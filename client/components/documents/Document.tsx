@@ -52,13 +52,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { api } from "@/lib/api/client";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { inferMimeFromName } from "@/utils/mime-map";
+import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import { Building2, FileCode, Power, Tag, UploadCloud, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -172,6 +174,10 @@ export default function Document({
       }
     >
   >({});
+  const [clientRenderedHtml, setClientRenderedHtml] = useState<string | null>(
+    renderedHtml
+  );
+  const searchParams = useSearchParams();
 
   // Create mode: File upload state
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -398,16 +404,78 @@ export default function Document({
   // Template mode detection - use isTemplateMode or check if templateUploadId exists
   const isTemplateDocument =
     isTemplateMode || (isEditMode && !!documentDetail?.template);
-  const templateSchemaForDisplay =
-    isEditMode && documentDetail?.template_schema
-      ? isTemplateSchema(documentDetail.template_schema)
+
+  // Get schema for display - prioritize selected template's schema if switching templates
+  const templateSchemaForDisplay = useMemo(() => {
+    // If we have a selected template ID and it's in the mapping, use that schema
+    if (selectedTemplateId && templateMapping[selectedTemplateId]) {
+      const selectedTemplateSchema =
+        templateMapping[selectedTemplateId].template_args;
+      if (isTemplateSchema(selectedTemplateSchema)) {
+        return selectedTemplateSchema;
+      }
+    }
+
+    // Otherwise, use documentDetail template_schema in edit mode, or templateSchema state
+    if (isEditMode && documentDetail?.template_schema) {
+      return isTemplateSchema(documentDetail.template_schema)
         ? documentDetail.template_schema
-        : null
-      : templateSchema;
+        : null;
+    }
+    return templateSchema;
+  }, [
+    selectedTemplateId,
+    templateMapping,
+    isEditMode,
+    documentDetail?.template_schema,
+    templateSchema,
+  ]);
   const templateHtmlForDisplay =
     isEditMode && documentDetail?.template_html
       ? documentDetail.template_html
       : templateHtml;
+
+  // Client-side render endpoint call when query params change
+  useEffect(() => {
+    // Only render if we have a template schema, document ID, and are in template mode
+    if (!templateSchemaForDisplay || !documentId || !isTemplateMode) {
+      setClientRenderedHtml(renderedHtml);
+      return;
+    }
+
+    const debounceTimer = setTimeout(async () => {
+      try {
+        // Parse search params to template args
+        const templateArgs = searchParamsToTemplateArgs(
+          searchParams,
+          templateSchemaForDisplay
+        );
+
+        // Always call render endpoint if we have template args, even if empty
+        // This ensures we get a rendered preview with default values
+        const result = await api.post("/documents/render", {
+          body: {
+            documentId,
+            templateArgs,
+            profileId: effectiveProfile?.id || "",
+          },
+        });
+        setClientRenderedHtml(result.rendered_html);
+      } catch {
+        // If render fails, set to null so TemplatePreview shows appropriate message
+        setClientRenderedHtml(null);
+      }
+    }, 500); // Debounce 500ms
+
+    return () => clearTimeout(debounceTimer);
+  }, [
+    searchParams,
+    templateSchemaForDisplay,
+    documentId,
+    isTemplateMode,
+    effectiveProfile?.id,
+    renderedHtml,
+  ]);
 
   // Create mode: Track department changes and manage staged selections
   React.useEffect(() => {
@@ -950,31 +1018,36 @@ export default function Document({
     setSelectedTemplateId(templateId);
     setTemplateUploadId(templateId);
 
+    // Enable template mode when switching to a template
+    setIsTemplateMode(true);
+
     // Parse template schema from template_args
     const schema = template.template_args;
     if (isTemplateSchema(schema)) {
       setTemplateSchema(schema);
+      // Initialize template args to empty object for the new template
+      // User will fill in the values via the form
+      setTemplateArgs({});
     } else {
       toast.error("Invalid template schema");
       return;
     }
 
-    // Load template HTML - need to fetch from server
-    if (isEditMode && documentId) {
+    // Load template HTML from upload endpoint
+    if (isEditMode && documentId && templateId) {
       try {
-        // The template HTML should be loaded from the document detail
-        // For now, we'll need to refetch or use the existing template_html
-        // This will be handled by the detail endpoint returning template_html for the selected template
-        toast.success("Template switched successfully");
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load template HTML"
-        );
+        const response = await fetch(`/api/uploads/download/${templateId}`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (response.ok) {
+          const html = await response.text();
+          setTemplateHtml(html);
+        }
+        // Silently handle errors - template HTML will remain as previous value
+      } catch {
+        // Silently handle errors - template HTML will remain as previous value
       }
-    } else {
-      toast.success("Template switched successfully");
     }
   };
 
@@ -1714,7 +1787,7 @@ export default function Document({
                   <TemplatePreview
                     documentId={documentId || null}
                     templateHtml={templateHtmlForDisplay}
-                    renderedHtml={renderedHtml}
+                    renderedHtml={clientRenderedHtml}
                   />
                 </div>
               </div>

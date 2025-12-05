@@ -4,9 +4,9 @@
  */
 
 "use client";
+import HtmlViewer from "@/components/common/chat/viewers/HtmlViewer";
 import CodeViewer from "@/components/common/chat/viewers/CodeViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
 
 export interface TemplatePreviewProps {
   documentId: string | null;
@@ -19,20 +19,6 @@ export default function TemplatePreview({
   templateHtml,
   renderedHtml = null,
 }: TemplatePreviewProps) {
-  const [iframeLoading, setIframeLoading] = useState(true);
-
-  // Sanitize HTML content for security
-  const sanitizeHtml = (html: string): string => {
-    return html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
-      .replace(/on\w+\s*=/gi, "data-removed=")
-      .replace(/javascript:/gi, "data-removed:")
-      .replace(/vbscript:/gi, "data-removed:");
-  };
-
-  const safeHtml = renderedHtml ? sanitizeHtml(renderedHtml) : "";
-
   if (!templateHtml) {
     return (
       <div className="text-sm text-muted-foreground p-4">
@@ -58,27 +44,31 @@ export default function TemplatePreview({
     );
   }
 
-  // When documentId exists, show only preview (no tabs)
+  // When documentId exists, use HtmlViewer for consistent rendering
+  // Show rendered HTML if available, otherwise show template source
+  if (renderedHtml) {
+    return (
+      <HtmlViewer
+        name={documentId ? "Template Preview" : "Template Source"}
+        content={renderedHtml}
+      />
+    );
+  }
+
+  // If no rendered HTML but we have template HTML, show source
+  if (templateHtml) {
+    return (
+      <HtmlViewer
+        name={documentId ? "Template Source" : "Template Source"}
+        content={templateHtml}
+      />
+    );
+  }
+
+  // Fallback message
   return (
-    <div className="w-full h-full">
-      {safeHtml ? (
-        <iframe
-          sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin"
-          className="w-full h-full min-h-[500px] border rounded-md"
-          srcDoc={safeHtml}
-          title="Template Preview"
-          onLoad={() => setIframeLoading(false)}
-          style={
-            iframeLoading
-              ? { visibility: "hidden" }
-              : { visibility: "visible" }
-          }
-        />
-      ) : (
-        <div className="text-sm text-muted-foreground p-4">
-          Fill in template arguments to see preview
-        </div>
-      )}
+    <div className="text-sm text-muted-foreground p-4">
+      Fill in template arguments to see preview
     </div>
   );
 }

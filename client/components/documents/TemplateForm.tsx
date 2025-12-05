@@ -5,7 +5,6 @@
 
 "use client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,30 +60,49 @@ export default function TemplateForm({
   const searchParams = useSearchParams();
   const [formValues, setFormValues] = useState<Record<string, unknown>>(values);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isUpdatingFromUrlRef = useRef(false);
+  const lastSearchParamsRef = useRef<string>("");
 
-  // Initialize form values from search params on mount
+  // Sync form values from search params when they change
   useEffect(() => {
-    if (schema && searchParams) {
-      // Check if there are any template arg params in URL
-      const hasTemplateParams = Array.from(searchParams.keys()).some(
-        (key) => key.includes(".") || schema.fields.some((f) => f.name === key)
-      );
+    if (!schema || !searchParams) return;
 
-      if (hasTemplateParams) {
-        // Import searchParamsToTemplateArgs dynamically to avoid circular deps
-        import("@/utils/template-args-url").then(
-          ({ searchParamsToTemplateArgs }) => {
-            const urlArgs = searchParamsToTemplateArgs(searchParams, schema);
-            if (Object.keys(urlArgs).length > 0) {
+    // Get search params string to detect changes
+    const searchParamsStr = searchParams.toString();
+
+    // Skip if search params haven't changed (avoid unnecessary updates)
+    if (searchParamsStr === lastSearchParamsRef.current) return;
+    lastSearchParamsRef.current = searchParamsStr;
+
+    // Check if there are any template arg params in URL
+    const hasTemplateParams = Array.from(searchParams.keys()).some(
+      (key) => key.includes(".") || schema.fields.some((f) => f.name === key)
+    );
+
+    if (hasTemplateParams) {
+      // Import searchParamsToTemplateArgs dynamically to avoid circular deps
+      import("@/utils/template-args-url").then(
+        ({ searchParamsToTemplateArgs }) => {
+          const urlArgs = searchParamsToTemplateArgs(searchParams, schema);
+          if (Object.keys(urlArgs).length > 0) {
+            // Check if values actually changed to avoid unnecessary updates
+            const currentValuesStr = JSON.stringify(formValues);
+            const urlArgsStr = JSON.stringify(urlArgs);
+            if (currentValuesStr !== urlArgsStr) {
+              isUpdatingFromUrlRef.current = true;
               setFormValues(urlArgs);
               onChange(urlArgs);
+              // Reset flag after a short delay
+              setTimeout(() => {
+                isUpdatingFromUrlRef.current = false;
+              }, 100);
             }
           }
-        );
-      }
+        }
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount - schema and searchParams are stable
+  }, [searchParams, schema]); // Watch searchParams changes, formValues and onChange excluded to avoid loops
 
   // Sync form values to URL search params with debouncing
   const syncToUrl = useCallback(
@@ -127,6 +145,9 @@ export default function TemplateForm({
   }, [values]);
 
   const updateValue = (path: string[], value: unknown) => {
+    // Skip URL sync if we're updating from URL to avoid circular updates
+    if (isUpdatingFromUrlRef.current) return;
+
     const newValues = { ...formValues };
     let current: Record<string, unknown> = newValues;
 
@@ -264,35 +285,34 @@ export default function TemplateForm({
               </Button>
             </div>
             {arrayValue.map((_item: unknown, index: number) => (
-              <Card key={index} className="relative">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">
-                      {field.name} #{index + 1}
-                    </CardTitle>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const newArray = arrayValue.filter(
-                          (_: unknown, i: number) => i !== index
-                        );
-                        updateValue(fieldPath, newArray);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {renderField(
-                    field.item!,
-                    [...fieldPath, index.toString()],
-                    indent + 1
-                  )}
-                </CardContent>
-              </Card>
+              <div
+                key={index}
+                className="relative border rounded-md p-4 bg-muted/30 space-y-4"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-sm font-medium">
+                    {field.name} #{index + 1}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const newArray = arrayValue.filter(
+                        (_: unknown, i: number) => i !== index
+                      );
+                      updateValue(fieldPath, newArray);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+                {renderField(
+                  field.item!,
+                  [...fieldPath, index.toString()],
+                  indent + 1
+                )}
+              </div>
             ))}
             {arrayValue.length === 0 && (
               <div className="text-sm text-muted-foreground p-4 border rounded-md">
@@ -310,13 +330,11 @@ export default function TemplateForm({
               {field.name}
               {field.required && <span className="text-destructive"> *</span>}
             </Label>
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                {field.fields.map((subField) =>
-                  renderField(subField, fieldPath, indent + 1)
-                )}
-              </CardContent>
-            </Card>
+            <div className="border rounded-md p-4 bg-muted/30 space-y-4">
+              {field.fields.map((subField) =>
+                renderField(subField, fieldPath, indent + 1)
+              )}
+            </div>
           </div>
         );
 
