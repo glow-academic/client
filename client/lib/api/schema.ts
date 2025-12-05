@@ -6419,6 +6419,8 @@ export interface components {
             questions: components["schemas"]["app__api__v3__videos__create__QuestionItem"][];
             /** Parameter Item Ids */
             parameter_item_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
         };
         /**
          * CreateVideoResponse
@@ -7746,8 +7748,6 @@ export interface components {
             question_id?: string | null;
             /** Question Text */
             question_text: string;
-            /** Type */
-            type: string;
             /** Allow Multiple */
             allow_multiple: boolean;
             /**
@@ -7929,6 +7929,8 @@ export interface components {
              * @default true
              */
             useQuestions: boolean;
+            /** Personaids */
+            personaIds?: string[] | null;
         };
         /**
          * GenerateOutlineResponse
@@ -8054,8 +8056,6 @@ export interface components {
         GeneratedQuestion: {
             /** Question Text */
             question_text: string;
-            /** Type */
-            type: string;
             /** Allow Multiple */
             allow_multiple: boolean;
             /** Options */
@@ -10407,8 +10407,6 @@ export interface components {
             question_id: string;
             /** Question Text */
             question_text: string;
-            /** Type */
-            type: string;
             /** Allow Multiple */
             allow_multiple: boolean;
             /** Times */
@@ -13072,6 +13070,8 @@ export interface components {
             image_agent_id?: string | null;
             /** Parameter Item Ids */
             parameter_item_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
         };
         /**
          * UpdateVideoResponse
@@ -15164,8 +15164,6 @@ export interface components {
         app__api__v3__videos__create__QuestionItem: {
             /** Question Text */
             question_text: string;
-            /** Type */
-            type: string;
             /**
              * Allow Multiple
              * @default false
@@ -15283,6 +15281,16 @@ export interface components {
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Persona Ids */
+            valid_persona_ids: string[];
         };
         /**
          * VideoItem
@@ -15417,6 +15425,16 @@ export interface components {
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Persona Ids */
+            valid_persona_ids: string[];
         };
         /**
          * QuestionItem
@@ -15425,8 +15443,6 @@ export interface components {
         app__api__v3__videos__update__QuestionItem: {
             /** Question Text */
             question_text: string;
-            /** Type */
-            type: string;
             /**
              * Allow Multiple
              * @default false

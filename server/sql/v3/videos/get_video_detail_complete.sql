@@ -252,7 +252,6 @@ video_questions_data AS (
     SELECT 
         q.id as question_id,
         q.question_text,
-        q.type as question_type,
         q.allow_multiple,
         (SELECT ARRAY_AGG(distinct_times.time ORDER BY distinct_times.time) FROM (SELECT DISTINCT qt.time FROM question_times qt WHERE qt.video_id = vq.video_id AND qt.question_id = q.id AND qt.active = true) distinct_times) as times,
         -- All options for this question
@@ -277,7 +276,7 @@ video_questions_data AS (
     FROM video_questions vq
     JOIN questions q ON q.id = vq.question_id
     WHERE vq.video_id = $1 AND vq.active = true AND q.active = true
-    GROUP BY q.id, q.question_text, q.type, q.allow_multiple, vq.video_id
+    GROUP BY q.id, q.question_text, q.allow_multiple, vq.video_id
 ),
 questions_json AS (
     SELECT COALESCE(
@@ -285,7 +284,7 @@ questions_json AS (
             jsonb_build_object(
                 'question_id', question_id::text,
                 'question_text', question_text,
-                'type', question_type::text,
+                'type', 'choice'::text,
                 'allow_multiple', allow_multiple,
                 'times', times,
                 'options', options
@@ -397,6 +396,80 @@ video_selected_parameter_items AS (
     SELECT ARRAY_AGG(vpi.parameter_item_id::text ORDER BY vpi.parameter_item_id) as parameter_item_ids
     FROM video_parameter_items vpi
     WHERE vpi.video_id = $1 AND vpi.active = true
+),
+video_personas_agg AS (
+    SELECT ARRAY_AGG(vp.persona_id::text ORDER BY vp.persona_id) as persona_ids
+    FROM video_personas vp
+    WHERE vp.video_id = $1 AND vp.active = true
+),
+image_model_check AS (
+    SELECT 
+        model_id,
+        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
+    FROM model_modalities
+    WHERE modality = 'image' AND is_input = false AND active = true
+    GROUP BY model_id
+),
+valid_personas_filtered AS (
+    SELECT DISTINCT
+        p.id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        p.color,
+        p.icon,
+        COALESCE(imc.image_model, false) as image_model
+    FROM personas p
+    LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
+    LEFT JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN models m ON m.id = a.model_id
+    LEFT JOIN image_model_check imc ON imc.model_id = m.id
+    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+    CROSS JOIN user_departments ud
+    WHERE p.active = true
+    GROUP BY p.id, p.name, p.description, p.color, p.icon, imc.image_model
+    HAVING 
+        COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
+        OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+),
+persona_data AS (
+    SELECT * FROM valid_personas_filtered
+    UNION
+    SELECT DISTINCT
+        p2.id,
+        p2.name,
+        COALESCE(p2.description, '') as description,
+        p2.color,
+        p2.icon,
+        COALESCE(imc2.image_model, false) as image_model
+    FROM video_personas_agg vpa
+    CROSS JOIN LATERAL unnest(vpa.persona_ids) as persona_id
+    JOIN personas p2 ON p2.id = persona_id::uuid
+    LEFT JOIN persona_agents pa2 ON pa2.persona_id = p2.id AND pa2.active = true
+    LEFT JOIN agents a2 ON a2.id = pa2.agent_id
+    LEFT JOIN models m2 ON m2.id = a2.model_id
+    LEFT JOIN image_model_check imc2 ON imc2.model_id = m2.id
+    WHERE p2.active = true
+    ORDER BY name
+),
+valid_personas_data AS (
+    SELECT 
+        COALESCE(ARRAY_AGG(p.id::text ORDER BY p.name), ARRAY[]::text[]) as valid_persona_ids,
+        COALESCE(jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.name,
+                'description', p.description,
+                'color', p.color,
+                'icon', p.icon,
+                'image_model', COALESCE(p.image_model, false)
+            )
+        ), '{}'::jsonb) as persona_mapping
+    FROM persona_data p
+),
+video_personas_data AS (
+    SELECT 
+        COALESCE((SELECT persona_ids FROM video_personas_agg), ARRAY[]::text[]) as persona_ids,
+        COALESCE((SELECT persona_mapping FROM valid_personas_data), '{}'::jsonb) as persona_mapping
 )
 SELECT 
     vc.name,
@@ -423,7 +496,10 @@ SELECT
     COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     COALESCE((SELECT parameter_mapping FROM video_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,
     COALESCE((SELECT parameter_item_mapping FROM video_parameter_item_mapping_data), '{}'::jsonb) as parameter_item_mapping,
-    COALESCE((SELECT parameter_item_ids FROM video_selected_parameter_items), ARRAY[]::text[]) as parameter_item_ids
+    COALESCE((SELECT parameter_item_ids FROM video_selected_parameter_items), ARRAY[]::text[]) as parameter_item_ids,
+    COALESCE((SELECT persona_ids FROM video_personas_data), ARRAY[]::text[]) as persona_ids,
+    COALESCE((SELECT persona_mapping FROM video_personas_data), '{}'::jsonb) as persona_mapping,
+    COALESCE((SELECT valid_persona_ids FROM valid_personas_data), ARRAY[]::text[]) as valid_persona_ids
 FROM video_core vc
 CROSS JOIN video_permissions vp
 CROSS JOIN valid_agents va

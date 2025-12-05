@@ -81,6 +81,7 @@ import {
   DocumentMappingItem,
   DocumentPicker,
 } from "@/components/common/forms/DocumentPicker";
+import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -136,7 +137,6 @@ type ParameterItemMapping = Record<string, ParameterItemMappingItem>;
 type Question = {
   question_id?: string;
   question_text: string;
-  type: "choice" | "frq";
   allow_multiple: boolean;
   times: number[];
   options: QuestionOption[];
@@ -339,7 +339,6 @@ export default function Video({
     // Transform questions for API
     const questionsForApi = questions.map((q) => ({
       question_text: q.question_text,
-      type: q.type,
       allow_multiple: q.allow_multiple,
       times: q.times,
       options: q.options.map((opt) => ({
@@ -370,6 +369,7 @@ export default function Video({
       department_ids: finalDepartmentIds,
       active: formData.active ?? true,
       questions: questionsForApi,
+      personaIds: formData.personaIds || [],
     };
 
     if (outlineIds.length > 0) {
@@ -551,7 +551,6 @@ export default function Video({
             ? questions.map((q) => ({
                 question_id: q.question_id || undefined,
                 question_text: q.question_text,
-                type: q.type,
                 allow_multiple: q.allow_multiple,
                 times: q.times,
                 options: q.options.map((opt) => ({
@@ -561,6 +560,8 @@ export default function Video({
                 })),
               }))
             : undefined,
+        // @ts-expect-error - personaIds will be added to schema in next regeneration
+        personaIds: formData.personaIds && formData.personaIds.length > 0 ? formData.personaIds : undefined,
       };
 
       if (isEditMode && videoId) {
@@ -584,7 +585,6 @@ export default function Video({
           const convertedQuestions: Question[] = result.questions.map(
             (q, _index) => ({
               question_text: q.question_text,
-              type: q.type as "choice" | "frq",
               allow_multiple: q.allow_multiple,
               times: [], // Will be set from question_timestamps
               options: q.options.map((opt) => ({
@@ -1006,6 +1006,7 @@ export default function Video({
     problemStatement: string;
     active: boolean;
     outlineAgentId: string | null;
+    personaIds: string[];
   };
 
   // Outline state
@@ -1054,6 +1055,7 @@ export default function Video({
       problemStatement: "",
       active: true,
       outlineAgentId: null,
+      personaIds: [],
     }),
     [defaultDepartmentIds]
   );
@@ -1238,6 +1240,7 @@ export default function Video({
         problemStatement: "", // Not used anymore, kept for form compatibility
         active: videoData.active ?? true,
         outlineAgentId: videoData.outline_agent_id || null,
+        personaIds: videoData.persona_ids || [],
       });
 
       // Load parameter items
@@ -1315,7 +1318,6 @@ export default function Video({
         const loadedQuestions: Question[] = videoData.questions.map((q) => ({
           question_id: q.question_id,
           question_text: q.question_text,
-          type: q.type as "choice" | "frq",
           allow_multiple: q.allow_multiple,
           times: q.times,
           options: q.options.map((opt) => ({
@@ -1415,7 +1417,6 @@ export default function Video({
       // Transform questions for API
       const questionsForApi = questions.map((q) => ({
         question_text: q.question_text,
-        type: q.type,
         allow_multiple: q.allow_multiple,
         times: q.times,
         options: q.options.map((opt) => ({
@@ -1445,6 +1446,7 @@ export default function Video({
           department_ids: finalDepartmentIds,
           active: formData.active,
           questions: questionsForApi,
+          personaIds: formData.personaIds || [],
         };
 
         if (outlineIds.length > 0) {
@@ -1565,11 +1567,7 @@ export default function Video({
 
   // Question modal state
   const [showMCQModal, setShowMCQModal] = useState(false);
-  const [showFRQModal, setShowFRQModal] = useState(false);
   const [editingMCQQuestion, setEditingMCQQuestion] = useState<Question | null>(
-    null
-  );
-  const [editingFRQQuestion, setEditingFRQQuestion] = useState<Question | null>(
     null
   );
 
@@ -1599,7 +1597,6 @@ export default function Video({
     } else {
       setEditingMCQQuestion({
         question_text: "",
-        type: "choice",
         allow_multiple: false,
         times: time !== undefined ? [time] : [],
         options: [
@@ -1622,26 +1619,6 @@ export default function Video({
   const closeMCQModal = () => {
     setShowMCQModal(false);
     setEditingMCQQuestion(null);
-  };
-
-  const openFRQModal = (time?: number, question?: Question) => {
-    if (question) {
-      setEditingFRQQuestion(question);
-    } else {
-      setEditingFRQQuestion({
-        question_text: "",
-        type: "frq",
-        allow_multiple: false,
-        times: time !== undefined ? [time] : [],
-        options: [],
-      });
-    }
-    setShowFRQModal(true);
-  };
-
-  const closeFRQModal = () => {
-    setShowFRQModal(false);
-    setEditingFRQQuestion(null);
   };
 
   const saveMCQQuestion = () => {
@@ -1697,44 +1674,6 @@ export default function Video({
     }
 
     closeMCQModal();
-  };
-
-  const saveFRQQuestion = () => {
-    if (!editingFRQQuestion) return;
-
-    if (!editingFRQQuestion.question_text.trim()) {
-      toast.error("Question text is required");
-      return;
-    }
-
-    // Allow questions without times when adding manually (not from timeline)
-    // Set default time to 0 if no time specified
-    if (editingFRQQuestion.times.length === 0) {
-      editingFRQQuestion.times = [0];
-    }
-
-    if (editingFRQQuestion.question_id) {
-      // Update existing question
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.question_id === editingFRQQuestion.question_id
-            ? editingFRQQuestion
-            : q
-        )
-      );
-    } else {
-      // Add new question - check max limit
-      const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
-      if (questions.length >= maxQuestions) {
-        toast.error(
-          `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
-        );
-        return;
-      }
-      setQuestions((prev) => [...prev, editingFRQQuestion]);
-    }
-
-    closeFRQModal();
   };
 
   const deleteQuestion = (questionId?: string) => {
@@ -1887,6 +1826,24 @@ export default function Video({
                 ) : null}
               </div>
             )}
+
+          {/* Personas */}
+          {videoData?.persona_ids && videoData.persona_ids.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="personas">Personas</Label>
+              {formData?.personaIds !== undefined ? (
+                <PersonaPicker
+                  mapping={personaMapping}
+                  validIds={videoData.persona_ids}
+                  selectedIds={formData.personaIds || []}
+                  onSelect={(ids) => handleInputChange("personaIds", ids)}
+                  placeholder="Select personas"
+                  disabled={isReadonly}
+                  multiSelect={true}
+                />
+              ) : null}
+            </div>
+          )}
 
           {/* Agent Selection */}
           {(() => {
@@ -2392,28 +2349,27 @@ export default function Video({
                           <p className="text-sm font-medium">
                             {question.question_text}
                           </p>
-                          {question.type === "choice" &&
-                            question.options.length > 0 && (
-                              <div className="mt-2 space-y-1">
-                                {question.options.map((opt, optIdx) => (
-                                  <div
-                                    key={optIdx}
-                                    className="flex items-center gap-2 text-xs"
+                          {question.options.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {question.options.map((opt, optIdx) => (
+                                <div
+                                  key={optIdx}
+                                  className="flex items-center gap-2 text-xs"
+                                >
+                                  {opt.is_correct && (
+                                    <Check className="h-3 w-3 text-green-600" />
+                                  )}
+                                  <span
+                                    className={
+                                      opt.is_correct ? "font-semibold" : ""
+                                    }
                                   >
-                                    {opt.is_correct && (
-                                      <Check className="h-3 w-3 text-green-600" />
-                                    )}
-                                    <span
-                                      className={
-                                        opt.is_correct ? "font-semibold" : ""
-                                      }
-                                    >
-                                      {opt.option_text}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                                    {opt.option_text}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           {question.times.length > 0 && (
                             <div className="mt-2 text-xs text-muted-foreground">
                               Times: {question.times.join(", ")}s
@@ -2425,11 +2381,7 @@ export default function Video({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (question.type === "frq") {
-                                openFRQModal(undefined, question);
-                              } else {
-                                openMCQModal(undefined, question);
-                              }
+                              openMCQModal(undefined, question);
                             }}
                             disabled={isReadonly}
                           >
@@ -2482,16 +2434,6 @@ export default function Video({
                       );
                       return;
                     }
-                    openFRQModal();
-                  }}
-                  disabled={
-                    isReadonly ||
-                    questions.length >= Math.floor(outlineVideoLength / 4) + 1
-                  }
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add FRQ
-                </Button>
               </div>
 
               {/* Timeline */}
@@ -3154,45 +3096,6 @@ export default function Video({
         </AlertDialog>
       )}
 
-      {/* FRQ Question Modal */}
-      {showFRQModal && editingFRQQuestion && (
-        <AlertDialog open={showFRQModal} onOpenChange={closeFRQModal}>
-          <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {editingFRQQuestion.question_id
-                  ? "Edit FRQ Question"
-                  : "Add FRQ Question"}
-              </AlertDialogTitle>
-            </AlertDialogHeader>
-            <div className="space-y-4 py-4">
-              {/* Question Text */}
-              <div className="space-y-2">
-                <Label>Question Text *</Label>
-                <Textarea
-                  value={editingFRQQuestion.question_text}
-                  onChange={(e) =>
-                    setEditingFRQQuestion({
-                      ...editingFRQQuestion,
-                      question_text: e.target.value,
-                    })
-                  }
-                  placeholder="Enter question text"
-                  rows={3}
-                />
-              </div>
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={closeFRQModal}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={saveFRQQuestion}>
-                Save
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
     </div>
   );
 }

@@ -49,7 +49,6 @@ class ExistingQuestion(BaseModel):
 
     question_id: str | None = None
     question_text: str
-    type: str  # 'choice' or 'frq'
     allow_multiple: bool
     times: list[int] = []
     options: list[ExistingQuestionOption] = []
@@ -67,6 +66,7 @@ class GenerateOutlineRequest(BaseModel):
     videoId: str | None = None
     videoLengthSeconds: int | None = None
     useQuestions: bool = True  # Whether to generate questions (default True for backward compatibility)
+    personaIds: list[str] | None = None  # Personas to inform outline generation
 
 
 class QuestionOption(BaseModel):
@@ -81,7 +81,6 @@ class GeneratedQuestion(BaseModel):
     """Generated question in response."""
 
     question_text: str
-    type: str  # 'choice' or 'frq'
     allow_multiple: bool
     options: list[QuestionOption]
 
@@ -183,6 +182,11 @@ async def generate_outline(
             if isinstance(context_row["parameter_items"], str)
             else context_row["parameter_items"]
         )
+        personas = (
+            json.loads(context_row["personas"])
+            if isinstance(context_row["personas"], str)
+            else context_row.get("personas", [])
+        )
 
         # Use provided videoLengthSeconds or fall back to video length from DB or default to 4
         video_length_seconds = (
@@ -231,6 +235,34 @@ async def generate_outline(
         else:
             parameter_item_info = format_parameter_item_info(parameter_items)
 
+        # Format persona info if personas were provided (from video or request)
+        persona_info = None
+        # Use personas from request if provided, otherwise use personas from context (video)
+        effective_personas = personas if isinstance(personas, list) and len(personas) > 0 else []
+        if request.personaIds and len(request.personaIds) > 0:
+            # If personaIds provided in request, use those (frontend can override video personas)
+            # For now, we'll use personas from context (video) - can be enhanced later
+            pass
+        if effective_personas and len(effective_personas) > 0:
+            # Format personas using format_persona_info utility
+            from app.utils.personas import format_persona_info
+            # Format each persona and combine
+            persona_contents = []
+            for persona in effective_personas:
+                if isinstance(persona, dict):
+                    persona_data = {
+                        "name": persona.get("name", ""),
+                        "description": persona.get("description", ""),
+                    }
+                    formatted = format_persona_info(persona_data)
+                    persona_contents.append(formatted["content"])
+            if persona_contents:
+                # Combine all persona info into a single input item
+                persona_info = {
+                    "role": "user",
+                    "content": "\n\n".join(persona_contents),
+                }
+
         # Format existing questions if provided to inform outline generation
         question_info = None
         question_id_mapping: dict[str, str] = {}
@@ -240,7 +272,6 @@ async def generate_outline(
                 {
                     "id": q.question_id or f"temp-{idx}",
                     "question_text": q.question_text,
-                    "type": q.type,
                     "allow_multiple": q.allow_multiple,
                 }
                 for idx, q in enumerate(request.existingQuestions)
@@ -266,10 +297,10 @@ async def generate_outline(
             tool_results: list[FunctionToolResult],
         ) -> ToolsToFinalOutputResult:
             if use_questions:
-                required_tools = ["outline", "multiple_choice", "free_response", "multi_select"]
+                required_tools = ["outline", "multiple_choice", "multi_select"]
                 completed_outline = outline_progress.get("outline", False)
                 completed_questions = all(
-                    question_progress.get(tool, False) for tool in ["multiple_choice", "free_response", "multi_select"]
+                    question_progress.get(tool, False) for tool in ["multiple_choice", "multi_select"]
                 )
                 completed_required = completed_outline and completed_questions
             else:
@@ -300,6 +331,7 @@ async def generate_outline(
 
         input_items: list[TResponseInputItem | None] = [
             policy_info,
+            persona_info,
             parameter_item_info,
             question_info,
         ]
@@ -394,14 +426,12 @@ async def generate_outline(
         
         if use_questions:
             multiple_choice = question_results.get("multiple_choice")
-            free_response = question_results.get("free_response")
             multi_select = question_results.get("multi_select")
 
             # Build question data structures
             if multiple_choice:
                 questions_data.append(GeneratedQuestion(
                     question_text=multiple_choice["question_text"],
-                    type=multiple_choice["type"],
                     allow_multiple=multiple_choice["allow_multiple"],
                     options=[
                         QuestionOption(
@@ -412,17 +442,9 @@ async def generate_outline(
                         for opt in multiple_choice["options"]
                     ],
                 ))
-            if free_response:
-                questions_data.append(GeneratedQuestion(
-                    question_text=free_response["question_text"],
-                    type=free_response["type"],
-                    allow_multiple=free_response["allow_multiple"],
-                    options=[],
-                ))
             if multi_select:
                 questions_data.append(GeneratedQuestion(
                     question_text=multi_select["question_text"],
-                    type=multi_select["type"],
                     allow_multiple=multi_select["allow_multiple"],
                     options=[
                         QuestionOption(
@@ -434,10 +456,10 @@ async def generate_outline(
                     ],
                 ))
 
-            if len(questions_data) != 3:
+            if len(questions_data) != 2:
                 raise ValueError(
-                    f"Expected 3 questions but got {len(questions_data)}. "
-                    "Please ensure all three question types are generated."
+                    f"Expected 2 questions but got {len(questions_data)}. "
+                    "Please ensure both question types (multiple choice and multi-select) are generated."
                 )
 
         outline_id: str | None = None

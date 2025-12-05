@@ -131,7 +131,6 @@ SELECT
             json_build_object(
                 'id', q.id::text,
                 'question_text', q.question_text,
-                'type', q.type::text,
                 'allow_multiple', q.allow_multiple
             )
             ORDER BY array_position(vi.effective_question_ids, q.id)
@@ -161,6 +160,24 @@ SELECT
         ),
         '[]'::json
     ) as parameter_items,
+    
+    -- Personas data (aggregated as JSON array when video_id provided)
+    COALESCE(
+        (SELECT json_agg(
+            json_build_object(
+                'id', p.id::text,
+                'name', p.name,
+                'description', COALESCE(p.description, '')
+            )
+            ORDER BY vp.persona_id
+        )
+        FROM video_personas vp
+        JOIN personas p ON p.id = vp.persona_id
+        CROSS JOIN params p_params
+        WHERE vp.video_id = p_params.video_id AND vp.active = true AND p.active = true
+        ),
+        '[]'::json
+    ) FILTER (WHERE (SELECT video_id FROM params) IS NOT NULL) as personas,
     
     -- Video length (if video_id provided)
     vi.length_seconds as video_length_seconds,

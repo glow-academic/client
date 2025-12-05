@@ -6,9 +6,10 @@
 --            $7=document_ids (text array, nullable),
 --            $8=upload_images_json (JSONB string with upload images array),
 --            $9=questions_json (JSONB string with questions array),
---            $10=parameter_item_ids (text array, nullable)
+--            $10=parameter_item_ids (text array, nullable),
+--            $11=persona_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
--- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
+-- Questions JSON structure: [{"question_text": "...", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 
 WITH new_video AS (
     INSERT INTO videos (
@@ -97,7 +98,6 @@ questions_data AS (
     -- Parse questions from JSON
     SELECT 
         q->>'question_text' as question_text,
-        q->>'type' as question_type,
         COALESCE((q->>'allow_multiple')::boolean, false) as allow_multiple,
         ARRAY(SELECT jsonb_array_elements_text(q->'times'))::integer[] as times,
         q->'options' as options_json
@@ -106,17 +106,16 @@ questions_data AS (
 ),
 create_questions AS (
     -- Create questions
-    INSERT INTO questions (question_text, type, allow_multiple, active, created_at, updated_at)
+    INSERT INTO questions (question_text, allow_multiple, active, created_at, updated_at)
     SELECT DISTINCT
         qd.question_text,
-        qd.question_type::question_type,
         qd.allow_multiple,
         true,
         NOW(),
         NOW()
     FROM questions_data qd
     WHERE qd.question_text IS NOT NULL AND qd.question_text != ''
-    RETURNING id::uuid as question_id, question_text, type, allow_multiple
+    RETURNING id::uuid as question_id, question_text, allow_multiple
 ),
 link_video_questions AS (
     -- Link questions to video
@@ -130,7 +129,6 @@ link_video_questions AS (
     FROM new_video nv
     CROSS JOIN questions_data qd
     JOIN create_questions cq ON cq.question_text = qd.question_text 
-        AND cq.type::text = qd.question_type 
         AND cq.allow_multiple = qd.allow_multiple
     ON CONFLICT (video_id, question_id) DO UPDATE SET
         active = true,
@@ -149,7 +147,6 @@ create_question_times AS (
     FROM new_video nv
     CROSS JOIN questions_data qd
     JOIN create_questions cq ON cq.question_text = qd.question_text 
-        AND cq.type::text = qd.question_type 
         AND cq.allow_multiple = qd.allow_multiple
     CROSS JOIN UNNEST(qd.times) as time_seconds
     WHERE time_seconds IS NOT NULL AND time_seconds >= 0
@@ -158,7 +155,7 @@ create_question_times AS (
         updated_at = NOW()
 ),
 options_data AS (
-    -- Extract options from questions (only for choice questions)
+    -- Extract options from questions
     SELECT DISTINCT
         cq.question_id,
         opt->>'option_text' as option_text,
@@ -166,10 +163,9 @@ options_data AS (
         COALESCE((opt->>'is_correct')::boolean, false) as is_correct
     FROM questions_data qd
     JOIN create_questions cq ON cq.question_text = qd.question_text 
-        AND cq.type::text = qd.question_type 
         AND cq.allow_multiple = qd.allow_multiple
     CROSS JOIN jsonb_array_elements(qd.options_json) as opt
-    WHERE qd.question_type = 'choice' AND qd.options_json IS NOT NULL
+    WHERE qd.options_json IS NOT NULL
 ),
 create_options AS (
     -- Create options
@@ -229,6 +225,22 @@ link_video_parameter_items AS (
     CROSS JOIN UNNEST($10::text[]) as param_item_id
     WHERE COALESCE(array_length($10::text[], 1), 0) > 0
     ON CONFLICT (video_id, parameter_item_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_video_personas AS (
+    -- Link personas to video if provided
+    INSERT INTO video_personas (video_id, persona_id, active, created_at, updated_at)
+    SELECT 
+        nv.video_id,
+        persona_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_video nv
+    CROSS JOIN UNNEST($11::text[]) as persona_id
+    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
+    ON CONFLICT (video_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

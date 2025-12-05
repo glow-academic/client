@@ -32,11 +32,8 @@ def format_question_info(questions: list[dict[str, Any]], video_length_seconds: 
     
     for question_index, question in enumerate(questions, start=1):
         question_id = question.get("id", "")
-        question_type = question.get("type", "unknown")
         allow_multiple = question.get("allow_multiple", False)
-        type_label = "Multi-select" if (question_type == "choice" and allow_multiple) else (
-            "Multiple Choice" if question_type == "choice" else "Free Response"
-        )
+        type_label = "Multi-select" if allow_multiple else "Multiple Choice"
         
         # Map simple number to UUID
         simple_id = str(question_index)

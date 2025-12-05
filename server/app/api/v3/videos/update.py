@@ -26,10 +26,9 @@ class QuestionItem(BaseModel):
     """Question item in update request."""
 
     question_text: str
-    type: str  # 'choice' or 'frq'
     allow_multiple: bool = False
     times: list[int]  # Array of seconds when question appears
-    options: list[QuestionOption]  # Only used for choice questions
+    options: list[QuestionOption]
 
 
 class UpdateVideoRequest(BaseModel):
@@ -49,6 +48,7 @@ class UpdateVideoRequest(BaseModel):
     outline_agent_id: str | None = None
     image_agent_id: str | None = None
     parameter_item_ids: list[str] | None = None  # Parameter items for video
+    persona_ids: list[str] | None = None  # Personas for video
 
 
 class UpdateVideoResponse(BaseModel):
@@ -89,6 +89,7 @@ async def update_video(
         image_names = request.image_names or []
         questions = request.questions or []
         parameter_item_ids = request.parameter_item_ids or []
+        persona_ids = request.persona_ids or []
 
         # Validate upload_ids and image_names match in length
         if len(upload_ids) != len(image_names):
@@ -124,6 +125,7 @@ async def update_video(
             request.outline_agent_id,
             request.image_agent_id,
             parameter_item_ids,  # Always pass array, SQL handles empty arrays
+            persona_ids,  # Always pass array, SQL handles empty arrays
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

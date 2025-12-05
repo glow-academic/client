@@ -7,9 +7,10 @@
 --            $9=upload_images_json (JSONB string with upload images array),
 --            $10=questions_json (JSONB string with questions array),
 --            $11=outline_agent_id (nullable uuid), $12=image_agent_id (nullable uuid),
---            $13=parameter_item_ids (text array, nullable)
+--            $13=parameter_item_ids (text array, nullable),
+--            $14=persona_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
--- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
+-- Questions JSON structure: [{"question_text": "...", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
 -- Note: file_path and mime_type are NOT updated here - they're managed via video_generations table when video file is generated/uploaded
 
@@ -131,7 +132,6 @@ questions_data AS (
     -- Parse questions from JSON
     SELECT 
         q->>'question_text' as question_text,
-        q->>'type' as question_type,
         COALESCE((q->>'allow_multiple')::boolean, false) as allow_multiple,
         ARRAY(SELECT jsonb_array_elements_text(q->'times'))::integer[] as times,
         q->'options' as options_json
@@ -141,10 +141,9 @@ questions_data AS (
 create_questions AS (
     -- Create questions (only if they don't already exist)
     -- Check for existing questions first to avoid duplicates
-    INSERT INTO questions (question_text, type, allow_multiple, active, created_at, updated_at)
+    INSERT INTO questions (question_text, allow_multiple, active, created_at, updated_at)
     SELECT DISTINCT
         qd.question_text,
-        qd.question_type::question_type,
         qd.allow_multiple,
         true,
         NOW(),
@@ -155,22 +154,19 @@ create_questions AS (
       AND NOT EXISTS (
           SELECT 1 FROM questions q 
           WHERE q.question_text = qd.question_text
-            AND q.type::text = qd.question_type
             AND q.allow_multiple = qd.allow_multiple
             AND q.active = true
       )
-    RETURNING id::uuid as question_id, question_text, type, allow_multiple
+    RETURNING id::uuid as question_id, question_text, allow_multiple
 ),
 get_existing_questions AS (
     -- Get existing questions that match
     SELECT 
         q.id as question_id,
         q.question_text,
-        q.type,
         q.allow_multiple
     FROM questions q
     JOIN questions_data qd ON q.question_text = qd.question_text 
-        AND q.type::text = qd.question_type 
         AND q.allow_multiple = qd.allow_multiple
     WHERE q.active = true
 ),
@@ -191,7 +187,6 @@ link_video_questions AS (
     FROM updated_video uv
     CROSS JOIN questions_data qd
     JOIN all_questions aq ON aq.question_text = qd.question_text 
-        AND aq.type::text = qd.question_type 
         AND aq.allow_multiple = qd.allow_multiple
     ON CONFLICT (video_id, question_id) DO UPDATE SET
         active = true,
@@ -210,7 +205,6 @@ create_question_times AS (
     FROM updated_video uv
     CROSS JOIN questions_data qd
     JOIN all_questions aq ON aq.question_text = qd.question_text 
-        AND aq.type::text = qd.question_type 
         AND aq.allow_multiple = qd.allow_multiple
     CROSS JOIN UNNEST(qd.times) as time_seconds
     WHERE time_seconds IS NOT NULL AND time_seconds >= 0
@@ -219,7 +213,7 @@ create_question_times AS (
         updated_at = NOW()
 ),
 options_data AS (
-    -- Extract options from questions (only for choice questions)
+    -- Extract options from questions
     SELECT DISTINCT
         aq.question_id,
         opt->>'option_text' as option_text,
@@ -227,10 +221,9 @@ options_data AS (
         COALESCE((opt->>'is_correct')::boolean, false) as is_correct
     FROM questions_data qd
     JOIN all_questions aq ON aq.question_text = qd.question_text 
-        AND aq.type::text = qd.question_type 
         AND aq.allow_multiple = qd.allow_multiple
     CROSS JOIN jsonb_array_elements(qd.options_json) as opt
-    WHERE qd.question_type = 'choice' AND qd.options_json IS NOT NULL
+    WHERE qd.options_json IS NOT NULL
 ),
 -- Note: We do NOT delete question_options or question_answers here because:
 -- 1. These are global tables shared across all videos
@@ -323,6 +316,27 @@ insert_video_parameters AS (
     CROSS JOIN UNNEST(COALESCE($13::text[], ARRAY[]::text[])) as param_item_id
     WHERE COALESCE(array_length($13::text[], 1), 0) > 0
     ON CONFLICT (video_id, parameter_item_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+replace_video_personas AS (
+    -- Delete all existing persona links
+    DELETE FROM video_personas 
+    WHERE video_id = $1::uuid
+),
+insert_video_personas AS (
+    -- Insert new persona links
+    INSERT INTO video_personas (video_id, persona_id, active, created_at, updated_at)
+    SELECT 
+        uv.video_id,
+        persona_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM updated_video uv
+    CROSS JOIN UNNEST(COALESCE($14::text[], ARRAY[]::text[])) as persona_id
+    WHERE COALESCE(array_length($14::text[], 1), 0) > 0
+    ON CONFLICT (video_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

@@ -26,10 +26,9 @@ class QuestionItem(BaseModel):
     """Question item in create request."""
 
     question_text: str
-    type: str  # 'choice' or 'frq'
     allow_multiple: bool = False
     times: list[int]  # Array of seconds when question appears
-    options: list[QuestionOption]  # Only used for choice questions
+    options: list[QuestionOption]
 
 
 class CreateVideoRequest(BaseModel):
@@ -46,6 +45,7 @@ class CreateVideoRequest(BaseModel):
     active: bool = True
     questions: list[QuestionItem] = []  # Questions with times and options
     parameter_item_ids: list[str] | None = None  # Parameter items for video
+    persona_ids: list[str] | None = None  # Personas for video
 
 
 class CreateVideoResponse(BaseModel):
@@ -85,6 +85,7 @@ async def create_video(
         image_names = request.image_names or []
         questions = request.questions or []
         parameter_item_ids = request.parameter_item_ids or []
+        persona_ids = request.persona_ids or []
 
         # Validate upload_ids and image_names match in length
         if len(upload_ids) != len(image_names):
@@ -116,6 +117,7 @@ async def create_video(
             upload_images_json,
             questions_json,
             parameter_item_ids if parameter_item_ids else None,
+            persona_ids if persona_ids else None,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

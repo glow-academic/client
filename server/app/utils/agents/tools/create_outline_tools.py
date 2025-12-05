@@ -208,9 +208,8 @@ def create_outline_tools(group_id: uuid.UUID | None, include_questions: bool = T
     
     if include_questions:
         tools.append(function_tool(set_multiple_choice_question))
-        tools.append(function_tool(set_free_response_question))
         tools.append(function_tool(set_multi_select_question))
-        logger.info(f"Created {len(tools)} outline and question tools")
+        logger.info(f"Created {len(tools)} outline and question tools (multiple choice and multi-select)")
     else:
         logger.info(f"Created {len(tools)} outline tools (questions disabled)")
     

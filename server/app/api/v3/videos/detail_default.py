@@ -38,10 +38,9 @@ class QuestionResponse(BaseModel):
 
     question_id: str
     question_text: str
-    type: str  # 'choice' or 'frq'
     allow_multiple: bool
     times: list[int]  # Array of seconds when question appears
-    options: list[QuestionOptionResponse]  # Only for choice questions
+    options: list[QuestionOptionResponse]
 
 
 class ProblemStatementInfo(BaseModel):

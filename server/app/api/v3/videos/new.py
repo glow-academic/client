@@ -38,10 +38,9 @@ class QuestionResponse(BaseModel):
 
     question_id: str
     question_text: str
-    type: str  # 'choice' or 'frq'
     allow_multiple: bool
     times: list[int]  # Array of seconds when question appears
-    options: list[QuestionOptionResponse]  # Only for choice questions
+    options: list[QuestionOptionResponse]
 
 
 class ProblemStatementInfo(BaseModel):
@@ -86,6 +85,9 @@ class VideoDetailResponse(BaseModel):
     parameter_mapping: dict[str, dict[str, Any]]
     parameter_item_mapping: dict[str, dict[str, Any]]
     parameter_item_ids: list[str]
+    persona_ids: list[str]
+    persona_mapping: dict[str, dict[str, Any]]
+    valid_persona_ids: list[str]
 
 
 router = APIRouter()
@@ -254,6 +256,28 @@ async def get_video_new(
             parameter_item_ids = []
         parameter_item_ids = [str(pid) for pid in parameter_item_ids]
 
+        # Parse persona_mapping from JSONB
+        persona_mapping_data = parse_jsonb(result.get("persona_mapping"))
+        persona_mapping: dict[str, dict[str, Any]] = {}
+        if isinstance(persona_mapping_data, dict):
+            persona_mapping = {
+                k: {
+                    "name": v.get("name", ""),
+                    "description": v.get("description", ""),
+                    "color": v.get("color", ""),
+                    "icon": v.get("icon", ""),
+                    "image_model": bool(v.get("image_model", False)),
+                }
+                for k, v in persona_mapping_data.items()
+                if isinstance(v, dict)
+            }
+
+        # Parse valid_persona_ids
+        valid_persona_ids = result.get("valid_persona_ids") or []
+        if not isinstance(valid_persona_ids, list):
+            valid_persona_ids = []
+        valid_persona_ids = [str(pid) for pid in valid_persona_ids]
+
         # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
         is_superadmin = user_role == "superadmin"
@@ -317,6 +341,10 @@ async def get_video_new(
             parameter_mapping=parameter_mapping,
             parameter_item_mapping=parameter_item_mapping,
             parameter_item_ids=parameter_item_ids,
+            # Personas (empty for new video)
+            persona_ids=[],
+            persona_mapping=persona_mapping,
+            valid_persona_ids=valid_persona_ids,
         )
 
         # Cache response

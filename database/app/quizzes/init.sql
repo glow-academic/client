@@ -5,8 +5,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ENUM TYPES
 -- ============================================================================
 
-CREATE TYPE question_type AS ENUM ('choice', 'frq');
-
 CREATE TYPE option_type AS ENUM ('discrete', 'freeform');
 
 -- ============================================================================
@@ -41,7 +39,6 @@ CREATE TABLE questions (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   question_text TEXT NOT NULL,
-  type         question_type NOT NULL,
   allow_multiple BOOLEAN NOT NULL DEFAULT FALSE,
   active        BOOLEAN     NOT NULL DEFAULT TRUE
 );

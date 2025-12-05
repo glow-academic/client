@@ -224,6 +224,50 @@ video_parameter_item_mapping_data AS (
             )
         ), '{}'::jsonb) as parameter_item_mapping
     FROM video_parameter_items_data pi
+),
+image_model_check AS (
+    SELECT 
+        model_id,
+        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
+    FROM model_modalities
+    WHERE modality = 'image' AND is_input = false AND active = true
+    GROUP BY model_id
+),
+valid_personas_filtered AS (
+    SELECT DISTINCT
+        p.id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        p.color,
+        p.icon,
+        COALESCE(imc.image_model, false) as image_model
+    FROM personas p
+    LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
+    LEFT JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN models m ON m.id = a.model_id
+    LEFT JOIN image_model_check imc ON imc.model_id = m.id
+    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+    CROSS JOIN user_departments ud
+    WHERE p.active = true
+    GROUP BY p.id, p.name, p.description, p.color, p.icon, imc.image_model
+    HAVING 
+        COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY((SELECT ARRAY_AGG(department_id) FROM user_departments))) > 0
+        OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+),
+valid_personas_data AS (
+    SELECT 
+        COALESCE(ARRAY_AGG(p.id::text ORDER BY p.name), ARRAY[]::text[]) as valid_persona_ids,
+        COALESCE(jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.name,
+                'description', p.description,
+                'color', p.color,
+                'icon', p.icon,
+                'image_model', COALESCE(p.image_model, false)
+            )
+        ), '{}'::jsonb) as persona_mapping
+    FROM valid_personas_filtered p
 )
 SELECT 
     COALESCE((SELECT department_ids FROM department_ids_array), ARRAY[]::text[]) as department_ids,
@@ -237,5 +281,7 @@ SELECT
     COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
     COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids,
     COALESCE((SELECT parameter_mapping FROM video_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,
-    COALESCE((SELECT parameter_item_mapping FROM video_parameter_item_mapping_data), '{}'::jsonb) as parameter_item_mapping
+    COALESCE((SELECT parameter_item_mapping FROM video_parameter_item_mapping_data), '{}'::jsonb) as parameter_item_mapping,
+    COALESCE((SELECT valid_persona_ids FROM valid_personas_data), ARRAY[]::text[]) as valid_persona_ids,
+    COALESCE((SELECT persona_mapping FROM valid_personas_data), '{}'::jsonb) as persona_mapping
 

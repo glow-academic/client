@@ -14808,6 +14808,20 @@
               }
             ],
             "title": "Parameter Item Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
           }
         },
         "type": "object",
@@ -17990,10 +18004,6 @@
             "type": "string",
             "title": "Question Text"
           },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
           "allow_multiple": {
             "type": "boolean",
             "title": "Allow Multiple"
@@ -18018,7 +18028,6 @@
         "type": "object",
         "required": [
           "question_text",
-          "type",
           "allow_multiple"
         ],
         "title": "ExistingQuestion",
@@ -18416,6 +18425,20 @@
             "type": "boolean",
             "title": "Usequestions",
             "default": true
+          },
+          "personaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaids"
           }
         },
         "type": "object",
@@ -18764,10 +18787,6 @@
             "type": "string",
             "title": "Question Text"
           },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
           "allow_multiple": {
             "type": "boolean",
             "title": "Allow Multiple"
@@ -18783,7 +18802,6 @@
         "type": "object",
         "required": [
           "question_text",
-          "type",
           "allow_multiple",
           "options"
         ],
@@ -25146,10 +25164,6 @@
             "type": "string",
             "title": "Question Text"
           },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
           "allow_multiple": {
             "type": "boolean",
             "title": "Allow Multiple"
@@ -25173,7 +25187,6 @@
         "required": [
           "question_id",
           "question_text",
-          "type",
           "allow_multiple",
           "times",
           "options"
@@ -32106,6 +32119,20 @@
               }
             ],
             "title": "Parameter Item Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
           }
         },
         "type": "object",
@@ -38102,10 +38129,6 @@
             "type": "string",
             "title": "Question Text"
           },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
           "allow_multiple": {
             "type": "boolean",
             "title": "Allow Multiple",
@@ -38129,7 +38152,6 @@
         "type": "object",
         "required": [
           "question_text",
-          "type",
           "times",
           "options"
         ],
@@ -38375,6 +38397,28 @@
             },
             "type": "array",
             "title": "Parameter Item Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          },
+          "valid_persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Persona Ids"
           }
         },
         "type": "object",
@@ -38408,7 +38452,10 @@
           "valid_agent_ids",
           "parameter_mapping",
           "parameter_item_mapping",
-          "parameter_item_ids"
+          "parameter_item_ids",
+          "persona_ids",
+          "persona_mapping",
+          "valid_persona_ids"
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."
@@ -38713,6 +38760,28 @@
             },
             "type": "array",
             "title": "Parameter Item Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          },
+          "valid_persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Persona Ids"
           }
         },
         "type": "object",
@@ -38747,7 +38816,10 @@
           "valid_agent_ids",
           "parameter_mapping",
           "parameter_item_mapping",
-          "parameter_item_ids"
+          "parameter_item_ids",
+          "persona_ids",
+          "persona_mapping",
+          "valid_persona_ids"
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."
@@ -38757,10 +38829,6 @@
           "question_text": {
             "type": "string",
             "title": "Question Text"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
           },
           "allow_multiple": {
             "type": "boolean",
@@ -38785,7 +38853,6 @@
         "type": "object",
         "required": [
           "question_text",
-          "type",
           "times",
           "options"
         ],
