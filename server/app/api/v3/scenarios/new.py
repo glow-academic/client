@@ -78,8 +78,6 @@ class ScenarioDetailResponse(BaseModel):
     hints_enabled: bool
     objectives_enabled: bool
     image_input_enabled: bool
-    input_guardrail_enabled: bool
-    output_guardrail_enabled: bool
     parent_scenario_id: str | None
     department_ids: list[str] | None
     valid_department_ids: list[str]
@@ -350,8 +348,6 @@ async def get_scenario_new(
             hints_enabled=False,
             objectives_enabled=True,
             image_input_enabled=False,
-            input_guardrail_enabled=False,
-            output_guardrail_enabled=False,
             parent_scenario_id=None,
             # Department
             department_ids=default_department_ids,

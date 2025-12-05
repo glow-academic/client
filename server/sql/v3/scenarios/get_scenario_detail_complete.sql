@@ -133,9 +133,7 @@ scenario_core AS (
 scenario_simulation_attributes AS (
     SELECT DISTINCT ON (ss.scenario_id)
         ss.scenario_id,
-        ss.hints_enabled,
-        ss.input_guardrail_enabled,
-        ss.output_guardrail_enabled
+        ss.hints_enabled
     FROM simulation_scenarios ss
     WHERE ss.scenario_id = $1 AND ss.active = true
     ORDER BY ss.scenario_id, ss.position
@@ -793,8 +791,6 @@ SELECT
     COALESCE(ssa_attr.hints_enabled, false) as hints_enabled,
     sc.objectives_enabled,
     sc.image_enabled as image_input_enabled,
-    COALESCE(ssa_attr.input_guardrail_enabled, false) as input_guardrail_enabled,
-    COALESCE(ssa_attr.output_guardrail_enabled, false) as output_guardrail_enabled,
     COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
     COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
     COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,

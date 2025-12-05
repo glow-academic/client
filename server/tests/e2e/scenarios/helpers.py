@@ -172,8 +172,6 @@ def create_scenario_api(
     hints_enabled: bool = False,
     objectives_enabled: bool = True,
     image_input_enabled: bool = False,
-    input_guardrail_enabled: bool = False,
-    output_guardrail_enabled: bool = False,
 ) -> str:
     """Create a scenario via the API and return its ID."""
     defaults = fetch_scenario_detail_default(
@@ -199,8 +197,6 @@ def create_scenario_api(
         "hints_enabled": hints_enabled,
         "objectives_enabled": objectives_enabled,
         "image_input_enabled": image_input_enabled,
-        "input_guardrail_enabled": input_guardrail_enabled,
-        "output_guardrail_enabled": output_guardrail_enabled,
     }
     data: dict[str, Any] = _post_json(
         request,

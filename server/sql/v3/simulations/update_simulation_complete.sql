@@ -1,5 +1,5 @@
 -- Update simulation with departments, scenarios, and videos in a single transaction
--- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_input_guardrail_enabled (bool array), $13=scenario_output_guardrail_enabled (bool array), $14=scenario_rubric_ids (text array, nullable), $15=scenario_time_limit_seconds (int array, nullable), $16=scenario_audio_enabled (bool array), $17=scenario_text_enabled (bool array), $18=scenario_show_problem_statement (bool array), $19=scenario_show_objectives (bool array), $20=scenario_show_image (bool array), $21=video_show_problem_statement (bool array), $22=video_show_objectives (bool array), $23=video_show_image (bool array), $24=scenario_hint_agent_ids (text array, nullable), $25=scenario_input_guardrail_agent_ids (text array, nullable), $26=scenario_output_guardrail_agent_ids (text array, nullable), $27=scenario_grade_agent_ids (text array array, nullable - array of arrays, one per scenario)
+-- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_rubric_ids (text array, nullable), $13=scenario_time_limit_seconds (int array, nullable), $14=scenario_audio_enabled (bool array), $15=scenario_text_enabled (bool array), $16=scenario_show_problem_statement (bool array), $17=scenario_show_objectives (bool array), $18=scenario_show_image (bool array), $19=video_show_problem_statement (bool array), $20=video_show_objectives (bool array), $21=video_show_image (bool array), $22=scenario_hint_agent_ids (text array, nullable), $23=scenario_grade_agent_ids (text array array, nullable - array of arrays, one per scenario)
 -- Note: scenario_ids/scenario_active_flags and video_ids/video_active_flags must be same length and order within each type
 -- Positions are unified: scenarios get positions 1..N, videos get positions N+1..M
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
@@ -52,8 +52,6 @@ scenarios_data AS (
         scenario_id,
         active_flag,
         hints_enabled,
-        input_guardrail_enabled,
-        output_guardrail_enabled,
         audio_enabled,
         text_enabled,
         show_problem_statement,
@@ -62,16 +60,12 @@ scenarios_data AS (
         rubric_id,
         time_limit_seconds,
         hint_agent_id,
-        input_guardrail_agent_id,
-        output_guardrail_agent_id,
         row_num
     FROM (
         SELECT 
             scenario_id,
             active_flag,
             COALESCE(hints_enabled, false) as hints_enabled,
-            COALESCE(input_guardrail_enabled, false) as input_guardrail_enabled,
-            COALESCE(output_guardrail_enabled, false) as output_guardrail_enabled,
             COALESCE(audio_enabled, false) as audio_enabled,
             COALESCE(text_enabled, true) as text_enabled,
             COALESCE(show_problem_statement, true) as show_problem_statement,
@@ -80,26 +74,20 @@ scenarios_data AS (
             rubric_id,
             time_limit_seconds,
             hint_agent_id,
-            input_guardrail_agent_id,
-            output_guardrail_agent_id,
             ROW_NUMBER() OVER () as row_num
         FROM UNNEST(
             $7::text[], 
             $8::bool[], 
             COALESCE($11::bool[], ARRAY[]::bool[]),
-            COALESCE($12::bool[], ARRAY[]::bool[]),
-            COALESCE($13::bool[], ARRAY[]::bool[]),
+            COALESCE($14::bool[], ARRAY[]::bool[]),
+            COALESCE($15::bool[], ARRAY[]::bool[]),
             COALESCE($16::bool[], ARRAY[]::bool[]),
             COALESCE($17::bool[], ARRAY[]::bool[]),
             COALESCE($18::bool[], ARRAY[]::bool[]),
-            COALESCE($19::bool[], ARRAY[]::bool[]),
-            COALESCE($20::bool[], ARRAY[]::bool[]),
-            COALESCE($14::text[], ARRAY[]::text[]),
-            COALESCE($15::int[], ARRAY[]::int[]),
-            COALESCE($24::text[], ARRAY[]::text[]),
-            COALESCE($25::text[], ARRAY[]::text[]),
-            COALESCE($26::text[], ARRAY[]::text[])
-        ) AS t(scenario_id, active_flag, hints_enabled, input_guardrail_enabled, output_guardrail_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, time_limit_seconds, hint_agent_id, input_guardrail_agent_id, output_guardrail_agent_id)
+            COALESCE($12::text[], ARRAY[]::text[]),
+            COALESCE($13::int[], ARRAY[]::int[]),
+            COALESCE($22::text[], ARRAY[]::text[])
+        ) AS t(scenario_id, active_flag, hints_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, time_limit_seconds, hint_agent_id)
     ) sub
 ),
 scenarios_with_order AS (
@@ -108,8 +96,6 @@ scenarios_with_order AS (
         scenario_id,
         active_flag,
         hints_enabled,
-        input_guardrail_enabled,
-        output_guardrail_enabled,
         audio_enabled,
         text_enabled,
         show_problem_statement,
@@ -118,8 +104,6 @@ scenarios_with_order AS (
         rubric_id,
         time_limit_seconds,
         hint_agent_id,
-        input_guardrail_agent_id,
-        output_guardrail_agent_id,
         ROW_NUMBER() OVER (
             ORDER BY active_flag DESC, row_num
         ) as position
@@ -166,9 +150,9 @@ videos_data AS (
         FROM UNNEST(
             $9::text[], 
             $10::bool[], 
-            COALESCE($21::bool[], ARRAY[]::bool[]),
-            COALESCE($22::bool[], ARRAY[]::bool[]),
-            COALESCE($23::bool[], ARRAY[]::bool[])
+            COALESCE($19::bool[], ARRAY[]::bool[]),
+            COALESCE($20::bool[], ARRAY[]::bool[]),
+            COALESCE($21::bool[], ARRAY[]::bool[])
         ) AS t(video_id, active_flag, show_problem_statement, show_objectives, show_image)
     ) sub
 ),
@@ -190,15 +174,13 @@ videos_with_order AS (
 ),
 link_scenarios AS (
     -- Insert new scenarios with proper ordering (active first, then inactive) and switch flags
-    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, input_guardrail_enabled, output_guardrail_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, hint_agent_id, input_guardrail_agent_id, output_guardrail_agent_id, created_at, updated_at)
+    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, hint_agent_id, created_at, updated_at)
     SELECT 
         $1::uuid,
         swo.scenario_id::uuid,
         swo.active_flag,
         swo.position,
         swo.hints_enabled,
-        swo.input_guardrail_enabled,
-        swo.output_guardrail_enabled,
         swo.audio_enabled,
         swo.text_enabled,
         swo.show_problem_statement,
@@ -206,8 +188,6 @@ link_scenarios AS (
         swo.show_image,
         CASE WHEN swo.rubric_id = '' OR swo.rubric_id IS NULL THEN NULL ELSE swo.rubric_id::uuid END,
         COALESCE(swo.hint_agent_id::uuid, (SELECT id FROM agents WHERE role = 'hint' AND active = true LIMIT 1)),
-        COALESCE(swo.input_guardrail_agent_id::uuid, (SELECT id FROM agents WHERE role = 'input_guardrail' AND active = true LIMIT 1)),
-        COALESCE(swo.output_guardrail_agent_id::uuid, (SELECT id FROM agents WHERE role = 'output_guardrail' AND active = true LIMIT 1)),
         NOW(),
         NOW()
     FROM scenarios_with_order swo

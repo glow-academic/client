@@ -35,8 +35,6 @@ class ContentItemInRequest(BaseModel):
     active: bool = True
     # Switch fields (scenarios only, except show fields which apply to both)
     hints_enabled: bool | None = None
-    input_guardrail_enabled: bool | None = None
-    output_guardrail_enabled: bool | None = None
     audio_enabled: bool | None = None  # Scenarios only
     text_enabled: bool | None = None  # Scenarios only
     show_problem_statement: bool | None = None  # Scenarios and videos
@@ -91,8 +89,6 @@ async def create_simulation(
             scenario_ids: list[str] = []
             scenario_active_flags: list[bool] = []
             scenario_hints_enabled: list[bool] = []
-            scenario_input_guardrail_enabled: list[bool] = []
-            scenario_output_guardrail_enabled: list[bool] = []
             scenario_audio_enabled: list[bool] = []
             scenario_text_enabled: list[bool] = []
             scenario_show_problem_statement: list[bool] = []
@@ -113,8 +109,6 @@ async def create_simulation(
                         scenario_ids.append(item.id)
                         scenario_active_flags.append(item.active)
                         scenario_hints_enabled.append(item.hints_enabled if item.hints_enabled is not None else False)
-                        scenario_input_guardrail_enabled.append(item.input_guardrail_enabled if item.input_guardrail_enabled is not None else False)
-                        scenario_output_guardrail_enabled.append(item.output_guardrail_enabled if item.output_guardrail_enabled is not None else False)
                         scenario_audio_enabled.append(item.audio_enabled if item.audio_enabled is not None else False)
                         scenario_text_enabled.append(item.text_enabled if item.text_enabled is not None else True)
                         scenario_show_problem_statement.append(item.show_problem_statement if item.show_problem_statement is not None else True)
@@ -155,8 +149,6 @@ async def create_simulation(
                 scenario_active_flags if scenario_active_flags else []
             )
             scenario_hints_array = scenario_hints_enabled if scenario_hints_enabled else []
-            scenario_input_guardrail_array = scenario_input_guardrail_enabled if scenario_input_guardrail_enabled else []
-            scenario_output_guardrail_array = scenario_output_guardrail_enabled if scenario_output_guardrail_enabled else []
             scenario_audio_enabled_array = scenario_audio_enabled if scenario_audio_enabled else []
             scenario_text_enabled_array = scenario_text_enabled if scenario_text_enabled else []
             scenario_show_problem_statement_array = scenario_show_problem_statement if scenario_show_problem_statement else []
@@ -184,8 +176,6 @@ async def create_simulation(
                 video_ids_array,
                 video_flags_array,
                 scenario_hints_array,
-                scenario_input_guardrail_array,
-                scenario_output_guardrail_array,
                 scenario_rubric_ids_array,
                 scenario_time_limit_seconds_array,
                 scenario_audio_enabled_array,

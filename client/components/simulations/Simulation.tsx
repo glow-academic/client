@@ -226,8 +226,6 @@ export default function Simulation({
       string,
       {
         hints_enabled?: boolean;
-        input_guardrail_enabled?: boolean;
-        output_guardrail_enabled?: boolean;
         copy_paste_allowed?: boolean;
         audio_enabled?: boolean;
         text_enabled?: boolean;
@@ -237,8 +235,6 @@ export default function Simulation({
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
         hint_agent_id?: string | null;
-        input_guardrail_agent_id?: string | null;
-        output_guardrail_agent_id?: string | null;
         grade_agent_ids?: string[];
       }
     >
@@ -247,11 +243,9 @@ export default function Simulation({
     useState<
       Record<
         string,
-        {
-          hints_enabled?: boolean;
-          input_guardrail_enabled?: boolean;
-          output_guardrail_enabled?: boolean;
-          copy_paste_allowed?: boolean;
+          {
+            hints_enabled?: boolean;
+            copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
           text_enabled?: boolean;
           show_problem_statement?: boolean;
@@ -260,8 +254,6 @@ export default function Simulation({
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
           hint_agent_id?: string | null;
-          input_guardrail_agent_id?: string | null;
-          output_guardrail_agent_id?: string | null;
           grade_agent_ids?: string[];
         }
       >
@@ -478,14 +470,6 @@ export default function Simulation({
           isNew: false,
           hints_enabled:
             switchState?.hints_enabled ?? scenario.hints_enabled ?? false,
-          input_guardrail_enabled:
-            switchState?.input_guardrail_enabled ??
-            scenario.input_guardrail_enabled ??
-            false,
-          output_guardrail_enabled:
-            switchState?.output_guardrail_enabled ??
-            scenario.output_guardrail_enabled ??
-            false,
           copy_paste_allowed:
             switchState?.copy_paste_allowed ??
             scenario.copy_paste_allowed ??
@@ -507,8 +491,6 @@ export default function Simulation({
             scenario.time_limit_seconds ??
             null,
           hint_agent_id: switchState?.hint_agent_id ?? scenario.hint_agent_id ?? null,
-          input_guardrail_agent_id: switchState?.input_guardrail_agent_id ?? scenario.input_guardrail_agent_id ?? null,
-          output_guardrail_agent_id: switchState?.output_guardrail_agent_id ?? scenario.output_guardrail_agent_id ?? null,
           grade_agent_ids: switchState?.grade_agent_ids ?? scenario.grade_agent_ids ?? [],
         });
       });
@@ -575,8 +557,6 @@ export default function Simulation({
         {
           hints_enabled?: boolean;
           objectives_enabled?: boolean;
-          input_guardrail_enabled?: boolean;
-          output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
           copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
@@ -591,8 +571,6 @@ export default function Simulation({
         {
           hints_enabled?: boolean;
           objectives_enabled?: boolean;
-          input_guardrail_enabled?: boolean;
-          output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
           copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
@@ -611,9 +589,6 @@ export default function Simulation({
           newOriginalActiveStates[key] = scenario.active;
           newSwitchStates[key] = {
             hints_enabled: scenario.hints_enabled ?? false,
-            input_guardrail_enabled: scenario.input_guardrail_enabled ?? false,
-            output_guardrail_enabled:
-              scenario.output_guardrail_enabled ?? false,
             copy_paste_allowed: scenario.copy_paste_allowed ?? false,
             audio_enabled: scenario.audio_enabled ?? false,
             text_enabled: scenario.text_enabled ?? true,
@@ -623,15 +598,10 @@ export default function Simulation({
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
             hint_agent_id: scenario.hint_agent_id ?? null,
-            input_guardrail_agent_id: scenario.input_guardrail_agent_id ?? null,
-            output_guardrail_agent_id: scenario.output_guardrail_agent_id ?? null,
             grade_agent_ids: scenario.grade_agent_ids ?? [],
           };
           newOriginalSwitchStates[key] = {
             hints_enabled: scenario.hints_enabled ?? false,
-            input_guardrail_enabled: scenario.input_guardrail_enabled ?? false,
-            output_guardrail_enabled:
-              scenario.output_guardrail_enabled ?? false,
             copy_paste_allowed: scenario.copy_paste_allowed ?? false,
             audio_enabled: scenario.audio_enabled ?? false,
             text_enabled: scenario.text_enabled ?? true,
@@ -641,8 +611,6 @@ export default function Simulation({
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
             hint_agent_id: scenario.hint_agent_id ?? null,
-            input_guardrail_agent_id: scenario.input_guardrail_agent_id ?? null,
-            output_guardrail_agent_id: scenario.output_guardrail_agent_id ?? null,
             grade_agent_ids: scenario.grade_agent_ids ?? [],
           };
         });
@@ -892,8 +860,6 @@ export default function Simulation({
         id: string;
         active: boolean;
         hints_enabled?: boolean;
-        input_guardrail_enabled?: boolean;
-        output_guardrail_enabled?: boolean;
         copy_paste_allowed?: boolean;
         audio_enabled?: boolean;
         text_enabled?: boolean;
@@ -903,8 +869,6 @@ export default function Simulation({
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
         hint_agent_id?: string | null;
-        input_guardrail_agent_id?: string | null;
-        output_guardrail_agent_id?: string | null;
         grade_agent_ids?: string[];
       }
 
@@ -921,14 +885,6 @@ export default function Simulation({
           if (item.type === "scenario") {
             baseItem.hints_enabled =
               switchState?.hints_enabled ?? item.hints_enabled ?? false;
-            baseItem.input_guardrail_enabled =
-              switchState?.input_guardrail_enabled ??
-              item.input_guardrail_enabled ??
-              false;
-            baseItem.output_guardrail_enabled =
-              switchState?.output_guardrail_enabled ??
-              item.output_guardrail_enabled ??
-              false;
             baseItem.copy_paste_allowed =
               switchState?.copy_paste_allowed ??
               item.copy_paste_allowed ??
@@ -953,10 +909,6 @@ export default function Simulation({
               null;
             baseItem.hint_agent_id =
               switchState?.hint_agent_id ?? item.hint_agent_id ?? null;
-            baseItem.input_guardrail_agent_id =
-              switchState?.input_guardrail_agent_id ?? item.input_guardrail_agent_id ?? null;
-            baseItem.output_guardrail_agent_id =
-              switchState?.output_guardrail_agent_id ?? item.output_guardrail_agent_id ?? null;
             baseItem.grade_agent_ids =
               switchState?.grade_agent_ids ?? item.grade_agent_ids ?? [];
           } else if (item.type === "video") {
@@ -1131,32 +1083,6 @@ export default function Simulation({
     []
   );
 
-  const handleInputGuardrailToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          input_guardrail_enabled: enabled,
-        },
-      }));
-    },
-    []
-  );
-
-  const handleOutputGuardrailToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          output_guardrail_enabled: enabled,
-        },
-      }));
-    },
-    []
-  );
-
   const handleHintAgentChange = useCallback(
     (contentId: string, agentId: string | null) => {
       setContentSwitchStates((prev) => ({
@@ -1164,32 +1090,6 @@ export default function Simulation({
         [contentId]: {
           ...prev[contentId],
           hint_agent_id: agentId,
-        },
-      }));
-    },
-    []
-  );
-
-  const handleInputGuardrailAgentChange = useCallback(
-    (contentId: string, agentId: string | null) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          input_guardrail_agent_id: agentId,
-        },
-      }));
-    },
-    []
-  );
-
-  const handleOutputGuardrailAgentChange = useCallback(
-    (contentId: string, agentId: string | null) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          output_guardrail_agent_id: agentId,
         },
       }));
     },
@@ -1633,16 +1533,12 @@ export default function Simulation({
             <SimulationScenariosTable
               data={currentContentItems}
               onHintsToggle={handleHintsToggle}
-              onInputGuardrailToggle={handleInputGuardrailToggle}
-              onOutputGuardrailToggle={handleOutputGuardrailToggle}
               onCopyPasteToggle={handleCopyPasteToggle}
               onAudioToggle={handleAudioToggle}
               onTextToggle={handleTextToggle}
               onRubricChange={handleRubricChange}
               onTimeLimitChange={handleTimeLimitChange}
               onHintAgentChange={handleHintAgentChange}
-              onInputGuardrailAgentChange={handleInputGuardrailAgentChange}
-              onOutputGuardrailAgentChange={handleOutputGuardrailAgentChange}
               onGradeAgentsChange={handleGradeAgentsChange}
               rubricMapping={simulationData?.rubric_mapping || {}}
               validRubricIds={validRubricIds}

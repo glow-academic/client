@@ -394,8 +394,6 @@ export default function SystemAgent({
     switch (agentType) {
       case "simulation-text":
       case "hint":
-      case "input_guardrail":
-      case "output_guardrail":
       case "question":
       case "outline":
       case "scenario":

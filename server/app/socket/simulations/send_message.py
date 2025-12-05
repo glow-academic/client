@@ -11,7 +11,6 @@ from agents.items import TResponseInputItem
 from app.main import get_pool, hint_progress, hint_results, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.get_output_guardrails import get_output_guardrails
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
 from app.utils.chat.format_chat_scenario import format_chat_scenario
 from app.utils.chat.get_simulation_conversation_history import \
@@ -760,9 +759,6 @@ async def _send_simulation_message_impl(
                         "base_url": context_row["base_url"],
                         "api_key": context_row["api_key"],
                         "image_input_active": context_row["image_input_enabled"],
-                        "output_guardrail_active": context_row[
-                            "output_guardrail_enabled"
-                        ],
                         "profile_id": context_row["profile_id"],
                         "documents": documents,
                         "req_per_day": context_row["req_per_day"],
@@ -817,22 +813,6 @@ async def _send_simulation_message_impl(
                     input_items.insert(0, chat_scenario)
                     input_items.extend(conversation_history)
 
-                    # Get output guardrails if enabled
-                    output_guards_raw = (
-                        get_output_guardrails(
-                            chat_id_uuid, department_id, conversation_history, conn
-                        )
-                        if context["output_guardrail_active"]
-                        else None
-                    )
-                    # Cast to match GenericAgent's expected type
-                    from agents import OutputGuardrail
-                    output_guards = (
-                        cast(list[OutputGuardrail[DebugContext]], output_guards_raw)
-                        if output_guards_raw
-                        else None
-                    )
-
                     # Create agent instance using context data
                     agent_instance = GenericAgent(
                         agent_name=context["persona_name"],
@@ -843,7 +823,6 @@ async def _send_simulation_message_impl(
                         base_url=context["base_url"],
                         reasoning=context["reasoning"],
                         api_key=context["api_key"],
-                        output_guardrails=output_guards,
                         custom_model=context["custom_model"],
                     )
 

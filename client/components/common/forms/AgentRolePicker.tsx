@@ -34,16 +34,6 @@ export const AGENT_ROLES = [
   { id: "grade", name: "Grade", description: "Grading agent" },
   { id: "hint", name: "Hint", description: "Hint generation agent" },
   {
-    id: "input_guardrail",
-    name: "Input Guardrail",
-    description: "Input validation agent",
-  },
-  {
-    id: "output_guardrail",
-    name: "Output Guardrail",
-    description: "Output validation agent",
-  },
-  {
     id: "scenario",
     name: "Scenario",
     description: "Scenario generation agent",

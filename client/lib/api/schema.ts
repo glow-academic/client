@@ -14688,10 +14688,6 @@ export interface components {
             objectives_enabled: boolean;
             /** Image Input Enabled */
             image_input_enabled: boolean;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled: boolean;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled: boolean;
             /** Parent Scenario Id */
             parent_scenario_id: string | null;
             /** Department Ids */
@@ -14775,10 +14771,6 @@ export interface components {
             active: boolean;
             /** Hints Enabled */
             hints_enabled?: boolean | null;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled?: boolean | null;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled?: boolean | null;
             /** Audio Enabled */
             audio_enabled?: boolean | null;
             /** Text Enabled */
@@ -14841,10 +14833,6 @@ export interface components {
             parameter_item_ids: string[];
             /** Hints Enabled */
             hints_enabled: boolean;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled: boolean;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled: boolean;
             /** Copy Paste Allowed */
             copy_paste_allowed: boolean;
             /** Audio Enabled */
@@ -14863,10 +14851,6 @@ export interface components {
             time_limit_seconds: number | null;
             /** Hint Agent Id */
             hint_agent_id: string;
-            /** Input Guardrail Agent Id */
-            input_guardrail_agent_id: string;
-            /** Output Guardrail Agent Id */
-            output_guardrail_agent_id: string;
             /** Grade Agent Ids */
             grade_agent_ids: string[];
             /** Usage Count */
@@ -15045,10 +15029,6 @@ export interface components {
             hints_enabled: boolean;
             /** Objectives Enabled */
             objectives_enabled: boolean;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled: boolean;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled: boolean;
             /** Image Input Enabled */
             image_input_enabled: boolean;
             /** Rubric Id */
@@ -15158,10 +15138,6 @@ export interface components {
             active: boolean;
             /** Hints Enabled */
             hints_enabled?: boolean | null;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled?: boolean | null;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled?: boolean | null;
             /** Audio Enabled */
             audio_enabled?: boolean | null;
             /** Text Enabled */
@@ -15178,10 +15154,6 @@ export interface components {
             time_limit_seconds?: number | null;
             /** Hint Agent Id */
             hint_agent_id?: string | null;
-            /** Input Guardrail Agent Id */
-            input_guardrail_agent_id?: string | null;
-            /** Output Guardrail Agent Id */
-            output_guardrail_agent_id?: string | null;
             /** Grade Agent Ids */
             grade_agent_ids?: string[] | null;
         };

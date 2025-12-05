@@ -32,8 +32,6 @@ async def test_create_scenario_minimal(
             "hints_enabled": False,
             "objectives_enabled": True,
             "image_input_enabled": False,
-            "input_guardrail_enabled": False,
-            "output_guardrail_enabled": False,
         },
     )
 
@@ -90,8 +88,6 @@ async def test_create_scenario_with_departments(
             "hints_enabled": False,
             "objectives_enabled": True,
             "image_input_enabled": False,
-            "input_guardrail_enabled": False,
-            "output_guardrail_enabled": False,
         },
     )
 

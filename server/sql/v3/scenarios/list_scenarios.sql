@@ -68,9 +68,7 @@ scenario_attributes AS (
         ss.scenario_id,
         ss.hints_enabled,
         s.objectives_enabled,
-        s.image_enabled as image_input_enabled,
-        ss.input_guardrail_enabled,
-        ss.output_guardrail_enabled
+        s.image_enabled as image_input_enabled
     FROM simulation_scenarios ss
     JOIN scenarios s ON s.id = ss.scenario_id
     WHERE ss.active = true
@@ -95,8 +93,6 @@ scenario_data AS (
         COALESCE(sa.hints_enabled, false) as hints_enabled,
         COALESCE(sa.objectives_enabled, true) as objectives_enabled,
         COALESCE(sa.image_input_enabled, false) as image_input_enabled,
-        COALESCE(sa.input_guardrail_enabled, false) as input_guardrail_enabled,
-        COALESCE(sa.output_guardrail_enabled, false) as output_guardrail_enabled,
         CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
         CASE 
             WHEN COALESCE(sdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
@@ -133,7 +129,7 @@ scenario_data AS (
     GROUP BY s.id, s.name, ps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
              so.objective_ids, spa.persona_ids, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
              sc.cohort_ids, sdd.department_ids, sal.total_links, up.role,
-             sa.hints_enabled, sa.objectives_enabled, sa.image_input_enabled, sa.input_guardrail_enabled, sa.output_guardrail_enabled
+             sa.hints_enabled, sa.objectives_enabled, sa.image_input_enabled
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(sd.scenario_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0

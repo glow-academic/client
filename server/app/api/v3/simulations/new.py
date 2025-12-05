@@ -34,8 +34,6 @@ class ScenarioInSimulation(BaseModel):
     # Switch fields from simulation_scenarios junction table
     hints_enabled: bool
     objectives_enabled: bool
-    input_guardrail_enabled: bool
-    output_guardrail_enabled: bool
     image_input_enabled: bool
     rubric_id: str | None
     time_limit_seconds: int | None  # Per-scenario time limit in seconds
@@ -211,8 +209,6 @@ async def get_simulation_new(
                             parameter_item_ids=s_data.get("parameter_item_ids", []),
                             hints_enabled=s_data.get("hints_enabled", False),
                             objectives_enabled=s_data.get("objectives_enabled", True),
-                            input_guardrail_enabled=s_data.get("input_guardrail_enabled", False),
-                            output_guardrail_enabled=s_data.get("output_guardrail_enabled", False),
                             image_input_enabled=s_data.get("image_input_enabled", False),
                             rubric_id=s_data.get("rubric_id"),
                             time_limit_seconds=s_data.get("time_limit_seconds"),

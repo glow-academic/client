@@ -33,8 +33,6 @@ class ScenarioInSimulation(BaseModel):
 
     # Switch fields from simulation_scenarios junction table
     hints_enabled: bool
-    input_guardrail_enabled: bool
-    output_guardrail_enabled: bool
     copy_paste_allowed: bool
     audio_enabled: bool
     text_enabled: bool
@@ -46,8 +44,6 @@ class ScenarioInSimulation(BaseModel):
     
     # Agent IDs
     hint_agent_id: str
-    input_guardrail_agent_id: str
-    output_guardrail_agent_id: str
     grade_agent_ids: list[str]  # Array of grade agent IDs from junction table
 
     # Statistics fields
@@ -256,8 +252,6 @@ async def get_simulation_detail(
                             position=s_data.get("position", 0),
                             parameter_item_ids=s_data.get("parameter_item_ids", []),
                             hints_enabled=s_data.get("hints_enabled", False),
-                            input_guardrail_enabled=s_data.get("input_guardrail_enabled", False),
-                            output_guardrail_enabled=s_data.get("output_guardrail_enabled", False),
                             copy_paste_allowed=s_data.get("copy_paste_allowed", False),
                             audio_enabled=s_data.get("audio_enabled", False),
                             text_enabled=s_data.get("text_enabled", True),
@@ -266,8 +260,6 @@ async def get_simulation_detail(
                             show_image=s_data.get("show_image", True),
                             rubric_id=s_data.get("rubric_id"),
                             hint_agent_id=s_data.get("hint_agent_id", ""),
-                            input_guardrail_agent_id=s_data.get("input_guardrail_agent_id", ""),
-                            output_guardrail_agent_id=s_data.get("output_guardrail_agent_id", ""),
                             grade_agent_ids=s_data.get("grade_agent_ids", []),
                             time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),

@@ -36699,14 +36699,6 @@
             "type": "boolean",
             "title": "Image Input Enabled"
           },
-          "input_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Output Guardrail Enabled"
-          },
           "parent_scenario_id": {
             "anyOf": [
               {
@@ -36884,8 +36876,6 @@
           "hints_enabled",
           "objectives_enabled",
           "image_input_enabled",
-          "input_guardrail_enabled",
-          "output_guardrail_enabled",
           "parent_scenario_id",
           "department_ids",
           "valid_department_ids",
@@ -36939,28 +36929,6 @@
               }
             ],
             "title": "Hints Enabled"
-          },
-          "input_guardrail_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Guardrail Enabled"
           },
           "audio_enabled": {
             "anyOf": [
@@ -37153,14 +37121,6 @@
             "type": "boolean",
             "title": "Hints Enabled"
           },
-          "input_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Output Guardrail Enabled"
-          },
           "copy_paste_allowed": {
             "type": "boolean",
             "title": "Copy Paste Allowed"
@@ -37211,14 +37171,6 @@
             "type": "string",
             "title": "Hint Agent Id"
           },
-          "input_guardrail_agent_id": {
-            "type": "string",
-            "title": "Input Guardrail Agent Id"
-          },
-          "output_guardrail_agent_id": {
-            "type": "string",
-            "title": "Output Guardrail Agent Id"
-          },
           "grade_agent_ids": {
             "items": {
               "type": "string"
@@ -37259,8 +37211,6 @@
           "position",
           "parameter_item_ids",
           "hints_enabled",
-          "input_guardrail_enabled",
-          "output_guardrail_enabled",
           "copy_paste_allowed",
           "audio_enabled",
           "text_enabled",
@@ -37270,8 +37220,6 @@
           "rubric_id",
           "time_limit_seconds",
           "hint_agent_id",
-          "input_guardrail_agent_id",
-          "output_guardrail_agent_id",
           "grade_agent_ids",
           "usage_count",
           "success_rate",
@@ -37724,14 +37672,6 @@
             "type": "boolean",
             "title": "Objectives Enabled"
           },
-          "input_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Output Guardrail Enabled"
-          },
           "image_input_enabled": {
             "type": "boolean",
             "title": "Image Input Enabled"
@@ -37792,8 +37732,6 @@
           "parameter_item_ids",
           "hints_enabled",
           "objectives_enabled",
-          "input_guardrail_enabled",
-          "output_guardrail_enabled",
           "image_input_enabled",
           "rubric_id",
           "time_limit_seconds",
@@ -38047,28 +37985,6 @@
             ],
             "title": "Hints Enabled"
           },
-          "input_guardrail_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Guardrail Enabled"
-          },
           "audio_enabled": {
             "anyOf": [
               {
@@ -38156,28 +38072,6 @@
               }
             ],
             "title": "Hint Agent Id"
-          },
-          "input_guardrail_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Guardrail Agent Id"
-          },
-          "output_guardrail_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Guardrail Agent Id"
           },
           "grade_agent_ids": {
             "anyOf": [

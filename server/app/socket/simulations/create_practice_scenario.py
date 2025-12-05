@@ -194,8 +194,6 @@ async def _create_practice_scenario_impl(
                     scenario["hints_enabled"],
                     scenario["objectives_enabled"],
                     scenario["image_input_enabled"],
-                    scenario["input_guardrail_enabled"],
-                    scenario["output_guardrail_enabled"],
                 )
                 new_scenario_id = new_scenario_row["id"]
                 logger.info(

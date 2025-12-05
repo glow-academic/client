@@ -17,7 +17,7 @@ CREATE TABLE simulations (
   practice_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE
   -- rubric_id moved to simulation_scenarios junction table
   -- time_limit moved to scenario_time_limits junction table (absence = infinite)
-  -- Flags moved to simulation_scenarios junction table: hints_enabled, input_guardrail_enabled, output_guardrail_enabled
+  -- Flags moved to simulation_scenarios junction table: hints_enabled
 );
 
 -- Simulation → Departments junction table (BCNF normalization)
@@ -41,8 +41,6 @@ CREATE TABLE simulation_scenarios (
   position      INT  NOT NULL DEFAULT 1,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
   hints_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  input_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  output_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   copy_paste_allowed BOOLEAN NOT NULL DEFAULT FALSE,
   audio_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   text_enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -51,8 +49,6 @@ CREATE TABLE simulation_scenarios (
   show_image BOOLEAN NOT NULL DEFAULT TRUE,
   rubric_id UUID REFERENCES rubrics(id) ON DELETE CASCADE,
   hint_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
-  input_guardrail_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
-  output_guardrail_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (simulation_id, scenario_id)
@@ -62,8 +58,6 @@ CREATE INDEX ON simulation_scenarios (simulation_id);
 CREATE INDEX ON simulation_scenarios (scenario_id);
 CREATE INDEX ON simulation_scenarios (rubric_id);
 CREATE INDEX ON simulation_scenarios (hint_agent_id);
-CREATE INDEX ON simulation_scenarios (input_guardrail_agent_id);
-CREATE INDEX ON simulation_scenarios (output_guardrail_agent_id);
 
 -- Enforce unique ordering within each simulation
 CREATE UNIQUE INDEX simulation_scenarios_position_uniq

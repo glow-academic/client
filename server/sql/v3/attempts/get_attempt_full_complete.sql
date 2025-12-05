@@ -496,9 +496,7 @@
                 COALESCE(ss.hints_enabled, false) as hints_enabled,
                 COALESCE(s.objectives_enabled, true) as objectives_enabled,
                 COALESCE(s.image_enabled, false) as image_input_enabled,
-                COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
-                COALESCE(ss.input_guardrail_enabled, false) as input_guardrail_enabled,
-                COALESCE(ss.output_guardrail_enabled, false) as output_guardrail_enabled
+                COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed
             FROM scenarios s
             CROSS JOIN scenario_ids_list sil
             CROSS JOIN attempt_base ab
@@ -514,9 +512,7 @@
                 COALESCE((SELECT ss.hints_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as hints_enabled,
                 COALESCE((SELECT s.objectives_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id JOIN scenarios s ON s.id = ss.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), true) as objectives_enabled,
                 COALESCE((SELECT s.image_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id JOIN scenarios s ON s.id = ss.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as image_input_enabled,
-                COALESCE((SELECT ss.copy_paste_allowed FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as copy_paste_allowed,
-                COALESCE((SELECT ss.input_guardrail_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as input_guardrail_enabled,
-                COALESCE((SELECT ss.output_guardrail_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as output_guardrail_enabled
+                COALESCE((SELECT ss.copy_paste_allowed FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as copy_paste_allowed
         ),
         -- Tree traversal for messages: get all messages following conversation flow
         messages_with_tree AS (
@@ -1391,8 +1387,6 @@
                 'objectivesEnabled', sf.objectives_enabled,
                 'imageInputActive', sf.image_input_enabled,
                 'copyPasteAllowed', sf.copy_paste_allowed,
-                'inputGuardrailActive', sf.input_guardrail_enabled,
-                'outputGuardrailActive', sf.output_guardrail_enabled,
                 'timeLimit', ab.sim_time_limit,
                 'rubricId', CASE WHEN ab.sim_rubric_id IS NOT NULL THEN ab.sim_rubric_id::text ELSE NULL END,
                 'createdAt', ab.sim_created_at,

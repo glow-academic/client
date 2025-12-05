@@ -110,8 +110,6 @@ user_context AS (
                 (ss.position = 1) as default_scenario,
                 ss.position,
                 ss.hints_enabled,
-                ss.input_guardrail_enabled,
-                ss.output_guardrail_enabled,
                 ss.copy_paste_allowed,
                 ss.audio_enabled,
                 ss.text_enabled,
@@ -120,8 +118,6 @@ user_context AS (
                 ss.show_image,
                 ss.rubric_id,
                 ss.hint_agent_id::text,
-                ss.input_guardrail_agent_id::text,
-                ss.output_guardrail_agent_id::text,
                 stl.time_limit_seconds,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
@@ -204,8 +200,6 @@ user_context AS (
                         'default_scenario', COALESCE(sb.default_scenario, false),
                         'position', sb.position,
                         'hints_enabled', sb.hints_enabled,
-                        'input_guardrail_enabled', sb.input_guardrail_enabled,
-                        'output_guardrail_enabled', sb.output_guardrail_enabled,
                         'copy_paste_allowed', sb.copy_paste_allowed,
                         'audio_enabled', sb.audio_enabled,
                         'text_enabled', sb.text_enabled,
@@ -214,8 +208,6 @@ user_context AS (
                         'show_image', sb.show_image,
                         'rubric_id', sb.rubric_id::text,
                         'hint_agent_id', sb.hint_agent_id,
-                        'input_guardrail_agent_id', sb.input_guardrail_agent_id,
-                        'output_guardrail_agent_id', sb.output_guardrail_agent_id,
                         'grade_agent_ids', COALESCE(ssgad.grade_agent_ids, ARRAY[]::text[]),
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
@@ -699,7 +691,7 @@ user_context AS (
             WHERE pd.active = true
         ),
         valid_agents AS (
-            -- Get agents with roles 'hint', 'input_guardrail', 'output_guardrail', or 'grade'
+            -- Get agents with roles 'hint' or 'grade'
             -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
             SELECT 
                 COALESCE(
@@ -717,7 +709,7 @@ user_context AS (
             FROM agents a
             LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
             WHERE a.active = true 
-            AND a.role IN ('hint', 'input_guardrail', 'output_guardrail', 'grade')
+            AND a.role IN ('hint', 'grade')
             GROUP BY a.id
             HAVING 
                 COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0

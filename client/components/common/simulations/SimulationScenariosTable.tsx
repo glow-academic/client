@@ -55,8 +55,6 @@ export interface SimulationScenariosTableProps {
   data: ContentItem[]; // Only scenario items
   // Switch toggle handlers
   onHintsToggle?: (contentId: string, enabled: boolean) => void;
-  onInputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
-  onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onCopyPasteToggle?: (contentId: string, enabled: boolean) => void;
   onAudioToggle?: (contentId: string, enabled: boolean) => void;
   onTextToggle?: (contentId: string, enabled: boolean) => void;
@@ -67,8 +65,6 @@ export interface SimulationScenariosTableProps {
   ) => void;
   // Agent change handlers
   onHintAgentChange?: (contentId: string, agentId: string | null) => void;
-  onInputGuardrailAgentChange?: (contentId: string, agentId: string | null) => void;
-  onOutputGuardrailAgentChange?: (contentId: string, agentId: string | null) => void;
   onGradeAgentsChange?: (contentId: string, agentIds: string[]) => void;
   // Rubric picker props
   rubricMapping?: Record<string, { name: string; description?: string }>;
@@ -87,16 +83,12 @@ export interface SimulationScenariosTableProps {
 export function SimulationScenariosTable({
   data,
   onHintsToggle,
-  onInputGuardrailToggle,
-  onOutputGuardrailToggle,
   onCopyPasteToggle,
   onAudioToggle,
   onTextToggle,
   onRubricChange,
   onTimeLimitChange,
   onHintAgentChange,
-  onInputGuardrailAgentChange,
-  onOutputGuardrailAgentChange,
   onGradeAgentsChange,
   rubricMapping = {},
   validRubricIds = [],
@@ -133,24 +125,6 @@ export function SimulationScenariosTable({
     });
   }, [validAgentIds, agentMapping]);
 
-  const inputGuardrailAgentIds = React.useMemo(() => {
-    return validAgentIds.filter((id) => {
-      const agent = agentMapping[id];
-      if (!agent) return false;
-      const roles = agent.roles || agent["roles"] || [];
-      return Array.isArray(roles) && roles.includes("input_guardrail");
-    });
-  }, [validAgentIds, agentMapping]);
-
-  const outputGuardrailAgentIds = React.useMemo(() => {
-    return validAgentIds.filter((id) => {
-      const agent = agentMapping[id];
-      if (!agent) return false;
-      const roles = agent.roles || agent["roles"] || [];
-      return Array.isArray(roles) && roles.includes("output_guardrail");
-    });
-  }, [validAgentIds, agentMapping]);
-
   const gradeAgentIds = React.useMemo(() => {
     return validAgentIds.filter((id) => {
       const agent = agentMapping[id];
@@ -168,8 +142,6 @@ export function SimulationScenariosTable({
     if (
       readonly ||
       !onHintAgentChange ||
-      !onInputGuardrailAgentChange ||
-      !onOutputGuardrailAgentChange ||
       !onGradeAgentsChange ||
       scenarioItems.length === 0
     ) {
@@ -190,16 +162,6 @@ export function SimulationScenariosTable({
         onHintAgentChange(contentId, hintAgentIds[0]!);
       }
 
-      // Auto-select input guardrail agent
-      if (!item.input_guardrail_agent_id && inputGuardrailAgentIds.length === 1) {
-        onInputGuardrailAgentChange(contentId, inputGuardrailAgentIds[0]!);
-      }
-
-      // Auto-select output guardrail agent
-      if (!item.output_guardrail_agent_id && outputGuardrailAgentIds.length === 1) {
-        onOutputGuardrailAgentChange(contentId, outputGuardrailAgentIds[0]!);
-      }
-
       // Auto-select grade agents (if only one)
       if ((!item.grade_agent_ids || item.grade_agent_ids.length === 0) && gradeAgentIds.length === 1) {
         onGradeAgentsChange(contentId, [gradeAgentIds[0]!]);
@@ -211,13 +173,9 @@ export function SimulationScenariosTable({
   }, [
     scenarioItems,
     hintAgentIds,
-    inputGuardrailAgentIds,
-    outputGuardrailAgentIds,
     gradeAgentIds,
     readonly,
     onHintAgentChange,
-    onInputGuardrailAgentChange,
-    onOutputGuardrailAgentChange,
     onGradeAgentsChange,
   ]);
 
@@ -326,129 +284,6 @@ export function SimulationScenariosTable({
                       }
                       placeholder="Select agent"
                       disabled={readonly || !onHintAgentChange}
-                      multiSelect={false}
-                      buttonClassName="h-8 text-xs"
-                    />
-                  </div>
-                );
-              },
-            },
-          ]
-        : []),
-      {
-        id: "guardrail",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Guardrail</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Monitor and filter inappropriate input/output</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <div className="flex flex-col items-center justify-center gap-2 py-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Input</span>
-                <Switch
-                  checked={item.input_guardrail_enabled ?? false}
-                  onCheckedChange={(checked) =>
-                    onInputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
-                  }
-                  disabled={readonly || !onInputGuardrailToggle}
-                />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Output</span>
-                <Switch
-                  checked={item.output_guardrail_enabled ?? false}
-                  onCheckedChange={(checked) =>
-                    onOutputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
-                  }
-                  disabled={readonly || !onOutputGuardrailToggle}
-                />
-              </div>
-            </div>
-          );
-        },
-      },
-      // Only show input guardrail agent column if more than one option
-      ...(inputGuardrailAgentIds.length > 1
-        ? [
-            {
-              id: "input_guardrail_agent",
-              header: () => (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex flex-col items-center gap-1 cursor-help">
-                      <Shield className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs">Input Guardrail Agent</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Agent to use for input guardrail monitoring</p>
-                  </TooltipContent>
-                </Tooltip>
-              ),
-              cell: ({ row }) => {
-                const item = row.original;
-                return (
-                  <div className="flex items-center justify-center min-w-[150px]">
-                    <AgentPicker
-                      mapping={agentMapping}
-                      validIds={inputGuardrailAgentIds}
-                      selectedIds={item.input_guardrail_agent_id ? [item.input_guardrail_agent_id] : []}
-                      onSelect={(ids) =>
-                        onInputGuardrailAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
-                      }
-                      placeholder="Select agent"
-                      disabled={readonly || !onInputGuardrailAgentChange}
-                      multiSelect={false}
-                      buttonClassName="h-8 text-xs"
-                    />
-                  </div>
-                );
-              },
-            },
-          ]
-        : []),
-      // Only show output guardrail agent column if more than one option
-      ...(outputGuardrailAgentIds.length > 1
-        ? [
-            {
-              id: "output_guardrail_agent",
-              header: () => (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex flex-col items-center gap-1 cursor-help">
-                      <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs">Output Guardrail Agent</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Agent to use for output guardrail monitoring</p>
-                  </TooltipContent>
-                </Tooltip>
-              ),
-              cell: ({ row }) => {
-                const item = row.original;
-                return (
-                  <div className="flex items-center justify-center min-w-[150px]">
-                    <AgentPicker
-                      mapping={agentMapping}
-                      validIds={outputGuardrailAgentIds}
-                      selectedIds={item.output_guardrail_agent_id ? [item.output_guardrail_agent_id] : []}
-                      onSelect={(ids) =>
-                        onOutputGuardrailAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
-                      }
-                      placeholder="Select agent"
-                      disabled={readonly || !onOutputGuardrailAgentChange}
                       multiSelect={false}
                       buttonClassName="h-8 text-xs"
                     />
@@ -674,23 +509,17 @@ export function SimulationScenariosTable({
     [
       readonly,
       onHintsToggle,
-      onInputGuardrailToggle,
-      onOutputGuardrailToggle,
       onCopyPasteToggle,
       onAudioToggle,
       onTextToggle,
       onRubricChange,
       onTimeLimitChange,
       onHintAgentChange,
-      onInputGuardrailAgentChange,
-      onOutputGuardrailAgentChange,
       onGradeAgentsChange,
       rubricMapping,
       validRubricIds,
       agentMapping,
       hintAgentIds,
-      inputGuardrailAgentIds,
-      outputGuardrailAgentIds,
       gradeAgentIds,
     ]
   );

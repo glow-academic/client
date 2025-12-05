@@ -62,8 +62,6 @@ export interface ContentItem {
   // Switch fields (scenarios only, except show fields which apply to both)
   hints_enabled?: boolean;
   objectives_enabled?: boolean;
-  input_guardrail_enabled?: boolean;
-  output_guardrail_enabled?: boolean;
   copy_paste_allowed?: boolean;
   audio_enabled?: boolean; // Scenarios only
   text_enabled?: boolean; // Scenarios only
@@ -74,8 +72,6 @@ export interface ContentItem {
   time_limit_seconds?: number | null; // Per-scenario time limit in seconds
   // Agent IDs (scenarios only)
   hint_agent_id?: string | null;
-  input_guardrail_agent_id?: string | null;
-  output_guardrail_agent_id?: string | null;
   grade_agent_ids?: string[]; // Multi-select for grade agents
 }
 
