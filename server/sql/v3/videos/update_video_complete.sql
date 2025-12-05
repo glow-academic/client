@@ -299,23 +299,23 @@ link_question_answers AS (
         updated_at = NOW()
 ),
 replace_video_parameters AS (
-    -- Delete all existing parameter links
-    DELETE FROM video_parameter_items 
+    -- Delete all existing field links
+    DELETE FROM video_fields 
     WHERE video_id = $1::uuid
 ),
 insert_video_parameters AS (
-    -- Insert new parameter links
-    INSERT INTO video_parameter_items (video_id, parameter_item_id, active, created_at, updated_at)
+    -- Insert new field links
+    INSERT INTO video_fields (video_id, field_id, active, created_at, updated_at)
     SELECT 
         uv.video_id,
-        param_item_id::uuid,
+        field_id::uuid,
         true,
         NOW(),
         NOW()
     FROM updated_video uv
     CROSS JOIN UNNEST(COALESCE($13::text[], ARRAY[]::text[])) as param_item_id
     WHERE COALESCE(array_length($13::text[], 1), 0) > 0
-    ON CONFLICT (video_id, parameter_item_id) DO UPDATE SET
+    ON CONFLICT (video_id, field_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

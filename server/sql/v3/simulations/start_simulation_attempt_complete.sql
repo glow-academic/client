@@ -211,7 +211,8 @@ scenario_full_data AS (
     LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
     LEFT JOIN documents d ON d.id = sd.document_id
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
     LEFT JOIN parameter_items pi ON pi.id = spi.parameter_item_id
     LEFT JOIN parameters p_param ON p_param.id = pi.parameter_id

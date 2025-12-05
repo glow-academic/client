@@ -122,7 +122,8 @@ SELECT
             )
             FROM scenario_documents sd
             JOIN documents d ON d.id = sd.document_id
-            LEFT JOIN uploads u ON u.id = d.upload_id
+            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+            LEFT JOIN uploads u ON u.id = du.upload_id
             WHERE sd.scenario_id = si.id AND sd.active = true
         ),
         '[]'::json

@@ -33,83 +33,87 @@ user_departments AS (
 ),
 parameter_active_scenario_links AS (
     SELECT 
-        pi.parameter_id,
-        COUNT(DISTINCT spi.scenario_id) as active_scenario_count
-    FROM parameter_items pi
-    JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
-    WHERE spi.active = true
-    GROUP BY pi.parameter_id
+        fp.parameter_id,
+        COUNT(DISTINCT sf.scenario_id) as active_scenario_count
+    FROM field_parameters fp
+    JOIN scenario_fields sf ON sf.field_id = fp.field_id
+    WHERE fp.active = true AND sf.active = true
+    GROUP BY fp.parameter_id
 ),
 parameter_all_scenario_links AS (
     SELECT 
-        pi.parameter_id,
-        COUNT(DISTINCT spi.scenario_id) as total_scenario_links
-    FROM parameter_items pi
-    JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
-    GROUP BY pi.parameter_id
+        fp.parameter_id,
+        COUNT(DISTINCT sf.scenario_id) as total_scenario_links
+    FROM field_parameters fp
+    JOIN scenario_fields sf ON sf.field_id = fp.field_id
+    WHERE fp.active = true
+    GROUP BY fp.parameter_id
 ),
 parameter_scenarios AS (
     SELECT 
-        pi.parameter_id,
+        fp.parameter_id,
         ARRAY_AGG(DISTINCT st.parent_id::text ORDER BY st.parent_id::text) as scenario_ids,
         COUNT(DISTINCT st.parent_id) as num_scenarios
-    FROM parameter_items pi
-    JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
-    JOIN scenario_tree st ON st.child_id = spi.scenario_id AND st.parent_id = st.child_id
-    WHERE spi.active = true
-    GROUP BY pi.parameter_id
+    FROM field_parameters fp
+    JOIN scenario_fields sf ON sf.field_id = fp.field_id
+    JOIN scenario_tree st ON st.child_id = sf.scenario_id AND st.parent_id = st.child_id
+    WHERE fp.active = true AND sf.active = true
+    GROUP BY fp.parameter_id
 ),
 parameter_item_counts AS (
     SELECT 
-        parameter_id,
+        fp.parameter_id,
         COUNT(*) as num_items
-    FROM parameter_items
-    GROUP BY parameter_id
+    FROM field_parameters fp
+    WHERE fp.active = true
+    GROUP BY fp.parameter_id
 ),
 parameter_sample_items AS (
     SELECT 
-        pi.parameter_id,
+        fp_sub.parameter_id,
         jsonb_agg(
             jsonb_build_object(
-                'parameter_item_id', pi.id::text,
-                'name', pi.name,
-                'description', pi.description,
-                'value', pi.value
-            ) ORDER BY pi.name
+                'parameter_item_id', fp_sub.field_id::text,
+                'name', fp_sub.name,
+                'description', fp_sub.description,
+                'value', fp_sub.value
+            ) ORDER BY fp_sub.name
         ) as sample_items
     FROM (
-        SELECT id, parameter_id, name, description, value,
-               ROW_NUMBER() OVER (PARTITION BY parameter_id ORDER BY name) as rn
-        FROM parameter_items
-    ) pi
-    WHERE pi.rn <= 3
-    GROUP BY pi.parameter_id
+        SELECT f.id as field_id, fp.parameter_id, f.name, f.description, f.value,
+               ROW_NUMBER() OVER (PARTITION BY fp.parameter_id ORDER BY f.name) as rn
+        FROM field_parameters fp
+        JOIN fields f ON f.id = fp.field_id
+        WHERE fp.active = true
+    ) fp_sub
+    WHERE fp_sub.rn <= 3
+    GROUP BY fp_sub.parameter_id
 ),
 parameter_item_departments_data AS (
     SELECT 
-        pi.parameter_id,
-        ARRAY_AGG(pid.department_id::text ORDER BY pid.created_at) as department_ids
-    FROM parameter_items pi
-    JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id
-    WHERE pid.active = true
-    GROUP BY pi.parameter_id
+        fp.parameter_id,
+        ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
+    FROM field_parameters fp
+    JOIN field_departments fd ON fd.field_id = fp.field_id
+    WHERE fp.active = true AND fd.active = true
+    GROUP BY fp.parameter_id
 ),
 parameter_item_departments_for_filter AS (
     SELECT DISTINCT
-        pi.parameter_id,
-        pid.department_id
-    FROM parameter_items pi
-    JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id
-    WHERE pid.active = true
+        fp.parameter_id,
+        fd.department_id
+    FROM field_parameters fp
+    JOIN field_departments fd ON fd.field_id = fp.field_id
+    WHERE fp.active = true AND fd.active = true
 ),
 parameter_documents AS (
     SELECT 
-        pi.parameter_id,
-        ARRAY_AGG(DISTINCT dpi.document_id::text ORDER BY dpi.document_id::text) as document_ids
-    FROM parameter_items pi
-    JOIN document_parameter_items dpi ON dpi.parameter_item_id = pi.id
-    WHERE dpi.active = true
-    GROUP BY pi.parameter_id
+        fp.parameter_id,
+        ARRAY_AGG(DISTINCT df.document_id::text ORDER BY df.document_id::text) as document_ids
+    FROM field_parameters fp
+    JOIN document_fields df ON df.field_id = fp.field_id
+    WHERE fp.active = true AND df.active = true
+    GROUP BY fp.parameter_id
 ),
 user_profile AS (
     SELECT p.role
@@ -231,10 +235,10 @@ CROSS JOIN document_mapping_data docmd
 GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pidd.department_ids, pic.num_items, 
          ps.scenario_ids, pd.document_ids, pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, sm.mapping, dmd.mapping, docmd.mapping
 HAVING 
-    -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+    -- Include if has matching department link via fields OR has no department links at all (cross-dept)
     COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT ud.department_id FROM user_departments ud)) > 0
-    OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                  JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                  WHERE pi2.parameter_id = p.id AND pid2.active = true)
+    OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                  JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                  WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
 ORDER BY p.updated_at DESC NULLS LAST
 

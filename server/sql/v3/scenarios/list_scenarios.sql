@@ -14,8 +14,8 @@ scenario_objectives AS (
 scenario_parameters AS (
     SELECT 
         spi.scenario_id,
-        ARRAY_AGG(DISTINCT spi.parameter_item_id) as parameter_item_ids
-    FROM scenario_parameter_items spi
+        ARRAY_AGG(DISTINCT sf.field_id) as parameter_item_ids
+    FROM scenario_fields sf
     WHERE spi.active = true
     GROUP BY spi.scenario_id
 ),
@@ -156,9 +156,10 @@ parameter_item_mapping_data AS (
         ) FILTER (WHERE pi.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
-    WHERE pi.id IN (SELECT parameter_item_id FROM all_parameter_item_ids)
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    WHERE f.id IN (SELECT parameter_item_id FROM all_parameter_item_ids)
 ),
 all_cohort_ids AS (
     SELECT DISTINCT unnest(cohort_ids) as cohort_id

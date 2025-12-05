@@ -1,5 +1,5 @@
 -- Update document with department links and parameter items in a single transaction
--- Parameters: $1=documentId, $2=name (nullable text), $3=active (nullable boolean), $4=department_id (nullable uuid), $5=parameter_item_ids (nullable text array), $6=classify_agent_id (nullable uuid), $7=document_agent_id (nullable uuid), $8=template (nullable boolean), $9=template_args (nullable jsonb)
+-- Parameters: $1=documentId, $2=name (nullable text), $3=active (nullable boolean), $4=department_id (nullable uuid), $5=field_ids (nullable text array), $6=classify_agent_id (nullable uuid), $7=document_agent_id (nullable uuid), $8=template (nullable boolean), $9=template_args (nullable jsonb)
 WITH update_document AS (
     UPDATE documents
     SET 
@@ -26,22 +26,22 @@ link_department AS (
         active = true,
         updated_at = NOW()
 ),
-replace_parameter_items AS (
-    -- Delete all existing parameter item links
-    DELETE FROM document_parameter_items WHERE document_id = $1::uuid
+replace_fields AS (
+    -- Delete all existing field links
+    DELETE FROM document_fields WHERE document_id = $1::uuid
 ),
-link_parameter_items AS (
-    -- Insert new parameter item links if provided (array is never NULL, but may be empty)
-    INSERT INTO document_parameter_items (document_id, parameter_item_id, active, created_at, updated_at)
+link_fields AS (
+    -- Insert new field links if provided (array is never NULL, but may be empty)
+    INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
     SELECT 
         $1::uuid,
-        param_item_id::uuid,
+        field_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($5::text[]) as param_item_id
+    FROM UNNEST($5::text[]) as field_id
     WHERE COALESCE(array_length($5::text[], 1), 0) > 0
-    ON CONFLICT (document_id, parameter_item_id) DO UPDATE SET
+    ON CONFLICT (document_id, field_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
 )

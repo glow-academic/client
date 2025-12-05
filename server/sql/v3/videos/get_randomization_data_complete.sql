@@ -41,7 +41,8 @@ policy_param_item AS (
 filtered_documents AS (
     SELECT DISTINCT d.id, d.name, '' as description, u.file_path, u.mime_type
     FROM documents d
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     CROSS JOIN policy_param_item ppi
     JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true

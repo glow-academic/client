@@ -1,5 +1,5 @@
 -- Bulk update documents with department links and parameter items in a single transaction
--- Parameters: $1=documentIds (uuid array), $2=type, $3=department_id (nullable uuid), $4=parameter_item_ids (nullable text array)
+-- Parameters: $1=documentIds (uuid array), $2=type, $3=department_id (nullable uuid), $4=field_ids (nullable text array)
 WITH update_documents AS (
     UPDATE documents
     SET 
@@ -27,23 +27,23 @@ link_departments AS (
         active = true,
         updated_at = NOW()
 ),
-replace_parameter_items AS (
-    -- Delete all existing parameter item links for all documents
-    DELETE FROM document_parameter_items WHERE document_id = ANY($1::uuid[])
+replace_fields AS (
+    -- Delete all existing field links for all documents
+    DELETE FROM document_fields WHERE document_id = ANY($1::uuid[])
 ),
-link_parameter_items AS (
-    -- Insert new parameter item links for all documents if provided (array is never NULL, but may be empty)
-    INSERT INTO document_parameter_items (document_id, parameter_item_id, active, created_at, updated_at)
+link_fields AS (
+    -- Insert new field links for all documents if provided (array is never NULL, but may be empty)
+    INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
     SELECT 
         doc_id::uuid,
-        param_item_id::uuid,
+        field_id::uuid,
         true,
         NOW(),
         NOW()
     FROM UNNEST($1::uuid[]) as doc_id
-    CROSS JOIN UNNEST($4::text[]) as param_item_id
+    CROSS JOIN UNNEST($4::text[]) as field_id
     WHERE COALESCE(array_length($4::text[], 1), 0) > 0
-    ON CONFLICT (document_id, parameter_item_id) DO UPDATE SET
+    ON CONFLICT (document_id, field_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
 )

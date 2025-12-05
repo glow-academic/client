@@ -17,6 +17,7 @@ from app.api.v3.departments import router as departments_router
 from app.api.v3.documents import router as documents_router
 from app.api.v3.evals import router as evals_router
 from app.api.v3.feedback import router as feedback_router
+from app.api.v3.fields import router as fields_router
 # ============================================================================
 # Batch G: Utility Routes
 # ============================================================================
@@ -88,6 +89,7 @@ router.include_router(keys_router)
 router.include_router(models_router)
 router.include_router(parameters_router)
 router.include_router(prompts_router)
+router.include_router(fields_router)
 router.include_router(units_router)
 router.include_router(feedback_router)
 router.include_router(logs_router)

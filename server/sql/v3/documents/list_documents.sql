@@ -27,13 +27,13 @@ document_scenarios AS (
     WHERE sd.active = true
     GROUP BY sd.document_id
 ),
-document_parameter_items_cte AS (
+document_fields_cte AS (
     SELECT 
-        dpi.document_id,
-        ARRAY_AGG(dpi.parameter_item_id) as parameter_item_ids
-    FROM document_parameter_items dpi
-    WHERE dpi.active = true
-    GROUP BY dpi.document_id
+        df.document_id,
+        ARRAY_AGG(df.field_id) as parameter_item_ids
+    FROM document_fields df
+    WHERE df.active = true
+    GROUP BY df.document_id
 ),
 document_departments_data AS (
     SELECT 
@@ -48,7 +48,7 @@ document_data AS (
         d.id as document_id,
         d.name,
         d.updated_at,
-        d.upload_id::text,
+        du.upload_id::text,
         u.mime_type,
         u.file_path,
         d.active,
@@ -56,19 +56,20 @@ document_data AS (
         d.document_agent_id::text,
         COALESCE(ddd.department_ids, NULL) as department_ids,
         COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
-        COALESCE(dpic.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
+        COALESCE(dfc.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
         COALESCE(dasl.active_scenario_count, 0) as active_scenario_count,
         COALESCE(dasl_all.total_scenario_links, 0) as total_scenario_links
     FROM documents d
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     LEFT JOIN document_departments_data ddd ON ddd.document_id = d.id
     LEFT JOIN document_scenarios ds ON ds.document_id = d.id
-    LEFT JOIN document_parameter_items_cte dpic ON dpic.document_id = d.id
+    LEFT JOIN document_fields_cte dfc ON dfc.document_id = d.id
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
-    GROUP BY d.id, d.name, d.updated_at, d.upload_id, u.mime_type, u.file_path, d.active, 
-             ddd.department_ids, ds.scenario_ids, dpic.parameter_item_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
+    GROUP BY d.id, d.name, d.updated_at, du.upload_id, u.mime_type, u.file_path, d.active, 
+             ddd.department_ids, ds.scenario_ids, dfc.parameter_item_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
     HAVING 
         COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
@@ -107,34 +108,35 @@ scenario_mapping_data AS (
 parameter_item_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            pi.id::text,
+            f_data.id::text,
             jsonb_build_object(
-                'name', pi.name,
-                'description', COALESCE(pi.description, ''),
-                'parameter_id', pi.parameter_id::text,
-                'parameter_name', pi.parameter_name,
-                'value', COALESCE(pi.value, '')
+                'name', f_data.name,
+                'description', COALESCE(f_data.description, ''),
+                'parameter_id', f_data.parameter_id::text,
+                'parameter_name', f_data.parameter_name,
+                'value', COALESCE(f_data.value, '')
             )
-        ) FILTER (WHERE pi.id IS NOT NULL),
+        ) FILTER (WHERE f_data.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
     FROM (
         SELECT DISTINCT
-            pi.id,
-            pi.name,
-            pi.description,
-            pi.value,
-            pi.parameter_id,
+            f.id,
+            f.name,
+            f.description,
+            f.value,
+            fp.parameter_id,
             p.name as parameter_name
-        FROM parameter_items pi
-        JOIN parameters p ON p.id = pi.parameter_id
-        LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+        FROM fields f
+        JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+        JOIN parameters p ON p.id = fp.parameter_id
+        LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
         WHERE p.active = true
-        GROUP BY pi.id, pi.name, pi.description, pi.value, pi.parameter_id, p.name
+        GROUP BY f.id, f.name, f.description, f.value, fp.parameter_id, p.name
         HAVING 
-            COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
-            OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
-    ) pi
+            COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
+            OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
+    ) f_data
 ),
 department_parameter_ids AS (
     SELECT 
@@ -142,44 +144,46 @@ department_parameter_ids AS (
         COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
     FROM departments d
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    LEFT JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE d.id IN (SELECT department_id FROM user_departments)
-    AND (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                                                 JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                                                 WHERE pi2.parameter_id = p.id AND pid2.active = true))
+    AND (fd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                                                 JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                                                 WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
     GROUP BY d.id
 ),
 cross_department_items AS (
-    -- Parameter items with no department restrictions (available to all)
-    SELECT DISTINCT pi.id
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id AND p.active = true
+    -- Fields with no department restrictions (available to all)
+    SELECT DISTINCT f.id
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id AND p.active = true
     WHERE NOT EXISTS (
-        SELECT 1 FROM parameter_item_departments pid 
-        WHERE pid.parameter_item_id = pi.id 
-        AND pid.active = true
+        SELECT 1 FROM field_departments fd 
+        WHERE fd.field_id = f.id 
+        AND fd.active = true
     )
 ),
 department_parameter_item_ids AS (
     SELECT 
         d.id as department_id,
-        COALESCE(ARRAY_AGG(pi.id::text ORDER BY pi.id) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
+        COALESCE(ARRAY_AGG(f.id::text ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
     FROM departments d
     LEFT JOIN (
-        -- Parameter items assigned to this specific department
-        SELECT DISTINCT pid.department_id, pi.id
-        FROM parameter_item_departments pid
-        JOIN parameter_items pi ON pi.id = pid.parameter_item_id
-        JOIN parameters p ON p.id = pi.parameter_id AND p.active = true
-        WHERE pid.active = true
+        -- Fields assigned to this specific department
+        SELECT DISTINCT fd.department_id, f.id
+        FROM field_departments fd
+        JOIN fields f ON f.id = fd.field_id
+        JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+        JOIN parameters p ON p.id = fp.parameter_id AND p.active = true
+        WHERE fd.active = true
         UNION
-        -- Cross-department items (available to all user departments)
+        -- Cross-department fields (available to all user departments)
         SELECT DISTINCT ud.department_id, cdi.id
         FROM user_departments ud
         CROSS JOIN cross_department_items cdi
-    ) pi_dept ON pi_dept.department_id = d.id
-    LEFT JOIN parameter_items pi ON pi.id = pi_dept.id
+    ) f_dept ON f_dept.department_id = d.id
+    LEFT JOIN fields f ON f.id = f_dept.id
     WHERE d.id IN (SELECT department_id FROM user_departments)
     GROUP BY d.id
 ),
@@ -210,15 +214,15 @@ parameter_data AS (
         p.document_parameter,
         p.persona_parameter
     FROM parameters p
-    JOIN parameter_items pi ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
     HAVING 
-        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                      JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                      WHERE pi2.parameter_id = p.id AND pid2.active = true)
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                      WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
     ORDER BY p.name
 ),
 parameter_mapping_data AS (
@@ -241,30 +245,31 @@ document_valid_parameter_items AS (
     SELECT 
         dd.document_id,
         COALESCE(
-            ARRAY_AGG(DISTINCT pi.id::text ORDER BY pi.id::text) FILTER (WHERE pi.id IS NOT NULL),
+            ARRAY_AGG(DISTINCT f.id::text ORDER BY f.id::text) FILTER (WHERE f.id IS NOT NULL),
             ARRAY[]::text[]
         ) as valid_parameter_item_ids
     FROM document_data dd
-    LEFT JOIN parameter_items pi ON pi.parameter_id IN (SELECT id FROM parameters WHERE active = true)
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    LEFT JOIN field_parameters fp ON fp.parameter_id IN (SELECT id FROM parameters WHERE active = true) AND fp.active = true
+    LEFT JOIN fields f ON f.id = fp.field_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE (
-        -- If document has no departments, include only cross-department items
+        -- If document has no departments, include only cross-department fields
         (dd.department_ids IS NULL OR array_length(dd.department_ids, 1) = 0)
         AND NOT EXISTS (
-            SELECT 1 FROM parameter_item_departments pid2 
-            WHERE pid2.parameter_item_id = pi.id 
-            AND pid2.active = true
+            SELECT 1 FROM field_departments fd2 
+            WHERE fd2.field_id = f.id 
+            AND fd2.active = true
         )
     ) OR (
-        -- If document has departments, include items from those departments OR cross-department items
+        -- If document has departments, include fields from those departments OR cross-department fields
         dd.department_ids IS NOT NULL 
         AND array_length(dd.department_ids, 1) > 0
         AND (
-            pid.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
+            fd.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
             OR NOT EXISTS (
-                SELECT 1 FROM parameter_item_departments pid2 
-                WHERE pid2.parameter_item_id = pi.id 
-                AND pid2.active = true
+                SELECT 1 FROM field_departments fd2 
+                WHERE fd2.field_id = f.id 
+                AND fd2.active = true
             )
         )
     )

@@ -18,7 +18,8 @@ WITH filtered_personas AS (
 filtered_documents AS (
     SELECT DISTINCT d.id, d.name, NULL::text as type, u.file_path
     FROM documents d
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     WHERE d.active = true
     GROUP BY d.id, d.name, u.file_path

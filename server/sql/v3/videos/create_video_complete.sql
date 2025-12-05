@@ -212,19 +212,19 @@ link_question_answers AS (
         active = true,
         updated_at = NOW()
 ),
-link_video_parameter_items AS (
-    -- Link parameter items to video if provided
-    INSERT INTO video_parameter_items (video_id, parameter_item_id, active, created_at, updated_at)
+link_video_fields AS (
+    -- Link fields to video if provided
+    INSERT INTO video_fields (video_id, field_id, active, created_at, updated_at)
     SELECT 
         nv.video_id,
-        param_item_id::uuid,
+        field_id::uuid,
         true,
         NOW(),
         NOW()
     FROM new_video nv
     CROSS JOIN UNNEST($10::text[]) as param_item_id
     WHERE COALESCE(array_length($10::text[], 1), 0) > 0
-    ON CONFLICT (video_id, parameter_item_id) DO UPDATE SET
+    ON CONFLICT (video_id, field_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

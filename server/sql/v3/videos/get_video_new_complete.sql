@@ -60,11 +60,12 @@ problem_statement_mapping_data AS (
 ),
 -- Get policy parameter item ID for filtering
 policy_param_item AS (
-    SELECT pi.id
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
+    SELECT f.id
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' AND p.document_parameter = true
-    AND pi.value = 'policy'
+    AND f.value = 'policy'
     LIMIT 1
 ),
 -- Documents (filtered to only include policy documents)
@@ -75,11 +76,12 @@ document_data AS (
         '' as description,
         u.file_path,
         u.mime_type,
-        u.id as upload_id
+        du.upload_id
     FROM documents d
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     CROSS JOIN policy_param_item ppi
-    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+    JOIN document_fields df ON df.document_id = d.id AND df.field_id = ppi.id AND df.active = true
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     CROSS JOIN user_profile up
     WHERE d.active = true
@@ -202,14 +204,15 @@ video_parameter_items_data AS (
         pi.parameter_id,
         p.name as parameter_name,
         pi.value
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
-    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
+    GROUP BY f.id, f.name, f.description, fp.parameter_id, p.id, p.name, f.value
     HAVING 
-        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
 ),
 video_parameter_item_mapping_data AS (
     SELECT 

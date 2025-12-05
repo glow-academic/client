@@ -36,24 +36,24 @@ department_parameter_ids AS (
     FROM departments d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-    WHERE (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                                                 JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                                                 WHERE pi2.parameter_id = p.id AND pid2.active = true))
+    LEFT JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    WHERE (fd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                                                 JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                                                 WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
     GROUP BY d.id
 ),
 department_parameter_item_ids AS (
     SELECT 
         d.id as department_id,
-        COALESCE(ARRAY_AGG(pi.id::text ORDER BY pi.id) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
+        COALESCE(ARRAY_AGG(f.id::text ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
     FROM departments d
     INNER JOIN user_departments ud ON d.id = ud.id
-    LEFT JOIN parameter_items pi ON true
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    LEFT JOIN fields f ON true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE (
-        pid.department_id = d.id 
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+        fd.department_id = d.id 
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
     )
     GROUP BY d.id
 ),
@@ -189,21 +189,22 @@ parameter_mapping_data AS (
 ),
 parameter_item_data AS (
     SELECT 
-        pi.id,
-        pi.name,
-        COALESCE(pi.description, '') as description,
-        pi.parameter_id,
+        f.id,
+        f.name,
+        COALESCE(f.description, '') as description,
+        fp.parameter_id,
         p.name as parameter_name,
-        pi.value
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+        f.value
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true
-    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
+    GROUP BY f.id, f.name, f.description, fp.parameter_id, p.id, p.name, f.value
     HAVING 
-        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
-    ORDER BY p.name, pi.name
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
+    ORDER BY p.name, f.name
 ),
 parameter_item_mapping_data AS (
     SELECT COALESCE(
@@ -228,9 +229,10 @@ parameters_structure AS (
             jsonb_build_object(
                 'parameter_item_ids', '[]'::jsonb,
                 'valid_parameter_item_ids', COALESCE((
-                    SELECT jsonb_agg(pi.id::text ORDER BY pi.id)
-                    FROM parameter_items pi
-                    WHERE pi.parameter_id = pd.id
+                    SELECT jsonb_agg(f.id::text ORDER BY f.id)
+                    FROM fields f
+                    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+                    WHERE fp.parameter_id = pd.id
                 ), '[]'::jsonb)
             )
         ),
@@ -255,14 +257,15 @@ document_details_data AS (
                     'file_path', u.file_path,
                     'mime_type', u.mime_type,
                     'parameter_item_ids', COALESCE((
-                        SELECT jsonb_agg(dpi.parameter_item_id::text)
-                        FROM document_parameter_items dpi
-                        WHERE dpi.document_id = d.id AND dpi.active = true
+                        SELECT jsonb_agg(df.field_id::text)
+                        FROM document_fields df
+                        WHERE df.document_id = d.id AND df.active = true
                     ), '[]'::jsonb)
                 ) ORDER BY d.name
             )
             FROM documents d
-            LEFT JOIN uploads u ON u.id = d.upload_id
+            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+            LEFT JOIN uploads u ON u.id = du.upload_id
             WHERE d.id IN (SELECT id FROM document_data)
             AND d.active = true
         ),

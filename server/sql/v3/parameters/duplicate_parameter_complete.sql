@@ -56,77 +56,91 @@ new_parameter AS (
     FROM original_parameter op
     RETURNING id::text as parameter_id
 ),
-original_items AS (
+original_fields AS (
     SELECT 
-        pi.id as original_item_id,
-        pi.name,
-        pi.description,
-        pi.value
-    FROM parameter_items pi
-    WHERE pi.parameter_id = $1::uuid
+        f.id as original_field_id,
+        f.name,
+        f.description,
+        f.value
+    FROM field_parameters fp
+    JOIN fields f ON f.id = fp.field_id
+    WHERE fp.parameter_id = $1::uuid AND fp.active = true
 ),
-original_item_departments AS (
+original_field_departments AS (
     SELECT 
-        oi.original_item_id,
-        COALESCE(ARRAY_AGG(pid.department_id::text ORDER BY pid.created_at) FILTER (WHERE pid.department_id IS NOT NULL), NULL) as department_ids
-    FROM original_items oi
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = oi.original_item_id AND pid.active = true
-    GROUP BY oi.original_item_id
+        of.original_field_id,
+        COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), NULL) as department_ids
+    FROM original_fields of
+    LEFT JOIN field_departments fd ON fd.field_id = of.original_field_id AND fd.active = true
+    GROUP BY of.original_field_id
 ),
-new_items AS (
-    -- Create all parameter items
-    INSERT INTO parameter_items (
-        parameter_id,
+new_fields AS (
+    -- Create all fields (duplicates of original fields)
+    INSERT INTO fields (
         name,
         description,
         value
     )
     SELECT 
-        np.parameter_id::uuid,
-        oi.name,
-        oi.description,
-        oi.value
-    FROM new_parameter np
-    CROSS JOIN original_items oi
-    RETURNING id::text as item_id, name as item_name
+        of.name,
+        of.description,
+        of.value
+    FROM original_fields of
+    RETURNING id::text as field_id, name as field_name
 ),
-items_with_depts AS (
-    -- Match new items with original items and their department arrays
-    -- Use ROW_NUMBER to match items in order since names might not be unique
+new_fields_with_order AS (
+    -- Add row numbers to new fields for matching
     SELECT 
-        ni.item_id,
-        oid.department_ids
-    FROM (
-        SELECT 
-            item_id,
-            item_name,
-            ROW_NUMBER() OVER (ORDER BY item_name) as item_row_num
-        FROM new_items
-    ) ni
+        field_id,
+        field_name,
+        ROW_NUMBER() OVER (ORDER BY field_name) as field_row_num
+    FROM new_fields
+),
+fields_with_depts AS (
+    -- Match new fields with original fields and their department arrays
+    -- Use ROW_NUMBER to match fields in order since names might not be unique
+    SELECT 
+        nf.field_id,
+        ofd.department_ids
+    FROM new_fields_with_order nf
     JOIN (
         SELECT 
-            original_item_id,
+            original_field_id,
             name,
-            ROW_NUMBER() OVER (ORDER BY name) as item_row_num
-        FROM original_items
-    ) oi ON oi.item_row_num = ni.item_row_num
-    LEFT JOIN original_item_departments oid ON oid.original_item_id = oi.original_item_id
-    WHERE oid.department_ids IS NOT NULL AND array_length(oid.department_ids, 1) > 0
-    -- Note: If no department links exist, this CTE will be empty, which is fine
+            ROW_NUMBER() OVER (ORDER BY name) as field_row_num
+        FROM original_fields
+    ) of ON of.field_row_num = nf.field_row_num
+    LEFT JOIN original_field_departments ofd ON ofd.original_field_id = of.original_field_id
+    WHERE ofd.department_ids IS NOT NULL AND array_length(ofd.department_ids, 1) > 0
+),
+link_fields_to_parameter AS (
+    -- Link new fields to new parameter via field_parameters junction
+    INSERT INTO field_parameters (field_id, parameter_id, active, created_at, updated_at)
+    SELECT 
+        fwd.field_id::uuid,
+        np.parameter_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN fields_with_depts fwd
+    ON CONFLICT (field_id, parameter_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 link_departments AS (
-    -- Link departments to items if they existed on original (only if dept_ids exist)
-    INSERT INTO parameter_item_departments (parameter_item_id, department_id, active, created_at, updated_at)
+    -- Link departments to fields if they existed on original (only if dept_ids exist)
+    INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
     SELECT 
-        iwd.item_id::uuid,
+        fwd.field_id::uuid,
         dept_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM items_with_depts iwd
-    CROSS JOIN UNNEST(iwd.department_ids) as dept_id
-    WHERE iwd.department_ids IS NOT NULL AND array_length(iwd.department_ids, 1) > 0
-    ON CONFLICT (parameter_item_id, department_id) DO UPDATE SET
+    FROM fields_with_depts fwd
+    CROSS JOIN UNNEST(fwd.department_ids) as dept_id
+    WHERE fwd.department_ids IS NOT NULL AND array_length(fwd.department_ids, 1) > 0
+    ON CONFLICT (field_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

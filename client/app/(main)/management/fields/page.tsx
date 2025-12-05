@@ -2,12 +2,56 @@
  * app/(main)/management/fields/page.tsx
  * Fields list page
  * @AshokSaravanan222 & @siladiea
- * 01/20/2025
+ * 12/05/2025
  */
 import { getSession } from "@/auth";
 
+import Fields from "@/components/fields/Fields";
 import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+
+/** ---- Strong types from OpenAPI ---- */
+type FieldsListOut = OutputOf<"/api/v3/fields/list", "post">;
+type DuplicateFieldIn = InputOf<"/api/v3/fields/duplicate", "post">;
+type DuplicateFieldOut = OutputOf<"/api/v3/fields/duplicate", "post">;
+type DeleteFieldIn = InputOf<"/api/v3/fields/delete", "post">;
+type DeleteFieldOut = OutputOf<"/api/v3/fields/delete", "post">;
+
+/** ---- Direct fetch (no Next.js cache) ---- */
+const getFieldsList = async (
+  profileId: string
+): Promise<FieldsListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/fields/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+async function duplicateField(
+  input: DuplicateFieldIn,
+): Promise<DuplicateFieldOut> {
+  "use server";
+  return api.post("/fields/duplicate", input);
+}
+
+async function deleteField(
+  input: DeleteFieldIn,
+): Promise<DeleteFieldOut> {
+  "use server";
+  return api.post("/fields/delete", input);
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
@@ -35,19 +79,29 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function FieldsPage() {
+export default async function FieldsPage() {
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "";
+
+  // Fetch list data server-side
+  const listData = await getFieldsList(profileId);
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Fields</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage fields configuration
-        </p>
-      </div>
-      <div className="rounded-lg border p-6">
-        <p className="text-muted-foreground">Fields management coming soon...</p>
-      </div>
+    <div className="space-y-6" data-page="fields-index">
+      <Fields
+        listData={listData}
+        duplicateFieldAction={duplicateField}
+        deleteFieldAction={deleteField}
+      />
     </div>
   );
 }
 
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  FieldsListOut,
+  DeleteFieldIn,
+  DeleteFieldOut,
+  DuplicateFieldIn,
+  DuplicateFieldOut,
+};

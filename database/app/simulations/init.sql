@@ -97,7 +97,7 @@ CREATE INDEX ON scenario_time_limits (simulation_id);
 CREATE INDEX ON scenario_time_limits (scenario_id);
 
 -- Note: Simulation tags and tag-related tables (simulation_tags, simulation_tag_documents, 
--- simulation_tag_parameter_items, v_tagged_documents, v_tagged_parameter_items) 
+-- simulation_tag_fields, v_tagged_documents, v_tagged_fields) 
 -- have been removed as part of BCNF migration
 
 CREATE TABLE simulation_attempts (

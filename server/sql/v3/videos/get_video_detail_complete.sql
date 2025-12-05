@@ -120,11 +120,12 @@ outline_mapping_data AS (
 ),
 -- Get policy parameter item ID for filtering
 policy_param_item AS (
-    SELECT pi.id
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
+    SELECT f.id
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' AND p.document_parameter = true
-    AND pi.value = 'policy'
+    AND f.value = 'policy'
     LIMIT 1
 ),
 video_documents_agg AS (
@@ -145,16 +146,17 @@ document_mapping_data AS (
                 END,
                 'filePath', u.file_path,
                 'mimeType', u.mime_type,
-                'uploadId', CASE WHEN d.upload_id IS NOT NULL THEN d.upload_id::text ELSE NULL END
+                'uploadId', CASE WHEN du.upload_id IS NOT NULL THEN du.upload_id::text ELSE NULL END
             )
         ) FILTER (WHERE d.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
     FROM video_documents vd
     JOIN documents d ON d.id = vd.document_id
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     CROSS JOIN policy_param_item ppi
-    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+    JOIN document_fields df ON df.document_id = d.id AND df.field_id = ppi.id AND df.active = true
     WHERE vd.video_id = $1 AND vd.active = true AND d.active = true
 ),
 valid_documents AS (
@@ -162,7 +164,7 @@ valid_documents AS (
     FROM (SELECT DISTINCT d.id FROM documents d
     CROSS JOIN user_profile up
     CROSS JOIN policy_param_item ppi
-    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+    JOIN document_fields df ON df.document_id = d.id AND df.field_id = ppi.id AND df.active = true
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     WHERE d.active = true
         AND (
@@ -361,22 +363,23 @@ video_parameter_mapping_data AS (
 ),
 video_parameter_items_data AS (
     SELECT 
-        pi.id,
-        pi.name,
-        COALESCE(pi.description, '') as description,
-        pi.parameter_id,
+        f.id,
+        f.name,
+        COALESCE(f.description, '') as description,
+        fp.parameter_id,
         p.name as parameter_name,
-        pi.value
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+        f.value
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN resolve_profile_id rpi
     LEFT JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
     WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
-    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
+    GROUP BY f.id, f.name, f.description, fp.parameter_id, p.id, p.name, f.value
     HAVING 
-        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM resolve_profile_id rpi2 JOIN profile_departments pd2 ON pd2.profile_id = rpi2.resolved_profile_id WHERE pd2.active = true)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM resolve_profile_id rpi2 JOIN profile_departments pd2 ON pd2.profile_id = rpi2.resolved_profile_id WHERE pd2.active = true)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
 ),
 video_parameter_item_mapping_data AS (
     SELECT 
@@ -393,9 +396,9 @@ video_parameter_item_mapping_data AS (
     FROM video_parameter_items_data pi
 ),
 video_selected_parameter_items AS (
-    SELECT ARRAY_AGG(vpi.parameter_item_id::text ORDER BY vpi.parameter_item_id) as parameter_item_ids
-    FROM video_parameter_items vpi
-    WHERE vpi.video_id = $1 AND vpi.active = true
+    SELECT ARRAY_AGG(vf.field_id::text ORDER BY vf.field_id) as parameter_item_ids
+    FROM video_fields vf
+    WHERE vf.video_id = $1 AND vf.active = true
 ),
 video_personas_agg AS (
     SELECT ARRAY_AGG(vp.persona_id::text ORDER BY vp.persona_id) as persona_ids

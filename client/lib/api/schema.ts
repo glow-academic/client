@@ -3771,6 +3771,166 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/fields/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Fields List
+         * @description Get fields list with permissions and relationships.
+         */
+        post: operations["get_fields_list_api_v3_fields_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/fields/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Field Detail
+         * @description Get detailed field information.
+         */
+        post: operations["get_field_detail_api_v3_fields_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/fields/detail_default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Field Detail Default
+         * @description Get default field detail for edit mode (same as detail).
+         */
+        post: operations["get_field_detail_default_api_v3_fields_detail_default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/fields/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Field New
+         * @description Get default field detail for creation mode.
+         */
+        post: operations["get_field_new_api_v3_fields_new_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/fields/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Field
+         * @description Create a new field with parameter and department associations.
+         */
+        post: operations["create_field_api_v3_fields_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/fields/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Field
+         * @description Update an existing field.
+         */
+        post: operations["update_field_api_v3_fields_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/fields/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate Field
+         * @description Duplicate a field with all parameter and department associations.
+         */
+        post: operations["duplicate_field_api_v3_fields_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/fields/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Field
+         * @description Delete a field.
+         */
+        post: operations["delete_field_api_v3_fields_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/units/list": {
         parameters: {
             query?: never;
@@ -5873,6 +6033,41 @@ export interface components {
             message: string;
         };
         /**
+         * CreateFieldRequest
+         * @description Request to create field.
+         */
+        CreateFieldRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Value */
+            value: string;
+            /**
+             * Default Field
+             * @default false
+             */
+            default_field: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * CreateFieldResponse
+         * @description Response from create field.
+         */
+        CreateFieldResponse: {
+            /** Success */
+            success: boolean;
+            /** Fieldid */
+            fieldId: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * CreateKeyRequest
          * @description Request to create key.
          */
@@ -6487,7 +6682,7 @@ export interface components {
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
@@ -6803,6 +6998,26 @@ export interface components {
          * @description Response from delete eval.
          */
         DeleteEvalResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeleteFieldRequest
+         * @description Request to delete field.
+         */
+        DeleteFieldRequest: {
+            /** Fieldid */
+            fieldId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * DeleteFieldResponse
+         * @description Response from delete field.
+         */
+        DeleteFieldResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -7306,7 +7521,7 @@ export interface components {
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Scenario Options */
             scenario_options: {
@@ -7394,6 +7609,28 @@ export interface components {
             success: boolean;
             /** Departmentid */
             departmentId: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DuplicateFieldRequest
+         * @description Request to duplicate field.
+         */
+        DuplicateFieldRequest: {
+            /** Fieldid */
+            fieldId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * DuplicateFieldResponse
+         * @description Response from duplicate field.
+         */
+        DuplicateFieldResponse: {
+            /** Success */
+            success: boolean;
+            /** Fieldid */
+            fieldId: string;
             /** Message */
             message: string;
         };
@@ -7802,6 +8039,130 @@ export interface components {
         FeedbackListResponse: {
             /** Feedback */
             feedback: components["schemas"]["app__api__v3__feedback__list__FeedbackItem"][];
+        };
+        /** FieldDetailRequest */
+        FieldDetailRequest: {
+            /** Fieldid */
+            fieldId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /** FieldDetailResponse */
+        FieldDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Value */
+            value: string;
+            /** Default Field */
+            default_field: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Valid Parameter Ids */
+            valid_parameter_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+        };
+        /**
+         * FieldItem
+         * @description Field item for list view.
+         */
+        FieldItem: {
+            /** Field Id */
+            field_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Value */
+            value: string;
+            /** Default Field */
+            default_field: boolean;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+        };
+        /** FieldNewRequest */
+        FieldNewRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** FieldNewResponse */
+        FieldNewResponse: {
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__fields__new__DepartmentMappingItem"];
+            };
+            /** Valid Parameter Ids */
+            valid_parameter_ids: string[];
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__fields__new__ParameterMappingItem"];
+            };
+            /** User Role */
+            user_role: string;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+        };
+        /**
+         * FieldsListRequest
+         * @description Request for fields list.
+         */
+        FieldsListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * FieldsListResponse
+         * @description Response for fields list.
+         */
+        FieldsListResponse: {
+            /** Fields */
+            fields: components["schemas"]["FieldItem"][];
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+            /** Parameter Options */
+            parameter_options: {
+                [key: string]: string;
+            }[];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * FilterOption
@@ -9229,22 +9590,6 @@ export interface components {
             /** Value */
             value: string;
         };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item - extends MappingItem
-         */
-        ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-        };
         /** ParameterNewRequest */
         ParameterNewRequest: {
             /** Profileid */
@@ -9667,7 +10012,7 @@ export interface components {
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
@@ -12579,6 +12924,38 @@ export interface components {
             message: string;
         };
         /**
+         * UpdateFieldRequest
+         * @description Request to update field.
+         */
+        UpdateFieldRequest: {
+            /** Fieldid */
+            fieldId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Value */
+            value: string;
+            /** Default Field */
+            default_field: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * UpdateFieldResponse
+         * @description Response from update field.
+         */
+        UpdateFieldResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * UpdateKeyRequest
          * @description Request to update key.
          */
@@ -13858,6 +14235,20 @@ export interface components {
             /** Author Profile Id */
             author_profile_id: string;
         };
+        /** DepartmentMappingItem */
+        app__api__v3__fields__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** ParameterMappingItem */
+        app__api__v3__fields__new__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
         /**
          * AttemptHistoryRow
          * @description Attempt history row.
@@ -14564,7 +14955,7 @@ export interface components {
             can_delete: boolean;
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
@@ -14724,7 +15115,7 @@ export interface components {
             can_delete: boolean;
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
@@ -14913,7 +15304,7 @@ export interface components {
             parameter_items: components["schemas"]["app__api__v3__simulations__detail__ParameterItemDetail"][];
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Scenario Mapping */
             scenario_mapping: {
@@ -15097,7 +15488,7 @@ export interface components {
             parameter_items: components["schemas"]["app__api__v3__simulations__new__ParameterItemDetail"][];
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Scenario Mapping */
             scenario_mapping: {
@@ -15546,6 +15937,22 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item - extends MappingItem
+         */
+        app__utils__schema__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
         };
         /**
          * StandardGroupMappingItem
@@ -21331,6 +21738,270 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletePromptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fields_list_api_v3_fields_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldsListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldsListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_field_detail_api_v3_fields_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_field_detail_default_api_v3_fields_detail_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_field_new_api_v3_fields_new_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldNewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldNewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_field_api_v3_fields_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFieldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateFieldResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_field_api_v3_fields_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFieldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateFieldResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_field_api_v3_fields_duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateFieldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicateFieldResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_field_api_v3_fields_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteFieldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteFieldResponse"];
                 };
             };
             /** @description Validation Error */

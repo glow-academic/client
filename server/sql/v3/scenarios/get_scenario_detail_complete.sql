@@ -187,33 +187,34 @@ all_parameters_data AS (
     SELECT 
         p.id::text as param_id,
         COALESCE((
-            SELECT jsonb_agg(spi2.parameter_item_id::text ORDER BY spi2.parameter_item_id)
-            FROM scenario_parameter_items spi2
-            JOIN parameter_items pi2 ON pi2.id = spi2.parameter_item_id
-            WHERE spi2.scenario_id = $1 AND pi2.parameter_id = p.id AND spi2.active = true
+            SELECT jsonb_agg(sf2.field_id::text ORDER BY sf2.field_id)
+            FROM scenario_fields sf2
+            JOIN field_parameters fp2 ON fp2.field_id = sf2.field_id AND fp2.active = true
+            WHERE sf2.scenario_id = $1 AND fp2.parameter_id = p.id AND sf2.active = true
         ), '[]'::jsonb) as selected_items,
         COALESCE((
             SELECT jsonb_agg(id::text ORDER BY id::text)
             FROM (
-                SELECT pi3.id
-                FROM parameter_items pi3
-                LEFT JOIN parameter_item_departments pid3 ON pid3.parameter_item_id = pi3.id AND pid3.active = true
+                SELECT f3.id
+                FROM fields f3
+                JOIN field_parameters fp3 ON fp3.field_id = f3.id AND fp3.active = true
+                LEFT JOIN field_departments fd3 ON fd3.field_id = f3.id AND fd3.active = true
                 CROSS JOIN user_departments ud3
-                WHERE pi3.parameter_id = p.id
-                GROUP BY pi3.id
+                WHERE fp3.parameter_id = p.id
+                GROUP BY f3.id
                 HAVING 
-                    COUNT(pid3.parameter_item_id) FILTER (WHERE pid3.department_id = ANY(ud3.dept_ids)) > 0
-                    OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid4 WHERE pid4.parameter_item_id = pi3.id AND pid4.active = true)
+                    COUNT(fd3.field_id) FILTER (WHERE fd3.department_id = ANY(ud3.dept_ids)) > 0
+                    OR NOT EXISTS (SELECT 1 FROM field_departments fd4 WHERE fd4.field_id = f3.id AND fd4.active = true)
                 UNION
-                SELECT spi2.parameter_item_id as id
-                FROM scenario_parameter_items spi2
-                JOIN parameter_items pi2 ON pi2.id = spi2.parameter_item_id
-                WHERE spi2.scenario_id = $1 AND pi2.parameter_id = p.id AND spi2.active = true
+                SELECT sf2.field_id as id
+                FROM scenario_fields sf2
+                JOIN field_parameters fp2 ON fp2.field_id = sf2.field_id AND fp2.active = true
+                WHERE sf2.scenario_id = $1 AND fp2.parameter_id = p.id AND sf2.active = true
             ) combined_items
         ), '[]'::jsonb) as valid_items
     FROM parameters p
-    JOIN parameter_items pi ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
     GROUP BY p.id
@@ -306,7 +307,8 @@ valid_documents_filtered AS (
         u.file_path,
         u.mime_type
     FROM documents d
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     CROSS JOIN user_departments ud
     WHERE d.active = true
@@ -327,7 +329,8 @@ document_data AS (
     FROM scenario_documents_agg sda
     CROSS JOIN LATERAL unnest(sda.document_ids) as doc_id
     JOIN documents d2 ON d2.id = doc_id::uuid
-    LEFT JOIN uploads u2 ON u2.id = d2.upload_id
+    LEFT JOIN document_uploads du2 ON du2.document_id = d2.id AND du2.active = true
+    LEFT JOIN uploads u2 ON u2.id = du2.upload_id
     WHERE d2.active = true
     ORDER BY name
 ),
@@ -360,7 +363,8 @@ scenario_documents_mapping_data AS (
     ) as document_mapping
     FROM scenario_documents sd
     JOIN documents d ON d.id = sd.document_id
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     WHERE sd.scenario_id = $1 AND sd.active = true AND d.active = true
 ),
 enhanced_document_mapping_data AS (
@@ -402,15 +406,16 @@ document_details_data AS (
                     'file_path', u.file_path,
                     'mime_type', u.mime_type,
                     'parameter_item_ids', COALESCE((
-                        SELECT jsonb_agg(dpi.parameter_item_id::text)
-                        FROM document_parameter_items dpi
-                        WHERE dpi.document_id = d.id AND dpi.active = true
+                        SELECT jsonb_agg(df.field_id::text)
+                        FROM document_fields df
+                        WHERE df.document_id = d.id AND df.active = true
                     ), '[]'::jsonb)
                 ) ORDER BY d.name
             )
             FROM scenario_documents sd
             JOIN documents d ON d.id = sd.document_id
-            LEFT JOIN uploads u ON u.id = d.upload_id
+            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+            LEFT JOIN uploads u ON u.id = du.upload_id
             WHERE sd.scenario_id = $1 AND sd.active = true
         ),
         '[]'::jsonb
@@ -451,8 +456,8 @@ parameter_data_for_mapping AS (
         p.document_parameter,
         p.persona_parameter
     FROM parameters p
-    JOIN parameter_items pi ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
@@ -516,22 +521,23 @@ enhanced_parameter_mapping_data AS (
 ),
 parameter_item_data AS (
     SELECT 
-        pi.id,
-        pi.name,
-        COALESCE(pi.description, '') as description,
-        pi.parameter_id,
+        f.id,
+        f.name,
+        COALESCE(f.description, '') as description,
+        fp.parameter_id,
         p.name as parameter_name,
-        pi.value
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+        f.value
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
-    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
+    GROUP BY f.id, f.name, f.description, fp.parameter_id, p.id, p.name, f.value
     HAVING 
-        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
-    ORDER BY p.name, pi.name
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
+    ORDER BY p.name, f.name
 ),
 parameter_item_mapping_data AS (
     SELECT 

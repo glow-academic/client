@@ -213,14 +213,15 @@ WITH user_departments AS (
         ),
         parameter_items_data AS (
             SELECT 
-                pi.id,
-                pi.parameter_id,
-                pi.name,
-                COALESCE(pi.description, '') as description,
+                f.id,
+                fp.parameter_id,
+                f.name,
+                COALESCE(f.description, '') as description,
                 p.name as parameter_name,
-                pi.value
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
+                f.value
+            FROM fields f
+            JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+            JOIN parameters p ON p.id = fp.parameter_id
             WHERE p.id IN (SELECT id FROM parameters_data)
         ),
         parameter_items_list_data AS (
@@ -277,9 +278,9 @@ WITH user_departments AS (
         ),
         scenario_parameter_items_data AS (
             SELECT 
-                spi.scenario_id,
-                ARRAY_AGG(DISTINCT spi.parameter_item_id) as parameter_item_ids
-            FROM scenario_parameter_items spi
+                sf.scenario_id,
+                ARRAY_AGG(DISTINCT sf.field_id) as parameter_item_ids
+            FROM scenario_fields sf
             WHERE spi.scenario_id IN (SELECT id FROM valid_scenarios_list)
               AND spi.active = true
             GROUP BY spi.scenario_id

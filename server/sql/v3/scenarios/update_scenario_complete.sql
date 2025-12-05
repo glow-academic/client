@@ -177,23 +177,23 @@ insert_objectives AS (
     JOIN all_objectives ao ON ao.objective = owi.obj_text
 ),
 replace_parameters AS (
-    -- Delete all existing parameter links
-    DELETE FROM scenario_parameter_items 
+    -- Delete all existing field links
+    DELETE FROM scenario_fields 
     WHERE scenario_id = $1::uuid
 ),
 insert_parameters AS (
-    -- Insert new parameter links
-    INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active, created_at, updated_at)
+    -- Insert new field links
+    INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
     SELECT 
         $1::uuid,
-        param_item_id::uuid,
+        field_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($14::text[]) as param_item_id
+    FROM UNNEST($14::text[]) as field_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
       AND COALESCE(array_length($14::text[], 1), 0) > 0
-    ON CONFLICT (scenario_id, parameter_item_id) DO UPDATE SET
+    ON CONFLICT (scenario_id, field_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

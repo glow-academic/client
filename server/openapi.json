@@ -8267,6 +8267,382 @@
         ]
       }
     },
+    "/api/v3/fields/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "fields"
+        ],
+        "summary": "Get Fields List",
+        "description": "Get fields list with permissions and relationships.",
+        "operationId": "get_fields_list_api_v3_fields_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldsListRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
+      }
+    },
+    "/api/v3/fields/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "fields"
+        ],
+        "summary": "Get Field Detail",
+        "description": "Get detailed field information.",
+        "operationId": "get_field_detail_api_v3_fields_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
+      }
+    },
+    "/api/v3/fields/detail_default": {
+      "post": {
+        "tags": [
+          "v3",
+          "fields"
+        ],
+        "summary": "Get Field Detail Default",
+        "description": "Get default field detail for edit mode (same as detail).",
+        "operationId": "get_field_detail_default_api_v3_fields_detail_default_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
+      }
+    },
+    "/api/v3/fields/new": {
+      "post": {
+        "tags": [
+          "v3",
+          "fields"
+        ],
+        "summary": "Get Field New",
+        "description": "Get default field detail for creation mode.",
+        "operationId": "get_field_new_api_v3_fields_new_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldNewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldNewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
+      }
+    },
+    "/api/v3/fields/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "fields"
+        ],
+        "summary": "Create Field",
+        "description": "Create a new field with parameter and department associations.",
+        "operationId": "create_field_api_v3_fields_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFieldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateFieldResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
+      }
+    },
+    "/api/v3/fields/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "fields"
+        ],
+        "summary": "Update Field",
+        "description": "Update an existing field.",
+        "operationId": "update_field_api_v3_fields_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFieldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateFieldResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
+      }
+    },
+    "/api/v3/fields/duplicate": {
+      "post": {
+        "tags": [
+          "v3",
+          "fields"
+        ],
+        "summary": "Duplicate Field",
+        "description": "Duplicate a field with all parameter and department associations.",
+        "operationId": "duplicate_field_api_v3_fields_duplicate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateFieldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateFieldResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
+      }
+    },
+    "/api/v3/fields/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "fields"
+        ],
+        "summary": "Delete Field",
+        "description": "Delete a field.",
+        "operationId": "delete_field_api_v3_fields_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteFieldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteFieldResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
+      }
+    },
     "/api/v3/units/list": {
       "post": {
         "tags": [
@@ -13361,6 +13737,94 @@
         ],
         "title": "CreateFeedbackResponse"
       },
+      "CreateFieldRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "default_field": {
+            "type": "boolean",
+            "title": "Default Field",
+            "default": false
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "value",
+          "department_ids",
+          "parameter_ids",
+          "profileId"
+        ],
+        "title": "CreateFieldRequest",
+        "description": "Request to create field."
+      },
+      "CreateFieldResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "fieldId": {
+            "type": "string",
+            "title": "Fieldid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "fieldId",
+          "message"
+        ],
+        "title": "CreateFieldResponse",
+        "description": "Response from create field."
+      },
       "CreateKeyRequest": {
         "properties": {
           "name": {
@@ -15005,7 +15469,7 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -15903,6 +16367,44 @@
         ],
         "title": "DeleteEvalResponse",
         "description": "Response from delete eval."
+      },
+      "DeleteFieldRequest": {
+        "properties": {
+          "fieldId": {
+            "type": "string",
+            "title": "Fieldid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fieldId",
+          "profileId"
+        ],
+        "title": "DeleteFieldRequest",
+        "description": "Request to delete field."
+      },
+      "DeleteFieldResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeleteFieldResponse",
+        "description": "Response from delete field."
       },
       "DeleteKeyRequest": {
         "properties": {
@@ -17043,7 +17545,7 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -17252,6 +17754,49 @@
         ],
         "title": "DuplicateDepartmentResponse",
         "description": "Response for duplicating a department."
+      },
+      "DuplicateFieldRequest": {
+        "properties": {
+          "fieldId": {
+            "type": "string",
+            "title": "Fieldid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fieldId",
+          "profileId"
+        ],
+        "title": "DuplicateFieldRequest",
+        "description": "Request to duplicate field."
+      },
+      "DuplicateFieldResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "fieldId": {
+            "type": "string",
+            "title": "Fieldid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "fieldId",
+          "message"
+        ],
+        "title": "DuplicateFieldResponse",
+        "description": "Response from duplicate field."
       },
       "DuplicateModelRequest": {
         "properties": {
@@ -18159,6 +18704,329 @@
           "feedback"
         ],
         "title": "FeedbackListResponse"
+      },
+      "FieldDetailRequest": {
+        "properties": {
+          "fieldId": {
+            "type": "string",
+            "title": "Fieldid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fieldId",
+          "profileId"
+        ],
+        "title": "FieldDetailRequest"
+      },
+      "FieldDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "default_field": {
+            "type": "boolean",
+            "title": "Default Field"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Ids"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "valid_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "value",
+          "default_field",
+          "department_ids",
+          "parameter_ids",
+          "department_mapping",
+          "valid_department_ids",
+          "parameter_mapping",
+          "valid_parameter_ids",
+          "can_edit"
+        ],
+        "title": "FieldDetailResponse"
+      },
+      "FieldItem": {
+        "properties": {
+          "field_id": {
+            "type": "string",
+            "title": "Field Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "default_field": {
+            "type": "boolean",
+            "title": "Default Field"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description",
+          "value",
+          "default_field",
+          "parameter_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "FieldItem",
+        "description": "Field item for list view."
+      },
+      "FieldNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "FieldNewRequest"
+      },
+      "FieldNewResponse": {
+        "properties": {
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__fields__new__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "valid_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Ids"
+          },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__fields__new__ParameterMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "user_role": {
+            "type": "string",
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_department_ids",
+          "department_mapping",
+          "valid_parameter_ids",
+          "parameter_mapping",
+          "user_role",
+          "primary_department_id"
+        ],
+        "title": "FieldNewResponse"
+      },
+      "FieldsListRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "FieldsListRequest",
+        "description": "Request for fields list."
+      },
+      "FieldsListResponse": {
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldItem"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "parameter_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Parameter Options"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fields",
+          "parameter_mapping",
+          "department_mapping",
+          "parameter_options",
+          "department_options"
+        ],
+        "title": "FieldsListResponse",
+        "description": "Response for fields list."
       },
       "FilterOption": {
         "properties": {
@@ -22003,40 +22871,6 @@
         "title": "ParameterItemMappingItem",
         "description": "Parameter item mapping item - extends MappingItem with parameter context"
       },
-      "ParameterMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "type": "boolean",
-            "title": "Persona Parameter"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "numerical",
-          "document_parameter",
-          "persona_parameter"
-        ],
-        "title": "ParameterMappingItem",
-        "description": "Parameter mapping item - extends MappingItem"
-      },
       "ParameterNewRequest": {
         "properties": {
           "profileId": {
@@ -23094,7 +23928,7 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -30707,6 +31541,94 @@
         "title": "UpdateEvalResponse",
         "description": "Response from update eval."
       },
+      "UpdateFieldRequest": {
+        "properties": {
+          "fieldId": {
+            "type": "string",
+            "title": "Fieldid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "default_field": {
+            "type": "boolean",
+            "title": "Default Field"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fieldId",
+          "name",
+          "description",
+          "value",
+          "default_field",
+          "department_ids",
+          "parameter_ids",
+          "profileId"
+        ],
+        "title": "UpdateFieldRequest",
+        "description": "Request to update field."
+      },
+      "UpdateFieldResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "UpdateFieldResponse",
+        "description": "Response from update field."
+      },
       "UpdateKeyRequest": {
         "properties": {
           "keyId": {
@@ -34336,6 +35258,42 @@
         ],
         "title": "FeedbackItem"
       },
+      "app__api__v3__fields__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem"
+      },
+      "app__api__v3__fields__new__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ParameterMappingItem"
+      },
       "app__api__v3__home__overview__AttemptHistoryRow": {
         "properties": {
           "attemptId": {
@@ -36389,7 +37347,7 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -36842,7 +37800,7 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -37395,7 +38353,7 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -37910,7 +38868,7 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -39225,6 +40183,40 @@
         ],
         "title": "ModelMappingItem",
         "description": "Model mapping item - extends MappingItem"
+      },
+      "app__utils__schema__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item - extends MappingItem"
       },
       "app__utils__schema__StandardGroupMappingItem": {
         "properties": {

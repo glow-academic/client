@@ -39,38 +39,39 @@ user_profile AS (
 ),
 parameter_active_scenario_links AS (
     SELECT 
-        pi.parameter_id,
-        COUNT(DISTINCT spi.scenario_id) as active_scenario_count
+        fp.parameter_id,
+        COUNT(DISTINCT sf.scenario_id) as active_scenario_count
     FROM parameter_id_resolved pid
-    JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
-    JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
-    WHERE spi.active = true
-    GROUP BY pi.parameter_id
+    JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
+    JOIN scenario_fields sf ON sf.field_id = fp.field_id AND sf.active = true
+    GROUP BY fp.parameter_id
 ),
-parameter_item_departments_data AS (
+field_departments_data AS (
     SELECT 
-        pi.id as parameter_item_id,
-        ARRAY_AGG(pid_dept.department_id::text ORDER BY pid_dept.created_at) as department_ids
+        f.id as field_id,
+        ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
     FROM parameter_id_resolved pid
-    JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
-    LEFT JOIN parameter_item_departments pid_dept ON pid_dept.parameter_item_id = pi.id AND pid_dept.active = true
-    GROUP BY pi.id
+    JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
+    JOIN fields f ON f.id = fp.field_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    GROUP BY f.id
 ),
 parameter_departments_aggregated AS (
     SELECT 
-        ARRAY_AGG(pid_dept.department_id::text ORDER BY pid_dept.department_id) as department_ids
+        ARRAY_AGG(fd.department_id::text ORDER BY fd.department_id) as department_ids
     FROM parameter_id_resolved pid
-    JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
-    JOIN parameter_item_departments pid_dept ON pid_dept.parameter_item_id = pi.id AND pid_dept.active = true
+    JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
+    JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
 ),
 user_has_parameter_access AS (
-    -- Check if user has access to parameter via parameter item department links
+    -- Check if user has access to parameter via field department links
     SELECT EXISTS(
-        SELECT 1 FROM parameter_item_departments pid_dept
-        JOIN profile_departments pd ON pd.department_id = pid_dept.department_id
-        JOIN parameter_items pi ON pi.id = pid_dept.parameter_item_id
-        WHERE pi.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
-        AND pid_dept.active = true
+        SELECT 1 FROM field_departments fd
+        JOIN profile_departments pd ON pd.department_id = fd.department_id
+        JOIN field_parameters fp ON fp.field_id = fd.field_id
+        WHERE fp.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+        AND fp.active = true
+        AND fd.active = true
         AND pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
         AND pd.active = true
     ) OR EXISTS(
@@ -78,11 +79,12 @@ user_has_parameter_access AS (
         JOIN profiles p ON p.id = rpi.resolved_profile_id
         WHERE p.role = 'superadmin'
     ) OR (
-        -- Default parameters (no department links on any items) are accessible to all
-        SELECT COUNT(*) FROM parameter_item_departments pid_dept
-        JOIN parameter_items pi ON pi.id = pid_dept.parameter_item_id
-        WHERE pi.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
-        AND pid_dept.active = true
+        -- Default parameters (no department links on any fields) are accessible to all
+        SELECT COUNT(*) FROM field_departments fd
+        JOIN field_parameters fp ON fp.field_id = fd.field_id
+        WHERE fp.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+        AND fp.active = true
+        AND fd.active = true
     ) = 0 as has_access
 ),
 parameter_data AS (
@@ -108,19 +110,20 @@ parameter_data AS (
     LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
     CROSS JOIN user_profile up
 ),
-parameter_items_with_usage AS (
+fields_with_usage AS (
     SELECT 
-        pi.id,
-        pi.name,
-        pi.description,
-        pi.value,
-        COALESCE(COUNT(spi.scenario_id), 0) as usage_count,
-        COALESCE(pidd.department_ids, NULL) as department_ids
+        f.id,
+        f.name,
+        f.description,
+        f.value,
+        COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
+        COALESCE(fdd.department_ids, NULL) as department_ids
     FROM parameter_id_resolved pid
-    JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
-    LEFT JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id AND spi.active = true
-    LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_item_id = pi.id
-    GROUP BY pi.id, pi.name, pi.description, pi.value, pidd.department_ids
+    JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
+    JOIN fields f ON f.id = fp.field_id
+    LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
+    LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
+    GROUP BY f.id, f.name, f.description, f.value, fdd.department_ids
 ),
 items_json AS (
     SELECT COALESCE(
@@ -130,13 +133,14 @@ items_json AS (
                 'name', name,
                 'description', description,
                 'value', value,
-                'usage_count', usage_count
+                'usage_count', usage_count,
+                'department_ids', department_ids
             )
             ORDER BY name
         ),
         '[]'::jsonb
     ) as items
-    FROM parameter_items_with_usage
+    FROM fields_with_usage
 ),
 valid_depts AS (
     SELECT 

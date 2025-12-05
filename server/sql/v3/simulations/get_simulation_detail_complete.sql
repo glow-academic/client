@@ -120,9 +120,9 @@ user_context AS (
                 ss.hint_agent_id::text,
                 stl.time_limit_seconds,
                 COALESCE(
-                    (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
-                     FROM scenario_parameter_items spi
-                     WHERE spi.scenario_id = s.id AND spi.active = true),
+                    (SELECT ARRAY_AGG(DISTINCT sf.field_id)
+                     FROM scenario_fields sf
+                     WHERE sf.scenario_id = s.id AND sf.active = true),
                     ARRAY[]::uuid[]
                 ) as parameter_item_ids
             FROM scenarios s
@@ -452,8 +452,8 @@ user_context AS (
                 p.document_parameter,
                 p.persona_parameter
             FROM parameters p
-            JOIN parameter_items pi ON pi.parameter_id = p.id
-            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+            LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
             CROSS JOIN user_department_ids udi
             WHERE p.active = true
             GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
@@ -482,14 +482,15 @@ user_context AS (
         ),
         parameter_items_data AS (
             SELECT 
-                pi.id,
-                pi.parameter_id,
-                pi.name,
-                COALESCE(pi.description, '') as description,
+                f.id,
+                fp.parameter_id,
+                f.name,
+                COALESCE(f.description, '') as description,
                 p.name as parameter_name,
-                pi.value
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
+                f.value
+            FROM fields f
+            JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+            JOIN parameters p ON p.id = fp.parameter_id
             WHERE p.id IN (SELECT id FROM parameters_data)
         ),
         parameter_items_list_data AS (
@@ -546,12 +547,12 @@ user_context AS (
         ),
         scenario_parameter_items_data AS (
             SELECT 
-                spi.scenario_id,
-                ARRAY_AGG(DISTINCT spi.parameter_item_id) as parameter_item_ids
-            FROM scenario_parameter_items spi
-            WHERE spi.scenario_id IN (SELECT id FROM valid_scenarios_list)
-              AND spi.active = true
-            GROUP BY spi.scenario_id
+                sf.scenario_id,
+                ARRAY_AGG(DISTINCT sf.field_id) as parameter_item_ids
+            FROM scenario_fields sf
+            WHERE sf.scenario_id IN (SELECT id FROM valid_scenarios_list)
+              AND sf.active = true
+            GROUP BY sf.scenario_id
         ),
         all_document_ids AS (
             SELECT DISTINCT unnest(document_ids) as document_id

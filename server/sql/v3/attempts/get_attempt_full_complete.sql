@@ -109,16 +109,17 @@
                             END,
                             'filePath', u.file_path,
                             'mimeType', u.mime_type,
-                            'uploadId', d.upload_id::text,
+                            'uploadId', du.upload_id::text,
                             'type', 'policy'
                         )
                     )
                     FROM video_documents vd
                     JOIN documents d ON d.id = vd.document_id
-                    LEFT JOIN uploads u ON u.id = d.upload_id
-                    JOIN parameter_items pi ON pi.parameter_id = (SELECT id FROM parameters WHERE name = 'Document Type' AND document_parameter = true LIMIT 1)
-                    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = pi.id AND dpi.active = true
-                    WHERE vd.video_id = v.id AND vd.active = true AND d.active = true AND pi.value = 'policy'),
+                    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+                    LEFT JOIN uploads u ON u.id = du.upload_id
+                    JOIN fields f ON f.id IN (SELECT f2.id FROM fields f2 JOIN field_parameters fp2 ON fp2.field_id = f2.id AND fp2.active = true JOIN parameters p2 ON p2.id = fp2.parameter_id WHERE p2.name = 'Document Type' AND p2.document_parameter = true LIMIT 1)
+                    JOIN document_fields df ON df.document_id = d.id AND df.field_id = f.id AND df.active = true
+                    WHERE vd.video_id = v.id AND vd.active = true AND d.active = true AND f.value = 'policy'),
                     '[]'::jsonb
                 ) as policies,
                 -- Get questions with timestamps and options
@@ -809,9 +810,9 @@
                         'file_path', d.file_path,
                         'mime_type', d.mime_type,
                         'parameter_item_ids', COALESCE(
-                            (SELECT array_agg(DISTINCT dpi.parameter_item_id::text)
-                             FROM document_parameter_items dpi
-                             WHERE dpi.document_id = d.id AND dpi.active = true),
+                            (SELECT array_agg(DISTINCT df.field_id::text)
+                             FROM document_fields df
+                             WHERE df.document_id = d.id AND df.active = true),
                             ARRAY[]::text[]
                         )
                     )
@@ -819,7 +820,8 @@
                 '[]'::jsonb
             ) as scenario_documents
             FROM documents d
-            LEFT JOIN uploads u ON u.id = d.upload_id
+            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+            LEFT JOIN uploads u ON u.id = du.upload_id
             JOIN scenario_documents sd ON sd.document_id = d.id
             CROSS JOIN scenario_ids_list sil
             WHERE sd.scenario_id = ANY(sil.scenario_ids) AND d.active = true

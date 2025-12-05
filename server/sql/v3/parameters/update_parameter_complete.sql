@@ -41,9 +41,9 @@ update_parameter AS (
     WHERE id = $1::uuid
     RETURNING id::text as parameter_id
 ),
-delete_existing_items AS (
-    -- Delete all existing parameter items (cascade deletes parameter_item_departments)
-    DELETE FROM parameter_items 
+delete_existing_field_links AS (
+    -- Delete all existing field_parameters links (fields themselves are not deleted)
+    DELETE FROM field_parameters 
     WHERE parameter_id = $1::uuid
 ),
 items_expanded AS (
@@ -67,51 +67,63 @@ items_expanded AS (
     FROM jsonb_array_elements(COALESCE($9::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
     WHERE COALESCE(jsonb_array_length(COALESCE($9::jsonb, '[]'::jsonb)), 0) > 0
 ),
-new_items AS (
-    -- Create all parameter items
-    INSERT INTO parameter_items (
-        parameter_id,
+new_fields AS (
+    -- Create all fields (formerly parameter items)
+    INSERT INTO fields (
         name,
         description,
         value
     )
     SELECT 
-        $1::uuid,
         ie.item_name,
         ie.item_description,
         ie.item_value
     FROM items_expanded ie
-    RETURNING id::text as item_id, name as item_name
+    RETURNING id::text as field_id, name as field_name
 ),
-new_items_with_order AS (
-    -- Add row numbers to new items for matching
+new_fields_with_order AS (
+    -- Add row numbers to new fields for matching
     SELECT 
-        item_id,
-        item_name,
-        ROW_NUMBER() OVER (ORDER BY item_name) as item_row_num
-    FROM new_items
+        field_id,
+        field_name,
+        ROW_NUMBER() OVER (ORDER BY field_name) as field_row_num
+    FROM new_fields
 ),
-items_with_depts AS (
-    -- Match items with their department arrays using row number
+fields_with_order AS (
+    -- Match fields with items_expanded using row number
     SELECT 
-        ni.item_id,
+        nf.field_id,
         ie.department_ids
-    FROM new_items_with_order ni
-    JOIN items_expanded ie ON ie.item_order = ni.item_row_num
-    WHERE ie.department_ids IS NOT NULL AND array_length(ie.department_ids, 1) > 0
+    FROM new_fields_with_order nf
+    JOIN items_expanded ie ON ie.item_order = nf.field_row_num
+),
+link_fields_to_parameter AS (
+    -- Link fields to parameter via field_parameters junction
+    INSERT INTO field_parameters (field_id, parameter_id, active, created_at, updated_at)
+    SELECT 
+        fwo.field_id::uuid,
+        $1::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM fields_with_order fwo
+    ON CONFLICT (field_id, parameter_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 link_departments AS (
-    -- Link departments to items if provided
-    INSERT INTO parameter_item_departments (parameter_item_id, department_id, active, created_at, updated_at)
+    -- Link departments to fields if provided
+    INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
     SELECT 
-        iwd.item_id::uuid,
+        fwo.field_id::uuid,
         dept_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM items_with_depts iwd
-    CROSS JOIN UNNEST(iwd.department_ids) as dept_id
-    ON CONFLICT (parameter_item_id, department_id) DO UPDATE SET
+    FROM fields_with_order fwo
+    CROSS JOIN UNNEST(fwo.department_ids) as dept_id
+    WHERE fwo.department_ids IS NOT NULL AND array_length(fwo.department_ids, 1) > 0
+    ON CONFLICT (field_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

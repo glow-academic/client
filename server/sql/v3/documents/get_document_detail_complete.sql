@@ -7,7 +7,7 @@ WITH document_data AS (
         d.classify_agent_id::text,
         d.document_agent_id::text,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
-        (SELECT ARRAY_AGG(dpi.parameter_item_id::text) FROM document_parameter_items dpi WHERE dpi.document_id = d.id AND dpi.active = true) as parameter_item_ids,
+        (SELECT ARRAY_AGG(df.field_id::text) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as parameter_item_ids,
         (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
         (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as template_upload_id
     FROM documents d
@@ -25,11 +25,11 @@ department_parameter_ids AS (
         COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
     FROM user_departments ud
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-    WHERE (pid.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                                                     JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                                                     WHERE pi2.parameter_id = p.id AND pid2.active = true))
+    LEFT JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    WHERE (fd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                                                     JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                                                     WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
     GROUP BY ud.id
 ),
 valid_depts AS (
@@ -53,30 +53,31 @@ valid_param_items AS (
     SELECT 
         COALESCE(
             jsonb_object_agg(
-                pi.id::text,
+                f.id::text,
                 jsonb_build_object(
-                    'name', pi.name,
-                    'description', COALESCE(pi.description, ''),
-                    'parameter_id', pi.parameter_id::text,
+                    'name', f.name,
+                    'description', COALESCE(f.description, ''),
+                    'parameter_id', fp.parameter_id::text,
                     'parameter_name', p.name
                 )
             ),
             '{}'::jsonb
         ) as param_item_mapping,
-        array_agg(pi.id::text ORDER BY pi.name) as param_item_ids
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
+        array_agg(f.id::text ORDER BY f.name) as param_item_ids
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
     CROSS JOIN document_data dd
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true
       AND (
           (dd.department_ids IS NULL OR array_length(dd.department_ids, 1) = 0)
-          AND NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+          AND NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
       )
       OR (
           dd.department_ids IS NOT NULL 
           AND array_length(dd.department_ids, 1) > 0
-          AND pid.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
+          AND fd.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
       )
 ),
 user_departments_for_agents AS (

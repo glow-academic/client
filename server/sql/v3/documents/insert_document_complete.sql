@@ -4,7 +4,7 @@
 --   $2 = name (text)
 --   $3 = upload_id (uuid, nullable - for regular documents)
 --   $4 = department_ids (uuid[])
---   $5 = parameter_item_ids (uuid[])
+--   $5 = field_ids (uuid[])
 --   $6 = template (boolean, default false)
 --   $7 = template_upload_id (uuid, nullable - for template HTML)
 --   $8 = template_args (jsonb, nullable - template schema)
@@ -60,10 +60,10 @@ insert_depts AS (
     WHERE cardinality($4::uuid[]) > 0
     RETURNING document_id
 ),
-insert_params AS (
-    INSERT INTO document_parameter_items (document_id, parameter_item_id, active, created_at, updated_at)
-    SELECT $1, param_id, true, NOW(), NOW()
-    FROM unnest($5::uuid[]) as param_id
+insert_fields AS (
+    INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
+    SELECT $1, field_id, true, NOW(), NOW()
+    FROM unnest($5::uuid[]) as field_id
     WHERE cardinality($5::uuid[]) > 0
     RETURNING document_id
 )

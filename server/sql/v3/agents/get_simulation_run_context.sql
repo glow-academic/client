@@ -146,7 +146,8 @@ LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents d ON d.id = sd.document_id
-LEFT JOIN uploads u ON u.id = d.upload_id
+LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+LEFT JOIN uploads u ON u.id = du.upload_id
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 CROSS JOIN resolved_dept

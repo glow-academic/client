@@ -515,7 +515,8 @@ scenario_documents_data AS (
         '[]'::jsonb
     ) as scenario_documents
     FROM documents d
-    LEFT JOIN uploads u ON u.id = d.upload_id
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
     JOIN scenario_documents sd ON sd.document_id = d.id
     CROSS JOIN chats_base cb
     WHERE sd.scenario_id = cb.scenario_id AND d.active = true

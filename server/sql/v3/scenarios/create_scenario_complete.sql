@@ -160,18 +160,18 @@ link_objectives AS (
     JOIN all_objectives ao ON ao.objective = owi.obj_text
 ),
 link_parameters AS (
-    -- Link parameter items
-    INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active, created_at, updated_at)
+    -- Link fields
+    INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
     SELECT 
         ns.scenario_id::uuid,
-        param_item_id::uuid,
+        field_id::uuid,
         true,
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($14::text[]) as param_item_id
+    CROSS JOIN UNNEST($14::text[]) as field_id
     WHERE COALESCE(array_length($14::text[], 1), 0) > 0
-    ON CONFLICT (scenario_id, parameter_item_id) DO UPDATE SET
+    ON CONFLICT (scenario_id, field_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

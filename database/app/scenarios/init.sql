@@ -43,34 +43,45 @@ CREATE TABLE parameters (
   video_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE parameter_items (
+CREATE TABLE fields (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   value TEXT        NOT NULL,
-  parameter_id UUID        NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
-  default_item BOOLEAN     NOT NULL DEFAULT FALSE
+  default_field BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
--- Parameter Items → Departments junction table (BCNF normalization)
--- Links parameter items to departments (moved from parameter_departments)
+-- Fields → Parameters junction table (BCNF normalization)
+-- Many-to-many relationship: fields can be associated with multiple parameters
+-- No records = field not associated with any parameter
+CREATE TABLE field_parameters (
+  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
+  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  active            BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (field_id, parameter_id)
+);
+
+CREATE INDEX ON field_parameters (field_id);
+CREATE INDEX ON field_parameters (parameter_id);
+
+-- Fields → Departments junction table (BCNF normalization)
+-- Links fields to departments (moved from parameter_item_departments)
 -- No records = available to all departments (cross-department)
-CREATE TABLE parameter_item_departments (
-  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+CREATE TABLE field_departments (
+  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
   department_id     UUID NOT NULL REFERENCES departments(id)   ON DELETE CASCADE,
   active            BOOLEAN NOT NULL DEFAULT TRUE,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (parameter_item_id, department_id)
+  PRIMARY KEY (field_id, department_id)
 );
 
-CREATE INDEX ON parameter_item_departments (parameter_item_id);
-CREATE INDEX ON parameter_item_departments (department_id);
-
--- Note: Parameter item tags are now managed via simulation_tags → simulation_tag_parameter_items
--- See simulations/init.sql for tag-related tables
+CREATE INDEX ON field_departments (field_id);
+CREATE INDEX ON field_departments (department_id);
   
 CREATE TABLE scenarios (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -144,18 +155,18 @@ CREATE TABLE scenario_objectives (
 CREATE INDEX ON scenario_objectives (scenario_id);
 CREATE INDEX ON scenario_objectives (objective_id);
 
--- Scenario → Parameter Items junction table
-CREATE TABLE scenario_parameter_items (
+-- Scenario → Fields junction table
+CREATE TABLE scenario_fields (
   scenario_id      UUID NOT NULL REFERENCES scenarios(id)       ON DELETE CASCADE,
-  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
   active           BOOLEAN NOT NULL DEFAULT TRUE,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (scenario_id, parameter_item_id)
+  PRIMARY KEY (scenario_id, field_id)
 );
 
-CREATE INDEX ON scenario_parameter_items (scenario_id);
-CREATE INDEX ON scenario_parameter_items (parameter_item_id);
+CREATE INDEX ON scenario_fields (scenario_id);
+CREATE INDEX ON scenario_fields (field_id);
 
 -- Scenario → Documents junction table  
 CREATE TABLE scenario_documents (
@@ -186,19 +197,19 @@ CREATE INDEX ON scenario_images (scenario_id);
 CREATE INDEX ON scenario_images (upload_id);
 CREATE INDEX ON scenario_images (scenario_id, active);
 
--- Document → Parameter Items junction table (BCNF normalization)
--- Allows documents to be filtered by parameter values
-CREATE TABLE document_parameter_items (
+-- Document → Fields junction table (BCNF normalization)
+-- Allows documents to be filtered by field values
+CREATE TABLE document_fields (
   document_id       UUID NOT NULL REFERENCES documents(id)       ON DELETE CASCADE,
-  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
   active            BOOLEAN NOT NULL DEFAULT TRUE,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (document_id, parameter_item_id)
+  PRIMARY KEY (document_id, field_id)
 );
 
-CREATE INDEX ON document_parameter_items (document_id);
-CREATE INDEX ON document_parameter_items (parameter_item_id);
+CREATE INDEX ON document_fields (document_id);
+CREATE INDEX ON document_fields (field_id);
 
 -- Scenario hierarchy with no NULLs (self-edge denotes root)
 CREATE TABLE scenario_tree (

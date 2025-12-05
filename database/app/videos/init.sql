@@ -140,18 +140,18 @@ CREATE INDEX ON video_images (video_id);
 CREATE INDEX ON video_images (upload_id);
 CREATE INDEX ON video_images (video_id, active);
 
--- Video → Parameter Items junction table (BCNF normalization)
-CREATE TABLE video_parameter_items (
+-- Video → Fields junction table (BCNF normalization)
+CREATE TABLE video_fields (
   video_id         UUID NOT NULL REFERENCES videos(id)       ON DELETE CASCADE,
-  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
   active           BOOLEAN NOT NULL DEFAULT TRUE,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (video_id, parameter_item_id)
+  PRIMARY KEY (video_id, field_id)
 );
 
-CREATE INDEX ON video_parameter_items (video_id);
-CREATE INDEX ON video_parameter_items (parameter_item_id);
+CREATE INDEX ON video_fields (video_id);
+CREATE INDEX ON video_fields (field_id);
 
 -- Video → Uploads junction table (BCNF normalization)
 -- Allows version history of video uploads

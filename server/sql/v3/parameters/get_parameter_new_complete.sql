@@ -34,18 +34,18 @@ user_departments AS (
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
     WHERE pd.active = true
 ),
-parameter_item_departments_for_filter AS (
+field_departments_for_filter AS (
     SELECT DISTINCT
-        pi.parameter_id,
-        pid.department_id
-    FROM parameter_items pi
-    JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id
-    WHERE pid.active = true
+        fp.parameter_id,
+        fd.department_id
+    FROM field_parameters fp
+    JOIN field_departments fd ON fd.field_id = fp.field_id
+    WHERE fp.active = true AND fd.active = true
 ),
 default_parameter AS (
     SELECT p.id
     FROM parameters p
-    LEFT JOIN parameter_item_departments_for_filter pidf ON pidf.parameter_id = p.id
+    LEFT JOIN field_departments_for_filter fdf ON fdf.parameter_id = p.id
     WHERE p.active = true
     GROUP BY p.id
     HAVING 
@@ -59,10 +59,11 @@ default_parameter AS (
 ),
 parameter_departments_aggregated AS (
     SELECT 
-        ARRAY_AGG(pid.department_id::text ORDER BY pid.department_id) as department_ids
-    FROM parameter_items pi
-    JOIN default_parameter dp ON pi.parameter_id = dp.id
-    JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+        ARRAY_AGG(fd.department_id::text ORDER BY fd.department_id) as department_ids
+    FROM field_parameters fp
+    JOIN default_parameter dp ON fp.parameter_id = dp.id
+    JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    WHERE fp.active = true
 ),
 parameter_data AS (
     SELECT 
@@ -77,28 +78,30 @@ parameter_data AS (
     JOIN default_parameter dp ON p.id = dp.id
     LEFT JOIN parameter_departments_aggregated pda ON true
 ),
-parameter_item_departments_data AS (
+field_departments_data AS (
     SELECT 
-        pi.id as parameter_item_id,
-        ARRAY_AGG(pid.department_id::text ORDER BY pid.created_at) as department_ids
-    FROM parameter_items pi
-    JOIN default_parameter dp ON pi.parameter_id = dp.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-    GROUP BY pi.id
+        f.id as parameter_item_id,
+        ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN default_parameter dp ON fp.parameter_id = dp.id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    GROUP BY f.id
 ),
 parameter_items_with_usage AS (
     SELECT 
-        pi.id,
-        pi.name,
-        pi.description,
-        pi.value,
-        COALESCE(COUNT(spi.scenario_id), 0) as usage_count,
-        COALESCE(pidd.department_ids, NULL) as department_ids
-    FROM parameter_items pi
-    JOIN default_parameter dp ON pi.parameter_id = dp.id
-    LEFT JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id AND spi.active = true
-    LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_item_id = pi.id
-    GROUP BY pi.id, pi.name, pi.description, pi.value, pidd.department_ids
+        f.id,
+        f.name,
+        f.description,
+        f.value,
+        COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
+        COALESCE(fdd.department_ids, NULL) as department_ids
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN default_parameter dp ON fp.parameter_id = dp.id
+    LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
+    LEFT JOIN field_departments_data fdd ON fdd.parameter_item_id = f.id
+    GROUP BY f.id, f.name, f.description, f.value, fdd.department_ids
 ),
 items_json AS (
     SELECT COALESCE(

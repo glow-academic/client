@@ -5,13 +5,14 @@ WITH params AS (
     -- Explicitly cast parameters for asyncpg type inference
     SELECT $1::uuid as department_id, $2::uuid[] as document_ids, $3::uuid[] as question_ids, $4::uuid[] as parameter_item_ids, $5::uuid as profile_id, $6::uuid as video_id
 ),
--- Get policy parameter item ID for filtering
+-- Get policy field ID for filtering
 policy_param_item AS (
-    SELECT pi.id
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
+    SELECT f.id
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' AND p.document_parameter = true
-    AND pi.value = 'policy'
+    AND f.value = 'policy'
     LIMIT 1
 ),
 video_info AS (
@@ -116,9 +117,10 @@ SELECT
             ORDER BY array_position(p.document_ids, d.id)
         )
         FROM documents d
-        LEFT JOIN uploads u ON u.id = d.upload_id
+        LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+        LEFT JOIN uploads u ON u.id = du.upload_id
         CROSS JOIN policy_param_item ppi
-        JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+        JOIN document_fields df ON df.document_id = d.id AND df.field_id = ppi.id AND df.active = true
         WHERE d.id = ANY(p.document_ids) AND d.active = true
         ),
         '[]'::json
@@ -154,9 +156,10 @@ SELECT
             )
             ORDER BY array_position(p.parameter_item_ids, pi.id)
         )
-        FROM parameter_items pi
-        JOIN parameters pa ON pi.parameter_id = pa.id
-        WHERE pi.id = ANY(p.parameter_item_ids)
+        FROM fields f
+        JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+        JOIN parameters pa ON pa.id = fp.parameter_id
+        WHERE f.id = ANY(p.parameter_item_ids)
         ),
         '[]'::json
     ) as parameter_items,

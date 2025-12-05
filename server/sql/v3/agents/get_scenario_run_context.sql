@@ -82,7 +82,8 @@ SELECT
             ORDER BY array_position(p.document_ids, d.id)
         )
         FROM documents d
-        LEFT JOIN uploads u ON u.id = d.upload_id
+        LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+        LEFT JOIN uploads u ON u.id = du.upload_id
         WHERE d.id = ANY(p.document_ids)
         ),
         '[]'::json
@@ -92,16 +93,17 @@ SELECT
     COALESCE(
         (SELECT json_agg(
             json_build_object(
-                'item_name', pi.name,
-                'item_description', pi.description,
+                'item_name', f.name,
+                'item_description', f.description,
                 'param_name', pa.name,
                 'param_description', pa.description
             )
-            ORDER BY array_position(p.parameter_item_ids, pi.id)
+            ORDER BY array_position(p.parameter_item_ids, f.id)
         )
-        FROM parameter_items pi
-        JOIN parameters pa ON pi.parameter_id = pa.id
-        WHERE pi.id = ANY(p.parameter_item_ids)
+        FROM fields f
+        JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+        JOIN parameters pa ON pa.id = fp.parameter_id
+        WHERE f.id = ANY(p.parameter_item_ids)
         ),
         '[]'::json
     ) as parameter_items,
