@@ -126,9 +126,9 @@ export default function Parameter({
       active: false,
       document_parameter: false,
       practice_parameter: false,
-      departmentIds: null, // No longer used at parameter level
+      departmentIds: defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
     }),
-    []
+    [defaultDepartmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -213,13 +213,13 @@ export default function Parameter({
         active: parameterData.active,
         document_parameter: parameterData.document_parameter ?? false,
         practice_parameter: parameterData.practice_parameter ?? false,
-        departmentIds: null, // No longer used at parameter level
+        departmentIds: parameterData.department_ids || null,
       });
     } else if (!isEditMode && parameterData) {
       // For create mode, use data from default detail endpoint
       setFormData({
         ...initialFormData,
-        departmentIds: null, // No longer used at parameter level
+        departmentIds: defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
       });
     }
   }, [parameterData, isEditMode, initialFormData]);
@@ -514,6 +514,34 @@ export default function Parameter({
                 />
               ) : null}
             </div>
+
+            {/* Department Selection */}
+            {validDepartmentIds.length > 1 && (
+              <div className="space-y-2">
+                <Label>Departments</Label>
+                {formData?.departmentIds !== undefined ? (
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={validDepartmentIds}
+                    selectedIds={formData.departmentIds || []}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        departmentIds: ids.length > 0 ? ids : null,
+                      }))
+                    }
+                    placeholder="All Departments"
+                    multiSelect={true}
+                    disabled={
+                      isEditMode && parameterDetail && !parameterDetail.can_edit
+                    }
+                  />
+                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to make this parameter available to all departments
+                </p>
+              </div>
+            )}
 
             {/* Active Switch */}
             <div className="space-y-2 pt-2">

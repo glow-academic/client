@@ -2,19 +2,27 @@ WITH document_data AS (
     SELECT 
         d.id::text as document_id,
         d.name,
+        d.description,
         d.active,
-        d.template,
-        d.template_args,
         d.updated_at,
         d.classify_agent_id::text,
         d.document_agent_id::text,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id::text) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as parameter_item_ids,
         (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as template_upload_id,
+        (SELECT dtu.upload_id::text FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_upload_id,
+        (SELECT dtu.args FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_args,
+        (SELECT dtu.instructions FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_instructions,
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
+        (SELECT u.file_path FROM document_template_uploads dtu
+         JOIN uploads u ON u.id = dtu.upload_id 
+         WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_file_path,
+        (CASE 
+            WHEN EXISTS (SELECT 1 FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true) THEN true
+            ELSE false
+        END) as template,
         (SELECT ARRAY_AGG(DISTINCT st.parent_id::text) FROM scenario_documents sd
          JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
          WHERE sd.document_id = d.id AND sd.active = true) as scenario_ids,

@@ -5947,6 +5947,8 @@ export interface components {
         CreateDocumentRequest: {
             /** Name */
             name: string;
+            /** Description */
+            description?: string | null;
             /** Uploadid */
             uploadId?: string | null;
             /** Departmentids */
@@ -5955,17 +5957,14 @@ export interface components {
             parameterItemIds?: string[] | null;
             /** Profileid */
             profileId: string;
-            /**
-             * Template
-             * @default false
-             */
-            template: boolean;
             /** Templateuploadid */
             templateUploadId?: string | null;
             /** Templateargs */
             templateArgs?: {
                 [key: string]: unknown;
             } | null;
+            /** Instructions */
+            instructions?: string | null;
         };
         /**
          * CreateDocumentResponse
@@ -7397,6 +7396,8 @@ export interface components {
             document_id: string;
             /** Name */
             name: string;
+            /** Description */
+            description: string;
             /** Active */
             active: boolean;
             /** Type */
@@ -7455,6 +7456,8 @@ export interface components {
             template_upload_id: string | null;
             /** Template Html */
             template_html: string | null;
+            /** Template Instructions */
+            template_instructions: string | null;
         };
         /**
          * DocumentItem
@@ -12873,6 +12876,8 @@ export interface components {
             documentId: string;
             /** Name */
             name?: string | null;
+            /** Description */
+            description?: string | null;
             /** Active */
             active?: boolean | null;
             /** Department Id */
@@ -12886,12 +12891,14 @@ export interface components {
             classify_agent_id?: string | null;
             /** Document Agent Id */
             document_agent_id?: string | null;
-            /** Template */
-            template?: boolean | null;
+            /** Templateuploadid */
+            templateUploadId?: string | null;
             /** Templateargs */
             templateArgs?: {
                 [key: string]: unknown;
             } | null;
+            /** Instructions */
+            instructions?: string | null;
         };
         /**
          * UpdateDocumentResponse

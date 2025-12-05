@@ -126,6 +126,26 @@ link_departments AS (
     ON CONFLICT (field_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
+),
+delete_existing_parameter_departments AS (
+    -- Delete all existing parameter_departments links
+    DELETE FROM parameter_departments 
+    WHERE parameter_id = $1::uuid
+),
+link_parameter_departments AS (
+    -- Link departments to parameter if provided at parameter level
+    INSERT INTO parameter_departments (parameter_id, department_id, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($8::text[]) as dept_id
+    WHERE $8::text[] IS NOT NULL AND array_length($8::text[], 1) > 0
+    ON CONFLICT (parameter_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 )
 SELECT parameter_id FROM update_parameter
 

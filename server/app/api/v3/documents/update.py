@@ -19,13 +19,15 @@ class UpdateDocumentRequest(BaseModel):
 
     documentId: str
     name: str | None = None
+    description: str | None = None
     active: bool | None = None
     department_id: str | None = None
     parameter_item_ids: list[str] = []
     classify_agent_id: str | None = None
     document_agent_id: str | None = None
-    template: bool | None = None
+    templateUploadId: str | None = None  # Template HTML upload
     templateArgs: dict[str, Any] | None = None  # Template schema JSON
+    instructions: str | None = None  # Template instructions
 
 
 class UpdateDocumentResponse(BaseModel):
@@ -65,25 +67,29 @@ async def update_document(
             sql_params = (
                 uuid.UUID(request.documentId),
                 request.name,
+                request.description,
                 request.active,
                 uuid.UUID(request.department_id) if request.department_id else None,
                 param_item_ids,
                 uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
                 uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
-                request.template,
+                uuid.UUID(request.templateUploadId) if request.templateUploadId else None,
                 template_args_jsonb,
+                request.instructions,
             )
             await conn.execute(
                 sql_query,
                 uuid.UUID(request.documentId),
                 request.name,
+                request.description,
                 request.active,
                 uuid.UUID(request.department_id) if request.department_id else None,
                 param_item_ids,
                 uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
                 uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
-                request.template,
+                uuid.UUID(request.templateUploadId) if request.templateUploadId else None,
                 template_args_jsonb,
+                request.instructions,
             )
 
         result = UpdateDocumentResponse(

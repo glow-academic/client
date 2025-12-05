@@ -21,13 +21,14 @@ class CreateDocumentRequest(BaseModel):
     """Request to create document."""
 
     name: str
+    description: str | None = None
     uploadId: str | None = None  # Regular document upload
     departmentIds: list[str] | None = None
     parameterItemIds: list[str] | None = None
     profileId: str
-    template: bool = False
     templateUploadId: str | None = None  # Template HTML upload
     templateArgs: dict[str, Any] | None = None  # Template schema JSON
+    instructions: str | None = None  # Template instructions
 
 
 class CreateDocumentResponse(BaseModel):
@@ -73,24 +74,26 @@ async def create_document(
         sql_params = (
             document_id,
             request_body.name,
+            request_body.description or '',
             uuid.UUID(request_body.uploadId) if request_body.uploadId else None,
             dept_uuids,
             param_item_uuids,
-            request_body.template,
             uuid.UUID(request_body.templateUploadId) if request_body.templateUploadId else None,
             template_args_jsonb,
+            request_body.instructions or '',
         )
 
         await conn.execute(
             sql_query,
             document_id,
             request_body.name,
+            request_body.description or '',
             uuid.UUID(request_body.uploadId) if request_body.uploadId else None,
             dept_uuids,
             param_item_uuids,
-            request_body.template,
             uuid.UUID(request_body.templateUploadId) if request_body.templateUploadId else None,
             template_args_jsonb,
+            request_body.instructions or '',
         )
 
         result_data = CreateDocumentResponse(

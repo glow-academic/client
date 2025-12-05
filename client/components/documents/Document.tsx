@@ -131,16 +131,16 @@ export default function Document({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
+    description: string;
     active: boolean;
-    template: boolean;
     departmentIds: string[];
     parameterItemIds: string[];
     classifyAgentId: string | null;
     documentAgentId: string | null;
   }>({
     name: "",
+    description: "",
     active: true,
-    template: false,
     departmentIds: [],
     parameterItemIds: [],
     classifyAgentId: null,
@@ -155,6 +155,7 @@ export default function Document({
   );
   const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
   const [templateArgs, setTemplateArgs] = useState<Record<string, unknown>>({});
+  const [templateInstructions, setTemplateInstructions] = useState<string>("");
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
 
   // Create mode: File upload state
@@ -310,22 +311,32 @@ export default function Document({
     if (isEditMode && documentDetail) {
       setFormData({
         name: documentDetail.name || "",
+        description: documentDetail.description || "",
         active: documentDetail.active ?? true,
-        template: documentDetail.template === true,
         departmentIds: documentDetail.department_ids || [],
         parameterItemIds: documentDetail.parameter_item_ids || [],
         classifyAgentId: documentDetail.classify_agent_id || null,
         documentAgentId: documentDetail.document_agent_id || null,
       });
 
-      // Initialize template args if template document
-      if (documentDetail.template && documentDetail.template_args) {
-        setTemplateArgs(documentDetail.template_args);
+      // Initialize template args and instructions if template document
+      if (documentDetail.template) {
+        if (documentDetail.template_args) {
+          setTemplateArgs(documentDetail.template_args);
+        }
+        if (documentDetail.template_instructions) {
+          setTemplateInstructions(documentDetail.template_instructions);
+        }
+        if (documentDetail.template_upload_id) {
+          setTemplateUploadId(documentDetail.template_upload_id);
+        }
+        setIsTemplateMode(true);
       }
     }
   }, [isEditMode, documentDetail]);
 
-  // Template mode detection - use formData.template for both modes
+  // Template mode detection - use isTemplateMode or check if templateUploadId exists
+  const isTemplateDocument = isTemplateMode || (isEditMode && !!documentDetail?.template);
   const templateSchemaForDisplay =
     isEditMode && documentDetail?.template_schema
       ? isTemplateSchema(documentDetail.template_schema)
@@ -693,6 +704,7 @@ export default function Document({
             const createResult = await createDocumentAction({
               body: {
                 name: file.name,
+                description: "",
                 uploadId: databaseUploadId,
                 departmentIds: finalDepartmentIds,
                 parameterItemIds: finalParameterItemIds,
@@ -819,7 +831,7 @@ export default function Document({
         setTemplateUploadId(result.upload_id || null);
         setIsTemplateMode(true);
         setTemplateArgs({});
-        setFormData((prev) => ({ ...prev, template: true }));
+        setTemplateInstructions("");
         toast.success("Template generated successfully");
       } else {
         toast.error(result.message || "Failed to generate template");
@@ -854,15 +866,16 @@ export default function Document({
       const createResult = await createDocumentAction({
         body: {
           name: `Template Document - ${new Date().toLocaleString()}`,
+          description: "",
           uploadId: null,
           departmentIds: finalDepartmentIds,
           parameterItemIds: [],
           profileId: effectiveProfile.id,
-          template: true,
           templateUploadId: templateUploadId,
           // TemplateSchema is a structured object that needs to be sent as Record<string, unknown>
           // to match server's dict[str, Any] type
           templateArgs: templateSchema as unknown as Record<string, unknown>,
+          instructions: templateInstructions,
         } as CreateDocumentBody,
       });
 
@@ -898,6 +911,7 @@ export default function Document({
         const updateBody: UpdateDocumentBody = {
           documentId,
           name: formData.name,
+          description: formData.description,
           active: formData.active,
           department_id:
             formData.departmentIds.length > 0
@@ -906,10 +920,11 @@ export default function Document({
           parameter_item_ids: formData.parameterItemIds,
           classify_agent_id: formData.classifyAgentId ?? null,
           document_agent_id: formData.documentAgentId ?? null,
-          template: formData.template ? true : null,
-          templateArgs: formData.template
+          templateUploadId: isTemplateDocument && templateUploadId ? templateUploadId : null,
+          templateArgs: isTemplateDocument
             ? (templateArgs as Record<string, unknown> | null)
             : null,
+          instructions: isTemplateDocument ? templateInstructions : null,
         };
         await updateDocumentAction({ body: updateBody });
 
@@ -971,14 +986,14 @@ export default function Document({
 
   // Handle template switch change
   const handleTemplateChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, template: checked }));
+    setIsTemplateMode(checked);
     if (!checked) {
       // Reset template mode when turning off
-      setIsTemplateMode(false);
       setTemplateHtml(null);
       setTemplateSchema(null);
       setTemplateUploadId(null);
       setTemplateArgs({});
+      setTemplateInstructions("");
     }
   };
 
@@ -990,7 +1005,7 @@ export default function Document({
   return (
     <div className="space-y-6">
       {/* Create Mode: File Classification Table */}
-      {!isEditMode && !formData.template && pendingFiles.length > 0 && (
+      {!isEditMode && !isTemplateMode && pendingFiles.length > 0 && (
         <div className="space-y-4">
           <Label className="text-base font-semibold">File Classification</Label>
           {/* Defaults Toolbar - only show when multiple files */}
@@ -1316,6 +1331,21 @@ export default function Document({
             />
           </div>
 
+          {/* Document description */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, description: e.target.value }))
+              }
+              placeholder="Document description"
+              rows={3}
+              disabled={isSubmitting}
+            />
+          </div>
+
           {/* Active status */}
           <div className="space-y-2 pt-2">
             <div className="space-y-1">
@@ -1411,14 +1441,14 @@ export default function Document({
                   </Label>
                   <Switch
                     id="template"
-                    checked={formData.template}
+                    checked={isTemplateMode || (isEditMode && !!documentDetail?.template)}
                     onCheckedChange={handleTemplateChange}
                     disabled={
                       isSubmitting || (isEditMode && !documentDetail?.template)
                     }
                   />
                 </div>
-                {!isEditMode && !formData.template && (
+                {!isEditMode && !isTemplateMode && (
                   <Button
                     type="button"
                     variant="outline"
@@ -1500,8 +1530,26 @@ export default function Document({
           )}
         </div>
 
+        {/* Template Instructions Field */}
+        {isTemplateDocument && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="template-instructions">Template Instructions</Label>
+            <Textarea
+              id="template-instructions"
+              value={templateInstructions}
+              onChange={(e) => setTemplateInstructions(e.target.value)}
+              placeholder="Instructions for using this template..."
+              rows={4}
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-muted-foreground">
+              Provide instructions on how to use this template document
+            </p>
+          </div>
+        )}
+
         {/* Document Viewer, Upload Dropzone, or Template Preview - Always in same spot */}
-        {formData.template ? (
+        {isTemplateDocument ? (
           /* Template Preview - 50% width with args below */
           templateSchemaForDisplay && templateHtmlForDisplay ? (
             <div className="space-y-4">
@@ -1604,10 +1652,10 @@ export default function Document({
               isSubmitting ||
               activeUploads.size > 0 ||
               (!isEditMode &&
-                !formData.template &&
+                !isTemplateMode &&
                 pendingFiles.length === 0) ||
-              (!isEditMode && !formData.template && !canSubmit) ||
-              (!isEditMode && formData.template && !templateUploadId)
+              (!isEditMode && !isTemplateMode && !canSubmit) ||
+              (!isEditMode && isTemplateMode && !templateUploadId)
             }
             data-testid={
               isEditMode ? "document-update-submit" : "document-classify-submit"
@@ -1619,7 +1667,7 @@ export default function Document({
                 : "Uploading..."
               : isEditMode
                 ? "Update"
-                : formData.template
+                : isTemplateMode
                   ? "Create Template Document"
                   : "Start Upload"}
           </Button>

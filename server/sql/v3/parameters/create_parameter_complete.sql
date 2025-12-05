@@ -137,6 +137,22 @@ link_departments AS (
     ON CONFLICT (field_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
+),
+link_parameter_departments AS (
+    -- Link departments to parameter if provided at parameter level
+    INSERT INTO parameter_departments (parameter_id, department_id, active, created_at, updated_at)
+    SELECT 
+        np.parameter_id::uuid,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN UNNEST($7::text[]) as dept_id
+    WHERE $7::text[] IS NOT NULL AND array_length($7::text[], 1) > 0
+    ON CONFLICT (parameter_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 )
 SELECT parameter_id FROM new_parameter
 

@@ -49,6 +49,7 @@ class DocumentDetailResponse(BaseModel):
 
     document_id: str
     name: str
+    description: str
     active: bool
     type: str
     upload_id: str | None
@@ -73,6 +74,7 @@ class DocumentDetailResponse(BaseModel):
     template_args: dict[str, Any] | None
     template_upload_id: str | None
     template_html: str | None
+    template_instructions: str | None
 
 
 router = APIRouter()
@@ -189,6 +191,7 @@ async def get_document_detail(
         # Parse template fields
         template = row.get("template", False)
         template_upload_id = row.get("template_upload_id")
+        template_instructions = row.get("template_instructions")
         
         # Parse template_args JSONB (this contains the schema, not the args values)
         template_args_raw = row.get("template_args")
@@ -207,14 +210,22 @@ async def get_document_detail(
         # Read template HTML if template upload exists
         if template and template_upload_id:
             try:
-                sql_get_upload = load_sql("sql/v3/uploads/get_upload_file_info.sql")
-                upload_row = await conn.fetchrow(sql_get_upload, template_upload_id)
-                if upload_row and upload_row.get("file_path"):
-                    file_path = upload_row["file_path"]
-                    full_path = os.path.join(UPLOAD_FOLDER, file_path)
+                # Try to get from template_file_path first, then fallback to regular upload
+                template_file_path = row.get("template_file_path")
+                if template_file_path:
+                    full_path = os.path.join(UPLOAD_FOLDER, template_file_path)
                     if os.path.exists(full_path):
                         with open(full_path, encoding="utf-8") as f:
                             template_html = f.read()
+                else:
+                    sql_get_upload = load_sql("sql/v3/uploads/get_upload_file_info.sql")
+                    upload_row = await conn.fetchrow(sql_get_upload, template_upload_id)
+                    if upload_row and upload_row.get("file_path"):
+                        file_path = upload_row["file_path"]
+                        full_path = os.path.join(UPLOAD_FOLDER, file_path)
+                        if os.path.exists(full_path):
+                            with open(full_path, encoding="utf-8") as f:
+                                template_html = f.read()
             except Exception:
                 # If reading fails, template_html will remain None
                 pass
@@ -250,6 +261,7 @@ async def get_document_detail(
         response_data = DocumentDetailResponse(
             document_id=document_id,
             name=row.get("name", ""),
+            description=row.get("description", ""),
             active=row.get("active", False),
             type=doc_type,
             upload_id=row.get("upload_id"),
@@ -274,6 +286,7 @@ async def get_document_detail(
             template_args=template_args,
             template_upload_id=template_upload_id,
             template_html=template_html,
+            template_instructions=template_instructions,
         )
 
         # Cache response

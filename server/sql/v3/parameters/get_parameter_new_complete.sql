@@ -49,21 +49,37 @@ default_parameter AS (
     WHERE p.active = true
     GROUP BY p.id
     HAVING 
-        -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
-        COUNT(fdf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
-                      WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
+        -- Include if has matching department link via parameter_departments or field_departments OR has no department links at all (cross-dept)
+        COUNT(fdf.parameter_id) FILTER (WHERE fdf.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (
+            SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM field_departments fd2 
+            JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+            WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true
+        )
     ORDER BY p.created_at DESC
     LIMIT 1
 ),
 parameter_departments_aggregated AS (
+    -- Get parameter-level departments (union of parameter_departments and field_departments)
     SELECT 
-        ARRAY_AGG(fd.department_id::text ORDER BY fd.department_id) as department_ids
-    FROM field_parameters fp
-    JOIN default_parameter dp ON fp.parameter_id = dp.id
-    JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
-    WHERE fp.active = true
+        ARRAY_AGG(DISTINCT dept_id::text ORDER BY dept_id::text) as department_ids
+    FROM (
+        -- Parameter-level departments
+        SELECT pd.department_id as dept_id
+        FROM parameter_departments pd
+        JOIN default_parameter dp ON pd.parameter_id = dp.id
+        WHERE pd.active = true
+        UNION
+        -- Field-level departments (for backward compatibility)
+        SELECT fd.department_id as dept_id
+        FROM field_parameters fp
+        JOIN default_parameter dp ON fp.parameter_id = dp.id
+        JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+        WHERE fp.active = true
+    ) combined_depts
 ),
 parameter_data AS (
     SELECT 

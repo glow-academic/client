@@ -90,21 +90,40 @@ parameter_sample_items AS (
     GROUP BY fp_sub.parameter_id
 ),
 parameter_item_departments_data AS (
+    -- Aggregate department IDs from both parameter-level and field-level departments
     SELECT 
-        fp.parameter_id,
-        ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
-    FROM field_parameters fp
-    JOIN field_departments fd ON fd.field_id = fp.field_id
-    WHERE fp.active = true AND fd.active = true
-    GROUP BY fp.parameter_id
+        combined.parameter_id,
+        ARRAY_AGG(DISTINCT combined.department_id::text ORDER BY combined.department_id::text) as department_ids
+    FROM (
+        -- Parameter-level departments
+        SELECT pd.parameter_id, pd.department_id
+        FROM parameter_departments pd
+        WHERE pd.active = true
+        UNION
+        -- Field-level departments (for backward compatibility)
+        SELECT fp.parameter_id, fd.department_id
+        FROM field_parameters fp
+        JOIN field_departments fd ON fd.field_id = fp.field_id
+        WHERE fp.active = true AND fd.active = true
+    ) combined
+    GROUP BY combined.parameter_id
 ),
 parameter_item_departments_for_filter AS (
     SELECT DISTINCT
-        fp.parameter_id,
-        fd.department_id
-    FROM field_parameters fp
-    JOIN field_departments fd ON fd.field_id = fp.field_id
-    WHERE fp.active = true AND fd.active = true
+        combined.parameter_id,
+        combined.department_id
+    FROM (
+        -- Parameter-level departments
+        SELECT pd.parameter_id, pd.department_id
+        FROM parameter_departments pd
+        WHERE pd.active = true
+        UNION
+        -- Field-level departments (for backward compatibility)
+        SELECT fp.parameter_id, fd.department_id
+        FROM field_parameters fp
+        JOIN field_departments fd ON fd.field_id = fp.field_id
+        WHERE fp.active = true AND fd.active = true
+    ) combined
 ),
 parameter_documents AS (
     SELECT 
@@ -235,10 +254,15 @@ CROSS JOIN document_mapping_data docmd
 GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pidd.department_ids, pic.num_items, 
          ps.scenario_ids, pd.document_ids, pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, sm.mapping, dmd.mapping, docmd.mapping
 HAVING 
-    -- Include if has matching department link via fields OR has no department links at all (cross-dept)
+    -- Include if has matching department link via parameter_departments or field_departments OR has no department links at all (cross-dept)
     COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT ud.department_id FROM user_departments ud)) > 0
-    OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                  JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
-                  WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
+    OR NOT EXISTS (
+        SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true
+    )
+    AND NOT EXISTS (
+        SELECT 1 FROM field_departments fd2 
+        JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+        WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true
+    )
 ORDER BY p.updated_at DESC NULLS LAST
 

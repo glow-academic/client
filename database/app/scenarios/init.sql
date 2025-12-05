@@ -82,6 +82,21 @@ CREATE TABLE field_departments (
 
 CREATE INDEX ON field_departments (field_id);
 CREATE INDEX ON field_departments (department_id);
+
+-- Parameters → Departments junction table (BCNF normalization)
+-- Links parameters to departments
+-- No records = available to all departments (cross-department)
+CREATE TABLE parameter_departments (
+  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (parameter_id, department_id)
+);
+
+CREATE INDEX ON parameter_departments (parameter_id);
+CREATE INDEX ON parameter_departments (department_id);
   
 CREATE TABLE scenarios (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

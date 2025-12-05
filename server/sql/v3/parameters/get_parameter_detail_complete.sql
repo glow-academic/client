@@ -57,15 +57,34 @@ field_departments_data AS (
     GROUP BY f.id
 ),
 parameter_departments_aggregated AS (
+    -- Get department IDs from both parameter-level and field-level departments
     SELECT 
-        ARRAY_AGG(fd.department_id::text ORDER BY fd.department_id) as department_ids
-    FROM parameter_id_resolved pid
-    JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
-    JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+        ARRAY_AGG(DISTINCT dept_id::text ORDER BY dept_id::text) as department_ids
+    FROM (
+        -- Parameter-level departments
+        SELECT pd.department_id as dept_id
+        FROM parameter_id_resolved pid
+        JOIN parameter_departments pd ON pd.parameter_id = pid.parameter_id AND pd.active = true
+        UNION
+        -- Field-level departments (for backward compatibility)
+        SELECT fd.department_id as dept_id
+        FROM parameter_id_resolved pid
+        JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
+        JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    ) combined_depts
 ),
 user_has_parameter_access AS (
-    -- Check if user has access to parameter via field department links
+    -- Check if user has access to parameter via parameter_departments or field_departments
     SELECT EXISTS(
+        -- Check parameter-level departments
+        SELECT 1 FROM parameter_departments pd
+        JOIN profile_departments pdp ON pdp.department_id = pd.department_id
+        WHERE pd.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+        AND pd.active = true
+        AND pdp.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
+        AND pdp.active = true
+    ) OR EXISTS(
+        -- Check field-level departments
         SELECT 1 FROM field_departments fd
         JOIN profile_departments pd ON pd.department_id = fd.department_id
         JOIN field_parameters fp ON fp.field_id = fd.field_id
@@ -79,13 +98,16 @@ user_has_parameter_access AS (
         JOIN profiles p ON p.id = rpi.resolved_profile_id
         WHERE p.role = 'superadmin'
     ) OR (
-        -- Default parameters (no department links on any fields) are accessible to all
-        SELECT COUNT(*) FROM field_departments fd
-        JOIN field_parameters fp ON fp.field_id = fd.field_id
-        WHERE fp.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
-        AND fp.active = true
-        AND fd.active = true
-    ) = 0 as has_access
+        -- Default parameters (no department links at parameter or field level) are accessible to all
+        (SELECT COUNT(*) FROM parameter_departments pd
+         WHERE pd.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+         AND pd.active = true) = 0
+        AND (SELECT COUNT(*) FROM field_departments fd
+             JOIN field_parameters fp ON fp.field_id = fd.field_id
+             WHERE fp.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+             AND fp.active = true
+             AND fd.active = true) = 0
+    ) as has_access
 ),
 parameter_data AS (
     SELECT 
