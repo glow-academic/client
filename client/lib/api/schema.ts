@@ -5963,8 +5963,6 @@ export interface components {
             templateArgs?: {
                 [key: string]: unknown;
             } | null;
-            /** Instructions */
-            instructions?: string | null;
         };
         /**
          * CreateDocumentResponse
@@ -7456,8 +7454,6 @@ export interface components {
             template_upload_id: string | null;
             /** Template Html */
             template_html: string | null;
-            /** Template Instructions */
-            template_instructions: string | null;
         };
         /**
          * DocumentItem
@@ -12897,8 +12893,6 @@ export interface components {
             templateArgs?: {
                 [key: string]: unknown;
             } | null;
-            /** Instructions */
-            instructions?: string | null;
         };
         /**
          * UpdateDocumentResponse

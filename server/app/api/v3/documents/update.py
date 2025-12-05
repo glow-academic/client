@@ -5,13 +5,12 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class UpdateDocumentRequest(BaseModel):
@@ -27,7 +26,6 @@ class UpdateDocumentRequest(BaseModel):
     document_agent_id: str | None = None
     templateUploadId: str | None = None  # Template HTML upload
     templateArgs: dict[str, Any] | None = None  # Template schema JSON
-    instructions: str | None = None  # Template instructions
 
 
 class UpdateDocumentResponse(BaseModel):
@@ -75,7 +73,6 @@ async def update_document(
                 uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
                 uuid.UUID(request.templateUploadId) if request.templateUploadId else None,
                 template_args_jsonb,
-                request.instructions,
             )
             await conn.execute(
                 sql_query,
@@ -89,7 +86,6 @@ async def update_document(
                 uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
                 uuid.UUID(request.templateUploadId) if request.templateUploadId else None,
                 template_args_jsonb,
-                request.instructions,
             )
 
         result = UpdateDocumentResponse(

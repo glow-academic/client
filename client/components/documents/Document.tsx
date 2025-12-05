@@ -43,6 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -155,7 +156,6 @@ export default function Document({
   );
   const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
   const [templateArgs, setTemplateArgs] = useState<Record<string, unknown>>({});
-  const [templateInstructions, setTemplateInstructions] = useState<string>("");
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
 
   // Create mode: File upload state
@@ -319,13 +319,10 @@ export default function Document({
         documentAgentId: documentDetail.document_agent_id || null,
       });
 
-      // Initialize template args and instructions if template document
+      // Initialize template args if template document
       if (documentDetail.template) {
         if (documentDetail.template_args) {
           setTemplateArgs(documentDetail.template_args);
-        }
-        if (documentDetail.template_instructions) {
-          setTemplateInstructions(documentDetail.template_instructions);
         }
         if (documentDetail.template_upload_id) {
           setTemplateUploadId(documentDetail.template_upload_id);
@@ -335,8 +332,48 @@ export default function Document({
     }
   }, [isEditMode, documentDetail]);
 
+  // Auto-select agents if only one option available (edit mode only)
+  useEffect(() => {
+    if (!isEditMode || !documentDetail) return;
+
+    const classifyAgentIds =
+      documentDetail.valid_agent_ids?.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("classify");
+      }) || [];
+
+    const documentAgentIds =
+      documentDetail.valid_agent_ids?.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("document");
+      }) || [];
+
+    // Auto-select first classify agent if only one option and not already set
+    if (classifyAgentIds.length === 1 && !formData.classifyAgentId) {
+      setFormData((prev) => ({
+        ...prev,
+        classifyAgentId: classifyAgentIds[0] || null,
+      }));
+    }
+
+    // Auto-select first document agent if only one option and not already set
+    if (documentAgentIds.length === 1 && !formData.documentAgentId) {
+      setFormData((prev) => ({
+        ...prev,
+        documentAgentId: documentAgentIds[0] || null,
+      }));
+    }
+  }, [
+    isEditMode,
+    documentDetail,
+    agentMapping,
+    formData.classifyAgentId,
+    formData.documentAgentId,
+  ]);
+
   // Template mode detection - use isTemplateMode or check if templateUploadId exists
-  const isTemplateDocument = isTemplateMode || (isEditMode && !!documentDetail?.template);
+  const isTemplateDocument =
+    isTemplateMode || (isEditMode && !!documentDetail?.template);
   const templateSchemaForDisplay =
     isEditMode && documentDetail?.template_schema
       ? isTemplateSchema(documentDetail.template_schema)
@@ -804,8 +841,14 @@ export default function Document({
   };
 
   const handleGenerateTemplate = async () => {
-    if (!effectiveProfile?.id || !generateTemplateAction) {
-      toast.error("Profile ID required");
+    if (!generateTemplateAction) {
+      toast.error("Generate template action not available");
+      return;
+    }
+
+    const departmentId = selectedDepartmentIds[0] || validDepartmentIds[0];
+    if (!departmentId) {
+      toast.error("Please select a department");
       return;
     }
 
@@ -813,8 +856,8 @@ export default function Document({
     try {
       const result = await generateTemplateAction({
         body: {
-          departmentId: selectedDepartmentIds[0] || validDepartmentIds[0] || "",
-          profileId: effectiveProfile.id,
+          departmentId,
+          profileId: effectiveProfile?.id || undefined,
         } as GenerateTemplateBody,
       });
 
@@ -831,7 +874,6 @@ export default function Document({
         setTemplateUploadId(result.upload_id || null);
         setIsTemplateMode(true);
         setTemplateArgs({});
-        setTemplateInstructions("");
         toast.success("Template generated successfully");
       } else {
         toast.error(result.message || "Failed to generate template");
@@ -875,7 +917,6 @@ export default function Document({
           // TemplateSchema is a structured object that needs to be sent as Record<string, unknown>
           // to match server's dict[str, Any] type
           templateArgs: templateSchema as unknown as Record<string, unknown>,
-          instructions: templateInstructions,
         } as CreateDocumentBody,
       });
 
@@ -920,11 +961,11 @@ export default function Document({
           parameter_item_ids: formData.parameterItemIds,
           classify_agent_id: formData.classifyAgentId ?? null,
           document_agent_id: formData.documentAgentId ?? null,
-          templateUploadId: isTemplateDocument && templateUploadId ? templateUploadId : null,
+          templateUploadId:
+            isTemplateDocument && templateUploadId ? templateUploadId : null,
           templateArgs: isTemplateDocument
             ? (templateArgs as Record<string, unknown> | null)
             : null,
-          instructions: isTemplateDocument ? templateInstructions : null,
         };
         await updateDocumentAction({ body: updateBody });
 
@@ -993,7 +1034,6 @@ export default function Document({
       setTemplateSchema(null);
       setTemplateUploadId(null);
       setTemplateArgs({});
-      setTemplateInstructions("");
     }
   };
 
@@ -1048,7 +1088,7 @@ export default function Document({
                     setGlobalDefaultParameterItemIds(next);
                   }}
                   parameterId=""
-                  parameterName="Params"
+                  parameterName="Fields"
                   allowCreate={false}
                   multiSelect={true}
                   badgesPosition="below"
@@ -1086,7 +1126,7 @@ export default function Document({
                   <TableHead className="min-w-[200px]">
                     <div className="flex items-center gap-2">
                       <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>Parameter Items</span>
+                      <span>Fields</span>
                     </div>
                   </TableHead>
                   {pendingFiles.length > 1 && (
@@ -1204,7 +1244,7 @@ export default function Document({
                             }
                           }}
                           parameterId=""
-                          parameterName="Params"
+                          parameterName="Fields"
                           allowCreate={false}
                           multiSelect={true}
                           badgesPosition="below"
@@ -1337,36 +1377,16 @@ export default function Document({
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, description: e.target.value }))
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
               }
               placeholder="Document description"
               rows={3}
               disabled={isSubmitting}
             />
-          </div>
-
-          {/* Active status */}
-          <div className="space-y-2 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="active"
-                  className="text-sm flex items-center gap-1.5"
-                >
-                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                  Active
-                </Label>
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, active: checked }))
-                  }
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
           </div>
 
           {/* Department Selection */}
@@ -1392,9 +1412,118 @@ export default function Document({
             </div>
           )}
 
-          {/* Parameter Items */}
+          {/* Agent Selection */}
+          {isEditMode &&
+            (() => {
+              const classifyAgentIds =
+                documentDetail?.valid_agent_ids?.filter((id) => {
+                  const agent = agentMapping[id];
+                  return agent?.roles?.includes("classify");
+                }) || [];
+
+              const documentAgentIds =
+                documentDetail?.valid_agent_ids?.filter((id) => {
+                  const agent = agentMapping[id];
+                  return agent?.roles?.includes("document");
+                }) || [];
+
+              // Only show agent pickers if there's more than one option
+              const showClassifyPicker = classifyAgentIds.length > 1;
+              const showDocumentPicker = documentAgentIds.length > 1;
+
+              if (!showClassifyPicker && !showDocumentPicker) {
+                return null;
+              }
+
+              return (
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                  {/* Classify Agent */}
+                  {showClassifyPicker && (
+                    <div className="space-y-2">
+                      <Label htmlFor="classifyAgentId">Classify Agent</Label>
+                      {formData?.classifyAgentId !== undefined ? (
+                        <AgentPicker
+                          mapping={agentMapping}
+                          validIds={classifyAgentIds}
+                          selectedIds={
+                            formData?.classifyAgentId
+                              ? [formData.classifyAgentId]
+                              : []
+                          }
+                          onSelect={(ids) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              classifyAgentId: ids[0] || null,
+                            }))
+                          }
+                          placeholder="Select classify agent"
+                          disabled={isSubmitting}
+                          multiSelect={false}
+                        />
+                      ) : null}
+                    </div>
+                  )}
+
+                  {/* Document Agent */}
+                  {showDocumentPicker && (
+                    <div className="space-y-2">
+                      <Label htmlFor="documentAgentId">Document Agent</Label>
+                      {formData?.documentAgentId !== undefined ? (
+                        <AgentPicker
+                          mapping={agentMapping}
+                          validIds={documentAgentIds}
+                          selectedIds={
+                            formData?.documentAgentId
+                              ? [formData.documentAgentId]
+                              : []
+                          }
+                          onSelect={(ids) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              documentAgentId: ids[0] || null,
+                            }))
+                          }
+                          placeholder="Select document agent"
+                          disabled={isSubmitting}
+                          multiSelect={false}
+                        />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+          {/* Active status */}
+          <div className="space-y-2 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="active"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                  Active
+                </Label>
+                <Switch
+                  id="active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, active: checked }))
+                  }
+                  disabled={isSubmitting}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Inactive documents will not be available for use in scenarios or
+                simulations
+              </p>
+            </div>
+          </div>
+
+          {/* Fields */}
           <div className="flex flex-col gap-2">
-            <Label>Parameter Items</Label>
+            <Label>Fields</Label>
             <ParameterItemPicker
               mapping={parameterItemMapping}
               selectedIds={
@@ -1418,7 +1547,7 @@ export default function Document({
                   : filteredValidParameterItemIds
               }
               parameterId=""
-              parameterName="Parameter Items"
+              parameterName="Fields"
               allowCreate={false}
               multiSelect={true}
               badgesPosition="below"
@@ -1441,17 +1570,18 @@ export default function Document({
                   </Label>
                   <Switch
                     id="template"
-                    checked={isTemplateMode || (isEditMode && !!documentDetail?.template)}
-                    onCheckedChange={handleTemplateChange}
-                    disabled={
-                      isSubmitting || (isEditMode && !documentDetail?.template)
+                    checked={
+                      isTemplateMode ||
+                      (isEditMode && !!documentDetail?.template)
                     }
+                    onCheckedChange={handleTemplateChange}
+                    disabled={isSubmitting}
                   />
                 </div>
-                {!isEditMode && !isTemplateMode && (
+                {(isTemplateMode ||
+                  (isEditMode && !!documentDetail?.template)) && (
                   <Button
                     type="button"
-                    variant="outline"
                     size="sm"
                     onClick={handleGenerateTemplateWithSwitch}
                     disabled={isGeneratingTemplate || activeUploads.size > 0}
@@ -1461,92 +1591,13 @@ export default function Document({
                   </Button>
                 )}
               </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Template documents can be dynamically rendered with variable
+                arguments for personalized content generation
+              </p>
             </div>
           </div>
-
-          {/* Agent Selection */}
-          {isEditMode && (
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {/* Classify Agent */}
-              <div className="space-y-2">
-                <Label htmlFor="classifyAgentId">Classify Agent</Label>
-                {formData?.classifyAgentId !== undefined ? (
-                  <AgentPicker
-                    mapping={agentMapping}
-                    validIds={
-                      documentDetail?.valid_agent_ids?.filter((id) => {
-                        const agent = agentMapping[id];
-                        return agent?.roles?.includes("classify");
-                      }) || []
-                    }
-                    selectedIds={
-                      formData?.classifyAgentId
-                        ? [formData.classifyAgentId]
-                        : []
-                    }
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        classifyAgentId: ids[0] || null,
-                      }))
-                    }
-                    placeholder="Select classify agent"
-                    disabled={isSubmitting}
-                    multiSelect={false}
-                  />
-                ) : null}
-              </div>
-
-              {/* Document Agent */}
-              <div className="space-y-2">
-                <Label htmlFor="documentAgentId">Document Agent</Label>
-                {formData?.documentAgentId !== undefined ? (
-                  <AgentPicker
-                    mapping={agentMapping}
-                    validIds={
-                      documentDetail?.valid_agent_ids?.filter((id) => {
-                        const agent = agentMapping[id];
-                        return agent?.roles?.includes("document");
-                      }) || []
-                    }
-                    selectedIds={
-                      formData?.documentAgentId
-                        ? [formData.documentAgentId]
-                        : []
-                    }
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        documentAgentId: ids[0] || null,
-                      }))
-                    }
-                    placeholder="Select document agent"
-                    disabled={isSubmitting}
-                    multiSelect={false}
-                  />
-                ) : null}
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* Template Instructions Field */}
-        {isTemplateDocument && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="template-instructions">Template Instructions</Label>
-            <Textarea
-              id="template-instructions"
-              value={templateInstructions}
-              onChange={(e) => setTemplateInstructions(e.target.value)}
-              placeholder="Instructions for using this template..."
-              rows={4}
-              disabled={isSubmitting}
-            />
-            <p className="text-xs text-muted-foreground">
-              Provide instructions on how to use this template document
-            </p>
-          </div>
-        )}
 
         {/* Document Viewer, Upload Dropzone, or Template Preview - Always in same spot */}
         {isTemplateDocument ? (
@@ -1570,12 +1621,16 @@ export default function Document({
                 />
               </div>
             </div>
-          ) : !isEditMode ? (
-            /* Create mode: Show message to generate template */
-            <div className="text-sm text-muted-foreground p-4 border rounded-md">
-              Click Generate to create a template
+          ) : (
+            /* Show empty template preview when template mode is on but no template exists */
+            <div className="border rounded-md min-h-[400px]">
+              <TemplatePreview
+                documentId={documentId || null}
+                templateHtml={null}
+                renderedHtml={null}
+              />
             </div>
-          ) : null
+          )
         ) : isEditMode && documentDetail?.upload_id ? (
           /* Edit mode: Document Viewer - Show uploaded document */
           <div className="border rounded-md min-h-[400px]">
@@ -1651,9 +1706,7 @@ export default function Document({
             disabled={
               isSubmitting ||
               activeUploads.size > 0 ||
-              (!isEditMode &&
-                !isTemplateMode &&
-                pendingFiles.length === 0) ||
+              (!isEditMode && !isTemplateMode && pendingFiles.length === 0) ||
               (!isEditMode && !isTemplateMode && !canSubmit) ||
               (!isEditMode && isTemplateMode && !templateUploadId)
             }

@@ -56,7 +56,6 @@ CREATE TABLE document_template_uploads (
     document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     upload_id UUID NOT NULL REFERENCES uploads(id) ON DELETE CASCADE,
     args JSONB NOT NULL DEFAULT '{}',
-    instructions TEXT NOT NULL DEFAULT '',
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),

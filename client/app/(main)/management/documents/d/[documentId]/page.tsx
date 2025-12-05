@@ -22,6 +22,14 @@ type UpdateDocumentIn = InputOf<"/api/v3/documents/update", "post">;
 type UpdateDocumentOut = OutputOf<"/api/v3/documents/update", "post">;
 type RenderTemplateIn = InputOf<"/api/v3/documents/render", "post">;
 type RenderTemplateOut = OutputOf<"/api/v3/documents/render", "post">;
+type GenerateTemplateIn = InputOf<
+  "/api/v3/documents/generate-template",
+  "post"
+>;
+type GenerateTemplateOut = OutputOf<
+  "/api/v3/documents/generate-template",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getDocument = async (
@@ -94,6 +102,13 @@ async function renderTemplate(
 ): Promise<RenderTemplateOut> {
   "use server";
   return api.post("/documents/render", input);
+}
+
+async function generateTemplate(
+  input: GenerateTemplateIn
+): Promise<GenerateTemplateOut> {
+  "use server";
+  return api.post("/documents/generate-template", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -174,6 +189,7 @@ export default async function DocumentEditPage({
           mode="edit"
           documentDetail={documentDetail}
           updateDocumentAction={updateDocument}
+          generateTemplateAction={generateTemplate}
           renderedHtml={renderedHtml}
         />
       </div>
@@ -202,6 +218,8 @@ export default async function DocumentEditPage({
 export type {
   DocumentDetailIn,
   DocumentDetailOut,
+  GenerateTemplateIn,
+  GenerateTemplateOut,
   RenderTemplateIn,
   RenderTemplateOut,
   UpdateDocumentIn,

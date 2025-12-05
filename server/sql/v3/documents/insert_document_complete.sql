@@ -8,7 +8,6 @@
 --   $6 = field_ids (uuid[])
 --   $7 = template_upload_id (uuid, nullable - for template HTML)
 --   $8 = template_args (jsonb, nullable - template schema)
---   $9 = instructions (text, nullable - for template documents)
 -- Returns: document_id (text)
 
 WITH insert_doc AS (
@@ -49,7 +48,6 @@ insert_template_upload AS (
         document_id,
         upload_id,
         args,
-        instructions,
         active,
         created_at,
         updated_at
@@ -58,14 +56,12 @@ insert_template_upload AS (
         $1,
         $7::uuid,
         COALESCE($8::jsonb, '{}'::jsonb),
-        COALESCE($9, ''),
         true,
         NOW(),
         NOW()
     WHERE $7::uuid IS NOT NULL
     ON CONFLICT (document_id, upload_id) DO UPDATE SET
         args = EXCLUDED.args,
-        instructions = EXCLUDED.instructions,
         active = true,
         updated_at = NOW()
 ),

@@ -6,16 +6,16 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import UPLOAD_FOLDER, get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import AgentMapping, AgentMappingItem, DepartmentMappingItem, ParameterItemMappingItem
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMappingItem, ParameterItemMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
@@ -74,7 +74,6 @@ class DocumentDetailResponse(BaseModel):
     template_args: dict[str, Any] | None
     template_upload_id: str | None
     template_html: str | None
-    template_instructions: str | None
 
 
 router = APIRouter()
@@ -165,6 +164,11 @@ async def get_document_detail(
         dept_ids = None
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]
+        
+        # Parse parameter_item_ids (fields) from document_fields
+        parameter_item_ids: list[str] = []
+        if row.get("parameter_item_ids"):
+            parameter_item_ids = [str(pid) for pid in row["parameter_item_ids"]]
 
         # Parse agent mapping
         agent_mapping: AgentMapping = {}
@@ -191,7 +195,6 @@ async def get_document_detail(
         # Parse template fields
         template = row.get("template", False)
         template_upload_id = row.get("template_upload_id")
-        template_instructions = row.get("template_instructions")
         
         # Parse template_args JSONB (this contains the schema, not the args values)
         template_args_raw = row.get("template_args")
@@ -274,7 +277,7 @@ async def get_document_detail(
             department_ids=dept_ids,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
-            parameter_item_ids=[],  # Not included in detail query
+            parameter_item_ids=parameter_item_ids,
             valid_parameter_item_ids=valid_parameter_item_ids,
             parameter_item_mapping=parameter_item_mapping,
             classify_agent_id=row.get("classify_agent_id", ""),
@@ -286,7 +289,6 @@ async def get_document_detail(
             template_args=template_args,
             template_upload_id=template_upload_id,
             template_html=template_html,
-            template_instructions=template_instructions,
         )
 
         # Cache response

@@ -13586,17 +13586,6 @@
               }
             ],
             "title": "Templateargs"
-          },
-          "instructions": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions"
           }
         },
         "type": "object",
@@ -17376,17 +17365,6 @@
               }
             ],
             "title": "Template Html"
-          },
-          "template_instructions": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Instructions"
           }
         },
         "type": "object",
@@ -17417,8 +17395,7 @@
           "template_schema",
           "template_args",
           "template_upload_id",
-          "template_html",
-          "template_instructions"
+          "template_html"
         ],
         "title": "DocumentDetailResponse",
         "description": "Detailed document response."
@@ -31515,17 +31492,6 @@
               }
             ],
             "title": "Templateargs"
-          },
-          "instructions": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions"
           }
         },
         "type": "object",

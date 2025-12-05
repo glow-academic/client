@@ -12,7 +12,6 @@ WITH document_data AS (
         (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
         (SELECT dtu.upload_id::text FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_upload_id,
         (SELECT dtu.args FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_args,
-        (SELECT dtu.instructions FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_instructions,
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
@@ -92,13 +91,18 @@ valid_param_items AS (
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true
       AND (
-          (dd.department_ids IS NULL OR array_length(dd.department_ids, 1) = 0)
-          AND NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
-      )
-      OR (
-          dd.department_ids IS NOT NULL 
-          AND array_length(dd.department_ids, 1) > 0
-          AND fd.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
+          -- Department-based filtering: include if matches department OR has no department restrictions
+          (
+              (dd.department_ids IS NULL OR array_length(dd.department_ids, 1) = 0)
+              AND NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
+          )
+          OR (
+              dd.department_ids IS NOT NULL 
+              AND array_length(dd.department_ids, 1) > 0
+              AND fd.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
+          )
+          -- Include fields already assigned to this document even if they don't pass department filter
+          OR f.id::text = ANY(COALESCE(dd.parameter_item_ids, ARRAY[]::text[]))
       )
 ),
 user_departments_for_agents AS (
@@ -109,6 +113,7 @@ user_departments_for_agents AS (
 valid_agents AS (
     -- Get agents with roles 'classify' or 'document'
     -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    -- Also include agents assigned to this document (classify_agent_id or document_agent_id) even if they don't pass department filter
     SELECT 
         COALESCE(
             jsonb_object_agg(
@@ -124,12 +129,26 @@ valid_agents AS (
         array_agg(a.id::text ORDER BY a.name) as agent_ids
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN document_data dd
     WHERE a.active = true 
     AND a.role IN ('classify', 'document')
-    GROUP BY a.id
-    HAVING 
-        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
-        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    AND (
+        -- Department access: has matching department link OR has no department links at all (cross-dept)
+        EXISTS (
+            SELECT 1 FROM agent_departments ad2 
+            WHERE ad2.agent_id = a.id 
+            AND ad2.active = true 
+            AND ad2.department_id IN (SELECT department_id FROM user_departments_for_agents)
+        )
+        OR NOT EXISTS (
+            SELECT 1 FROM agent_departments ad3 
+            WHERE ad3.agent_id = a.id 
+            AND ad3.active = true
+        )
+        -- Include agents assigned to this document even if they don't pass department filter
+        OR a.id::text = dd.classify_agent_id
+        OR a.id::text = dd.document_agent_id
+    )
 )
 SELECT 
     doc.*,

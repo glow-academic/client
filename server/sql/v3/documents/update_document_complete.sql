@@ -1,5 +1,5 @@
 -- Update document with department links and parameter items in a single transaction
--- Parameters: $1=documentId, $2=name (nullable text), $3=description (nullable text), $4=active (nullable boolean), $5=department_id (nullable uuid), $6=field_ids (nullable text array), $7=classify_agent_id (nullable uuid), $8=document_agent_id (nullable uuid), $9=template_upload_id (nullable uuid), $10=template_args (nullable jsonb), $11=instructions (nullable text)
+-- Parameters: $1=documentId, $2=name (nullable text), $3=description (nullable text), $4=active (nullable boolean), $5=department_id (nullable uuid), $6=field_ids (nullable text array), $7=classify_agent_id (nullable uuid), $8=document_agent_id (nullable uuid), $9=template_upload_id (nullable uuid), $10=template_args (nullable jsonb)
 WITH update_document AS (
     UPDATE documents
     SET 
@@ -18,7 +18,6 @@ update_template_upload AS (
         document_id,
         upload_id,
         args,
-        instructions,
         active,
         created_at,
         updated_at
@@ -27,14 +26,12 @@ update_template_upload AS (
         $1::uuid,
         $9::uuid,
         COALESCE($10::jsonb, '{}'::jsonb),
-        COALESCE($11, ''),
         true,
         NOW(),
         NOW()
     WHERE $9::uuid IS NOT NULL
     ON CONFLICT (document_id, upload_id) DO UPDATE SET
         args = EXCLUDED.args,
-        instructions = EXCLUDED.instructions,
         active = true,
         updated_at = NOW()
 ),

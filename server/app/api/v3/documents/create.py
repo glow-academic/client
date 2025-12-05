@@ -5,13 +5,12 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -28,7 +27,6 @@ class CreateDocumentRequest(BaseModel):
     profileId: str
     templateUploadId: str | None = None  # Template HTML upload
     templateArgs: dict[str, Any] | None = None  # Template schema JSON
-    instructions: str | None = None  # Template instructions
 
 
 class CreateDocumentResponse(BaseModel):
@@ -80,7 +78,6 @@ async def create_document(
             param_item_uuids,
             uuid.UUID(request_body.templateUploadId) if request_body.templateUploadId else None,
             template_args_jsonb,
-            request_body.instructions or '',
         )
 
         await conn.execute(
@@ -93,7 +90,6 @@ async def create_document(
             param_item_uuids,
             uuid.UUID(request_body.templateUploadId) if request_body.templateUploadId else None,
             template_args_jsonb,
-            request_body.instructions or '',
         )
 
         result_data = CreateDocumentResponse(
