@@ -7442,6 +7442,8 @@ export interface components {
             valid_agent_ids: string[];
             /** Template */
             template: boolean;
+            /** Template Id */
+            template_id: string | null;
             /** Template Schema */
             template_schema: {
                 [key: string]: unknown;
@@ -7454,6 +7456,10 @@ export interface components {
             template_upload_id: string | null;
             /** Template Html */
             template_html: string | null;
+            /** Template Mapping */
+            template_mapping: {
+                [key: string]: components["schemas"]["TemplateInfo"];
+            };
         };
         /**
          * DocumentItem
@@ -8376,6 +8382,8 @@ export interface components {
             departmentId: string;
             /** Profileid */
             profileId?: string | null;
+            /** Documentid */
+            documentId?: string | null;
         };
         /**
          * GenerateTemplateResponse
@@ -8394,6 +8402,10 @@ export interface components {
             };
             /** Upload Id */
             upload_id: string;
+            /** Template Mapping */
+            template_mapping?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * GenerateVideoRequest
@@ -12571,6 +12583,22 @@ export interface components {
             isCorrect: boolean;
         };
         /**
+         * TemplateInfo
+         * @description Template version information.
+         */
+        TemplateInfo: {
+            /** Template Args */
+            template_args: {
+                [key: string]: unknown;
+            };
+            /** Active */
+            active: boolean;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /**
          * ThemeTokens
          * @description Full internal design tokens derived from ThemePrimitives.
          *     This is what components consume via CSS variables.
@@ -12876,6 +12904,8 @@ export interface components {
             description?: string | null;
             /** Active */
             active?: boolean | null;
+            /** Template */
+            template?: boolean | null;
             /** Department Id */
             department_id?: string | null;
             /**

@@ -18,10 +18,7 @@ WITH document_data AS (
         (SELECT u.file_path FROM document_template_uploads dtu
          JOIN uploads u ON u.id = dtu.upload_id 
          WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_file_path,
-        (CASE 
-            WHEN EXISTS (SELECT 1 FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true) THEN true
-            ELSE false
-        END) as template,
+        d.template,
         (SELECT ARRAY_AGG(DISTINCT st.parent_id::text) FROM scenario_documents sd
          JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
          WHERE sd.document_id = d.id AND sd.active = true) as scenario_ids,
@@ -29,6 +26,45 @@ WITH document_data AS (
         (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id) as total_scenario_links
     FROM documents d
     WHERE d.id = $1
+),
+document_active_template AS (
+    SELECT 
+        dtu.document_id,
+        dtu.upload_id::text as template_id,
+        dtu.args as template_args,
+        dtu.created_at as template_created_at,
+        dtu.updated_at as template_updated_at
+    FROM document_template_uploads dtu
+    WHERE dtu.document_id = $1 AND dtu.active = true
+    ORDER BY dtu.created_at DESC
+    LIMIT 1
+),
+document_all_templates AS (
+    SELECT 
+        dtu.document_id,
+        dtu.upload_id::text as template_id,
+        dtu.args as template_args,
+        dtu.active as template_active,
+        dtu.created_at as template_created_at,
+        dtu.updated_at as template_updated_at
+    FROM document_template_uploads dtu
+    WHERE dtu.document_id = $1
+),
+template_mapping_data AS (
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                dt.template_id,
+                jsonb_build_object(
+                    'template_args', dt.template_args,
+                    'active', dt.template_active,
+                    'created_at', dt.template_created_at::text,
+                    'updated_at', dt.template_updated_at::text
+                )
+            ),
+            '{}'::jsonb
+        ) as template_mapping
+    FROM document_all_templates dt
 ),
 user_profile AS (
     SELECT role FROM profiles WHERE id = $2
@@ -158,6 +194,8 @@ SELECT
     vpi.param_item_ids as valid_parameter_item_ids,
     COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
     COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    COALESCE(dat.template_id, NULL) as template_id,
+    COALESCE(tmd.template_mapping, '{}'::jsonb) as template_mapping,
     CASE 
         WHEN doc.file_path IS NOT NULL THEN SUBSTRING(doc.file_path FROM '\\.([^\\.]+)$')
         ELSE NULL
@@ -177,4 +215,6 @@ CROSS JOIN user_profile up
 CROSS JOIN valid_depts vd
 CROSS JOIN valid_param_items vpi
 CROSS JOIN valid_agents va
+LEFT JOIN document_active_template dat ON dat.document_id = doc.document_id::uuid
+CROSS JOIN template_mapping_data tmd
 

@@ -13,6 +13,7 @@ CREATE TABLE documents (
     description TEXT        NOT NULL DEFAULT '',
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
+    template BOOLEAN     NOT NULL DEFAULT FALSE,
     classify_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
     document_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
 );

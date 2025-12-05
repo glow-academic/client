@@ -3,9 +3,8 @@
 from typing import Any
 
 from agents import Tool, function_tool
-from pydantic import Field
-
 from app.utils.logging.db_logger import get_logger
+from pydantic import Field
 
 logger = get_logger(__name__)
 
@@ -49,18 +48,20 @@ def create_generate_template_schema_function() -> Tool:
 
     async def generate_template_schema(
         schema_json: str = Field(
-            description="JSON schema string describing the template context fields and types"
+            description="JSON string in TemplateSchema format describing the template context fields and types. Must have structure: { 'name': string, 'fields': [{ 'name': string, 'type': 'string'|'number'|'boolean'|'array'|'object', 'required': bool (optional), 'item': {...} (optional for arrays), 'fields': [...] (optional for objects) }] }"
         ),
     ) -> str:
-        """Generate the JSON schema for template context.
+        """Generate the TemplateSchema JSON for template context.
 
-        The schema should describe all fields needed for the template, including:
-        - Field names and types (string, number, boolean, date, array, object)
-        - Required fields
-        - Nested structures for arrays and objects
+        The schema must follow the TemplateSchema format (NOT standard JSON Schema):
+        - Top-level object with "name" (string) and "fields" (array)
+        - Each field in "fields" must have "name" (string) and "type" (one of: string, number, boolean, array, object)
+        - Optional "required" boolean field
+        - For array types: include "item" field describing the array element structure
+        - For object types: include "fields" array describing nested object structure
 
         Args:
-            schema_json: JSON schema string describing template context
+            schema_json: JSON string in TemplateSchema format describing template context
 
         Returns:
             Confirmation message

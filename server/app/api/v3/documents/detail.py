@@ -37,6 +37,15 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     return None
 
 
+class TemplateInfo(BaseModel):
+    """Template version information."""
+
+    template_args: dict[str, Any]
+    active: bool
+    created_at: str
+    updated_at: str
+
+
 class DocumentDetailRequest(BaseModel):
     """Request to get document details."""
 
@@ -70,10 +79,12 @@ class DocumentDetailResponse(BaseModel):
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
     template: bool
+    template_id: str | None
     template_schema: dict[str, Any] | None
     template_args: dict[str, Any] | None
     template_upload_id: str | None
     template_html: str | None
+    template_mapping: dict[str, TemplateInfo]
 
 
 router = APIRouter()
@@ -194,9 +205,28 @@ async def get_document_detail(
 
         # Parse template fields
         template = row.get("template", False)
+        template_id = row.get("template_id")
         template_upload_id = row.get("template_upload_id")
         
-        # Parse template_args JSONB (this contains the schema, not the args values)
+        # Parse template_mapping (all template versions)
+        template_mapping: dict[str, TemplateInfo] = {}
+        template_mapping_data = parse_jsonb(row.get("template_mapping"))
+        if isinstance(template_mapping_data, dict):
+            for tid, tdata in template_mapping_data.items():
+                if isinstance(tdata, dict):
+                    template_args_data = tdata.get("template_args")
+                    if isinstance(template_args_data, str):
+                        template_args_data = json.loads(template_args_data)
+                    elif not isinstance(template_args_data, dict):
+                        template_args_data = {}
+                    template_mapping[tid] = TemplateInfo(
+                        template_args=template_args_data,
+                        active=tdata.get("active", False),
+                        created_at=tdata.get("created_at", ""),
+                        updated_at=tdata.get("updated_at", ""),
+                    )
+        
+        # Parse template_args JSONB from active template (this contains the schema, not the args values)
         template_args_raw = row.get("template_args")
         template_schema: dict[str, Any] | None = None
         template_args: dict[str, Any] | None = None
@@ -285,10 +315,12 @@ async def get_document_detail(
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
             template=template,
+            template_id=template_id,
             template_schema=template_schema,
             template_args=template_args,
             template_upload_id=template_upload_id,
             template_html=template_html,
+            template_mapping=template_mapping,
         )
 
         # Cache response

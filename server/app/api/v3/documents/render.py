@@ -55,20 +55,15 @@ async def render_document_template(
         profile_id = uuid.UUID(request.profileId)
 
         # Get template upload info and template args
+        # SQL uses INNER JOIN so it only returns rows if document exists and has active template
         sql_query = load_sql("sql/v3/documents/render_template_complete.sql")
-        sql_params = (str(document_id), str(profile_id))
+        sql_params = (str(document_id),)
         template_row = await conn.fetchrow(sql_query, *sql_params)
 
         if not template_row:
             raise HTTPException(
                 status_code=404,
-                detail=f"Document {request.documentId} not found or not a template",
-            )
-
-        if not template_row.get("template"):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Document {request.documentId} is not a template",
+                detail=f"Document {request.documentId} not found or has no active template",
             )
 
         file_path = template_row.get("file_path")

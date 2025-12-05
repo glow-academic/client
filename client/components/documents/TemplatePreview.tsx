@@ -58,37 +58,27 @@ export default function TemplatePreview({
     );
   }
 
+  // When documentId exists, show only preview (no tabs)
   return (
-    <Tabs defaultValue="render" className="w-full h-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="render">Preview</TabsTrigger>
-        <TabsTrigger value="source">Template Source</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="render" className="h-full relative mt-4">
-        {safeHtml ? (
-          <iframe
-            sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin"
-            className="w-full h-full min-h-[500px] border rounded-md"
-            srcDoc={safeHtml}
-            title="Template Preview"
-            onLoad={() => setIframeLoading(false)}
-            style={
-              iframeLoading
-                ? { visibility: "hidden" }
-                : { visibility: "visible" }
-            }
-          />
-        ) : (
-          <div className="text-sm text-muted-foreground p-4">
-            Fill in template arguments to see preview
-          </div>
-        )}
-      </TabsContent>
-
-      <TabsContent value="source" className="mt-4 h-full">
-        <CodeViewer name="Template HTML" value={templateHtml} />
-      </TabsContent>
-    </Tabs>
+    <div className="w-full h-full">
+      {safeHtml ? (
+        <iframe
+          sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin"
+          className="w-full h-full min-h-[500px] border rounded-md"
+          srcDoc={safeHtml}
+          title="Template Preview"
+          onLoad={() => setIframeLoading(false)}
+          style={
+            iframeLoading
+              ? { visibility: "hidden" }
+              : { visibility: "visible" }
+          }
+        />
+      ) : (
+        <div className="text-sm text-muted-foreground p-4">
+          Fill in template arguments to see preview
+        </div>
+      )}
+    </div>
   );
 }

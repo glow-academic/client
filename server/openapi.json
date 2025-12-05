@@ -17320,6 +17320,17 @@
             "type": "boolean",
             "title": "Template"
           },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
           "template_schema": {
             "anyOf": [
               {
@@ -17365,6 +17376,13 @@
               }
             ],
             "title": "Template Html"
+          },
+          "template_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TemplateInfo"
+            },
+            "type": "object",
+            "title": "Template Mapping"
           }
         },
         "type": "object",
@@ -17392,10 +17410,12 @@
           "agent_mapping",
           "valid_agent_ids",
           "template",
+          "template_id",
           "template_schema",
           "template_args",
           "template_upload_id",
-          "template_html"
+          "template_html",
+          "template_mapping"
         ],
         "title": "DocumentDetailResponse",
         "description": "Detailed document response."
@@ -19585,6 +19605,17 @@
               }
             ],
             "title": "Profileid"
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentid"
           }
         },
         "type": "object",
@@ -19616,6 +19647,18 @@
           "upload_id": {
             "type": "string",
             "title": "Upload Id"
+          },
+          "template_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Mapping"
           }
         },
         "type": "object",
@@ -30658,6 +30701,36 @@
         ],
         "title": "SubmitQuizResponseResponse"
       },
+      "TemplateInfo": {
+        "properties": {
+          "template_args": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Template Args"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_args",
+          "active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TemplateInfo",
+        "description": "Template version information."
+      },
       "ThemeTokens": {
         "properties": {
           "background": {
@@ -31428,6 +31501,17 @@
               }
             ],
             "title": "Active"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
           },
           "department_id": {
             "anyOf": [

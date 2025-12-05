@@ -20,6 +20,7 @@ class UpdateDocumentRequest(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
+    template: bool | None = None  # Enable/disable template mode
     department_id: str | None = None
     parameter_item_ids: list[str] = []
     classify_agent_id: str | None = None
@@ -67,6 +68,7 @@ async def update_document(
                 request.name,
                 request.description,
                 request.active,
+                request.template,
                 uuid.UUID(request.department_id) if request.department_id else None,
                 param_item_ids,
                 uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
@@ -80,6 +82,7 @@ async def update_document(
                 request.name,
                 request.description,
                 request.active,
+                request.template,
                 uuid.UUID(request.department_id) if request.department_id else None,
                 param_item_ids,
                 uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,

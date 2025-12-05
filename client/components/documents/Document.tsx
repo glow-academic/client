@@ -24,6 +24,7 @@ import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
+import { TemplatePicker } from "@/components/common/forms/TemplatePicker";
 import TemplateForm, {
   type TemplateSchema,
   isTemplateSchema,
@@ -157,6 +158,20 @@ export default function Document({
   const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
   const [templateArgs, setTemplateArgs] = useState<Record<string, unknown>>({});
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null
+  );
+  const [templateMapping, setTemplateMapping] = useState<
+    Record<
+      string,
+      {
+        template_args: Record<string, unknown>;
+        active: boolean;
+        created_at: string;
+        updated_at: string;
+      }
+    >
+  >({});
 
   // Create mode: File upload state
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -319,6 +334,12 @@ export default function Document({
         documentAgentId: documentDetail.document_agent_id || null,
       });
 
+      // Always initialize template_mapping if it exists (regardless of template flag)
+      // This allows showing past templates even if document is not currently a template
+      if (documentDetail.template_mapping) {
+        setTemplateMapping(documentDetail.template_mapping);
+      }
+
       // Initialize template args if template document
       if (documentDetail.template) {
         if (documentDetail.template_args) {
@@ -326,6 +347,9 @@ export default function Document({
         }
         if (documentDetail.template_upload_id) {
           setTemplateUploadId(documentDetail.template_upload_id);
+        }
+        if (documentDetail.template_id) {
+          setSelectedTemplateId(documentDetail.template_id);
         }
         setIsTemplateMode(true);
       }
@@ -858,6 +882,7 @@ export default function Document({
         body: {
           departmentId,
           profileId: effectiveProfile?.id || undefined,
+          documentId: isEditMode && documentId ? documentId : undefined,
         } as GenerateTemplateBody,
       });
 
@@ -872,8 +897,25 @@ export default function Document({
         }
         // Extract upload_id from result - it's part of GenerateTemplateOut
         setTemplateUploadId(result.upload_id || null);
+        setSelectedTemplateId(result.upload_id || null);
         setIsTemplateMode(true);
         setTemplateArgs({});
+
+        // If template_mapping is returned (when documentId was provided), update state
+        if (result.template_mapping && isEditMode) {
+          // Type assertion needed since API returns dict[str, Any] but we need TemplateInfo structure
+          const mapping = result.template_mapping as Record<
+            string,
+            {
+              template_args: Record<string, unknown>;
+              active: boolean;
+              created_at: string;
+              updated_at: string;
+            }
+          >;
+          setTemplateMapping(mapping);
+        }
+
         toast.success("Template generated successfully");
       } else {
         toast.error(result.message || "Failed to generate template");
@@ -884,6 +926,55 @@ export default function Document({
       );
     } finally {
       setIsGeneratingTemplate(false);
+    }
+  };
+
+  const handleTemplateSelect = async (templateId: string | null) => {
+    if (!templateId) {
+      // Create new template - clear current template
+      setSelectedTemplateId(null);
+      setTemplateHtml(null);
+      setTemplateSchema(null);
+      setTemplateUploadId(null);
+      setTemplateArgs({});
+      return;
+    }
+
+    const template = templateMapping[templateId];
+    if (!template) {
+      toast.error("Template not found");
+      return;
+    }
+
+    // Set the selected template ID
+    setSelectedTemplateId(templateId);
+    setTemplateUploadId(templateId);
+
+    // Parse template schema from template_args
+    const schema = template.template_args;
+    if (isTemplateSchema(schema)) {
+      setTemplateSchema(schema);
+    } else {
+      toast.error("Invalid template schema");
+      return;
+    }
+
+    // Load template HTML - need to fetch from server
+    if (isEditMode && documentId) {
+      try {
+        // The template HTML should be loaded from the document detail
+        // For now, we'll need to refetch or use the existing template_html
+        // This will be handled by the detail endpoint returning template_html for the selected template
+        toast.success("Template switched successfully");
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to load template HTML"
+        );
+      }
+    } else {
+      toast.success("Template switched successfully");
     }
   };
 
@@ -1580,15 +1671,29 @@ export default function Document({
                 </div>
                 {(isTemplateMode ||
                   (isEditMode && !!documentDetail?.template)) && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleGenerateTemplateWithSwitch}
-                    disabled={isGeneratingTemplate || activeUploads.size > 0}
-                    className="h-8"
-                  >
-                    {isGeneratingTemplate ? "Generating..." : "Generate"}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {isEditMode &&
+                      documentDetail &&
+                      Object.keys(templateMapping).length > 0 && (
+                        <TemplatePicker
+                          templateMapping={templateMapping}
+                          selectedTemplateId={selectedTemplateId}
+                          onSelect={handleTemplateSelect}
+                          onCreateNew={() => handleTemplateSelect(null)}
+                          disabled={isSubmitting || isGeneratingTemplate}
+                          buttonClassName="h-8"
+                        />
+                      )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleGenerateTemplateWithSwitch}
+                      disabled={isGeneratingTemplate || activeUploads.size > 0}
+                      className="h-8"
+                    >
+                      {isGeneratingTemplate ? "Generating..." : "Generate"}
+                    </Button>
+                  </div>
                 )}
               </div>
               <p className="text-xs text-muted-foreground pl-5">
@@ -1601,11 +1706,11 @@ export default function Document({
 
         {/* Document Viewer, Upload Dropzone, or Template Preview - Always in same spot */}
         {isTemplateDocument ? (
-          /* Template Preview - 50% width with args below */
+          /* Template Preview - full width with args below */
           templateSchemaForDisplay && templateHtmlForDisplay ? (
             <div className="space-y-4">
-              <div className="w-full max-w-[50%] min-w-[400px]">
-                <div className="border rounded-md min-h-[400px]">
+              <div className="w-full">
+                <div className="border rounded-md min-h-[500px]">
                   <TemplatePreview
                     documentId={documentId || null}
                     templateHtml={templateHtmlForDisplay}
@@ -1613,7 +1718,7 @@ export default function Document({
                   />
                 </div>
               </div>
-              <div className="w-full max-w-[50%] min-w-[400px] border rounded-md p-4">
+              <div className="w-full border rounded-md p-4">
                 <TemplateForm
                   schema={templateSchemaForDisplay}
                   values={templateArgs}
@@ -1623,7 +1728,7 @@ export default function Document({
             </div>
           ) : (
             /* Show empty template preview when template mode is on but no template exists */
-            <div className="border rounded-md min-h-[400px]">
+            <div className="border rounded-md min-h-[500px]">
               <TemplatePreview
                 documentId={documentId || null}
                 templateHtml={null}

@@ -19,10 +19,14 @@ from app.main import UPLOAD_FOLDER, get_db
 from app.utils.agents.build_document_agent import build_document_agent
 from app.utils.agents.tools.create_document_tools import (
     create_document_tools, document_progress, document_results)
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+
+logger = get_logger(__name__)
 
 
 class GenerateTemplateRequest(BaseModel):
@@ -30,6 +34,7 @@ class GenerateTemplateRequest(BaseModel):
 
     departmentId: str
     profileId: str | None = None
+    documentId: str | None = None  # Optional: if provided, save template immediately
 
 
 class GenerateTemplateResponse(BaseModel):
@@ -40,6 +45,7 @@ class GenerateTemplateResponse(BaseModel):
     template_html: str
     template_schema: dict[str, Any]
     upload_id: str
+    template_mapping: dict[str, Any] | None = None  # Optional: only when documentId provided
 
 
 router = APIRouter()
@@ -223,12 +229,78 @@ async def generate_template(
         )
         upload_id = upload_id_result["id"]
 
+        # If documentId is provided, save template immediately to document_template_uploads
+        template_mapping: dict[str, Any] | None = None
+        if request.documentId:
+            try:
+                document_id = uuid.UUID(request.documentId)
+                # Prepare template schema as JSONB
+                template_schema_jsonb = json.dumps(template_schema)
+                
+                # Insert template into document_template_uploads (marks previous as inactive)
+                sql_insert_template = load_sql("sql/v3/documents/insert_document_template.sql")
+                await conn.execute(
+                    sql_insert_template,
+                    str(document_id),
+                    str(uuid.UUID(upload_id)),
+                    template_schema_jsonb,
+                    True,  # active = true
+                )
+                # Note: We do NOT automatically set template = true here
+                # Users must explicitly enable template mode via the update form
+                
+                # Fetch updated template_mapping to return in response
+                sql_get_template_mapping = """
+                    SELECT 
+                        COALESCE(
+                            jsonb_object_agg(
+                                dtu.upload_id::text,
+                                jsonb_build_object(
+                                    'template_args', dtu.args,
+                                    'active', dtu.active,
+                                    'created_at', dtu.created_at::text,
+                                    'updated_at', dtu.updated_at::text
+                                )
+                            ),
+                            '{}'::jsonb
+                        ) as template_mapping
+                    FROM document_template_uploads dtu
+                    WHERE dtu.document_id = $1
+                """
+                mapping_row = await conn.fetchrow(sql_get_template_mapping, str(document_id))
+                if mapping_row and mapping_row.get("template_mapping"):
+                    mapping_data = mapping_row["template_mapping"]
+                    # Parse JSONB string to dict if needed (asyncpg returns JSONB as dict or str)
+                    if isinstance(mapping_data, str):
+                        try:
+                            template_mapping = json.loads(mapping_data)
+                        except json.JSONDecodeError:
+                            logger.warning(f"Failed to parse template_mapping JSON: {mapping_data}")
+                            template_mapping = {}
+                    elif isinstance(mapping_data, dict):
+                        template_mapping = mapping_data
+                    else:
+                        template_mapping = {}
+                
+                # Invalidate documents cache to ensure detail page shows updated template
+                await invalidate_tags(["documents"])
+                logger.info(f"Template saved to document {document_id} with upload_id {upload_id}")
+            except ValueError as e:
+                # If documentId is invalid UUID, log but don't fail the request
+                # Template is still generated, just not saved
+                logger.warning(f"Invalid documentId provided: {request.documentId}, template not saved: {e}")
+            except Exception as e:
+                # If saving fails, log but don't fail the request
+                # Template is still generated and can be used
+                logger.error(f"Failed to save template to document {request.documentId}: {e}", exc_info=True)
+
         return GenerateTemplateResponse(
             success=True,
             message="Document template generated successfully",
             template_html=template_html,
             template_schema=template_schema,
             upload_id=upload_id,
+            template_mapping=template_mapping,
         )
     except HTTPException:
         raise
