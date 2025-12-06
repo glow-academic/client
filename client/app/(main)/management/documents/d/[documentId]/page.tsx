@@ -142,15 +142,11 @@ export default async function DocumentEditPage({
         }
       });
 
-      // Check if there are template arg params
+      // Check if there are template arg params (JSON format)
       const templateSchema =
         documentDetail.template_schema as TemplateSchema | null;
       if (templateSchema) {
-        const hasTemplateParams = Array.from(searchParamsObj.keys()).some(
-          (key) =>
-            key.includes(".") ||
-            templateSchema.fields.some((f) => f.name === key)
-        );
+        const hasTemplateParams = searchParamsObj.has("templateArgs");
 
         if (hasTemplateParams) {
           // Extract template args from search params
@@ -160,12 +156,18 @@ export default async function DocumentEditPage({
           );
 
           // Call render endpoint server-side
+          // Use first departmentId from document for department-specific theme
+          const departmentIds = documentDetail.department_ids && documentDetail.department_ids.length > 0
+            ? documentDetail.department_ids
+            : undefined;
+
           try {
             const renderResult = await renderTemplate({
               body: {
                 documentId,
                 templateArgs,
                 profileId,
+                departmentIds,
               },
             });
             renderedHtml = renderResult.rendered_html;
@@ -190,6 +192,7 @@ export default async function DocumentEditPage({
           documentDetail={documentDetail}
           updateDocumentAction={updateDocument}
           generateTemplateAction={generateTemplate}
+          renderTemplateAction={renderTemplate}
           renderedHtml={renderedHtml}
         />
       </div>

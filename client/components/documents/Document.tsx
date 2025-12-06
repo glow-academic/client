@@ -9,6 +9,8 @@
 
 import type {
   DocumentDetailOut,
+  RenderTemplateIn,
+  RenderTemplateOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
 } from "@/app/(main)/management/documents/d/[documentId]/page";
@@ -52,7 +54,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
@@ -89,6 +90,9 @@ export interface DocumentProps {
   generateTemplateAction?: (
     input: GenerateTemplateIn
   ) => Promise<GenerateTemplateOut>;
+  renderTemplateAction?: (
+    input: RenderTemplateIn
+  ) => Promise<RenderTemplateOut>;
   renderedHtml?: string | null;
 }
 
@@ -101,6 +105,7 @@ export default function Document({
   updateDocumentAction,
   finalizeUploadAction,
   generateTemplateAction,
+  renderTemplateAction,
   renderedHtml = null,
 }: DocumentProps) {
   const router = useRouter();
@@ -438,7 +443,12 @@ export default function Document({
   // Client-side render endpoint call when query params change
   useEffect(() => {
     // Only render if we have a template schema, document ID, and are in template mode
-    if (!templateSchemaForDisplay || !documentId || !isTemplateMode) {
+    // In edit mode, also check if document is a template
+    const shouldRender =
+      templateSchemaForDisplay &&
+      documentId &&
+      (isTemplateMode || (isEditMode && !!documentDetail?.template));
+    if (!shouldRender) {
       setClientRenderedHtml(renderedHtml);
       return;
     }
@@ -451,18 +461,35 @@ export default function Document({
           templateSchemaForDisplay
         );
 
+        // Get departmentIds from documentDetail (edit mode) or form state
+        const departmentIds =
+          isEditMode && documentDetail?.department_ids
+            ? documentDetail.department_ids
+            : formData.departmentIds.length > 0
+              ? formData.departmentIds
+              : null;
+
         // Always call render endpoint if we have template args, even if empty
         // This ensures we get a rendered preview with default values
-        const result = await api.post("/documents/render", {
-          body: {
-            documentId,
-            templateArgs,
-            profileId: effectiveProfile?.id || "",
-          },
-        });
+        if (!renderTemplateAction) {
+          console.error("Render template action not available");
+          setClientRenderedHtml(null);
+          return;
+        }
+
+        const renderBody: RenderTemplateIn["body"] = {
+          documentId,
+          templateArgs,
+          profileId: effectiveProfile?.id || "",
+        };
+        if (departmentIds) {
+          renderBody.departmentIds = departmentIds;
+        }
+        const result = await renderTemplateAction({ body: renderBody });
         setClientRenderedHtml(result.rendered_html);
-      } catch {
+      } catch (error) {
         // If render fails, set to null so TemplatePreview shows appropriate message
+        console.error("Failed to render template:", error);
         setClientRenderedHtml(null);
       }
     }, 500); // Debounce 500ms
@@ -473,7 +500,12 @@ export default function Document({
     templateSchemaForDisplay,
     documentId,
     isTemplateMode,
+    isEditMode,
+    documentDetail?.template,
+    documentDetail?.department_ids,
+    formData.departmentIds,
     effectiveProfile?.id,
+    renderTemplateAction,
     renderedHtml,
   ]);
 
@@ -1779,11 +1811,12 @@ export default function Document({
 
         {/* Document Viewer, Upload Dropzone, or Template Preview - Always in same spot */}
         {isTemplateDocument ? (
-          /* Template Preview - full width with args below */
+          /* Template Preview - side by side layout, 50% each */
           templateSchemaForDisplay && templateHtmlForDisplay ? (
-            <div className="space-y-4">
-              <div className="w-full">
-                <div className="border rounded-md min-h-[500px]">
+            <div className="flex gap-4 min-h-[400px] max-h-[600px]">
+              {/* Template Preview - 50% width */}
+              <div className="w-1/2 flex flex-col min-h-0">
+                <div className="border rounded-md flex-1 min-h-0 flex flex-col overflow-hidden">
                   <TemplatePreview
                     documentId={documentId || null}
                     templateHtml={templateHtmlForDisplay}
@@ -1791,17 +1824,20 @@ export default function Document({
                   />
                 </div>
               </div>
-              <div className="w-full border rounded-md p-4">
-                <TemplateForm
-                  schema={templateSchemaForDisplay}
-                  values={templateArgs}
-                  onChange={setTemplateArgs}
-                />
+              {/* Template Args - 50% width with scroll */}
+              <div className="w-1/2 flex flex-col min-h-0">
+                <div className="border rounded-md flex-1 min-h-0 overflow-y-auto p-4">
+                  <TemplateForm
+                    schema={templateSchemaForDisplay}
+                    values={templateArgs}
+                    onChange={setTemplateArgs}
+                  />
+                </div>
               </div>
             </div>
           ) : (
             /* Show empty template preview when template mode is on but no template exists */
-            <div className="border rounded-md min-h-[500px]">
+            <div className="border rounded-md min-h-[400px]">
               <TemplatePreview
                 documentId={documentId || null}
                 templateHtml={null}

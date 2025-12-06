@@ -26648,6 +26648,20 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
           }
         },
         "type": "object",

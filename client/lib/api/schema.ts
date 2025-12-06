@@ -11002,6 +11002,8 @@ export interface components {
             };
             /** Profileid */
             profileId: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
         };
         /**
          * RenderTemplateResponse

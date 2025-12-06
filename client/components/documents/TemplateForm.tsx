@@ -74,10 +74,8 @@ export default function TemplateForm({
     if (searchParamsStr === lastSearchParamsRef.current) return;
     lastSearchParamsRef.current = searchParamsStr;
 
-    // Check if there are any template arg params in URL
-    const hasTemplateParams = Array.from(searchParams.keys()).some(
-      (key) => key.includes(".") || schema.fields.some((f) => f.name === key)
-    );
+    // Check if there are template args in URL (JSON format)
+    const hasTemplateParams = searchParams.has("templateArgs");
 
     if (hasTemplateParams) {
       // Import searchParamsToTemplateArgs dynamically to avoid circular deps
@@ -118,7 +116,10 @@ export default function TemplateForm({
       debounceTimeoutRef.current = setTimeout(() => {
         const params = new URLSearchParams(searchParams.toString());
 
-        // Remove existing template arg params
+        // Remove existing template args param (JSON format)
+        params.delete("templateArgs");
+
+        // Also clean up any old dot notation params for backward compatibility
         const keysToRemove: string[] = [];
         for (const key of params.keys()) {
           if (key.includes(".") || schema.fields.some((f) => f.name === key)) {
@@ -127,7 +128,7 @@ export default function TemplateForm({
         }
         keysToRemove.forEach((key) => params.delete(key));
 
-        // Add new template arg params
+        // Add new template args as JSON
         const templateParams = templateArgsToSearchParams(newValues);
         for (const [key, value] of templateParams.entries()) {
           params.set(key, value);
@@ -285,10 +286,7 @@ export default function TemplateForm({
               </Button>
             </div>
             {arrayValue.map((_item: unknown, index: number) => (
-              <div
-                key={index}
-                className="relative border rounded-md p-4 bg-muted/30 space-y-4"
-              >
+              <div key={index} className="relative p-4 space-y-4">
                 <div className="flex items-center justify-between mb-2">
                   <Label className="text-sm font-medium">
                     {field.name} #{index + 1}
@@ -315,7 +313,7 @@ export default function TemplateForm({
               </div>
             ))}
             {arrayValue.length === 0 && (
-              <div className="text-sm text-muted-foreground p-4 border rounded-md">
+              <div className="text-sm text-muted-foreground p-4">
                 No items. Click "Add Item" to add one.
               </div>
             )}
@@ -330,7 +328,7 @@ export default function TemplateForm({
               {field.name}
               {field.required && <span className="text-destructive"> *</span>}
             </Label>
-            <div className="border rounded-md p-4 bg-muted/30 space-y-4">
+            <div className="space-y-4">
               {field.fields.map((subField) =>
                 renderField(subField, fieldPath, indent + 1)
               )}

@@ -26,6 +26,7 @@ class RenderTemplateRequest(BaseModel):
     documentId: str
     templateArgs: dict[str, Any]
     profileId: str
+    departmentIds: list[str] | None = None  # Optional department IDs for department-specific theme
 
 
 class RenderTemplateResponse(BaseModel):
@@ -84,8 +85,15 @@ async def render_document_template(
         with open(full_path, encoding="utf-8") as f:
             template_html = f.read()
 
-        # Get active theme
-        settings_request = SettingsActiveRequest(profileId=request.profileId)
+        # Get active theme - use first departmentId if provided for department-specific theme
+        department_id = None
+        if request.departmentIds and len(request.departmentIds) > 0:
+            department_id = request.departmentIds[0]
+        
+        settings_request = SettingsActiveRequest(
+            profileId=request.profileId,
+            departmentId=department_id
+        )
         # Create a dummy response object for get_active_settings
         dummy_response = Response()
         settings_response = await get_active_settings(
