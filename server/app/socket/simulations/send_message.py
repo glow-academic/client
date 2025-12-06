@@ -84,6 +84,10 @@ class SimulationMessageCancelledPayload(BaseModel):
     final_content: str
 
 
+class SimulationRunCompletePayload(BaseModel):
+    chat_id: str
+
+
 class MessageSentPayload(BaseModel):
     message_id: str
     chat_id: str
@@ -141,6 +145,12 @@ async def simulation_message_cancelled(
     payload: SimulationMessageCancelledPayload, room: str
 ) -> None:
     await sio.emit("simulation_message_cancelled", payload.model_dump(), room=room)
+
+
+async def simulation_run_complete(
+    payload: SimulationRunCompletePayload, room: str
+) -> None:
+    await sio.emit("simulation_run_complete", payload.model_dump(), room=room)
 
 
 async def message_sent(payload: MessageSentPayload, room: str) -> None:
@@ -1072,6 +1082,12 @@ async def _send_simulation_message_impl(
                         usage.input_tokens,
                         usage.output_tokens,
                     )
+
+                    # Emit global run complete event (chat-wide, indicates all persona tool calls finished)
+                    await simulation_run_complete(
+                        SimulationRunCompletePayload(chat_id=str(chat_id_uuid)),
+                        room=f"simulation_{chat_id_uuid}",
+                    )
                 except OutputGuardrailTripwireTriggered as e:
                     # Handle guardrail-triggered output
                     reason = ""
@@ -1093,6 +1109,11 @@ async def _send_simulation_message_impl(
                         SimulationMessageErrorPayload(
                             chat_id=str(chat_id_uuid), error=error_text
                         ),
+                        room=f"simulation_{chat_id_uuid}",
+                    )
+                    # Emit run complete event on error to ensure stop button turns off
+                    await simulation_run_complete(
+                        SimulationRunCompletePayload(chat_id=str(chat_id_uuid)),
                         room=f"simulation_{chat_id_uuid}",
                     )
 
@@ -1167,6 +1188,11 @@ async def _send_simulation_message_impl(
                         SimulationMessageErrorPayload(
                             chat_id=str(chat_id_uuid), error=str(e)
                         ),
+                        room=f"simulation_{chat_id_uuid}",
+                    )
+                    # Emit run complete event on error to ensure stop button turns off
+                    await simulation_run_complete(
+                        SimulationRunCompletePayload(chat_id=str(chat_id_uuid)),
                         room=f"simulation_{chat_id_uuid}",
                     )
 

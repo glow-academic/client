@@ -230,6 +230,7 @@ export default function AttemptChat({
   const simulationRef = useRef<typeof simulation | null>(null);
   const pendingNextChatIdRef = useRef<string | null>(null);
   const dataFetchedAtRef = useRef<number>(Date.now());
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [localElapsedOffset, setLocalElapsedOffset] = useState(0);
 
   // Extract data from v3 response
@@ -713,25 +714,18 @@ export default function AttemptChat({
         setIsSendingMessage(true);
       }
 
-      // Refresh when new message arrives for current chat
-      if (data.chat_id === currentChatIdRef.current) {
-        // Server-side Redis cache is already invalidated by the WebSocket handler
-        router.refresh();
-      }
+      // No refresh needed - optimistic messages handle immediate display
+      // Refresh will happen on completion to sync final state
     };
 
-    const handleMessageSent = async (data: {
+    const handleMessageSent = async (_data: {
       message_id: string;
       chat_id: string;
       message: string;
       created_at: string;
     }) => {
-      // Immediately refresh when user message is confirmed by server
-      // This provides immediate feedback that the message was received
-      if (data.chat_id === currentChatIdRef.current) {
-        // Server-side Redis cache is already invalidated by the WebSocket handler
-        router.refresh();
-      }
+      // No refresh needed - optimistic messages handle immediate display
+      // The message is already visible via simulation_new_message event
     };
 
     const handleSimulationMessageComplete = async (data: {
@@ -742,9 +736,24 @@ export default function AttemptChat({
       audio?: boolean;
     }) => {
       if (data.chat_id === currentChatIdRef.current) {
+        // Don't set isSendingMessage to false here - wait for simulation_run_complete
+        // This event is kept for per-message completion tracking (local UI updates)
+
+        // Debounce refresh to prevent multiple rapid refreshes
+        if (refreshTimeoutRef.current) {
+          clearTimeout(refreshTimeoutRef.current);
+        }
+        refreshTimeoutRef.current = setTimeout(() => {
+          router.refresh();
+          refreshTimeoutRef.current = null;
+        }, 500); // 500ms debounce
+      }
+    };
+
+    const handleSimulationRunComplete = (data: { chat_id: string }) => {
+      if (data.chat_id === currentChatIdRef.current) {
+        // Global run complete - turn off stop button (all persona tool calls finished)
         setIsSendingMessage(false);
-        // Server-side Redis cache is already invalidated by the WebSocket handler
-        router.refresh();
       }
     };
 
@@ -1175,6 +1184,7 @@ export default function AttemptChat({
     socket.on("simulation_new_message", handleSimulationNewMessage);
     socket.on("message_sent", handleMessageSent);
     socket.on("simulation_message_complete", handleSimulationMessageComplete);
+    socket.on("simulation_run_complete", handleSimulationRunComplete);
     socket.on("simulation_message_cancelled", handleSimulationMessageCancelled);
     socket.on("simulation_message_error", handleSimulationMessageError);
     socket.on("simulation_stopped", handleSimulationStopped);
@@ -1196,6 +1206,7 @@ export default function AttemptChat({
         "simulation_message_complete",
         handleSimulationMessageComplete
       );
+      socket.off("simulation_run_complete", handleSimulationRunComplete);
       socket.off(
         "simulation_message_cancelled",
         handleSimulationMessageCancelled
@@ -1215,6 +1226,11 @@ export default function AttemptChat({
         handleSimulationGradingProgress
       );
       socket.off("hint_generation_progress", handleHintGenerationProgress);
+
+      // Clean up refresh timeout on unmount
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
     };
   }, [
     socket,

@@ -423,7 +423,7 @@ export default function ActiveAttemptView({
                       isActive={!timer.expired}
                       simulation={simulation}
                       currentChatHints={currentChatHints}
-                      personas={personas}
+                      personas={personas ?? []}
                       scenario={scenario}
                     />
                   </div>

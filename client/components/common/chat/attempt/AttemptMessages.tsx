@@ -114,7 +114,7 @@ export default function AttemptMessages({
   simulation,
   currentChatHints = [],
   personas,
-  scenario,
+  scenario: _scenario,
 }: AttemptMessagesProps) {
   const { socket } = useProfile();
   const router = useRouter();
@@ -125,8 +125,12 @@ export default function AttemptMessages({
 
   // Create persona lookup map for efficient persona lookup by ID
   const personaMap = useMemo(() => {
-    if (!personas) return new Map<string, { id: string; name: string; icon: string | null; color: string | null }>();
-    return new Map(personas.map(p => [p.id, p]));
+    if (!personas)
+      return new Map<
+        string,
+        { id: string; name: string; icon: string | null; color: string | null }
+      >();
+    return new Map(personas.map((p) => [p.id, p]));
   }, [personas]);
 
   // State for hints modal
@@ -145,28 +149,49 @@ export default function AttemptMessages({
     new Map()
   );
 
-  // Get messages from props
-  // Merge with streaming content for real-time updates
-  const messages = useMemo(() => {
-    if (!propMessages) return [];
+  // State to track optimistic messages from WebSocket events
+  const [optimisticMessages, setOptimisticMessages] = useState<
+    Map<
+      string,
+      {
+        id: string;
+        type: string; // "query" | "response"
+        content: string;
+        createdAt: string;
+        completed: boolean;
+        personaId?: string;
+      }
+    >
+  >(new Map());
 
-    // Merge streaming content with SSR messages
-    // Only use streaming content if message is not completed (still streaming)
-    // or if streaming content is more recent than SSR content
-    return propMessages.map((msg) => {
+  // Get messages from props
+  // Merge with optimistic messages and streaming content for real-time updates
+  const messages = useMemo(() => {
+    if (!propMessages) return Array.from(optimisticMessages.values());
+
+    // Start with propMessages
+    const messageMap = new Map<string, (typeof propMessages)[number]>();
+    propMessages.forEach((msg) => messageMap.set(msg.id, msg));
+
+    // Add optimistic messages not yet in propMessages
+    optimisticMessages.forEach((optMsg, id) => {
+      if (!messageMap.has(id)) {
+        messageMap.set(id, optMsg);
+      }
+    });
+
+    // Apply streaming content to all messages
+    return Array.from(messageMap.values()).map((msg) => {
       const streaming = streamingContent.get(msg.id);
       if (
         streaming !== undefined &&
         (!msg.completed || streaming.length > msg.content.length)
       ) {
-        return {
-          ...msg,
-          content: streaming,
-        };
+        return { ...msg, content: streaming };
       }
       return msg;
     });
-  }, [propMessages, streamingContent]);
+  }, [propMessages, optimisticMessages, streamingContent]);
 
   // Sort messages chronologically (no grouping)
   const sortedMessages = useMemo(() => {
@@ -186,6 +211,19 @@ export default function AttemptMessages({
   }, []);
 
   const handleStarterPromptClick = (prompt: string) => {
+    // Create optimistic user message immediately for instant feedback
+    const tempId = `optimistic-user-${Date.now()}-${Math.random()}`;
+    setOptimisticMessages((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(tempId, {
+        id: tempId,
+        type: "query",
+        content: prompt,
+        createdAt: new Date().toISOString(),
+        completed: true,
+      });
+      return newMap;
+    });
     sendMessage(prompt);
   };
 
@@ -246,14 +284,17 @@ export default function AttemptMessages({
     return () => viewport.removeEventListener("scroll", handleScrollEvent);
   }, [messages.length, messages]);
 
-  // Clear streaming content when chat changes
+  // Clear streaming content and optimistic messages when chat changes
   useEffect(() => {
     setStreamingContent(new Map());
+    setOptimisticMessages(new Map());
   }, [targetChatId]);
 
   // Clear streaming content for completed messages when SSR data refreshes
+  // Also clear optimistic messages that are now in SSR data
   useEffect(() => {
-    if (!propMessages) return;
+    // Don't clear if propMessages is undefined or empty - might be during refresh
+    if (!propMessages || propMessages.length === 0) return;
 
     // Clear streaming content for messages that are completed in SSR data
     setStreamingContent((prev) => {
@@ -267,6 +308,21 @@ export default function AttemptMessages({
             newMap.delete(msg.id);
             changed = true;
           }
+        }
+      });
+      return changed ? newMap : prev;
+    });
+
+    // Clear optimistic messages that are now in SSR data
+    // Only clear if the message actually exists in propMessages (not just because propMessages exists)
+    setOptimisticMessages((prev) => {
+      const newMap = new Map(prev);
+      let changed = false;
+      const propMessageIds = new Set(propMessages.map((msg) => msg.id));
+      newMap.forEach((_msg, id) => {
+        if (propMessageIds.has(id)) {
+          newMap.delete(id);
+          changed = true;
         }
       });
       return changed ? newMap : prev;
@@ -314,8 +370,66 @@ export default function AttemptMessages({
       }
     };
 
+    const handleSimulationNewMessage = (data: {
+      message_id: string;
+      chat_id: string;
+      role: string;
+      content: string;
+      completed: boolean;
+      created_at: string;
+      persona_id?: string;
+    }) => {
+      if (data.chat_id === targetChatId) {
+        // Convert role to type (user -> query, assistant -> response)
+        const type = data.role === "user" ? "query" : "response";
+        setOptimisticMessages((prev) => {
+          const newMap = new Map(prev);
+
+          // For user messages, check if there's a matching optimistic message to replace
+          if (type === "query") {
+            const normalizedContent = data.content.trim().toLowerCase();
+
+            // Find matching optimistic user message by content
+            for (const [tempId, optMsg] of newMap.entries()) {
+              if (
+                optMsg.type === "query" &&
+                tempId.startsWith("optimistic-user-") &&
+                optMsg.content.trim().toLowerCase() === normalizedContent
+              ) {
+                // Replace temp message with real one (same content, real ID)
+                newMap.delete(tempId);
+                break;
+              }
+            }
+          }
+
+          // Add the real message (or new message if no match found)
+          const optimisticMessage: {
+            id: string;
+            type: string;
+            content: string;
+            createdAt: string;
+            completed: boolean;
+            personaId?: string;
+          } = {
+            id: data.message_id,
+            type,
+            content: data.content,
+            createdAt: data.created_at,
+            completed: data.completed,
+          };
+          if (data.persona_id) {
+            optimisticMessage.personaId = data.persona_id;
+          }
+          newMap.set(data.message_id, optimisticMessage);
+          return newMap;
+        });
+      }
+    };
+
     socket.on("simulation_message_token", handleSimulationMessageToken);
     socket.on("simulation_message_complete", handleSimulationMessageComplete);
+    socket.on("simulation_new_message", handleSimulationNewMessage);
 
     return () => {
       socket.off("simulation_message_token", handleSimulationMessageToken);
@@ -323,6 +437,7 @@ export default function AttemptMessages({
         "simulation_message_complete",
         handleSimulationMessageComplete
       );
+      socket.off("simulation_new_message", handleSimulationNewMessage);
     };
   }, [socket, targetChatId]);
 
@@ -461,8 +576,8 @@ export default function AttemptMessages({
                     const isSelected = selectedHintMessageId === message.id;
 
                     // Get persona data from message's personaId, fallback to default
-                    const messagePersona = message.personaId 
-                      ? personaMap.get(message.personaId) 
+                    const messagePersona = message.personaId
+                      ? personaMap.get(message.personaId)
                       : null;
                     const personaName = messagePersona?.name || "Assistant";
                     const personaIcon = messagePersona?.icon;
