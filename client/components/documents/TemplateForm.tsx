@@ -241,6 +241,10 @@ export default function TemplateForm({
     path: string[] = [],
     indent: number = 0
   ): React.JSX.Element | null => {
+    // Skip if field doesn't have a name (can happen with malformed schemas)
+    if (!field.name) {
+      return null;
+    }
     const fieldPath = [...path, field.name];
     const fieldValue = getNestedValue(formValues, fieldPath);
     const paddingLeft = indent * 24;
@@ -378,10 +382,24 @@ export default function TemplateForm({
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
-                {renderField(
-                  field.item!,
-                  [...fieldPath, index.toString()],
-                  indent + 1
+                {field.item!.type === "object" && field.item!.fields ? (
+                  // For object-type array items, render fields directly without adding item name to path
+                  <div className="space-y-4">
+                    {field.item!.fields.map((subField) =>
+                      renderField(
+                        subField,
+                        [...fieldPath, index.toString()],
+                        indent + 1
+                      )
+                    )}
+                  </div>
+                ) : (
+                  // For non-object array items, render normally
+                  renderField(
+                    field.item!,
+                    [...fieldPath, index.toString()],
+                    indent + 1
+                  )
                 )}
               </div>
             ))}
@@ -426,7 +444,12 @@ export default function TemplateForm({
     path: string[]
   ): unknown => {
     let current: unknown = obj;
-    for (const key of path) {
+    for (let i = 0; i < path.length; i++) {
+      const key = path[i];
+      if (key === undefined) {
+        return undefined;
+      }
+
       if (
         current === undefined ||
         current === null ||
@@ -434,7 +457,24 @@ export default function TemplateForm({
       ) {
         return undefined;
       }
-      current = (current as Record<string, unknown>)[key];
+
+      // Check if current is an array and key is numeric (array index)
+      if (Array.isArray(current)) {
+        const index = parseInt(key, 10);
+        if (!isNaN(index) && index >= 0 && index < current.length) {
+          current = current[index];
+        } else {
+          // Invalid array index
+          return undefined;
+        }
+      } else {
+        // Treat as object key
+        const objCurrent = current as Record<string, unknown>;
+        if (!(key in objCurrent)) {
+          return undefined;
+        }
+        current = objCurrent[key];
+      }
     }
     return current;
   };
