@@ -20,7 +20,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Loader2, Mic, MicOff, Send, Square } from "lucide-react";
+import { Loader2, Mic, MicOff, Send, Square, X } from "lucide-react";
 
 // Tooltip
 import {
@@ -89,6 +89,7 @@ export default function AttemptInput({
   const [voiceModeEnabled, setVoiceModeEnabled] = useState(false);
   const [isStartingVoice, setIsStartingVoice] = useState(false);
   const [isStoppingVoice, setIsStoppingVoice] = useState(false);
+  const [isMicMuted, setIsMicMuted] = useState(false);
 
   const { socket } = useProfile();
   const inputPanelRef = useRef<HTMLDivElement>(null);
@@ -149,12 +150,45 @@ export default function AttemptInput({
     e.preventDefault();
     const messageToSend = newMessage.trim();
 
-    // Require either text message or sketch to send
-    if (!messageToSend || !currentChat || isSendingMessage || !isConnected)
-      return;
+    if (!messageToSend || !currentChat || !isConnected) return;
+
+    // In voice mode: send to RealtimeSession instead of backend text path
+    if (voiceModeEnabled && realtimeSessionRef.current) {
+      const session = realtimeSessionRef.current;
+      try {
+        // Send text message to RealtimeSession
+        session.sendMessage({
+          type: "message",
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: messageToSend,
+            },
+          ],
+        });
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Sent text to RealtimeSession:", messageToSend);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to send message to voice session";
+        // eslint-disable-next-line no-console
+        console.error("[Voice] Error sending text to RealtimeSession:", {
+          error: errorMessage,
+          error_object: error,
+        });
+        toast.error(errorMessage);
+        return; // don't clear input on failure
+      }
+    } else {
+      // Normal text mode: go through your existing backend
+      if (isSendingMessage) return;
+      sendMessage(messageToSend);
+    }
 
     setNewMessage("");
-    sendMessage(messageToSend);
   };
   const handleStopMessage = () => stopMessage();
 
@@ -177,233 +211,210 @@ export default function AttemptInput({
     }
 
     setVoiceModeEnabled(false);
+    setIsMicMuted(false);
   }, []);
 
   // Voice mode handlers
-  const handleVoiceToggle = useCallback(async () => {
+  const handleVoiceStop = useCallback(async () => {
+    if (!currentChat?.id || !socket || !isConnected || !voiceModeEnabled)
+      return;
+
+    setIsStoppingVoice(true);
+    try {
+      // eslint-disable-next-line no-console
+      console.log("[Voice] Stopping voice mode:", {
+        chat_id: currentChat.id,
+      });
+
+      const stopResponse = await new Promise<{
+        success: boolean;
+        message: string;
+      }>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error("Timeout waiting for stop_voice response"));
+        }, 5000);
+
+        socket.once("stop_voice_response", (data) => {
+          clearTimeout(timeout);
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Received stop_voice_response:", data);
+          resolve(data);
+        });
+
+        socket.once("stop_voice_error", (data) => {
+          clearTimeout(timeout);
+          // eslint-disable-next-line no-console
+          console.error("[Voice] Received stop_voice_error:", data);
+          reject(new Error(data.message || "Failed to stop voice session"));
+        });
+
+        socket.emit("stop_voice", { chat_id: currentChat.id });
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Emitted stop_voice event");
+      });
+
+      if (!stopResponse.success) {
+        throw new Error(stopResponse.message || "Failed to stop voice session");
+      }
+
+      toolContextMapRef.current = {};
+      await cleanupRealtime();
+      toast.success("Voice mode disabled");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to stop voice mode";
+      // eslint-disable-next-line no-console
+      console.error("[Voice] Error stopping voice mode:", {
+        error: errorMessage,
+        error_object: error,
+      });
+      toast.error(errorMessage);
+    } finally {
+      setIsStoppingVoice(false);
+    }
+  }, [cleanupRealtime, currentChat?.id, isConnected, socket, voiceModeEnabled]);
+
+  const startVoiceMode = useCallback(async () => {
     if (!currentChat?.id || !socket || !isConnected) {
       toast.error("Cannot enable voice mode: chat or connection not available");
       return;
     }
 
-    if (voiceModeEnabled) {
-      // Stop voice mode
-      setIsStoppingVoice(true);
-      try {
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Stopping voice mode:", {
-          chat_id: currentChat.id,
-        });
+    setIsStartingVoice(true);
+    try {
+      // Start voice session on server - this will return ephemeral key + tools + config
+      // eslint-disable-next-line no-console
+      console.log("[Voice] Emitting start_voice event:", {
+        chat_id: currentChat.id,
+      });
+      socket.emit("start_voice", { chat_id: currentChat.id });
 
-        // Wait for server response before disconnecting
-        const stopResponse = await new Promise<{
-          success: boolean;
-          message: string;
-        }>((resolve, reject) => {
+      // Wait for server response with ephemeral key, tools, instructions, config, and tool context map
+      // Type definition (will use auto-generated types after ws.json regeneration)
+      type StartVoiceResponsePayload = {
+        success: boolean;
+        message: string;
+        ephemeral_key: string;
+        persona_tools: Array<{
+          name: string;
+          description: string;
+          parameters: string;
+        }>;
+        tool_context_map: ToolContextMap;
+        instructions: string;
+        config: Record<string, unknown>;
+      };
+      const responseData = await new Promise<StartVoiceResponsePayload>(
+        (resolve, reject) => {
           const timeout = setTimeout(() => {
-            reject(new Error("Timeout waiting for stop_voice response"));
-          }, 5000);
+            reject(new Error("Timeout waiting for voice session start"));
+          }, 10000);
 
-          socket.once("stop_voice_response", (data) => {
+          socket.once("start_voice_response", (data) => {
             clearTimeout(timeout);
             // eslint-disable-next-line no-console
-            console.log("[Voice] Received stop_voice_response:", data);
-            resolve(data);
-          });
-
-          socket.once("stop_voice_error", (data) => {
-            clearTimeout(timeout);
-            // eslint-disable-next-line no-console
-            console.error("[Voice] Received stop_voice_error:", data);
-            reject(new Error(data.message || "Failed to stop voice session"));
-          });
-
-          // Stop voice session on server
-          socket.emit("stop_voice", { chat_id: currentChat.id });
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Emitted stop_voice event");
-        });
-
-        if (!stopResponse.success) {
-          throw new Error(
-            stopResponse.message || "Failed to stop voice session"
-          );
-        }
-
-        // Clear tool context map
-        toolContextMapRef.current = {};
-
-        // Locally tear down session / audio
-        await cleanupRealtime();
-        toast.success("Voice mode disabled");
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to stop voice mode";
-        // eslint-disable-next-line no-console
-        console.error("[Voice] Error stopping voice mode:", {
-          error: errorMessage,
-          error_object: error,
-        });
-        toast.error(errorMessage);
-      } finally {
-        setIsStoppingVoice(false);
-      }
-    } else {
-      // Start voice mode
-      setIsStartingVoice(true);
-      try {
-        // Start voice session on server - this will return ephemeral key + tools + config
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Emitting start_voice event:", {
-          chat_id: currentChat.id,
-        });
-        socket.emit("start_voice", { chat_id: currentChat.id });
-
-        // Wait for server response with ephemeral key, tools, instructions, config, and tool context map
-        // Type definition (will use auto-generated types after ws.json regeneration)
-        type StartVoiceResponsePayload = {
-          success: boolean;
-          message: string;
-          ephemeral_key: string;
-          persona_tools: Array<{
-            name: string;
-            description: string;
-            parameters: string;
-          }>;
-          tool_context_map: ToolContextMap;
-          instructions: string;
-          config: Record<string, unknown>;
-        };
-        const responseData = await new Promise<StartVoiceResponsePayload>(
-          (resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error("Timeout waiting for voice session start"));
-            }, 10000);
-
-            socket.once("start_voice_response", (data) => {
-              clearTimeout(timeout);
-              // eslint-disable-next-line no-console
-              console.log("[Voice] Received start_voice_response:", {
-                success: data.success,
-                message: data.message,
-                ephemeral_key: data.ephemeral_key
-                  ? `${data.ephemeral_key.substring(0, 20)}...`
-                  : null,
-                persona_tools_count: data.persona_tools?.length || 0,
-                persona_tools: data.persona_tools,
-                tool_context_map: data.tool_context_map,
-                instructions: data.instructions,
-                config: data.config,
-              });
-              if (data.success) {
-                resolve(data);
-              } else {
-                reject(
-                  new Error(data.message || "Failed to start voice session")
-                );
-              }
+            console.log("[Voice] Received start_voice_response:", {
+              success: data.success,
+              message: data.message,
+              ephemeral_key: data.ephemeral_key
+                ? `${data.ephemeral_key.substring(0, 20)}...`
+                : null,
+              persona_tools_count: data.persona_tools?.length || 0,
+              persona_tools: data.persona_tools,
+              tool_context_map: data.tool_context_map,
+              instructions: data.instructions,
+              config: data.config,
             });
-
-            socket.once("start_voice_error", (data) => {
-              clearTimeout(timeout);
-              // eslint-disable-next-line no-console
-              console.error("[Voice] Received start_voice_error:", data);
+            if (data.success) {
+              resolve(data);
+            } else {
               reject(
                 new Error(data.message || "Failed to start voice session")
               );
-            });
-          }
-        );
+            }
+          });
 
-        // Store tool context map for later use
-        toolContextMapRef.current = responseData.tool_context_map || {};
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Voice] Stored tool context map:",
-          toolContextMapRef.current
-        );
-
-        // Convert server tools to RealtimeAgent tools
-        // Parse parameters from server (JSON string) and convert to zod schema
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Processing persona tools:", {
-          count: responseData.persona_tools.length,
-          tools: responseData.persona_tools.map((t) => ({
-            name: t.name,
-            description: t.description,
-            parameters_raw: t.parameters,
-          })),
-        });
-
-        const realtimeTools = responseData.persona_tools.map((toolDef) => {
-          // Parse parameters from server (it's a JSON string)
-          let parametersSchema: z.ZodObject<Record<string, z.ZodTypeAny>>;
-          try {
-            const paramsJson = JSON.parse(toolDef.parameters);
+          socket.once("start_voice_error", (data) => {
+            clearTimeout(timeout);
             // eslint-disable-next-line no-console
-            console.log(
-              `[Voice] Parsed parameters for ${toolDef.name}:`,
-              paramsJson
-            );
+            console.error("[Voice] Received start_voice_error:", data);
+            reject(new Error(data.message || "Failed to start voice session"));
+          });
+        }
+      );
 
-            // Convert JSON schema to zod schema
-            // For now, we'll construct zod schema based on the JSON schema structure
-            if (paramsJson.type === "object" && paramsJson.properties) {
-              const zodProps: Record<string, z.ZodTypeAny> = {};
+      // Store tool context map for later use
+      toolContextMapRef.current = responseData.tool_context_map || {};
+      // eslint-disable-next-line no-console
+      console.log(
+        "[Voice] Stored tool context map:",
+        toolContextMapRef.current
+      );
 
-              for (const [key, value] of Object.entries(
-                paramsJson.properties
-              )) {
-                const prop = value as { type: string; description?: string };
+      // Convert server tools to RealtimeAgent tools
+      // Parse parameters from server (JSON string) and convert to zod schema
+      // eslint-disable-next-line no-console
+      console.log("[Voice] Processing persona tools:", {
+        count: responseData.persona_tools.length,
+        tools: responseData.persona_tools.map((t) => ({
+          name: t.name,
+          description: t.description,
+          parameters_raw: t.parameters,
+        })),
+      });
 
-                let zodType: z.ZodTypeAny;
-                switch (prop.type) {
-                  case "string":
-                    zodType = z.string();
-                    break;
-                  case "integer":
-                  case "number":
-                    zodType = z.number();
-                    break;
-                  case "boolean":
-                    zodType = z.boolean();
-                    break;
-                  default:
-                    zodType = z.string(); // fallback
-                }
+      const realtimeTools = responseData.persona_tools.map((toolDef) => {
+        // Parse parameters from server (it's a JSON string)
+        let parametersSchema: z.ZodObject<Record<string, z.ZodTypeAny>>;
+        try {
+          const paramsJson = JSON.parse(toolDef.parameters);
+          // eslint-disable-next-line no-console
+          console.log(
+            `[Voice] Parsed parameters for ${toolDef.name}:`,
+            paramsJson
+          );
 
-                // Add description if available
-                if (prop.description) {
-                  zodType = zodType.describe(prop.description);
-                }
+          // Convert JSON schema to zod schema
+          // For now, we'll construct zod schema based on the JSON schema structure
+          if (paramsJson.type === "object" && paramsJson.properties) {
+            const zodProps: Record<string, z.ZodTypeAny> = {};
 
-                // Check if required
-                const isRequired = paramsJson.required?.includes(key) ?? true;
-                if (!isRequired) {
-                  zodType = zodType.optional();
-                }
+            for (const [key, value] of Object.entries(paramsJson.properties)) {
+              const prop = value as { type: string; description?: string };
 
-                zodProps[key] = zodType;
+              let zodType: z.ZodTypeAny;
+              switch (prop.type) {
+                case "string":
+                  zodType = z.string();
+                  break;
+                case "integer":
+                case "number":
+                  zodType = z.number();
+                  break;
+                case "boolean":
+                  zodType = z.boolean();
+                  break;
+                default:
+                  zodType = z.string(); // fallback
               }
 
-              parametersSchema = z.object(zodProps);
-            } else {
-              // Fallback: use default schema for persona tools
-              parametersSchema = z.object({
-                message: z
-                  .string()
-                  .describe(
-                    `Respond as the persona. This is the message that will be said.`
-                  ),
-              });
+              // Add description if available
+              if (prop.description) {
+                zodType = zodType.describe(prop.description);
+              }
+
+              // Check if required
+              const isRequired = paramsJson.required?.includes(key) ?? true;
+              if (!isRequired) {
+                zodType = zodType.optional();
+              }
+
+              zodProps[key] = zodType;
             }
-          } catch (error) {
-            // If parsing fails, use default schema
-            // eslint-disable-next-line no-console
-            console.warn(
-              `Failed to parse parameters for tool ${toolDef.name}:`,
-              error
-            );
+
+            parametersSchema = z.object(zodProps);
+          } else {
+            // Fallback: use default schema for persona tools
             parametersSchema = z.object({
               message: z
                 .string()
@@ -412,199 +423,256 @@ export default function AttemptInput({
                 ),
             });
           }
-
-          return tool({
-            name: toolDef.name,
-            description: toolDef.description,
-            parameters: parametersSchema,
-            async execute(args) {
-              // The tool's execute function is called by RealtimeSession
-              // The actual forwarding to server happens in session.on("function_call") handler
-              // Just return a confirmation - the handler will emit voice_tool_call to server
-              // eslint-disable-next-line no-console
-              console.log(
-                `[Voice] Tool ${toolDef.name} execute called with args:`,
-                args
-              );
-              return `Tool ${toolDef.name} executed`;
-            },
-          });
-        });
-
-        // Create RealtimeAgent with tools and server-provided instructions
-        const agent = new RealtimeAgent({
-          name: "Voice Assistant",
-          instructions:
-            responseData.instructions ||
-            "You are a helpful voice assistant that orchestrates conversations between personas.",
-          tools: realtimeTools,
-        });
-
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Created RealtimeAgent:", {
-          name: agent.name,
-          instructions_length: responseData.instructions?.length || 0,
-          instructions_preview:
-            responseData.instructions?.substring(0, 200) || "",
-          tools_count: realtimeTools.length,
-          tool_names: realtimeTools.map((t) => t.name),
-        });
-
-        // Create RealtimeSession with config from server
-        const session = new RealtimeSession(agent, {
-          model: "gpt-realtime-mini",
-          config: responseData.config,
-        });
-
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Created RealtimeSession:", {
-          model: "gpt-realtime-mini",
-          config: responseData.config,
-        });
-
-        // Set up event listeners - library handles audio playback automatically
-        // Listen for tool calls using agent_tool_start event
-        session.on("agent_tool_start", (_runCtx, _agent, toolDef, args) => {
+        } catch (error) {
+          // If parsing fails, use default schema
           // eslint-disable-next-line no-console
-          console.log("[Voice] agent_tool_start:", {
-            tool_name: toolDef.name,
-            args,
+          console.warn(
+            `Failed to parse parameters for tool ${toolDef.name}:`,
+            error
+          );
+          parametersSchema = z.object({
+            message: z
+              .string()
+              .describe(
+                `Respond as the persona. This is the message that will be said.`
+              ),
           });
+        }
 
-          // Extract actual arguments from the args parameter
-          // The SDK may wrap arguments in different structures, so we need to handle both cases
-          let actualArguments: Record<string, unknown> = {};
+        return tool({
+          name: toolDef.name,
+          description: toolDef.description,
+          parameters: parametersSchema,
+          async execute(args) {
+            // The tool's execute function is called by RealtimeSession
+            // The actual forwarding to server happens in session.on("function_call") handler
+            // Just return a confirmation - the handler will emit voice_tool_call to server
+            // eslint-disable-next-line no-console
+            console.log(
+              `[Voice] Tool ${toolDef.name} execute called with args:`,
+              args
+            );
+            return `Tool ${toolDef.name} executed`;
+          },
+        });
+      });
 
-          // Check if args has a toolCall property with nested arguments
-          if (
-            args &&
-            typeof args === "object" &&
-            "toolCall" in args &&
-            args.toolCall &&
-            typeof args.toolCall === "object"
-          ) {
-            const toolCall = args.toolCall as {
-              arguments?: string | Record<string, unknown>;
-            };
-            // If arguments is a JSON string, parse it
-            if (typeof toolCall.arguments === "string") {
-              try {
-                actualArguments = JSON.parse(toolCall.arguments);
-              } catch (e) {
-                // eslint-disable-next-line no-console
-                console.warn(
-                  "[Voice] Failed to parse toolCall.arguments as JSON:",
-                  e
-                );
-                actualArguments = args as Record<string, unknown>;
-              }
-            } else if (toolCall.arguments) {
-              actualArguments = toolCall.arguments as Record<string, unknown>;
-            } else {
-              // Fallback: use args directly
+      // Create RealtimeAgent with tools and server-provided instructions
+      const agent = new RealtimeAgent({
+        name: "Voice Assistant",
+        instructions:
+          responseData.instructions ||
+          "You are a helpful voice assistant that orchestrates conversations between personas.",
+        tools: realtimeTools,
+      });
+
+      // eslint-disable-next-line no-console
+      console.log("[Voice] Created RealtimeAgent:", {
+        name: agent.name,
+        instructions_length: responseData.instructions?.length || 0,
+        instructions_preview:
+          responseData.instructions?.substring(0, 200) || "",
+        tools_count: realtimeTools.length,
+        tool_names: realtimeTools.map((t) => t.name),
+      });
+
+      // Create RealtimeSession with config from server
+      const session = new RealtimeSession(agent, {
+        model: "gpt-realtime-mini",
+        config: responseData.config,
+      });
+
+      // eslint-disable-next-line no-console
+      console.log("[Voice] Created RealtimeSession:", {
+        model: "gpt-realtime-mini",
+        config: responseData.config,
+      });
+
+      // Set up event listeners - library handles audio playback automatically
+      // Listen for tool calls using agent_tool_start event
+      session.on("agent_tool_start", (_runCtx, _agent, toolDef, args) => {
+        // eslint-disable-next-line no-console
+        console.log("[Voice] agent_tool_start:", {
+          tool_name: toolDef.name,
+          args,
+        });
+
+        // Extract actual arguments from the args parameter
+        // The SDK may wrap arguments in different structures, so we need to handle both cases
+        let actualArguments: Record<string, unknown> = {};
+
+        // Check if args has a toolCall property with nested arguments
+        if (
+          args &&
+          typeof args === "object" &&
+          "toolCall" in args &&
+          args.toolCall &&
+          typeof args.toolCall === "object"
+        ) {
+          const toolCall = args.toolCall as {
+            arguments?: string | Record<string, unknown>;
+          };
+          // If arguments is a JSON string, parse it
+          if (typeof toolCall.arguments === "string") {
+            try {
+              actualArguments = JSON.parse(toolCall.arguments);
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.warn(
+                "[Voice] Failed to parse toolCall.arguments as JSON:",
+                e
+              );
               actualArguments = args as Record<string, unknown>;
             }
+          } else if (toolCall.arguments) {
+            actualArguments = toolCall.arguments as Record<string, unknown>;
           } else {
-            // If args is already the flat arguments object, use it directly
+            // Fallback: use args directly
             actualArguments = args as Record<string, unknown>;
           }
+        } else {
+          // If args is already the flat arguments object, use it directly
+          actualArguments = args as Record<string, unknown>;
+        }
 
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Extracted actual arguments:", actualArguments);
+
+        // Extract message from arguments
+        const message = actualArguments["message"] as string;
+        if (!message) {
           // eslint-disable-next-line no-console
-          console.log("[Voice] Extracted actual arguments:", actualArguments);
+          console.error(
+            `[Voice] No message in arguments for tool ${toolDef.name}`
+          );
+          return;
+        }
 
-          // Extract message from arguments
-          const message = actualArguments["message"] as string;
-          if (!message) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `[Voice] No message in arguments for tool ${toolDef.name}`
-            );
-            return;
-          }
-
-          // Look up persona_id for this tool
-          const toolContext = toolContextMapRef.current[toolDef.name];
-          if (!toolContext) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `[Voice] No context found for tool ${toolDef.name}. Available tools:`,
-              Object.keys(toolContextMapRef.current)
-            );
-            return;
-          }
-
-          // Forward simplified tool call to server
-          socket.emit("voice_tool_call", {
-            chat_id: currentChat.id,
-            persona_id: toolContext.persona_id,
-            message: message,
-            profile_id: toolContext.profile_id,
-          });
+        // Look up persona_id for this tool
+        const toolContext = toolContextMapRef.current[toolDef.name];
+        if (!toolContext) {
           // eslint-disable-next-line no-console
-          console.log("[Voice] Emitted voice_tool_call to server:", {
-            chat_id: currentChat.id,
-            persona_id: toolContext.persona_id,
-            message: message.substring(0, 100),
-            profile_id: toolContext.profile_id,
-          });
+          console.error(
+            `[Voice] No context found for tool ${toolDef.name}. Available tools:`,
+            Object.keys(toolContextMapRef.current)
+          );
+          return;
+        }
+
+        // Forward simplified tool call to server
+        socket.emit("voice_tool_call", {
+          chat_id: currentChat.id,
+          persona_id: toolContext.persona_id,
+          message: message,
+          profile_id: toolContext.profile_id,
         });
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Emitted voice_tool_call to server:", {
+          chat_id: currentChat.id,
+          persona_id: toolContext.persona_id,
+          message: message.substring(0, 100),
+          profile_id: toolContext.profile_id,
+        });
+      });
 
-        session.on(
-          "agent_tool_end",
-          (_runCtx, _agent, toolDef, result, rawResult) => {
-            // eslint-disable-next-line no-console
-            console.log("[Voice] agent_tool_end:", {
-              tool_name: toolDef.name,
-              result,
-              rawResult,
-            });
-          }
+      session.on(
+        "agent_tool_end",
+        (_runCtx, _agent, toolDef, result, rawResult) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] agent_tool_end:", {
+            tool_name: toolDef.name,
+            result,
+            rawResult,
+          });
+        }
+      );
+
+      session.on("audio_interrupted", () => {
+        // eslint-disable-next-line no-console
+        console.log("[Voice] RealtimeSession audio_interrupted event");
+        // Notify server of interruption
+        socket.emit("voice_interrupted", {
+          chat_id: currentChat.id,
+        });
+      });
+
+      // Connect session with ephemeral key
+      // WebRTC transport will automatically handle mic/speaker
+      // eslint-disable-next-line no-console
+      console.log("[Voice] Connecting RealtimeSession with ephemeral key...");
+      await session.connect({ apiKey: responseData.ephemeral_key });
+      // eslint-disable-next-line no-console
+      console.log("[Voice] RealtimeSession connected successfully");
+      realtimeSessionRef.current = session;
+
+      // Ensure we start unmuted when entering voice mode
+      try {
+        session.mute(false);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[Voice] mute(false) failed (transport might not support mute):",
+          e
         );
-
-        session.on("audio_interrupted", () => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] RealtimeSession audio_interrupted event");
-          // Notify server of interruption
-          socket.emit("voice_interrupted", {
-            chat_id: currentChat.id,
-          });
-        });
-
-        // Connect session with ephemeral key
-        // WebRTC transport will automatically handle mic/speaker
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Connecting RealtimeSession with ephemeral key...");
-        await session.connect({ apiKey: responseData.ephemeral_key });
-        // eslint-disable-next-line no-console
-        console.log("[Voice] RealtimeSession connected successfully");
-        realtimeSessionRef.current = session;
-
-        setVoiceModeEnabled(true);
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Voice mode enabled successfully", {
-          chat_id: currentChat.id,
-          tools_count: realtimeTools.length,
-          session_connected: true,
-        });
-        toast.success("Voice mode enabled");
-      } catch (error) {
-        // Log error for debugging (ESLint allows in catch blocks)
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to start voice mode";
-        // eslint-disable-next-line no-console
-        console.error("[Voice] Error starting voice mode:", {
-          error: errorMessage,
-          error_object: error,
-          chat_id: currentChat.id,
-        });
-        toast.error(errorMessage);
-        // Cleanup on error
-        await cleanupRealtime();
-      } finally {
-        setIsStartingVoice(false);
       }
+      setIsMicMuted(false);
+      setVoiceModeEnabled(true);
+
+      // eslint-disable-next-line no-console
+      console.log("[Voice] Voice mode enabled successfully", {
+        chat_id: currentChat.id,
+        tools_count: realtimeTools.length,
+        session_connected: true,
+      });
+      toast.success("Voice mode enabled");
+    } catch (error) {
+      // Log error for debugging (ESLint allows in catch blocks)
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to start voice mode";
+      // eslint-disable-next-line no-console
+      console.error("[Voice] Error starting voice mode:", {
+        error: errorMessage,
+        error_object: error,
+        chat_id: currentChat.id,
+      });
+      toast.error(errorMessage);
+      // Cleanup on error
+      await cleanupRealtime();
+    } finally {
+      setIsStartingVoice(false);
     }
-  }, [voiceModeEnabled, currentChat?.id, socket, isConnected, cleanupRealtime]);
+  }, [cleanupRealtime, currentChat?.id, isConnected, socket]);
+
+  // Voice mode handlers
+  const handleVoiceToggle = useCallback(async () => {
+    // If voice mode is not enabled, this button starts it
+    if (!voiceModeEnabled) {
+      await startVoiceMode();
+      return;
+    }
+
+    // Voice mode is enabled → toggle mute
+    const session = realtimeSessionRef.current;
+    if (!session) {
+      // eslint-disable-next-line no-console
+      console.warn("[Voice] No RealtimeSession present while toggling mute");
+      return;
+    }
+
+    const currentlyMuted = session.muted ?? isMicMuted;
+    const nextMuted = !currentlyMuted;
+
+    try {
+      session.mute(nextMuted);
+      setIsMicMuted(nextMuted);
+      // eslint-disable-next-line no-console
+      console.log("[Voice] Toggled mute:", { nextMuted });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[Voice] Error toggling mute:", e);
+      toast.error("Could not toggle microphone mute");
+    }
+  }, [startVoiceMode, voiceModeEnabled, isMicMuted]);
 
   // Cleanup on unmount or chat change
   useEffect(() => {
@@ -701,21 +769,59 @@ export default function AttemptInput({
               >
                 {isStartingVoice || isStoppingVoice ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : voiceModeEnabled ? (
+                ) : !voiceModeEnabled ? (
+                  // Voice OFF → button means "start voice"
                   <Mic className="h-4 w-4" />
-                ) : (
+                ) : isMicMuted ? (
+                  // Voice ON + muted
                   <MicOff className="h-4 w-4" />
+                ) : (
+                  // Voice ON + unmuted
+                  <Mic className="h-4 w-4" />
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p>
-                {voiceModeEnabled
-                  ? "Voice mode enabled - Click to disable"
-                  : "Enable voice mode"}
+                {!voiceModeEnabled
+                  ? "Enable voice mode"
+                  : isMicMuted
+                    ? "Unmute microphone"
+                    : "Mute microphone"}
               </p>
             </TooltipContent>
           </Tooltip>
+
+          {voiceModeEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="min-h-[40px] h-[40px] w-[40px] shrink-0"
+                  onClick={handleVoiceStop}
+                  disabled={
+                    readOnly ||
+                    !isConnected ||
+                    !currentChat?.id ||
+                    isStartingVoice ||
+                    isStoppingVoice
+                  }
+                  data-testid="voice-exit-button"
+                >
+                  {isStoppingVoice ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <X className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Exit voice mode</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
           <div className="flex-1 relative">
             <Textarea
               ref={textareaRef}
@@ -727,7 +833,7 @@ export default function AttemptInput({
               }
               placeholder={
                 voiceModeEnabled
-                  ? "Voice mode active - speak into your microphone"
+                  ? "Voice mode active – speak or type and press send"
                   : "Type your message (LaTeX supported)"
               }
               disabled={readOnly ? true : false}
