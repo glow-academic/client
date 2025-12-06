@@ -380,41 +380,52 @@ async def _generate_document_template_impl(
             )
             upload_id = upload_id_result["id"]
 
-            # If documentId is provided, save template immediately to document_template_uploads
+            # If documentId is provided, create template and link to document and run
             template_mapping: dict[str, Any] | None = None
             if data.documentId:
                 try:
                     document_id = uuid.UUID(data.documentId)
                     template_schema_jsonb = json.dumps(template_schema)
+                    template_name = f"Template for {data.documentName or 'Document'}"
 
-                    sql_insert_template = load_sql(
-                        "sql/v3/documents/insert_document_template.sql"
+                    # Create template and link to document and run
+                    sql_create_template = load_sql(
+                        "sql/v3/documents/create_template_and_link.sql"
                     )
-                    await conn.execute(
-                        sql_insert_template,
+                    template_result = await conn.fetchrow(
+                        sql_create_template,
                         str(document_id),
                         str(uuid.UUID(upload_id)),
+                        template_name,
                         template_schema_jsonb,
                         True,  # active = true
+                        str(model_run_id),  # run_id
                     )
 
-                    # Fetch updated template_mapping to return in response
+                    if template_result:
+                        template_id = template_result["template_id"]
+                        logger.info(
+                            f"Created template {template_id} and linked to document {document_id} and run {model_run_id}"
+                        )
+
+                    # Fetch updated template_mapping to return in response (using new document_templates)
                     sql_get_template_mapping = """
                         SELECT 
                             COALESCE(
                                 jsonb_object_agg(
-                                    dtu.upload_id::text,
+                                    t.upload_id::text,
                                     jsonb_build_object(
-                                        'template_args', dtu.args,
-                                        'active', dtu.active,
-                                        'created_at', dtu.created_at::text,
-                                        'updated_at', dtu.updated_at::text
+                                        'template_args', t.args,
+                                        'active', dt.active,
+                                        'created_at', dt.created_at::text,
+                                        'updated_at', dt.updated_at::text
                                     )
                                 ),
                                 '{}'::jsonb
                             ) as template_mapping
-                        FROM document_template_uploads dtu
-                        WHERE dtu.document_id = $1
+                        FROM document_templates dt
+                        JOIN templates t ON t.id = dt.template_id
+                        WHERE dt.document_id = $1
                     """
                     mapping_row = await conn.fetchrow(
                         sql_get_template_mapping, str(document_id)

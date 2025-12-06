@@ -243,13 +243,25 @@ async def _generate_video_impl(sid: str, data: GenerateVideoPayload) -> None:
                         f"Created upload record: {upload_id_str}, file_path: {video_filename}"
                     )
 
-                    # Update video with upload_id
-                    update_sql = load_sql("sql/v3/videos/update_video_upload_id.sql")
-                    await conn.execute(
-                        update_sql, str(video_id), uuid.UUID(upload_id_str)
+                    # Create generation and link to video (no run_id since video generation doesn't create a run)
+                    sql_create_generation = load_sql("sql/v3/videos/create_generation_and_link.sql")
+                    generation_result = await conn.fetchrow(
+                        sql_create_generation,
+                        str(video_id),
+                        video_filename,
+                        mime_type,
+                        uuid.UUID(upload_id_str),
+                        True,  # active
+                        None,  # run_id - video generation doesn't create a run currently
                     )
 
-                    logger.info(f"Updated video {video_id} with upload_id: {upload_id_str}")
+                    if generation_result:
+                        generation_id = generation_result["generation_id"]
+                        logger.info(
+                            f"Created generation {generation_id} and linked to video {video_id}"
+                        )
+                    else:
+                        logger.warning(f"Failed to create generation for video {video_id}")
 
                     # Emit completion event
                     await video_generation_complete(

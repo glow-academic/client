@@ -10,14 +10,15 @@ WITH document_data AS (
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id::text) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as parameter_item_ids,
         (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT dtu.upload_id::text FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_upload_id,
-        (SELECT dtu.args FROM document_template_uploads dtu WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_args,
+        (SELECT t.upload_id::text FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_upload_id,
+        (SELECT t.args FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_args,
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
-        (SELECT u.file_path FROM document_template_uploads dtu
-         JOIN uploads u ON u.id = dtu.upload_id 
-         WHERE dtu.document_id = d.id AND dtu.active = true ORDER BY dtu.created_at DESC LIMIT 1) as template_file_path,
+        (SELECT u.file_path FROM document_templates dt
+         JOIN templates t ON t.id = dt.template_id
+         JOIN uploads u ON u.id = t.upload_id 
+         WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_file_path,
         d.template,
         (SELECT ARRAY_AGG(DISTINCT st.parent_id::text) FROM scenario_documents sd
          JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
@@ -29,26 +30,28 @@ WITH document_data AS (
 ),
 document_active_template AS (
     SELECT 
-        dtu.document_id,
-        dtu.upload_id::text as template_id,
-        dtu.args as template_args,
-        dtu.created_at as template_created_at,
-        dtu.updated_at as template_updated_at
-    FROM document_template_uploads dtu
-    WHERE dtu.document_id = $1 AND dtu.active = true
-    ORDER BY dtu.created_at DESC
+        dt.document_id,
+        t.id::text as template_id,
+        t.args as template_args,
+        dt.created_at as template_created_at,
+        dt.updated_at as template_updated_at
+    FROM document_templates dt
+    JOIN templates t ON t.id = dt.template_id
+    WHERE dt.document_id = $1 AND dt.active = true
+    ORDER BY dt.created_at DESC
     LIMIT 1
 ),
 document_all_templates AS (
     SELECT 
-        dtu.document_id,
-        dtu.upload_id::text as template_id,
-        dtu.args as template_args,
-        dtu.active as template_active,
-        dtu.created_at as template_created_at,
-        dtu.updated_at as template_updated_at
-    FROM document_template_uploads dtu
-    WHERE dtu.document_id = $1
+        dt.document_id,
+        t.id::text as template_id,
+        t.args as template_args,
+        dt.active as template_active,
+        dt.created_at as template_created_at,
+        dt.updated_at as template_updated_at
+    FROM document_templates dt
+    JOIN templates t ON t.id = dt.template_id
+    WHERE dt.document_id = $1
 ),
 template_mapping_data AS (
     SELECT 

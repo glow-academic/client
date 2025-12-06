@@ -579,6 +579,7 @@ async def _generate_video_outline_impl(
                         str(video_id_uuid),
                         name,
                         outline,
+                        str(model_run_id),  # run_id for linking to run
                     )
 
                     if outline_row:

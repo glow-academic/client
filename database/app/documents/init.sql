@@ -50,7 +50,39 @@ CREATE INDEX ON document_uploads (document_id);
 CREATE INDEX ON document_uploads (upload_id);
 CREATE INDEX ON document_uploads (document_id, active);
 
+-- Templates table (standalone, can exist independently)
+-- Strong entity for document templates
+CREATE TABLE templates (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  upload_id  UUID        NOT NULL REFERENCES uploads(id) ON DELETE RESTRICT,
+  args       JSONB       NOT NULL DEFAULT '{}'
+);
+
+CREATE INDEX ON templates (name);
+CREATE INDEX ON templates (created_at);
+CREATE INDEX ON templates (upload_id);
+
+-- Document → Templates junction table (BCNF normalization)
+-- Links documents to templates with template-specific metadata
+-- Used for template documents that have HTML templates with args and instructions
+CREATE TABLE document_templates (
+    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    template_id UUID NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (document_id, template_id)
+);
+
+CREATE INDEX ON document_templates (document_id);
+CREATE INDEX ON document_templates (template_id);
+CREATE INDEX ON document_templates (document_id, active);
+
 -- Document → Template Uploads junction table (BCNF normalization)
+-- DEPRECATED: Use document_templates instead. Kept for migration compatibility.
 -- Links documents to template uploads with template-specific metadata
 -- Used for template documents that have HTML templates with args and instructions
 CREATE TABLE document_template_uploads (

@@ -5,7 +5,8 @@
 --            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
 --            $12=document_ids (text array), $13=objective_ids (text array), 
 --            $14=parameter_item_ids (text array, flattened from parameters dict),
---            $15=upload_images_json (JSONB string with upload images array)
+--            $15=upload_images_json (JSONB string with upload images array),
+--            $16=run_id (uuid, nullable - for linking AI-generated problem_statements and objectives to runs)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
@@ -175,24 +176,73 @@ link_parameters AS (
         active = true,
         updated_at = NOW()
 ),
+create_images AS (
+    -- Create images from uploads if they don't exist
+    INSERT INTO images (name, upload_id, created_at, updated_at, active)
+    SELECT DISTINCT
+        img->>'name',
+        (img->>'upload_id')::uuid,
+        NOW(),
+        NOW(),
+        true
+    FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+      AND NOT EXISTS (
+          SELECT 1 FROM images i 
+          WHERE i.upload_id = (img->>'upload_id')::uuid AND i.name = img->>'name'
+      )
+    RETURNING id as image_id, upload_id
+),
+get_images AS (
+    -- Get existing images
+    SELECT i.id as image_id, i.upload_id
+    FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    JOIN images i ON i.upload_id = (img->>'upload_id')::uuid AND i.name = img->>'name'
+),
+all_images AS (
+    SELECT image_id, upload_id FROM create_images
+    UNION
+    SELECT image_id, upload_id FROM get_images
+),
 link_images AS (
-    -- Link images if provided (create junction table entries)
-    -- Note: uploads must be created via upload finalize endpoint first
-    INSERT INTO scenario_images (scenario_id, upload_id, name, active, created_at, updated_at)
+    -- Link images to scenario via junction table
+    INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
     SELECT 
         ns.scenario_id::uuid,
-        (img->>'upload_id')::uuid,
-        img->>'name',
+        ai.image_id,
         true,
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    CROSS JOIN all_images ai
     WHERE jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
-    ON CONFLICT (scenario_id, upload_id) DO UPDATE SET
+    ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
-        name = EXCLUDED.name,
         updated_at = NOW()
+),
+link_problem_statements_to_runs AS (
+    -- Link problem statements to run if run_id provided
+    INSERT INTO problem_statement_runs (problem_statement_id, run_id, created_at, updated_at)
+    SELECT DISTINCT
+        cps.problem_statement_id,
+        $16::uuid,
+        NOW(),
+        NOW()
+    FROM create_problem_statements cps
+    WHERE $16::uuid IS NOT NULL
+    ON CONFLICT (problem_statement_id, run_id) DO NOTHING
+),
+link_objectives_to_runs AS (
+    -- Link objectives to run if run_id provided
+    INSERT INTO objective_runs (objective_id, run_id, created_at, updated_at)
+    SELECT DISTINCT
+        ao.objective_id,
+        $16::uuid,
+        NOW(),
+        NOW()
+    FROM all_objectives ao
+    WHERE $16::uuid IS NOT NULL
+    ON CONFLICT (objective_id, run_id) DO NOTHING
 )
 SELECT scenario_id FROM new_scenario
 

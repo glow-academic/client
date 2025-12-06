@@ -95,13 +95,14 @@ SELECT
             json_build_object(
                 'document_id', d.id::text,
                 'document_name', d.name,
-                'template_args', dtu.args,
-                'template_upload_id', dtu.upload_id::text
+                'template_args', t.args,
+                'template_upload_id', t.upload_id::text
             )
             ORDER BY array_position(p.document_ids, d.id)
         )
         FROM documents d
-        INNER JOIN document_template_uploads dtu ON dtu.document_id = d.id AND dtu.active = true
+        INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+        INNER JOIN templates t ON t.id = dt.template_id
         WHERE d.id = ANY(p.document_ids)
           AND d.template = true
         ),

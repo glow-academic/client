@@ -197,19 +197,18 @@ CREATE INDEX ON scenario_documents (scenario_id);
 CREATE INDEX ON scenario_documents (document_id);
 
 -- Scenario → Images junction table (BCNF normalization)
--- Uses uploads directly instead of images table
+-- Links scenarios to images (strong entity)
 CREATE TABLE scenario_images (
   scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
-  upload_id   UUID NOT NULL REFERENCES uploads(id) ON DELETE CASCADE,
-  name        TEXT NOT NULL,
+  image_id    UUID NOT NULL REFERENCES images(id) ON DELETE CASCADE,
   active      BOOLEAN NOT NULL DEFAULT TRUE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (scenario_id, upload_id)
+  PRIMARY KEY (scenario_id, image_id)
 );
 
 CREATE INDEX ON scenario_images (scenario_id);
-CREATE INDEX ON scenario_images (upload_id);
+CREATE INDEX ON scenario_images (image_id);
 CREATE INDEX ON scenario_images (scenario_id, active);
 
 -- Document → Fields junction table (BCNF normalization)

@@ -13,34 +13,65 @@ WITH update_document AS (
     WHERE id = $1::uuid
     RETURNING id::text as document_id
 ),
-update_template_upload AS (
-    -- Update or insert template upload junction if template_upload_id is provided
-    INSERT INTO document_template_uploads (
-        document_id,
-        upload_id,
-        args,
-        active,
-        created_at,
-        updated_at
-    )
+create_or_get_template AS (
+    -- Create or get template if template_upload_id is provided
+    INSERT INTO templates (name, upload_id, args, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        COALESCE((SELECT name FROM documents WHERE id = $1::uuid), 'Template'),
         $10::uuid,
         COALESCE($11::jsonb, '{}'::jsonb),
-        true,
         NOW(),
         NOW()
     WHERE $10::uuid IS NOT NULL
-    ON CONFLICT (document_id, upload_id) DO UPDATE SET
-        args = EXCLUDED.args,
+      AND NOT EXISTS (
+          SELECT 1 FROM templates t 
+          WHERE t.upload_id = $10::uuid AND t.args = COALESCE($11::jsonb, '{}'::jsonb)
+      )
+    RETURNING id as template_id
+),
+get_existing_template AS (
+    -- Get existing template if it exists
+    SELECT id as template_id
+    FROM templates
+    WHERE upload_id = $10::uuid 
+      AND args = COALESCE($11::jsonb, '{}'::jsonb)
+    LIMIT 1
+),
+template_id AS (
+    SELECT template_id FROM create_or_get_template
+    UNION ALL
+    SELECT template_id FROM get_existing_template
+    WHERE $10::uuid IS NOT NULL
+    LIMIT 1
+),
+deactivate_previous_templates AS (
+    -- Deactivate all previous templates if new one is provided
+    UPDATE document_templates
+    SET active = false, updated_at = NOW()
+    WHERE document_id = $1::uuid
+      AND active = true
+      AND $10::uuid IS NOT NULL
+),
+update_template_link AS (
+    -- Update or insert template link if template_id is available
+    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        ti.template_id,
+        true,
+        NOW(),
+        NOW()
+    FROM template_id ti
+    WHERE $10::uuid IS NOT NULL
+    ON CONFLICT (document_id, template_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
-delete_template_upload AS (
-    -- Delete template upload junction if template_upload_id is NULL (removing template)
-    DELETE FROM document_template_uploads 
+delete_template_link AS (
+    -- Delete template link if template_upload_id is NULL (removing template)
+    DELETE FROM document_templates 
     WHERE document_id = $1::uuid 
-    AND ($10::uuid IS NULL OR upload_id != $10::uuid)
+    AND $10::uuid IS NULL
 ),
 replace_departments AS (
     -- Delete all existing department links

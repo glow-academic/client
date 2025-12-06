@@ -208,3 +208,87 @@ CREATE INDEX ON agent_reasoning_levels (active);
 -- Only one active reasoning level per agent
 CREATE UNIQUE INDEX agent_reasoning_levels_one_active_per_agent
   ON agent_reasoning_levels(agent_id) WHERE active = true;
+
+-- ============================================================================
+-- Run → AI Generation Junction Tables
+-- Links AI-generated objects to the runs that created them
+-- Following Chris Date's "no nulls" principle - only AI-generated objects have entries
+-- ============================================================================
+
+-- Template → Runs junction table
+CREATE TABLE template_runs (
+  template_id UUID NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+  run_id      UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (template_id, run_id)
+);
+
+CREATE INDEX ON template_runs (template_id);
+CREATE INDEX ON template_runs (run_id);
+CREATE INDEX ON template_runs (run_id, created_at);
+
+-- Problem Statement → Runs junction table
+CREATE TABLE problem_statement_runs (
+  problem_statement_id UUID NOT NULL REFERENCES problem_statements(id) ON DELETE CASCADE,
+  run_id               UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (problem_statement_id, run_id)
+);
+
+CREATE INDEX ON problem_statement_runs (problem_statement_id);
+CREATE INDEX ON problem_statement_runs (run_id);
+CREATE INDEX ON problem_statement_runs (run_id, created_at);
+
+-- Objective → Runs junction table
+CREATE TABLE objective_runs (
+  objective_id UUID NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
+  run_id       UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (objective_id, run_id)
+);
+
+CREATE INDEX ON objective_runs (objective_id);
+CREATE INDEX ON objective_runs (run_id);
+CREATE INDEX ON objective_runs (run_id, created_at);
+
+-- Outline → Runs junction table
+CREATE TABLE outline_runs (
+  outline_id UUID NOT NULL REFERENCES outlines(id) ON DELETE CASCADE,
+  run_id     UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (outline_id, run_id)
+);
+
+CREATE INDEX ON outline_runs (outline_id);
+CREATE INDEX ON outline_runs (run_id);
+CREATE INDEX ON outline_runs (run_id, created_at);
+
+-- Image → Runs junction table
+CREATE TABLE image_runs (
+  image_id  UUID NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+  run_id    UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (image_id, run_id)
+);
+
+CREATE INDEX ON image_runs (image_id);
+CREATE INDEX ON image_runs (run_id);
+CREATE INDEX ON image_runs (run_id, created_at);
+
+-- Generation → Runs junction table
+CREATE TABLE generation_runs (
+  generation_id UUID NOT NULL REFERENCES generations(id) ON DELETE CASCADE,
+  run_id        UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (generation_id, run_id)
+);
+
+CREATE INDEX ON generation_runs (generation_id);
+CREATE INDEX ON generation_runs (run_id);
+CREATE INDEX ON generation_runs (run_id, created_at);
