@@ -983,6 +983,14 @@ export default function Document({
           departmentId,
           profileId: effectiveProfile?.id || undefined,
           documentId: isEditMode && documentId ? documentId : undefined,
+          documentName: formData.name || undefined,
+          documentDescription: formData.description || undefined,
+          fieldIds:
+            isEditMode && formData.parameterItemIds.length > 0
+              ? formData.parameterItemIds
+              : globalDefaultParameterItemIds.length > 0
+                ? globalDefaultParameterItemIds
+                : undefined,
         } as GenerateTemplateBody,
       });
 

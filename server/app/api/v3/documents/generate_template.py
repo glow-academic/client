@@ -20,6 +20,8 @@ from app.utils.agents.build_document_agent import build_document_agent
 from app.utils.agents.tools.create_document_tools import (
     create_document_tools, document_progress, document_results)
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.document.format_document_template_context import \
+    format_document_template_context
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -35,6 +37,9 @@ class GenerateTemplateRequest(BaseModel):
     departmentId: str
     profileId: str | None = None
     documentId: str | None = None  # Optional: if provided, save template immediately
+    documentName: str | None = None  # Optional: document name for context
+    documentDescription: str | None = None  # Optional: document description for context
+    fieldIds: list[str] | None = None  # Optional: field IDs for context
 
 
 class GenerateTemplateResponse(BaseModel):
@@ -108,17 +113,60 @@ async def generate_template(
         document_tools = create_document_tools()
         document_agent = build_document_agent(context, document_tools)
 
+        # Fetch fields information if fieldIds provided
+        fields_data: list[dict[str, Any]] | None = None
+        if request.fieldIds and len(request.fieldIds) > 0:
+            field_ids_uuid = [uuid.UUID(fid) for fid in request.fieldIds]
+            field_ids_str = [str(fid) for fid in field_ids_uuid]
+            sql_query_fields = load_sql("sql/v3/agents/get_document_template_context.sql")
+            fields_row = await conn.fetchrow(sql_query_fields, field_ids_str)
+            if fields_row and fields_row.get("fields"):
+                fields_json = fields_row["fields"]
+                if isinstance(fields_json, str):
+                    fields_data = json.loads(fields_json)
+                elif isinstance(fields_json, list):
+                    fields_data = fields_json
+                else:
+                    fields_data = []
+
+        # Get department name
+        department_name: str | None = None
+        if department_id:
+            dept_row = await conn.fetchrow(
+                "SELECT title FROM departments WHERE id = $1", department_id
+            )
+            if dept_row:
+                department_name = dept_row.get("title")
+
+        # Format context for agent input
+        context_items = format_document_template_context(
+            document_name=request.documentName,
+            document_description=request.documentDescription,
+            department_name=department_name,
+            fields=fields_data,
+        )
+
         # Construct input items for the agent
         # The agent will generate both template HTML and schema using its tools
-        input_items: list[TResponseInputItem] = [
-            {
+        input_items: list[TResponseInputItem] = context_items.copy()
+        
+        # Add the main instruction if we have context, otherwise use generic prompt
+        if context_items:
+            input_items.append({
+                "role": "user",
+                "content": "Based on the document context provided above, generate a Jinja2 template HTML document and its corresponding JSON schema. "
+                "You must call both generate_template_html and generate_template_schema tools. "
+                "The template should be a complete HTML document with Jinja2 placeholders that fits the document's purpose and fields. "
+                "The schema should describe all template variables including their types (string, number, boolean, array, object) and whether they are required.",
+            })
+        else:
+            input_items.append({
                 "role": "user",
                 "content": "Generate a Jinja2 template HTML document and its corresponding JSON schema. "
                 "You must call both generate_template_html and generate_template_schema tools. "
                 "The template should be a complete HTML document with Jinja2 placeholders. "
                 "The schema should describe all template variables including their types (string, number, boolean, array, object) and whether they are required.",
-            }
-        ]
+            })
 
         # Import Runner and trace for agent execution
         from agents import Runner, trace

@@ -110,6 +110,10 @@ async def render_document_template(
         # Merge: request args override document args
         merged_args = {**document_template_args, **request.templateArgs}
 
+        # Add organization info from settings to template context
+        merged_args["organization_name"] = settings_response.organization_name
+        merged_args["organization_description"] = settings_response.organization_description
+
         # Render template
         rendered_html = render_template(
             html=template_html,

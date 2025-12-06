@@ -8384,6 +8384,12 @@ export interface components {
             profileId?: string | null;
             /** Documentid */
             documentId?: string | null;
+            /** Documentname */
+            documentName?: string | null;
+            /** Documentdescription */
+            documentDescription?: string | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
         };
         /**
          * GenerateTemplateResponse

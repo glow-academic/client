@@ -19616,6 +19616,42 @@
               }
             ],
             "title": "Documentid"
+          },
+          "documentName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentname"
+          },
+          "documentDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentdescription"
+          },
+          "fieldIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fieldids"
           }
         },
         "type": "object",
