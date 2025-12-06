@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document_name }} - {{ class_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: "Georgia", "Times New Roman", serif;
+            background: #ffffff;
+            color: #111827;
+            line-height: 1.6;
+        }
+
+        .document-container {
+            max-width: 850px;
+            margin: 2.5rem auto 3rem;
+            padding: 3rem 3.5rem;
+            background: #ffffff;
+            border: 1px solid #d4d4d8;
+            border-radius: 0;
+        }
+
+        .document-title-section {
+            padding-bottom: 1.75rem;
+            margin-bottom: 1.75rem;
+            border-bottom: 1.5px solid #9ca3af;
+            text-align: center;
+        }
+
+        .document-title-section h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .document-title-section .class-info {
+            font-size: 0.95rem;
+            color: #4b5563;
+            font-weight: 400;
+        }
+
+        .meta-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .meta-grid {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 1px solid #d4d4d8;
+            border-bottom: 1px solid #d4d4d8;
+        }
+
+        .meta-item {
+            display: table-row;
+        }
+
+        .meta-label,
+        .meta-value {
+            display: table-cell;
+            padding: 0.5rem 0.25rem;
+            vertical-align: top;
+            font-size: 0.95rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .meta-item:first-child .meta-label,
+        .meta-item:first-child .meta-value {
+            border-top: none;
+        }
+
+        .meta-label {
+            width: 28%;
+            font-weight: 600;
+            color: #374151;
+            padding-right: 1.5rem;
+            white-space: nowrap;
+        }
+
+        .meta-value {
+            color: #111827;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #9ca3af;
+            padding-bottom: 0.4rem;
+        }
+
+        .syllabus-info {
+            border-left: 3px solid #111827;
+            padding: 1.25rem 1.5rem;
+            background: #f9fafb;
+            font-size: 0.98rem;
+            color: #111827;
+        }
+
+        .info-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            margin-right: 0.5rem;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .schedule-table th,
+        .schedule-table td {
+            border: 1px solid #d4d4d8;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .schedule-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .policy-item {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .policy-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .policy-title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .grading-scale {
+            border: 1px solid #d4d4d8;
+            padding: 1rem 1.5rem;
+            background: #ffffff;
+        }
+
+        .grade-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .grade-item:last-child {
+            border-bottom: none;
+        }
+
+        .resource-item {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .resource-item:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #6b7280;
+        }
+
+        .document-footer {
+            border-top: 1px solid #d4d4d8;
+            padding: 1.5rem 0;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        .footer-content {
+            max-width: 850px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-branding {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 2px;
+            border: 1px solid #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #111827;
+        }
+
+        .footer-org-name {
+            font-weight: 600;
+            color: #111827;
+            font-size: 0.9rem;
+        }
+
+        .footer-meta {
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                color: #000000;
+            }
+
+            .document-container {
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+
+            .document-footer {
+                border-top: 1px solid #d4d4d8;
+                margin-top: 1.5rem;
+                padding-top: 0.75rem;
+            }
+
+            .schedule-table,
+            .grading-scale {
+                border: 1px solid #c4c4c4;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .document-container {
+                margin: 0.5rem;
+                padding: 1.5rem 1.25rem 2rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="document-container">
+        <section class="document-title-section">
+            <h1>{{ document_name }} ({{ class_name }})</h1>
+            {% if class_description %}
+            <div class="class-info">{{ class_description }}</div>
+            {% endif %}
+        </section>
+
+        <section class="meta-section">
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Department</div>
+                    <div class="meta-value">{{ department }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Class</div>
+                    <div class="meta-value">{{ class_name }}{% if class_description %} - {{ class_description }}{% endif %}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Document Type</div>
+                    <div class="meta-value">Course Syllabus</div>
+                </div>
+                {% if semester %}
+                <div class="meta-item">
+                    <div class="meta-label">Semester</div>
+                    <div class="meta-value">{{ semester }}</div>
+                </div>
+                {% endif %}
+                {% if academic_year %}
+                <div class="meta-item">
+                    <div class="meta-label">Academic Year</div>
+                    <div class="meta-value">{{ academic_year }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        {% if course_info %}
+        <section class="section">
+            <h2>1. Course Information</h2>
+            <div class="syllabus-info">
+                {% if course_info.item %}
+                    {% if course_info.item.course_code %}
+                    <div class="info-item">
+                        <span class="info-label">Course Code:</span>
+                        {{ course_info.item.course_code }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.item.credits %}
+                    <div class="info-item">
+                        <span class="info-label">Credits:</span>
+                        {{ course_info.item.credits }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.item.prerequisites %}
+                    <div class="info-item">
+                        <span class="info-label">Prerequisites:</span>
+                        {{ course_info.item.prerequisites }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.item.instructor %}
+                    <div class="info-item">
+                        <span class="info-label">Instructor:</span>
+                        {{ course_info.item.instructor }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.item.email %}
+                    <div class="info-item">
+                        <span class="info-label">Email:</span>
+                        {{ course_info.item.email }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.item.office_hours %}
+                    <div class="info-item">
+                        <span class="info-label">Office Hours:</span>
+                        {{ course_info.item.office_hours }}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    {% if course_info.course_code %}
+                    <div class="info-item">
+                        <span class="info-label">Course Code:</span>
+                        {{ course_info.course_code }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.credits %}
+                    <div class="info-item">
+                        <span class="info-label">Credits:</span>
+                        {{ course_info.credits }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.prerequisites %}
+                    <div class="info-item">
+                        <span class="info-label">Prerequisites:</span>
+                        {{ course_info.prerequisites }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.instructor %}
+                    <div class="info-item">
+                        <span class="info-label">Instructor:</span>
+                        {{ course_info.instructor }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.email %}
+                    <div class="info-item">
+                        <span class="info-label">Email:</span>
+                        {{ course_info.email }}
+                    </div>
+                    {% endif %}
+                    {% if course_info.office_hours %}
+                    <div class="info-item">
+                        <span class="info-label">Office Hours:</span>
+                        {{ course_info.office_hours }}
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if course_description %}
+        <section class="section">
+            <h2>{% if course_info %}2.{% else %}1.{% endif %} Course Description</h2>
+            <div class="syllabus-info">
+                {{ course_description }}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if schedule %}
+        <section class="section">
+            <h2>{% if course_info and course_description %}3.{% elif course_info or course_description %}2.{% else %}1.{% endif %} Course Schedule</h2>
+            {% if schedule.item and schedule.item.weeks %}
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Week</th>
+                            <th>Topic</th>
+                            <th>Assignments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for week in schedule.item.weeks %}
+                        <tr>
+                            <td>{{ week.item.week_number if week.item and week.item.week_number else week.week_number }}</td>
+                            <td>{{ week.item.topic if week.item and week.item.topic else week.topic }}</td>
+                            <td>{{ week.item.assignments if week.item and week.item.assignments else week.assignments }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% elif schedule.weeks %}
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Week</th>
+                            <th>Topic</th>
+                            <th>Assignments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for week in schedule.weeks %}
+                        <tr>
+                            <td>{{ week.week_number }}</td>
+                            <td>{{ week.topic }}</td>
+                            <td>{{ week.assignments }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="syllabus-info">
+                    {{ schedule }}
+                </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {% if grading %}
+        <section class="section">
+            <h2>{% if course_info and course_description and schedule %}4.{% elif (course_info and course_description) or (course_info and schedule) or (course_description and schedule) %}3.{% elif course_info or course_description or schedule %}2.{% else %}1.{% endif %} Grading</h2>
+            {% if grading.item %}
+                {% if grading.item.scale %}
+                <div class="grading-scale">
+                    {% for grade in grading.item.scale %}
+                    <div class="grade-item">
+                        <span>{{ grade.item.letter if grade.item and grade.item.letter else grade.letter }}</span>
+                        <span>{{ grade.item.range if grade.item and grade.item.range else grade.range }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if grading.item.breakdown %}
+                <div style="margin-top: 1rem;">
+                    {% for item in grading.item.breakdown %}
+                    <div class="grade-item">
+                        <span>{{ item.item.assignment if item.item and item.item.assignment else item.assignment }}</span>
+                        <span>{{ item.item.weight if item.item and item.item.weight else item.weight }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% else %}
+                {% if grading.scale %}
+                <div class="grading-scale">
+                    {% for grade in grading.scale %}
+                    <div class="grade-item">
+                        <span>{{ grade.letter }}</span>
+                        <span>{{ grade.range }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if grading.breakdown %}
+                <div style="margin-top: 1rem;">
+                    {% for item in grading.breakdown %}
+                    <div class="grade-item">
+                        <span>{{ item.assignment }}</span>
+                        <span>{{ item.weight }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {% if policies %}
+        <section class="section">
+            <h2>{% if course_info and course_description and schedule and grading %}5.{% elif (course_info and course_description and schedule) or (course_info and course_description and grading) or (course_info and schedule and grading) or (course_description and schedule and grading) %}4.{% elif (course_info and course_description) or (course_info and schedule) or (course_info and grading) or (course_description and schedule) or (course_description and grading) or (schedule and grading) %}3.{% elif course_info or course_description or schedule or grading %}2.{% else %}1.{% endif %} Course Policies</h2>
+            {% if policies.item and policies.item.items %}
+                {% for policy in policies.item.items %}
+                <div class="policy-item">
+                    <div class="policy-title">
+                        {{ policy.item.title if policy.item and policy.item.title else policy.title }}
+                    </div>
+                    <div>
+                        {{ policy.item.description if policy.item and policy.item.description else policy.description }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% elif policies.items %}
+                {% for policy in policies.items %}
+                <div class="policy-item">
+                    <div class="policy-title">{{ policy.title }}</div>
+                    <div>{{ policy.description }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="syllabus-info">
+                    {{ policies }}
+                </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {% if resources %}
+        <section class="section">
+            <h2>{% if course_info and course_description and schedule and grading and policies %}6.{% else %}3.{% endif %} Resources</h2>
+            <div>
+                {% if resources.item and resources.item.items %}
+                    {% for resource in resources.item.items %}
+                    <div class="resource-item">
+                        {{ resource.item.text if resource.item and resource.item.text else resource.text }}
+                    </div>
+                    {% endfor %}
+                {% elif resources.items %}
+                    {% for resource in resources.items %}
+                    <div class="resource-item">{{ resource.text }}</div>
+                    {% endfor %}
+                {% else %}
+                    <p>{{ resources }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <footer class="document-footer">
+        <div class="footer-content">
+            <div class="footer-branding">
+                <div class="footer-logo">
+                    {% if organization_name %}
+                        {{ organization_name[:1]|upper }}
+                    {% else %}
+                        E
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="footer-org-name">{{ organization_name or "Educational Institution" }}</div>
+                    {% if organization_description %}
+                        <div class="footer-meta">{{ organization_description }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="footer-meta">
+                {{ department }} • {{ class_name }}
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+

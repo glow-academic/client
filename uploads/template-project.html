@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document_name }} - {{ class_name }}</title>
+    <style>
+        /* Base reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: "Georgia", "Times New Roman", serif;
+            background: #ffffff;
+            color: #111827;
+            line-height: 1.6;
+        }
+
+        .document-container {
+            max-width: 850px;
+            margin: 2.5rem auto 3rem;
+            padding: 3rem 3.5rem;
+            background: #ffffff;
+            border: 1px solid #d4d4d8;
+            border-radius: 0;
+        }
+
+        .document-title-section {
+            padding-bottom: 1.75rem;
+            margin-bottom: 1.75rem;
+            border-bottom: 1.5px solid #9ca3af;
+            text-align: center;
+        }
+
+        .document-title-section h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .document-title-section .class-info {
+            font-size: 0.95rem;
+            color: #4b5563;
+            font-weight: 400;
+        }
+
+        .meta-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .meta-grid {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 1px solid #d4d4d8;
+            border-bottom: 1px solid #d4d4d8;
+        }
+
+        .meta-item {
+            display: table-row;
+        }
+
+        .meta-label,
+        .meta-value {
+            display: table-cell;
+            padding: 0.5rem 0.25rem;
+            vertical-align: top;
+            font-size: 0.95rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .meta-item:first-child .meta-label,
+        .meta-item:first-child .meta-value {
+            border-top: none;
+        }
+
+        .meta-label {
+            width: 28%;
+            font-weight: 600;
+            color: #374151;
+            padding-right: 1.5rem;
+            white-space: nowrap;
+        }
+
+        .meta-value {
+            color: #111827;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #9ca3af;
+            padding-bottom: 0.4rem;
+        }
+
+        .instructions-content {
+            border-left: 3px solid #111827;
+            padding: 1.25rem 1.5rem;
+            background: #f9fafb;
+            font-size: 0.98rem;
+            color: #111827;
+        }
+
+        .milestone-card {
+            border: 1px solid #d4d4d8;
+            padding: 1.25rem 1.5rem;
+            background: #ffffff;
+            margin-bottom: 1.5rem;
+            page-break-inside: avoid;
+        }
+
+        .milestone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .milestone-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .milestone-date {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .milestone-description {
+            margin-top: 0.5rem;
+            color: #374151;
+        }
+
+        .deliverable-item {
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .deliverable-item:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #6b7280;
+        }
+
+        .group-info {
+            border: 1px solid #d4d4d8;
+            padding: 1.25rem 1.5rem;
+            background: #f9fafb;
+            margin-bottom: 1.5rem;
+        }
+
+        .group-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+
+        .evaluation-criteria {
+            border: 1px solid #d4d4d8;
+            padding: 1.25rem 1.5rem;
+            background: #ffffff;
+        }
+
+        .criteria-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .criteria-item:last-child {
+            border-bottom: none;
+        }
+
+        .criteria-name {
+            color: #111827;
+        }
+
+        .criteria-weight {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .document-footer {
+            border-top: 1px solid #d4d4d8;
+            padding: 1.5rem 0;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        .footer-content {
+            max-width: 850px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-branding {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 2px;
+            border: 1px solid #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #111827;
+        }
+
+        .footer-org-name {
+            font-weight: 600;
+            color: #111827;
+            font-size: 0.9rem;
+        }
+
+        .footer-meta {
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                color: #000000;
+            }
+
+            .document-container {
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+
+            .document-footer {
+                border-top: 1px solid #d4d4d8;
+                margin-top: 1.5rem;
+                padding-top: 0.75rem;
+            }
+
+            .milestone-card {
+                border: 1px solid #c4c4c4;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .document-container {
+                margin: 0.5rem;
+                padding: 1.5rem 1.25rem 2rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="document-container">
+        <section class="document-title-section">
+            <h1>{{ document_name }} ({{ class_name }})</h1>
+            {% if class_description %}
+            <div class="class-info">{{ class_description }}</div>
+            {% endif %}
+        </section>
+
+        <section class="meta-section">
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Department</div>
+                    <div class="meta-value">{{ department }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Class</div>
+                    <div class="meta-value">{{ class_name }}{% if class_description %} - {{ class_description }}{% endif %}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Project Type</div>
+                    <div class="meta-value">Final Project</div>
+                </div>
+                {% if due_date %}
+                <div class="meta-item">
+                    <div class="meta-label">Due Date</div>
+                    <div class="meta-value">{{ due_date }}</div>
+                </div>
+                {% endif %}
+                {% if total_points %}
+                <div class="meta-item">
+                    <div class="meta-label">Total Points</div>
+                    <div class="meta-value">{{ total_points }}</div>
+                </div>
+                {% endif %}
+                {% if document_description %}
+                <div class="meta-item">
+                    <div class="meta-label">Description</div>
+                    <div class="meta-value">{{ document_description }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>1. Project Overview</h2>
+            <div class="instructions-content">
+                {{ project_overview }}
+            </div>
+        </section>
+
+        {% if milestones %}
+        <section class="section">
+            <h2>2. Project Milestones</h2>
+            {% for milestone in milestones %}
+            <div class="milestone-card">
+                <div class="milestone-header">
+                    <div class="milestone-title">
+                        {% if milestone.item and milestone.item.title %}
+                            {{ milestone.item.title }}
+                        {% elif milestone.title %}
+                            {{ milestone.title }}
+                        {% else %}
+                            Milestone {{ loop.index }}
+                        {% endif %}
+                    </div>
+                    {% if (milestone.item and milestone.item.due_date) or milestone.due_date %}
+                    <div class="milestone-date">
+                        Due: {{ milestone.item.due_date if milestone.item and milestone.item.due_date else milestone.due_date }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% if (milestone.item and milestone.item.description) or milestone.description %}
+                <div class="milestone-description">
+                    {{ milestone.item.description if milestone.item and milestone.item.description else milestone.description }}
+                </div>
+                {% endif %}
+                {% if (milestone.item and milestone.item.deliverables) or milestone.deliverables %}
+                <div style="margin-top: 0.75rem;">
+                    <strong>Deliverables:</strong>
+                    {% if milestone.item and milestone.item.deliverables %}
+                        {% for deliverable in milestone.item.deliverables %}
+                        <div class="deliverable-item">
+                            {{ deliverable.item.name if deliverable.item and deliverable.item.name else deliverable.name }}
+                        </div>
+                        {% endfor %}
+                    {% elif milestone.deliverables %}
+                        {% for deliverable in milestone.deliverables %}
+                        <div class="deliverable-item">{{ deliverable.name }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if deliverables %}
+        <section class="section">
+            <h2>{% if milestones %}3.{% else %}2.{% endif %} Required Deliverables</h2>
+            {% if deliverables.item and deliverables.item.items %}
+                {% for deliverable in deliverables.item.items %}
+                <div class="deliverable-item">
+                    {{ deliverable.item.name if deliverable.item and deliverable.item.name else deliverable.name }}
+                    {% if (deliverable.item and deliverable.item.description) or deliverable.description %}
+                        - {{ deliverable.item.description if deliverable.item and deliverable.item.description else deliverable.description }}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% elif deliverables.items %}
+                {% for deliverable in deliverables.items %}
+                <div class="deliverable-item">
+                    {{ deliverable.name }}
+                    {% if deliverable.description %} - {{ deliverable.description }}{% endif %}
+                </div>
+                {% endfor %}
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {% if group_info %}
+        <section class="section">
+            <h2>{% if milestones and deliverables %}4.{% elif milestones or deliverables %}3.{% else %}2.{% endif %} Group Information</h2>
+            <div class="group-info">
+                {% if group_info.item %}
+                    {% if group_info.item.max_size %}
+                    <p><strong>Maximum Group Size:</strong> {{ group_info.item.max_size }}</p>
+                    {% endif %}
+                    {% if group_info.item.min_size %}
+                    <p><strong>Minimum Group Size:</strong> {{ group_info.item.min_size }}</p>
+                    {% endif %}
+                    {% if group_info.item.roles %}
+                    <p><strong>Group Roles:</strong></p>
+                    <ul>
+                        {% for role in group_info.item.roles %}
+                        <li>{{ role.item.name if role.item and role.item.name else role.name }}: {{ role.item.description if role.item and role.item.description else role.description }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                {% else %}
+                    {% if group_info.max_size %}
+                    <p><strong>Maximum Group Size:</strong> {{ group_info.max_size }}</p>
+                    {% endif %}
+                    {% if group_info.min_size %}
+                    <p><strong>Minimum Group Size:</strong> {{ group_info.min_size }}</p>
+                    {% endif %}
+                    {% if group_info.roles %}
+                    <p><strong>Group Roles:</strong></p>
+                    <ul>
+                        {% for role in group_info.roles %}
+                        <li>{{ role.name }}: {{ role.description }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if evaluation_criteria %}
+        <section class="section">
+            <h2>{% if milestones and deliverables and group_info %}5.{% elif (milestones and deliverables) or (milestones and group_info) or (deliverables and group_info) %}4.{% elif milestones or deliverables or group_info %}3.{% else %}2.{% endif %} Evaluation Criteria</h2>
+            <div class="evaluation-criteria">
+                {% if evaluation_criteria.item and evaluation_criteria.item.criteria %}
+                    {% for criterion in evaluation_criteria.item.criteria %}
+                    <div class="criteria-item">
+                        <span class="criteria-name">
+                            {{ criterion.item.name if criterion.item and criterion.item.name else criterion.name }}
+                        </span>
+                        <span class="criteria-weight">
+                            {{ criterion.item.weight if criterion.item and criterion.item.weight else criterion.weight }}%
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% elif evaluation_criteria.criteria %}
+                    {% for criterion in evaluation_criteria.criteria %}
+                    <div class="criteria-item">
+                        <span class="criteria-name">{{ criterion.name }}</span>
+                        <span class="criteria-weight">{{ criterion.weight }}%</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if submission_instructions %}
+        <section class="section">
+            <h2>{% if milestones or deliverables or group_info or evaluation_criteria %}6.{% else %}3.{% endif %} Submission Instructions</h2>
+            <div class="instructions-content">
+                {% if submission_instructions.item and submission_instructions.item.instructions %}
+                    {% for instruction in submission_instructions.item.instructions %}
+                    <p>{{ instruction.item.text if instruction.item and instruction.item.text else instruction.text }}</p>
+                    {% endfor %}
+                {% elif submission_instructions.instructions %}
+                    {% for instruction in submission_instructions.instructions %}
+                    <p>{{ instruction.text }}</p>
+                    {% endfor %}
+                {% else %}
+                    <p>Submit all project deliverables by the final due date. Include all source code, documentation, and required artifacts. Format: ZIP archive preferred.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <footer class="document-footer">
+        <div class="footer-content">
+            <div class="footer-branding">
+                <div class="footer-logo">
+                    {% if organization_name %}
+                        {{ organization_name[:1]|upper }}
+                    {% else %}
+                        E
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="footer-org-name">{{ organization_name or "Educational Institution" }}</div>
+                    {% if organization_description %}
+                        <div class="footer-meta">{{ organization_description }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="footer-meta">
+                {{ department }} • {{ class_name }}
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+

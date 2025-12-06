@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document_name }} - {{ class_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: "Georgia", "Times New Roman", serif;
+            background: #ffffff;
+            color: #111827;
+            line-height: 1.6;
+        }
+
+        .document-container {
+            max-width: 850px;
+            margin: 2.5rem auto 3rem;
+            padding: 3rem 3.5rem;
+            background: #ffffff;
+            border: 1px solid #d4d4d8;
+            border-radius: 0;
+        }
+
+        .document-title-section {
+            padding-bottom: 1.75rem;
+            margin-bottom: 1.75rem;
+            border-bottom: 1.5px solid #9ca3af;
+            text-align: center;
+        }
+
+        .document-title-section h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .document-title-section .class-info {
+            font-size: 0.95rem;
+            color: #4b5563;
+            font-weight: 400;
+        }
+
+        .meta-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .meta-grid {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 1px solid #d4d4d8;
+            border-bottom: 1px solid #d4d4d8;
+        }
+
+        .meta-item {
+            display: table-row;
+        }
+
+        .meta-label,
+        .meta-value {
+            display: table-cell;
+            padding: 0.5rem 0.25rem;
+            vertical-align: top;
+            font-size: 0.95rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .meta-item:first-child .meta-label,
+        .meta-item:first-child .meta-value {
+            border-top: none;
+        }
+
+        .meta-label {
+            width: 28%;
+            font-weight: 600;
+            color: #374151;
+            padding-right: 1.5rem;
+            white-space: nowrap;
+        }
+
+        .meta-value {
+            color: #111827;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #9ca3af;
+            padding-bottom: 0.4rem;
+        }
+
+        .lecture-topic {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .learning-objectives {
+            border-left: 3px solid #111827;
+            padding: 1.25rem 1.5rem;
+            background: #f9fafb;
+            margin-bottom: 1.5rem;
+        }
+
+        .learning-objectives ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .learning-objectives li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .learning-objectives li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #6b7280;
+        }
+
+        .key-concept {
+            border: 1px solid #d4d4d8;
+            padding: 1rem 1.5rem;
+            background: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .key-concept-title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .notes-section {
+            border: 1px solid #d4d4d8;
+            padding: 1.25rem 1.5rem;
+            background: #ffffff;
+        }
+
+        .notes-item {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .notes-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .reference-item {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .reference-item:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #6b7280;
+        }
+
+        .document-footer {
+            border-top: 1px solid #d4d4d8;
+            padding: 1.5rem 0;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        .footer-content {
+            max-width: 850px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-branding {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 2px;
+            border: 1px solid #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #111827;
+        }
+
+        .footer-org-name {
+            font-weight: 600;
+            color: #111827;
+            font-size: 0.9rem;
+        }
+
+        .footer-meta {
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                color: #000000;
+            }
+
+            .document-container {
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+
+            .document-footer {
+                border-top: 1px solid #d4d4d8;
+                margin-top: 1.5rem;
+                padding-top: 0.75rem;
+            }
+
+            .key-concept,
+            .notes-section {
+                border: 1px solid #c4c4c4;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .document-container {
+                margin: 0.5rem;
+                padding: 1.5rem 1.25rem 2rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="document-container">
+        <section class="document-title-section">
+            <h1>{{ document_name }} ({{ class_name }})</h1>
+            {% if class_description %}
+            <div class="class-info">{{ class_description }}</div>
+            {% endif %}
+        </section>
+
+        <section class="meta-section">
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Department</div>
+                    <div class="meta-value">{{ department }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Class</div>
+                    <div class="meta-value">{{ class_name }}{% if class_description %} - {{ class_description }}{% endif %}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Document Type</div>
+                    <div class="meta-value">Lecture Notes</div>
+                </div>
+                {% if lecture_date %}
+                <div class="meta-item">
+                    <div class="meta-label">Lecture Date</div>
+                    <div class="meta-value">{{ lecture_date }}</div>
+                </div>
+                {% endif %}
+                {% if document_description %}
+                <div class="meta-item">
+                    <div class="meta-label">Description</div>
+                    <div class="meta-value">{{ document_description }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        {% if topic %}
+        <section class="section">
+            <h2>1. Topic</h2>
+            <div class="lecture-topic">{{ topic }}</div>
+        </section>
+        {% endif %}
+
+        {% if learning_objectives %}
+        <section class="section">
+            <h2>{% if topic %}2.{% else %}1.{% endif %} Learning Objectives</h2>
+            <div class="learning-objectives">
+                {% if learning_objectives.item and learning_objectives.item.items %}
+                    <ul>
+                        {% for objective in learning_objectives.item.items %}
+                        <li>{{ objective.item.text if objective.item and objective.item.text else objective.text }}</li>
+                        {% endfor %}
+                    </ul>
+                {% elif learning_objectives.items %}
+                    <ul>
+                        {% for objective in learning_objectives.items %}
+                        <li>{{ objective.text }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>{{ learning_objectives }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if key_concepts %}
+        <section class="section">
+            <h2>{% if topic and learning_objectives %}3.{% elif topic or learning_objectives %}2.{% else %}1.{% endif %} Key Concepts</h2>
+            {% if key_concepts.item and key_concepts.item.items %}
+                {% for concept in key_concepts.item.items %}
+                <div class="key-concept">
+                    <div class="key-concept-title">
+                        {{ concept.item.title if concept.item and concept.item.title else concept.title }}
+                    </div>
+                    <div>
+                        {{ concept.item.description if concept.item and concept.item.description else concept.description }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% elif key_concepts.items %}
+                {% for concept in key_concepts.items %}
+                <div class="key-concept">
+                    <div class="key-concept-title">{{ concept.title }}</div>
+                    <div>{{ concept.description }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="key-concept">
+                    <p>{{ key_concepts }}</p>
+                </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {% if notes %}
+        <section class="section">
+            <h2>{% if topic and learning_objectives and key_concepts %}4.{% elif (topic and learning_objectives) or (topic and key_concepts) or (learning_objectives and key_concepts) %}3.{% elif topic or learning_objectives or key_concepts %}2.{% else %}1.{% endif %} Lecture Notes</h2>
+            <div class="notes-section">
+                {% if notes.item and notes.item.items %}
+                    {% for note in notes.item.items %}
+                    <div class="notes-item">
+                        <strong>{{ note.item.section if note.item and note.item.section else note.section }}:</strong>
+                        {{ note.item.content if note.item and note.item.content else note.content }}
+                    </div>
+                    {% endfor %}
+                {% elif notes.items %}
+                    {% for note in notes.items %}
+                    <div class="notes-item">
+                        <strong>{{ note.section }}:</strong> {{ note.content }}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>{{ notes }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if references %}
+        <section class="section">
+            <h2>{% if topic and learning_objectives and key_concepts and notes %}5.{% elif (topic and learning_objectives and key_concepts) or (topic and learning_objectives and notes) or (topic and key_concepts and notes) or (learning_objectives and key_concepts and notes) %}4.{% elif (topic and learning_objectives) or (topic and key_concepts) or (topic and notes) or (learning_objectives and key_concepts) or (learning_objectives and notes) or (key_concepts and notes) %}3.{% elif topic or learning_objectives or key_concepts or notes %}2.{% else %}1.{% endif %} References</h2>
+            <div>
+                {% if references.item and references.item.items %}
+                    {% for ref in references.item.items %}
+                    <div class="reference-item">
+                        {{ ref.item.text if ref.item and ref.item.text else ref.text }}
+                    </div>
+                    {% endfor %}
+                {% elif references.items %}
+                    {% for ref in references.items %}
+                    <div class="reference-item">{{ ref.text }}</div>
+                    {% endfor %}
+                {% else %}
+                    <p>{{ references }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <footer class="document-footer">
+        <div class="footer-content">
+            <div class="footer-branding">
+                <div class="footer-logo">
+                    {% if organization_name %}
+                        {{ organization_name[:1]|upper }}
+                    {% else %}
+                        E
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="footer-org-name">{{ organization_name or "Educational Institution" }}</div>
+                    {% if organization_description %}
+                        <div class="footer-meta">{{ organization_description }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="footer-meta">
+                {{ department }} • {{ class_name }}
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+

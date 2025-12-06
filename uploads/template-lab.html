@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document_name }} - {{ class_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: "Georgia", "Times New Roman", serif;
+            background: #ffffff;
+            color: #111827;
+            line-height: 1.6;
+        }
+
+        .document-container {
+            max-width: 850px;
+            margin: 2.5rem auto 3rem;
+            padding: 3rem 3.5rem;
+            background: #ffffff;
+            border: 1px solid #d4d4d8;
+            border-radius: 0;
+        }
+
+        .document-title-section {
+            padding-bottom: 1.75rem;
+            margin-bottom: 1.75rem;
+            border-bottom: 1.5px solid #9ca3af;
+            text-align: center;
+        }
+
+        .document-title-section h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .document-title-section .class-info {
+            font-size: 0.95rem;
+            color: #4b5563;
+            font-weight: 400;
+        }
+
+        .meta-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .meta-grid {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 1px solid #d4d4d8;
+            border-bottom: 1px solid #d4d4d8;
+        }
+
+        .meta-item {
+            display: table-row;
+        }
+
+        .meta-label,
+        .meta-value {
+            display: table-cell;
+            padding: 0.5rem 0.25rem;
+            vertical-align: top;
+            font-size: 0.95rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .meta-item:first-child .meta-label,
+        .meta-item:first-child .meta-value {
+            border-top: none;
+        }
+
+        .meta-label {
+            width: 28%;
+            font-weight: 600;
+            color: #374151;
+            padding-right: 1.5rem;
+            white-space: nowrap;
+        }
+
+        .meta-value {
+            color: #111827;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #9ca3af;
+            padding-bottom: 0.4rem;
+        }
+
+        .instructions-content {
+            border-left: 3px solid #111827;
+            padding: 1.25rem 1.5rem;
+            background: #f9fafb;
+            font-size: 0.98rem;
+            color: #111827;
+        }
+
+        .lab-section {
+            border: 1px solid #d4d4d8;
+            padding: 1.5rem;
+            background: #ffffff;
+            margin-bottom: 1.5rem;
+        }
+
+        .lab-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+
+        .materials-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .materials-list li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .materials-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #6b7280;
+        }
+
+        .procedure-step {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .procedure-step-number {
+            position: absolute;
+            left: 0;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .observation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .observation-table th,
+        .observation-table td {
+            border: 1px solid #d4d4d8;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .observation-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .document-footer {
+            border-top: 1px solid #d4d4d8;
+            padding: 1.5rem 0;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        .footer-content {
+            max-width: 850px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-branding {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 2px;
+            border: 1px solid #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #111827;
+        }
+
+        .footer-org-name {
+            font-weight: 600;
+            color: #111827;
+            font-size: 0.9rem;
+        }
+
+        .footer-meta {
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                color: #000000;
+            }
+
+            .document-container {
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+
+            .document-footer {
+                border-top: 1px solid #d4d4d8;
+                margin-top: 1.5rem;
+                padding-top: 0.75rem;
+            }
+
+            .lab-section {
+                border: 1px solid #c4c4c4;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .document-container {
+                margin: 0.5rem;
+                padding: 1.5rem 1.25rem 2rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="document-container">
+        <section class="document-title-section">
+            <h1>{{ document_name }} ({{ class_name }})</h1>
+            {% if class_description %}
+            <div class="class-info">{{ class_description }}</div>
+            {% endif %}
+        </section>
+
+        <section class="meta-section">
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Department</div>
+                    <div class="meta-value">{{ department }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Class</div>
+                    <div class="meta-value">{{ class_name }}{% if class_description %} - {{ class_description }}{% endif %}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Lab Type</div>
+                    <div class="meta-value">Laboratory Exercise</div>
+                </div>
+                {% if lab_date %}
+                <div class="meta-item">
+                    <div class="meta-label">Lab Date</div>
+                    <div class="meta-value">{{ lab_date }}</div>
+                </div>
+                {% endif %}
+                {% if document_description %}
+                <div class="meta-item">
+                    <div class="meta-label">Description</div>
+                    <div class="meta-value">{{ document_description }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        {% if objectives %}
+        <section class="section">
+            <h2>1. Objectives</h2>
+            <div class="lab-section">
+                {% if objectives.item and objectives.item.items %}
+                    <ul class="materials-list">
+                        {% for objective in objectives.item.items %}
+                        <li>{{ objective.item.text if objective.item and objective.item.text else objective.text }}</li>
+                        {% endfor %}
+                    </ul>
+                {% elif objectives.items %}
+                    <ul class="materials-list">
+                        {% for objective in objectives.items %}
+                        <li>{{ objective.text }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>{{ objectives }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if materials %}
+        <section class="section">
+            <h2>{% if objectives %}2.{% else %}1.{% endif %} Materials and Equipment</h2>
+            <div class="lab-section">
+                {% if materials.item and materials.item.items %}
+                    <ul class="materials-list">
+                        {% for material in materials.item.items %}
+                        <li>{{ material.item.name if material.item and material.item.name else material.name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% elif materials.items %}
+                    <ul class="materials-list">
+                        {% for material in materials.items %}
+                        <li>{{ material.name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>{{ materials }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if procedure %}
+        <section class="section">
+            <h2>{% if objectives and materials %}3.{% elif objectives or materials %}2.{% else %}1.{% endif %} Procedure</h2>
+            <div class="lab-section">
+                {% if procedure.item and procedure.item.steps %}
+                    {% for step in procedure.item.steps %}
+                    <div class="procedure-step">
+                        <span class="procedure-step-number">{{ loop.index }}.</span>
+                        <span>{{ step.item.text if step.item and step.item.text else step.text }}</span>
+                    </div>
+                    {% endfor %}
+                {% elif procedure.steps %}
+                    {% for step in procedure.steps %}
+                    <div class="procedure-step">
+                        <span class="procedure-step-number">{{ loop.index }}.</span>
+                        <span>{{ step.text }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>{{ procedure }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if observations %}
+        <section class="section">
+            <h2>{% if objectives and materials and procedure %}4.{% elif (objectives and materials) or (objectives and procedure) or (materials and procedure) %}3.{% elif objectives or materials or procedure %}2.{% else %}1.{% endif %} Observations</h2>
+            <div class="lab-section">
+                {% if observations.item and observations.item.table %}
+                    <table class="observation-table">
+                        <thead>
+                            <tr>
+                                {% for header in observations.item.table.headers %}
+                                <th>{{ header.item.name if header.item and header.item.name else header.name }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in observations.item.table.rows %}
+                            <tr>
+                                {% for cell in row.item.cells if row.item else row.cells %}
+                                <td>{{ cell.item.value if cell.item and cell.item.value else cell.value }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>{{ observations }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if analysis %}
+        <section class="section">
+            <h2>{% if objectives and materials and procedure and observations %}5.{% elif (objectives and materials and procedure) or (objectives and materials and observations) or (objectives and procedure and observations) or (materials and procedure and observations) %}4.{% elif (objectives and materials) or (objectives and procedure) or (objectives and observations) or (materials and procedure) or (materials and observations) or (procedure and observations) %}3.{% elif objectives or materials or procedure or observations %}2.{% else %}1.{% endif %} Analysis and Discussion</h2>
+            <div class="lab-section">
+                {{ analysis }}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if questions %}
+        <section class="section">
+            <h2>{% if objectives or materials or procedure or observations or analysis %}6.{% else %}2.{% endif %} Questions</h2>
+            <div class="lab-section">
+                {% if questions.item and questions.item.items %}
+                    {% for item in questions.item.items %}
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Q{{ loop.index }}:</strong> {{ item.item.question_text if item.item and item.item.question_text else item.question_text }}
+                    </div>
+                    {% endfor %}
+                {% elif questions.items %}
+                    {% for item in questions.items %}
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Q{{ loop.index }}:</strong> {{ item.question_text }}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>{{ questions }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <footer class="document-footer">
+        <div class="footer-content">
+            <div class="footer-branding">
+                <div class="footer-logo">
+                    {% if organization_name %}
+                        {{ organization_name[:1]|upper }}
+                    {% else %}
+                        E
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="footer-org-name">{{ organization_name or "Educational Institution" }}</div>
+                    {% if organization_description %}
+                        <div class="footer-meta">{{ organization_description }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="footer-meta">
+                {{ department }} • {{ class_name }}
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+

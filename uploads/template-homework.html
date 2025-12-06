@@ -122,50 +122,46 @@
             color: #111827;
         }
 
-        /* Figures and Images */
-        .figure-container {
-            margin: 1.75rem 0;
-            text-align: center;
-            page-break-inside: avoid;
-        }
-
-        .figure-image {
-            max-width: 100%;
-            height: auto;
+        /* Problem Sets */
+        .problem-set {
+            margin-bottom: 2rem;
             border: 1px solid #d4d4d8;
-            padding: 0.5rem;
+            padding: 1.5rem;
+            background: #ffffff;
         }
 
-        /* Simplified placeholder (no animation, no emoji) */
-        .figure-placeholder {
-            width: 100%;
-            min-height: 220px;
-            border: 1px dashed #d4d4d8;
-            background: #f9fafb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 1.25rem;
-            font-size: 0.9rem;
-            color: #6b7280;
-            font-style: italic;
-        }
-
-        .figure-placeholder-content {
-            max-width: 80%;
-            margin: 0 auto;
-        }
-
-        .figure-caption {
-            font-size: 0.85rem;
-            color: #4b5563;
-            font-style: italic;
-            margin-top: 0.4rem;
-        }
-
-        .figure-number {
+        .problem-set-title {
+            font-size: 1.1rem;
             font-weight: 600;
+            color: #111827;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .problem-item {
+            margin-bottom: 1.25rem;
+            padding-left: 1rem;
+        }
+
+        .problem-number {
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .problem-text {
+            margin-top: 0.5rem;
+        }
+
+        .problem-points {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #374151;
+            padding: 0.15rem 0.5rem;
+            border: 1px solid #d4d4d8;
+            border-radius: 999px;
+            display: inline-block;
+            margin-left: 0.5rem;
         }
 
         /* Questions Section */
@@ -213,10 +209,6 @@
             white-space: nowrap;
         }
 
-        .question-figure {
-            margin: 1rem 0;
-        }
-
         .question-hint {
             margin-top: 0.75rem;
             padding: 0.75rem 0.9rem;
@@ -227,13 +219,37 @@
             font-style: italic;
         }
 
-        .no-questions {
-            text-align: center;
-            padding: 2.5rem 1.5rem;
-            color: #6b7280;
-            font-style: italic;
-            border: 1px dashed #d4d4d8;
+        /* Submission Info */
+        .submission-info {
+            border: 1px solid #d4d4d8;
+            padding: 1rem 1.5rem;
             background: #f9fafb;
+            margin-top: 2rem;
+        }
+
+        .submission-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+
+        .submission-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .submission-info li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .submission-info li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #6b7280;
         }
 
         /* Footer */
@@ -304,20 +320,13 @@
                 padding-top: 0.75rem;
             }
 
+            .problem-set,
             .question-card {
                 border: 1px solid #c4c4c4;
             }
 
-            .figure-container {
-                page-break-inside: avoid;
-            }
-
             .section {
                 page-break-inside: avoid;
-            }
-
-            @page {
-                margin: 1in;
             }
         }
 
@@ -363,16 +372,28 @@
                     <div class="meta-value">{{ class_name }}{% if class_description %} - {{ class_description }}{% endif %}</div>
                 </div>
                 <div class="meta-item">
-                    <div class="meta-label">Document Type</div>
-                    <div class="meta-value">{{ document_type }}{% if document_type_description %} - {{ document_type_description }}{% endif %}</div>
+                    <div class="meta-label">Assignment Type</div>
+                    <div class="meta-value">Homework</div>
                 </div>
+                {% if due_date %}
+                <div class="meta-item">
+                    <div class="meta-label">Due Date</div>
+                    <div class="meta-value">{{ due_date }}</div>
+                </div>
+                {% endif %}
+                {% if total_points %}
+                <div class="meta-item">
+                    <div class="meta-label">Total Points</div>
+                    <div class="meta-value">{{ total_points }}</div>
+                </div>
+                {% endif %}
                 {% if document_description %}
                 <div class="meta-item">
                     <div class="meta-label">Description</div>
                     <div class="meta-value">{{ document_description }}</div>
                 </div>
                 {% endif %}
-    </div>
+            </div>
         </section>
 
         <!-- Instructions Section -->
@@ -380,71 +401,112 @@
             <h2>1. Instructions</h2>
             <div class="instructions-content">
                 {{ instructions }}
-    </div>
+            </div>
         </section>
 
-        <!-- Questions Section -->
+        <!-- Problem Sets Section -->
+        {% if problem_sets %}
         <section class="section">
-            <h2>2. Questions</h2>
-        {% if questions %}
-                <div class="questions-container">
-            {% for item in questions %}
-                        <div class="question-card">
-                            <div class="question-header">
-                                <div class="question-title">
-                                    <span class="question-number">Q{{ loop.index }}</span>
-                                    {{ item.item.question_text if item.item else item.question_text }}
-                                </div>
-                                {% if (item.item and item.item.points) or item.points %}
-                                    <div class="question-points">
-                                        {{ item.item.points if item.item and item.item.points else item.points }} PTS
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            {% if (item.item and item.item.figure) or item.figure %}
-                                <div class="question-figure">
-                                    <div class="figure-container">
-                                        {% if (item.item and item.item.figure_url) or item.figure_url %}
-                                            <img src="{{ item.item.figure_url if item.item and item.item.figure_url else item.figure_url }}" 
-                                                 alt="{{ item.item.figure_caption if item.item and item.item.figure_caption else (item.figure_caption or 'Figure') }}" 
-                                                 class="figure-image">
-                                        {% else %}
-                                            <div class="figure-placeholder">
-                                                <div class="figure-placeholder-content">
-                                                    <div>Figure {{ loop.index }}</div>
-                                                    <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.7;">
-                                                        {% if (item.item and item.item.figure_caption) or item.figure_caption %}
-                                                            {{ item.item.figure_caption if item.item and item.item.figure_caption else item.figure_caption }}
-                                                        {% else %}
-                                                            Diagram or chart placeholder
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                        <div class="figure-caption">
-                                            <span class="figure-number">Figure {{ loop.index }}:</span>
-                                            {{ item.item.figure_caption if item.item and item.item.figure_caption else (item.figure_caption or 'Relevant diagram or chart') }}
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endif %}
-                            
-                            {% if (item.item and item.item.hint) or item.hint %}
-                                <div class="question-hint">
-                                    <strong>Hint:</strong> {{ item.item.hint if item.item and item.item.hint else item.hint }}
-                                </div>
+            <h2>2. Problem Sets</h2>
+            {% for problem_set in problem_sets %}
+            <div class="problem-set">
+                <div class="problem-set-title">
+                    {% if problem_set.item and problem_set.item.title %}
+                        {{ problem_set.item.title }}
+                    {% elif problem_set.title %}
+                        {{ problem_set.title }}
+                    {% else %}
+                        Problem Set {{ loop.index }}
+                    {% endif %}
+                </div>
+                {% if problem_set.item and problem_set.item.problems %}
+                    {% for problem in problem_set.item.problems %}
+                    <div class="problem-item">
+                        <div>
+                            <span class="problem-number">Problem {{ loop.index }}:</span>
+                            {% if problem.item and problem.item.points %}
+                                <span class="problem-points">{{ problem.item.points }} PTS</span>
+                            {% elif problem.points %}
+                                <span class="problem-points">{{ problem.points }} PTS</span>
                             {% endif %}
                         </div>
+                        <div class="problem-text">
+                            {{ (problem.item.text if problem.item and problem.item.text else problem.text) }}
+                        </div>
+                    </div>
                     {% endfor %}
-                </div>
-            {% else %}
-                <div class="no-questions">
-                    <p>No questions provided.</p>
-                </div>
-            {% endif %}
+                {% elif problem_set.problems %}
+                    {% for problem in problem_set.problems %}
+                    <div class="problem-item">
+                        <div>
+                            <span class="problem-number">Problem {{ loop.index }}:</span>
+                            {% if problem.points %}
+                                <span class="problem-points">{{ problem.points }} PTS</span>
+                            {% endif %}
+                        </div>
+                        <div class="problem-text">{{ problem.text }}</div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% endfor %}
         </section>
+        {% endif %}
+
+        <!-- Questions Section -->
+        {% if questions %}
+        <section class="section">
+            <h2>{% if problem_sets %}3.{% else %}2.{% endif %} Questions</h2>
+            <div class="questions-container">
+                {% for item in questions %}
+                <div class="question-card">
+                    <div class="question-header">
+                        <div class="question-title">
+                            <span class="question-number">Q{{ loop.index }}</span>
+                            {{ (item.item.question_text if item.item else item.question_text) }}
+                        </div>
+                        {% if (item.item and item.item.points) or item.points %}
+                        <div class="question-points">
+                            {{ item.item.points if item.item and item.item.points else item.points }} PTS
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if (item.item and item.item.hint) or item.hint %}
+                    <div class="question-hint">
+                        <strong>Hint:</strong> {{ item.item.hint if item.item and item.item.hint else item.hint }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Submission Information -->
+        {% if submission_instructions %}
+        <section class="section">
+            <h2>{% if problem_sets and questions %}4.{% elif problem_sets or questions %}3.{% else %}2.{% endif %} Submission Instructions</h2>
+            <div class="submission-info">
+                {% if submission_instructions.item and submission_instructions.item.instructions %}
+                    {% for instruction in submission_instructions.item.instructions %}
+                    <p>{{ (instruction.item.text if instruction.item and instruction.item.text else instruction.text) }}</p>
+                    {% endfor %}
+                {% elif submission_instructions.instructions %}
+                    {% for instruction in submission_instructions.instructions %}
+                    <p>{{ instruction.text }}</p>
+                    {% endfor %}
+                {% else %}
+                    <ul>
+                        <li>Submit your completed assignment by the due date</li>
+                        <li>Include all work and solutions</li>
+                        <li>Format: PDF preferred</li>
+                        <li>Name your file: LastName_FirstName_Assignment.pdf</li>
+                    </ul>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
     </main>
 
     <!-- Footer -->
@@ -468,7 +530,8 @@
             <div class="footer-meta">
                 {{ department }} • {{ class_name }}
             </div>
-    </div>
+        </div>
     </footer>
 </body>
 </html>
+
