@@ -292,7 +292,7 @@ export default function ActiveAttemptView({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className={`flex items-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto ${
+                                    className={`flex items-center justify-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
                                       !attempt?.infiniteMode &&
                                       currentChat?.completed &&
                                       currentDynamicRubric &&

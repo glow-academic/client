@@ -21186,6 +21186,17 @@
           "completed": {
             "type": "boolean",
             "title": "Completed"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
           }
         },
         "type": "object",

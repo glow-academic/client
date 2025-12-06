@@ -565,7 +565,7 @@ export default function GradedAttemptView({
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div
-                                  className={`flex items-center gap-2 px-3 py-1 rounded-full ${(() => {
+                                  className={`flex items-center justify-center gap-2 px-3 py-1 rounded-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${(() => {
                                     if (!displayChat) return "bg-muted";
                                     const rubric = allDynamicRubrics.find(
                                       (r) => r && r.chatId === displayChat.id

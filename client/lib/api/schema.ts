@@ -8970,6 +8970,8 @@ export interface components {
             type: string;
             /** Completed */
             completed: boolean;
+            /** Personaid */
+            personaId?: string | null;
         };
         /**
          * Method

@@ -47,6 +47,7 @@ export type ServerToClientEvents = {
     content: string;
     completed: boolean;
     created_at: string;
+    persona_id: string;
   }) => void;
   simulation_message_token: (payload: {
     message_id: string;

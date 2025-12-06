@@ -525,11 +525,13 @@
                     m.created_at, 
                     m.completed, 
                     m.updated_at,
+                    mp_persona.persona_id,
                     0 as depth,
                     m.id as path_root_id
                 FROM messages m
                 JOIN message_runs mr ON mr.message_id = m.id
                 JOIN chat_runs rc ON rc.run_id = mr.run_id
+                LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
                 WHERE rc.chat_id = ANY(cil.chat_ids)
                   AND m.role IN ('user', 'assistant')
@@ -550,6 +552,7 @@
                     m.created_at, 
                     m.completed, 
                     m.updated_at,
+                    mp_persona.persona_id,
                     mp.depth + 1 as depth,
                     mp.path_root_id
                 FROM messages m
@@ -557,6 +560,7 @@
                 JOIN message_path mp ON mp.id = mt.child_id
                 JOIN message_runs mr ON mr.message_id = m.id
                 JOIN chat_runs rc ON rc.run_id = mr.run_id
+                LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
                 WHERE mp.depth < 1000  -- Safety limit
                   AND m.role IN ('user', 'assistant')
@@ -573,11 +577,13 @@
                     m.created_at, 
                     m.completed, 
                     m.updated_at,
+                    mp_persona.persona_id,
                     -1 as depth,
                     m.id as path_root_id
                 FROM messages m
                 JOIN message_runs mr ON mr.message_id = m.id
                 JOIN chat_runs rc ON rc.run_id = mr.run_id
+                LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
                 WHERE rc.chat_id = ANY(cil.chat_ids)
                   AND m.role IN ('user', 'assistant')
@@ -604,7 +610,8 @@
                 content,
                 created_at,
                 completed,
-                updated_at
+                updated_at,
+                persona_id
             FROM all_messages
             ORDER BY id, chat_id, created_at
         ),
@@ -620,7 +627,8 @@
                             'chatId', mwt.chat_id::text,
                             'content', mwt.content,
                             'type', mwt.type,
-                            'completed', mwt.completed
+                            'completed', mwt.completed,
+                            'personaId', CASE WHEN mwt.persona_id IS NOT NULL THEN mwt.persona_id::text ELSE NULL END
                         ) ORDER BY mwt.created_at
                     ),
                     '[]'::jsonb

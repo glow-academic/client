@@ -97,6 +97,7 @@ class MessageItem(BaseModel):
     content: str
     type: str  # "query" | "response"
     completed: bool
+    personaId: str | None = None
 
 
 class HintItem(BaseModel):

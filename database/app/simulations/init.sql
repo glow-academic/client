@@ -187,6 +187,19 @@ CREATE INDEX ON message_runs (message_id);
 CREATE INDEX ON message_runs (run_id);
 CREATE INDEX ON message_runs (run_id, created_at);
 
+-- Message ↔ Personas junction table (BCNF normalization)
+-- Links messages to personas to track which persona is speaking
+CREATE TABLE message_personas (
+  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  persona_id UUID NOT NULL REFERENCES personas(id) ON DELETE RESTRICT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, persona_id)
+);
+
+CREATE INDEX ON message_personas (message_id);
+CREATE INDEX ON message_personas (persona_id);
+
 -- Simulation hints collection table (BCNF normalization)
 -- Normalized text collection pattern: composite PK with idx, created_at only (matches scenario_objectives)
 CREATE TABLE simulation_hints (

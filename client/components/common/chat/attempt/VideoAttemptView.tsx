@@ -370,7 +370,7 @@ export default function VideoAttemptView({
                           {/* Timer */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto bg-muted">
+                              <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-muted">
                                 <Clock className="h-4 w-4 flex-shrink-0" />
                                 <span
                                   className="text-sm font-medium"
