@@ -25,14 +25,9 @@ type FinalizeUploadOut = OutputOf<
 >;
 type CreateDocumentIn = InputOf<"/api/v3/documents/create", "post">;
 type CreateDocumentOut = OutputOf<"/api/v3/documents/create", "post">;
-type GenerateTemplateIn = InputOf<
-  "/api/v3/documents/generate-template",
-  "post"
->;
-type GenerateTemplateOut = OutputOf<
-  "/api/v3/documents/generate-template",
-  "post"
->;
+// GenerateTemplate types removed - now using WebSocket
+type GenerateTemplateIn = never;
+type GenerateTemplateOut = never;
 // RenderTemplate types removed - not used on new page since we don't have documentId yet
 
 /** ---- Direct fetch (no Next.js cache) ---- */
@@ -64,12 +59,7 @@ async function createDocument(
   return api.post("/documents/create", input);
 }
 
-async function generateTemplate(
-  input: GenerateTemplateIn
-): Promise<GenerateTemplateOut> {
-  "use server";
-  return api.post("/documents/generate-template", input);
-}
+// generateTemplate removed - component now uses WebSocket directly
 
 // renderTemplate removed - not used on new page since we don't have documentId yet
 
@@ -122,7 +112,6 @@ export default async function NewDocumentPage() {
         documentDetailDefault={listData}
         finalizeUploadAction={finalizeUpload}
         createDocumentAction={createDocument}
-        generateTemplateAction={generateTemplate}
         renderedHtml={renderedHtml}
       />
     </div>

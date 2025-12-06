@@ -81,7 +81,7 @@ export interface DocumentsProps {
 export default function Documents({
   listData: serverListData,
   deleteDocumentAction,
-  generateTemplateAction,
+  generateTemplateAction: _generateTemplateAction,
 }: DocumentsProps) {
   const router = useRouter();
   const { departmentIds, effectiveProfile } = useProfile();

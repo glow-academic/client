@@ -22,14 +22,9 @@ type UpdateDocumentIn = InputOf<"/api/v3/documents/update", "post">;
 type UpdateDocumentOut = OutputOf<"/api/v3/documents/update", "post">;
 type RenderTemplateIn = InputOf<"/api/v3/documents/render", "post">;
 type RenderTemplateOut = OutputOf<"/api/v3/documents/render", "post">;
-type GenerateTemplateIn = InputOf<
-  "/api/v3/documents/generate-template",
-  "post"
->;
-type GenerateTemplateOut = OutputOf<
-  "/api/v3/documents/generate-template",
-  "post"
->;
+// GenerateTemplate types removed - now using WebSocket
+type GenerateTemplateIn = never;
+type GenerateTemplateOut = never;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getDocument = async (
@@ -104,12 +99,7 @@ async function renderTemplate(
   return api.post("/documents/render", input);
 }
 
-async function generateTemplate(
-  input: GenerateTemplateIn
-): Promise<GenerateTemplateOut> {
-  "use server";
-  return api.post("/documents/generate-template", input);
-}
+// generateTemplate removed - component now uses WebSocket directly
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function DocumentEditPage({
@@ -191,7 +181,6 @@ export default async function DocumentEditPage({
           mode="edit"
           documentDetail={documentDetail}
           updateDocumentAction={updateDocument}
-          generateTemplateAction={generateTemplate}
           renderTemplateAction={renderTemplate}
           renderedHtml={renderedHtml}
         />

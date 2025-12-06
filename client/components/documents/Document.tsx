@@ -109,7 +109,8 @@ export default function Document({
   renderedHtml = null,
 }: DocumentProps) {
   const router = useRouter();
-  const { effectiveDepartmentIds, effectiveProfile } = useProfile();
+  const { effectiveDepartmentIds, effectiveProfile, socket, isConnected } =
+    useProfile();
   const isEditMode = mode === "edit" && !!documentId;
   const isSuperadmin = effectiveProfile?.role === "superadmin";
   const defaultDepartmentIds = useMemo(
@@ -965,8 +966,8 @@ export default function Document({
   };
 
   const handleGenerateTemplate = async () => {
-    if (!generateTemplateAction) {
-      toast.error("Generate template action not available");
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected");
       return;
     }
 
@@ -978,20 +979,106 @@ export default function Document({
 
     setIsGeneratingTemplate(true);
     try {
-      const result = await generateTemplateAction({
-        body: {
-          departmentId,
-          profileId: effectiveProfile?.id || undefined,
-          documentId: isEditMode && documentId ? documentId : undefined,
-          documentName: formData.name || undefined,
-          documentDescription: formData.description || undefined,
-          fieldIds:
-            isEditMode && formData.parameterItemIds.length > 0
-              ? formData.parameterItemIds
-              : globalDefaultParameterItemIds.length > 0
-                ? globalDefaultParameterItemIds
-                : undefined,
-        } as GenerateTemplateBody,
+      const body = {
+        departmentId,
+        profileId: effectiveProfile?.id || undefined,
+        documentId: isEditMode && documentId ? documentId : undefined,
+        documentName: formData.name || undefined,
+        documentDescription: formData.description || undefined,
+        fieldIds:
+          isEditMode && formData.parameterItemIds.length > 0
+            ? formData.parameterItemIds
+            : globalDefaultParameterItemIds.length > 0
+              ? globalDefaultParameterItemIds
+              : undefined,
+      } as GenerateTemplateBody;
+
+      const result = await new Promise<GenerateTemplateOut>((resolve, reject) => {
+        const handleProgress = (data: {
+          type: string;
+          message?: string;
+          trace_id?: string;
+        }) => {
+          if (data.type === "start") {
+            toast.info(data.message || "Starting template generation...");
+          }
+        };
+
+        const handleComplete = (data: {
+          success: boolean;
+          message: string;
+          template_html: string;
+          template_schema: Record<string, unknown>;
+          upload_id: string;
+          template_mapping?: Record<string, unknown>;
+          trace_id?: string;
+        }) => {
+          socket.off(
+            "document_template_generation_progress",
+            handleProgress
+          );
+          socket.off(
+            "document_template_generation_complete",
+            handleComplete
+          );
+          socket.off(
+            "document_template_generation_error",
+            handleError
+          );
+
+          if (data.success) {
+            resolve({
+              success: true,
+              message: data.message,
+              template_html: data.template_html,
+              template_schema: data.template_schema,
+              upload_id: data.upload_id,
+              template_mapping: data.template_mapping || null,
+            });
+          } else {
+            reject(new Error(data.message || "Template generation failed"));
+          }
+        };
+
+        const handleError = (data: {
+          success: boolean;
+          message: string;
+          trace_id?: string;
+        }) => {
+          socket.off(
+            "document_template_generation_progress",
+            handleProgress
+          );
+          socket.off(
+            "document_template_generation_complete",
+            handleComplete
+          );
+          socket.off(
+            "document_template_generation_error",
+            handleError
+          );
+
+          reject(new Error(data.message || "Template generation failed"));
+        };
+
+        socket.on(
+          "document_template_generation_progress",
+          handleProgress
+        );
+        socket.on(
+          "document_template_generation_complete",
+          handleComplete
+        );
+        socket.on("document_template_generation_error", handleError);
+
+        socket.emit("generate_document_template", {
+          departmentId: body.departmentId,
+          profileId: body.profileId,
+          documentId: body.documentId,
+          documentName: body.documentName,
+          documentDescription: body.documentDescription,
+          fieldIds: body.fieldIds,
+        });
       });
 
       if (result.success) {

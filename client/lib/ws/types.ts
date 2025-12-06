@@ -139,6 +139,84 @@ export type ServerToClientEvents = {
     chat_id: string;
     chat_type: string;
   }) => void;
+  scenario_generation_progress: (payload: {
+    type: string;
+    message: string;
+    tool_name: string;
+    trace_id: string;
+  }) => void;
+  scenario_generation_complete: (payload: {
+    success: boolean;
+    message: string;
+    title: string;
+    description: string;
+    objectives: string[];
+    dynamic_document_mapping: string;
+    trace_id: string;
+  }) => void;
+  scenario_generation_error: (payload: {
+    success: boolean;
+    message: string;
+    trace_id: string;
+  }) => void;
+  video_outline_generation_progress: (payload: {
+    type: string;
+    message: string;
+    trace_id: string;
+  }) => void;
+  video_outline_generation_complete: (payload: {
+    success: boolean;
+    message: string;
+    name: string;
+    outline: string;
+    outline_id: string;
+    video_name: string;
+    questions: { question_text: string; allow_multiple: boolean; options: string }[];
+    question_timestamps: string;
+    trace_id: string;
+  }) => void;
+  video_outline_generation_error: (payload: {
+    success: boolean;
+    message: string;
+    trace_id: string;
+  }) => void;
+  video_generation_progress: (payload: {
+    type: string;
+    message: string;
+    status: string;
+    progress: number;
+    video_id: string;
+  }) => void;
+  video_generation_complete: (payload: {
+    success: boolean;
+    message: string;
+    videoUrl: string;
+    videoId: string;
+  }) => void;
+  video_generation_error: (payload: {
+    success: boolean;
+    message: string;
+    video_id: string;
+  }) => void;
+  document_template_generation_progress: (payload: {
+    type: string;
+    message: string;
+    trace_id: string;
+  }) => void;
+  document_template_generation_complete: (payload: {
+    success: boolean;
+    message: string;
+    template_html: string;
+    template_schema: string;
+    upload_id: string;
+    template_mapping: string;
+    trace_id: string;
+  }) => void;
+  document_template_generation_error: (payload: {
+    success: boolean;
+    message: string;
+    trace_id: string;
+  }) => void;
 };
 
 export type ClientToServerEvents = {
@@ -198,5 +276,30 @@ export type ClientToServerEvents = {
     chat_id: string;
     tool_name: string;
     arguments: string;
+  }) => void;
+  generate_video_outline: (payload: {
+    departmentId: string;
+    documentIds: string[];
+    questionIds: string[];
+    parameterItemIds: string[];
+    existingQuestions: { question_id: string; question_text: string; allow_multiple: boolean; times: number; options: string }[];
+    profileId: string;
+    videoId: string;
+    videoLengthSeconds: number;
+    useQuestions: boolean;
+    personaIds: string[];
+  }) => void;
+  generate_video: (payload: {
+    videoId: string;
+    prompt: string;
+    imageReferenceId: string;
+  }) => void;
+  generate_document_template: (payload: {
+    departmentId: string;
+    profileId: string;
+    documentId: string;
+    documentName: string;
+    documentDescription: string;
+    fieldIds: string[];
   }) => void;
 };

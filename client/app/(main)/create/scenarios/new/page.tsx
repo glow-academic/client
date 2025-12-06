@@ -13,20 +13,15 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenarioNewIn = InputOf<
-  "/api/v3/scenarios/new",
-  "post"
->;
-type ScenarioNewOut = OutputOf<
-  "/api/v3/scenarios/new",
-  "post"
->;
+type ScenarioNewIn = InputOf<"/api/v3/scenarios/new", "post">;
+type ScenarioNewOut = OutputOf<"/api/v3/scenarios/new", "post">;
 type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v3/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v3/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v3/scenarios/update", "post">;
-type GenerateAIScenarioIn = InputOf<"/api/v3/scenarios/generate-ai", "post">;
-type GenerateAIScenarioOut = OutputOf<"/api/v3/scenarios/generate-ai", "post">;
+// GenerateAIScenario types removed - now using WebSocket
+type GenerateAIScenarioIn = never;
+type GenerateAIScenarioOut = never;
 type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
 type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
@@ -36,16 +31,12 @@ type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 const getScenarioDefault = async (
   input: ScenarioNewIn
 ): Promise<ScenarioNewOut> => {
-  return api.post(
-    "/scenarios/new",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/scenarios/new", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -65,13 +56,7 @@ async function updateScenario(
   return api.post("/scenarios/update", input);
 }
 
-async function generateAIScenario(
-  input: GenerateAIScenarioIn
-): Promise<GenerateAIScenarioOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/generate-ai", input);
-}
+// generateAIScenario removed - component now uses WebSocket directly
 
 async function randomizeScenario(
   input: RandomizeScenarioIn
@@ -127,7 +112,6 @@ export default async function NewScenarioPage() {
         scenarioDetailDefault={scenarioDetailDefault}
         createScenarioAction={createScenario}
         updateScenarioAction={updateScenario}
-        generateAIScenarioAction={generateAIScenario}
         randomizeScenarioAction={randomizeScenario}
       />
     </div>

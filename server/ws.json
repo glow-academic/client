@@ -80,6 +80,37 @@
         "tool_name": "string",
         "arguments": "string"
       }
+    },
+    "generate_video_outline": {
+      "payload": {
+        "departmentId": "string",
+        "documentIds": "string[]",
+        "questionIds": "string[]",
+        "parameterItemIds": "string[]",
+        "existingQuestions": "object{question_id:string,question_text:string,allow_multiple:boolean,times:number,options:string}[]",
+        "profileId": "string",
+        "videoId": "string",
+        "videoLengthSeconds": "number",
+        "useQuestions": "boolean",
+        "personaIds": "string[]"
+      }
+    },
+    "generate_video": {
+      "payload": {
+        "videoId": "string",
+        "prompt": "string",
+        "imageReferenceId": "string"
+      }
+    },
+    "generate_document_template": {
+      "payload": {
+        "departmentId": "string",
+        "profileId": "string",
+        "documentId": "string",
+        "documentName": "string",
+        "documentDescription": "string",
+        "fieldIds": "string[]"
+      }
     }
   },
   "serverToClient": {
@@ -260,6 +291,108 @@
       "payload": {
         "chat_id": "string",
         "chat_type": "string"
+      }
+    },
+    "scenario_generation_progress": {
+      "payload": {
+        "type": "string",
+        "message": "string",
+        "tool_name": "string",
+        "trace_id": "string"
+      }
+    },
+    "scenario_generation_complete": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "title": "string",
+        "description": "string",
+        "objectives": "string[]",
+        "dynamic_document_mapping": "string",
+        "trace_id": "string"
+      }
+    },
+    "scenario_generation_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "trace_id": "string"
+      }
+    },
+    "video_outline_generation_progress": {
+      "payload": {
+        "type": "string",
+        "message": "string",
+        "trace_id": "string"
+      }
+    },
+    "video_outline_generation_complete": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "name": "string",
+        "outline": "string",
+        "outline_id": "string",
+        "video_name": "string",
+        "questions": "object{question_text:string,allow_multiple:boolean,options:string}[]",
+        "question_timestamps": "string",
+        "trace_id": "string"
+      }
+    },
+    "video_outline_generation_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "trace_id": "string"
+      }
+    },
+    "video_generation_progress": {
+      "payload": {
+        "type": "string",
+        "message": "string",
+        "status": "string",
+        "progress": "number",
+        "video_id": "string"
+      }
+    },
+    "video_generation_complete": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "videoUrl": "string",
+        "videoId": "string"
+      }
+    },
+    "video_generation_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "video_id": "string"
+      }
+    },
+    "document_template_generation_progress": {
+      "payload": {
+        "type": "string",
+        "message": "string",
+        "trace_id": "string"
+      }
+    },
+    "document_template_generation_complete": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "template_html": "string",
+        "template_schema": "string",
+        "upload_id": "string",
+        "template_mapping": "string",
+        "trace_id": "string"
+      }
+    },
+    "document_template_generation_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "trace_id": "string"
       }
     }
   }

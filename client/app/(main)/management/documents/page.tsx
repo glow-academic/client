@@ -18,8 +18,9 @@ type DocumentsListIn = InputOf<"/api/v3/documents/list", "post">;
 type DocumentsListOut = OutputOf<"/api/v3/documents/list", "post">;
 type DeleteDocumentIn = InputOf<"/api/v3/documents/delete", "post">;
 type DeleteDocumentOut = OutputOf<"/api/v3/documents/delete", "post">;
-type GenerateTemplateIn = InputOf<"/api/v3/documents/generate-template", "post">;
-type GenerateTemplateOut = OutputOf<"/api/v3/documents/generate-template", "post">;
+// GenerateTemplate types removed - now using WebSocket
+type GenerateTemplateIn = never;
+type GenerateTemplateOut = never;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -52,12 +53,7 @@ async function deleteDocument(
   return api.post("/documents/delete", input);
 }
 
-async function generateTemplate(
-  input: GenerateTemplateIn,
-): Promise<GenerateTemplateOut> {
-  "use server";
-  return api.post("/documents/generate-template", input);
-}
+// generateTemplate removed - component now uses WebSocket directly
 
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
@@ -97,7 +93,6 @@ export default async function DocumentsPage() {
       <Documents
         listData={listData}
         deleteDocumentAction={deleteDocument}
-        generateTemplateAction={generateTemplate}
       />
     </div>
   );

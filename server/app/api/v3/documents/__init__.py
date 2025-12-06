@@ -9,7 +9,6 @@ from app.api.v3.documents.create import router as create_router
 from app.api.v3.documents.delete import router as delete_router
 from app.api.v3.documents.detail import router as detail_router
 from app.api.v3.documents.detail_bulk import router as detail_bulk_router
-from app.api.v3.documents.generate_template import router as generate_template_router
 from app.api.v3.documents.list import router as list_router
 from app.api.v3.documents.render import router as render_router
 from app.api.v3.documents.update import router as update_router
@@ -26,5 +25,4 @@ router.include_router(bulk_update_router)
 router.include_router(bulk_delete_router)
 router.include_router(update_router)
 router.include_router(certificate_router)
-router.include_router(generate_template_router)
 router.include_router(render_router)

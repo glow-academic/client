@@ -7,7 +7,6 @@ from app.api.v3.scenarios.delete import router as delete_router
 from app.api.v3.scenarios.detail import router as detail_router
 from app.api.v3.scenarios.new import router as new_router
 from app.api.v3.scenarios.duplicate import router as duplicate_router
-from app.api.v3.scenarios.generate_ai import router as generate_ai_router
 from app.api.v3.scenarios.list import router as list_router
 from app.api.v3.scenarios.overview import router as overview_router
 from app.api.v3.scenarios.randomize import router as randomize_router
@@ -25,7 +24,6 @@ router.include_router(create_router)
 router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
-router.include_router(generate_ai_router)
 router.include_router(randomize_router)
 router.include_router(select_attributes_router)
 router.include_router(overview_router)

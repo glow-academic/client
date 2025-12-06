@@ -397,6 +397,10 @@ from app.socket.connections.disconnect import disconnect  # type: ignore
 from app.socket.connections.join_chat import join_chat  # type: ignore
 from app.socket.connections.stop_chat import \
     stop_chat  # noqa: E402; type: ignore
+from app.socket.documents.generate_template import \
+    generate_document_template  # noqa: E402; type: ignore
+from app.socket.scenarios.generate_ai import \
+    generate_scenario_ai  # noqa: E402; type: ignore
 from app.socket.simulations import send_simulation_message  # type: ignore
 from app.socket.simulations import start_simulation  # type: ignore
 from app.socket.simulations.continue_chat import \
@@ -405,6 +409,10 @@ from app.socket.simulations.create_practice_scenario import \
     create_practice_scenario  # noqa: E402; type: ignore
 from app.socket.simulations.stop import \
     stop_simulation  # noqa: E402; type: ignore
+from app.socket.videos.generate_outline import \
+    generate_video_outline  # noqa: E402; type: ignore
+from app.socket.videos.generate_video import \
+    generate_video  # noqa: E402; type: ignore
 from app.socket.voice import start_voice  # noqa: E402; type: ignore
 from app.socket.voice import stop_voice, voice_interrupted, voice_tool_call
 
@@ -850,12 +858,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             stop_voice,
             voice_interrupted,
             voice_tool_call,
+            # AI generation events
+            generate_scenario_ai,
+            generate_video_outline,
+            generate_video,
+            generate_document_template,
         ]
 
         # Import server-to-client emit functions (with Pydantic payload models)
         from app.socket.connections.connect import connection_confirmed
         from app.socket.connections.join_chat import joined_chat
         from app.socket.connections.stop_chat import chat_stopped
+        from app.socket.documents.generate_template import (
+            document_template_generation_complete,
+            document_template_generation_error,
+            document_template_generation_progress)
+        from app.socket.scenarios.generate_ai import (
+            scenario_generation_complete, scenario_generation_error,
+            scenario_generation_progress)
         from app.socket.simulations.continue_chat import (
             continue_simulation_error, end_all_completed, end_all_started,
             end_chat_started, simulation_continued,
@@ -873,6 +893,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.simulations.stop import (simulation_message_cancelled,
                                                  simulation_stopped,
                                                  stop_simulation_error)
+        from app.socket.videos.generate_outline import (
+            video_outline_generation_complete, video_outline_generation_error,
+            video_outline_generation_progress)
+        from app.socket.videos.generate_video import (
+            video_generation_complete, video_generation_error,
+            video_generation_progress)
 
         # Collect all unique emit functions (use one instance of each event name)
         server_to_client_stubs = [
@@ -900,6 +926,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             connection_confirmed,
             joined_chat,
             chat_stopped,
+            # AI generation events
+            scenario_generation_progress,
+            scenario_generation_complete,
+            scenario_generation_error,
+            video_outline_generation_progress,
+            video_outline_generation_complete,
+            video_outline_generation_error,
+            video_generation_progress,
+            video_generation_complete,
+            video_generation_error,
+            document_template_generation_progress,
+            document_template_generation_complete,
+            document_template_generation_error,
         ]
 
         contract = build_socket_contract(

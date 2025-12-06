@@ -28,8 +28,9 @@ type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v3/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v3/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v3/scenarios/update", "post">;
-type GenerateAIScenarioIn = InputOf<"/api/v3/scenarios/generate-ai", "post">;
-type GenerateAIScenarioOut = OutputOf<"/api/v3/scenarios/generate-ai", "post">;
+// GenerateAIScenario types removed - now using WebSocket
+type GenerateAIScenarioIn = never;
+type GenerateAIScenarioOut = never;
 type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
 type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
@@ -108,13 +109,7 @@ async function updateScenario(
   return api.post("/scenarios/update", input);
 }
 
-async function generateAIScenario(
-  input: GenerateAIScenarioIn
-): Promise<GenerateAIScenarioOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/generate-ai", input);
-}
+// generateAIScenario removed - component now uses WebSocket directly
 
 async function randomizeScenario(
   input: RandomizeScenarioIn
@@ -150,7 +145,6 @@ export default async function EditScenarioPage({
           scenarioDetail={scenarioDetail}
           createScenarioAction={createScenario}
           updateScenarioAction={updateScenario}
-          generateAIScenarioAction={generateAIScenario}
           randomizeScenarioAction={randomizeScenario}
         />
       </div>

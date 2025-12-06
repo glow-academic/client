@@ -4,9 +4,6 @@ from app.api.v3.videos.create import router as create_router
 from app.api.v3.videos.delete import router as delete_router
 from app.api.v3.videos.detail import router as detail_router
 from app.api.v3.videos.duplicate import router as duplicate_router
-from app.api.v3.videos.generate_outline import \
-    router as generate_outline_router
-from app.api.v3.videos.generate_video import router as generate_video_router
 from app.api.v3.videos.list import router as list_router
 from app.api.v3.videos.new import router as new_router
 from app.api.v3.videos.randomize import router as randomize_router
@@ -26,6 +23,4 @@ router.include_router(duplicate_router)
 router.include_router(delete_router)
 router.include_router(search_router)
 router.include_router(randomize_router)
-router.include_router(generate_outline_router)
-router.include_router(generate_video_router)
 

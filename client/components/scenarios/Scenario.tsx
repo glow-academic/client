@@ -71,8 +71,8 @@ import type {
   GenerateAIScenarioOut,
   RandomizeScenarioIn,
   RandomizeScenarioOut,
-  ScenarioNewOut,
   ScenarioDetailOut,
+  ScenarioNewOut,
   UpdateScenarioIn,
   UpdateScenarioOut,
 } from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
@@ -266,11 +266,11 @@ export default function Scenario({
   scenarioDetailDefault: serverScenarioDetailDefault,
   createScenarioAction,
   updateScenarioAction,
-  generateAIScenarioAction,
+  generateAIScenarioAction: _generateAIScenarioAction,
   randomizeScenarioAction,
 }: ScenarioProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, socket, isConnected } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isEditMode = mode === "edit" && !!scenarioId;
   const isSuperadmin = effectiveProfile?.role === "superadmin";
@@ -329,11 +329,84 @@ export default function Scenario({
     return await updateScenarioAction({ body });
   };
 
-  const handleGenerateAIScenario = async (body: GenerateAIScenarioBody) => {
-    if (!generateAIScenarioAction) {
-      throw new Error("generateAIScenarioAction is required");
+  const handleGenerateAIScenario = async (
+    body: GenerateAIScenarioBody
+  ): Promise<GenerateAIScenarioOut> => {
+    if (!socket || !isConnected) {
+      throw new Error("WebSocket not connected");
     }
-    return await generateAIScenarioAction({ body });
+
+    return new Promise((resolve, reject) => {
+      // Set up event listeners
+      const handleProgress = (data: {
+        type: string;
+        message?: string;
+        tool_name?: string;
+        trace_id?: string;
+      }) => {
+        // Can show progress toast if needed
+        if (data.type === "start") {
+          toast.info(data.message || "Starting scenario generation...");
+        }
+      };
+
+      const handleComplete = (data: {
+        success: boolean;
+        message: string;
+        title: string;
+        description: string;
+        objectives: string[];
+        dynamic_document_mapping?: Record<string, string>;
+        trace_id?: string;
+      }) => {
+        // Clean up listeners
+        socket.off("scenario_generation_progress", handleProgress);
+        socket.off("scenario_generation_complete", handleComplete);
+        socket.off("scenario_generation_error", handleError);
+
+        if (data.success) {
+          resolve({
+            success: true,
+            message: data.message,
+            title: data.title,
+            description: data.description,
+            objectives: data.objectives,
+            dynamic_document_mapping: data.dynamic_document_mapping || null,
+          });
+        } else {
+          reject(new Error(data.message || "Scenario generation failed"));
+        }
+      };
+
+      const handleError = (data: {
+        success: boolean;
+        message: string;
+        trace_id?: string;
+      }) => {
+        // Clean up listeners
+        socket.off("scenario_generation_progress", handleProgress);
+        socket.off("scenario_generation_complete", handleComplete);
+        socket.off("scenario_generation_error", handleError);
+
+        reject(new Error(data.message || "Scenario generation failed"));
+      };
+
+      // Register listeners
+      socket.on("scenario_generation_progress", handleProgress);
+      socket.on("scenario_generation_complete", handleComplete);
+      socket.on("scenario_generation_error", handleError);
+
+      // Emit the event
+      socket.emit("generate_scenario_ai", {
+        departmentId: body.departmentId,
+        personaIds: body.personaIds,
+        documentIds: body.documentIds,
+        parameterItemIds: body.parameterItemIds,
+        profileId: body.profileId,
+        userInstructions: body.userInstructions,
+        objectivesEnabled: body.objectivesEnabled,
+      });
+    });
   };
 
   const handleRandomizeScenario = async (body: RandomizeScenarioBody) => {
@@ -2108,7 +2181,8 @@ export default function Scenario({
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
-        upload_ids: image?.upload_id || image?.id ? [image.upload_id || image.id] : null,
+        upload_ids:
+          image?.upload_id || image?.id ? [image.upload_id || image.id] : null,
         image_names: image?.name ? [image.name] : null,
         parameters: groupParameterItemsByParameterId(
           currentParameterItemIds,
