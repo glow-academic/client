@@ -145,32 +145,85 @@ export default function TemplateForm({
 
   const updateValue = (path: string[], value: unknown) => {
     const newValues = { ...formValues };
-    let current: Record<string, unknown> = newValues;
+    let current: unknown = newValues;
 
-    // Navigate to the nested path
+    // Navigate to the nested path, handling both objects and arrays
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
       if (key === undefined) break;
-      if (
-        !current[key] ||
-        typeof current[key] !== "object" ||
-        current[key] === null
-      ) {
-        current[key] = {};
+
+      // Check if current is an array or object
+      if (Array.isArray(current)) {
+        // Handle array access
+        const index = parseInt(key, 10);
+        if (isNaN(index)) break; // Invalid array index
+
+        // Ensure array is large enough
+        while (current.length <= index) {
+          (current as unknown[]).push({});
+        }
+
+        // Ensure the element exists and is an object/array
+        if (
+          !current[index] ||
+          typeof current[index] !== "object" ||
+          current[index] === null
+        ) {
+          // Check if next key is numeric to determine if we need an array or object
+          const nextKey = path[i + 1];
+          const nextIsNumeric =
+            nextKey !== undefined && !isNaN(parseInt(nextKey, 10));
+          current[index] = nextIsNumeric ? [] : {};
+        }
+
+        current = current[index];
+      } else if (current && typeof current === "object" && current !== null) {
+        // Handle object access
+        const obj = current as Record<string, unknown>;
+
+        if (
+          !obj[key] ||
+          typeof obj[key] !== "object" ||
+          obj[key] === null ||
+          Array.isArray(obj[key])
+        ) {
+          // Check if next key is numeric to determine if we need an array or object
+          const nextKey = path[i + 1];
+          const nextIsNumeric =
+            nextKey !== undefined && !isNaN(parseInt(nextKey, 10));
+          obj[key] = nextIsNumeric ? [] : {};
+        }
+
+        current = obj[key];
+      } else {
+        // Current is not an object or array, can't navigate further
+        break;
       }
-      current = current[key] as Record<string, unknown>;
     }
 
     // Set the final value
     const finalKey = path[path.length - 1];
-    if (finalKey !== undefined) {
-      current[finalKey] = value;
+    if (finalKey === undefined) return;
+
+    if (Array.isArray(current)) {
+      // Setting value in array
+      const index = parseInt(finalKey, 10);
+      if (!isNaN(index)) {
+        // Ensure array is large enough
+        while (current.length <= index) {
+          current.push(undefined);
+        }
+        current[index] = value;
+      }
+    } else if (current && typeof current === "object" && current !== null) {
+      // Setting value in object
+      (current as Record<string, unknown>)[finalKey] = value;
     }
 
-    // Update local state immediately for responsive UI (like SimulationHistory pattern)
+    // Update local state immediately for responsive UI
     setFormValues(newValues);
 
-    // Sync to URL with debounce (this will trigger soft refresh and re-render)
+    // Sync to URL with debounce
     syncToUrl(newValues);
   };
 

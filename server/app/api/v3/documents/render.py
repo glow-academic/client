@@ -266,61 +266,136 @@ async def render_document_template(
             
             Args:
                 context: Template context dictionary
-                array_fields: Set of field names that should be arrays
+                array_fields: Set of field names that should be arrays (from schema only)
             
             Returns:
                 Sanitized context with all array fields guaranteed to be lists
             """
-            import inspect
-            
             sanitized = context.copy()
             
             for field_name in array_fields:
-                # Handle nested paths (e.g., "milestones.deliverables")
+                # Handle nested paths (e.g., "objectives.items", "milestones.deliverables")
                 if "." in field_name:
                     parts = field_name.split(".")
-                    # For nested arrays, we'll handle them recursively
-                    # Top-level arrays are what we need to validate here
-                    continue
-                
-                # Get the value from context
-                value = sanitized.get(field_name)
-                
-                # Check if value is a function/method (callable) - this is the main issue
-                # If it's callable or not a list, set to empty list
-                if callable(value) or not isinstance(value, list):
-                    sanitized[field_name] = []
-                    if value is not None:
-                        # Log warning for debugging (but don't fail)
-                        value_type = type(value).__name__
-                        if callable(value):
-                            logger.warning(
-                                f"Array field '{field_name}' was callable (function/method), "
-                                f"converted to empty list"
-                            )
-                        else:
-                            logger.warning(
-                                f"Array field '{field_name}' had non-list value type {value_type}, "
-                                f"converted to empty list"
-                            )
+                    # Navigate to the nested location
+                    current: Any = sanitized
+                    path_valid = True
+                    for part in parts[:-1]:
+                        if not isinstance(current, dict) or part not in current:
+                            # Path doesn't exist, skip this field
+                            path_valid = False
+                            break
+                        current = current.get(part)  # Use .get() to avoid type issues
+                    
+                    # Validate the final nested array field
+                    if path_valid and isinstance(current, dict) and len(parts) > 0:
+                        final_key = parts[-1]
+                        value = current.get(final_key)
+                        if callable(value) or (value is not None and not isinstance(value, list)):
+                            current[final_key] = []
+                            if value is not None:
+                                value_type = type(value).__name__
+                                if callable(value):
+                                    logger.warning(
+                                        f"Nested array field '{field_name}' was callable, converted to empty list"
+                                    )
+                                else:
+                                    logger.warning(
+                                        f"Nested array field '{field_name}' had non-list value type {value_type}, "
+                                        f"converted to empty list"
+                                    )
+                else:
+                    # Top-level array field
+                    value = sanitized.get(field_name)
+                    if callable(value) or (value is not None and not isinstance(value, list)):
+                        sanitized[field_name] = []
+                        if value is not None:
+                            value_type = type(value).__name__
+                            if callable(value):
+                                logger.warning(
+                                    f"Array field '{field_name}' was callable (function/method), "
+                                    f"converted to empty list"
+                                )
+                            else:
+                                logger.warning(
+                                    f"Array field '{field_name}' had non-list value type {value_type}, "
+                                    f"converted to empty list"
+                                )
             
             return sanitized
         
-        # Get all array field names from schema
+        # Ensure objects with nested arrays are properly initialized
+        # This prevents Jinja2 from accessing Python dict methods (like .items()) instead of keys
+        def ensure_nested_arrays(obj: Any, schema: dict[str, Any], path: list[str] = []) -> Any:
+            """Ensure objects with nested arrays have their arrays initialized.
+            
+            This prevents issues where accessing .items on a dict without an 'items' key
+            resolves to the .items() method instead of a key.
+            """
+            if not isinstance(schema, dict) or "fields" not in schema:
+                return obj
+            
+            if not isinstance(obj, dict):
+                return obj
+            
+            result = obj.copy()
+            
+            for field in schema.get("fields", []):
+                field_name = field.get("name")
+                if not field_name:
+                    continue
+                
+                field_type = field.get("type")
+                
+                if field_type == "object" and "fields" in field:
+                    # This is an object field - check if it has nested arrays
+                    nested_fields = field.get("fields", [])
+                    
+                    # Ensure the object field exists and is a dict
+                    if field_name not in result:
+                        result[field_name] = {}
+                    elif not isinstance(result[field_name], dict):
+                        # If it's not a dict, initialize as empty dict
+                        result[field_name] = {}
+                    
+                    # Now process nested arrays - this ensures 'items' key always exists
+                    for nested_field in nested_fields:
+                        nested_field_name = nested_field.get("name")
+                        nested_field_type = nested_field.get("type")
+                        
+                        if nested_field_type == "array":
+                            # This object should have a nested array - ALWAYS ensure it exists
+                            # This prevents Jinja2 from accessing dict.items() method
+                            if nested_field_name not in result[field_name]:
+                                result[field_name][nested_field_name] = []
+                            elif not isinstance(result[field_name][nested_field_name], list):
+                                result[field_name][nested_field_name] = []
+                            
+                            # Recursively ensure nested structure if array items are objects
+                            if "item" in nested_field:
+                                item_schema = nested_field.get("item", {})
+                                if item_schema.get("type") == "object" and "fields" in item_schema:
+                                    # Recursively process nested object arrays
+                                    for item in result[field_name][nested_field_name]:
+                                        if isinstance(item, dict):
+                                            ensure_nested_arrays(item, {"fields": item_schema.get("fields", [])}, path + [field_name, nested_field_name])
+                    
+                    # Recursively ensure nested objects
+                    if field_name in result and isinstance(result[field_name], dict):
+                        nested_schema = {"fields": nested_fields}
+                        result[field_name] = ensure_nested_arrays(result[field_name], nested_schema, path + [field_name])
+            
+            return result
+        
+        # Ensure nested arrays are initialized before validation
+        merged_args = ensure_nested_arrays(merged_args, template_schema_raw)
+        
+        # Get all array field names from schema - this is the single source of truth
+        # Schema detection handles both top-level arrays and nested arrays within objects
         array_field_names = get_array_field_names(template_schema_raw)
         
-        # Also check for common array field names that might be in templates but not properly validated
-        # This is a defensive measure to catch any variables that should be arrays
-        common_array_names = {"milestones", "questions", "problem_sets", "deliverables", "items", 
-                              "objectives", "materials", "procedure", "observations", "policies",
-                              "resources", "references", "notes", "concepts", "guidelines", "compliance",
-                              "instructions", "criteria", "roles", "weeks", "scale", "breakdown"}
-        
-        # Combine schema arrays with common array names (union to avoid duplicates)
-        all_array_fields = array_field_names | common_array_names
-        
-        # Validate and sanitize array variables
-        merged_args = validate_and_sanitize_arrays(merged_args, all_array_fields)
+        # Validate and sanitize array variables based on schema only (no hardcoded names)
+        merged_args = validate_and_sanitize_arrays(merged_args, array_field_names)
 
         # Add organization info from settings to template context
         merged_args["organization_name"] = settings_response.organization_name

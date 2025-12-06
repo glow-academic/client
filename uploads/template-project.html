@@ -395,13 +395,15 @@
                     {% endif %}
                 </div>
                 {% endfor %}
-            {% elif deliverables.items %}
+            {% elif deliverables.items is defined and deliverables.items is sequence and deliverables.items is not string %}
+                {% if deliverables.items|length > 0 %}
                 {% for deliverable in deliverables.items %}
                 <div class="deliverable-item">
                     {{ deliverable.name }}
                     {% if deliverable.description %} - {{ deliverable.description }}{% endif %}
                 </div>
                 {% endfor %}
+                {% endif %}
             {% endif %}
         </section>
         {% endif %}

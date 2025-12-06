@@ -400,7 +400,8 @@
                             </div>
                         </div>
                         {% endfor %}
-                    {% elif section.questions %}
+                    {% elif section.questions is defined and section.questions is sequence and section.questions is not string %}
+                        {% if section.questions|length > 0 %}
                         {% for item in section.questions %}
                         <div class="question-card">
                             <div class="question-header">
@@ -414,6 +415,7 @@
                             </div>
                         </div>
                         {% endfor %}
+                        {% endif %}
                     {% endif %}
                 </div>
                 {% endif %}

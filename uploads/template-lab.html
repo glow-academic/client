@@ -306,20 +306,14 @@
         <section class="section">
             <h2>1. Objectives</h2>
             <div class="lab-section">
-                {% if objectives.item and objectives.item.items %}
-                    <ul class="materials-list">
-                        {% for objective in objectives.item.items %}
-                        <li>{{ objective.item.text if objective.item and objective.item.text else objective.text }}</li>
-                        {% endfor %}
-                    </ul>
-                {% elif objectives.items %}
+                {% if objectives.items is defined and objectives.items is sequence and objectives.items is not string %}
+                    {% if objectives.items|length > 0 %}
                     <ul class="materials-list">
                         {% for objective in objectives.items %}
                         <li>{{ objective.text }}</li>
                         {% endfor %}
                     </ul>
-                {% else %}
-                    <p>{{ objectives }}</p>
+                    {% endif %}
                 {% endif %}
             </div>
         </section>
@@ -329,20 +323,14 @@
         <section class="section">
             <h2>{% if objectives %}2.{% else %}1.{% endif %} Materials and Equipment</h2>
             <div class="lab-section">
-                {% if materials.item and materials.item.items %}
-                    <ul class="materials-list">
-                        {% for material in materials.item.items %}
-                        <li>{{ material.item.name if material.item and material.item.name else material.name }}</li>
-                        {% endfor %}
-                    </ul>
-                {% elif materials.items %}
+                {% if materials.items is defined and materials.items is sequence and materials.items is not string %}
+                    {% if materials.items|length > 0 %}
                     <ul class="materials-list">
                         {% for material in materials.items %}
                         <li>{{ material.name }}</li>
                         {% endfor %}
                     </ul>
-                {% else %}
-                    <p>{{ materials }}</p>
+                    {% endif %}
                 {% endif %}
             </div>
         </section>
@@ -352,22 +340,15 @@
         <section class="section">
             <h2>{% if objectives and materials %}3.{% elif objectives or materials %}2.{% else %}1.{% endif %} Procedure</h2>
             <div class="lab-section">
-                {% if procedure.item and procedure.item.steps %}
-                    {% for step in procedure.item.steps %}
-                    <div class="procedure-step">
-                        <span class="procedure-step-number">{{ loop.index }}.</span>
-                        <span>{{ step.item.text if step.item and step.item.text else step.text }}</span>
-                    </div>
-                    {% endfor %}
-                {% elif procedure.steps %}
+                {% if procedure.steps is defined and procedure.steps is sequence and procedure.steps is not string %}
+                    {% if procedure.steps|length > 0 %}
                     {% for step in procedure.steps %}
                     <div class="procedure-step">
                         <span class="procedure-step-number">{{ loop.index }}.</span>
                         <span>{{ step.text }}</span>
                     </div>
                     {% endfor %}
-                {% else %}
-                    <p>{{ procedure }}</p>
+                    {% endif %}
                 {% endif %}
             </div>
         </section>
@@ -377,27 +358,33 @@
         <section class="section">
             <h2>{% if objectives and materials and procedure %}4.{% elif (objectives and materials) or (objectives and procedure) or (materials and procedure) %}3.{% elif objectives or materials or procedure %}2.{% else %}1.{% endif %} Observations</h2>
             <div class="lab-section">
-                {% if observations.item and observations.item.table %}
+                {% if observations.table is defined and observations.table.headers is defined and observations.table.headers is sequence and observations.table.headers is not string %}
+                    {% if observations.table.headers|length > 0 %}
                     <table class="observation-table">
                         <thead>
                             <tr>
-                                {% for header in observations.item.table.headers %}
-                                <th>{{ header.item.name if header.item and header.item.name else header.name }}</th>
+                                    {% for header in observations.table.headers %}
+                                    <th>{{ header.name }}</th>
                                 {% endfor %}
                             </tr>
                         </thead>
                         <tbody>
-                            {% for row in observations.item.table.rows %}
-                            <tr>
-                                {% for cell in row.item.cells if row.item else row.cells %}
-                                <td>{{ cell.item.value if cell.item and cell.item.value else cell.value }}</td>
-                                {% endfor %}
+                                {% if observations.table.rows is defined and observations.table.rows is sequence and observations.table.rows is not string %}
+                                    {% if observations.table.rows|length > 0 %}
+                                        {% for row in observations.table.rows %}
+                                        <tr>
+                                            {% if row.cells is defined and row.cells is sequence and row.cells is not string %}
+                                    {% for cell in row.cells %}
+                                                <td>{{ cell.value }}</td>
+                                    {% endfor %}
+                                {% endif %}
                             </tr>
                             {% endfor %}
+                                    {% endif %}
+                                {% endif %}
                         </tbody>
                     </table>
-                {% else %}
-                    <p>{{ observations }}</p>
+                    {% endif %}
                 {% endif %}
             </div>
         </section>
@@ -416,20 +403,14 @@
         <section class="section">
             <h2>{% if objectives or materials or procedure or observations or analysis %}6.{% else %}2.{% endif %} Questions</h2>
             <div class="lab-section">
-                {% if questions.item and questions.item.items %}
-                    {% for item in questions.item.items %}
-                    <div style="margin-bottom: 1rem;">
-                        <strong>Q{{ loop.index }}:</strong> {{ item.item.question_text if item.item and item.item.question_text else item.question_text }}
-                    </div>
-                    {% endfor %}
-                {% elif questions.items %}
+                {% if questions.items is defined and questions.items is sequence and questions.items is not string %}
+                    {% if questions.items|length > 0 %}
                     {% for item in questions.items %}
                     <div style="margin-bottom: 1rem;">
                         <strong>Q{{ loop.index }}:</strong> {{ item.question_text }}
                     </div>
                     {% endfor %}
-                {% else %}
-                    <p>{{ questions }}</p>
+                    {% endif %}
                 {% endif %}
             </div>
         </section>

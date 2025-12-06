@@ -317,10 +317,12 @@
                         {{ guideline.item.text if guideline.item and guideline.item.text else guideline.text }}
                     </div>
                     {% endfor %}
-                {% elif guidelines.items %}
+                {% elif guidelines.items is defined and guidelines.items is sequence and guidelines.items is not string %}
+                    {% if guidelines.items|length > 0 %}
                     {% for guideline in guidelines.items %}
                     <div class="guideline-item">{{ guideline.text }}</div>
                     {% endfor %}
+                    {% endif %}
                 {% else %}
                     <p>{{ guidelines }}</p>
                 {% endif %}
@@ -343,13 +345,15 @@
                         </span>
                     </div>
                     {% endfor %}
-                {% elif compliance.items %}
+                {% elif compliance.items is defined and compliance.items is sequence and compliance.items is not string %}
+                    {% if compliance.items|length > 0 %}
                     {% for item in compliance.items %}
                     <div class="compliance-item">
                         <span class="compliance-label">{{ item.requirement }}</span>
                         <span class="compliance-value">{{ item.status }}</span>
                     </div>
                     {% endfor %}
+                    {% endif %}
                 {% else %}
                     <p>{{ compliance }}</p>
                 {% endif %}

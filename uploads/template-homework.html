@@ -435,7 +435,8 @@
                         </div>
                     </div>
                     {% endfor %}
-                {% elif problem_set.problems %}
+                {% elif problem_set.problems is defined and problem_set.problems is sequence and problem_set.problems is not string %}
+                    {% if problem_set.problems|length > 0 %}
                     {% for problem in problem_set.problems %}
                     <div class="problem-item">
                         <div>
@@ -447,6 +448,7 @@
                         <div class="problem-text">{{ problem.text }}</div>
                     </div>
                     {% endfor %}
+                    {% endif %}
                 {% endif %}
             </div>
             {% endfor %}

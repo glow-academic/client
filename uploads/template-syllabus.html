@@ -434,7 +434,8 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            {% elif schedule.weeks %}
+            {% elif schedule.weeks is defined and schedule.weeks is sequence and schedule.weeks is not string %}
+                {% if schedule.weeks|length > 0 %}
                 <table class="schedule-table">
                     <thead>
                         <tr>
@@ -453,6 +454,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% endif %}
             {% else %}
                 <div class="syllabus-info">
                     {{ schedule }}
@@ -486,7 +488,8 @@
                 </div>
                 {% endif %}
             {% else %}
-                {% if grading.scale %}
+                {% if grading.scale is defined and grading.scale is sequence and grading.scale is not string %}
+                    {% if grading.scale|length > 0 %}
                 <div class="grading-scale">
                     {% for grade in grading.scale %}
                     <div class="grade-item">
@@ -496,7 +499,9 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                {% if grading.breakdown %}
+                {% endif %}
+                {% if grading.breakdown is defined and grading.breakdown is sequence and grading.breakdown is not string %}
+                    {% if grading.breakdown|length > 0 %}
                 <div style="margin-top: 1rem;">
                     {% for item in grading.breakdown %}
                     <div class="grade-item">
@@ -505,6 +510,7 @@
                     </div>
                     {% endfor %}
                 </div>
+                    {% endif %}
                 {% endif %}
             {% endif %}
         </section>
@@ -524,13 +530,15 @@
                     </div>
                 </div>
                 {% endfor %}
-            {% elif policies.items %}
+            {% elif policies.items is defined and policies.items is sequence and policies.items is not string %}
+                {% if policies.items|length > 0 %}
                 {% for policy in policies.items %}
                 <div class="policy-item">
                     <div class="policy-title">{{ policy.title }}</div>
                     <div>{{ policy.description }}</div>
                 </div>
                 {% endfor %}
+                {% endif %}
             {% else %}
                 <div class="syllabus-info">
                     {{ policies }}
@@ -549,10 +557,12 @@
                         {{ resource.item.text if resource.item and resource.item.text else resource.text }}
                     </div>
                     {% endfor %}
-                {% elif resources.items %}
+                {% elif resources.items is defined and resources.items is sequence and resources.items is not string %}
+                    {% if resources.items|length > 0 %}
                     {% for resource in resources.items %}
                     <div class="resource-item">{{ resource.text }}</div>
                     {% endfor %}
+                    {% endif %}
                 {% else %}
                     <p>{{ resources }}</p>
                 {% endif %}
