@@ -81,7 +81,7 @@ def create_persona_tools(
     """Create tools for all personas in a scenario.
 
     Args:
-        personas: List of persona dicts with 'id' and 'name' keys
+        personas: List of persona dicts with 'persona_id'/'id' and 'persona_name'/'name' keys
         chat_id: UUID of the chat
         conn: Database connection
 
@@ -90,8 +90,13 @@ def create_persona_tools(
     """
     tools = []
     for persona in personas:
-        persona_id = uuid.UUID(str(persona["id"]))
-        persona_name = persona.get("name", "Unknown Persona")
+        # Handle both 'id'/'name' and 'persona_id'/'persona_name' field names
+        persona_id_str = persona.get("persona_id") or persona.get("id")
+        if not persona_id_str:
+            logger.error(f"Persona missing id field: {persona}")
+            continue
+        persona_id = uuid.UUID(str(persona_id_str))
+        persona_name = persona.get("persona_name") or persona.get("name", "Unknown Persona")
         tool = create_persona_tool(persona_id, persona_name, chat_id, conn)
         tools.append(tool)
         logger.info(f"Created persona tool: {tool.name} for {persona_name}")

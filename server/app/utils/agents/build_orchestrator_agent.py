@@ -32,9 +32,14 @@ def build_orchestrator_agent(
         tool_results: list[FunctionToolResult],
     ) -> ToolsToFinalOutputResult:
         # Check if any persona tool has been called
-        persona_tool_called = any(
-            result.name.startswith("speak_") for result in tool_results
-        )
+        # FunctionToolResult may have 'name' attribute at runtime (from agents library)
+        persona_tool_called = False
+        for result in tool_results:
+            # Access name attribute dynamically since type checker doesn't see it
+            tool_name = getattr(result, "name", None)  # type: ignore[misc]
+            if tool_name and isinstance(tool_name, str) and tool_name.startswith("speak_"):
+                persona_tool_called = True
+                break
 
         logger.info(
             f"Orchestrator tool use check: persona_tool_called={persona_tool_called}, "
@@ -66,7 +71,7 @@ You should call exactly one persona tool per user message."""
         system_prompt=orchestrator_prompt,
         temperature=context.get("temperature", 0.7),
         model_name=context["model_name"],
-        model_provider=context["provider_name"],
+        provider=context["provider_name"],
         base_url=context.get("base_url"),
         reasoning=context.get("reasoning"),
         api_key=context["api_key"],

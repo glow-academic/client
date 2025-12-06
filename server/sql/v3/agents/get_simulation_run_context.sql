@@ -95,7 +95,7 @@ SELECT
     k.key as api_key,
     
     -- Scenario settings (flags moved from scenarios to simulation_scenarios)
-    COALESCE(ss.image_input_enabled, false) as image_input_enabled,
+    COALESCE(s.image_enabled, false) as image_input_enabled,
     COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
     
     -- Profile data (via attempt_profiles junction)
@@ -163,7 +163,7 @@ GROUP BY sc.id, sc.title, sc.trace_id,
          p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
          m.id, m.name, m.provider,
          k.key, me.base_url,
-         ss.image_input_enabled, ss.copy_paste_allowed,
+         s.image_enabled, ss.copy_paste_allowed,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 
