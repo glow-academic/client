@@ -354,38 +354,30 @@
         </section>
         {% endif %}
 
-        {% if observations %}
+        {% if observations and observations.table is defined and observations.table.headers is defined and observations.table.headers is sequence and observations.table.headers is not string and observations.table.headers|length > 0 and observations.table.rows is defined and observations.table.rows is sequence and observations.table.rows is not string and observations.table.rows|length > 0 %}
         <section class="section">
             <h2>Observations</h2>
             <div class="lab-section">
-                {% if observations.table is defined and observations.table.headers is defined and observations.table.headers is sequence and observations.table.headers is not string %}
-                    {% if observations.table.headers|length > 0 %}
-                    <table class="observation-table">
-                        <thead>
-                            <tr>
-                                    {% for header in observations.table.headers %}
-                                    <th>{{ header.name }}</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                                {% if observations.table.rows is defined and observations.table.rows is sequence and observations.table.rows is not string %}
-                                    {% if observations.table.rows|length > 0 %}
-                                        {% for row in observations.table.rows %}
-                                        <tr>
-                                            {% if row.cells is defined and row.cells is sequence and row.cells is not string %}
-                                    {% for cell in row.cells %}
-                                                <td>{{ cell.value }}</td>
-                                    {% endfor %}
-                                {% endif %}
-                            </tr>
+                <table class="observation-table">
+                    <thead>
+                        <tr>
+                            {% for header in observations.table.headers %}
+                            <th>{{ header.name }}</th>
                             {% endfor %}
-                                    {% endif %}
-                                {% endif %}
-                        </tbody>
-                    </table>
-                    {% endif %}
-                {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in observations.table.rows %}
+                        <tr>
+                            {% if row.cells is defined and row.cells is sequence and row.cells is not string %}
+                            {% for cell in row.cells %}
+                            <td>{{ cell.value }}</td>
+                            {% endfor %}
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </section>
         {% endif %}
