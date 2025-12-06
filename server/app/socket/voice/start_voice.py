@@ -179,6 +179,7 @@ You should call exactly one persona tool per user message."""
                 "orchestrator_agent": orchestrator_agent,
                 "personas": personas,
                 "context": context,
+                "context_row": dict(context_row),  # Store full context for run creation
             }
 
             # Format persona tools for client (include parameters for RealtimeAgent)

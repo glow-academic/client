@@ -5,7 +5,7 @@
 
 WITH latest_run AS (
     -- Get the latest run for this chat
-    SELECT rc.run_id
+    SELECT r.id
     FROM chat_runs rc
     JOIN runs r ON r.id = rc.run_id
     WHERE rc.chat_id = $1::uuid

@@ -151,8 +151,6 @@ export default function AttemptInput({
 
     if (session) {
       try {
-        // Remove listeners so this instance can't emit anything anymore
-        session.removeAllListeners();
         // Correct way to tear down the session (closes WebRTC transport automatically)
         session.close();
         // eslint-disable-next-line no-console
@@ -438,17 +436,59 @@ export default function AttemptInput({
             tool_name: toolDef.name,
             args,
           });
+
+          // Extract actual arguments from the args parameter
+          // The SDK may wrap arguments in different structures, so we need to handle both cases
+          let actualArguments: Record<string, unknown> = {};
+
+          // Check if args has a toolCall property with nested arguments
+          if (
+            args &&
+            typeof args === "object" &&
+            "toolCall" in args &&
+            args.toolCall &&
+            typeof args.toolCall === "object"
+          ) {
+            const toolCall = args.toolCall as {
+              arguments?: string | Record<string, unknown>;
+            };
+            // If arguments is a JSON string, parse it
+            if (typeof toolCall.arguments === "string") {
+              try {
+                actualArguments = JSON.parse(toolCall.arguments);
+              } catch (e) {
+                // eslint-disable-next-line no-console
+                console.warn(
+                  "[Voice] Failed to parse toolCall.arguments as JSON:",
+                  e
+                );
+                actualArguments = args as Record<string, unknown>;
+              }
+            } else if (toolCall.arguments) {
+              actualArguments = toolCall.arguments as Record<string, unknown>;
+            } else {
+              // Fallback: use args directly
+              actualArguments = args as Record<string, unknown>;
+            }
+          } else {
+            // If args is already the flat arguments object, use it directly
+            actualArguments = args as Record<string, unknown>;
+          }
+
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Extracted actual arguments:", actualArguments);
+
           // Forward tool call to server
           socket.emit("voice_tool_call", {
             chat_id: currentChat.id,
             tool_name: toolDef.name,
-            arguments: args,
+            arguments: actualArguments,
           });
           // eslint-disable-next-line no-console
           console.log("[Voice] Emitted voice_tool_call to server:", {
             chat_id: currentChat.id,
             tool_name: toolDef.name,
-            arguments: args,
+            arguments: actualArguments,
           });
         });
 

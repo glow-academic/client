@@ -103,17 +103,129 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
             return
 
         async with pool.acquire() as conn:
-            # Get latest run for this chat
-            sql_get_run = load_sql(
-                "sql/v3/simulations/get_latest_run_for_chat.sql"
-            )
-            run_row = await conn.fetchrow(sql_get_run, chat_id_uuid)
-
-            if not run_row:
-                logger.error(f"No run found for chat {chat_id}")
+            # Get context from voice session
+            context_row = session_data.get("context_row")
+            if not context_row:
+                logger.error(f"No context found in voice session for chat {chat_id}")
                 await voice_tool_call_error(
                     VoiceToolCallErrorPayload(
-                        success=False, message=f"No run found for chat {chat_id}"
+                        success=False,
+                        message=f"No context found in voice session for chat {chat_id}",
+                    ),
+                    room=sid,
+                )
+                return
+
+            # Extract persona name from tool_name (e.g., "speak_passive" -> "passive")
+            persona_name = tool_name.replace("speak_", "").replace("_", " ")
+            
+            # Find the persona_id from the personas list stored in session
+            # The personas list has keys: persona_id, persona_name (from SQL query)
+            personas = session_data.get("personas", [])
+            persona_id = None
+            for persona in personas:
+                # Check both possible key names (persona_name from SQL, name from dict conversion)
+                persona_name_from_db = persona.get("persona_name") or persona.get("name", "")
+                if persona_name_from_db.lower() == persona_name.lower():
+                    persona_id = persona.get("persona_id") or persona.get("id")
+                    break
+            
+            if not persona_id:
+                logger.error(
+                    f"Persona '{persona_name}' not found in voice session for chat {chat_id}. "
+                    f"Available personas: {[p.get('persona_name') or p.get('name', '') for p in personas]}"
+                )
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message=f"Persona '{persona_name}' not found in voice session",
+                    ),
+                    room=sid,
+                )
+                return
+
+            # Get key_id from model_keys table (first active key for this model)
+            key_id_row = await conn.fetchrow(
+                """
+                SELECT mk.key_id::text as key_id
+                FROM model_keys mk
+                WHERE mk.model_id = $1::uuid AND mk.active = true
+                LIMIT 1
+                """,
+                context_row.get("model_id"),
+            )
+            key_id = key_id_row["key_id"] if key_id_row else None
+
+            # Get or create run for this chat
+            # asyncpg has trouble inferring types when None is passed early in the parameter list
+            # We need to ensure at least one UUID parameter before the first None is a string
+            sql_get_or_create_run = load_sql(
+                "sql/v3/simulations/get_or_create_run_for_chat.sql"
+            )
+            
+            # Prepare parameters - ensure required UUIDs are present
+            dept_id = context_row.get("department_id")
+            model_id = context_row.get("model_id")
+            profile_id_val = context_row.get("profile_id")
+            
+            # Validate required fields
+            if not model_id:
+                logger.error(f"model_id missing from context for chat {chat_id}")
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message="Missing model_id in context",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            if not persona_id:
+                logger.error(f"persona_id missing for chat {chat_id}")
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message="Missing persona_id",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            # asyncpg has trouble inferring UUID types when None is passed early
+            # Solution: use execute() with explicit type casting, or ensure dept_id is always a string
+            # Since department_id should always exist from context (SQL has fallbacks),
+            # let's ensure it's always a string UUID
+            if not dept_id:
+                logger.error(f"department_id missing from context for chat {chat_id}")
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message="Missing department_id in context",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            # Use execute() with explicit parameter types by passing all UUIDs as strings
+            # asyncpg will infer UUID type from the SQL casts ($2::uuid, etc.)
+            run_row = await conn.fetchrow(
+                sql_get_or_create_run,
+                str(chat_id_uuid),  # $1: chat_id
+                str(dept_id),  # $2: department_id (always present as string)
+                str(model_id),  # $3: model_id (always present as string)
+                str(persona_id),  # $4: entity_id (always present as string)
+                "persona",  # $5: entity_type
+                str(profile_id_val) if profile_id_val else None,  # $6: profile_id
+                str(key_id) if key_id else None,  # $7: key_id
+                None,  # $8: agent_id
+            )
+
+            if not run_row:
+                logger.error(f"Failed to get or create run for chat {chat_id}")
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message=f"Failed to get or create run for chat {chat_id}",
                     ),
                     room=sid,
                 )
@@ -143,9 +255,7 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
 
             # Emit new message event
             from app.socket.simulations.send_message import (
-                SimulationNewMessagePayload,
-                simulation_new_message,
-            )
+                SimulationNewMessagePayload, simulation_new_message)
 
             await simulation_new_message(
                 SimulationNewMessagePayload(
@@ -161,9 +271,7 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
 
             # Stream message content token by token (simulate streaming)
             from app.socket.simulations.send_message import (
-                SimulationMessageTokenPayload,
-                simulation_message_token,
-            )
+                SimulationMessageTokenPayload, simulation_message_token)
 
             accumulated_content = ""
             # Split message into tokens (words) for streaming
@@ -202,9 +310,7 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
 
             # Emit completion event
             from app.socket.simulations.send_message import (
-                SimulationMessageCompletePayload,
-                simulation_message_complete,
-            )
+                SimulationMessageCompletePayload, simulation_message_complete)
 
             await simulation_message_complete(
                 SimulationMessageCompletePayload(
