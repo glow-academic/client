@@ -414,7 +414,8 @@ from app.socket.videos.generate_outline import \
 from app.socket.videos.generate_video import \
     generate_video  # noqa: E402; type: ignore
 from app.socket.voice import start_voice  # noqa: E402; type: ignore
-from app.socket.voice import stop_voice, voice_interrupted, voice_tool_call
+from app.socket.voice import (stop_voice, voice_interrupted, voice_tool_call,
+                              voice_user_message)
 
 
 # Create a combined lifespan to manage both session managers
@@ -858,6 +859,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             stop_voice,
             voice_interrupted,
             voice_tool_call,
+            voice_user_message,
             # AI generation events
             generate_scenario_ai,
             generate_video_outline,
@@ -904,6 +906,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.voice.stop_voice import (stop_voice_error,
                                                  stop_voice_response)
         from app.socket.voice.tool_call import voice_tool_call_error
+        from app.socket.voice.user_message import voice_user_message_error
 
         # Collect all unique emit functions (use one instance of each event name)
         server_to_client_stubs = [
@@ -950,6 +953,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             stop_voice_response,
             stop_voice_error,
             voice_tool_call_error,
+            voice_user_message_error,
         ]
 
         contract = build_socket_contract(

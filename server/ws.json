@@ -82,6 +82,13 @@
         "profile_id": "string"
       }
     },
+    "voice_user_message": {
+      "payload": {
+        "chat_id": "string",
+        "message": "string",
+        "transcription_id": "string"
+      }
+    },
     "generate_video_outline": {
       "payload": {
         "departmentId": "string",
@@ -426,6 +433,12 @@
       }
     },
     "voice_tool_call_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "voice_user_message_error": {
       "payload": {
         "success": "boolean",
         "message": "string"

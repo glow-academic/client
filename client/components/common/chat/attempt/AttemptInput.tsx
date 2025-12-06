@@ -169,6 +169,26 @@ export default function AttemptInput({
         });
         // eslint-disable-next-line no-console
         console.log("[Voice] Sent text to RealtimeSession:", messageToSend);
+
+        // Notify server about user message for database tracking and UI consistency
+        if (socket && currentChat?.id) {
+          try {
+            socket.emit("voice_user_message", {
+              chat_id: currentChat.id,
+              message: messageToSend,
+            });
+            // eslint-disable-next-line no-console
+            console.log("[Voice] Emitted voice_user_message to server");
+          } catch (emitError) {
+            // Log error but don't block user flow - message was sent to RealtimeSession successfully
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] Failed to emit voice_user_message:",
+              emitError
+            );
+            // Don't show toast - this is a background tracking event
+          }
+        }
       } catch (error) {
         const errorMessage =
           error instanceof Error

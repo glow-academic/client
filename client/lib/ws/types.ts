@@ -242,6 +242,10 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
+  voice_user_message_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
 };
 
 export type ClientToServerEvents = {
@@ -302,6 +306,11 @@ export type ClientToServerEvents = {
     persona_id: string;
     message: string;
     profile_id: string;
+  }) => void;
+  voice_user_message: (payload: {
+    chat_id: string;
+    message: string;
+    transcription_id: string;
   }) => void;
   generate_video_outline: (payload: {
     departmentId: string;
