@@ -463,11 +463,11 @@
         </section>
         {% endif %}
 
-        {% if grading %}
+        {% if grading and ((grading.item and ((grading.item.scale is defined and grading.item.scale is sequence and grading.item.scale is not string and grading.item.scale|length > 0) or (grading.item.breakdown is defined and grading.item.breakdown is sequence and grading.item.breakdown is not string and grading.item.breakdown|length > 0))) or ((grading['scale'] is defined and grading['scale'] is sequence and grading['scale'] is not string and grading['scale']|length > 0) or (grading['breakdown'] is defined and grading['breakdown'] is sequence and grading['breakdown'] is not string and grading['breakdown']|length > 0))) %}
         <section class="section">
             <h2>Grading</h2>
             {% if grading.item %}
-                {% if grading.item.scale %}
+                {% if grading.item.scale is defined and grading.item.scale is sequence and grading.item.scale is not string and grading.item.scale|length > 0 %}
                 <div class="grading-scale">
                     {% for grade in grading.item.scale %}
                     <div class="grade-item">
@@ -477,7 +477,7 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                {% if grading.item.breakdown %}
+                {% if grading.item.breakdown is defined and grading.item.breakdown is sequence and grading.item.breakdown is not string and grading.item.breakdown|length > 0 %}
                 <div style="margin-top: 1rem;">
                     {% for item in grading.item.breakdown %}
                     <div class="grade-item">
@@ -488,8 +488,7 @@
                 </div>
                 {% endif %}
             {% else %}
-                {% if grading['scale'] is defined and grading['scale'] is sequence and grading['scale'] is not string %}
-                    {% if grading['scale']|length > 0 %}
+                {% if grading['scale'] is defined and grading['scale'] is sequence and grading['scale'] is not string and grading['scale']|length > 0 %}
                 <div class="grading-scale">
                     {% for grade in grading['scale'] %}
                     <div class="grade-item">
@@ -499,9 +498,7 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                {% endif %}
-                {% if grading['breakdown'] is defined and grading['breakdown'] is sequence and grading['breakdown'] is not string %}
-                    {% if grading['breakdown']|length > 0 %}
+                {% if grading['breakdown'] is defined and grading['breakdown'] is sequence and grading['breakdown'] is not string and grading['breakdown']|length > 0 %}
                 <div style="margin-top: 1rem;">
                     {% for item in grading['breakdown'] %}
                     <div class="grade-item">
@@ -510,7 +507,6 @@
                     </div>
                     {% endfor %}
                 </div>
-                    {% endif %}
                 {% endif %}
             {% endif %}
         </section>

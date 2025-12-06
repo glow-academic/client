@@ -447,11 +447,11 @@
         </section>
         {% endif %}
 
-        {% if evaluation_criteria %}
+        {% if evaluation_criteria and ((evaluation_criteria.item and evaluation_criteria.item.criteria is defined and evaluation_criteria.item.criteria is sequence and evaluation_criteria.item.criteria is not string and evaluation_criteria.item.criteria|length > 0) or (evaluation_criteria.criteria is defined and evaluation_criteria.criteria is sequence and evaluation_criteria.criteria is not string and evaluation_criteria.criteria|length > 0)) %}
         <section class="section">
             <h2>Evaluation Criteria</h2>
             <div class="evaluation-criteria">
-                {% if evaluation_criteria.item and evaluation_criteria.item.criteria %}
+                {% if evaluation_criteria.item and evaluation_criteria.item.criteria is defined and evaluation_criteria.item.criteria is sequence and evaluation_criteria.item.criteria is not string and evaluation_criteria.item.criteria|length > 0 %}
                     {% for criterion in evaluation_criteria.item.criteria %}
                     <div class="criteria-item">
                         <span class="criteria-name">
@@ -462,7 +462,7 @@
                         </span>
                     </div>
                     {% endfor %}
-                {% elif evaluation_criteria.criteria %}
+                {% elif evaluation_criteria.criteria is defined and evaluation_criteria.criteria is sequence and evaluation_criteria.criteria is not string and evaluation_criteria.criteria|length > 0 %}
                     {% for criterion in evaluation_criteria.criteria %}
                     <div class="criteria-item">
                         <span class="criteria-name">{{ criterion.name }}</span>
