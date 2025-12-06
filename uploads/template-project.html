@@ -330,7 +330,7 @@
         </section>
 
         <section class="section">
-            <h2>1. Project Overview</h2>
+            <h2>Project Overview</h2>
             <div class="instructions-content">
                 {{ project_overview }}
             </div>
@@ -338,7 +338,7 @@
 
         {% if milestones %}
         <section class="section">
-            <h2>2. Project Milestones</h2>
+            <h2>Project Milestones</h2>
             {% for milestone in milestones %}
             <div class="milestone-card">
                 <div class="milestone-header">
@@ -371,8 +371,8 @@
                             {{ deliverable.item.name if deliverable.item and deliverable.item.name else deliverable.name }}
                         </div>
                         {% endfor %}
-                    {% elif milestone.deliverables %}
-                        {% for deliverable in milestone.deliverables %}
+                    {% elif milestone['deliverables'] %}
+                        {% for deliverable in milestone['deliverables'] %}
                         <div class="deliverable-item">{{ deliverable.name }}</div>
                         {% endfor %}
                     {% endif %}
@@ -383,9 +383,9 @@
         </section>
         {% endif %}
 
-        {% if deliverables %}
+        {% if deliverables and ((deliverables.item and deliverables.item.items) or (deliverables['items'] is defined and deliverables['items'] is sequence and deliverables['items'] is not string and deliverables['items']|length > 0) or (deliverables is string)) %}
         <section class="section">
-            <h2>{% if milestones %}3.{% else %}2.{% endif %} Required Deliverables</h2>
+            <h2>Required Deliverables</h2>
             {% if deliverables.item and deliverables.item.items %}
                 {% for deliverable in deliverables.item.items %}
                 <div class="deliverable-item">
@@ -395,9 +395,9 @@
                     {% endif %}
                 </div>
                 {% endfor %}
-            {% elif deliverables.items is defined and deliverables.items is sequence and deliverables.items is not string %}
-                {% if deliverables.items|length > 0 %}
-                {% for deliverable in deliverables.items %}
+            {% elif deliverables['items'] is defined and deliverables['items'] is sequence and deliverables['items'] is not string %}
+                {% if deliverables['items']|length > 0 %}
+                {% for deliverable in deliverables['items'] %}
                 <div class="deliverable-item">
                     {{ deliverable.name }}
                     {% if deliverable.description %} - {{ deliverable.description }}{% endif %}
@@ -410,7 +410,7 @@
 
         {% if group_info %}
         <section class="section">
-            <h2>{% if milestones and deliverables %}4.{% elif milestones or deliverables %}3.{% else %}2.{% endif %} Group Information</h2>
+            <h2>Group Information</h2>
             <div class="group-info">
                 {% if group_info.item %}
                     {% if group_info.item.max_size %}
@@ -449,7 +449,7 @@
 
         {% if evaluation_criteria %}
         <section class="section">
-            <h2>{% if milestones and deliverables and group_info %}5.{% elif (milestones and deliverables) or (milestones and group_info) or (deliverables and group_info) %}4.{% elif milestones or deliverables or group_info %}3.{% else %}2.{% endif %} Evaluation Criteria</h2>
+            <h2>Evaluation Criteria</h2>
             <div class="evaluation-criteria">
                 {% if evaluation_criteria.item and evaluation_criteria.item.criteria %}
                     {% for criterion in evaluation_criteria.item.criteria %}
@@ -476,7 +476,7 @@
 
         {% if submission_instructions %}
         <section class="section">
-            <h2>{% if milestones or deliverables or group_info or evaluation_criteria %}6.{% else %}3.{% endif %} Submission Instructions</h2>
+            <h2>Submission Instructions</h2>
             <div class="instructions-content">
                 {% if submission_instructions.item and submission_instructions.item.instructions %}
                     {% for instruction in submission_instructions.item.instructions %}

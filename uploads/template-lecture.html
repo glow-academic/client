@@ -309,19 +309,19 @@
 
         {% if topic %}
         <section class="section">
-            <h2>1. Topic</h2>
+            <h2>Topic</h2>
             <div class="lecture-topic">{{ topic }}</div>
         </section>
         {% endif %}
 
-        {% if learning_objectives %}
+        {% if learning_objectives and ((learning_objectives['items'] is defined and learning_objectives['items'] is sequence and learning_objectives['items'] is not string and learning_objectives['items']|length > 0) or (learning_objectives is string)) %}
         <section class="section">
-            <h2>{% if topic %}2.{% else %}1.{% endif %} Learning Objectives</h2>
+            <h2>Learning Objectives</h2>
             <div class="learning-objectives">
-                {% if learning_objectives.items is defined and learning_objectives.items is sequence and learning_objectives.items is not string %}
-                    {% if learning_objectives.items|length > 0 %}
+                {% if learning_objectives['items'] is defined and learning_objectives['items'] is sequence and learning_objectives['items'] is not string %}
+                    {% if learning_objectives['items']|length > 0 %}
                     <ul>
-                        {% for objective in learning_objectives.items %}
+                        {% for objective in learning_objectives['items'] %}
                         <li>{{ objective.text }}</li>
                         {% endfor %}
                     </ul>
@@ -331,12 +331,12 @@
         </section>
         {% endif %}
 
-        {% if key_concepts %}
+        {% if key_concepts and ((key_concepts['items'] is defined and key_concepts['items'] is sequence and key_concepts['items'] is not string and key_concepts['items']|length > 0) or (key_concepts is string)) %}
         <section class="section">
-            <h2>{% if topic and learning_objectives %}3.{% elif topic or learning_objectives %}2.{% else %}1.{% endif %} Key Concepts</h2>
-            {% if key_concepts.items is defined and key_concepts.items is sequence and key_concepts.items is not string %}
-                {% if key_concepts.items|length > 0 %}
-                {% for concept in key_concepts.items %}
+            <h2>Key Concepts</h2>
+            {% if key_concepts['items'] is defined and key_concepts['items'] is sequence and key_concepts['items'] is not string %}
+                {% if key_concepts['items']|length > 0 %}
+                {% for concept in key_concepts['items'] %}
                 <div class="key-concept">
                     <div class="key-concept-title">{{ concept.title }}</div>
                     <div>{{ concept.description }}</div>
@@ -347,13 +347,13 @@
         </section>
         {% endif %}
 
-        {% if notes %}
+        {% if notes and ((notes['items'] is defined and notes['items'] is sequence and notes['items'] is not string and notes['items']|length > 0) or (notes is string)) %}
         <section class="section">
-            <h2>{% if topic and learning_objectives and key_concepts %}4.{% elif (topic and learning_objectives) or (topic and key_concepts) or (learning_objectives and key_concepts) %}3.{% elif topic or learning_objectives or key_concepts %}2.{% else %}1.{% endif %} Lecture Notes</h2>
+            <h2>Lecture Notes</h2>
             <div class="notes-section">
-                {% if notes.items is defined and notes.items is sequence and notes.items is not string %}
-                    {% if notes.items|length > 0 %}
-                    {% for note in notes.items %}
+                {% if notes['items'] is defined and notes['items'] is sequence and notes['items'] is not string %}
+                    {% if notes['items']|length > 0 %}
+                    {% for note in notes['items'] %}
                     <div class="notes-item">
                         <strong>{{ note.section }}:</strong> {{ note.content }}
                     </div>
@@ -364,13 +364,13 @@
         </section>
         {% endif %}
 
-        {% if references %}
+        {% if references and ((references['items'] is defined and references['items'] is sequence and references['items'] is not string and references['items']|length > 0) or (references is string)) %}
         <section class="section">
-            <h2>{% if topic and learning_objectives and key_concepts and notes %}5.{% elif (topic and learning_objectives and key_concepts) or (topic and learning_objectives and notes) or (topic and key_concepts and notes) or (learning_objectives and key_concepts and notes) %}4.{% elif (topic and learning_objectives) or (topic and key_concepts) or (topic and notes) or (learning_objectives and key_concepts) or (learning_objectives and notes) or (key_concepts and notes) %}3.{% elif topic or learning_objectives or key_concepts or notes %}2.{% else %}1.{% endif %} References</h2>
+            <h2>References</h2>
             <div>
-                {% if references.items is defined and references.items is sequence and references.items is not string %}
-                    {% if references.items|length > 0 %}
-                    {% for ref in references.items %}
+                {% if references['items'] is defined and references['items'] is sequence and references['items'] is not string %}
+                    {% if references['items']|length > 0 %}
+                    {% for ref in references['items'] %}
                     <div class="reference-item">{{ ref.text }}</div>
                     {% endfor %}
                     {% endif %}

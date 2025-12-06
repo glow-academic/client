@@ -302,14 +302,14 @@
             </div>
         </section>
 
-        {% if objectives %}
+        {% if objectives and ((objectives['items'] is defined and objectives['items'] is sequence and objectives['items'] is not string and objectives['items']|length > 0) or (objectives is string)) %}
         <section class="section">
-            <h2>1. Objectives</h2>
+            <h2>Objectives</h2>
             <div class="lab-section">
-                {% if objectives.items is defined and objectives.items is sequence and objectives.items is not string %}
-                    {% if objectives.items|length > 0 %}
+                {% if objectives['items'] is defined and objectives['items'] is sequence and objectives['items'] is not string %}
+                    {% if objectives['items']|length > 0 %}
                     <ul class="materials-list">
-                        {% for objective in objectives.items %}
+                        {% for objective in objectives['items'] %}
                         <li>{{ objective.text }}</li>
                         {% endfor %}
                     </ul>
@@ -319,14 +319,14 @@
         </section>
         {% endif %}
 
-        {% if materials %}
+        {% if materials and ((materials['items'] is defined and materials['items'] is sequence and materials['items'] is not string and materials['items']|length > 0) or (materials is string)) %}
         <section class="section">
-            <h2>{% if objectives %}2.{% else %}1.{% endif %} Materials and Equipment</h2>
+            <h2>Materials and Equipment</h2>
             <div class="lab-section">
-                {% if materials.items is defined and materials.items is sequence and materials.items is not string %}
-                    {% if materials.items|length > 0 %}
+                {% if materials['items'] is defined and materials['items'] is sequence and materials['items'] is not string %}
+                    {% if materials['items']|length > 0 %}
                     <ul class="materials-list">
-                        {% for material in materials.items %}
+                        {% for material in materials['items'] %}
                         <li>{{ material.name }}</li>
                         {% endfor %}
                     </ul>
@@ -336,13 +336,13 @@
         </section>
         {% endif %}
 
-        {% if procedure %}
+        {% if procedure and ((procedure['steps'] is defined and procedure['steps'] is sequence and procedure['steps'] is not string and procedure['steps']|length > 0) or (procedure is string)) %}
         <section class="section">
-            <h2>{% if objectives and materials %}3.{% elif objectives or materials %}2.{% else %}1.{% endif %} Procedure</h2>
+            <h2>Procedure</h2>
             <div class="lab-section">
-                {% if procedure.steps is defined and procedure.steps is sequence and procedure.steps is not string %}
-                    {% if procedure.steps|length > 0 %}
-                    {% for step in procedure.steps %}
+                {% if procedure['steps'] is defined and procedure['steps'] is sequence and procedure['steps'] is not string %}
+                    {% if procedure['steps']|length > 0 %}
+                    {% for step in procedure['steps'] %}
                     <div class="procedure-step">
                         <span class="procedure-step-number">{{ loop.index }}.</span>
                         <span>{{ step.text }}</span>
@@ -356,7 +356,7 @@
 
         {% if observations %}
         <section class="section">
-            <h2>{% if objectives and materials and procedure %}4.{% elif (objectives and materials) or (objectives and procedure) or (materials and procedure) %}3.{% elif objectives or materials or procedure %}2.{% else %}1.{% endif %} Observations</h2>
+            <h2>Observations</h2>
             <div class="lab-section">
                 {% if observations.table is defined and observations.table.headers is defined and observations.table.headers is sequence and observations.table.headers is not string %}
                     {% if observations.table.headers|length > 0 %}
@@ -392,20 +392,20 @@
 
         {% if analysis %}
         <section class="section">
-            <h2>{% if objectives and materials and procedure and observations %}5.{% elif (objectives and materials and procedure) or (objectives and materials and observations) or (objectives and procedure and observations) or (materials and procedure and observations) %}4.{% elif (objectives and materials) or (objectives and procedure) or (objectives and observations) or (materials and procedure) or (materials and observations) or (procedure and observations) %}3.{% elif objectives or materials or procedure or observations %}2.{% else %}1.{% endif %} Analysis and Discussion</h2>
+            <h2>Analysis and Discussion</h2>
             <div class="lab-section">
                 {{ analysis }}
             </div>
         </section>
         {% endif %}
 
-        {% if questions %}
+        {% if questions and ((questions['items'] is defined and questions['items'] is sequence and questions['items'] is not string and questions['items']|length > 0) or (questions is string)) %}
         <section class="section">
-            <h2>{% if objectives or materials or procedure or observations or analysis %}6.{% else %}2.{% endif %} Questions</h2>
+            <h2>Questions</h2>
             <div class="lab-section">
-                {% if questions.items is defined and questions.items is sequence and questions.items is not string %}
-                    {% if questions.items|length > 0 %}
-                    {% for item in questions.items %}
+                {% if questions['items'] is defined and questions['items'] is sequence and questions['items'] is not string %}
+                    {% if questions['items']|length > 0 %}
+                    {% for item in questions['items'] %}
                     <div style="margin-bottom: 1rem;">
                         <strong>Q{{ loop.index }}:</strong> {{ item.question_text }}
                     </div>

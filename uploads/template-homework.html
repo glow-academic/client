@@ -398,7 +398,7 @@
 
         <!-- Instructions Section -->
         <section class="section">
-            <h2>1. Instructions</h2>
+            <h2>Instructions</h2>
             <div class="instructions-content">
                 {{ instructions }}
             </div>
@@ -407,7 +407,7 @@
         <!-- Problem Sets Section -->
         {% if problem_sets %}
         <section class="section">
-            <h2>2. Problem Sets</h2>
+            <h2>Problem Sets</h2>
             {% for problem_set in problem_sets %}
             <div class="problem-set">
                 <div class="problem-set-title">
@@ -435,9 +435,9 @@
                         </div>
                     </div>
                     {% endfor %}
-                {% elif problem_set.problems is defined and problem_set.problems is sequence and problem_set.problems is not string %}
-                    {% if problem_set.problems|length > 0 %}
-                    {% for problem in problem_set.problems %}
+                {% elif problem_set['problems'] is defined and problem_set['problems'] is sequence and problem_set['problems'] is not string %}
+                    {% if problem_set['problems']|length > 0 %}
+                    {% for problem in problem_set['problems'] %}
                     <div class="problem-item">
                         <div>
                             <span class="problem-number">Problem {{ loop.index }}:</span>
@@ -458,7 +458,7 @@
         <!-- Questions Section -->
         {% if questions %}
         <section class="section">
-            <h2>{% if problem_sets %}3.{% else %}2.{% endif %} Questions</h2>
+            <h2>Questions</h2>
             <div class="questions-container">
                 {% for item in questions %}
                 <div class="question-card">
@@ -488,7 +488,7 @@
         <!-- Submission Information -->
         {% if submission_instructions %}
         <section class="section">
-            <h2>{% if problem_sets and questions %}4.{% elif problem_sets or questions %}3.{% else %}2.{% endif %} Submission Instructions</h2>
+            <h2>Submission Instructions</h2>
             <div class="submission-info">
                 {% if submission_instructions.item and submission_instructions.item.instructions %}
                     {% for instruction in submission_instructions.item.instructions %}

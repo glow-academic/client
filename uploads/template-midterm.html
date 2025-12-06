@@ -352,7 +352,7 @@
         {% endif %}
 
         <section class="section">
-            <h2>{% if time_limit or total_points %}2.{% else %}1.{% endif %} Instructions</h2>
+            <h2>Instructions</h2>
             <div class="instructions-content">
                 {{ instructions }}
             </div>
@@ -360,7 +360,7 @@
 
         {% if exam_sections %}
         <section class="section">
-            <h2>{% if time_limit or total_points %}3.{% else %}2.{% endif %} Exam Sections</h2>
+            <h2>Exam Sections</h2>
             {% for section in exam_sections %}
             <div class="exam-section">
                 <div class="exam-section-title">
@@ -400,9 +400,9 @@
                             </div>
                         </div>
                         {% endfor %}
-                    {% elif section.questions is defined and section.questions is sequence and section.questions is not string %}
-                        {% if section.questions|length > 0 %}
-                        {% for item in section.questions %}
+                    {% elif section['questions'] is defined and section['questions'] is sequence and section['questions'] is not string %}
+                        {% if section['questions']|length > 0 %}
+                        {% for item in section['questions'] %}
                         <div class="question-card">
                             <div class="question-header">
                                 <div class="question-title">
@@ -424,7 +424,7 @@
         </section>
         {% elif questions %}
         <section class="section">
-            <h2>{% if time_limit or total_points %}3.{% else %}2.{% endif %} Questions</h2>
+            <h2>Questions</h2>
             <div class="questions-container">
                 {% for item in questions %}
                 <div class="question-card">

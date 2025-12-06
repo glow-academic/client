@@ -322,7 +322,7 @@
 
         {% if course_info %}
         <section class="section">
-            <h2>1. Course Information</h2>
+            <h2>Course Information</h2>
             <div class="syllabus-info">
                 {% if course_info.item %}
                     {% if course_info.item.course_code %}
@@ -405,16 +405,16 @@
 
         {% if course_description %}
         <section class="section">
-            <h2>{% if course_info %}2.{% else %}1.{% endif %} Course Description</h2>
+            <h2>Course Description</h2>
             <div class="syllabus-info">
                 {{ course_description }}
             </div>
         </section>
         {% endif %}
 
-        {% if schedule %}
+        {% if schedule and ((schedule.item and schedule.item.weeks) or (schedule['weeks'] is defined and schedule['weeks'] is sequence and schedule['weeks'] is not string and schedule['weeks']|length > 0) or (schedule is string)) %}
         <section class="section">
-            <h2>{% if course_info and course_description %}3.{% elif course_info or course_description %}2.{% else %}1.{% endif %} Course Schedule</h2>
+            <h2>Course Schedule</h2>
             {% if schedule.item and schedule.item.weeks %}
                 <table class="schedule-table">
                     <thead>
@@ -434,8 +434,8 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            {% elif schedule.weeks is defined and schedule.weeks is sequence and schedule.weeks is not string %}
-                {% if schedule.weeks|length > 0 %}
+            {% elif schedule['weeks'] is defined and schedule['weeks'] is sequence and schedule['weeks'] is not string %}
+                {% if schedule['weeks']|length > 0 %}
                 <table class="schedule-table">
                     <thead>
                         <tr>
@@ -445,7 +445,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for week in schedule.weeks %}
+                        {% for week in schedule['weeks'] %}
                         <tr>
                             <td>{{ week.week_number }}</td>
                             <td>{{ week.topic }}</td>
@@ -465,7 +465,7 @@
 
         {% if grading %}
         <section class="section">
-            <h2>{% if course_info and course_description and schedule %}4.{% elif (course_info and course_description) or (course_info and schedule) or (course_description and schedule) %}3.{% elif course_info or course_description or schedule %}2.{% else %}1.{% endif %} Grading</h2>
+            <h2>Grading</h2>
             {% if grading.item %}
                 {% if grading.item.scale %}
                 <div class="grading-scale">
@@ -488,10 +488,10 @@
                 </div>
                 {% endif %}
             {% else %}
-                {% if grading.scale is defined and grading.scale is sequence and grading.scale is not string %}
-                    {% if grading.scale|length > 0 %}
+                {% if grading['scale'] is defined and grading['scale'] is sequence and grading['scale'] is not string %}
+                    {% if grading['scale']|length > 0 %}
                 <div class="grading-scale">
-                    {% for grade in grading.scale %}
+                    {% for grade in grading['scale'] %}
                     <div class="grade-item">
                         <span>{{ grade.letter }}</span>
                         <span>{{ grade.range }}</span>
@@ -500,10 +500,10 @@
                 </div>
                 {% endif %}
                 {% endif %}
-                {% if grading.breakdown is defined and grading.breakdown is sequence and grading.breakdown is not string %}
-                    {% if grading.breakdown|length > 0 %}
+                {% if grading['breakdown'] is defined and grading['breakdown'] is sequence and grading['breakdown'] is not string %}
+                    {% if grading['breakdown']|length > 0 %}
                 <div style="margin-top: 1rem;">
-                    {% for item in grading.breakdown %}
+                    {% for item in grading['breakdown'] %}
                     <div class="grade-item">
                         <span>{{ item.assignment }}</span>
                         <span>{{ item.weight }}%</span>
@@ -516,9 +516,9 @@
         </section>
         {% endif %}
 
-        {% if policies %}
+        {% if policies and ((policies.item and policies.item.items) or (policies['items'] is defined and policies['items'] is sequence and policies['items'] is not string and policies['items']|length > 0) or (policies is string)) %}
         <section class="section">
-            <h2>{% if course_info and course_description and schedule and grading %}5.{% elif (course_info and course_description and schedule) or (course_info and course_description and grading) or (course_info and schedule and grading) or (course_description and schedule and grading) %}4.{% elif (course_info and course_description) or (course_info and schedule) or (course_info and grading) or (course_description and schedule) or (course_description and grading) or (schedule and grading) %}3.{% elif course_info or course_description or schedule or grading %}2.{% else %}1.{% endif %} Course Policies</h2>
+            <h2>Course Policies</h2>
             {% if policies.item and policies.item.items %}
                 {% for policy in policies.item.items %}
                 <div class="policy-item">
@@ -530,9 +530,9 @@
                     </div>
                 </div>
                 {% endfor %}
-            {% elif policies.items is defined and policies.items is sequence and policies.items is not string %}
-                {% if policies.items|length > 0 %}
-                {% for policy in policies.items %}
+            {% elif policies['items'] is defined and policies['items'] is sequence and policies['items'] is not string %}
+                {% if policies['items']|length > 0 %}
+                {% for policy in policies['items'] %}
                 <div class="policy-item">
                     <div class="policy-title">{{ policy.title }}</div>
                     <div>{{ policy.description }}</div>
@@ -547,9 +547,9 @@
         </section>
         {% endif %}
 
-        {% if resources %}
+        {% if resources and ((resources.item and resources.item.items) or (resources['items'] is defined and resources['items'] is sequence and resources['items'] is not string and resources['items']|length > 0) or (resources is string)) %}
         <section class="section">
-            <h2>{% if course_info and course_description and schedule and grading and policies %}6.{% else %}3.{% endif %} Resources</h2>
+            <h2>Resources</h2>
             <div>
                 {% if resources.item and resources.item.items %}
                     {% for resource in resources.item.items %}
@@ -557,9 +557,9 @@
                         {{ resource.item.text if resource.item and resource.item.text else resource.text }}
                     </div>
                     {% endfor %}
-                {% elif resources.items is defined and resources.items is sequence and resources.items is not string %}
-                    {% if resources.items|length > 0 %}
-                    {% for resource in resources.items %}
+                {% elif resources['items'] is defined and resources['items'] is sequence and resources['items'] is not string %}
+                    {% if resources['items']|length > 0 %}
+                    {% for resource in resources['items'] %}
                     <div class="resource-item">{{ resource.text }}</div>
                     {% endfor %}
                     {% endif %}

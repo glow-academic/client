@@ -353,7 +353,7 @@
         {% endif %}
 
         <section class="section">
-            <h2>{% if time_limit or total_points %}2.{% else %}1.{% endif %} Instructions</h2>
+            <h2>Instructions</h2>
             <div class="instructions-content">
                 {{ instructions }}
             </div>
@@ -361,7 +361,7 @@
 
         {% if questions %}
         <section class="section">
-            <h2>{% if time_limit or total_points %}3.{% else %}2.{% endif %} Questions</h2>
+            <h2>Questions</h2>
             <div class="questions-container">
                 {% for item in questions %}
                 <div class="question-card">
@@ -380,7 +380,7 @@
                     {% if (item.item and item.item.question_type) or item.question_type %}
                         {% set qtype = item.item.question_type if item.item and item.item.question_type else item.question_type %}
                         {% if qtype == "multiple_choice" %}
-                            {% if (item.item and item.item.options) or item.options %}
+                            {% if (item.item and item.item.options) or item['options'] %}
                             <div class="question-options">
                                 {% if item.item and item.item.options %}
                                     {% for option in item.item.options %}
@@ -388,8 +388,8 @@
                                         {{ option.item.text if option.item and option.item.text else option.text }}
                                     </div>
                                     {% endfor %}
-                                {% elif item.options %}
-                                    {% for option in item.options %}
+                                {% elif item['options'] %}
+                                    {% for option in item['options'] %}
                                     <div class="question-option">{{ option.text }}</div>
                                     {% endfor %}
                                 {% endif %}
