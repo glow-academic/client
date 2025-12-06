@@ -248,7 +248,23 @@ CREATE INDEX ON message_tree (child_id);
 CREATE INDEX ON message_tree (active);
 
 -- Enforce single parent per child (tree structure, not DAG)
-CREATE UNIQUE INDEX message_tree_one_parent_per_child ON message_tree(child_id) WHERE active = true;
+-- Note: Developer and system messages are excluded from this constraint as they are shared
+-- across multiple runs and can have multiple active parents
+CREATE OR REPLACE FUNCTION message_is_conversation_message(message_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM messages m 
+        WHERE m.id = message_id 
+        AND m.role IN ('user', 'assistant')
+    );
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE UNIQUE INDEX message_tree_one_parent_per_child 
+ON message_tree(child_id) 
+WHERE active = true 
+AND message_is_conversation_message(child_id);
 
 -- Note: Crowdsourcing tables (simulation_chat_crowdsourced_feedbacks, simulation_crowdsourced_messages)
 -- have been removed as part of BCNF migration

@@ -584,15 +584,23 @@ async def _send_simulation_message_impl(
                             sql_latest, str(chat_id_uuid)
                         )
                         if latest_message_row:
-                            sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
-                            await conn.execute(
-                                sql_branch,
-                                str(latest_message_row["id"]),
-                                str(user_message["id"]),
-                            )
-                            logger.info(
-                                f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
-                            )
+                            latest_id_str = str(latest_message_row["id"])
+                            user_id_str = str(user_message["id"])
+                            # Prevent self-references (parent_id != child_id)
+                            if latest_id_str != user_id_str:
+                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                await conn.execute(
+                                    sql_branch,
+                                    latest_id_str,
+                                    user_id_str,
+                                )
+                                logger.info(
+                                    f"Created branch from message {latest_id_str} to user message {user_id_str}"
+                                )
+                            else:
+                                logger.warning(
+                                    f"Skipping branch creation: latest message ID ({latest_id_str}) equals user message ID ({user_id_str})"
+                                )
 
                         # 2. Emit user message to connected clients
                         logger.info(
@@ -675,33 +683,42 @@ async def _send_simulation_message_impl(
                         if latest_message_row:
                             parent_message_id = latest_message_row["id"]
 
-                # Create branch from parent to assistant message (if parent exists)
-                if parent_message_id:
-                    sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
-                    await conn.execute(
-                        sql_branch,
-                        str(parent_message_id),
-                        str(assistant_message["id"]),
-                    )
-                    logger.info(
-                        f"Created branch from message {parent_message_id} to assistant message {assistant_message['id']}"
-                    )
+                # Create branch from parent to assistant message (if parent exists and assistant message exists)
+                if parent_message_id and assistant_message:
+                    parent_id_str = str(parent_message_id)
+                    assistant_id_str = str(assistant_message["id"])
+                    # Prevent self-references (parent_id != child_id)
+                    if parent_id_str != assistant_id_str:
+                        sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                        await conn.execute(
+                            sql_branch,
+                            parent_id_str,
+                            assistant_id_str,
+                        )
+                        logger.info(
+                            f"Created branch from message {parent_id_str} to assistant message {assistant_id_str}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Skipping branch creation: parent_id ({parent_id_str}) equals child_id ({assistant_id_str})"
+                        )
 
-                # 4. Emit placeholder assistant message
-                logger.info(
-                    f"Emitting assistant placeholder to room simulation_{chat_id_uuid}"
-                )
-                await simulation_new_message(
-                    SimulationNewMessagePayload(
-                        message_id=str(assistant_message["id"]),
-                        chat_id=str(chat_id_uuid),
-                        role="assistant",
-                        content="",
-                        completed=False,
-                        created_at=assistant_message["created_at"].isoformat(),
-                    ),
-                    room=f"simulation_{chat_id_uuid}",
-                )
+                # 4. Emit placeholder assistant message (if it was created)
+                if assistant_message:
+                    logger.info(
+                        f"Emitting assistant placeholder to room simulation_{chat_id_uuid}"
+                    )
+                    await simulation_new_message(
+                        SimulationNewMessagePayload(
+                            message_id=str(assistant_message["id"]),
+                            chat_id=str(chat_id_uuid),
+                            role="assistant",
+                            content="",
+                            completed=False,
+                            created_at=assistant_message["created_at"].isoformat(),
+                        ),
+                        room=f"simulation_{chat_id_uuid}",
+                    )
 
                 logger.info(f"Processing simulation message for chat {chat_id_uuid}")
 
@@ -725,8 +742,11 @@ async def _send_simulation_message_impl(
                     from app.utils.websocket.store_active_run import \
                         store_active_run
 
-                    # Context already fetched earlier, reuse it
-                    # context_row is already available from earlier fetch (line 522)
+                    # Fetch context for the chat
+                    sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+                    context_row = await conn.fetchrow(
+                        sql_context, str(chat_id_uuid)
+                    )
                     if not context_row:
                         raise ValueError(
                             f"Chat {chat_id_uuid} not found or no persona configured"
@@ -823,11 +843,10 @@ async def _send_simulation_message_impl(
                         system_prompt=context["system_prompt"],
                         temperature=context["temperature"],
                         model_name=context["model_name"],
-                        model_provider=context["provider_name"],
+                        provider=context["provider_name"],
                         base_url=context["base_url"],
                         reasoning=context["reasoning"],
                         api_key=context["api_key"],
-                        custom_model=context["custom_model"],
                     )
 
                     # Check rate limit
@@ -862,13 +881,25 @@ async def _send_simulation_message_impl(
                             error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                         raise ValueError(error_message)
 
-                    # Get Simulation Agent ID for persona-based runs
+                    # Get Simulation Text Agent ID from persona_agents table (required for runs table)
+                    # Personas are linked to agents via persona_agents junction table
+                    # Note: We check for the link regardless of pa.active status, as long as the agent itself is active
+                    # The pa.active flag controls which agent is "primary" for the persona, but we can use any linked active agent
                     simulation_agent_row = await conn.fetchrow(
-                        "SELECT id FROM agents WHERE role = 'simulation' AND active = true LIMIT 1"
+                        """
+                        SELECT pa.agent_id
+                        FROM persona_agents pa
+                        JOIN agents a ON a.id = pa.agent_id
+                        WHERE pa.persona_id = $1::uuid 
+                        AND a.role = 'simulation-text'
+                        AND a.active = true
+                        LIMIT 1
+                        """,
+                        uuid.UUID(context["persona_id"]),
                     )
                     if not simulation_agent_row:
-                        raise ValueError("Simulation Agent not found")
-                    simulation_agent_id = simulation_agent_row["id"]
+                        raise ValueError(f"Simulation Text Agent not found for persona {context['persona_id']}")
+                    simulation_agent_id = simulation_agent_row["agent_id"]
 
                     # Create model run with all junction records using SQL file (using persona, not agent)
                     sql_create_run = load_sql(
@@ -935,21 +966,22 @@ async def _send_simulation_message_impl(
                         if sys_dev_result and user_message:
                             dev_msg_id = sys_dev_result.get("developer_message_id")
                             sys_msg_id = sys_dev_result.get("system_message_id")
-                            # Link developer → user (if developer exists)
-                            if dev_msg_id:
+                            user_msg_id = str(user_message["id"])
+                            # Link developer → user (if developer exists and IDs are different)
+                            if dev_msg_id and str(dev_msg_id) != user_msg_id:
                                 sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
                                 await conn.execute(
                                     sql_branch,
                                     str(dev_msg_id),
-                                    str(user_message["id"]),
+                                    user_msg_id,
                                 )
-                            # Link system → user (if system exists and no developer)
-                            elif sys_msg_id:
+                            # Link system → user (if system exists, no developer, and IDs are different)
+                            elif sys_msg_id and str(sys_msg_id) != user_msg_id:
                                 sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
                                 await conn.execute(
                                     sql_branch,
                                     str(sys_msg_id),
-                                    str(user_message["id"]),
+                                    user_msg_id,
                                 )
                     
                     # Create assistant message if it wasn't created earlier

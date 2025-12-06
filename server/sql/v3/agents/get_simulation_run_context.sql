@@ -94,6 +94,13 @@ SELECT
     COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
     
+    -- Custom model (if any) - indicated by presence of base_url in model_endpoints
+    CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.name ELSE NULL END as custom_model,
+    
+    -- Provider data (provider enum is now on models table, no separate providers table)
+    NULL::text as provider_id,
+    m.provider::text as provider_name,
+    
     -- Scenario settings (flags moved from scenarios to simulation_scenarios)
     COALESCE(s.image_enabled, false) as image_input_enabled,
     COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
@@ -132,11 +139,13 @@ LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
 LEFT JOIN personas p ON p.id = sp.persona_id
 LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
 LEFT JOIN agents a ON a.id = pa.agent_id
+LEFT JOIN models m ON m.id = a.model_id
 -- Join temperature and reasoning from model levels via agent
+-- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
+LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
 -- Try department-specific agent prompt first, fall back to default prompt
 LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
     AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
@@ -144,7 +153,6 @@ LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id
 LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
 LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
 LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
-LEFT JOIN models m ON m.id = a.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
 LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true

@@ -252,9 +252,7 @@ model_temperature_levels_data AS (
         mtl.model_id::text as model_id,
         MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false) as temperature_lower,
         MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true) as temperature_upper,
-        jsonb_agg(
-            DISTINCT mtl.temperature::text ORDER BY mtl.temperature::text
-        ) as temperature_values
+        jsonb_agg(DISTINCT mtl.temperature::text) as temperature_values
     FROM model_temperature_levels mtl
     WHERE mtl.active = true
     GROUP BY mtl.model_id
@@ -308,7 +306,7 @@ model_temperature_levels_data_with_ids AS (
         MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false) as temperature_lower,
         MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true) as temperature_upper,
         jsonb_agg(
-            DISTINCT jsonb_build_object(
+            jsonb_build_object(
                 'id', mtl.id::text,
                 'temperature', mtl.temperature::text,
                 'is_upper', mtl.is_upper

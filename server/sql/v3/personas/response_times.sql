@@ -27,18 +27,24 @@ message_pairs AS (
         ) as pair_num
     FROM chats sc
     JOIN scenarios s ON s.id = sc.scenario_id
-    JOIN messages sm1 ON sm1.chat_id = sc.id
-    JOIN messages sm2 ON sm2.chat_id = sc.id
+    JOIN messages sm1 ON true
+    JOIN message_runs mr1 ON mr1.message_id = sm1.id
+    JOIN chat_runs rc1 ON rc1.run_id = mr1.run_id AND rc1.chat_id = sc.id
+    JOIN messages sm2 ON true
+    JOIN message_runs mr2 ON mr2.message_id = sm2.id
+    JOIN chat_runs rc2 ON rc2.run_id = mr2.run_id AND rc2.chat_id = sc.id
     CROSS JOIN scenario_ids_array sia
     WHERE sc.scenario_id = ANY(sia.ids)
       AND sia.ids != ARRAY[]::uuid[]
       AND sc.created_at >= $2
-      AND sm1.type = 'query'
-      AND sm2.type = 'response'
+      AND sm1.role = 'user'
+      AND sm2.role = 'assistant'
       AND sm2.created_at > sm1.created_at
       AND NOT EXISTS (
           SELECT 1 FROM messages sm_between
-          WHERE sm_between.chat_id = sc.id
+          JOIN message_runs mr_between ON mr_between.message_id = sm_between.id
+          JOIN chat_runs rc_between ON rc_between.run_id = mr_between.run_id
+          WHERE rc_between.chat_id = sc.id
             AND sm_between.created_at > sm1.created_at
             AND sm_between.created_at < sm2.created_at
       )

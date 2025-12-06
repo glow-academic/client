@@ -146,13 +146,14 @@ LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.
 LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
 -- Use department-specific prompt if available, otherwise use default
 LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
+INNER JOIN models m ON m.id = a.model_id
 -- Join temperature from junction table
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
 -- Join reasoning from junction table
+-- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
-INNER JOIN models m ON m.id = a.model_id
+LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
 LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true

@@ -37,7 +37,12 @@ import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 // type EventPayload<T extends keyof ServerToClientEvents> =
 //   ServerToClientEvents[T] extends (payload: infer P) => unknown ? P : never;
 // type StartVoiceResponsePayload = EventPayload<"start_voice_response">;
-import { RealtimeAgent, RealtimeSession, tool } from "@openai/agents/realtime";
+import {
+  RealtimeAgent,
+  RealtimeSession,
+  tool,
+  type RealtimeItem,
+} from "@openai/agents/realtime";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -95,6 +100,8 @@ export default function AttemptInput({
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const realtimeSessionRef = useRef<RealtimeSession | null>(null);
+  // Track which Realtime items we've already forwarded to the server
+  const processedItemIdsRef = useRef<Set<string>>(new Set());
   // Use strongly typed tool context map from WebSocket event payload
   // Fallback type until ws.json is regenerated with start_voice_response
   type ToolContextMap = Record<
@@ -170,25 +177,8 @@ export default function AttemptInput({
         // eslint-disable-next-line no-console
         console.log("[Voice] Sent text to RealtimeSession:", messageToSend);
 
-        // Notify server about user message for database tracking and UI consistency
-        if (socket && currentChat?.id) {
-          try {
-            socket.emit("voice_user_message", {
-              chat_id: currentChat.id,
-              message: messageToSend,
-            });
-            // eslint-disable-next-line no-console
-            console.log("[Voice] Emitted voice_user_message to server");
-          } catch (emitError) {
-            // Log error but don't block user flow - message was sent to RealtimeSession successfully
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] Failed to emit voice_user_message:",
-              emitError
-            );
-            // Don't show toast - this is a background tracking event
-          }
-        }
+        // The history_added listener will see this new user message and
+        // forward it to the server in one unified path.
       } catch (error) {
         const errorMessage =
           error instanceof Error
@@ -230,6 +220,7 @@ export default function AttemptInput({
       }
     }
 
+    processedItemIdsRef.current = new Set(); // reset
     setVoiceModeEnabled(false);
     setIsMicMuted(false);
   }, []);
@@ -614,6 +605,64 @@ export default function AttemptInput({
         socket.emit("voice_interrupted", {
           chat_id: currentChat.id,
         });
+      });
+
+      // Unify *all* user messages (typed or microphone transcripts)
+      session.on("history_added", (item: RealtimeItem) => {
+        try {
+          // Only care about message items
+          if (!item || item.type !== "message") return;
+
+          // Only forward user messages
+          if (item.role !== "user") return;
+
+          // Avoid double-processing the same item
+          if (processedItemIdsRef.current.has(item.itemId)) return;
+          processedItemIdsRef.current.add(item.itemId);
+
+          // RealtimeMessageItem.content: array of input_text or input_audio
+          // We want either the text or the transcript.
+          const contentArray = item.content as Array<
+            | { type: "input_text"; text: string }
+            | {
+                type: "input_audio";
+                audio?: string | null;
+                transcript: string | null;
+              }
+          >;
+
+          const textParts: string[] = [];
+
+          for (const c of contentArray ?? []) {
+            if (c.type === "input_text" && typeof c.text === "string") {
+              textParts.push(c.text);
+            } else if (
+              c.type === "input_audio" &&
+              typeof c.transcript === "string" &&
+              c.transcript.trim().length > 0
+            ) {
+              textParts.push(c.transcript);
+            }
+          }
+
+          const finalText = textParts.join(" ").trim();
+          if (!finalText) return;
+          if (!socket || !currentChat?.id) return;
+
+          socket.emit("voice_user_message", {
+            chat_id: currentChat.id,
+            message: finalText,
+          });
+
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Forwarded user message from history_added:", {
+            itemId: item.itemId,
+            message: finalText,
+          });
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error("[Voice] Error in history_added handler:", err);
+        }
       });
 
       // Connect session with ephemeral key

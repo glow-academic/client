@@ -2,11 +2,13 @@
 -- Parameters: $1=chat_id (uuid)
 -- Returns: cancelled_message_id (uuid), final_content (text), success (boolean)
 WITH get_incomplete_message AS (
-    -- Get first incomplete response message for the chat
-    SELECT id, content
-    FROM messages
-    WHERE chat_id = $1::uuid AND type = 'response' AND completed = false
-    ORDER BY created_at DESC
+    -- Get first incomplete assistant message for the chat
+    SELECT m.id, m.content
+    FROM messages m
+    JOIN message_runs mr ON mr.message_id = m.id
+    JOIN chat_runs rc ON rc.run_id = mr.run_id
+    WHERE rc.chat_id = $1::uuid AND m.role = 'assistant' AND m.completed = false
+    ORDER BY m.created_at DESC
     LIMIT 1
 ),
 update_message AS (

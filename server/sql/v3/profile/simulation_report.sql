@@ -53,16 +53,18 @@ chat_messages AS (
             (SELECT jsonb_agg(
                 jsonb_build_object(
                     'created_at', sm.created_at,
-                    'type', sm.type,
+                    'role', sm.role,
                     'content', sm.content,
                     'completed', sm.completed
                 ) ORDER BY sm.created_at
             ) 
             FROM (
-                SELECT created_at, type, content, completed
-                FROM messages
-                WHERE chat_id = ac.chat_id
-                ORDER BY created_at DESC
+                SELECT m.created_at, m.role, m.content, m.completed
+                FROM messages m
+                JOIN message_runs mr ON mr.message_id = m.id
+                JOIN chat_runs rc ON rc.run_id = mr.run_id
+                WHERE rc.chat_id = ac.chat_id
+                ORDER BY m.created_at DESC
                 LIMIT $2
             ) sm),
             '[]'::jsonb

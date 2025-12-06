@@ -35,18 +35,25 @@ WITH run_info AS (
     WHERE r.id = $1::uuid
 ),
 -- Get system prompt for persona runs
+-- System prompt comes from the agent (department-specific or default), then persona instructions are appended
 persona_system_prompt AS (
     SELECT 
-        COALESCE(pr_dept.system_prompt, pr_default.system_prompt) as system_prompt
+        CASE 
+            WHEN p.instructions IS NOT NULL AND p.instructions != '' THEN
+                COALESCE(pr_dept.system_prompt, pr_default.system_prompt) || E'\n\n' || p.instructions
+            ELSE
+                COALESCE(pr_dept.system_prompt, pr_default.system_prompt)
+        END as system_prompt
     FROM run_info ri
     JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true
     JOIN personas p ON p.id = rp.persona_id
-    LEFT JOIN persona_department_prompts pdp ON pdp.persona_id = p.id 
-        AND pdp.department_id = ri.department_id
-        AND pdp.active = true
-    LEFT JOIN prompts pr_dept ON pr_dept.id = pdp.prompt_id
-    LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
-    LEFT JOIN prompts pr_default ON pr_default.id = pp.prompt_id
+    JOIN agents a ON a.id = ri.agent_id
+    LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
+        AND adp.department_id = ri.department_id
+        AND adp.active = true
+    LEFT JOIN prompts pr_dept ON pr_dept.id = adp.prompt_id
+    LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+    LEFT JOIN prompts pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.persona_id IS NOT NULL
     AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) IS NOT NULL
     AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) != ''
