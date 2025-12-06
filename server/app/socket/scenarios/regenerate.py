@@ -1,4 +1,4 @@
-"""Handler for generate_scenario_ai WebSocket event."""
+"""Handler for regenerate_scenario WebSocket event."""
 
 import json
 import uuid
@@ -9,21 +9,12 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner,
 from agents.items import TResponseInputItem
 from app.main import get_pool, scenario_progress, scenario_results, sio
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_dynamic_document_function import (
-    available_templates, dynamic_document_results)
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.document.format_document_info import format_document_info
-from app.utils.documents.create_dynamic_document import create_dynamic_document
 from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_regeneration_messages import \
     log_regeneration_messages
-from app.utils.messages.log_run_messages import log_run_messages
-from app.utils.personas import format_persona_info
-from app.utils.scenario import format_parameter_item_info
-from app.utils.scenario.format_document_template_info import \
-    format_document_template_info
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
@@ -31,98 +22,82 @@ logger = get_logger(__name__)
 
 
 # Pydantic models for server-to-client events
-class ScenarioGenerationProgressPayload(BaseModel):
-    type: str  # "start", "tool_call", "complete"
+class ScenarioRegenerationProgressPayload(BaseModel):
+    type: str  # "start", "complete"
     message: str | None = None
-    tool_name: str | None = None
     trace_id: str | None = None
 
 
-class ScenarioGenerationCompletePayload(BaseModel):
+class ScenarioRegenerationCompletePayload(BaseModel):
     success: bool
     message: str
     title: str
     description: str
     objectives: list[str]
-    dynamic_document_mapping: dict[str, str] | None = None
+    dynamic_document_mapping: dict[str, Any] | None = None
     trace_id: str | None = None
 
 
-class ScenarioGenerationErrorPayload(BaseModel):
+class ScenarioRegenerationErrorPayload(BaseModel):
     success: bool
     message: str
     trace_id: str | None = None
 
 
 # Pydantic model for client-to-server event
-class GenerateScenarioAIPayload(BaseModel):
+class RegenerateScenarioPayload(BaseModel):
+    scenarioId: str
+    userInstructions: str
     departmentId: str
-    personaIds: list[str] | None = None
-    documentIds: list[str] | None = None
-    parameterItemIds: list[str] | None = None
     profileId: str | None = None
     objectivesEnabled: bool = True
 
 
 # Emit helper functions
-async def scenario_generation_progress(
-    payload: ScenarioGenerationProgressPayload, room: str
+async def scenario_regeneration_progress(
+    payload: ScenarioRegenerationProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "scenario_generation_progress",
+        "scenario_regeneration_progress",
         payload.model_dump(exclude_none=True),
         room=room,
     )
 
 
-async def scenario_generation_complete(
-    payload: ScenarioGenerationCompletePayload, room: str
+async def scenario_regeneration_complete(
+    payload: ScenarioRegenerationCompletePayload, room: str
 ) -> None:
-    await sio.emit("scenario_generation_complete", payload.model_dump(), room=room)
+    await sio.emit("scenario_regeneration_complete", payload.model_dump(), room=room)
 
 
-async def scenario_generation_error(
-    payload: ScenarioGenerationErrorPayload, room: str
+async def scenario_regeneration_error(
+    payload: ScenarioRegenerationErrorPayload, room: str
 ) -> None:
-    await sio.emit("scenario_generation_error", payload.model_dump(), room=room)
+    await sio.emit("scenario_regeneration_error", payload.model_dump(), room=room)
 
 
-async def _generate_scenario_ai_impl(
-    sid: str, data: GenerateScenarioAIPayload
+async def _regenerate_scenario_impl(
+    sid: str, data: RegenerateScenarioPayload
 ) -> None:
-    """Handle scenario AI generation requests via WebSocket."""
+    """Handle scenario regeneration requests via WebSocket."""
     trace_id = gen_trace_id()
     
     try:
         logger.info(
-            f"Received generate_scenario_ai request from {sid} with data: {data}"
+            f"Received regenerate_scenario request from {sid} with scenarioId: {data.scenarioId}"
         )
 
         # Convert string IDs to UUIDs
+        scenario_id = uuid.UUID(data.scenarioId)
         department_id = uuid.UUID(data.departmentId)
-        persona_ids = (
-            [uuid.UUID(p) for p in data.personaIds] if data.personaIds else None
-        )
-        persona_id = persona_ids[0] if persona_ids and len(persona_ids) > 0 else None
-        document_ids = (
-            [uuid.UUID(d) for d in data.documentIds] if data.documentIds else None
-        )
-        parameter_item_ids = (
-            [uuid.UUID(p) for p in data.parameterItemIds]
-            if data.parameterItemIds
-            else None
-        )
         profile_id = uuid.UUID(data.profileId) if data.profileId else None
-
-        # Filter out empty lists
-        if document_ids and len(document_ids) == 0:
-            document_ids = None
+        objectives_enabled = data.objectivesEnabled
 
         # Get connection pool
         pool = get_pool()
         if not pool:
-            await scenario_generation_error(
-                ScenarioGenerationErrorPayload(
+            await scenario_regeneration_error(
+                ScenarioRegenerationErrorPayload(
                     success=False,
                     message="Database connection pool not available",
                     trace_id=trace_id,
@@ -135,24 +110,76 @@ async def _generate_scenario_ai_impl(
             # Clear previous results
             scenario_results.clear()
             scenario_progress.clear()
-            dynamic_document_results.clear()
-            available_templates.clear()
 
             # Emit start event
-            await scenario_generation_progress(
-                ScenarioGenerationProgressPayload(
+            await scenario_regeneration_progress(
+                ScenarioRegenerationProgressPayload(
                     type="start",
-                    message="Starting scenario generation",
+                    message="Starting scenario regeneration",
                     trace_id=trace_id,
                 ),
                 room=sid,
             )
 
-            # Get all context data in a single optimized query using SQL file
-            doc_ids_str = [str(d) for d in document_ids] if document_ids else []
-            param_ids_str = (
-                [str(p) for p in parameter_item_ids] if parameter_item_ids else []
+            # Get previous run for this scenario
+            sql_get_previous_run = load_sql("sql/v3/messages/get_previous_run_for_entity.sql")
+            previous_run_row = await conn.fetchrow(
+                sql_get_previous_run,
+                str(scenario_id),
+                "scenario",
             )
+
+            if not previous_run_row or not previous_run_row.get("run_id"):
+                await scenario_regeneration_error(
+                    ScenarioRegenerationErrorPayload(
+                        success=False,
+                        message=f"No previous run found for scenario {data.scenarioId}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
+
+            previous_run_id = uuid.UUID(previous_run_row["run_id"])
+
+            # Get scenario's current persona/document/parameter IDs
+            sql_get_scenario_ids = """
+                SELECT 
+                    (SELECT rp.persona_id FROM scenario_personas rp WHERE rp.scenario_id = s.id AND rp.active = true LIMIT 1) as persona_id,
+                    COALESCE(
+                        json_agg(DISTINCT sd.document_id::text) FILTER (WHERE sd.document_id IS NOT NULL),
+                        '[]'::json
+                    ) as document_ids,
+                    COALESCE(
+                        json_agg(DISTINCT spi.parameter_item_id::text) FILTER (WHERE spi.parameter_item_id IS NOT NULL),
+                        '[]'::json
+                    ) as parameter_item_ids
+                FROM scenarios s
+                LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
+                LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id AND spi.active = true
+                WHERE s.id = $1::uuid
+                GROUP BY s.id
+            """
+            scenario_ids_row = await conn.fetchrow(sql_get_scenario_ids, str(scenario_id))
+            
+            if not scenario_ids_row:
+                await scenario_regeneration_error(
+                    ScenarioRegenerationErrorPayload(
+                        success=False,
+                        message=f"Scenario {data.scenarioId} not found",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
+
+            persona_id = uuid.UUID(scenario_ids_row["persona_id"]) if scenario_ids_row["persona_id"] else None
+            document_ids = [uuid.UUID(d) for d in scenario_ids_row["document_ids"]] if scenario_ids_row["document_ids"] else []
+            parameter_item_ids = [uuid.UUID(p) for p in scenario_ids_row["parameter_item_ids"]] if scenario_ids_row["parameter_item_ids"] else []
+
+            # Get context using same SQL as generate_ai
+            doc_ids_str = [str(d) for d in document_ids] if document_ids else []
+            param_ids_str = [str(p) for p in parameter_item_ids] if parameter_item_ids else []
 
             sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
             context_row = await conn.fetchrow(
@@ -164,8 +191,8 @@ async def _generate_scenario_ai_impl(
             )
 
             if not context_row:
-                await scenario_generation_error(
-                    ScenarioGenerationErrorPayload(
+                await scenario_regeneration_error(
+                    ScenarioRegenerationErrorPayload(
                         success=False,
                         message=f"No scenario agent configured for department {data.departmentId}",
                         trace_id=trace_id,
@@ -178,19 +205,20 @@ async def _generate_scenario_ai_impl(
             documents = (
                 json.loads(context_row["documents"])
                 if isinstance(context_row["documents"], str)
-                else context_row["documents"]
+                else context_row["documents"] or []
+            )
+            personas = (
+                json.loads(context_row["personas"])
+                if isinstance(context_row["personas"], str)
+                else context_row["personas"] or []
             )
             parameter_items = (
                 json.loads(context_row["parameter_items"])
                 if isinstance(context_row["parameter_items"], str)
-                else context_row["parameter_items"]
-            )
-            document_templates = (
-                json.loads(context_row["document_templates"])
-                if isinstance(context_row["document_templates"], str)
-                else context_row["document_templates"]
+                else context_row["parameter_items"] or []
             )
 
+            # Build context dict (same structure as generate_ai)
             context = {
                 "agent_id": context_row["agent_id"],
                 "agent_name": context_row["agent_name"],
@@ -215,19 +243,35 @@ async def _generate_scenario_ai_impl(
                 else None,
                 "documents": documents,
                 "parameter_items": parameter_items,
-                "document_templates": document_templates,
+                "document_templates": (
+                    json.loads(context_row["document_templates"])
+                    if isinstance(context_row["document_templates"], str)
+                    else context_row["document_templates"] or []
+                ),
                 "default_guest_profile_id": context_row["guest_profile_id"],
                 "req_per_day": context_row["req_per_day"],
                 "runs_today_count": context_row["runs_today_count"],
                 "earliest_run_created_at": context_row["earliest_run_created_at"],
             }
 
+            # Format input items (same as generation)
+            from app.utils.document.format_document_info import \
+                format_document_info
+            from app.utils.personas import format_persona_info
+            from app.utils.scenario import format_parameter_item_info
+            from app.utils.scenario.format_document_template_info import \
+                format_document_template_info
+
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:
                 persona_info = None
                 show_images = False
             else:
-                persona_info = format_persona_info(context["persona"])
+                persona_dict = context["persona"]
+                if isinstance(persona_dict, dict):
+                    persona_info = format_persona_info(persona_dict)
+                else:
+                    persona_info = None
                 show_images = False
 
             # Format document info if documents were provided
@@ -249,9 +293,17 @@ async def _generate_scenario_ai_impl(
                 context["document_templates"]
             )
 
-            # Create scenario generation tools
+            input_items: list[TResponseInputItem | None] = [
+                persona_info,
+                document_info,
+                parameter_item_info,
+                document_template_info,
+            ]
+
+            clean_input_items = [item for item in input_items if item is not None]
+
+            # Create scenario tools
             group_id = None
-            objectives_enabled = data.objectivesEnabled
             documents_enabled = bool(document_ids and len(document_ids) > 0)
             scenario_tools = create_scenario_tools(
                 group_id,
@@ -260,7 +312,7 @@ async def _generate_scenario_ai_impl(
             )
             scenario_tools.append(debug_info_tool)
 
-            # Create tool use behavior to check when all required tools are called
+            # Create tool use behavior
             def tool_use_behavior(
                 tool_context: RunContextWrapper[Any],
                 tool_results: list[FunctionToolResult],
@@ -291,25 +343,13 @@ async def _generate_scenario_ai_impl(
 
             agent_instance = scenario_agent_generic.agent()
 
-            input_items: list[TResponseInputItem | None] = [
-                persona_info,
-                document_info,
-                parameter_item_info,
-                document_template_info,
-            ]
-
-            clean_input_items = [item for item in input_items if item is not None]
-
             # Use default guest profile from context if no profile_id provided
             final_profile_id = (
-                profile_id if profile_id else context["default_guest_profile_id"]
+                profile_id if profile_id else uuid.UUID(context["default_guest_profile_id"])
             )
-
-            # Check rate limit
-            profile_id_uuid = final_profile_id if final_profile_id else None
-            if not profile_id_uuid:
-                await scenario_generation_error(
-                    ScenarioGenerationErrorPayload(
+            if not final_profile_id:
+                await scenario_regeneration_error(
+                    ScenarioRegenerationErrorPayload(
                         success=False,
                         message="Profile not found. Please contact support.",
                         trace_id=trace_id,
@@ -318,36 +358,7 @@ async def _generate_scenario_ai_impl(
                 )
                 return
 
-            req_per_day = context["req_per_day"]
-            runs_today_count = context["runs_today_count"]
-
-            if req_per_day is not None and runs_today_count >= req_per_day:
-                from datetime import timedelta
-                from zoneinfo import ZoneInfo
-
-                earliest_run_created_at = context["earliest_run_created_at"]
-                if earliest_run_created_at:
-                    next_allowed_utc = earliest_run_created_at + timedelta(days=1)
-                    eastern_tz = ZoneInfo("America/New_York")
-                    next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. "
-                        f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
-                        f"{next_allowed_et.strftime('%B %d, %Y')}."
-                    )
-                else:
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                    )
-                await scenario_generation_error(
-                    ScenarioGenerationErrorPayload(
-                        success=False, message=error_message, trace_id=trace_id
-                    ),
-                    room=sid,
-                )
-                return
-
-            # Create model run with all junction records using SQL file
+            # Create new model run
             sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
             model_run_row = await conn.fetchrow(
                 sql_create_run,
@@ -355,23 +366,15 @@ async def _generate_scenario_ai_impl(
                 context["model_id"],
                 context["agent_id"],
                 "agent",
-                final_profile_id,
+                str(final_profile_id),
                 None,  # key_id
                 str(context["agent_id"]),  # agent_id
             )
             model_run_id = uuid.UUID(model_run_row["run_id"])
 
-            # Log system and developer messages for this run
-            await log_run_messages(
-                conn=conn,
-                run_id=model_run_id,
-                system_prompt=context["system_prompt"],
-                input_items=clean_input_items,
-                department_id=department_id,
-            )
-
+            # Run the agent
             with trace(
-                "Scenario Agent",
+                "Scenario Regeneration",
                 group_id=str(group_id) if group_id else None,
                 trace_id=trace_id,
             ):
@@ -381,16 +384,16 @@ async def _generate_scenario_ai_impl(
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
             
-            # Log assistant message (model output)
+            # Log regeneration messages (reuse existing system/developer, add user + assistant)
             assistant_output = getattr(result, "final_output", None) or ""
-            if assistant_output:
-                await log_run_messages(
-                    conn=conn,
-                    run_id=model_run_id,
-                    system_prompt=None,  # Already logged
-                    assistant_output=assistant_output,
-                    department_id=department_id,
-                )
+            await log_regeneration_messages(
+                conn=conn,
+                run_id=model_run_id,
+                previous_run_id=previous_run_id,
+                user_instructions=data.userInstructions,
+                assistant_output=assistant_output,
+                department_id=department_id,
+            )
 
             # Extract results from the global storage
             scenario_result = scenario_results
@@ -418,49 +421,15 @@ async def _generate_scenario_ai_impl(
             # Limit objectives to maximum 3
             limited_objectives = objectives[:3] if objectives else []
 
-            # Process dynamic documents if any were created
-            dynamic_document_mapping: dict[str, str] | None = None
-            if dynamic_document_results.get("dynamic_documents"):
-                dynamic_document_mapping = {}
-                for doc_request in dynamic_document_results["dynamic_documents"]:
-                    try:
-                        parent_id = uuid.UUID(doc_request["parent_document_id"])
-                        template_args = doc_request["template_args"]
-
-                        # Create child document
-                        # http_request is optional and only used for theme settings
-                        child_id = await create_dynamic_document(
-                            conn=conn,
-                            parent_document_id=parent_id,
-                            template_args=template_args,
-                            department_id=department_id,
-                            profile_id=profile_id,
-                            http_request=None,  # WebSocket doesn't have HTTP request
-                        )
-
-                        dynamic_document_mapping[str(parent_id)] = str(child_id)
-                        logger.info(
-                            f"Created dynamic child document {child_id} from parent {parent_id}"
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to create dynamic document from parent {doc_request.get('parent_document_id')}: {e}",
-                            exc_info=True,
-                        )
-                        # Continue with other documents even if one fails
-
-                # Clear dynamic document results after processing
-                dynamic_document_results.clear()
-
             # Emit completion event
-            await scenario_generation_complete(
-                ScenarioGenerationCompletePayload(
+            await scenario_regeneration_complete(
+                ScenarioRegenerationCompletePayload(
                     success=True,
-                    message="Scenario generated successfully",
+                    message="Scenario regenerated successfully",
                     title=title,
                     description=description,
                     objectives=limited_objectives,
-                    dynamic_document_mapping=dynamic_document_mapping,
+                    dynamic_document_mapping=None,  # Regeneration doesn't create dynamic documents
                     trace_id=trace_id,
                 ),
                 room=sid,
@@ -468,10 +437,10 @@ async def _generate_scenario_ai_impl(
 
     except Exception as e:
         logger.error(
-            f"Error in generate_scenario_ai for {sid}: {str(e)}", exc_info=True
+            f"Error in regenerate_scenario for {sid}: {str(e)}", exc_info=True
         )
-        await scenario_generation_error(
-            ScenarioGenerationErrorPayload(
+        await scenario_regeneration_error(
+            ScenarioRegenerationErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
             ),
             room=sid,
@@ -479,15 +448,15 @@ async def _generate_scenario_ai_impl(
 
 
 @sio.event  # type: ignore
-async def generate_scenario_ai(sid: str, data: dict[str, Any]) -> None:
+async def regenerate_scenario(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
     try:
-        validated = GenerateScenarioAIPayload(**data)
-        await _generate_scenario_ai_impl(sid, validated)
+        validated = RegenerateScenarioPayload(**data)
+        await _regenerate_scenario_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in generate_scenario_ai for {sid}: {e}")
-        await scenario_generation_error(
-            ScenarioGenerationErrorPayload(
+        logger.error(f"Validation error in regenerate_scenario for {sid}: {e}")
+        await scenario_regeneration_error(
+            ScenarioRegenerationErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}", trace_id=None
             ),
             room=sid,
