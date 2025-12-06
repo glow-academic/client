@@ -899,6 +899,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.videos.generate_video import (
             video_generation_complete, video_generation_error,
             video_generation_progress)
+        from app.socket.voice.start_voice import (start_voice_error,
+                                                  start_voice_response)
+        from app.socket.voice.stop_voice import (stop_voice_error,
+                                                 stop_voice_response)
+        from app.socket.voice.tool_call import voice_tool_call_error
 
         # Collect all unique emit functions (use one instance of each event name)
         server_to_client_stubs = [
@@ -939,6 +944,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             document_template_generation_progress,
             document_template_generation_complete,
             document_template_generation_error,
+            # Voice events
+            start_voice_response,
+            start_voice_error,
+            stop_voice_response,
+            stop_voice_error,
+            voice_tool_call_error,
         ]
 
         contract = build_socket_contract(

@@ -30,6 +30,13 @@ class StartVoiceErrorPayload(BaseModel):
     message: str
 
 
+class PersonaToolContext(BaseModel):
+    """Context for a persona tool call."""
+
+    persona_id: str
+    profile_id: str | None
+
+
 class StartVoiceResponsePayload(BaseModel):
     """Server-to-client response payload."""
 
@@ -37,6 +44,7 @@ class StartVoiceResponsePayload(BaseModel):
     message: str
     ephemeral_key: str
     persona_tools: list[dict[str, str]]  # List of {name, description, parameters} for each tool
+    tool_context_map: dict[str, PersonaToolContext]  # Map of tool_name -> PersonaToolContext
     instructions: str  # Orchestrator instructions telling model to use tools
     config: dict[str, Any]  # Session config (model, audio format, etc.)
 
@@ -138,6 +146,44 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             # Create persona tools
             persona_tools = create_persona_tools(personas, chat_id_uuid, conn)
 
+            # Build tool context map: tool_name -> PersonaToolContext
+            # Import sanitize function to match tool names
+            from app.utils.agents.tools.create_persona_tools import \
+                sanitize_persona_name
+            
+            tool_context_map: dict[str, PersonaToolContext] = {}
+            profile_id = context_row.get("profile_id")
+            
+            # Build map by iterating through personas and matching to tools
+            for persona in personas:
+                persona_id_str = persona.get("persona_id") or persona.get("id")
+                persona_name = persona.get("persona_name") or persona.get("name", "")
+                
+                if not persona_id_str:
+                    logger.warning(f"Persona missing id field: {persona}, skipping")
+                    continue
+                
+                # Generate expected tool name using same sanitization
+                expected_tool_name = f"speak_{sanitize_persona_name(persona_name)}"
+                
+                # Find matching tool
+                matching_tool = None
+                for tool in persona_tools:
+                    if tool.name == expected_tool_name:
+                        matching_tool = tool
+                        break
+                
+                if not matching_tool:
+                    logger.warning(
+                        f"Could not find tool {expected_tool_name} for persona {persona_name}, skipping context map entry"
+                    )
+                    continue
+                
+                tool_context_map[matching_tool.name] = PersonaToolContext(
+                    persona_id=str(persona_id_str),
+                    profile_id=str(profile_id) if profile_id else None,
+                )
+
             # Build orchestrator agent (we'll use it when processing realtime events)
             orchestrator_agent = build_orchestrator_agent(context, persona_tools)
             
@@ -175,11 +221,10 @@ You should call exactly one persona tool per user message."""
             # Store orchestrator agent in a session store (we'll use Redis or in-memory dict)
             # For now, we'll store it per chat_id in a global dict
             # In production, use Redis for multi-server support
+            # Note: context_row and personas are no longer needed - context is sent to client
             _voice_sessions[str(chat_id_uuid)] = {
                 "orchestrator_agent": orchestrator_agent,
-                "personas": personas,
-                "context": context,
-                "context_row": dict(context_row),  # Store full context for run creation
+                "context": context,  # Keep for orchestrator agent if needed
             }
 
             # Format persona tools for client (include parameters for RealtimeAgent)
@@ -317,6 +362,7 @@ You should call exactly one persona tool per user message."""
                     message="Voice session started successfully",
                     ephemeral_key=ephemeral_key,
                     persona_tools=persona_tools_response,
+                    tool_context_map=tool_context_map,
                     instructions=orchestrator_instructions,
                     config=session_config,
                 ),

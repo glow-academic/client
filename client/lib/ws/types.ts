@@ -151,7 +151,7 @@ export type ServerToClientEvents = {
     title: string;
     description: string;
     objectives: string[];
-    dynamic_document_mapping: string;
+    dynamic_document_mapping: Record<string, unknown>;
     trace_id: string;
   }) => void;
   scenario_generation_error: (payload: {
@@ -172,7 +172,7 @@ export type ServerToClientEvents = {
     outline_id: string;
     video_name: string;
     questions: { question_text: string; allow_multiple: boolean; options: string }[];
-    question_timestamps: string;
+    question_timestamps: Record<string, unknown>;
     trace_id: string;
   }) => void;
   video_outline_generation_error: (payload: {
@@ -207,15 +207,40 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
     template_html: string;
-    template_schema: string;
+    template_schema: Record<string, unknown>;
     upload_id: string;
-    template_mapping: string;
+    template_mapping: Record<string, unknown>;
     trace_id: string;
   }) => void;
   document_template_generation_error: (payload: {
     success: boolean;
     message: string;
     trace_id: string;
+  }) => void;
+  start_voice_response: (payload: {
+    success: boolean;
+    message: string;
+    ephemeral_key: string;
+    persona_tools: string[];
+    tool_context_map: { object{persona_id: string; profile_id: unknown };
+    instructions: string;
+    config: Record<string, unknown>;
+  }) => void;
+  start_voice_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  stop_voice_response: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  stop_voice_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  voice_tool_call_error: (payload: {
+    success: boolean;
+    message: string;
   }) => void;
 };
 
@@ -249,7 +274,7 @@ export type ClientToServerEvents = {
     attempt_id: string;
     end_all: boolean;
     previous_chat_id: string;
-    previous_chat_map: string;
+    previous_chat_map: Record<string, unknown>;
   }) => void;
   join_chat: (payload: {
     chat_id: string;
@@ -274,8 +299,9 @@ export type ClientToServerEvents = {
   }) => void;
   voice_tool_call: (payload: {
     chat_id: string;
-    tool_name: string;
-    arguments: string;
+    persona_id: string;
+    message: string;
+    profile_id: string;
   }) => void;
   generate_video_outline: (payload: {
     departmentId: string;

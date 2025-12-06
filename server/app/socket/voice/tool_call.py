@@ -16,8 +16,9 @@ class VoiceToolCallPayload(BaseModel):
     """Client-to-server payload for voice_tool_call."""
 
     chat_id: str
-    tool_name: str
-    arguments: dict[str, Any]
+    persona_id: str
+    message: str
+    profile_id: str | None
 
 
 class VoiceToolCallErrorPayload(BaseModel):
@@ -41,7 +42,7 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
     """
     try:
         logger.info(
-            f"Received voice_tool_call from {sid}: tool={data.tool_name}, chat_id={data.chat_id}"
+            f"Received voice_tool_call from {sid}: persona_id={data.persona_id}, chat_id={data.chat_id}"
         )
 
         chat_id = data.chat_id
@@ -54,38 +55,30 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
             )
             return
 
-        # Get voice session
-        session_data = _voice_sessions.get(chat_id)
-        if not session_data:
+        persona_id = data.persona_id
+        message_content = data.message
+        profile_id_val = data.profile_id
+
+        if not persona_id:
             await voice_tool_call_error(
                 VoiceToolCallErrorPayload(
-                    success=False,
-                    message=f"No active voice session for chat {chat_id}",
+                    success=False, message="Missing persona_id"
                 ),
                 room=sid,
             )
             return
 
-        tool_name = data.tool_name
-        tool_arguments = data.arguments
-
-        # Check if it's a persona tool
-        if not tool_name.startswith("speak_"):
-            logger.warning(
-                f"Received non-persona tool call: {tool_name} for chat {chat_id}"
-            )
-            return
-
-        # The tool call contains the message - stream it directly
-        message_content = tool_arguments.get("message", "")
         if not message_content:
-            logger.warning(
-                f"Persona tool {tool_name} called but no message in arguments"
+            await voice_tool_call_error(
+                VoiceToolCallErrorPayload(
+                    success=False, message="Missing message"
+                ),
+                room=sid,
             )
             return
 
         logger.info(
-            f"Persona tool called: {tool_name}, streaming message: {message_content[:100]}..."
+            f"Persona tool called: persona_id={persona_id}, streaming message: {message_content[:100]}..."
         )
 
         # Stream the message via existing WebSocket events
@@ -103,42 +96,57 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
             return
 
         async with pool.acquire() as conn:
-            # Get context from voice session
-            context_row = session_data.get("context_row")
+            # Get context from chat_id (department_id, model_id, etc.)
+            sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+            context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
+            
             if not context_row:
-                logger.error(f"No context found in voice session for chat {chat_id}")
                 await voice_tool_call_error(
                     VoiceToolCallErrorPayload(
                         success=False,
-                        message=f"No context found in voice session for chat {chat_id}",
+                        message=f"Chat {chat_id} not found or no scenario configured",
                     ),
                     room=sid,
                 )
                 return
 
-            # Extract persona name from tool_name (e.g., "speak_passive" -> "passive")
-            persona_name = tool_name.replace("speak_", "").replace("_", " ")
+            # Extract required fields from context and validate they're valid UUIDs
+            department_id_str = context_row.get("department_id")
+            model_id_str = context_row.get("model_id")
             
-            # Find the persona_id from the personas list stored in session
-            # The personas list has keys: persona_id, persona_name (from SQL query)
-            personas = session_data.get("personas", [])
-            persona_id = None
-            for persona in personas:
-                # Check both possible key names (persona_name from SQL, name from dict conversion)
-                persona_name_from_db = persona.get("persona_name") or persona.get("name", "")
-                if persona_name_from_db.lower() == persona_name.lower():
-                    persona_id = persona.get("persona_id") or persona.get("id")
-                    break
-            
-            if not persona_id:
-                logger.error(
-                    f"Persona '{persona_name}' not found in voice session for chat {chat_id}. "
-                    f"Available personas: {[p.get('persona_name') or p.get('name', '') for p in personas]}"
-                )
+            if not department_id_str:
+                logger.error(f"department_id missing from context for chat {chat_id}")
                 await voice_tool_call_error(
                     VoiceToolCallErrorPayload(
                         success=False,
-                        message=f"Persona '{persona_name}' not found in voice session",
+                        message="Missing department_id in context",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            if not model_id_str:
+                logger.error(f"model_id missing from context for chat {chat_id}")
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message="Missing model_id in context",
+                    ),
+                    room=sid,
+                )
+                return
+
+            # Validate and convert to UUID objects to ensure they're valid
+            try:
+                department_id_uuid_obj = uuid.UUID(str(department_id_str))
+                model_id_uuid_obj = uuid.UUID(str(model_id_str))
+                persona_id_uuid_obj = uuid.UUID(str(persona_id))
+            except (ValueError, TypeError) as e:
+                logger.error(f"Invalid UUID format: {e}")
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message=f"Invalid UUID format: {str(e)}",
                     ),
                     room=sid,
                 )
@@ -152,72 +160,92 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                 WHERE mk.model_id = $1::uuid AND mk.active = true
                 LIMIT 1
                 """,
-                context_row.get("model_id"),
+                model_id_uuid_obj,  # Pass UUID object directly
             )
-            key_id = key_id_row["key_id"] if key_id_row else None
+            key_id_uuid_obj = None
+            if key_id_row and key_id_row["key_id"]:
+                try:
+                    key_id_uuid_obj = uuid.UUID(key_id_row["key_id"])
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid key_id format from database: {key_id_row['key_id']}")
+
+            # Convert profile_id to UUID object if present
+            profile_id_uuid_obj = None
+            if profile_id_val:
+                try:
+                    profile_id_uuid_obj = uuid.UUID(str(profile_id_val))
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid profile_id format: {profile_id_val}")
+
+            # Get Simulation Voice Agent ID from persona_agents table (required for runs table)
+            # Personas are linked to agents via persona_agents junction table
+            simulation_agent_row = await conn.fetchrow(
+                """
+                SELECT pa.agent_id
+                FROM persona_agents pa
+                JOIN agents a ON a.id = pa.agent_id
+                WHERE pa.persona_id = $1::uuid 
+                AND pa.active = true 
+                AND a.role = 'simulation-voice'
+                AND a.active = true
+                LIMIT 1
+                """,
+                persona_id_uuid_obj,
+            )
+            if not simulation_agent_row:
+                logger.error(f"Simulation Voice Agent not found for persona {persona_id}")
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message=f"Simulation Voice Agent not found for persona {persona_id}",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            # Ensure agent_id is a UUID object
+            agent_id_value = simulation_agent_row["agent_id"]
+            if isinstance(agent_id_value, str):
+                simulation_agent_id = uuid.UUID(agent_id_value)
+            elif isinstance(agent_id_value, uuid.UUID):
+                simulation_agent_id = agent_id_value
+            else:
+                logger.error(f"Invalid agent_id type: {type(agent_id_value)}")
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message="Invalid agent_id format",
+                    ),
+                    room=sid,
+                )
+                return
 
             # Get or create run for this chat
-            # asyncpg has trouble inferring types when None is passed early in the parameter list
-            # We need to ensure at least one UUID parameter before the first None is a string
             sql_get_or_create_run = load_sql(
                 "sql/v3/simulations/get_or_create_run_for_chat.sql"
             )
             
-            # Prepare parameters - ensure required UUIDs are present
-            dept_id = context_row.get("department_id")
-            model_id = context_row.get("model_id")
-            profile_id_val = context_row.get("profile_id")
+            # Debug log: Show all UUIDs being passed to the query
+            logger.info(
+                f"Calling get_or_create_run_for_chat with: "
+                f"chat_id={chat_id_uuid}, department_id={department_id_uuid_obj}, "
+                f"model_id={model_id_uuid_obj}, persona_id={persona_id_uuid_obj}, "
+                f"profile_id={profile_id_uuid_obj}, key_id={key_id_uuid_obj}, "
+                f"agent_id={simulation_agent_id}"
+            )
             
-            # Validate required fields
-            if not model_id:
-                logger.error(f"model_id missing from context for chat {chat_id}")
-                await voice_tool_call_error(
-                    VoiceToolCallErrorPayload(
-                        success=False,
-                        message="Missing model_id in context",
-                    ),
-                    room=sid,
-                )
-                return
-            
-            if not persona_id:
-                logger.error(f"persona_id missing for chat {chat_id}")
-                await voice_tool_call_error(
-                    VoiceToolCallErrorPayload(
-                        success=False,
-                        message="Missing persona_id",
-                    ),
-                    room=sid,
-                )
-                return
-            
-            # asyncpg has trouble inferring UUID types when None is passed early
-            # Solution: use execute() with explicit type casting, or ensure dept_id is always a string
-            # Since department_id should always exist from context (SQL has fallbacks),
-            # let's ensure it's always a string UUID
-            if not dept_id:
-                logger.error(f"department_id missing from context for chat {chat_id}")
-                await voice_tool_call_error(
-                    VoiceToolCallErrorPayload(
-                        success=False,
-                        message="Missing department_id in context",
-                    ),
-                    room=sid,
-                )
-                return
-            
-            # Use execute() with explicit parameter types by passing all UUIDs as strings
-            # asyncpg will infer UUID type from the SQL casts ($2::uuid, etc.)
+            # Pass UUID objects directly - asyncpg can infer types from UUID objects
+            # This avoids type inference issues when None values are present
             run_row = await conn.fetchrow(
                 sql_get_or_create_run,
-                str(chat_id_uuid),  # $1: chat_id
-                str(dept_id),  # $2: department_id (always present as string)
-                str(model_id),  # $3: model_id (always present as string)
-                str(persona_id),  # $4: entity_id (always present as string)
-                "persona",  # $5: entity_type
-                str(profile_id_val) if profile_id_val else None,  # $6: profile_id
-                str(key_id) if key_id else None,  # $7: key_id
-                None,  # $8: agent_id
+                chat_id_uuid,  # $1: chat_id (UUID object)
+                department_id_uuid_obj,  # $2: department_id (UUID object)
+                model_id_uuid_obj,  # $3: model_id (UUID object)
+                persona_id_uuid_obj,  # $4: entity_id (UUID object)
+                "persona",  # $5: entity_type (string)
+                profile_id_uuid_obj,  # $6: profile_id (UUID object or None)
+                key_id_uuid_obj,  # $7: key_id (UUID object or None)
+                simulation_agent_id,  # $8: agent_id (simulation agent UUID)
             )
 
             if not run_row:
@@ -252,6 +280,38 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
             await conn.execute(
                 sql_link, str(assistant_message["id"]), run_id
             )
+
+            # Get latest message in chat to use as parent for message_tree
+            # (messages with no active children are the latest/leaf nodes)
+            latest_message_row = await conn.fetchrow(
+                """
+                SELECT m.id
+                FROM messages m
+                JOIN message_runs mr ON mr.message_id = m.id
+                JOIN chat_runs cr ON cr.run_id = mr.run_id
+                WHERE cr.chat_id = $1::uuid
+                  AND NOT EXISTS (
+                      SELECT 1 FROM message_tree mt 
+                      WHERE mt.parent_id = m.id AND mt.active = true
+                  )
+                ORDER BY m.created_at DESC
+                LIMIT 1
+                """,
+                chat_id_uuid,
+            )
+
+            # Create message_tree branch if parent message exists
+            if latest_message_row and latest_message_row["id"] != assistant_message["id"]:
+                parent_message_id = latest_message_row["id"]
+                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                await conn.execute(
+                    sql_branch,
+                    str(parent_message_id),
+                    str(assistant_message["id"]),
+                )
+                logger.info(
+                    f"Created message_tree branch from {parent_message_id} to assistant message {assistant_message['id']}"
+                )
 
             # Emit new message event
             from app.socket.simulations.send_message import (
@@ -322,7 +382,7 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
             )
 
             logger.info(
-                f"Streamed persona message from {tool_name} for chat {chat_id}"
+                f"Streamed persona message from persona_id={persona_id} for chat {chat_id}"
             )
 
     except Exception as e:

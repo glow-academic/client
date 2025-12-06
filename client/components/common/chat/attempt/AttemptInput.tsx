@@ -32,6 +32,11 @@ import {
 
 import { useProfile } from "@/contexts/profile-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
+// Note: After ws.json is regenerated with start_voice_response, import and use:
+// import type { ServerToClientEvents } from "@/lib/ws/types";
+// type EventPayload<T extends keyof ServerToClientEvents> =
+//   ServerToClientEvents[T] extends (payload: infer P) => unknown ? P : never;
+// type StartVoiceResponsePayload = EventPayload<"start_voice_response">;
 import { RealtimeAgent, RealtimeSession, tool } from "@openai/agents/realtime";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -89,6 +94,16 @@ export default function AttemptInput({
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const realtimeSessionRef = useRef<RealtimeSession | null>(null);
+  // Use strongly typed tool context map from WebSocket event payload
+  // Fallback type until ws.json is regenerated with start_voice_response
+  type ToolContextMap = Record<
+    string,
+    {
+      persona_id: string;
+      profile_id: string | null;
+    }
+  >;
+  const toolContextMapRef = useRef<ToolContextMap>({});
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -215,6 +230,9 @@ export default function AttemptInput({
           );
         }
 
+        // Clear tool context map
+        toolContextMapRef.current = {};
+
         // Locally tear down session / audio
         await cleanupRealtime();
         toast.success("Voice mode disabled");
@@ -241,53 +259,69 @@ export default function AttemptInput({
         });
         socket.emit("start_voice", { chat_id: currentChat.id });
 
-        // Wait for server response with ephemeral key, tools, instructions, and config
-        const responseData = await new Promise<{
+        // Wait for server response with ephemeral key, tools, instructions, config, and tool context map
+        // Type definition (will use auto-generated types after ws.json regeneration)
+        type StartVoiceResponsePayload = {
           success: boolean;
           message: string;
           ephemeral_key: string;
           persona_tools: Array<{
             name: string;
             description: string;
-            parameters: string; // JSON string from server
+            parameters: string;
           }>;
+          tool_context_map: ToolContextMap;
           instructions: string;
           config: Record<string, unknown>;
-        }>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error("Timeout waiting for voice session start"));
-          }, 10000);
+        };
+        const responseData = await new Promise<StartVoiceResponsePayload>(
+          (resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error("Timeout waiting for voice session start"));
+            }, 10000);
 
-          socket.once("start_voice_response", (data) => {
-            clearTimeout(timeout);
-            // eslint-disable-next-line no-console
-            console.log("[Voice] Received start_voice_response:", {
-              success: data.success,
-              message: data.message,
-              ephemeral_key: data.ephemeral_key
-                ? `${data.ephemeral_key.substring(0, 20)}...`
-                : null,
-              persona_tools_count: data.persona_tools?.length || 0,
-              persona_tools: data.persona_tools,
-              instructions: data.instructions,
-              config: data.config,
+            socket.once("start_voice_response", (data) => {
+              clearTimeout(timeout);
+              // eslint-disable-next-line no-console
+              console.log("[Voice] Received start_voice_response:", {
+                success: data.success,
+                message: data.message,
+                ephemeral_key: data.ephemeral_key
+                  ? `${data.ephemeral_key.substring(0, 20)}...`
+                  : null,
+                persona_tools_count: data.persona_tools?.length || 0,
+                persona_tools: data.persona_tools,
+                tool_context_map: data.tool_context_map,
+                instructions: data.instructions,
+                config: data.config,
+              });
+              if (data.success) {
+                resolve(data);
+              } else {
+                reject(
+                  new Error(data.message || "Failed to start voice session")
+                );
+              }
             });
-            if (data.success) {
-              resolve(data);
-            } else {
+
+            socket.once("start_voice_error", (data) => {
+              clearTimeout(timeout);
+              // eslint-disable-next-line no-console
+              console.error("[Voice] Received start_voice_error:", data);
               reject(
                 new Error(data.message || "Failed to start voice session")
               );
-            }
-          });
+            });
+          }
+        );
 
-          socket.once("start_voice_error", (data) => {
-            clearTimeout(timeout);
-            // eslint-disable-next-line no-console
-            console.error("[Voice] Received start_voice_error:", data);
-            reject(new Error(data.message || "Failed to start voice session"));
-          });
-        });
+        // Store tool context map for later use
+        toolContextMapRef.current = responseData.tool_context_map || {};
+        // eslint-disable-next-line no-console
+        console.log(
+          "[Voice] Stored tool context map:",
+          toolContextMapRef.current
+        );
 
         // Convert server tools to RealtimeAgent tools
         // Parse parameters from server (JSON string) and convert to zod schema
@@ -478,17 +512,40 @@ export default function AttemptInput({
           // eslint-disable-next-line no-console
           console.log("[Voice] Extracted actual arguments:", actualArguments);
 
-          // Forward tool call to server
+          // Extract message from arguments
+          const message = actualArguments["message"] as string;
+          if (!message) {
+            // eslint-disable-next-line no-console
+            console.error(
+              `[Voice] No message in arguments for tool ${toolDef.name}`
+            );
+            return;
+          }
+
+          // Look up persona_id for this tool
+          const toolContext = toolContextMapRef.current[toolDef.name];
+          if (!toolContext) {
+            // eslint-disable-next-line no-console
+            console.error(
+              `[Voice] No context found for tool ${toolDef.name}. Available tools:`,
+              Object.keys(toolContextMapRef.current)
+            );
+            return;
+          }
+
+          // Forward simplified tool call to server
           socket.emit("voice_tool_call", {
             chat_id: currentChat.id,
-            tool_name: toolDef.name,
-            arguments: actualArguments,
+            persona_id: toolContext.persona_id,
+            message: message,
+            profile_id: toolContext.profile_id,
           });
           // eslint-disable-next-line no-console
           console.log("[Voice] Emitted voice_tool_call to server:", {
             chat_id: currentChat.id,
-            tool_name: toolDef.name,
-            arguments: actualArguments,
+            persona_id: toolContext.persona_id,
+            message: message.substring(0, 100),
+            profile_id: toolContext.profile_id,
           });
         });
 

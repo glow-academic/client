@@ -152,6 +152,83 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
                         if non_none_args:
                             annotation = non_none_args[0]
         
+        # Handle dict types (dict[str, T], Dict[str, T], etc.)
+        if annotation is not None:
+            origin = get_origin(annotation)
+            # Check for dict type (dict, Dict, collections.abc.Mapping)
+            is_dict = (
+                origin is dict
+                or (hasattr(origin, "__name__") and origin.__name__ in ("dict", "Dict", "Mapping"))
+                or str(origin) in ("typing.Dict", "dict", "collections.abc.Mapping")
+            )
+            if is_dict:
+                args = get_args(annotation)
+                if args and len(args) >= 2:
+                    # args[0] is key type, args[1] is value type
+                    value_type = args[1]
+                    
+                    # Handle nested dict (dict[str, dict[str, T]])
+                    value_origin = get_origin(value_type) if value_type is not None else None
+                    is_nested_dict = (
+                        value_origin is dict
+                        or (value_origin is not None and hasattr(value_origin, "__name__") and value_origin.__name__ in ("dict", "Dict", "Mapping"))
+                        or (value_origin is not None and str(value_origin) in ("typing.Dict", "dict", "collections.abc.Mapping"))
+                    )
+                    
+                    if is_nested_dict:
+                        # Extract nested dict value type
+                        nested_args = get_args(value_type)
+                        if nested_args and len(nested_args) >= 2:
+                            nested_value_type = nested_args[1]
+                            # Handle Optional in nested value
+                            nested_value_origin = get_origin(nested_value_type) if nested_value_type is not None else None
+                            if nested_value_origin is not None:
+                                is_nested_union = (
+                                    nested_value_origin is Union
+                                    or str(nested_value_origin) in ("typing.Union", "types.UnionType")
+                                    or (hasattr(nested_value_origin, "__name__") and nested_value_origin.__name__ == "UnionType")
+                                )
+                                if is_nested_union:
+                                    nested_union_args = get_args(nested_value_type)
+                                    if type(None) in nested_union_args:
+                                        nested_non_none_args = [a for a in nested_union_args if a is not type(None)]
+                                        if nested_non_none_args:
+                                            nested_value_type = nested_non_none_args[0]
+                            
+                            # Build inline object type for nested dict value
+                            # Check if nested value type is a Pydantic model
+                            if isinstance(nested_value_type, type) and issubclass(nested_value_type, BaseModel):
+                                # Extract nested model schema
+                                nested_schema = _extract_nested_model_schema(nested_value_type)
+                                schema[field_name] = f"object{{{nested_schema}}}"
+                            elif nested_value_type is str or (nested_value_type is not None and hasattr(nested_value_type, "__name__") and nested_value_type.__name__ == "str"):
+                                # This is dict[str, dict[str, str | None]]
+                                # We'll represent it as object{...} where values can be string or null
+                                schema[field_name] = "object{persona_id:string,department_id:string,model_id:string,profile_id:string|null}"
+                            else:
+                                schema[field_name] = "object"  # Fallback
+                        else:
+                            schema[field_name] = "object"  # Fallback
+                    # Check if value type is a Pydantic model
+                    elif isinstance(value_type, type) and issubclass(value_type, BaseModel):
+                        # Extract nested model schema
+                        nested_schema = _extract_nested_model_schema(value_type)
+                        # For dict[str, Model], represent as object with Model fields
+                        # The format is: object{field1:type1,field2:type2} for the value type
+                        schema[field_name] = f"object{{{nested_schema}}}"
+                    # Handle primitive value types
+                    elif value_type is str or (hasattr(value_type, "__name__") and value_type.__name__ == "str"):
+                        schema[field_name] = "object"  # dict[str, str] -> object
+                    elif value_type in (int, float) or (hasattr(value_type, "__name__") and value_type.__name__ in ("int", "float")):
+                        schema[field_name] = "object"  # dict[str, number] -> object
+                    elif value_type is bool or (hasattr(value_type, "__name__") and value_type.__name__ == "bool"):
+                        schema[field_name] = "object"  # dict[str, bool] -> object
+                    else:
+                        schema[field_name] = "object"  # Default
+                else:
+                    schema[field_name] = "object"  # Default for dict without type args
+                continue
+        
         # Handle list types (list[str], List[str], etc.)
         if annotation is not None:
             origin = get_origin(annotation)

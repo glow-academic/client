@@ -38,7 +38,7 @@
         "attempt_id": "string",
         "end_all": "boolean",
         "previous_chat_id": "string",
-        "previous_chat_map": "string"
+        "previous_chat_map": "object"
       }
     },
     "join_chat": {
@@ -77,8 +77,9 @@
     "voice_tool_call": {
       "payload": {
         "chat_id": "string",
-        "tool_name": "string",
-        "arguments": "string"
+        "persona_id": "string",
+        "message": "string",
+        "profile_id": "string"
       }
     },
     "generate_video_outline": {
@@ -308,7 +309,7 @@
         "title": "string",
         "description": "string",
         "objectives": "string[]",
-        "dynamic_document_mapping": "string",
+        "dynamic_document_mapping": "object",
         "trace_id": "string"
       }
     },
@@ -335,7 +336,7 @@
         "outline_id": "string",
         "video_name": "string",
         "questions": "object{question_text:string,allow_multiple:boolean,options:string}[]",
-        "question_timestamps": "string",
+        "question_timestamps": "object",
         "trace_id": "string"
       }
     },
@@ -382,9 +383,9 @@
         "success": "boolean",
         "message": "string",
         "template_html": "string",
-        "template_schema": "string",
+        "template_schema": "object",
         "upload_id": "string",
-        "template_mapping": "string",
+        "template_mapping": "object",
         "trace_id": "string"
       }
     },
@@ -393,6 +394,41 @@
         "success": "boolean",
         "message": "string",
         "trace_id": "string"
+      }
+    },
+    "start_voice_response": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "ephemeral_key": "string",
+        "persona_tools": "string[]",
+        "tool_context_map": "object{object{persona_id:string,profile_id:string}}",
+        "instructions": "string",
+        "config": "object"
+      }
+    },
+    "start_voice_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "stop_voice_response": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "stop_voice_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "voice_tool_call_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
       }
     }
   }
