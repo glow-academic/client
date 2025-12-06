@@ -105,6 +105,8 @@ export default function AttemptChat({
   );
 
   // Simulation state management
+  // Track if we've initialized from server data to prevent overwriting user's current view
+  const hasInitializedFromServerRef = useRef(false);
   const [currentChatIndex, setCurrentChatIndex] = useState(
     initialAttemptData.currentChatIndex ?? 0
   );
@@ -114,15 +116,34 @@ export default function AttemptChat({
 
   // Update state when initial prop changes (from router.refresh())
   useEffect(() => {
-    setAttemptData(initialAttemptData);
-    // Sync currentChatIndex from server data to ensure client stays in sync with server's view
+    // Preserve attemptData during refresh transitions - only update if initialAttemptData is valid
+    // During router.refresh(), initialAttemptData may temporarily be null/undefined
+    if (initialAttemptData) {
+      setAttemptData(initialAttemptData);
+    }
+    // Sync currentChatIndex from server data ONLY on initial load
+    // After that, preserve user's current view during refresh to prevent chat switching
+    // This prevents messages from disappearing when server's currentChatIndex changes
+    // (e.g., due to branching creating new chats)
     if (initialAttemptData?.currentChatIndex !== undefined) {
-      setCurrentChatIndex((prevIndex) => {
-        // Only update if different to avoid unnecessary re-renders
-        return initialAttemptData.currentChatIndex !== prevIndex
-          ? initialAttemptData.currentChatIndex
-          : prevIndex;
-      });
+      if (!hasInitializedFromServerRef.current) {
+        // Initial load: sync from server
+        setCurrentChatIndex(initialAttemptData.currentChatIndex);
+        hasInitializedFromServerRef.current = true;
+      } else if (initialAttemptData.chats) {
+        // Subsequent refreshes: only sync if current chat no longer exists or is invalid
+        // This preserves user's view while still handling edge cases
+        // Use attemptData (current state) to check current chat, not initialAttemptData
+        const currentChatId = attemptData?.chats?.[currentChatIndex]?.chat?.id;
+        const currentChatStillExists = initialAttemptData.chats.some(
+          (c) => c.chat.id === currentChatId
+        );
+        if (!currentChatStillExists && initialAttemptData.chats.length > 0) {
+          // Current chat no longer exists, sync to server's suggestion
+          setCurrentChatIndex(initialAttemptData.currentChatIndex);
+        }
+        // Otherwise, keep current index to preserve user's view
+      }
     }
     // Sync currentContentIndex - ensure it's within valid bounds
     if (initialAttemptData?.chats) {
@@ -137,66 +158,69 @@ export default function AttemptChat({
     }
     // Clear optimistic states for chats that now have server data
     // This ensures server data takes precedence after refresh
-    setOptimisticGradingStates((prev) => {
-      const updated: Record<string, OptimisticGradingState> = {};
-      Object.entries(prev).forEach(([chatId, optimisticState]) => {
-        // Keep optimistic state only if server doesn't have grading state for this chat
-        const chatData = initialAttemptData?.chats?.find(
-          (c) => c.chat.id === chatId
-        );
-        if (!chatData?.gradingState) {
-          updated[chatId] = optimisticState;
-        }
-      });
-      return updated;
-    });
-    // Clear optimistic hints for chats that now have server hints with actual content
-    setOptimisticHints((prev) => {
-      const updated: Record<string, HintsByMessage[]> = {};
-      Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
-        const chatData = initialAttemptData?.chats?.find(
-          (c) => c.chat.id === chatId
-        );
-        const serverHints = chatData?.hints || [];
-
-        // Keep optimistic hints only if server doesn't have complete hints for all messages
-        // A hint is "complete" if it has hints with non-empty text
-        const serverHintsMap = new Map<string, HintsByMessage>();
-        serverHints.forEach((h) => {
-          serverHintsMap.set(h.messageId, h);
-        });
-
-        const missingOrIncompleteHints = optimisticChatHints.filter(
-          (optimisticHint) => {
-            const serverHint = serverHintsMap.get(optimisticHint.messageId);
-            // Keep optimistic hint if:
-            // 1. Server doesn't have hints for this messageId, OR
-            // 2. Server hints exist but don't have the same count as optimistic, OR
-            // 3. Server hints exist but don't have actual content (empty strings)
-            if (!serverHint) {
-              return true; // Server doesn't have this hint yet
-            }
-            // Check if server hints have the same count as optimistic hints
-            const serverHintCount = serverHint.hints.length;
-            const optimisticHintCount = optimisticHint.hints.length;
-            if (serverHintCount !== optimisticHintCount) {
-              return true; // Keep if counts don't match (server data incomplete)
-            }
-            // Check if server hints have actual content (non-empty hint text)
-            const hasContent = serverHint.hints.some(
-              (h) => h.hint && h.hint.trim().length > 0
-            );
-            return !hasContent; // Keep if server hints don't have content yet
+    // Only clear if we have valid server data (not during refresh transition)
+    if (initialAttemptData?.chats) {
+      setOptimisticGradingStates((prev) => {
+        const updated: Record<string, OptimisticGradingState> = {};
+        Object.entries(prev).forEach(([chatId, optimisticState]) => {
+          // Keep optimistic state only if server doesn't have grading state for this chat
+          const chatData = initialAttemptData?.chats?.find(
+            (c) => c.chat.id === chatId
+          );
+          if (!chatData?.gradingState) {
+            updated[chatId] = optimisticState;
           }
-        );
-
-        if (missingOrIncompleteHints.length > 0) {
-          updated[chatId] = missingOrIncompleteHints;
-        }
+        });
+        return updated;
       });
-      return updated;
-    });
-  }, [initialAttemptData]);
+      // Clear optimistic hints for chats that now have server hints with actual content
+      setOptimisticHints((prev) => {
+        const updated: Record<string, HintsByMessage[]> = {};
+        Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
+          const chatData = initialAttemptData?.chats?.find(
+            (c) => c.chat.id === chatId
+          );
+          const serverHints = chatData?.hints || [];
+
+          // Keep optimistic hints only if server doesn't have complete hints for all messages
+          // A hint is "complete" if it has hints with non-empty text
+          const serverHintsMap = new Map<string, HintsByMessage>();
+          serverHints.forEach((h) => {
+            serverHintsMap.set(h.messageId, h);
+          });
+
+          const missingOrIncompleteHints = optimisticChatHints.filter(
+            (optimisticHint) => {
+              const serverHint = serverHintsMap.get(optimisticHint.messageId);
+              // Keep optimistic hint if:
+              // 1. Server doesn't have hints for this messageId, OR
+              // 2. Server hints exist but don't have the same count as optimistic, OR
+              // 3. Server hints exist but don't have actual content (empty strings)
+              if (!serverHint) {
+                return true; // Server doesn't have this hint yet
+              }
+              // Check if server hints have the same count as optimistic hints
+              const serverHintCount = serverHint.hints.length;
+              const optimisticHintCount = optimisticHint.hints.length;
+              if (serverHintCount !== optimisticHintCount) {
+                return true; // Keep if counts don't match (server data incomplete)
+              }
+              // Check if server hints have actual content (non-empty hint text)
+              const hasContent = serverHint.hints.some(
+                (h) => h.hint && h.hint.trim().length > 0
+              );
+              return !hasContent; // Keep if server hints don't have content yet
+            }
+          );
+
+          if (missingOrIncompleteHints.length > 0) {
+            updated[chatId] = missingOrIncompleteHints;
+          }
+        });
+        return updated;
+      });
+    }
+  }, [initialAttemptData, attemptData, currentChatIndex]);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const [showResults, setShowResults] = useState(
@@ -231,6 +255,7 @@ export default function AttemptChat({
   const pendingNextChatIdRef = useRef<string | null>(null);
   const dataFetchedAtRef = useRef<number>(Date.now());
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sendingMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [localElapsedOffset, setLocalElapsedOffset] = useState(0);
 
   // Extract data from v3 response
@@ -736,8 +761,18 @@ export default function AttemptChat({
       audio?: boolean;
     }) => {
       if (data.chat_id === currentChatIdRef.current) {
-        // Don't set isSendingMessage to false here - wait for simulation_run_complete
-        // This event is kept for per-message completion tracking (local UI updates)
+        // Set up fallback timeout to reset isSendingMessage if simulation_run_complete is delayed
+        // This ensures the stop button doesn't get stuck even if the event is delayed or lost
+        if (sendingMessageTimeoutRef.current) {
+          clearTimeout(sendingMessageTimeoutRef.current);
+        }
+        sendingMessageTimeoutRef.current = setTimeout(() => {
+          // Fallback: reset sending state after 2 seconds if simulation_run_complete hasn't fired
+          if (currentChatIdRef.current === data.chat_id) {
+            setIsSendingMessage(false);
+          }
+          sendingMessageTimeoutRef.current = null;
+        }, 2000); // 2 second fallback timeout
 
         // Debounce refresh to prevent multiple rapid refreshes
         if (refreshTimeoutRef.current) {
@@ -753,6 +788,12 @@ export default function AttemptChat({
     const handleSimulationRunComplete = (data: { chat_id: string }) => {
       if (data.chat_id === currentChatIdRef.current) {
         // Global run complete - turn off stop button (all persona tool calls finished)
+        // Clear fallback timeout since we got the real event
+        if (sendingMessageTimeoutRef.current) {
+          clearTimeout(sendingMessageTimeoutRef.current);
+          sendingMessageTimeoutRef.current = null;
+        }
+        // Reset sending state immediately - this is reliable even during refresh transitions
         setIsSendingMessage(false);
       }
     };
@@ -763,6 +804,11 @@ export default function AttemptChat({
       final_content: string;
     }) => {
       if (data.chat_id === currentChatIdRef.current) {
+        // Clear fallback timeout since message was cancelled
+        if (sendingMessageTimeoutRef.current) {
+          clearTimeout(sendingMessageTimeoutRef.current);
+          sendingMessageTimeoutRef.current = null;
+        }
         setIsSendingMessage(false);
         setIsStoppingMessage(false);
       }
@@ -773,6 +819,11 @@ export default function AttemptChat({
       error: string;
     }) => {
       if (data.chat_id === currentChatIdRef.current) {
+        // Clear fallback timeout since there was an error
+        if (sendingMessageTimeoutRef.current) {
+          clearTimeout(sendingMessageTimeoutRef.current);
+          sendingMessageTimeoutRef.current = null;
+        }
         setIsSendingMessage(false);
         setIsStoppingMessage(false);
       }
@@ -863,6 +914,11 @@ export default function AttemptChat({
       success: boolean;
       message: string;
     }) => {
+      // Clear fallback timeout since there was an error
+      if (sendingMessageTimeoutRef.current) {
+        clearTimeout(sendingMessageTimeoutRef.current);
+        sendingMessageTimeoutRef.current = null;
+      }
       setIsSendingMessage(false);
       setIsStoppingMessage(false);
       toast.error(data.message);
@@ -872,6 +928,11 @@ export default function AttemptChat({
       success: boolean;
       message: string;
     }) => {
+      // Clear fallback timeout since stop was requested
+      if (sendingMessageTimeoutRef.current) {
+        clearTimeout(sendingMessageTimeoutRef.current);
+        sendingMessageTimeoutRef.current = null;
+      }
       setIsStoppingMessage(false);
       setIsSendingMessage(false);
       toast.error(data.message);
@@ -1230,6 +1291,10 @@ export default function AttemptChat({
       // Clean up refresh timeout on unmount
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
+      }
+      // Clean up sending message timeout on unmount
+      if (sendingMessageTimeoutRef.current) {
+        clearTimeout(sendingMessageTimeoutRef.current);
       }
     };
   }, [

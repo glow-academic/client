@@ -134,7 +134,9 @@ resolved_dept AS (
     ) as department_id
 ),
 -- Get full scenario data with all metadata
-scenario_full_data AS (
+-- CRITICAL FIX: Use DISTINCT ON to ensure only ONE row per scenario
+-- Multiple agents/models for the same persona can cause multiple rows, leading to duplicate chats
+scenario_full_data_raw AS (
     SELECT 
         s.id as scenario_id,
         s.name as scenario_name,
@@ -228,6 +230,12 @@ scenario_full_data AS (
              s.generated, p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 
              COALESCE(mtl.temperature, 0.0), mrl.reasoning_level, p.color, p.icon, m.id, m.name, m.provider,
              k.key, me.base_url
+),
+-- Select only ONE row per scenario (deterministic: pick first model by ID)
+scenario_full_data AS (
+    SELECT DISTINCT ON (scenario_id) *
+    FROM scenario_full_data_raw
+    ORDER BY scenario_id, model_id
 ),
 -- Create simulation chat (only for scenarios, not videos)
 new_chat AS (

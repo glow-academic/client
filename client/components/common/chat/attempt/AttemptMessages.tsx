@@ -103,6 +103,11 @@ const generateGradientFromHex = (hexColor: string): string => {
   return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
 };
 
+// Utility function to normalize message content for comparison (trim + lowercase)
+const normalizeMessageContent = (content: string): string => {
+  return content.trim().toLowerCase();
+};
+
 export default function AttemptMessages({
   chatId,
   isAttemptOwner = true,
@@ -121,6 +126,7 @@ export default function AttemptMessages({
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const prevChatIdRef = useRef<string | null>(null);
   const targetChatId = chatId || currentChat?.id;
 
   // Create persona lookup map for efficient persona lookup by ID
@@ -166,14 +172,17 @@ export default function AttemptMessages({
 
   // Get messages from props
   // Merge with optimistic messages and streaming content for real-time updates
+  // This ensures messages persist even when propMessages is temporarily empty during router.refresh()
   const messages = useMemo(() => {
+    // If propMessages is null/undefined, return only optimistic messages
     if (!propMessages) return Array.from(optimisticMessages.values());
 
-    // Start with propMessages
+    // Start with propMessages (may be empty array during refresh transition)
     const messageMap = new Map<string, (typeof propMessages)[number]>();
     propMessages.forEach((msg) => messageMap.set(msg.id, msg));
 
     // Add optimistic messages not yet in propMessages
+    // This preserves messages during refresh transitions when propMessages is temporarily empty
     optimisticMessages.forEach((optMsg, id) => {
       if (!messageMap.has(id)) {
         messageMap.set(id, optMsg);
@@ -181,7 +190,7 @@ export default function AttemptMessages({
     });
 
     // Apply streaming content to all messages
-    return Array.from(messageMap.values()).map((msg) => {
+    const messagesWithStreaming = Array.from(messageMap.values()).map((msg) => {
       const streaming = streamingContent.get(msg.id);
       if (
         streaming !== undefined &&
@@ -191,6 +200,73 @@ export default function AttemptMessages({
       }
       return msg;
     });
+
+    // Deduplicate user messages by content (not just ID)
+    // This fixes the issue where temp optimistic messages aren't replaced when content matching fails
+    const deduplicatedMessages: typeof messagesWithStreaming = [];
+    const seenContent = new Map<string, string>(); // normalizedContent -> messageId
+
+    for (const msg of messagesWithStreaming) {
+      // Only deduplicate user messages (type === "query")
+      if (msg.type === "query") {
+        const normalizedContent = normalizeMessageContent(msg.content);
+        const existingMessageId = seenContent.get(normalizedContent);
+
+        if (existingMessageId) {
+          // Duplicate content found - prefer the message with real ID (not optimistic temp ID)
+          const isCurrentOptimistic = msg.id.startsWith("optimistic-user-");
+          const isExistingOptimistic =
+            existingMessageId.startsWith("optimistic-user-");
+
+          if (isCurrentOptimistic && !isExistingOptimistic) {
+            // Current is optimistic, existing is real - skip current
+            continue;
+          } else if (!isCurrentOptimistic && isExistingOptimistic) {
+            // Current is real, existing is optimistic - replace existing
+            const existingIndex = deduplicatedMessages.findIndex(
+              (m) => m.id === existingMessageId
+            );
+            if (existingIndex !== -1) {
+              deduplicatedMessages[existingIndex] = msg;
+              seenContent.set(normalizedContent, msg.id);
+            }
+            continue;
+          } else {
+            // Both are same type - prefer the one from propMessages (server data)
+            const currentIsFromProps = propMessages.some(
+              (m) => m.id === msg.id
+            );
+            const existingIsFromProps = propMessages.some(
+              (m) => m.id === existingMessageId
+            );
+
+            if (currentIsFromProps && !existingIsFromProps) {
+              // Current is from props, existing is not - replace existing
+              const existingIndex = deduplicatedMessages.findIndex(
+                (m) => m.id === existingMessageId
+              );
+              if (existingIndex !== -1) {
+                deduplicatedMessages[existingIndex] = msg;
+                seenContent.set(normalizedContent, msg.id);
+              }
+              continue;
+            } else {
+              // Skip duplicate - keep existing
+              continue;
+            }
+          }
+        } else {
+          // No duplicate found - add message
+          seenContent.set(normalizedContent, msg.id);
+          deduplicatedMessages.push(msg);
+        }
+      } else {
+        // Not a user message - add without deduplication
+        deduplicatedMessages.push(msg);
+      }
+    }
+
+    return deduplicatedMessages;
   }, [propMessages, optimisticMessages, streamingContent]);
 
   // Sort messages chronologically (no grouping)
@@ -285,15 +361,27 @@ export default function AttemptMessages({
   }, [messages.length, messages]);
 
   // Clear streaming content and optimistic messages when chat changes
+  // BUT preserve messages if we're just refreshing the same chat (targetChatId hasn't actually changed)
   useEffect(() => {
-    setStreamingContent(new Map());
-    setOptimisticMessages(new Map());
+    // Only clear if targetChatId actually changed (not just a re-render)
+    // This prevents clearing messages during router.refresh() when staying on the same chat
+    const currentChatId = targetChatId ?? null;
+    if (
+      prevChatIdRef.current !== null &&
+      prevChatIdRef.current !== currentChatId
+    ) {
+      // Chat actually changed, clear optimistic state
+      setStreamingContent(new Map());
+      setOptimisticMessages(new Map());
+    }
+    prevChatIdRef.current = currentChatId;
   }, [targetChatId]);
 
   // Clear streaming content for completed messages when SSR data refreshes
   // Also clear optimistic messages that are now in SSR data
   useEffect(() => {
-    // Don't clear if propMessages is undefined or empty - might be during refresh
+    // Don't clear if propMessages is undefined or empty - might be during refresh transition
+    // This preserves optimistic messages and streaming content during router.refresh() gaps
     if (!propMessages || propMessages.length === 0) return;
 
     // Clear streaming content for messages that are completed in SSR data
@@ -387,14 +475,14 @@ export default function AttemptMessages({
 
           // For user messages, check if there's a matching optimistic message to replace
           if (type === "query") {
-            const normalizedContent = data.content.trim().toLowerCase();
+            const normalizedContent = normalizeMessageContent(data.content);
 
             // Find matching optimistic user message by content
             for (const [tempId, optMsg] of newMap.entries()) {
               if (
                 optMsg.type === "query" &&
                 tempId.startsWith("optimistic-user-") &&
-                optMsg.content.trim().toLowerCase() === normalizedContent
+                normalizeMessageContent(optMsg.content) === normalizedContent
               ) {
                 // Replace temp message with real one (same content, real ID)
                 newMap.delete(tempId);
