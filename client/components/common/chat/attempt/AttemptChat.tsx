@@ -15,14 +15,14 @@ import { ImperativePanelGroupHandle } from "react-resizable-panels";
 
 import type {
   AttemptFullOut,
-  UpdateChatCreatedAtIn,
-  UpdateChatCreatedAtOut,
+  CompleteQuizIn,
+  CompleteQuizOut,
   CreateQuizIn,
   CreateQuizOut,
   SubmitQuizResponseIn,
   SubmitQuizResponseOut,
-  CompleteQuizIn,
-  CompleteQuizOut,
+  UpdateChatCreatedAtIn,
+  UpdateChatCreatedAtOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
 import {
   Select,
@@ -43,6 +43,14 @@ type UpdateChatCreatedAtBody = UpdateChatCreatedAtIn extends { body: infer B }
   ? B
   : never;
 
+// ContentItem type - derived from ChatData but with questions extracted from video
+// This matches what VideoAttemptView expects (ContentItem has questions at top level)
+type AttemptFullResponse = AttemptFullOut;
+type ChatDataType = AttemptFullResponse["chats"][number];
+export type ContentItem = ChatDataType & {
+  questions: NonNullable<ChatDataType["video"]>["questions"];
+};
+
 interface AttemptChatProps {
   attemptId: string;
   attemptData: AttemptFullOut;
@@ -60,7 +68,7 @@ export default function AttemptChat({
   attemptId,
   attemptData: initialAttemptData,
   updateChatCreatedAtAction,
-  createQuizAction,
+  createQuizAction: _createQuizAction,
   submitQuizResponseAction,
   completeQuizAction,
 }: AttemptChatProps) {
@@ -68,8 +76,6 @@ export default function AttemptChat({
   const { effectiveProfile, activeProfile, socket, isConnected } = useProfile();
 
   // Infer types from the API response
-  type AttemptFullResponse = AttemptFullOut;
-  type ChatDataType = AttemptFullResponse["chats"][number];
   type Chat = ChatDataType["chat"];
 
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
@@ -103,6 +109,9 @@ export default function AttemptChat({
     initialAttemptData.currentChatIndex ?? 0
   );
 
+  // Content index state - tracks which content item (chat/video) is currently displayed
+  const [currentContentIndex, setCurrentContentIndex] = useState(0);
+
   // Update state when initial prop changes (from router.refresh())
   useEffect(() => {
     setAttemptData(initialAttemptData);
@@ -113,6 +122,17 @@ export default function AttemptChat({
         return initialAttemptData.currentChatIndex !== prevIndex
           ? initialAttemptData.currentChatIndex
           : prevIndex;
+      });
+    }
+    // Sync currentContentIndex - ensure it's within valid bounds
+    if (initialAttemptData?.chats) {
+      const contentLength = initialAttemptData.chats.length;
+      setCurrentContentIndex((prevIndex) => {
+        // Clamp to valid range
+        if (prevIndex >= contentLength) {
+          return Math.max(0, contentLength - 1);
+        }
+        return prevIndex;
       });
     }
     // Clear optimistic states for chats that now have server data
@@ -220,6 +240,19 @@ export default function AttemptChat({
   const attempt = attemptData?.attempt || null;
   const simulation = attemptData?.simulation || null;
 
+  // Derive content array from chats - maps ChatData to ContentItem format
+  // ContentItem has questions extracted from video.questions for easier access
+  const content = useMemo<ContentItem[]>(() => {
+    if (!attemptData?.chats) return [];
+    return attemptData.chats.map((chatData) => ({
+      ...chatData,
+      questions: chatData.video?.questions || [],
+    }));
+  }, [attemptData]);
+
+  // Expected content count - total number of content items (chats + videos)
+  const expectedContentCount = useMemo(() => content.length, [content.length]);
+
   // Current chat based on index (client-controlled, defaults to server's suggestion)
   const currentChat = useMemo(() => {
     if (!attemptData?.chats || attemptData.chats.length === 0) return null;
@@ -228,11 +261,11 @@ export default function AttemptChat({
   }, [attemptData, currentChatIndex]);
 
   // Get current content item (full ContentItem object) to access contentType, video, quiz
-  const currentContentItem = useMemo(() => {
-    if (!attemptData?.content || attemptData.content.length === 0) return null;
-    const contentItem = attemptData.content[currentContentIndex];
-    return contentItem || attemptData.content[0] || null;
-  }, [attemptData, currentContentIndex]);
+  const currentContentItem = useMemo<ContentItem | null>(() => {
+    if (!content || content.length === 0) return null;
+    const contentItem = content[currentContentIndex];
+    return contentItem || content[0] || null;
+  }, [content, currentContentIndex]);
 
   // Get scenario, documents from v3 data
   const scenario = useMemo(() => {
@@ -1428,6 +1461,44 @@ export default function AttemptChat({
     }
   }, [displayChat, currentChatIndex, scenarioDocuments, selectedDocumentId]);
 
+  // Check contentType to determine which view to render
+  const contentType = currentContentItem?.contentType || "scenario";
+
+  // Helper function to handle quiz completion
+  const handleVideoComplete = useCallback(
+    async (quizId: string) => {
+      if (!completeQuizAction) return;
+      try {
+        await completeQuizAction({ body: { quizId } });
+        router.refresh();
+      } catch {
+        // Error handling - quiz completion failed silently
+      }
+    },
+    [completeQuizAction, router]
+  );
+
+  // Helper function to handle quiz response submission
+  const handleSubmitQuizResponse = useCallback(
+    async (
+      quizId: string,
+      questionId: string,
+      optionId: string,
+      _isCorrect: boolean
+    ) => {
+      if (!submitQuizResponseAction) return;
+      try {
+        await submitQuizResponseAction({
+          body: { quizId, questionId, optionId },
+        });
+        router.refresh();
+      } catch {
+        // Error handling - quiz response submission failed silently
+      }
+    },
+    [submitQuizResponseAction, router]
+  );
+
   if (!chats || chats.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
@@ -1505,58 +1576,27 @@ export default function AttemptChat({
     );
   }
 
-  // Check contentType to determine which view to render
-  const contentType = currentContentItem?.contentType || "scenario";
-
-  // Helper function to handle quiz completion
-  const handleVideoComplete = useCallback(
-    async (quizId: string) => {
-      if (!completeQuizAction) return;
-      try {
-        await completeQuizAction({ body: { quizId } });
-        router.refresh();
-      } catch (error) {
-        console.error("Failed to complete quiz:", error);
-      }
-    },
-    [completeQuizAction, router]
-  );
-
-  // Helper function to handle quiz response submission
-  const handleSubmitQuizResponse = useCallback(
-    async (
-      quizId: string,
-      questionId: string,
-      optionId: string,
-      isCorrect: boolean
-    ) => {
-      if (!submitQuizResponseAction) return;
-      try {
-        await submitQuizResponseAction({
-          body: { quizId, questionId, optionId, isCorrect },
-        });
-        router.refresh();
-      } catch (error) {
-        console.error("Failed to submit quiz response:", error);
-      }
-    },
-    [submitQuizResponseAction, router]
-  );
-
   // If video content type, render VideoAttemptView
   if (contentType === "video" && currentContentItem) {
     // Get documents (policies) - video documents come from video.policies in contentItem
     // scenarioDocuments may also contain policy documents, so combine both sources
     const videoDocuments = currentContentItem.video?.policies || [];
-    const scenarioPolicyDocuments = scenarioDocuments.filter((doc) => 
-      doc.type === "policy" || 
-      (doc.parameter_item_ids && Array.isArray(doc.parameter_item_ids) && doc.parameter_item_ids.length > 0)
+    const scenarioPolicyDocuments = scenarioDocuments.filter(
+      (doc) =>
+        doc.type === "policy" ||
+        (doc.parameter_item_ids &&
+          Array.isArray(doc.parameter_item_ids) &&
+          doc.parameter_item_ids.length > 0)
     );
     // Combine and deduplicate by document_id
-    const allPolicyDocuments = [...videoDocuments, ...scenarioPolicyDocuments];
+    // videoDocuments are PolicyItem (has 'id'), scenarioDocuments are ScenarioDocumentItem (has 'document_id')
+    const allPolicyDocuments = [
+      ...videoDocuments.map((doc) => ({ ...doc, document_id: doc.id })),
+      ...scenarioPolicyDocuments,
+    ];
     const uniquePolicyDocuments = Array.from(
-      new Map(allPolicyDocuments.map(doc => [doc.document_id || doc.id, doc])).values()
-    );
+      new Map(allPolicyDocuments.map((doc) => [doc.document_id, doc])).values()
+    ) as typeof scenarioDocuments;
 
     return (
       <VideoAttemptView
@@ -1569,7 +1609,7 @@ export default function AttemptChat({
         onVideoComplete={handleVideoComplete}
         onSubmitQuizResponse={handleSubmitQuizResponse}
         onContinue={() => {
-          if (currentContentIndex < (attemptData?.content.length ?? 0) - 1) {
+          if (currentContentIndex < content.length - 1) {
             setCurrentContentIndex(currentContentIndex + 1);
           }
         }}

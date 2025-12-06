@@ -53,7 +53,7 @@ async def _generate_ephemeral_key_internal() -> tuple[str, int]:
             json={
                 "session": {
                     "type": "realtime",
-                    "model": "gpt-realtime",
+                    "model": "gpt-realtime-mini",
                 }
             },
             timeout=30.0,

@@ -177,18 +177,12 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
 
             # Build session config
             session_config = {
-                "model": "gpt-realtime",
+                "model": "gpt-realtime-mini",
                 "inputAudioFormat": "pcm16",
                 "outputAudioFormat": "pcm16",
                 "inputAudioTranscription": {
                     "model": "gpt-4o-mini-transcribe",
-                },
-                "turnDetection": {
-                    "type": "server_vad",
-                    "threshold": 0.5,
-                    "prefixPaddingMs": 300,
-                    "silenceDurationMs": 500,
-                },
+                }
             }
 
             logger.info(

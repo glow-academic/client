@@ -7,6 +7,7 @@
 "use client";
 
 import type { AttemptFullOut } from "@/app/(main)/home/a/[attemptId]/page";
+import type { ContentItem } from "./AttemptChat";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
@@ -51,9 +52,6 @@ import {
 import PolicyViewer from "@/components/common/chat/viewers/PolicyViewer";
 import { formatTime } from "@/utils/time";
 import VideoQuestionPopover from "./VideoQuestionPopover";
-
-// Extract types from AttemptFullOut
-type ContentItem = AttemptFullOut["content"][number];
 type VideoItem = NonNullable<ContentItem["video"]>;
 type QuizItem = NonNullable<ContentItem["quiz"]>;
 type QuestionItem = ContentItem["questions"][number];
