@@ -93,6 +93,7 @@ interface ActiveAttemptViewProps {
     content: string;
     createdAt: string;
     completed?: boolean;
+    personaId?: string;
   }>;
   currentChatHints: Array<{
     messageId: string;
@@ -102,6 +103,12 @@ interface ActiveAttemptViewProps {
       idx: number;
       createdAt: string;
     }>;
+  }>;
+  personas?: Array<{
+    id: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
   }>;
   isAttemptOwner: boolean;
   isSendingMessage: boolean;
@@ -140,6 +147,7 @@ export default function ActiveAttemptView({
   inputPanelGroupRef,
   currentMessages,
   currentChatHints,
+  personas,
   isAttemptOwner,
   isSendingMessage,
   isStoppingMessage,
@@ -415,6 +423,7 @@ export default function ActiveAttemptView({
                       isActive={!timer.expired}
                       simulation={simulation}
                       currentChatHints={currentChatHints}
+                      personas={personas}
                       scenario={scenario}
                     />
                   </div>

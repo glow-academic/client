@@ -369,7 +369,44 @@ export default function AttemptChat({
     const chatData = attemptData.chats.find(
       (c) => c.chat.id === currentChat.id
     );
-    return chatData?.messages ?? [];
+    const messages = chatData?.messages ?? [];
+    // Transform messages to match expected type (personaId: string | null -> optional string)
+    return messages.map((msg) => {
+      const result: {
+        id: string;
+        type: string;
+        content: string;
+        createdAt: string;
+        completed?: boolean;
+        personaId?: string;
+      } = {
+        id: msg.id,
+        type: msg.type,
+        content: msg.content,
+        createdAt: msg.createdAt,
+        completed: msg.completed,
+      };
+      if (msg.personaId) {
+        result.personaId = msg.personaId;
+      }
+      return result;
+    });
+  }, [attemptData, currentChat]);
+
+  // Personas - get personas for current chat
+  const currentPersonas = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return [];
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    const personas = chatData?.personas ?? [];
+    // Transform personas to match expected type (icon/color optional -> required but nullable)
+    return personas.map((p) => ({
+      id: p.id,
+      name: p.name,
+      icon: p.icon ?? null,
+      color: p.color ?? null,
+    }));
   }, [attemptData, currentChat]);
 
   // Hints - get hints for current chat (merged from server + optimistic)
@@ -666,6 +703,7 @@ export default function AttemptChat({
       content: string;
       completed: boolean;
       created_at: string;
+      persona_id?: string;
     }) => {
       // Handle message start for assistant messages
       if (
@@ -1557,6 +1595,7 @@ export default function AttemptChat({
         selectedDocumentId={selectedDocumentId}
         currentMessages={currentMessages}
         currentChatHints={currentChatHints}
+        personas={currentPersonas}
         isAttemptOwner={isAttemptOwner}
         chatPicker={chatPicker}
         selectedScenario={selectedScenario}
@@ -1649,6 +1688,7 @@ export default function AttemptChat({
       }
       currentMessages={currentMessages}
       currentChatHints={currentChatHints}
+      personas={currentPersonas}
       isAttemptOwner={isAttemptOwner}
       isSendingMessage={isSendingMessage}
       isStoppingMessage={isStoppingMessage}

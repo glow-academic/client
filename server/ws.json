@@ -3,28 +3,28 @@
     "send_simulation_message": {
       "payload": {
         "chat_id": "string",
-        "message": "string",
-        "is_retry": "boolean"
+        "message": "?string",
+        "is_retry": "?boolean"
       }
     },
     "start_simulation": {
       "payload": {
         "simulation_id": "string",
-        "profile_id": "string",
-        "scenario_id": "string",
-        "infinite": "boolean",
-        "infinite_time_limit": "number"
+        "profile_id": "?string",
+        "scenario_id": "?string",
+        "infinite": "?boolean",
+        "infinite_time_limit": "?number"
       }
     },
     "create_practice_scenario": {
       "payload": {
-        "persona_id": "string",
-        "parameter_item_ids": "string[]",
-        "department_id": "string",
-        "infinite_mode": "boolean",
-        "infinite_time_limit": "number",
-        "simulation_id": "string",
-        "profile_id": "string"
+        "persona_id": "?string",
+        "parameter_item_ids": "?string[]",
+        "department_id": "?string",
+        "infinite_mode": "?boolean",
+        "infinite_time_limit": "?number",
+        "simulation_id": "?string",
+        "profile_id": "?string"
       }
     },
     "stop_simulation": {
@@ -36,27 +36,27 @@
       "payload": {
         "chat_id": "string",
         "attempt_id": "string",
-        "end_all": "boolean",
-        "previous_chat_id": "string",
-        "previous_chat_map": "object"
+        "end_all": "?boolean",
+        "previous_chat_id": "?string",
+        "previous_chat_map": "object{string:string|null}"
       }
     },
     "join_chat": {
       "payload": {
         "chat_id": "string",
-        "chat_type": "string"
+        "chat_type": "?string"
       }
     },
     "leave_chat": {
       "payload": {
         "chat_id": "string",
-        "chat_type": "string"
+        "chat_type": "?string"
       }
     },
     "stop_chat": {
       "payload": {
         "chat_id": "string",
-        "chat_type": "string"
+        "chat_type": "?string"
       }
     },
     "start_voice": {
@@ -79,45 +79,45 @@
         "chat_id": "string",
         "persona_id": "string",
         "message": "string",
-        "profile_id": "string"
+        "profile_id": "?string"
       }
     },
     "voice_user_message": {
       "payload": {
         "chat_id": "string",
         "message": "string",
-        "transcription_id": "string"
+        "transcription_id": "?string"
       }
     },
     "generate_video_outline": {
       "payload": {
         "departmentId": "string",
-        "documentIds": "string[]",
-        "questionIds": "string[]",
-        "parameterItemIds": "string[]",
-        "existingQuestions": "object{question_id:string,question_text:string,allow_multiple:boolean,times:number,options:string}[]",
-        "profileId": "string",
-        "videoId": "string",
-        "videoLengthSeconds": "number",
-        "useQuestions": "boolean",
-        "personaIds": "string[]"
+        "documentIds": "?string[]",
+        "questionIds": "?string[]",
+        "parameterItemIds": "?string[]",
+        "existingQuestions": "?object{question_id:string|null,question_text:string,allow_multiple:boolean,times:number|null,options:string|null}[]",
+        "profileId": "?string",
+        "videoId": "?string",
+        "videoLengthSeconds": "?number",
+        "useQuestions": "?boolean",
+        "personaIds": "?string[]"
       }
     },
     "generate_video": {
       "payload": {
         "videoId": "string",
         "prompt": "string",
-        "imageReferenceId": "string"
+        "imageReferenceId": "?string"
       }
     },
     "generate_document_template": {
       "payload": {
         "departmentId": "string",
-        "profileId": "string",
-        "documentId": "string",
-        "documentName": "string",
-        "documentDescription": "string",
-        "fieldIds": "string[]"
+        "profileId": "?string",
+        "documentId": "?string",
+        "documentName": "?string",
+        "documentDescription": "?string",
+        "fieldIds": "?string[]"
       }
     }
   },
@@ -182,7 +182,7 @@
         "content": "string",
         "completed": "boolean",
         "created_at": "string",
-        "persona_id": "string"
+        "persona_id": "?string"
       }
     },
     "simulation_message_token": {
@@ -217,36 +217,36 @@
     "hint_generation_progress": {
       "payload": {
         "type": "string",
-        "message": "string",
-        "error": "string",
+        "message": "?string",
+        "error": "?string",
         "chat_id": "string",
         "message_id": "string",
-        "hint_ids": "string[]",
-        "hints_count": "number",
-        "hints": "object{idx:number,hint:string}[]"
+        "hint_ids": "?string[]",
+        "hints_count": "?number",
+        "hints": "?object{idx:number,hint:string}[]"
       }
     },
     "simulation_grading_progress": {
       "payload": {
         "type": "string",
         "chat_id": "string",
-        "message": "string",
-        "error": "string",
-        "rubric_name": "string",
-        "standards_count": "number",
-        "grade_id": "string",
-        "total_score": "number",
-        "passed": "boolean",
-        "standards_graded": "number",
-        "time_taken": "number",
-        "summary": "string",
-        "standard_group_name": "string",
-        "standard_group_short_name": "string",
-        "score": "number",
-        "feedback_preview": "string",
-        "completed_count": "number",
-        "total_count": "number",
-        "summary_preview": "string"
+        "message": "?string",
+        "error": "?string",
+        "rubric_name": "?string",
+        "standards_count": "?number",
+        "grade_id": "?string",
+        "total_score": "?number",
+        "passed": "?boolean",
+        "standards_graded": "?number",
+        "time_taken": "?number",
+        "summary": "?string",
+        "standard_group_name": "?string",
+        "standard_group_short_name": "?string",
+        "score": "?number",
+        "feedback_preview": "?string",
+        "completed_count": "?number",
+        "total_count": "?number",
+        "summary_preview": "?string"
       }
     },
     "simulation_continued": {
@@ -254,9 +254,9 @@
         "success": "boolean",
         "message": "string",
         "completed_chat_id": "string",
-        "next_chat_id": "string",
-        "is_attempt_finished": "boolean",
-        "simulation_grade_id": "string"
+        "next_chat_id": "?string",
+        "is_attempt_finished": "?boolean",
+        "simulation_grade_id": "?string"
       }
     },
     "end_all_started": {
@@ -276,17 +276,17 @@
         "success": "boolean",
         "message": "string",
         "chat_id": "string",
-        "attempt_id": "string",
-        "completed_chat_ids": "string[]",
-        "next_chat_ids": "string[]",
-        "all_completed": "boolean"
+        "attempt_id": "?string",
+        "completed_chat_ids": "?string[]",
+        "next_chat_ids": "?string[]",
+        "all_completed": "?boolean"
       }
     },
     "connection_confirmed": {
       "payload": {
         "sid": "string",
-        "profile_id": "string",
-        "guest_id": "string",
+        "profile_id": "?string",
+        "guest_id": "?string",
         "server_time": "number"
       }
     },
@@ -305,9 +305,9 @@
     "scenario_generation_progress": {
       "payload": {
         "type": "string",
-        "message": "string",
-        "tool_name": "string",
-        "trace_id": "string"
+        "message": "?string",
+        "tool_name": "?string",
+        "trace_id": "?string"
       }
     },
     "scenario_generation_complete": {
@@ -317,22 +317,22 @@
         "title": "string",
         "description": "string",
         "objectives": "string[]",
-        "dynamic_document_mapping": "object",
-        "trace_id": "string"
+        "dynamic_document_mapping": "object{string:string}",
+        "trace_id": "?string"
       }
     },
     "scenario_generation_error": {
       "payload": {
         "success": "boolean",
         "message": "string",
-        "trace_id": "string"
+        "trace_id": "?string"
       }
     },
     "video_outline_generation_progress": {
       "payload": {
         "type": "string",
-        "message": "string",
-        "trace_id": "string"
+        "message": "?string",
+        "trace_id": "?string"
       }
     },
     "video_outline_generation_complete": {
@@ -341,49 +341,49 @@
         "message": "string",
         "name": "string",
         "outline": "string",
-        "outline_id": "string",
-        "video_name": "string",
-        "questions": "object{question_text:string,allow_multiple:boolean,options:string}[]",
+        "outline_id": "?string",
+        "video_name": "?string",
+        "questions": "?object{question_text:string,allow_multiple:boolean,options:string}[]",
         "question_timestamps": "object",
-        "trace_id": "string"
+        "trace_id": "?string"
       }
     },
     "video_outline_generation_error": {
       "payload": {
         "success": "boolean",
         "message": "string",
-        "trace_id": "string"
+        "trace_id": "?string"
       }
     },
     "video_generation_progress": {
       "payload": {
         "type": "string",
-        "message": "string",
-        "status": "string",
-        "progress": "number",
-        "video_id": "string"
+        "message": "?string",
+        "status": "?string",
+        "progress": "?number",
+        "video_id": "?string"
       }
     },
     "video_generation_complete": {
       "payload": {
         "success": "boolean",
         "message": "string",
-        "videoUrl": "string",
-        "videoId": "string"
+        "videoUrl": "?string",
+        "videoId": "?string"
       }
     },
     "video_generation_error": {
       "payload": {
         "success": "boolean",
         "message": "string",
-        "video_id": "string"
+        "video_id": "?string"
       }
     },
     "document_template_generation_progress": {
       "payload": {
         "type": "string",
-        "message": "string",
-        "trace_id": "string"
+        "message": "?string",
+        "trace_id": "?string"
       }
     },
     "document_template_generation_complete": {
@@ -394,14 +394,14 @@
         "template_schema": "object",
         "upload_id": "string",
         "template_mapping": "object",
-        "trace_id": "string"
+        "trace_id": "?string"
       }
     },
     "document_template_generation_error": {
       "payload": {
         "success": "boolean",
         "message": "string",
-        "trace_id": "string"
+        "trace_id": "?string"
       }
     },
     "start_voice_response": {
@@ -410,7 +410,7 @@
         "message": "string",
         "ephemeral_key": "string",
         "persona_tools": "string[]",
-        "tool_context_map": "object{object{persona_id:string,profile_id:string}}",
+        "tool_context_map": "object{string:object{persona_id:string,profile_id:string|null}}",
         "instructions": "string",
         "config": "object"
       }

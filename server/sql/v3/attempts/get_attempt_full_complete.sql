@@ -636,6 +636,26 @@
             FROM messages_with_tree mwt
             GROUP BY mwt.chat_id
         ),
+        -- Get personas for each chat (from scenario_personas via chat's scenario_id)
+        personas_per_chat AS (
+            SELECT 
+                cb.id as chat_id,
+                COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'id', p.id::text,
+                            'name', p.name,
+                            'icon', p.icon,
+                            'color', p.color
+                        ) ORDER BY p.name
+                    ),
+                    '[]'::jsonb
+                ) as personas
+            FROM chats_base cb
+            LEFT JOIN scenario_personas sp ON sp.scenario_id = cb.scenario_id AND sp.active = true
+            LEFT JOIN personas p ON p.id = sp.persona_id AND p.active = true
+            GROUP BY cb.id
+        ),
         hints_data AS (
             SELECT 
                 rc.chat_id,
@@ -986,6 +1006,7 @@
                     'feedbacks', COALESCE(fg.feedbacks, '[]'::jsonb),
                     'dynamicRubric', drpc.dynamic_rubric,
                     'gradingState', gspc.grading_state,
+                    'personas', COALESCE(ppc.personas, '[]'::jsonb),
                     -- Use root parent scenario ID to get previous chats from previous_chats_for_scenarios
                     'previousChats', COALESCE(
                         (SELECT previous_chats 
@@ -1010,6 +1031,7 @@
             LEFT JOIN feedbacks_grouped fg ON fg.grade_id = (gd.grade->>'id')::uuid
             LEFT JOIN dynamic_rubric_per_chat drpc ON drpc.chat_id = cb.id
             LEFT JOIN grading_state_per_chat gspc ON gspc.chat_id = cb.id
+            LEFT JOIN personas_per_chat ppc ON ppc.chat_id = cb.id
         ),
         -- Videos with quiz data
         videos_with_all_data AS (
@@ -1047,6 +1069,7 @@
                     'feedbacks', '[]'::jsonb,  -- Videos don't have feedbacks
                     'dynamicRubric', NULL::jsonb,  -- Videos don't have rubrics
                     'gradingState', NULL::jsonb,  -- Videos don't have grading state
+                    'personas', '[]'::jsonb,  -- Videos don't have personas
                     'previousChats', '[]'::jsonb,  -- Videos don't have previous chats
                     'contentType', 'video'::text,
                     'video', jsonb_build_object(

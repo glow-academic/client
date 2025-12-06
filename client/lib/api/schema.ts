@@ -5261,6 +5261,11 @@ export interface components {
             dynamicRubric?: components["schemas"]["DynamicRubric"] | null;
             /** Previouschats */
             previousChats: components["schemas"]["PreviousChat"][];
+            /**
+             * Personas
+             * @default []
+             */
+            personas: components["schemas"]["app__api__v3__attempts__full__PersonaItem"][];
             /** Contenttype */
             contentType?: string | null;
             video?: components["schemas"]["app__api__v3__attempts__full__VideoItem"] | null;
@@ -9432,52 +9437,6 @@ export interface components {
             profileId: string;
         };
         /**
-         * PersonaItem
-         * @description Individual persona item in the response.
-         */
-        PersonaItem: {
-            /** Persona Id */
-            persona_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Temperature Display */
-            temperature_display: string;
-            /** Active */
-            active: boolean;
-            /** Is Inactive */
-            is_inactive: boolean;
-            /** Num Scenarios */
-            num_scenarios: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
          * PersonaMappingItem
          * @description Persona mapping item with custom color and icon fields
          */
@@ -9634,7 +9593,7 @@ export interface components {
          */
         PersonasListResponse: {
             /** Personas */
-            personas: components["schemas"]["PersonaItem"][];
+            personas: components["schemas"]["app__api__v3__personas__list__PersonaItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
@@ -13519,6 +13478,17 @@ export interface components {
             /** Can Edit */
             can_edit: boolean;
         };
+        /** PersonaItem */
+        app__api__v3__attempts__full__PersonaItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Icon */
+            icon?: string | null;
+            /** Color */
+            color?: string | null;
+        };
         /** ScenarioItem */
         app__api__v3__attempts__full__ScenarioItem: {
             /** Id */
@@ -14332,6 +14302,52 @@ export interface components {
             };
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__detail__DebugInfoItem"][];
+        };
+        /**
+         * PersonaItem
+         * @description Individual persona item in the response.
+         */
+        app__api__v3__personas__list__PersonaItem: {
+            /** Persona Id */
+            persona_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Agent Id */
+            agent_id: string | null;
+            /** Agent Name */
+            agent_name: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Model Name */
+            model_name: string | null;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number;
+            /** Temperature Display */
+            temperature_display: string;
+            /** Active */
+            active: boolean;
+            /** Is Inactive */
+            is_inactive: boolean;
+            /** Num Scenarios */
+            num_scenarios: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Can Delete */
+            can_delete: boolean;
         };
         /**
          * DebugInfoItem

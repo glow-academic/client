@@ -96,6 +96,8 @@ def _extract_nested_model_schema(model: type[BaseModel]) -> str:
     fields: list[str] = []
     for field_name, field_info in model.model_fields.items():
         annotation = field_info.annotation
+        is_optional = False
+        
         # Handle Optional types
         if annotation is not None:
             origin = get_origin(annotation)
@@ -108,9 +110,14 @@ def _extract_nested_model_schema(model: type[BaseModel]) -> str:
                 if is_union:
                     args = get_args(annotation)
                     if type(None) in args:
+                        is_optional = True
                         non_none_args = [a for a in args if a is not type(None)]
                         if non_none_args:
                             annotation = non_none_args[0]
+        
+        # Check if field is required (Pydantic v2)
+        if not field_info.is_required() and not is_optional:
+            is_optional = True
         
         # Map to simple type strings
         if annotation is str or "str" in str(annotation):
@@ -122,16 +129,29 @@ def _extract_nested_model_schema(model: type[BaseModel]) -> str:
         else:
             field_type = "string"  # Default
         
+        # Add |null for optional fields
+        if is_optional:
+            field_type = f"{field_type}|null"
+        
         fields.append(f"{field_name}:{field_type}")
     
     return f"object{{{','.join(fields)}}}"
 
 
 def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
-    """Extract simple type strings from Pydantic model fields."""
+    """Extract simple type strings from Pydantic model fields.
+    
+    Optional fields are marked with a '?' prefix in the type string.
+    """
     schema: dict[str, str] = {}
     for field_name, field_info in model.model_fields.items():
         annotation = field_info.annotation
+        is_optional = False
+        
+        # Check if field is required using Pydantic's is_required() method
+        # A field is optional if it's not required (has a default or is Optional)
+        is_required = field_info.is_required()
+        
         # Handle Optional types (Union with None)
         if annotation is not None:
             origin = get_origin(annotation)
@@ -146,11 +166,16 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
                 )
                 if is_union:
                     args = get_args(annotation)
-                    # If it's a Union and one of the args is None, extract the non-None type
+                    # If it's a Union and one of the args is None, it's optional
                     if type(None) in args:
-                        non_none_args = [a for a in args if a is not type(None)]
+                        is_optional = True
+                        non_none_args = [a for a in args if a is not type(None) and a is not None]
                         if non_none_args:
-                            annotation = non_none_args[0]
+                            annotation = non_none_args[0]  # type: ignore[assignment]
+        
+        # Mark as optional if field is not required (has a default value)
+        if not is_required and not is_optional:
+            is_optional = True
         
         # Handle dict types (dict[str, T], Dict[str, T], etc.)
         if annotation is not None:
@@ -158,7 +183,7 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
             # Check for dict type (dict, Dict, collections.abc.Mapping)
             is_dict = (
                 origin is dict
-                or (hasattr(origin, "__name__") and origin.__name__ in ("dict", "Dict", "Mapping"))
+                or (origin is not None and hasattr(origin, "__name__") and origin.__name__ in ("dict", "Dict", "Mapping"))
                 or str(origin) in ("typing.Dict", "dict", "collections.abc.Mapping")
             )
             if is_dict:
@@ -182,6 +207,7 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
                             nested_value_type = nested_args[1]
                             # Handle Optional in nested value
                             nested_value_origin = get_origin(nested_value_type) if nested_value_type is not None else None
+                            is_nested_optional = False
                             if nested_value_origin is not None:
                                 is_nested_union = (
                                     nested_value_origin is Union
@@ -191,6 +217,7 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
                                 if is_nested_union:
                                     nested_union_args = get_args(nested_value_type)
                                     if type(None) in nested_union_args:
+                                        is_nested_optional = True
                                         nested_non_none_args = [a for a in nested_union_args if a is not type(None)]
                                         if nested_non_none_args:
                                             nested_value_type = nested_non_none_args[0]
@@ -198,33 +225,57 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
                             # Build inline object type for nested dict value
                             # Check if nested value type is a Pydantic model
                             if isinstance(nested_value_type, type) and issubclass(nested_value_type, BaseModel):
-                                # Extract nested model schema
+                                # Extract nested model schema (already includes object{...})
                                 nested_schema = _extract_nested_model_schema(nested_value_type)
-                                schema[field_name] = f"object{{{nested_schema}}}"
+                                # For dict[str, dict[str, Model]], use Record pattern
+                                schema[field_name] = f"object{{string:{nested_schema}}}"
                             elif nested_value_type is str or (nested_value_type is not None and hasattr(nested_value_type, "__name__") and nested_value_type.__name__ == "str"):
-                                # This is dict[str, dict[str, str | None]]
-                                # We'll represent it as object{...} where values can be string or null
-                                schema[field_name] = "object{persona_id:string,department_id:string,model_id:string,profile_id:string|null}"
+                                # dict[str, dict[str, str | None]] -> represent as object with optional string values
+                                value_type_str = "string|null" if is_nested_optional else "string"
+                                schema[field_name] = f"object{{string:{value_type_str}}}"
                             else:
                                 schema[field_name] = "object"  # Fallback
                         else:
                             schema[field_name] = "object"  # Fallback
                     # Check if value type is a Pydantic model
                     elif isinstance(value_type, type) and issubclass(value_type, BaseModel):
-                        # Extract nested model schema
+                        # Extract nested model schema (already includes object{...})
                         nested_schema = _extract_nested_model_schema(value_type)
-                        # For dict[str, Model], represent as object with Model fields
-                        # The format is: object{field1:type1,field2:type2} for the value type
-                        schema[field_name] = f"object{{{nested_schema}}}"
-                    # Handle primitive value types
-                    elif value_type is str or (hasattr(value_type, "__name__") and value_type.__name__ == "str"):
-                        schema[field_name] = "object"  # dict[str, str] -> object
-                    elif value_type in (int, float) or (hasattr(value_type, "__name__") and value_type.__name__ in ("int", "float")):
-                        schema[field_name] = "object"  # dict[str, number] -> object
-                    elif value_type is bool or (hasattr(value_type, "__name__") and value_type.__name__ == "bool"):
-                        schema[field_name] = "object"  # dict[str, bool] -> object
+                        # For dict[str, Model], use Record pattern: object{string:ModelSchema}
+                        # This tells TypeScript generator to create Record<string, ModelType>
+                        schema[field_name] = f"object{{string:{nested_schema}}}"
+                    # Handle Optional value types (dict[str, str | None])
                     else:
-                        schema[field_name] = "object"  # Default
+                        # Check if value_type is Optional
+                        value_origin = get_origin(value_type) if value_type is not None else None
+                        is_value_optional = False
+                        actual_value_type = value_type
+                        if value_origin is not None:
+                            is_value_union = (
+                                value_origin is Union
+                                or str(value_origin) in ("typing.Union", "types.UnionType")
+                                or (hasattr(value_origin, "__name__") and value_origin.__name__ == "UnionType")
+                            )
+                            if is_value_union:
+                                value_union_args = get_args(value_type)
+                                if type(None) in value_union_args:
+                                    is_value_optional = True
+                                    non_none_args = [a for a in value_union_args if a is not type(None)]
+                                    if non_none_args:
+                                        actual_value_type = non_none_args[0]
+                        
+                        # Handle primitive value types with Optional support
+                        if actual_value_type is str or (actual_value_type is not None and hasattr(actual_value_type, "__name__") and actual_value_type.__name__ == "str"):
+                            value_type_str = "string|null" if is_value_optional else "string"
+                            schema[field_name] = f"object{{string:{value_type_str}}}"
+                        elif actual_value_type in (int, float) or (actual_value_type is not None and hasattr(actual_value_type, "__name__") and actual_value_type.__name__ in ("int", "float")):
+                            value_type_str = "number|null" if is_value_optional else "number"
+                            schema[field_name] = f"object{{string:{value_type_str}}}"
+                        elif actual_value_type is bool or (actual_value_type is not None and hasattr(actual_value_type, "__name__") and actual_value_type.__name__ == "bool"):
+                            value_type_str = "boolean|null" if is_value_optional else "boolean"
+                            schema[field_name] = f"object{{string:{value_type_str}}}"
+                        else:
+                            schema[field_name] = "object"  # Default
                 else:
                     schema[field_name] = "object"  # Default for dict without type args
                 continue
@@ -232,41 +283,89 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
         # Handle list types (list[str], List[str], etc.)
         if annotation is not None:
             origin = get_origin(annotation)
-            if origin is list:
+            
+            # Check if annotation itself is untyped list (for Python 3.9+)
+            # Only treat as untyped if it's literally `list` without type args
+            if annotation is list:
+                # Untyped list, treat as string[]
+                type_str = "string[]"
+                if is_optional:
+                    type_str = f"?{type_str}"
+                schema[field_name] = type_str
+                continue
+            # Check for list type (list, List, collections.abc.Sequence, etc.)
+            # get_origin(list[T]) returns the list class itself
+            is_list = (
+                origin is list
+                or (origin is not None and origin == list)
+                or (origin is not None and str(origin) == "<class 'list'>")
+                or (origin is not None and hasattr(origin, "__name__") and origin.__name__ == "list")
+            )
+            if is_list:
                 args = get_args(annotation)
                 if args:
                     element_type = args[0]
                     # Check if element type is a Pydantic model (nested object)
-                    if isinstance(element_type, type) and issubclass(element_type, BaseModel):
+                    # Try multiple ways to detect BaseModel subclass
+                    is_pydantic_model = False
+                    if isinstance(element_type, type):
+                        try:
+                            is_pydantic_model = issubclass(element_type, BaseModel)
+                        except TypeError:
+                            # element_type might be a string forward reference or other non-type
+                            pass
+                    
+                    if is_pydantic_model:
                         # Extract nested model schema and create inline object type
                         nested_schema = _extract_nested_model_schema(element_type)
-                        schema[field_name] = f"{nested_schema}[]"
+                        type_str = f"{nested_schema}[]"
+                        # Prefix with '?' if field is optional
+                        if is_optional:
+                            type_str = f"?{type_str}"
+                        schema[field_name] = type_str
+                        continue
                     # Determine the element type string for primitives
                     elif element_type is str or (hasattr(element_type, "__name__") and element_type.__name__ == "str"):
-                        schema[field_name] = "string[]"
+                        type_str = "string[]"
                     elif element_type in (int, float) or (hasattr(element_type, "__name__") and element_type.__name__ in ("int", "float")):
-                        schema[field_name] = "number[]"
+                        type_str = "number[]"
                     elif element_type is bool or (hasattr(element_type, "__name__") and element_type.__name__ == "bool"):
-                        schema[field_name] = "boolean[]"
+                        type_str = "boolean[]"
                     else:
-                        schema[field_name] = "string[]"  # Default to string[]
+                        type_str = "string[]"  # Default to string[]
+                    
+                    # Prefix with '?' if field is optional
+                    if is_optional:
+                        type_str = f"?{type_str}"
+                    schema[field_name] = type_str
+                    continue
                 else:
-                    schema[field_name] = "string[]"  # Default to string[] if no args
-                continue
+                    type_str = "string[]"  # Default to string[] if no args
+                    if is_optional:
+                        type_str = f"?{type_str}"
+                    schema[field_name] = type_str
+                    continue
         
         # Map to simple type strings
+        type_str = ""
         if annotation is str or "str" in str(annotation):
-            schema[field_name] = "string"
+            type_str = "string"
         elif (
             annotation in (int, float)
             or "int" in str(annotation)
             or "float" in str(annotation)
         ):
-            schema[field_name] = "number"
+            type_str = "number"
         elif annotation is bool or "bool" in str(annotation):
-            schema[field_name] = "boolean"
+            type_str = "boolean"
         else:
-            schema[field_name] = "string"  # Default to string
+            type_str = "string"  # Default to string
+        
+        # Prefix with '?' if field is optional
+        if is_optional:
+            type_str = f"?{type_str}"
+        
+        schema[field_name] = type_str
     return schema
 
 

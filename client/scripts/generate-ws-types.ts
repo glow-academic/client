@@ -19,40 +19,105 @@ interface WsContract {
 }
 
 // Map JSON type strings to TypeScript types
-function jsonTypeToTsType(jsonType: string): string {
+// Optional types are prefixed with '?' (e.g., "?string" means optional string)
+function jsonTypeToTsType(jsonType: string): {
+  type: string;
+  isOptional: boolean;
+} {
+  let isOptional = false;
+  let typeStr = jsonType;
+
+  // Check if type is optional (prefixed with '?')
+  if (typeStr.startsWith("?")) {
+    isOptional = true;
+    typeStr = typeStr.slice(1); // Remove '?' prefix
+  }
+
   // Handle array types like "string[]", "number[]", "object{...}[]", etc.
-  if (jsonType.endsWith("[]")) {
-    const elementType = jsonType.slice(0, -2);
-    const tsElementType = jsonTypeToTsType(elementType);
-    return `${tsElementType}[]`;
+  if (typeStr.endsWith("[]")) {
+    const elementType = typeStr.slice(0, -2);
+    const elementResult = jsonTypeToTsType(elementType);
+    return {
+      type: `${elementResult.type}[]`,
+      isOptional,
+    };
   }
 
   // Handle inline object types like "object{idx:number,hint:string}"
-  if (jsonType.startsWith("object{") && jsonType.endsWith("}")) {
-    const fieldsStr = jsonType.slice(7, -1); // Extract content between "object{" and "}"
+  // Also handles nested objects like "object{string:string|null}" for Record types
+  if (typeStr.startsWith("object{") && typeStr.endsWith("}")) {
+    const fieldsStr = typeStr.slice(7, -1); // Extract content between "object{" and "}"
+
+    // Check if this is a Record type pattern: "object{string:T}" or "object{string:T|null}"
+    // This represents dict[str, T] or dict[str, T | None]
+    const recordMatch = fieldsStr.match(/^string:(.+)$/);
+    if (recordMatch && recordMatch[1]) {
+      const valueType = recordMatch[1].trim();
+      const valueResult = jsonTypeToTsType(valueType);
+      return {
+        type: `Record<string, ${valueResult.type}>`,
+        isOptional,
+      };
+    }
+
+    // Regular object type with multiple fields
     const fields = fieldsStr.split(",");
     const tsFields = fields.map((field) => {
-      const [name, type] = field.split(":");
-      const tsType = jsonTypeToTsType(type?.trim() ?? "");
-      return `${name?.trim() ?? ""}: ${tsType}`;
+      const colonIndex = field.indexOf(":");
+      if (colonIndex === -1) {
+        // No colon found, treat as field name only
+        return field.trim();
+      }
+      const name = field.slice(0, colonIndex).trim();
+      const type = field.slice(colonIndex + 1).trim();
+      const fieldResult = jsonTypeToTsType(type);
+      return `${name}: ${fieldResult.type}`;
     });
-    return `{ ${tsFields.join("; ")} }`;
+    return {
+      type: `{ ${tsFields.join("; ")} }`,
+      isOptional,
+    };
   }
 
-  switch (jsonType) {
-    case "string":
-      return "string";
-    case "number":
-      return "number";
-    case "boolean":
-      return "boolean";
-    case "object":
-      return "Record<string, unknown>";
-    case "array":
-      return "unknown[]";
-    default:
-      return "unknown";
+  // Handle union types like "string|null", "number|string", etc.
+  if (typeStr.includes("|")) {
+    const unionTypes = typeStr.split("|").map((t) => t.trim());
+    const tsUnionTypes = unionTypes.map((unionType) => {
+      // Handle "null" as a literal type
+      if (unionType === "null") {
+        return "null";
+      }
+      const unionResult = jsonTypeToTsType(unionType);
+      return unionResult.type;
+    });
+    return {
+      type: tsUnionTypes.join(" | "),
+      isOptional,
+    };
   }
+
+  let baseType: string;
+  switch (typeStr) {
+    case "string":
+      baseType = "string";
+      break;
+    case "number":
+      baseType = "number";
+      break;
+    case "boolean":
+      baseType = "boolean";
+      break;
+    case "object":
+      baseType = "Record<string, unknown>";
+      break;
+    case "array":
+      baseType = "unknown[]";
+      break;
+    default:
+      baseType = "unknown";
+  }
+
+  return { type: baseType, isOptional };
 }
 
 // Generate TypeScript type definition for a payload
@@ -66,8 +131,9 @@ function generatePayloadType(
 
   const lines: string[] = [];
   for (const [key, value] of Object.entries(payload)) {
-    const tsType = jsonTypeToTsType(value);
-    lines.push(`${indent}${key}: ${tsType};`);
+    const { type, isOptional } = jsonTypeToTsType(value);
+    const optionalMarker = isOptional ? "?" : "";
+    lines.push(`${indent}${key}${optionalMarker}: ${type};`);
   }
   return `{\n${lines.join("\n")}\n  }`;
 }
@@ -82,7 +148,7 @@ function generateReturnType(
 
   // If it's a simple primitive (single "value" field), return the type directly
   if (Object.keys(returnSchema).length === 1 && returnSchema["value"]) {
-    return jsonTypeToTsType(returnSchema["value"]);
+    return jsonTypeToTsType(returnSchema["value"]).type;
   }
 
   // Otherwise, generate an object type

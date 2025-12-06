@@ -50,6 +50,7 @@ export interface AttemptMessagesProps {
     content: string;
     createdAt: string;
     completed?: boolean;
+    personaId?: string;
   }>;
   currentChat: { id: string; completed?: boolean } | null;
   sendMessage: (message: string, isRetry?: boolean) => void;
@@ -67,6 +68,12 @@ export interface AttemptMessagesProps {
       idx: number;
       createdAt: string;
     }>;
+  }>;
+  personas?: Array<{
+    id: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
   }>;
   scenario?: {
     personaName?: string | null;
@@ -106,6 +113,7 @@ export default function AttemptMessages({
   isActive,
   simulation,
   currentChatHints = [],
+  personas,
   scenario,
 }: AttemptMessagesProps) {
   const { socket } = useProfile();
@@ -114,6 +122,12 @@ export default function AttemptMessages({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const targetChatId = chatId || currentChat?.id;
+
+  // Create persona lookup map for efficient persona lookup by ID
+  const personaMap = useMemo(() => {
+    if (!personas) return new Map<string, { id: string; name: string; icon: string | null; color: string | null }>();
+    return new Map(personas.map(p => [p.id, p]));
+  }, [personas]);
 
   // State for hints modal
   const [selectedHintMessageId, setSelectedHintMessageId] = useState<
@@ -446,10 +460,13 @@ export default function AttemptMessages({
                     const hasNewHints = messagesWithNewHints.has(message.id);
                     const isSelected = selectedHintMessageId === message.id;
 
-                    // Get persona data from scenario
-                    const personaName = scenario?.personaName || "Assistant";
-                    const personaIcon = scenario?.personaIcon;
-                    const personaColor = scenario?.personaColor;
+                    // Get persona data from message's personaId, fallback to default
+                    const messagePersona = message.personaId 
+                      ? personaMap.get(message.personaId) 
+                      : null;
+                    const personaName = messagePersona?.name || "Assistant";
+                    const personaIcon = messagePersona?.icon;
+                    const personaColor = messagePersona?.color;
 
                     // Get icon component
                     const IconComponent = personaIcon

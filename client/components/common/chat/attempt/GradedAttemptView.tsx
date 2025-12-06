@@ -106,6 +106,7 @@ interface GradedAttemptViewProps {
     content: string;
     createdAt: string;
     completed?: boolean;
+    personaId?: string;
   }>;
   currentChatHints: Array<{
     messageId: string;
@@ -115,6 +116,12 @@ interface GradedAttemptViewProps {
       idx: number;
       createdAt: string;
     }>;
+  }>;
+  personas?: Array<{
+    id: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
   }>;
   isAttemptOwner: boolean;
   chatPicker: React.ReactNode | null;
@@ -159,6 +166,7 @@ export default function GradedAttemptView({
   selectedDocumentId,
   currentMessages,
   currentChatHints,
+  personas,
   isAttemptOwner,
   chatPicker,
   selectedScenario,
@@ -763,6 +771,7 @@ export default function GradedAttemptView({
                           isActive={false}
                           simulation={simulation}
                           currentChatHints={currentChatHints}
+                          personas={personas}
                           scenario={
                             displayChat?.id
                               ? scenariosByChatId[displayChat.id] || null

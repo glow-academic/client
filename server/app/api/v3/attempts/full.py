@@ -100,6 +100,13 @@ class MessageItem(BaseModel):
     personaId: str | None = None
 
 
+class PersonaItem(BaseModel):
+    id: str
+    name: str
+    icon: str | None = None
+    color: str | None = None
+
+
 class HintItem(BaseModel):
     simulationMessageId: str
     hint: str
@@ -212,6 +219,7 @@ class ChatData(BaseModel):
     gradingState: GradingState | None = None
     dynamicRubric: DynamicRubric | None = None
     previousChats: list[PreviousChat]
+    personas: list[PersonaItem] = []
     contentType: str | None = None  # "scenario" | "video"
     video: VideoItem | None = None
     quiz: QuizItem | None = None
@@ -510,6 +518,9 @@ async def get_attempt_full(
             previous_chats = [
                 PreviousChat(**pc) for pc in chat_data.get("previousChats", [])
             ]
+            personas = [
+                PersonaItem(**p) for p in chat_data.get("personas", [])
+            ]
             
             # Handle contentType, video, and quiz fields
             content_type = chat_data.get("contentType")
@@ -571,6 +582,7 @@ async def get_attempt_full(
                     gradingState=grading_state,
                     dynamicRubric=dynamic_rubric,
                     previousChats=previous_chats,
+                    personas=personas,
                     contentType=content_type,
                     video=video,
                     quiz=quiz,

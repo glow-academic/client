@@ -22,7 +22,6 @@ from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
-from openai.types.responses import ResponseTextDeltaEvent
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
@@ -752,49 +751,6 @@ async def _send_simulation_message_impl(
                     input_items.insert(0, chat_scenario)
                     input_items.extend(conversation_history)
 
-                    # Get all personas for this scenario and create persona tools
-                    sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
-                    persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
-                    personas = [dict(row) for row in persona_rows]
-                    
-                    # Create persona tools if personas exist
-                    persona_tools = []
-                    persona_tool_map: dict[str, str] = {}  # tool_name -> persona_id
-                    if personas:
-                        persona_tools = create_persona_tools(
-                            personas, chat_id_uuid, conn
-                        )
-                        # Build map of tool_name -> persona_id for quick lookup
-                        for persona in personas:
-                            persona_id_str = str(persona.get("persona_id") or persona.get("id"))
-                            persona_name = persona.get("persona_name") or persona.get("name", "")
-                            tool_name = f"speak_{sanitize_persona_name(persona_name)}"
-                            persona_tool_map[tool_name] = persona_id_str
-                        logger.info(
-                            f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}"
-                        )
-                        
-                        # Add developer message listing available personas
-                        persona_names = [p.get("persona_name") or p.get("name", "Unknown") for p in personas]
-                        developer_message_personas: TResponseInputItem = {
-                            "role": "developer",
-                            "content": f"Available personas: {', '.join(persona_names)}. You must use the speak_{{persona_name}} tool to respond as that persona. Replace {{persona_name}} with the sanitized name of the persona you are playing.",
-                        }
-                        input_items.append(developer_message_personas)
-
-                    # Create agent instance using context data with persona tools
-                    agent_instance = GenericAgent(
-                        agent_name=context["persona_name"],
-                        system_prompt=context["system_prompt"],
-                        temperature=context["temperature"],
-                        model_name=context["model_name"],
-                        provider=context["provider_name"],
-                        base_url=context["base_url"],
-                        reasoning=context["reasoning"],
-                        api_key=context["api_key"],
-                        tools=persona_tools,
-                    )
-
                     # Check rate limit
                     profile_id_uuid = (
                         uuid.UUID(context["profile_id"])
@@ -929,10 +885,12 @@ async def _send_simulation_message_impl(
                                     str(sys_msg_id),
                                     user_msg_id,
                                 )
+
+                    # Get all personas for this scenario and create persona tools
+                    sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
+                    persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
+                    personas = [dict(row) for row in persona_rows]
                     
-                    # Track tool calls and their corresponding assistant messages
-                    # Key: tool call identifier (tool name), Value: assistant message dict
-                    tool_call_messages: dict[str, dict[str, Any]] = {}
                     # Track parent message for branching (user message or latest)
                     parent_message_id_for_branching: uuid.UUID | None = None
                     if is_retry:
@@ -958,314 +916,164 @@ async def _send_simulation_message_impl(
                             )
                             if latest_message_row:
                                 parent_message_id_for_branching = latest_message_row["id"]
+                    
+                    # Create emit function wrappers for persona tools
+                    async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:
+                        await simulation_new_message(
+                            SimulationNewMessagePayload(**event_data),
+                            room=f"simulation_{chat_id_uuid}",
+                        )
+                    
+                    async def emit_token_wrapper(event_data: dict[str, Any]) -> None:
+                        await simulation_message_token(
+                            SimulationMessageTokenPayload(**event_data),
+                            room=f"simulation_{chat_id_uuid}",
+                        )
+                    
+                    async def emit_complete_wrapper(event_data: dict[str, Any]) -> None:
+                        await simulation_message_complete(
+                            SimulationMessageCompletePayload(**event_data),
+                            room=f"simulation_{chat_id_uuid}",
+                        )
+                    
+                    # Track completed tool messages for hint generation
+                    completed_tool_messages: list[dict[str, Any]] = []
+                    
+                    # Create wrapper that tracks completed messages
+                    async def emit_complete_with_tracking(event_data: dict[str, Any]) -> None:
+                        await emit_complete_wrapper(event_data)
+                        # Track completed message for hint generation
+                        completed_tool_messages.append({"id": uuid.UUID(event_data["message_id"])})
+                    
+                    # Create persona tools if personas exist
+                    persona_tools = []
+                    if personas:
+                        persona_tools = create_persona_tools(
+                            personas,
+                            chat_id_uuid,
+                            conn,
+                            model_run_id,
+                            emit_new_message_wrapper,
+                            emit_token_wrapper,
+                            emit_complete_with_tracking,
+                            parent_message_id_for_branching,
+                        )
+                        logger.info(
+                            f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}"
+                        )
+                        
+                        # Add developer message listing available personas
+                        persona_names = [p.get("persona_name") or p.get("name", "Unknown") for p in personas]
+                        developer_message_personas: TResponseInputItem = {
+                            "role": "developer",
+                            "content": f"Available personas: {', '.join(persona_names)}. You must use the speak_{{persona_name}} tool to respond as that persona. Replace {{persona_name}} with the sanitized name of the persona you are playing.",
+                        }
+                        input_items.append(developer_message_personas)
 
+                    # Create agent instance using context data with persona tools
+                    agent_instance = GenericAgent(
+                        agent_name=context["persona_name"],
+                        system_prompt=context["system_prompt"],
+                        temperature=context["temperature"],
+                        model_name=context["model_name"],
+                        provider=context["provider_name"],
+                        base_url=context["base_url"],
+                        reasoning=context["reasoning"],
+                        api_key=context["api_key"],
+                        tools=persona_tools,
+                    )
+                    
+                    # Link run to chat if not already linked
+                    await conn.execute(
+                        """
+                        INSERT INTO chat_runs (run_id, chat_id, created_at, updated_at)
+                        VALUES ($1::uuid, $2::uuid, NOW(), NOW())
+                        ON CONFLICT (run_id, chat_id) DO NOTHING
+                        """,
+                        str(model_run_id),
+                        str(chat_id_uuid)
+                    )
+                    
+                    # Link system/developer messages to run
+                    sql_link_sys_dev = load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql")
+                    await conn.fetchrow(
+                        sql_link_sys_dev,
+                        str(model_run_id),
+                        context.get("department_id"),
+                        str(chat_id_uuid),
+                    )
+                    
+                    # Create user message if it wasn't created earlier (no run existed)
+                    if not user_message and message_str and message_str.strip() != "" and not is_retry:
+                        # Create message without run_id
+                        sql = load_sql("sql/v3/simulations/create_message.sql")
+                        user_message_row = await conn.fetchrow(
+                            sql, "user", message_str, True
+                        )
+                        user_message = {
+                            "id": user_message_row["id"],
+                            "created_at": user_message_row["created_at"],
+                        }
+                        # Link message to run via message_runs
+                        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                        await conn.execute(
+                            sql_link,
+                            str(user_message["id"]),
+                            str(model_run_id),
+                        )
+                        # Link to message_tree: developer → user (or system → user if no developer)
+                        # Get system/developer messages for this run
+                        sys_dev_result = await conn.fetchrow(
+                            sql_link_sys_dev,
+                            str(model_run_id),
+                            context.get("department_id"),
+                            str(chat_id_uuid),
+                        )
+                        if sys_dev_result and user_message:
+                            dev_msg_id = sys_dev_result.get("developer_message_id")
+                            sys_msg_id = sys_dev_result.get("system_message_id")
+                            user_msg_id = str(user_message["id"])
+                            # Link developer → user (if developer exists and IDs are different)
+                            if dev_msg_id and str(dev_msg_id) != user_msg_id:
+                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                await conn.execute(
+                                    sql_branch,
+                                    str(dev_msg_id),
+                                    user_msg_id,
+                                )
+                            # Link system → user (if system exists, no developer, and IDs are different)
+                            elif sys_msg_id and str(sys_msg_id) != user_msg_id:
+                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                await conn.execute(
+                                    sql_branch,
+                                    str(sys_msg_id),
+                                    user_msg_id,
+                                )
+                    
                     with trace(
                         context["chat_title"],
                         trace_id=context["trace_id"],
                         group_id=context["attempt_id"],
                     ):
-                        result = Runner.run_streamed(
+                        result = await Runner.run(
                             agent_instance.agent(),
                             input=input_items,
                             context=DebugContext(conn=conn, run_id=model_run_id),
                         )
 
-                    # Store the result in active runs for potential cancellation using unified tracking
-                    chat_id_str = str(chat_id_uuid)
-                    await store_active_run(chat_id_str, result)
-                    await store_active_result(chat_id_str, result)
-
-                    try:
-                        # Process streaming events
-                        events = result.stream_events()
-                        await store_active_events(chat_id_str, events)
-
-                        # Track current tool call being processed
-                        current_tool_call_id: str | None = None
-                        
-                        # Helper function to emit token/delta and update database for a specific tool message
-                        async def emit_token_delta_for_message(token_str: str, tool_message: dict[str, Any]) -> bool:
-                            """Emit a token/delta for a specific tool message, update accumulated content and database.
-                            
-                            Returns True if cancelled, False otherwise.
-                            """
-                            # Check cancellation BEFORE processing this token to avoid emitting it
-                            try:
-                                run_id = await get_active_run(chat_id_str)
-                                if run_id and await is_run_cancelled(run_id):
-                                    sql = load_sql(
-                                        "sql/v3/simulations/complete_message.sql"
-                                    )
-                                    await conn.execute(
-                                        sql, tool_message.get("accumulated_content", ""), str(tool_message["id"])
-                                    )
-                                    return True
-                            except Exception:
-                                pass
-
-                            # Accumulate content for this specific message
-                            if "accumulated_content" not in tool_message:
-                                tool_message["accumulated_content"] = ""
-                            tool_message["accumulated_content"] += token_str
-
-                            # Update the database with accumulated content
-                            sql = load_sql(
-                                "sql/v3/simulations/update_message_content.sql"
-                            )
-                            await conn.execute(
-                                sql,
-                                tool_message["accumulated_content"],
-                                str(tool_message["id"]),
-                            )
-
-                            logger.info(
-                                f"Emitting token to room simulation_{chat_id_uuid} for message {tool_message['id']}: {token_str[:20]}..."
-                            )
-                            await simulation_message_token(
-                                SimulationMessageTokenPayload(
-                                    message_id=str(tool_message["id"]),
-                                    chat_id=str(chat_id_uuid),
-                                    token=token_str,
-                                    accumulated_content=tool_message["accumulated_content"],
-                                ),
-                                room=f"simulation_{chat_id_uuid}",
-                            )
-                            return False
-
-                        async for event in events:
-                            # Cooperative cancellation: check a Redis flag bound to this chat's active run
-                            try:
-                                run_id = await get_active_run(chat_id_str)
-                                if run_id and await is_run_cancelled(run_id):
-                                    # Raise a cancellation to unwind upstream and hit finally cleanup
-                                    raise Exception("cancelled")
-                            except Exception:
-                                # If Redis unavailable or check fails, continue; stop is best-effort
-                                pass
-
-                            # Handle raw response events (tool call deltas only - ignore text deltas)
-                            if event.type == "raw_response_event":
-                                raw = event.data
-                                
-                                # Ignore text deltas - we only handle tool call events
-                                if isinstance(raw, ResponseTextDeltaEvent):
-                                    continue
-
-                                # Tool call name extraction (for function_call events)
-                                event_type = getattr(raw, "type", None)
-                                if event_type in (
-                                    "response.function_call.name",
-                                    "response.output_tool_call.name",
-                                ):
-                                    tool_name_raw = getattr(raw, "name", None)
-                                    if tool_name_raw and isinstance(tool_name_raw, str) and tool_name_raw.startswith("speak_"):
-                                        # Create a new assistant message for this tool call
-                                        current_tool_call_id = tool_name_raw
-                                        
-                                        # Look up persona_id from tool name
-                                        persona_id_from_tool: str | None = persona_tool_map.get(tool_name_raw)
-                                        if not persona_id_from_tool:
-                                            logger.warning(f"Persona ID not found for tool {tool_name_raw}")
-                                            continue
-                                        
-                                        # Create assistant message for this tool call
-                                        sql = load_sql("sql/v3/simulations/create_message.sql")
-                                        assistant_message_row = await conn.fetchrow(
-                                            sql, "assistant", "", False
-                                        )
-                                        tool_message = {
-                                            "id": assistant_message_row["id"],
-                                            "created_at": assistant_message_row["created_at"],
-                                            "persona_id": persona_id_from_tool,
-                                            "accumulated_content": "",
-                                        }
-                                        tool_call_messages[tool_name_raw] = tool_message
-                                        
-                                        # Link message to run via message_runs
-                                        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
-                                        await conn.execute(
-                                            sql_link,
-                                            str(tool_message["id"]),
-                                            str(model_run_id),
-                                        )
-                                        
-                                        # Link message to persona
-                                        sql_link_persona = load_sql(
-                                            "sql/v3/simulations/link_message_to_persona.sql"
-                                        )
-                                        try:
-                                            await conn.execute(
-                                                sql_link_persona,
-                                                str(tool_message["id"]),
-                                                persona_id_from_tool,
-                                            )
-                                            logger.info(
-                                                f"Linked message {tool_message['id']} to persona {persona_id_from_tool} via tool {tool_name_raw}"
-                                            )
-                                        except Exception as link_err:
-                                            logger.warning(
-                                                f"Failed to link message to persona: {link_err}"
-                                            )
-
-                                        # Create branch from parent to this assistant message
-                                        if parent_message_id_for_branching:
-                                            parent_id_str = str(parent_message_id_for_branching)
-                                            assistant_id_str = str(tool_message["id"])
-                                            # Prevent self-references (parent_id != child_id)
-                                            if parent_id_str != assistant_id_str:
-                                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
-                                                await conn.execute(
-                                                    sql_branch,
-                                                    parent_id_str,
-                                                    assistant_id_str,
-                                                )
-                                                logger.info(
-                                                    f"Created branch from message {parent_id_str} to assistant message {assistant_id_str} for tool {tool_name_raw}"
-                                                )
-                                            else:
-                                                logger.warning(
-                                                    f"Skipping branch creation: parent_id ({parent_id_str}) equals child_id ({assistant_id_str})"
-                                                )
-                                        
-                                        # Emit new message event
-                                        logger.info(
-                                            f"Emitting assistant message for tool {tool_name_raw} to room simulation_{chat_id_uuid}"
-                                        )
-                                        await simulation_new_message(
-                                            SimulationNewMessagePayload(
-                                                message_id=str(tool_message["id"]),
-                                                chat_id=str(chat_id_uuid),
-                                                role="assistant",
-                                                content="",
-                                                completed=False,
-                                                created_at=tool_message["created_at"].isoformat(),
-                                                persona_id=persona_id_from_tool,
-                                            ),
-                                            room=f"simulation_{chat_id_uuid}",
-                                        )
-                                        
-                                        # Update parent for next tool call (branch from this message)
-                                        parent_message_id_for_branching = tool_message["id"]
-
-                                # Tool call argument deltas - stream to the corresponding tool message
-                                if event_type in (
-                                    "response.function_call_arguments.delta",
-                                    "response.output_tool_call.arguments.delta",
-                                ):
-                                    delta = getattr(raw, "delta", None)
-                                    if delta and current_tool_call_id:
-                                        current_tool_message = tool_call_messages.get(current_tool_call_id)
-                                        if current_tool_message is not None:
-                                            cancelled_flag = await emit_token_delta_for_message(delta, current_tool_message)
-                                            if cancelled_flag:
-                                                cancelled = True
-                                                break
-                                    continue
-
-                                # Tool call argument done events - extract message field and complete
-                                if event_type in (
-                                    "response.function_call_arguments.done",
-                                    "response.output_tool_call.arguments.done",
-                                ):
-                                    args_json = getattr(raw, "arguments", None)
-                                    if args_json and current_tool_call_id:
-                                        current_tool_message = tool_call_messages.get(current_tool_call_id)
-                                        if current_tool_message is not None:
-                                            # Extract message field from arguments
-                                            if isinstance(args_json, dict):
-                                                message_content = args_json.get("message", "")
-                                            elif isinstance(args_json, str):
-                                                # Parse JSON string if needed
-                                                try:
-                                                    parsed = json.loads(args_json)
-                                                    message_content = parsed.get("message", "") if isinstance(parsed, dict) else ""
-                                                except (json.JSONDecodeError, AttributeError):
-                                                    message_content = ""
-                                            else:
-                                                message_content = ""
-                                            
-                                            # Update accumulated content with final message
-                                            current_tool_message["accumulated_content"] = message_content
-                                            
-                                            # Update database with final content
-                                            sql = load_sql(
-                                                "sql/v3/simulations/update_message_content.sql"
-                                            )
-                                            await conn.execute(
-                                                sql,
-                                                message_content,
-                                                str(current_tool_message["id"]),
-                                            )
-                                            
-                                            # Complete the message
-                                            sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-                                            await conn.execute(
-                                                sql_complete,
-                                                message_content,
-                                                str(current_tool_message["id"]),
-                                            )
-                                            
-                                            # Emit completion event
-                                            logger.info(
-                                                f"Completing tool call message {current_tool_message['id']} for tool {current_tool_call_id}"
-                                            )
-                                            await simulation_message_complete(
-                                                SimulationMessageCompletePayload(
-                                                    message_id=str(current_tool_message["id"]),
-                                                    chat_id=str(chat_id_uuid),
-                                                    final_content=message_content,
-                                                ),
-                                                room=f"simulation_{chat_id_uuid}",
-                                            )
-                                            
-                                            # Emit updated message with completed=True
-                                            await simulation_new_message(
-                                                SimulationNewMessagePayload(
-                                                    message_id=str(current_tool_message["id"]),
-                                                    chat_id=str(chat_id_uuid),
-                                                    role="assistant",
-                                                    content=message_content,
-                                                    completed=True,
-                                                    created_at=current_tool_message["created_at"].isoformat(),
-                                                    persona_id=current_tool_message["persona_id"],
-                                                ),
-                                                room=f"simulation_{chat_id_uuid}",
-                                            )
-                                            
-                                            # Reset current tool call
-                                            current_tool_call_id = None
-                                    continue
-
-                        usage = result.context_wrapper.usage
-                        sql_update_tokens = load_sql(
-                            "sql/v3/model_runs/update_model_run_tokens.sql"
-                        )
-                        await conn.execute(
-                            sql_update_tokens,
-                            str(model_run_id),
-                            usage.input_tokens,
-                            usage.output_tokens,
-                        )
-                    except (asyncio.CancelledError, GeneratorExit, StopAsyncIteration):
-                        # Treat explicit cancellation/closure as expected
-                        pass
-                    except Exception as e:
-                        # Handle cancellation or other errors
-                        if "cancelled" in str(e).lower():
-                            # This is expected when the run is cancelled
-                            pass
-                        else:
-                            # Re-raise other exceptions
-                            raise e
-                    finally:
-                        # Clean up the active run using unified tracking
-                        from app.utils.websocket.remove_active_run import \
-                            remove_active_run
-
-                        await remove_active_run(chat_id_str)
-                        await remove_active_result(chat_id_str)
+                    # Update token usage
+                    usage = result.context_wrapper.usage
+                    sql_update_tokens = load_sql(
+                        "sql/v3/model_runs/update_model_run_tokens.sql"
+                    )
+                    await conn.execute(
+                        sql_update_tokens,
+                        str(model_run_id),
+                        usage.input_tokens,
+                        usage.output_tokens,
+                    )
                 except OutputGuardrailTripwireTriggered as e:
-                    # Handle guardrail-triggered output: overwrite all active tool call messages with error
+                    # Handle guardrail-triggered output
                     reason = ""
                     try:
                         reason = (
@@ -1281,44 +1089,6 @@ async def _send_simulation_message_impl(
 
                     error_text = f"Error: {reason or 'Guardrail tripwire triggered'}"
 
-                    # Apply error to all active tool call messages
-                    for tool_name, tool_message in tool_call_messages.items():
-                        sql = load_sql("sql/v3/simulations/complete_message.sql")
-                        await conn.execute(sql, error_text, str(tool_message["id"]))
-
-                        # Get persona_id for error message
-                        persona_id_for_error = tool_message.get("persona_id")
-                        if not persona_id_for_error:
-                            sql_get_persona = load_sql("sql/v3/simulations/get_message_persona.sql")
-                            persona_row = await conn.fetchrow(
-                                sql_get_persona, str(tool_message["id"])
-                            )
-                            if persona_row:
-                                persona_id_for_error = persona_row["persona_id"]
-
-                        await simulation_message_complete(
-                            SimulationMessageCompletePayload(
-                                message_id=str(tool_message["id"]),
-                                chat_id=str(chat_id_uuid),
-                                final_content=error_text,
-                            ),
-                            room=f"simulation_{chat_id_uuid}",
-                        )
-                        
-                        # Also emit updated message with persona_id
-                        await simulation_new_message(
-                            SimulationNewMessagePayload(
-                                message_id=str(tool_message["id"]),
-                                chat_id=str(chat_id_uuid),
-                                role="assistant",
-                                content=error_text,
-                                completed=True,
-                                created_at=tool_message["created_at"].isoformat(),
-                                persona_id=persona_id_for_error,
-                            ),
-                            room=f"simulation_{chat_id_uuid}",
-                        )
-
                     await simulation_message_error(
                         SimulationMessageErrorPayload(
                             chat_id=str(chat_id_uuid), error=error_text
@@ -1326,71 +1096,12 @@ async def _send_simulation_message_impl(
                         room=f"simulation_{chat_id_uuid}",
                     )
 
-                    # Skip later completion emission
-                    cancelled = True
-
-                except Exception as e:
-                    if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
-                        # Handle cancellation gracefully - complete all active tool call messages
-                        cancelled = True
-                        logger.info(
-                            f"Simulation run for chat {chat_id_uuid} was cancelled"
-                        )
-
-                        # Keep content as-is for all tool call messages, mark as completed
-                        for tool_name, tool_message in tool_call_messages.items():
-                            final_content = tool_message.get("accumulated_content", "")
-                            sql = load_sql("sql/v3/simulations/complete_message.sql")
-                            await conn.execute(
-                                sql, final_content, str(tool_message["id"])
-                            )
-
-                            # Get persona_id for cancelled message
-                            persona_id_for_cancel = tool_message.get("persona_id")
-                            if not persona_id_for_cancel:
-                                sql_get_persona = load_sql("sql/v3/simulations/get_message_persona.sql")
-                                persona_row = await conn.fetchrow(
-                                    sql_get_persona, str(tool_message["id"])
-                                )
-                                if persona_row:
-                                    persona_id_for_cancel = persona_row["persona_id"]
-
-                            # Emit cancellation signal for this message
-                            logger.info(
-                                f"Emitting cancellation for message {tool_message['id']} to room simulation_{chat_id_uuid}"
-                            )
-                            await simulation_message_cancelled(
-                                SimulationMessageCancelledPayload(
-                                    message_id=str(tool_message["id"]),
-                                    chat_id=str(chat_id_uuid),
-                                    final_content=final_content,
-                                ),
-                                room=f"simulation_{chat_id_uuid}",
-                            )
-                            
-                            # Also emit updated message with persona_id
-                            await simulation_new_message(
-                                SimulationNewMessagePayload(
-                                    message_id=str(tool_message["id"]),
-                                    chat_id=str(chat_id_uuid),
-                                    role="assistant",
-                                    content=final_content,
-                                    completed=True,
-                                    created_at=tool_message["created_at"].isoformat(),
-                                    persona_id=persona_id_for_cancel,
-                                ),
-                                room=f"simulation_{chat_id_uuid}",
-                            )
-                    else:
-                        # Re-raise other exceptions
-                        raise e
-
                 # 6. Trigger hint generation for practice simulations (on last tool call message completion)
                 # Each tool call message completes independently, so we trigger hint generation
-                # after all tool calls are processed (if not cancelled)
-                if not cancelled and tool_call_messages:
-                    # Get the last tool call message for hint generation
-                    last_tool_message = list(tool_call_messages.values())[-1]
+                # after all tool calls are processed
+                if completed_tool_messages:
+                    # Get the last completed tool message for hint generation
+                    last_tool_message = completed_tool_messages[-1]
 
                     # Trigger hint generation for practice simulations only (fire and forget)
                     # Use optimized query to get simulation metadata
@@ -1445,56 +1156,7 @@ async def _send_simulation_message_impl(
 
             except Exception as e:
                 logger.error(f"Error processing simulation message: {str(e)}")
-                # Best-effort: if we have already created tool call messages,
-                # persist the error text onto them and mark them complete so the UI shows it.
-                try:
-                    error_text = f"Error: {str(e)}"
-                    # Apply error to all tool call messages
-                    for tool_name, tool_message in tool_call_messages.items():
-                        sql = load_sql("sql/v3/simulations/complete_message.sql")
-                        await conn.execute(
-                            sql, error_text, str(tool_message["id"])
-                        )
-
-                        # Get persona_id for error message
-                        persona_id_for_error_handler = tool_message.get("persona_id")
-                        if not persona_id_for_error_handler:
-                            sql_get_persona = load_sql("sql/v3/simulations/get_message_persona.sql")
-                            persona_row = await conn.fetchrow(
-                                sql_get_persona, str(tool_message["id"])
-                            )
-                            if persona_row:
-                                persona_id_for_error_handler = persona_row["persona_id"]
-
-                        # Emit a completion update using the same message so the client updates content
-                        await simulation_message_complete(
-                            SimulationMessageCompletePayload(
-                                message_id=str(tool_message["id"]),
-                                chat_id=str(chat_id_uuid),
-                                final_content=error_text,
-                            ),
-                            room=f"simulation_{chat_id_uuid}",
-                        )
-                        
-                        # Also emit updated message with persona_id
-                        await simulation_new_message(
-                            SimulationNewMessagePayload(
-                                message_id=str(tool_message["id"]),
-                                chat_id=str(chat_id_uuid),
-                                role="assistant",
-                                content=error_text,
-                                completed=True,
-                                created_at=tool_message["created_at"].isoformat(),
-                                persona_id=persona_id_for_error_handler,
-                            ),
-                            room=f"simulation_{chat_id_uuid}",
-                        )
-                except Exception as persist_error:
-                    logger.error(
-                        f"Failed to persist/emit error content for chat {chat_id_uuid}: {persist_error}"
-                    )
-
-                # Also emit the explicit error event for toasts/state resets
+                # Emit the explicit error event for toasts/state resets
                 # Only emit explicit error event if not cancelled
                 if (
                     "cancelled" not in str(e).lower()
@@ -1545,16 +1207,7 @@ async def _send_simulation_message_impl(
                                 if created_at and hasattr(created_at, "isoformat")
                                 else str(created_at) if created_at else ""
                             )
-                            # Get persona_id for error message if it exists
                             error_message_id = str(error_message_dict.get("id", ""))
-                            persona_id_for_top_level_error: str | None = None
-                            if error_message_id:
-                                sql_get_persona = load_sql("sql/v3/simulations/get_message_persona.sql")
-                                persona_row = await conn.fetchrow(
-                                    sql_get_persona, error_message_id
-                                )
-                                if persona_row:
-                                    persona_id_for_top_level_error = persona_row["persona_id"]
                             
                             await simulation_new_message(
                                 SimulationNewMessagePayload(
@@ -1564,7 +1217,6 @@ async def _send_simulation_message_impl(
                                     content=f"Error: {str(e)}",
                                     completed=True,
                                     created_at=created_at_str,
-                                    persona_id=persona_id_for_top_level_error,
                                 ),
                                 room=f"simulation_{chat_id}",
                             )

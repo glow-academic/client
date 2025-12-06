@@ -11859,6 +11859,14 @@
             "type": "array",
             "title": "Previouschats"
           },
+          "personas": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__attempts__full__PersonaItem"
+            },
+            "type": "array",
+            "title": "Personas",
+            "default": []
+          },
           "contentType": {
             "anyOf": [
               {
@@ -22456,170 +22464,6 @@
         "title": "PersonaDetailRequest",
         "description": "Request to get persona details."
       },
-      "PersonaItem": {
-        "properties": {
-          "persona_id": {
-            "type": "string",
-            "title": "Persona Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "agent_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Name"
-          },
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "model_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Name"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "temperature_display": {
-            "type": "string",
-            "title": "Temperature Display"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "is_inactive": {
-            "type": "boolean",
-            "title": "Is Inactive"
-          },
-          "num_scenarios": {
-            "type": "integer",
-            "title": "Num Scenarios"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "persona_id",
-          "name",
-          "description",
-          "color",
-          "icon",
-          "department_ids",
-          "scenario_ids",
-          "agent_id",
-          "agent_name",
-          "model_id",
-          "model_name",
-          "reasoning",
-          "temperature",
-          "temperature_display",
-          "active",
-          "is_inactive",
-          "num_scenarios",
-          "can_edit",
-          "can_duplicate",
-          "can_delete"
-        ],
-        "title": "PersonaItem",
-        "description": "Individual persona item in the response."
-      },
       "PersonaMappingItem": {
         "properties": {
           "name": {
@@ -22955,7 +22799,7 @@
         "properties": {
           "personas": {
             "items": {
-              "$ref": "#/components/schemas/PersonaItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__list__PersonaItem"
             },
             "type": "array",
             "title": "Personas"
@@ -33303,6 +33147,46 @@
         ],
         "title": "AgentDetailResponse"
       },
+      "app__api__v3__attempts__full__PersonaItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "PersonaItem"
+      },
       "app__api__v3__attempts__full__ScenarioItem": {
         "properties": {
           "id": {
@@ -35652,6 +35536,170 @@
         ],
         "title": "PersonaDetailResponse",
         "description": "Detailed persona response with all fields and metadata."
+      },
+      "app__api__v3__personas__list__PersonaItem": {
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "title": "Persona Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature"
+          },
+          "temperature_display": {
+            "type": "string",
+            "title": "Temperature Display"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "is_inactive": {
+            "type": "boolean",
+            "title": "Is Inactive"
+          },
+          "num_scenarios": {
+            "type": "integer",
+            "title": "Num Scenarios"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name",
+          "description",
+          "color",
+          "icon",
+          "department_ids",
+          "scenario_ids",
+          "agent_id",
+          "agent_name",
+          "model_id",
+          "model_name",
+          "reasoning",
+          "temperature",
+          "temperature_display",
+          "active",
+          "is_inactive",
+          "num_scenarios",
+          "can_edit",
+          "can_duplicate",
+          "can_delete"
+        ],
+        "title": "PersonaItem",
+        "description": "Individual persona item in the response."
       },
       "app__api__v3__personas__new__DebugInfoItem": {
         "properties": {
