@@ -21,6 +21,7 @@ from app.utils.chat.get_simulation_conversation_history import \
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
+from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
@@ -530,33 +531,15 @@ async def _run_grade_agent_inline(
         )
         model_run_id = uuid.UUID(model_run_row["run_id"])
         
-        # Link system message to run
-        sql_link_sys = load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql")
-        await conn.fetchrow(
-            sql_link_sys,
-            str(model_run_id),
-            str(department_id),
-            None,  # chat_id not needed for grade agent
-        )
-        
-        # Link developer messages to run (rubric and time_message)
-        # These are dynamic messages that get deduplicated by MD5 hash
-        sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
-        
-        # Link rubric developer message
+        # Log system and developer messages for this run
         rubric_dev_content = rubric_input["content"]
-        await conn.fetchrow(
-            sql_link_dev,
-            rubric_dev_content,
-            str(model_run_id),
-        )
-        
-        # Link time limit developer message
         time_dev_content = time_message["content"]
-        await conn.fetchrow(
-            sql_link_dev,
-            time_dev_content,
-            str(model_run_id),
+        await log_run_messages(
+            conn=conn,
+            run_id=model_run_id,
+            system_prompt=agent["system_prompt"],
+            developer_message_contents=[rubric_dev_content, time_dev_content],
+            department_id=department_id,
         )
 
         # Run the grading
@@ -568,6 +551,17 @@ async def _run_grade_agent_inline(
                 agent_instance,
                 input=input_items,
                 context=DebugContext(conn=conn, run_id=model_run_id),
+            )
+        
+        # Log assistant message (model output)
+        assistant_output = getattr(result, "final_output", None) or ""
+        if assistant_output:
+            await log_run_messages(
+                conn=conn,
+                run_id=model_run_id,
+                system_prompt=None,  # Already logged
+                assistant_output=assistant_output,
+                department_id=department_id,
             )
 
         usage = result.context_wrapper.usage

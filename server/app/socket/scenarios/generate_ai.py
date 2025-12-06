@@ -9,19 +9,19 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner,
 from agents.items import TResponseInputItem
 from app.main import get_pool, scenario_progress, scenario_results, sio
 from app.utils.agents.generic_agent import GenericAgent
+from app.utils.agents.tools.create_dynamic_document_function import (
+    available_templates, dynamic_document_results)
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
 from app.utils.documents.create_dynamic_document import create_dynamic_document
-from app.utils.agents.tools.create_dynamic_document_function import (
-    dynamic_document_results,
-    available_templates,
-)
 from app.utils.logging.db_logger import get_logger
+from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
-from app.utils.scenario.format_document_template_info import format_document_template_info
+from app.utils.scenario.format_document_template_info import \
+    format_document_template_info
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
@@ -297,10 +297,10 @@ async def _generate_scenario_ai_impl(
                 document_template_info,
             ]
 
-            # Add user instructions as first input item if provided
+            # Add user instructions as first input item if provided (as developer message)
             if data.userInstructions and data.userInstructions.strip():
                 user_instructions_item: TResponseInputItem = {
-                    "role": "user",
+                    "role": "developer",
                     "content": f"User instructions for scenario generation: {data.userInstructions.strip()}",
                 }
                 input_items.insert(0, user_instructions_item)
@@ -368,6 +368,15 @@ async def _generate_scenario_ai_impl(
             )
             model_run_id = uuid.UUID(model_run_row["run_id"])
 
+            # Log system and developer messages for this run
+            await log_run_messages(
+                conn=conn,
+                run_id=model_run_id,
+                system_prompt=context["system_prompt"],
+                input_items=clean_input_items,
+                department_id=department_id,
+            )
+
             with trace(
                 "Scenario Agent",
                 group_id=str(group_id) if group_id else None,
@@ -377,6 +386,17 @@ async def _generate_scenario_ai_impl(
                     agent_instance,
                     input=clean_input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
+                )
+            
+            # Log assistant message (model output)
+            assistant_output = getattr(result, "final_output", None) or ""
+            if assistant_output:
+                await log_run_messages(
+                    conn=conn,
+                    run_id=model_run_id,
+                    system_prompt=None,  # Already logged
+                    assistant_output=assistant_output,
+                    department_id=department_id,
                 )
 
             # Extract results from the global storage

@@ -8,6 +8,7 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from agents import FunctionToolResult, Runner, RunContextWrapper, ToolsToFinalOutputResult, trace
+from agents.items import TResponseInputItem
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 
@@ -19,6 +20,7 @@ from app.utils.agents.tools.create_classification_tools import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
+from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
@@ -256,7 +258,17 @@ Use the provided classification tools to indicate which files match each paramet
         model_run_id = uuid.UUID(model_run_row["run_id"])
 
         # Run classification agent
-        input_items = [{"role": "user", "content": agent_input}]
+        # Convert to developer message (non-simulation handlers use developer, not user)
+        input_items: list[TResponseInputItem] = [{"role": "developer", "content": agent_input}]  # type: ignore[assignment]
+        
+        # Log system and developer messages for this run
+        await log_run_messages(
+            conn=conn,
+            run_id=model_run_id,
+            system_prompt=context["system_prompt"],
+            input_items=input_items,
+            department_id=department_id,
+        )
         
         with trace(
             "Classification Agent",
@@ -267,6 +279,17 @@ Use the provided classification tools to indicate which files match each paramet
                 classification_agent.agent(),
                 input_items,
                 context=DebugContext(conn=conn, run_id=model_run_id),
+            )
+        
+        # Log assistant message (model output)
+        assistant_output = getattr(result, "final_output", None) or ""
+        if assistant_output:
+            await log_run_messages(
+                conn=conn,
+                run_id=model_run_id,
+                system_prompt=None,  # Already logged
+                assistant_output=assistant_output,
+                department_id=department_id,
             )
 
         # Update token counts

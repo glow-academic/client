@@ -16,6 +16,7 @@ from app.utils.agents.tools.create_document_tools import (
     document_results,
 )
 from app.utils.debug_info import DebugContext
+from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
@@ -179,6 +180,15 @@ async def run_document_agent_with_ai(
     )
     model_run_id = uuid.UUID(model_run_row["run_id"])
 
+    # Log system and developer messages for this run
+    await log_run_messages(
+        conn=conn,
+        run_id=model_run_id,
+        system_prompt=context["system_prompt"],
+        input_items=input_items,
+        department_id=department_id,
+    )
+
     # Run document generation with tracing
     with trace(
         "Document Agent",
@@ -189,6 +199,17 @@ async def run_document_agent_with_ai(
             document_agent.agent(),
             input_items,
             context=DebugContext(conn=conn, run_id=model_run_id),
+        )
+    
+    # Log assistant message (model output)
+    assistant_output = getattr(result, "final_output", None) or ""
+    if assistant_output:
+        await log_run_messages(
+            conn=conn,
+            run_id=model_run_id,
+            system_prompt=None,  # Already logged
+            assistant_output=assistant_output,
+            department_id=department_id,
         )
 
     # Update token counts using SQL file

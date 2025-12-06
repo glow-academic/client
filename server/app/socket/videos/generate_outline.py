@@ -14,6 +14,7 @@ from app.utils.agents.tools.create_outline_tools import create_outline_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
+from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
 from app.utils.video.format_policy_info import format_policy_info
@@ -430,6 +431,15 @@ async def _generate_video_outline_impl(
             )
             model_run_id = uuid.UUID(model_run_row["run_id"])
 
+            # Log system and developer messages for this run
+            await log_run_messages(
+                conn=conn,
+                run_id=model_run_id,
+                system_prompt=context["system_prompt"],
+                input_items=clean_input_items,
+                department_id=department_id,
+            )
+
             with trace(
                 "Outline Agent",
                 group_id=str(group_id) if group_id else None,
@@ -439,6 +449,17 @@ async def _generate_video_outline_impl(
                     agent_instance,
                     input=clean_input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
+                )
+            
+            # Log assistant message (model output)
+            assistant_output = getattr(result, "final_output", None) or ""
+            if assistant_output:
+                await log_run_messages(
+                    conn=conn,
+                    run_id=model_run_id,
+                    system_prompt=None,  # Already logged
+                    assistant_output=assistant_output,
+                    department_id=department_id,
                 )
 
             # Extract results from the global storage

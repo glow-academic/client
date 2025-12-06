@@ -18,6 +18,7 @@ from app.utils.chat.get_simulation_conversation_history import \
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
+from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
 from openai.types.responses import ResponseTextDeltaEvent
 from pydantic import BaseModel, ValidationError
@@ -335,22 +336,14 @@ async def _generate_hints_background_inline(
             )
             model_run_id = uuid.UUID(model_run_row["run_id"])
             
-            # Link system message to run
-            sql_link_sys = load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql")
-            await conn.fetchrow(
-                sql_link_sys,
-                str(model_run_id),
-                str(department_id),
-                None,  # chat_id not needed for hint agent
-            )
-            
-            # Link hint developer message to run (shared message)
+            # Log system and developer messages for this run
             hint_dev_content = "Now please generate the hints based on the previous conversation. You must call all three hint tools (provide_hint_1, provide_hint_2, and provide_hint_3) to provide short, concise guidance for the GTA."
-            sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
-            await conn.fetchrow(
-                sql_link_dev,
-                hint_dev_content,
-                str(model_run_id),
+            await log_run_messages(
+                conn=conn,
+                run_id=model_run_id,
+                system_prompt=context["system_prompt"],
+                developer_message_contents=[hint_dev_content],
+                department_id=department_id,
             )
 
             # Run the hint agent
@@ -362,6 +355,17 @@ async def _generate_hints_background_inline(
                     hint_agent.agent(),
                     input=input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
+                )
+            
+            # Log assistant message (model output)
+            assistant_output = getattr(result, "final_output", None) or ""
+            if assistant_output:
+                await log_run_messages(
+                    conn=conn,
+                    run_id=model_run_id,
+                    system_prompt=None,  # Already logged
+                    assistant_output=assistant_output,
+                    department_id=department_id,
                 )
 
             # Update token usage using SQL file
