@@ -96,7 +96,7 @@
                 svl.show_problem_statement,
                 svl.show_objectives,
                 svl.show_image,
-                -- Get documents (policies) for this video
+                -- Get documents connected to this video
                 COALESCE(
                     (SELECT jsonb_agg(
                         jsonb_build_object(
@@ -109,19 +109,16 @@
                             END,
                             'filePath', u.file_path,
                             'mimeType', u.mime_type,
-                            'uploadId', du.upload_id::text,
-                            'type', 'policy'
+                            'uploadId', CASE WHEN du.upload_id IS NOT NULL THEN du.upload_id::text ELSE NULL END
                         )
                     )
                     FROM video_documents vd
                     JOIN documents d ON d.id = vd.document_id
                     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
                     LEFT JOIN uploads u ON u.id = du.upload_id
-                    JOIN fields f ON f.id IN (SELECT f2.id FROM fields f2 JOIN field_parameters fp2 ON fp2.field_id = f2.id AND fp2.active = true JOIN parameters p2 ON p2.id = fp2.parameter_id WHERE p2.name = 'Document Type' AND p2.document_parameter = true LIMIT 1)
-                    JOIN document_fields df ON df.document_id = d.id AND df.field_id = f.id AND df.active = true
-                    WHERE vd.video_id = v.id AND vd.active = true AND d.active = true AND f.value = 'policy'),
+                    WHERE vd.video_id = v.id AND vd.active = true AND d.active = true),
                     '[]'::jsonb
-                ) as policies,
+                ) as videoDocuments,
                 -- Get questions with timestamps and options
                 COALESCE(
                     (SELECT jsonb_agg(
@@ -810,7 +807,8 @@
                         ),
                         'file_path', u.file_path,
                         'mime_type', u.mime_type,
-                        'parameter_item_ids', COALESCE(
+                        'upload_id', CASE WHEN du.upload_id IS NOT NULL THEN du.upload_id::text ELSE NULL END,
+                        'field_ids', COALESCE(
                             (SELECT array_agg(DISTINCT df.field_id::text)
                              FROM document_fields df
                              WHERE df.document_id = d.id AND df.active = true),
@@ -1048,7 +1046,7 @@
                         'title', vd.video_title,
                         'lengthSeconds', vd.length_seconds,
                         'uploadId', CASE WHEN vd.upload_id IS NOT NULL THEN vd.upload_id::text ELSE NULL END,
-                        'policies', vd.policies,
+                        'videoDocuments', vd.videoDocuments,
                         'questions', vd.questions,
                         'showProblemStatement', vd.show_problem_statement,
                         'showObjectives', vd.show_objectives,

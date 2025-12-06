@@ -23014,65 +23014,6 @@
         "title": "PersonasListResponse",
         "description": "Response for personas list endpoint."
       },
-      "PolicyItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "extension": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Extension"
-          },
-          "filePath": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Filepath"
-          },
-          "mimeType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mimetype"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "extension",
-          "filePath",
-          "mimeType"
-        ],
-        "title": "PolicyItem"
-      },
       "PracticeFilters": {
         "properties": {
           "profileId": {
@@ -27604,12 +27545,23 @@
             "type": "string",
             "title": "Mime Type"
           },
-          "parameter_item_ids": {
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Parameter Item Ids"
+            "title": "Field Ids"
           }
         },
         "type": "object",
@@ -27626,7 +27578,8 @@
           "department_ids",
           "file_path",
           "mime_type",
-          "parameter_item_ids"
+          "upload_id",
+          "field_ids"
         ],
         "title": "ScenarioDocumentItem"
       },
@@ -32619,6 +32572,77 @@
         "title": "VideoDetailRequest",
         "description": "Request to get video detail."
       },
+      "VideoDocumentItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "extension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension"
+          },
+          "filePath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filepath"
+          },
+          "mimeType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mimetype"
+          },
+          "uploadId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploadid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "extension",
+          "filePath",
+          "mimeType",
+          "uploadId"
+        ],
+        "title": "VideoDocumentItem"
+      },
       "VideoInRequest": {
         "properties": {
           "video_id": {
@@ -33559,12 +33583,12 @@
             ],
             "title": "Uploadid"
           },
-          "policies": {
+          "videoDocuments": {
             "items": {
-              "$ref": "#/components/schemas/PolicyItem"
+              "$ref": "#/components/schemas/VideoDocumentItem"
             },
             "type": "array",
-            "title": "Policies"
+            "title": "Videodocuments"
           },
           "questions": {
             "items": {
@@ -33592,7 +33616,7 @@
           "title",
           "lengthSeconds",
           "uploadId",
-          "policies",
+          "videoDocuments",
           "questions",
           "showProblemStatement",
           "showObjectives",

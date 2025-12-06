@@ -92,20 +92,20 @@ export default function VideoAttemptView({
   const quiz = contentItem.quiz;
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Get documents (policies) from video.policies or fallback to policies prop
-  // video.policies contains documents linked to the video
+  // Get documents from video.videoDocuments or fallback to policies prop
+  // video.videoDocuments contains documents linked to the video
   // policies prop contains scenario documents filtered by type='policy'
   const videoPolicies = useMemo(() => {
     if (
-      video?.policies &&
-      Array.isArray(video.policies) &&
-      video.policies.length > 0
+      video?.videoDocuments &&
+      Array.isArray(video.videoDocuments) &&
+      video.videoDocuments.length > 0
     ) {
-      return video.policies;
+      return video.videoDocuments;
     }
     // Fallback to policies prop (scenario documents filtered by type='policy')
     return policies || [];
-  }, [video?.policies, policies]);
+  }, [video?.videoDocuments, policies]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);

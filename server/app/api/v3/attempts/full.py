@@ -167,13 +167,14 @@ class QuestionItem(BaseModel):
     options: list[OptionItem]
 
 
-class PolicyItem(BaseModel):
+class VideoDocumentItem(BaseModel):
     id: str
     name: str
     description: str
     extension: str | None
     filePath: str | None
     mimeType: str | None
+    uploadId: str | None
 
 
 class VideoItem(BaseModel):
@@ -181,7 +182,7 @@ class VideoItem(BaseModel):
     title: str
     lengthSeconds: int
     uploadId: str | None
-    policies: list[PolicyItem]
+    videoDocuments: list[VideoDocumentItem]
     questions: list[QuestionItem]
     showProblemStatement: bool
     showObjectives: bool
@@ -228,7 +229,8 @@ class ScenarioDocumentItem(BaseModel):
     department_ids: list[str] | None
     file_path: str
     mime_type: str
-    parameter_item_ids: list[str]
+    upload_id: str | None
+    field_ids: list[str]
 
 
 class StandardGroupMappingItem(BaseModel):
@@ -515,9 +517,9 @@ async def get_attempt_full(
             
             if content_type == "video" and chat_data.get("video"):
                 video_data = chat_data["video"]
-                # Parse policies
-                policies = [
-                    PolicyItem(**p) for p in video_data.get("policies", [])
+                # Parse video documents
+                video_documents = [
+                    VideoDocumentItem(**p) for p in video_data.get("videoDocuments", [])
                 ]
                 # Parse questions with options
                 questions = []
@@ -540,7 +542,7 @@ async def get_attempt_full(
                     title=video_data["title"],
                     lengthSeconds=video_data["lengthSeconds"],
                     uploadId=video_data.get("uploadId"),
-                    policies=policies,
+                    videoDocuments=video_documents,
                     questions=questions,
                     showProblemStatement=video_data.get("showProblemStatement", True),
                     showObjectives=video_data.get("showObjectives", True),

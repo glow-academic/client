@@ -9658,21 +9658,6 @@ export interface components {
                 [key: string]: string;
             }[];
         };
-        /** PolicyItem */
-        PolicyItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Extension */
-            extension: string | null;
-            /** Filepath */
-            filePath: string | null;
-            /** Mimetype */
-            mimeType: string | null;
-        };
         /**
          * PracticeFilters
          * @description Practice filter request schema - simplified to profile-only.
@@ -11313,8 +11298,10 @@ export interface components {
             file_path: string;
             /** Mime Type */
             mime_type: string;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
+            /** Upload Id */
+            upload_id: string | null;
+            /** Field Ids */
+            field_ids: string[];
         };
         /**
          * ScenarioFact
@@ -13270,6 +13257,23 @@ export interface components {
             /** Profileid */
             profileId: string;
         };
+        /** VideoDocumentItem */
+        VideoDocumentItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Extension */
+            extension: string | null;
+            /** Filepath */
+            filePath: string | null;
+            /** Mimetype */
+            mimeType: string | null;
+            /** Uploadid */
+            uploadId: string | null;
+        };
         /**
          * VideoInRequest
          * @description Video in request format.
@@ -13604,8 +13608,8 @@ export interface components {
             lengthSeconds: number;
             /** Uploadid */
             uploadId: string | null;
-            /** Policies */
-            policies: components["schemas"]["PolicyItem"][];
+            /** Videodocuments */
+            videoDocuments: components["schemas"]["VideoDocumentItem"][];
             /** Questions */
             questions: components["schemas"]["QuestionItem-Output"][];
             /** Showproblemstatement */

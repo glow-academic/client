@@ -1578,18 +1578,18 @@ export default function AttemptChat({
 
   // If video content type, render VideoAttemptView
   if (contentType === "video" && currentContentItem) {
-    // Get documents (policies) - video documents come from video.policies in contentItem
+    // Get documents - video documents come from video.videoDocuments in contentItem
     // scenarioDocuments may also contain policy documents, so combine both sources
-    const videoDocuments = currentContentItem.video?.policies || [];
+    const videoDocuments = currentContentItem.video?.videoDocuments || [];
     const scenarioPolicyDocuments = scenarioDocuments.filter(
       (doc) =>
         doc.type === "policy" ||
-        (doc.parameter_item_ids &&
-          Array.isArray(doc.parameter_item_ids) &&
-          doc.parameter_item_ids.length > 0)
+        (doc.field_ids &&
+          Array.isArray(doc.field_ids) &&
+          doc.field_ids.length > 0)
     );
     // Combine and deduplicate by document_id
-    // videoDocuments are PolicyItem (has 'id'), scenarioDocuments are ScenarioDocumentItem (has 'document_id')
+    // videoDocuments are VideoDocumentItem (has 'id'), scenarioDocuments are ScenarioDocumentItem (has 'document_id')
     const allPolicyDocuments = [
       ...videoDocuments.map((doc) => ({ ...doc, document_id: doc.id })),
       ...scenarioPolicyDocuments,
