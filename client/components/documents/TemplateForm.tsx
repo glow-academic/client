@@ -9,7 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { templateArgsToSearchParams } from "@/utils/template-args-url";
+import {
+  searchParamsToTemplateArgs,
+  templateArgsToSearchParams,
+} from "@/utils/template-args-url";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -49,60 +52,48 @@ export function isTemplateSchema(value: unknown): value is TemplateSchema {
 
 export interface TemplateFormProps {
   schema: TemplateSchema | null;
-  values: Record<string, unknown>;
-  onChange: (values: Record<string, unknown>) => void;
+  // values and onChange are kept for backward compatibility but not used
+  // Search params are now the single source of truth
+  values?: Record<string, unknown>;
+  onChange?: (values: Record<string, unknown>) => void;
 }
 
 export default function TemplateForm({
   schema,
-  values,
-  onChange,
+  values: _values,
+  onChange: _onChange,
 }: TemplateFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [formValues, setFormValues] = useState<Record<string, unknown>>(values);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isUpdatingFromUrlRef = useRef(false);
-  const lastSearchParamsRef = useRef<string>("");
 
-  // Sync form values from search params when they change
+  // Helper to get template args from URL search params
+  const getUrlArgs = useCallback(() => {
+    if (!schema || !searchParams) return {};
+    return searchParamsToTemplateArgs(searchParams, schema);
+  }, [schema, searchParams]);
+
+  // Initialize form values from URL search params (single source of truth)
+  const [formValues, setFormValues] = useState<Record<string, unknown>>(() => {
+    if (!schema || !searchParams) return {};
+    return searchParamsToTemplateArgs(searchParams, schema);
+  });
+
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isUpdatingUrlRef = useRef(false);
+
+  // Keep local state in sync if URL changes (back/forward, link, etc.)
+  // This follows the SimulationHistory pattern - sync directly without comparison
   useEffect(() => {
     if (!schema || !searchParams) return;
 
-    // Get search params string to detect changes
-    const searchParamsStr = searchParams.toString();
-
-    // Skip if search params haven't changed (avoid unnecessary updates)
-    if (searchParamsStr === lastSearchParamsRef.current) return;
-    lastSearchParamsRef.current = searchParamsStr;
-
-    // Check if there are template args in URL (JSON format)
-    const hasTemplateParams = searchParams.has("templateArgs");
-
-    if (hasTemplateParams) {
-      // Import searchParamsToTemplateArgs dynamically to avoid circular deps
-      import("@/utils/template-args-url").then(
-        ({ searchParamsToTemplateArgs }) => {
-          const urlArgs = searchParamsToTemplateArgs(searchParams, schema);
-          if (Object.keys(urlArgs).length > 0) {
-            // Check if values actually changed to avoid unnecessary updates
-            const currentValuesStr = JSON.stringify(formValues);
-            const urlArgsStr = JSON.stringify(urlArgs);
-            if (currentValuesStr !== urlArgsStr) {
-              isUpdatingFromUrlRef.current = true;
-              setFormValues(urlArgs);
-              onChange(urlArgs);
-              // Reset flag after a short delay
-              setTimeout(() => {
-                isUpdatingFromUrlRef.current = false;
-              }, 100);
-            }
-          }
-        }
-      );
+    // Skip if we're the ones updating the URL (avoid circular updates)
+    if (isUpdatingUrlRef.current) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, schema]); // Watch searchParams changes, formValues and onChange excluded to avoid loops
+
+    const urlArgs = getUrlArgs();
+    setFormValues(urlArgs);
+  }, [searchParams, schema, getUrlArgs]);
 
   // Sync form values to URL search params with debouncing
   const syncToUrl = useCallback(
@@ -114,7 +105,10 @@ export default function TemplateForm({
         clearTimeout(debounceTimeoutRef.current);
       }
 
-      // Debounce URL updates (300ms)
+      // Mark that we're updating the URL
+      isUpdatingUrlRef.current = true;
+
+      // Debounce URL updates (500ms to match render debounce)
       debounceTimeoutRef.current = setTimeout(() => {
         const params = new URLSearchParams(searchParams.toString());
 
@@ -136,21 +130,20 @@ export default function TemplateForm({
           params.set(key, value);
         }
 
-        // Update URL without scrolling
+        // Update URL without scrolling (this will trigger soft refresh)
         router.replace(`?${params.toString()}`, { scroll: false });
-      }, 300);
+
+        // Clear flag after URL update completes
+        // Next.js soft refresh will cause searchParams to update, which will sync formValues
+        setTimeout(() => {
+          isUpdatingUrlRef.current = false;
+        }, 100);
+      }, 500);
     },
     [schema, searchParams, router]
   );
 
-  useEffect(() => {
-    setFormValues(values);
-  }, [values]);
-
   const updateValue = (path: string[], value: unknown) => {
-    // Skip URL sync if we're updating from URL to avoid circular updates
-    if (isUpdatingFromUrlRef.current) return;
-
     const newValues = { ...formValues };
     let current: Record<string, unknown> = newValues;
 
@@ -173,8 +166,11 @@ export default function TemplateForm({
     if (finalKey !== undefined) {
       current[finalKey] = value;
     }
+
+    // Update local state immediately for responsive UI (like SimulationHistory pattern)
     setFormValues(newValues);
-    onChange(newValues);
+
+    // Sync to URL with debounce (this will trigger soft refresh and re-render)
     syncToUrl(newValues);
   };
 
@@ -205,7 +201,9 @@ export default function TemplateForm({
               {field.required && <span className="text-destructive"> *</span>}
             </Label>
             {field.description && (
-              <p className="text-sm text-muted-foreground">{field.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {field.description}
+              </p>
             )}
             <Textarea
               id={fieldPath.join(".")}
@@ -225,7 +223,9 @@ export default function TemplateForm({
               {field.required && <span className="text-destructive"> *</span>}
             </Label>
             {field.description && (
-              <p className="text-sm text-muted-foreground">{field.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {field.description}
+              </p>
             )}
             <Input
               id={fieldPath.join(".")}
@@ -250,11 +250,7 @@ export default function TemplateForm({
 
       case "boolean":
         return (
-          <div
-            key={field.name}
-            className="space-y-2"
-            style={{ paddingLeft }}
-          >
+          <div key={field.name} className="space-y-2" style={{ paddingLeft }}>
             <div className="flex items-center space-x-2">
               <Checkbox
                 id={fieldPath.join(".")}
@@ -269,7 +265,9 @@ export default function TemplateForm({
               </Label>
             </div>
             {field.description && (
-              <p className="text-sm text-muted-foreground ml-6">{field.description}</p>
+              <p className="text-sm text-muted-foreground ml-6">
+                {field.description}
+              </p>
             )}
           </div>
         );
@@ -284,10 +282,14 @@ export default function TemplateForm({
               <div>
                 <Label>
                   {field.name}
-                  {field.required && <span className="text-destructive"> *</span>}
+                  {field.required && (
+                    <span className="text-destructive"> *</span>
+                  )}
                 </Label>
                 {field.description && (
-                  <p className="text-sm text-muted-foreground">{field.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {field.description}
+                  </p>
                 )}
               </div>
               <Button
@@ -348,7 +350,9 @@ export default function TemplateForm({
                 {field.required && <span className="text-destructive"> *</span>}
               </Label>
               {field.description && (
-                <p className="text-sm text-muted-foreground">{field.description}</p>
+                <p className="text-sm text-muted-foreground">
+                  {field.description}
+                </p>
               )}
             </div>
             <div className="space-y-4">

@@ -1167,8 +1167,11 @@ export default function Document({
           document_agent_id: formData.documentAgentId ?? null,
           templateUploadId:
             isTemplateDocument && templateUploadId ? templateUploadId : null,
-          templateArgs: isTemplateDocument
-            ? (templateArgs as Record<string, unknown> | null)
+          templateArgs: isTemplateDocument && templateSchemaForDisplay
+            ? (searchParamsToTemplateArgs(
+                searchParams,
+                templateSchemaForDisplay
+              ) as Record<string, unknown> | null)
             : null,
         };
         await updateDocumentAction({ body: updateBody });
@@ -1837,8 +1840,7 @@ export default function Document({
                 <div className="border rounded-md flex-1 min-h-0 overflow-y-auto p-4">
                   <TemplateForm
                     schema={templateSchemaForDisplay}
-                    values={templateArgs}
-                    onChange={setTemplateArgs}
+                    // values and onChange are no longer needed - search params are the source of truth
                   />
                 </div>
               </div>
