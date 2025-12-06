@@ -35,8 +35,6 @@ original_persona AS (
         p.name,
         p.description,
         COALESCE(pr.system_prompt, '') as system_prompt,
-        p.temperature,
-        p.reasoning,
         pa.agent_id,
         p.color,
         p.icon
@@ -56,8 +54,6 @@ new_persona AS (
     INSERT INTO personas (
         name,
         description,
-        temperature,
-        reasoning,
         color,
         icon,
         active,
@@ -67,8 +63,6 @@ new_persona AS (
     SELECT 
         op.name || ' Copy',
         COALESCE(op.description, ''),
-        op.temperature,
-        COALESCE(op.reasoning::reasoning_effort, 'none'::reasoning_effort),
         op.color,
         op.icon,
         false,

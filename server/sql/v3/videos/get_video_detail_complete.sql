@@ -75,12 +75,13 @@ video_core AS (
         v.name,
         v.length_seconds,
         v.active,
-        v.upload_id::text,
+        vu.upload_id::text,
         COALESCE(vdd.department_ids, NULL) as department_ids,
         v.outline_agent_id::text,
         v.image_agent_id::text
     FROM videos v
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
+    LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
     CROSS JOIN video_department_access_check vdac
     WHERE v.id = $1 AND vdac.has_access = true
 ),

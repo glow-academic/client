@@ -91,7 +91,7 @@
                 v.id as video_id,
                 v.name as video_title,
                 v.length_seconds,
-                v.upload_id,
+                vu.upload_id,
                 svl.position,
                 svl.show_problem_statement,
                 svl.show_objectives,
@@ -128,7 +128,7 @@
                         jsonb_build_object(
                             'id', q.id::text,
                             'questionText', q.question_text,
-                            'type', q.type::text,
+                            'type', 'choice'::text,
                             'allowMultiple', q.allow_multiple,
                             'times', (
                                 SELECT ARRAY_AGG(qt.time ORDER BY qt.time)
@@ -161,6 +161,7 @@
                 ) as questions
             FROM simulation_videos_list svl
             JOIN videos v ON v.id = svl.video_id
+            LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
             WHERE v.active = true
         ),
         -- Get quizzes for this attempt
@@ -788,9 +789,9 @@
                     jsonb_build_object(
                         'document_id', d.id::text,
                         'name', d.name,
-                        'type', NULL,
+                        'type', '',
                         'updatedAt', d.updated_at,
-                        'extension', CASE WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$') ELSE '' END,
+                        'extension', COALESCE(SUBSTRING(u.file_path FROM '\\.([^\\.]+)$'), ''),
                         'scenario_ids', COALESCE(
                             (SELECT array_agg(DISTINCT st.parent_id::text)
                              FROM scenario_documents sd2
@@ -807,8 +808,8 @@
                              WHERE dd.document_id = d.id AND dd.active = true),
                             NULL
                         ),
-                        'file_path', d.file_path,
-                        'mime_type', d.mime_type,
+                        'file_path', u.file_path,
+                        'mime_type', u.mime_type,
                         'parameter_item_ids', COALESCE(
                             (SELECT array_agg(DISTINCT df.field_id::text)
                              FROM document_fields df
@@ -1109,7 +1110,7 @@
         -- Combine chats and videos into unified content list
         unified_content AS (
             SELECT 
-                chat_id as content_id,
+                chat_id::text as content_id,
                 chat_data,
                 completed,
                 created_at,
@@ -1387,6 +1388,8 @@
                 'practiceSimulation', ab.sim_practice_simulation,
                 'hintsEnabled', sf.hints_enabled,
                 'objectivesEnabled', sf.objectives_enabled,
+                'inputGuardrailActive', false,
+                'outputGuardrailActive', false,
                 'imageInputActive', sf.image_input_enabled,
                 'copyPasteAllowed', sf.copy_paste_allowed,
                 'timeLimit', ab.sim_time_limit,

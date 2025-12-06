@@ -502,8 +502,8 @@ scenario_documents_data AS (
                      WHERE dd.document_id = d.id AND dd.active = true),
                     NULL
                 ),
-                'file_path', d.file_path,
-                'mime_type', d.mime_type,
+                'file_path', u.file_path,
+                'mime_type', u.mime_type,
                 'parameter_item_ids', COALESCE(
                     (SELECT array_agg(DISTINCT df.field_id::text)
                      FROM document_fields df

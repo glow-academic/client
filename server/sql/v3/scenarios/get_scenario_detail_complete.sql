@@ -265,7 +265,14 @@ valid_personas_filtered AS (
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
 ),
 persona_data AS (
-    SELECT * FROM valid_personas_filtered
+    SELECT 
+        p.id,
+        p.name,
+        p.description,
+        p.color,
+        p.icon,
+        p.image_model
+    FROM valid_personas_filtered p
     UNION
     SELECT DISTINCT
         p2.id,
@@ -282,7 +289,6 @@ persona_data AS (
     LEFT JOIN models m2 ON m2.id = a2.model_id
     LEFT JOIN image_model_check imc2 ON imc2.model_id = m2.id
     WHERE p2.active = true
-    ORDER BY name
 ),
 valid_personas_data AS (
     SELECT 
@@ -318,7 +324,13 @@ valid_documents_filtered AS (
         OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
 ),
 document_data AS (
-    SELECT * FROM valid_documents_filtered
+    SELECT 
+        d.id,
+        d.name,
+        d.description,
+        d.file_path,
+        d.mime_type
+    FROM valid_documents_filtered d
     UNION
     SELECT DISTINCT
         d2.id,
@@ -332,7 +344,6 @@ document_data AS (
     LEFT JOIN document_uploads du2 ON du2.document_id = d2.id AND du2.active = true
     LEFT JOIN uploads u2 ON u2.id = du2.upload_id
     WHERE d2.active = true
-    ORDER BY name
 ),
 valid_documents_data AS (
     SELECT 

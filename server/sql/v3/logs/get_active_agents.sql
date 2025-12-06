@@ -3,16 +3,20 @@ SELECT
     p.id, 
     p.name, 
     COALESCE(pr_prompt.system_prompt, '') as system_prompt, 
-    p.temperature,
+    COALESCE(mtl.temperature, 0.0) as temperature,
     m.provider::text as provider_name, 
     k.key as api_key,
     COALESCE(me.base_url, '') as base_url, 
     m.name as model_name,
-    p.reasoning,
+    mrl.reasoning_level as reasoning,
     'simulation' as agent_type
 FROM personas p
 LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
 LEFT JOIN agents a ON a.id = pa.agent_id
+LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
 LEFT JOIN models m ON m.id = a.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true

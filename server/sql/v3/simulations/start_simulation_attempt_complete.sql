@@ -149,8 +149,8 @@ scenario_full_data AS (
             COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
             ''
         ) as system_prompt,
-        p.temperature,
-        p.reasoning,
+        COALESCE(mtl.temperature, 0.0) as temperature,
+        mrl.reasoning_level as reasoning,
         p.color as persona_color,
         p.icon as persona_icon,
         -- Model data
@@ -197,6 +197,11 @@ scenario_full_data AS (
     LEFT JOIN personas p ON p.id = sp.persona_id
     LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
     LEFT JOIN agents a ON a.id = pa.agent_id
+    -- Join temperature and reasoning from model levels via agent
+    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
     -- Try department-specific agent prompt first, fall back to default prompt
     CROSS JOIN resolved_dept rd
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
@@ -220,7 +225,7 @@ scenario_full_data AS (
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, s.name, ps.problem_statement, s.active, 
              s.generated, p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 
-             p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.provider,
+             COALESCE(mtl.temperature, 0.0), mrl.reasoning_level, p.color, p.icon, m.id, m.name, m.provider,
              k.key, me.base_url
 ),
 -- Create simulation chat (only for scenarios, not videos)

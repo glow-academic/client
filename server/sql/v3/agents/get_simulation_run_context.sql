@@ -84,8 +84,8 @@ SELECT
         COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
         ''
     ) as system_prompt,
-    p.temperature,
-    p.reasoning,
+    COALESCE(mtl.temperature, 0.0) as temperature,
+    mrl.reasoning_level as reasoning,
     
     -- Model data
     m.id::text as model_id,
@@ -132,6 +132,11 @@ LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
 LEFT JOIN personas p ON p.id = sp.persona_id
 LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
 LEFT JOIN agents a ON a.id = pa.agent_id
+-- Join temperature and reasoning from model levels via agent
+LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
 -- Try department-specific agent prompt first, fall back to default prompt
 LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
     AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
@@ -155,7 +160,7 @@ WHERE sc.id = $1::uuid
 GROUP BY sc.id, sc.title, sc.trace_id,
          sa.id, sa.simulation_id,
          s.id, ps.problem_statement,
-         p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, p.temperature, p.reasoning,
+         p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
          m.id, m.name, m.provider,
          k.key, me.base_url,
          ss.image_input_enabled, ss.copy_paste_allowed,

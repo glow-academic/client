@@ -99,11 +99,11 @@ document_mapping_data AS (
                 'name', d.name,
                 'description', d.description,
                 'extension', CASE 
-                    WHEN d.file_path IS NOT NULL THEN SUBSTRING(d.file_path FROM '\.([^\.]+)$')
+                    WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\.([^\.]+)$')
                     ELSE NULL
                 END,
-                'filePath', d.file_path,
-                'mimeType', d.mime_type,
+                'filePath', u.file_path,
+                'mimeType', u.mime_type,
                 'uploadId', d.upload_id::text
             )
         ) FILTER (WHERE d.id IS NOT NULL),
