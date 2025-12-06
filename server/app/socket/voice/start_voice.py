@@ -1,8 +1,9 @@
 """Handler for start_voice WebSocket event."""
 
+import inspect
 import json
 import uuid
-from typing import Any
+from typing import Any, get_type_hints
 
 from app.api.v3.realtime.ephemeral_key import _generate_ephemeral_key_internal
 from app.main import _voice_sessions, get_pool, sio
@@ -36,6 +37,7 @@ class StartVoiceResponsePayload(BaseModel):
     message: str
     ephemeral_key: str
     persona_tools: list[dict[str, str]]  # List of {name, description, parameters} for each tool
+    instructions: str  # Orchestrator instructions telling model to use tools
     config: dict[str, Any]  # Session config (model, audio format, etc.)
 
 
@@ -138,6 +140,37 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
 
             # Build orchestrator agent (we'll use it when processing realtime events)
             orchestrator_agent = build_orchestrator_agent(context, persona_tools)
+            
+            # Extract orchestrator instructions from the agent
+            # The instructions are in the agent's system_prompt
+            orchestrator_instructions = ""
+            if hasattr(orchestrator_agent, "agent"):
+                agent_instance = orchestrator_agent.agent()
+                if hasattr(agent_instance, "instructions"):
+                    instructions_value = getattr(agent_instance, "instructions", "")
+                    if isinstance(instructions_value, str):
+                        orchestrator_instructions = instructions_value
+                elif hasattr(agent_instance, "system_prompt"):
+                    prompt_value = getattr(agent_instance, "system_prompt", "")
+                    if isinstance(prompt_value, str):
+                        orchestrator_instructions = prompt_value
+            
+            # If we couldn't get it from the agent, construct it manually
+            if not orchestrator_instructions:
+                persona_names = [tool.name.replace("speak_", "").replace("_", " ") for tool in persona_tools]
+                orchestrator_instructions = f"""You are an orchestrator managing a multi-party conversation.
+
+Available personas:
+{chr(10).join(f"- {name}" for name in persona_names)}
+
+Your role:
+- Listen to the user's input
+- Decide which persona should respond based on the context
+- Call the appropriate persona tool (speak_{{persona_name}}) to make that persona respond
+- Never respond directly - always use a persona tool
+
+When a persona tool is called, that persona will generate and speak the response.
+You should call exactly one persona tool per user message."""
 
             # Store orchestrator agent in a session store (we'll use Redis or in-memory dict)
             # For now, we'll store it per chat_id in a global dict
@@ -149,7 +182,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             }
 
             # Format persona tools for client (include parameters for RealtimeAgent)
-            persona_tools_response = []
+            persona_tools_response: list[dict[str, str]] = []
             for tool in persona_tools:
                 # Handle different tool types - only FunctionTool has description
                 tool_description = ""
@@ -158,20 +191,108 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 else:
                     tool_description = f"Tool for {tool.name}"
 
-                # Extract parameters schema if available
-                tool_parameters = {}
-                if hasattr(tool, "parameters") and tool.parameters:
-                    # Convert Pydantic model to JSON schema
-                    if hasattr(tool.parameters, "model_json_schema"):
-                        tool_parameters = tool.parameters.model_json_schema()
-                    elif hasattr(tool.parameters, "schema"):
-                        tool_parameters = tool.parameters.schema()
+                # Extract parameters schema from Tool's underlying function
+                # All persona tools have the same signature: message: str = Field(...)
+                # Try to get the function from the tool, or construct schema manually
+                tool_parameters: dict[str, Any] = {}
+                
+                # Try to access the underlying function from the tool
+                func = None
+                if hasattr(tool, "func"):
+                    func = tool.func
+                elif hasattr(tool, "_func"):
+                    func = tool._func
+                elif hasattr(tool, "function"):
+                    func = tool.function
+                
+                if func:
+                    try:
+                        # Get function signature and type hints
+                        sig = inspect.signature(func)
+                        hints = get_type_hints(func, include_extras=True)
+                        
+                        # Build JSON schema from function parameters
+                        properties: dict[str, Any] = {}
+                        required: list[str] = []
+                        
+                        for param_name, param in sig.parameters.items():
+                            if param_name == "self":
+                                continue
+                            
+                            param_type = hints.get(param_name, str)
+                            param_default = param.default
+                            
+                            # Check if it's a Field with description
+                            field_info = None
+                            # Check if param_default is a Field instance
+                            if hasattr(param_default, "__class__") and param_default.__class__.__name__ == "FieldInfo":
+                                field_info = param_default
+                            elif hasattr(param_default, "description"):
+                                field_info = param_default
+                            
+                            # Determine type
+                            type_str = "string"
+                            if param_type == int:
+                                type_str = "integer"
+                            elif param_type == float:
+                                type_str = "number"
+                            elif param_type == bool:
+                                type_str = "boolean"
+                            
+                            prop: dict[str, Any] = {"type": type_str}
+                            
+                            # Add description if available
+                            if field_info:
+                                if hasattr(field_info, "description") and field_info.description:
+                                    prop["description"] = str(field_info.description)
+                            
+                            properties[param_name] = prop
+                            
+                            # Check if required (no default or default is Field)
+                            is_field_default = (
+                                hasattr(param.default, "__class__") 
+                                and param.default.__class__.__name__ == "FieldInfo"
+                            )
+                            if param.default == inspect.Parameter.empty or is_field_default:
+                                required.append(param_name)
+                        
+                        tool_parameters = {
+                            "type": "object",
+                            "properties": properties,
+                            "required": required,
+                        }
+                    except Exception as e:
+                        logger.warning(f"Failed to extract schema from tool {tool.name}: {e}")
+                        # Fallback: construct schema manually for persona tools
+                        tool_parameters = {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": f"Respond as the persona. This is the message that will be said.",
+                                }
+                            },
+                            "required": ["message"],
+                        }
+                else:
+                    # Fallback: construct schema manually for persona tools
+                    # All persona tools have the same signature
+                    tool_parameters = {
+                        "type": "object",
+                        "properties": {
+                            "message": {
+                                "type": "string",
+                                "description": f"Respond as the persona. This is the message that will be said.",
+                            }
+                        },
+                        "required": ["message"],
+                    }
 
                 persona_tools_response.append(
                     {
-                        "name": tool.name,
-                        "description": tool_description,
-                        "parameters": tool_parameters,
+                        "name": str(tool.name),
+                        "description": str(tool_description),
+                        "parameters": json.dumps(tool_parameters),
                     }
                 )
 
@@ -195,6 +316,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     message="Voice session started successfully",
                     ephemeral_key=ephemeral_key,
                     persona_tools=persona_tools_response,
+                    instructions=orchestrator_instructions,
                     config=session_config,
                 ),
                 room=sid,

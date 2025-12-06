@@ -89,8 +89,6 @@ export default function AttemptInput({
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const realtimeSessionRef = useRef<RealtimeSession | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -145,6 +143,29 @@ export default function AttemptInput({
   };
   const handleStopMessage = () => stopMessage();
 
+  // Cleanup helper for Realtime session
+  // WebRTC transport handles mic/speaker automatically, so we only need to close the session
+  const cleanupRealtime = useCallback(() => {
+    const session = realtimeSessionRef.current;
+    realtimeSessionRef.current = null;
+
+    if (session) {
+      try {
+        // Remove listeners so this instance can't emit anything anymore
+        session.removeAllListeners();
+        // Correct way to tear down the session (closes WebRTC transport automatically)
+        session.close();
+        // eslint-disable-next-line no-console
+        console.log("[Voice] RealtimeSession closed");
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn("[Voice] Error closing session:", err);
+      }
+    }
+
+    setVoiceModeEnabled(false);
+  }, []);
+
   // Voice mode handlers
   const handleVoiceToggle = useCallback(async () => {
     if (!currentChat?.id || !socket || !isConnected) {
@@ -156,31 +177,57 @@ export default function AttemptInput({
       // Stop voice mode
       setIsStoppingVoice(true);
       try {
-        // Stop voice session on server
-        socket.emit("stop_voice", { chat_id: currentChat.id });
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Stopping voice mode:", {
+          chat_id: currentChat.id,
+        });
 
-        // Disconnect Realtime session
-        if (realtimeSessionRef.current) {
-          await realtimeSessionRef.current.disconnect();
-          realtimeSessionRef.current = null;
+        // Wait for server response before disconnecting
+        const stopResponse = await new Promise<{
+          success: boolean;
+          message: string;
+        }>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error("Timeout waiting for stop_voice response"));
+          }, 5000);
+
+          socket.once("stop_voice_response", (data) => {
+            clearTimeout(timeout);
+            // eslint-disable-next-line no-console
+            console.log("[Voice] Received stop_voice_response:", data);
+            resolve(data);
+          });
+
+          socket.once("stop_voice_error", (data) => {
+            clearTimeout(timeout);
+            // eslint-disable-next-line no-console
+            console.error("[Voice] Received stop_voice_error:", data);
+            reject(new Error(data.message || "Failed to stop voice session"));
+          });
+
+          // Stop voice session on server
+          socket.emit("stop_voice", { chat_id: currentChat.id });
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Emitted stop_voice event");
+        });
+
+        if (!stopResponse.success) {
+          throw new Error(
+            stopResponse.message || "Failed to stop voice session"
+          );
         }
 
-        // Stop microphone
-        if (mediaStreamRef.current) {
-          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-          mediaStreamRef.current = null;
-        }
-
-        if (audioContextRef.current) {
-          await audioContextRef.current.close();
-          audioContextRef.current = null;
-        }
-
-        setVoiceModeEnabled(false);
+        // Locally tear down session / audio
+        await cleanupRealtime();
         toast.success("Voice mode disabled");
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Failed to stop voice mode";
+        // eslint-disable-next-line no-console
+        console.error("[Voice] Error stopping voice mode:", {
+          error: errorMessage,
+          error_object: error,
+        });
         toast.error(errorMessage);
       } finally {
         setIsStoppingVoice(false);
@@ -190,9 +237,13 @@ export default function AttemptInput({
       setIsStartingVoice(true);
       try {
         // Start voice session on server - this will return ephemeral key + tools + config
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Emitting start_voice event:", {
+          chat_id: currentChat.id,
+        });
         socket.emit("start_voice", { chat_id: currentChat.id });
 
-        // Wait for server response with ephemeral key, tools, and config
+        // Wait for server response with ephemeral key, tools, instructions, and config
         const responseData = await new Promise<{
           success: boolean;
           message: string;
@@ -200,8 +251,9 @@ export default function AttemptInput({
           persona_tools: Array<{
             name: string;
             description: string;
-            parameters: Record<string, unknown>;
+            parameters: string; // JSON string from server
           }>;
+          instructions: string;
           config: Record<string, unknown>;
         }>((resolve, reject) => {
           const timeout = setTimeout(() => {
@@ -210,6 +262,18 @@ export default function AttemptInput({
 
           socket.once("start_voice_response", (data) => {
             clearTimeout(timeout);
+            // eslint-disable-next-line no-console
+            console.log("[Voice] Received start_voice_response:", {
+              success: data.success,
+              message: data.message,
+              ephemeral_key: data.ephemeral_key
+                ? `${data.ephemeral_key.substring(0, 20)}...`
+                : null,
+              persona_tools_count: data.persona_tools?.length || 0,
+              persona_tools: data.persona_tools,
+              instructions: data.instructions,
+              config: data.config,
+            });
             if (data.success) {
               resolve(data);
             } else {
@@ -221,66 +285,188 @@ export default function AttemptInput({
 
           socket.once("start_voice_error", (data) => {
             clearTimeout(timeout);
+            // eslint-disable-next-line no-console
+            console.error("[Voice] Received start_voice_error:", data);
             reject(new Error(data.message || "Failed to start voice session"));
           });
         });
 
         // Convert server tools to RealtimeAgent tools
-        // All persona tools have a message parameter based on server implementation
+        // Parse parameters from server (JSON string) and convert to zod schema
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Processing persona tools:", {
+          count: responseData.persona_tools.length,
+          tools: responseData.persona_tools.map((t) => ({
+            name: t.name,
+            description: t.description,
+            parameters_raw: t.parameters,
+          })),
+        });
+
         const realtimeTools = responseData.persona_tools.map((toolDef) => {
-          return tool({
-            name: toolDef.name,
-            description: toolDef.description,
-            parameters: z.object({
+          // Parse parameters from server (it's a JSON string)
+          let parametersSchema: z.ZodObject<Record<string, z.ZodTypeAny>>;
+          try {
+            const paramsJson = JSON.parse(toolDef.parameters);
+            // eslint-disable-next-line no-console
+            console.log(
+              `[Voice] Parsed parameters for ${toolDef.name}:`,
+              paramsJson
+            );
+
+            // Convert JSON schema to zod schema
+            // For now, we'll construct zod schema based on the JSON schema structure
+            if (paramsJson.type === "object" && paramsJson.properties) {
+              const zodProps: Record<string, z.ZodTypeAny> = {};
+
+              for (const [key, value] of Object.entries(
+                paramsJson.properties
+              )) {
+                const prop = value as { type: string; description?: string };
+
+                let zodType: z.ZodTypeAny;
+                switch (prop.type) {
+                  case "string":
+                    zodType = z.string();
+                    break;
+                  case "integer":
+                  case "number":
+                    zodType = z.number();
+                    break;
+                  case "boolean":
+                    zodType = z.boolean();
+                    break;
+                  default:
+                    zodType = z.string(); // fallback
+                }
+
+                // Add description if available
+                if (prop.description) {
+                  zodType = zodType.describe(prop.description);
+                }
+
+                // Check if required
+                const isRequired = paramsJson.required?.includes(key) ?? true;
+                if (!isRequired) {
+                  zodType = zodType.optional();
+                }
+
+                zodProps[key] = zodType;
+              }
+
+              parametersSchema = z.object(zodProps);
+            } else {
+              // Fallback: use default schema for persona tools
+              parametersSchema = z.object({
+                message: z
+                  .string()
+                  .describe(
+                    `Respond as the persona. This is the message that will be said.`
+                  ),
+              });
+            }
+          } catch (error) {
+            // If parsing fails, use default schema
+            // eslint-disable-next-line no-console
+            console.warn(
+              `Failed to parse parameters for tool ${toolDef.name}:`,
+              error
+            );
+            parametersSchema = z.object({
               message: z
                 .string()
                 .describe(
                   `Respond as the persona. This is the message that will be said.`
                 ),
-            }),
+            });
+          }
+
+          return tool({
+            name: toolDef.name,
+            description: toolDef.description,
+            parameters: parametersSchema,
             async execute(args) {
-              // Forward tool call to server via WebSocket
-              socket.emit("voice_realtime_event", {
-                chat_id: currentChat.id,
-                event_type: "response.function_call_arguments.done",
-                event_data: JSON.stringify({
-                  name: toolDef.name,
-                  arguments: args,
-                }),
-              });
+              // The tool's execute function is called by RealtimeSession
+              // The actual forwarding to server happens in session.on("function_call") handler
+              // Just return a confirmation - the handler will emit voice_tool_call to server
+              // eslint-disable-next-line no-console
+              console.log(
+                `[Voice] Tool ${toolDef.name} execute called with args:`,
+                args
+              );
               return `Tool ${toolDef.name} executed`;
             },
           });
         });
 
-        // Create RealtimeAgent with tools
+        // Create RealtimeAgent with tools and server-provided instructions
         const agent = new RealtimeAgent({
           name: "Voice Assistant",
           instructions:
+            responseData.instructions ||
             "You are a helpful voice assistant that orchestrates conversations between personas.",
           tools: realtimeTools,
         });
 
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Created RealtimeAgent:", {
+          name: agent.name,
+          instructions_length: responseData.instructions?.length || 0,
+          instructions_preview:
+            responseData.instructions?.substring(0, 200) || "",
+          tools_count: realtimeTools.length,
+          tool_names: realtimeTools.map((t) => t.name),
+        });
+
         // Create RealtimeSession with config from server
         const session = new RealtimeSession(agent, {
-          model: "gpt-realtime",
+          model: "gpt-realtime-mini",
+          config: responseData.config,
+        });
+
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Created RealtimeSession:", {
+          model: "gpt-realtime-mini",
           config: responseData.config,
         });
 
         // Set up event listeners - library handles audio playback automatically
+        // Listen for tool calls using agent_tool_start event
+        session.on("agent_tool_start", (_runCtx, _agent, toolDef, args) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] agent_tool_start:", {
+            tool_name: toolDef.name,
+            args,
+          });
+          // Forward tool call to server
+          socket.emit("voice_tool_call", {
+            chat_id: currentChat.id,
+            tool_name: toolDef.name,
+            arguments: args,
+          });
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Emitted voice_tool_call to server:", {
+            chat_id: currentChat.id,
+            tool_name: toolDef.name,
+            arguments: args,
+          });
+        });
+
         session.on(
-          "function_call",
-          (event: { name: string; arguments: Record<string, unknown> }) => {
-            // Forward tool call to server with strongly typed event
-            socket.emit("voice_tool_call", {
-              chat_id: currentChat.id,
-              tool_name: event.name,
-              arguments: event.arguments,
+          "agent_tool_end",
+          (_runCtx, _agent, toolDef, result, rawResult) => {
+            // eslint-disable-next-line no-console
+            console.log("[Voice] agent_tool_end:", {
+              tool_name: toolDef.name,
+              result,
+              rawResult,
             });
           }
         );
 
         session.on("audio_interrupted", () => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] RealtimeSession audio_interrupted event");
           // Notify server of interruption
           socket.emit("voice_interrupted", {
             chat_id: currentChat.id,
@@ -288,90 +474,50 @@ export default function AttemptInput({
         });
 
         // Connect session with ephemeral key
+        // WebRTC transport will automatically handle mic/speaker
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Connecting RealtimeSession with ephemeral key...");
         await session.connect({ apiKey: responseData.ephemeral_key });
+        // eslint-disable-next-line no-console
+        console.log("[Voice] RealtimeSession connected successfully");
         realtimeSessionRef.current = session;
 
-        // Start microphone capture
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-        });
-        mediaStreamRef.current = stream;
-
-        // Set up audio context for processing input
-        const audioContext = new AudioContext({ sampleRate: 24000 });
-        audioContextRef.current = audioContext;
-
-        const source = audioContext.createMediaStreamSource(stream);
-        const processor = audioContext.createScriptProcessor(4096, 1, 1);
-
-        processor.onaudioprocess = (e) => {
-          if (realtimeSessionRef.current && voiceModeEnabled) {
-            const inputData = e.inputBuffer.getChannelData(0);
-            // Convert Float32Array to ArrayBuffer (PCM16) for Realtime API
-            const buffer = new ArrayBuffer(inputData.length * 2);
-            const view = new DataView(buffer);
-            for (let i = 0; i < inputData.length; i++) {
-              const sample = Math.max(-1, Math.min(1, inputData[i] ?? 0));
-              const int16Value = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
-              view.setInt16(i * 2, int16Value, true);
-            }
-            // Send audio to session - library handles output automatically
-            realtimeSessionRef.current.sendAudio(buffer);
-          }
-        };
-
-        source.connect(processor);
-        processor.connect(audioContext.destination);
-
         setVoiceModeEnabled(true);
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Voice mode enabled successfully", {
+          chat_id: currentChat.id,
+          tools_count: realtimeTools.length,
+          session_connected: true,
+        });
         toast.success("Voice mode enabled");
       } catch (error) {
         // Log error for debugging (ESLint allows in catch blocks)
         const errorMessage =
           error instanceof Error ? error.message : "Failed to start voice mode";
+        // eslint-disable-next-line no-console
+        console.error("[Voice] Error starting voice mode:", {
+          error: errorMessage,
+          error_object: error,
+          chat_id: currentChat.id,
+        });
         toast.error(errorMessage);
         // Cleanup on error
-        if (realtimeSessionRef.current) {
-          await realtimeSessionRef.current.disconnect();
-          realtimeSessionRef.current = null;
-        }
-        if (mediaStreamRef.current) {
-          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-          mediaStreamRef.current = null;
-        }
+        await cleanupRealtime();
       } finally {
         setIsStartingVoice(false);
       }
     }
-  }, [voiceModeEnabled, currentChat?.id, socket, isConnected]);
+  }, [voiceModeEnabled, currentChat?.id, socket, isConnected, cleanupRealtime]);
 
   // Cleanup on unmount or chat change
   useEffect(() => {
     return () => {
-      // Cleanup voice mode when component unmounts or chat changes
-      if (realtimeSessionRef.current) {
-        realtimeSessionRef.current.disconnect().catch(() => {
-          // Ignore disconnect errors during cleanup
-        });
-        realtimeSessionRef.current = null;
-      }
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-        mediaStreamRef.current = null;
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {
-          // Ignore close errors during cleanup
-        });
-        audioContextRef.current = null;
-      }
-      setVoiceModeEnabled(false);
+      // Fire-and-forget async cleanup
+      (async () => {
+        await cleanupRealtime();
+      })();
     };
-  }, [currentChat?.id]);
+  }, [currentChat?.id, cleanupRealtime]);
 
   // --- Effects ---
   useEffect(() => {
