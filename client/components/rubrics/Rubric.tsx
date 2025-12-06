@@ -9,8 +9,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -45,7 +52,10 @@ import {
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { toast } from "sonner";
-import { Plus, Power, Sparkles, Trash2, Edit } from "lucide-react";
+import { Plus, Power, Sparkles, Trash2, Edit, X } from "lucide-react";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 
 // Type-only import from server page
 import type {
@@ -655,18 +665,27 @@ export default function Rubric({
     });
   };
 
-  // Get unique standards (for columns) sorted by points descending (most to least)
-  // Note: Currently standards belong to one group, but we display them as columns
-  // across all groups. In a true grid, standards would appear in multiple groups.
-  const uniqueStandards = useMemo(() => {
-    const seen = new Set<string>();
-    const unique = standards.filter((s) => {
-      if (seen.has(s.id)) return false;
-      seen.add(s.id);
-      return true;
+  // Get unique standards grouped by name (for columns) sorted by points descending (most to least)
+  // This avoids duplicate columns when multiple rubrics have standards with the same name
+  const uniqueStandardsByName = useMemo(() => {
+    const standardsByName = new Map<string, Standard>();
+    // Group by name, keeping the standard with highest points (or first encountered if tie)
+    standards.forEach((s) => {
+      const existing = standardsByName.get(s.name);
+      if (!existing || s.points > existing.points) {
+        standardsByName.set(s.name, s);
+      }
     });
-    // Sort by points descending (most points first, left to right)
-    return unique.sort((a, b) => b.points - a.points);
+    // Convert to array and sort by points descending
+    return Array.from(standardsByName.values()).sort((a, b) => b.points - a.points);
+  }, [standards]);
+
+  // Helper function to find the standard ID for a given group and standard name
+  const findStandardIdForGroup = useCallback((groupId: string, standardName: string): string | null => {
+    const standard = standards.find(
+      (s) => s.standardGroupId === groupId && s.name === standardName
+    );
+    return standard?.id || null;
   }, [standards]);
 
   // Table columns definition
@@ -674,7 +693,16 @@ export default function Rubric({
     const cols: ColumnDef<StandardGroup>[] = [
       {
         id: "group",
-        header: "Standard Group",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Standard Group" />
+        ),
+        accessorFn: (row) => `${row.name} ${row.description}`,
+        filterFn: (row, id, value) => {
+          const searchValue = String(value).toLowerCase();
+          const name = String(row.original.name).toLowerCase();
+          const description = String(row.original.description).toLowerCase();
+          return name.includes(searchValue) || description.includes(searchValue);
+        },
         cell: ({ row }) => (
           <div className="space-y-1">
             <div className="font-medium">{row.original.name}</div>
@@ -714,10 +742,10 @@ export default function Rubric({
       },
     ];
 
-    // Add a column for each unique standard
-    uniqueStandards.forEach((standard) => {
+    // Add a column for each unique standard name (grouped by name to avoid duplicates)
+    uniqueStandardsByName.forEach((standard) => {
       cols.push({
-        id: standard.id,
+        id: `standard-${standard.name}`, // Use name-based ID instead of standard.id
         header: () => (
           <div className="space-y-1">
             <div className="font-medium">{standard.name}</div>
@@ -748,26 +776,28 @@ export default function Rubric({
         ),
         cell: ({ row }) => {
           const group = row.original;
+          // Find the actual standard ID for this group and standard name
+          const actualStandardId = findStandardIdForGroup(group.id, standard.name);
+          if (!actualStandardId) {
+            return (
+              <div className="text-xs text-muted-foreground text-center py-4">
+                Standard not in this group
+              </div>
+            );
+          }
           const cell = gridCells.find(
             (c) =>
-              c.standardGroupId === group.id && c.standardId === standard.id
+              c.standardGroupId === group.id && c.standardId === actualStandardId
           );
-          // Check if this standard belongs to this group (for current structure)
-          const standardBelongsToGroup =
-            standard.standardGroupId === group.id;
           return (
             <Textarea
               value={cell?.description || ""}
               onChange={(e) =>
-                handleCellChange(group.id, standard.id, e.target.value)
+                handleCellChange(group.id, actualStandardId, e.target.value)
               }
-              placeholder={
-                standardBelongsToGroup
-                  ? "Description..."
-                  : "Standard not in this group"
-              }
+              placeholder="Description..."
               className="min-h-[80px] resize-none"
-              disabled={isReadonly || !standardBelongsToGroup}
+              disabled={isReadonly}
             />
           );
         },
@@ -775,12 +805,29 @@ export default function Rubric({
     });
 
     return cols;
-  }, [uniqueStandards, gridCells, isReadonly]);
+  }, [uniqueStandardsByName, gridCells, isReadonly, findStandardIdForGroup, handleEditStandard, handleDeleteStandard]);
+
+  // Table state
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
     data: standardGroups,
     columns,
+    state: {
+      columnVisibility,
+      columnFilters,
+      sorting,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   // Error state
@@ -957,50 +1004,100 @@ export default function Rubric({
 
       {/* Grid Table - Only show in edit mode */}
       {isEditMode && (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="min-w-[200px]">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No standard groups yet. Click "Add Row" to get started.
-                  </TableCell>
-                </TableRow>
+        <div className="space-y-4">
+          {/* Toolbar with filters */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+              <div className="w-full md:w-auto">
+                <Input
+                  placeholder="Search standard groups..."
+                  value={(table.getColumn("group")?.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    table.getColumn("group")?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 w-full md:w-[200px]"
+                />
+              </div>
+              {table.getState().columnFilters.length > 0 && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
               )}
-            </TableBody>
-          </Table>
+            </div>
+            <div className="flex items-center space-x-2">
+              <DataTableViewOptions table={table} />
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      // Skip rendering hidden columns
+                      if (!header.column.getIsVisible()) return null;
+                      return (
+                        <TableHead
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          className={`border-r py-2 text-xs text-center min-w-[200px] ${
+                            header.id === "group" ? "sticky left-0 bg-background z-10" : ""
+                          }`}
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className={`border-r px-3 py-2 ${
+                            cell.column.id === "group" ? "sticky left-0 bg-background z-10" : ""
+                          }`}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={table.getAllColumns().length}
+                      className="h-24 text-center px-6"
+                    >
+                      No standard groups yet. Click "Add Row" to get started.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 
