@@ -75,16 +75,12 @@ export function SimulationControls({
   } | null>(null);
 
   // Confirmation dialogs state
-  const [confirmEndAllOpen, setConfirmEndAllOpen] = useState(false);
-  const [endAllRemainingSessions, setEndAllRemainingSessions] = useState(0);
   const [confirmEndChatOpen, setConfirmEndChatOpen] = useState(false);
   const [isEndingSessionFromZeroMessages, setIsEndingSessionFromZeroMessages] =
     useState(false);
-  const [showPreviousChatsDialog, setShowPreviousChatsDialog] = useState(false);
-  const [selectedPreviousChatId, setSelectedPreviousChatId] = useState<
-    string | null
-  >(null);
-  const [selectedPermutation, setSelectedPermutation] = useState<string>("");
+  const [showUsePreviousDialog, setShowUsePreviousDialog] = useState(false);
+  const [selectedContinuationPermutation, setSelectedContinuationPermutation] =
+    useState<string>("");
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
@@ -278,27 +274,7 @@ export function SimulationControls({
     };
   }, [socket, currentChatId]);
 
-  // Generate permutations for End All dialog
-  // Must be computed before early returns to maintain hook order
-  type PermutationOption = {
-    scenarioId: string;
-    chatId: string | null; // null means "continue normally"
-    previousChatId: string | null;
-    title: string;
-    score: number | null;
-    percentage: number | null;
-    timeTaken: number | null;
-  };
-
-  type Permutation = {
-    id: string;
-    options: PermutationOption[];
-    totalScore: number;
-    totalPercentage: number | null;
-    totalTimeTaken: number;
-  };
-
-  // Get all simulation scenarios with their previous chats for permutation generation
+  // Get all simulation scenarios with their previous chats (for remaining scenarios calculation)
   const allSimulationScenarios = useMemo(() => {
     // Early return if attemptData is not available
     if (!attemptData) {
@@ -342,101 +318,114 @@ export function SimulationControls({
   }, [attemptData]);
 
   // Use server-side calculation for remaining scenarios
-  // Filter to only include scenarios without completed chats for End All permutations
+  // Filter to only include scenarios without completed chats
   const remainingScenarios = useMemo(() => {
     return allSimulationScenarios.filter(
       (scenario) => !scenario.hasCompletedChat
     );
   }, [allSimulationScenarios]);
 
-  const permutations = useMemo(() => {
-    // Only generate permutations if multiple alternatives are allowed and there are remaining scenarios
-    if (
-      !attemptData?.canPickMultipleAlternatives ||
-      remainingScenarios.length === 0
-    )
-      return [];
+  // Get previous chats for current chat to show red dot indicator
+  // Must be computed before early returns to maintain hook order
+  const currentChatData = useMemo(() => {
+    return attemptData?.chats.find((c) => c.chat.id === currentChat?.id);
+  }, [attemptData?.chats, currentChat?.id]);
 
-    // Generate all permutations using cartesian product
-    const generatePermutations = (
-      scenarios: typeof remainingScenarios,
-      index: number = 0,
-      currentPermutation: PermutationOption[] = []
-    ): PermutationOption[][] => {
-      if (index >= scenarios.length) {
-        return [currentPermutation];
+  // Get available continuation options from server
+  const continuationOptions = useMemo(() => {
+    return attemptData?.availableContinuationOptions || null;
+  }, [attemptData]);
+
+  // Generate permutations from continuation options (sequential: 1, 1+2, 1+2+3, etc.)
+  type ContinuationPermutationOption = {
+    scenarioId: string;
+    scenarioName: string;
+    previousChatId: string | null;
+    title: string;
+    score: number | null;
+    percentage: number | null;
+    timeTaken: number | null;
+  };
+
+  type ContinuationPermutation = {
+    id: string;
+    options: ContinuationPermutationOption[];
+    totalScore: number;
+    totalPercentage: number | null;
+    totalTimeTaken: number;
+  };
+
+  const continuationPermutations = useMemo(() => {
+    if (!continuationOptions?.nextSequentialOptions?.length) return [];
+
+    // Group options by scenario position
+    const optionsByPosition = new Map<number, ContinuationPermutationOption[]>();
+    continuationOptions.nextSequentialOptions.forEach((opt) => {
+      const pos = opt.position || 0;
+      if (!optionsByPosition.has(pos)) {
+        optionsByPosition.set(pos, []);
       }
+      optionsByPosition.get(pos)!.push({
+        scenarioId: opt.scenarioId,
+        scenarioName: opt.scenarioName,
+        previousChatId: opt.previousChatId,
+        title: opt.title,
+        score: opt.score ?? null,
+        percentage: opt.percentage ?? null,
+        timeTaken: opt.timeTaken ?? null,
+      });
+    });
 
-      const scenario = scenarios[index];
-      if (!scenario) return [];
+    // Generate sequential permutations (1, 1+2, 1+2+3, etc.)
+    const positions = Array.from(optionsByPosition.keys()).sort((a, b) => a - b);
+    const allPermutations: ContinuationPermutation[] = [];
 
-      const options: PermutationOption[] = [
-        // Option 1: Skip/End without score (always available when ending session)
-        {
-          scenarioId: scenario.scenarioId,
-          chatId: scenario.chatId,
-          previousChatId: null,
-          title: "Skip (no score)",
-          score: null,
-          percentage: null,
-          timeTaken: null,
-        },
-        // Options 2+: Each previous chat (reuse score from previous attempt)
-        ...scenario.previousChats.map((prevChat) => ({
-          scenarioId: scenario.scenarioId,
-          chatId: scenario.chatId,
-          previousChatId: prevChat.chatId,
-          title: prevChat.title,
-          score: prevChat.score,
-          percentage: prevChat.percentage,
-          timeTaken: prevChat.timeTaken,
-        })),
-      ];
+    // For each sequence length (1, 2, 3, ...)
+    for (let seqLen = 1; seqLen <= positions.length; seqLen++) {
+      const seqPositions = positions.slice(0, seqLen);
+      
+      // Generate all permutations for this sequence using cartesian product
+      const generatePermutations = (
+        posIndex: number = 0,
+        currentPerm: ContinuationPermutationOption[] = []
+      ): ContinuationPermutationOption[][] => {
+        if (posIndex >= seqPositions.length) {
+          return [currentPerm];
+        }
 
-      const results: PermutationOption[][] = [];
-      for (const option of options) {
-        const newPermutation = [...currentPermutation, option];
-        results.push(
-          ...generatePermutations(scenarios, index + 1, newPermutation)
-        );
-      }
+        const pos = seqPositions[posIndex]!;
+        const options = optionsByPosition.get(pos) || [];
+        const results: ContinuationPermutationOption[][] = [];
 
-      return results;
-    };
+        for (const option of options) {
+          results.push(...generatePermutations(posIndex + 1, [...currentPerm, option]));
+        }
 
-    const allPermutations = generatePermutations(remainingScenarios);
+        return results;
+      };
 
-    // Calculate total scores and percentages for each permutation
-    const permutationsWithScores: Permutation[] = allPermutations.map(
-      (perm, idx) => {
+      const perms = generatePermutations();
+      perms.forEach((perm, idx) => {
         const totalScore = perm.reduce((sum, opt) => sum + (opt.score || 0), 0);
-        const totalTimeTaken = perm.reduce(
-          (sum, opt) => sum + (opt.timeTaken || 0),
-          0
-        );
-
-        // Calculate total percentage - include skipped sessions as 0 in the average
-        // Skipped sessions (null percentage) count as 0 and are included in the average
+        const totalTimeTaken = perm.reduce((sum, opt) => sum + (opt.timeTaken || 0), 0);
+        const percentages = perm.map((opt) => opt.percentage).filter((p) => p !== null) as number[];
         const totalPercentage =
-          perm.length > 0
-            ? Math.round(
-                perm.reduce((sum, opt) => sum + (opt.percentage || 0), 0) /
-                  perm.length
-              )
+          percentages.length > 0
+            ? Math.round(percentages.reduce((sum, p) => sum + p, 0) / percentages.length)
             : null;
 
-        return {
-          id: `perm-${idx}`,
+        allPermutations.push({
+          id: `perm-${seqLen}-${idx}`,
           options: perm,
           totalScore,
           totalPercentage,
           totalTimeTaken,
-        };
-      }
-    );
+        });
+      });
+    }
 
     // Sort by total score (descending), then by total percentage (descending)
-    return permutationsWithScores.sort((a, b) => {
+    return allPermutations.sort((a, b) => {
       if (b.totalScore !== a.totalScore) {
         return b.totalScore - a.totalScore;
       }
@@ -445,15 +434,15 @@ export function SimulationControls({
       if (b.totalPercentage === null) return -1;
       return b.totalPercentage - a.totalPercentage;
     });
-  }, [remainingScenarios, attemptData?.canPickMultipleAlternatives]);
+  }, [continuationOptions]);
 
-  // Get previous chats for current chat to show red dot indicator
-  // Must be computed before early returns to maintain hook order
-  const currentChatData = useMemo(() => {
-    return attemptData?.chats.find((c) => c.chat.id === currentChat?.id);
-  }, [attemptData?.chats, currentChat?.id]);
+  // Check if "Use Previous" button should be shown
+  const shouldShowUsePrevious = useMemo(() => {
+    if (isPracticeSimulation) return false; // Practice simulations can't use previous chats
+    return continuationPermutations.length > 0;
+  }, [isPracticeSimulation, continuationPermutations]);
 
-  // Get previous chats for current chat
+  // Get previous chats for current chat (for red dot indicator)
   // Prefer using previousChats directly from chat data (server-computed, uses parent scenario ID)
   // Fallback to allSimulationScenarios if chat data doesn't have previousChats
   const previousChats = useMemo(() => {
@@ -527,37 +516,38 @@ export function SimulationControls({
     return null;
   }
 
-  // Handle Next Chat button click (moves to next chat)
-  const handleNextChat = () => {
+  // Handle Use Previous button click (shows continuation options)
+  const handleUsePrevious = () => {
     const totalMessages = currentMessages.length;
 
-    // Practice simulations cannot use previous chats - must always go through manual grading
-    // If there are previous chats available (and not a practice simulation), bypass the "no messages" warning
-    // and go directly to the previous chats selection dialog
-    if (hasPreviousChats && !isPracticeSimulation) {
-      setShowPreviousChatsDialog(true);
-      setSelectedPreviousChatId(""); // Default to "continue normally"
-      return;
-    }
-
-    // Show confirmation if chat has 0 messages and no previous chats are available
-    // This will mark the chat as incomplete
-    if (totalMessages === 0 && !hasPreviousChats) {
+    // Show confirmation if chat has 0 messages and no continuation options
+    if (totalMessages === 0 && !shouldShowUsePrevious) {
       setConfirmEndChatOpen(true);
       return;
     }
 
-    // No previous chats and has messages, proceed normally
+    // Show unified dialog with continuation options
+    if (shouldShowUsePrevious) {
+      setShowUsePreviousDialog(true);
+      // Select best permutation by default
+      if (continuationPermutations.length > 0) {
+        setSelectedContinuationPermutation(continuationPermutations[0]!.id);
+      } else {
+        setSelectedContinuationPermutation("");
+      }
+      return;
+    }
+
+    // No options available, proceed normally
     endChat();
   };
 
-  // Handle End Session button click (ends whole session)
+  // Handle End Session button click (always does default end session logic)
   const handleEndSession = () => {
     const totalMessages = currentMessages.length;
 
-    // Show confirmation if current chat has 0 messages and no previous chats are available
-    // This will mark the current chat as incomplete
-    if (totalMessages === 0 && !hasPreviousChats) {
+    // Show confirmation if current chat has 0 messages
+    if (totalMessages === 0) {
       setIsEndingSessionFromZeroMessages(true);
       setConfirmEndChatOpen(true);
       return;
@@ -569,21 +559,8 @@ export function SimulationControls({
       return;
     }
 
-    // Use server-side calculation for remaining scenarios count
-    const remainingSessions =
-      attemptData?.remainingScenariosCount ?? remainingScenarios.length;
-    setEndAllRemainingSessions(remainingSessions);
-
-    // If there are permutations available and multiple alternatives are allowed, select the best one by default
-    if (
-      attemptData?.canPickMultipleAlternatives &&
-      permutations &&
-      permutations.length > 0
-    ) {
-      setSelectedPermutation(permutations[0]!.id);
-    }
-
-    setConfirmEndAllOpen(true);
+    // Always end all chats with default behavior (no options)
+    endAllChats();
   };
 
   // Use server-side calculation for isLastRemainingScenario
@@ -596,36 +573,38 @@ export function SimulationControls({
         {/* Infinite mode: Always show both buttons for cycling/ending */}
         {isInfiniteMode ? (
           <>
-            {/* Next Chat button - always visible in infinite mode to cycle through scenarios */}
-            <Button
-              type="button"
-              variant={isGrading ? "outline" : "default"}
-              onClick={handleNextChat}
-              disabled={endChatLoading}
-              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-            >
-              {/* Red dot indicator for previous chats - overlays on top right corner */}
-              {hasPreviousChats && (
-                <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-              )}
+            {/* Use Previous button - only show if options are available */}
+            {shouldShowUsePrevious && (
+              <Button
+                type="button"
+                variant={isGrading ? "outline" : "default"}
+                onClick={handleUsePrevious}
+                disabled={endChatLoading}
+                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+              >
+                {/* Red dot indicator for previous chats - overlays on top right corner */}
+                {hasPreviousChats && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+                )}
 
-              {/* Grading progress overlay - fills from left to right */}
-              {isGrading && gradingProgress ? (
-                <span
-                  className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
-                  style={{
-                    width: `${gradingProgress.displayedProgress}%`,
-                  }}
-                />
-              ) : null}
+                {/* Grading progress overlay - fills from left to right */}
+                {isGrading && gradingProgress ? (
+                  <span
+                    className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
+                    style={{
+                      width: `${gradingProgress.displayedProgress}%`,
+                    }}
+                  />
+                ) : null}
 
-              {/* Button text */}
-              <span className="relative z-10">
-                {endChatLoading && endingAction === "endChat"
-                  ? "Ending..."
-                  : "Next Chat"}
-              </span>
-            </Button>
+                {/* Button text */}
+                <span className="relative z-10">
+                  {endChatLoading && endingAction === "endChat"
+                    ? "Ending..."
+                    : "Use Previous"}
+                </span>
+              </Button>
+            )}
 
             {/* End Session button - always visible in infinite mode to stop cycling */}
             <Button
@@ -635,11 +614,6 @@ export function SimulationControls({
               disabled={endChatLoading}
               className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
             >
-              {/* Red dot indicator for better previous attempts - overlays on top right corner */}
-              {hasBetterPreviousAttempt && (
-                <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-              )}
-
               {endChatLoading && endingAction === "endAll"
                 ? "Ending..."
                 : "End Session"}
@@ -647,13 +621,13 @@ export function SimulationControls({
           </>
         ) : (
           <>
-            {/* Normal mode: Use existing logic */}
-            {/* If only 1 remaining scenario, show "Next Chat" button styled but with "End Session" text */}
-            {isLastRemainingScenario && shouldShowControls ? (
+            {/* Normal mode */}
+            {/* Use Previous button - only show if options are available */}
+            {shouldShowUsePrevious && shouldShowControls && (
               <Button
                 type="button"
                 variant={isGrading ? "outline" : "default"}
-                onClick={handleNextChat}
+                onClick={handleUsePrevious}
                 disabled={endChatLoading}
                 className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
                 data-tour-end-chat
@@ -673,102 +647,60 @@ export function SimulationControls({
                   />
                 ) : null}
 
-                {/* Button text - "End Session" but functionally it's Next Chat */}
+                {/* Button text */}
                 <span className="relative z-10">
                   {endChatLoading && endingAction === "endChat"
                     ? "Ending..."
-                    : "End Session"}
+                    : "Use Previous"}
                 </span>
               </Button>
-            ) : (
-              <>
-                {/* Next Chat button - only show if there are 2+ remaining scenarios */}
-                {shouldShowControls && remainingScenarios.length > 1 && (
-                  <Button
-                    type="button"
-                    variant={isGrading ? "outline" : "default"}
-                    onClick={handleNextChat}
-                    disabled={endChatLoading}
-                    className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-                    data-tour-end-chat
-                  >
-                    {/* Red dot indicator for previous chats - overlays on top right corner */}
-                    {hasPreviousChats && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-                    )}
-
-                    {/* Grading progress overlay - fills from left to right */}
-                    {isGrading && gradingProgress ? (
-                      <span
-                        className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
-                        style={{
-                          width: `${gradingProgress.displayedProgress}%`,
-                        }}
-                      />
-                    ) : null}
-
-                    {/* Button text */}
-                    <span className="relative z-10">
-                      {endChatLoading && endingAction === "endChat"
-                        ? "Ending..."
-                        : "Next Chat"}
-                    </span>
-                  </Button>
-                )}
-
-                {/* End Session button - show when there are remaining scenarios OR when all scenarios have graded chats */}
-                {(shouldShowControls && remainingScenarios.length >= 1) ||
-                !shouldShowControls ? (
-                  <Button
-                    type="button"
-                    variant={shouldShowControls ? "destructive" : "outline"}
-                    onClick={handleEndSession}
-                    disabled={endChatLoading}
-                    className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-                    data-tour-end-all
-                  >
-                    {/* Red dot indicator for better previous attempts - overlays on top right corner */}
-                    {hasBetterPreviousAttempt && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-                    )}
-
-                    {endChatLoading && endingAction === "endAll"
-                      ? "Ending..."
-                      : "End Session"}
-                  </Button>
-                ) : null}
-              </>
             )}
+
+            {/* End Session button - show when there are remaining scenarios OR when all scenarios have graded chats */}
+            {(shouldShowControls && remainingScenarios.length >= 1) ||
+            !shouldShowControls ? (
+              <Button
+                type="button"
+                variant={shouldShowControls ? "destructive" : "outline"}
+                onClick={handleEndSession}
+                disabled={endChatLoading}
+                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                data-tour-end-all
+              >
+                {endChatLoading && endingAction === "endAll"
+                  ? "Ending..."
+                  : "End Session"}
+              </Button>
+            ) : null}
           </>
         )}
       </div>
 
-      {/* Confirm End All Dialog with Permutation Selection */}
-      <AlertDialog open={confirmEndAllOpen} onOpenChange={setConfirmEndAllOpen}>
+      {/* Use Previous Dialog - Unified continuation options with permutation UI */}
+      <AlertDialog
+        open={showUsePreviousDialog}
+        onOpenChange={setShowUsePreviousDialog}
+      >
         <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
           <AlertDialogHeader>
-            <AlertDialogTitle>End all remaining sessions?</AlertDialogTitle>
+            <AlertDialogTitle>Use Previous Attempt?</AlertDialogTitle>
             <AlertDialogDescription>
-              {attemptData?.canPickMultipleAlternatives &&
-              permutations.length > 0
-                ? `Choose which previous attempts to use for the ${endAllRemainingSessions} remaining session${endAllRemainingSessions === 1 ? "" : "s"}. Permutations are sorted by highest total score.`
-                : `This will mark ${endAllRemainingSessions} remaining session${endAllRemainingSessions === 1 ? "" : "s"} as incomplete, and their scores will not count.`}
+              Choose which previous attempts to use. Permutations are sorted by highest total score.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          {attemptData?.canPickMultipleAlternatives &&
-          permutations.length > 0 ? (
+          {continuationPermutations.length > 0 ? (
             <div className="flex-1 overflow-auto">
               <RadioGroup
-                value={selectedPermutation}
-                onValueChange={setSelectedPermutation}
+                value={selectedContinuationPermutation}
+                onValueChange={setSelectedContinuationPermutation}
                 className="space-y-3 pr-4"
               >
-                {permutations.map((perm) => (
+                {continuationPermutations.map((perm) => (
                   <div
                     key={perm.id}
                     className={`rounded-lg border-2 transition-colors ${
-                      selectedPermutation === perm.id
+                      selectedContinuationPermutation === perm.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     }`}
@@ -795,14 +727,14 @@ export function SimulationControls({
                               ({formatTime(perm.totalTimeTaken)})
                             </span>
                           )}
-                          {perm.id === permutations[0]?.id && (
+                          {perm.id === continuationPermutations[0]?.id && (
                             <Badge variant="default" className="ml-auto">
                               Best
                             </Badge>
                           )}
                         </div>
                       </div>
-                      {/* Individual chat cases below */}
+                      {/* Individual scenario options below */}
                       <div className="space-y-1 px-3 pb-3 pl-11">
                         {perm.options.map((opt, optIdx) => (
                           <div
@@ -817,6 +749,7 @@ export function SimulationControls({
                                   ? `${opt.percentage}%`
                                   : `${opt.score} pts`}
                                 {opt.timeTaken !== null &&
+                                  opt.timeTaken > 0 &&
                                   ` - ${formatTime(opt.timeTaken)}`}
                                 {")"}
                               </>
@@ -832,34 +765,57 @@ export function SimulationControls({
           ) : null}
 
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <AlertDialogCancel
               onClick={() => {
-                // Extract permutation map if one is selected and multiple alternatives are allowed
-                let previousChatMap: Record<string, string | null> | undefined;
-                if (
-                  attemptData?.canPickMultipleAlternatives &&
-                  selectedPermutation &&
-                  permutations.length > 0
-                ) {
-                  const selectedPerm = permutations.find(
-                    (p) => p.id === selectedPermutation
-                  );
-                  if (selectedPerm) {
-                    previousChatMap = {};
-                    selectedPerm.options.forEach((opt) => {
-                      if (opt.previousChatId !== null) {
-                        previousChatMap![opt.scenarioId] = opt.previousChatId;
-                      }
-                    });
-                  }
-                }
-
-                setConfirmEndAllOpen(false);
-                endAllChats(previousChatMap);
+                setShowUsePreviousDialog(false);
+                setSelectedContinuationPermutation("");
               }}
             >
-              End All
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowUsePreviousDialog(false);
+                if (!selectedContinuationPermutation) {
+                  // Continue normally if nothing selected
+                  endChat();
+                  setSelectedContinuationPermutation("");
+                  return;
+                }
+
+                const selectedPerm = continuationPermutations.find(
+                  (p) => p.id === selectedContinuationPermutation
+                );
+
+                if (selectedPerm && selectedPerm.options.length > 0) {
+                  // Build previous_chat_map for multiple scenarios or use previous_chat_id for single
+                  if (selectedPerm.options.length === 1) {
+                    // Single scenario - use previous_chat_id
+                    const option = selectedPerm.options[0]!;
+                    if (option.previousChatId) {
+                      endChat(undefined, option.previousChatId);
+                    } else {
+                      endChat();
+                    }
+                  } else {
+                    // Multiple scenarios - build previous_chat_map and end all chats
+                    const previousChatMap: Record<string, string | null> = {};
+                    selectedPerm.options.forEach((opt) => {
+                      if (opt.previousChatId) {
+                        previousChatMap[opt.scenarioId] = opt.previousChatId;
+                      }
+                    });
+                    endAllChats(Object.keys(previousChatMap).length > 0 ? previousChatMap : undefined);
+                  }
+                } else {
+                  // Fallback: continue normally
+                  endChat();
+                }
+                setSelectedContinuationPermutation("");
+              }}
+              disabled={!selectedContinuationPermutation}
+            >
+              Continue
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -918,104 +874,6 @@ export function SimulationControls({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Previous Chats Selection Dialog */}
-      <AlertDialog
-        open={showPreviousChatsDialog}
-        onOpenChange={setShowPreviousChatsDialog}
-      >
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Reuse score from previous attempt?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              You have completed this scenario before. Select a previous attempt
-              to reuse its score, or{" "}
-              {isLastRemainingScenario ? "end normally" : "continue normally"}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            {(() => {
-              // Use the same previousChats logic as the red dot indicator
-              // Get from allSimulationScenarios using the parent scenario ID
-              if (previousChats.length === 0) {
-                return null;
-              }
-
-              return (
-                <RadioGroup
-                  value={selectedPreviousChatId || ""}
-                  onValueChange={setSelectedPreviousChatId}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="" id="none" />
-                      <Label htmlFor="none" className="cursor-pointer">
-                        {isLastRemainingScenario
-                          ? "End normally"
-                          : "Continue normally"}{" "}
-                        (don't reuse score)
-                      </Label>
-                    </div>
-                    {previousChats.map((prevChat) => (
-                      <div
-                        key={prevChat.chatId}
-                        className="flex items-center space-x-2"
-                      >
-                        <RadioGroupItem
-                          value={prevChat.chatId}
-                          id={prevChat.chatId}
-                        />
-                        <Label
-                          htmlFor={prevChat.chatId}
-                          className="cursor-pointer flex-1"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">
-                              {prevChat.title}
-                            </span>
-                            <span className="text-sm text-muted-foreground ml-2">
-                              {prevChat.score !== null &&
-                              prevChat.passed !== null
-                                ? `${prevChat.percentage ?? "N/A"}% (${prevChat.passed ? "Passed" : "Failed"})${prevChat.timeTaken !== null ? ` - ${formatTime(prevChat.timeTaken)}` : ""}`
-                                : "No score"}
-                            </span>
-                          </div>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
-              );
-            })()}
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                setShowPreviousChatsDialog(false);
-                setSelectedPreviousChatId(null);
-              }}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowPreviousChatsDialog(false);
-                endChat(
-                  undefined,
-                  selectedPreviousChatId && selectedPreviousChatId !== ""
-                    ? selectedPreviousChatId
-                    : undefined
-                );
-                setSelectedPreviousChatId(null);
-              }}
-              disabled={false}
-            >
-              {isLastRemainingScenario ? "End" : "Continue"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

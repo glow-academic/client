@@ -1368,6 +1368,87 @@
                 -- Can pick multiple alternatives (not allowed for practice simulations)
                 NOT (SELECT sim_practice_simulation FROM attempt_base) as can_pick_multiple_alternatives
             FROM unified_content
+        ),
+        -- Compute available continuation options with order constraint
+        -- Generates sequential permutations (1, 1+2, 1+2+3, etc.) - no gaps allowed
+        -- Note: This is complex, so we'll generate permutations on the frontend instead
+        -- Here we just return the valid scenarios with their previous chats
+        available_continuation_options AS (
+            WITH current_scenario_position AS (
+                -- Find the position of the current chat's scenario (first incomplete chat)
+                SELECT COALESCE(
+                    (SELECT ss.position
+                     FROM simulation_scenarios ss
+                     CROSS JOIN attempt_base ab
+                     JOIN unified_content uc ON uc.content_type = 'scenario'
+                     WHERE ss.simulation_id = ab.simulation_id
+                       AND ss.scenario_id = (uc.chat_data->'chat'->>'parentScenarioId')::uuid
+                       AND ss.active = true
+                       AND uc.completed = false
+                     ORDER BY uc.position, uc.created_at
+                     LIMIT 1),
+                    -- If no incomplete chat found, use position 1 (start from beginning)
+                    1
+                ) as current_position
+            ),
+            -- Find ALL scenarios with previous chats (for generating permutations)
+            -- Include all scenarios from current position onwards that have previous chats
+            -- Frontend will generate sequential permutations (1, 1+2, 1+2+3, etc.)
+            valid_next_scenarios AS (
+                SELECT 
+                    ssl.scenario_id,
+                    ssl.position,
+                    asswpc.scenario_data->>'name' as scenario_name,
+                    asswpc.previous_chats
+                FROM simulation_scenarios_list ssl
+                CROSS JOIN attempt_base ab
+                CROSS JOIN current_scenario_position csp
+                JOIN all_simulation_scenarios_with_previous_chats asswpc 
+                    ON asswpc.scenario_id = ssl.scenario_id
+                WHERE ssl.position >= csp.current_position
+                  -- Exclude practice simulations (they can't use previous chats)
+                  AND ab.sim_practice_simulation = false
+                  -- Must have previous chats available
+                  AND jsonb_array_length(COALESCE(asswpc.previous_chats, '[]'::jsonb)) > 0
+                ORDER BY ssl.position
+            ),
+            -- Return scenarios with their previous chat options (no "continue normally")
+            scenario_options_expanded AS (
+                SELECT 
+                    vns.scenario_id,
+                    vns.position,
+                    vns.scenario_name,
+                    (pc->>'chatId')::text as previous_chat_id,
+                    COALESCE(pc->>'title', 'Previous attempt') as title,
+                    (pc->>'score')::numeric as score,
+                    (pc->>'percentage')::numeric as percentage,
+                    (pc->>'timeTaken')::numeric as time_taken
+                FROM valid_next_scenarios vns
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    CASE 
+                        WHEN vns.previous_chats IS NULL THEN '[]'::jsonb
+                        ELSE vns.previous_chats
+                    END
+                ) pc
+            )
+            SELECT 
+                COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'scenarioId', scenario_id::text,
+                            'position', position,
+                            'scenarioName', scenario_name,
+                            'previousChatId', previous_chat_id,
+                            'title', title,
+                            'score', score,
+                            'percentage', percentage,
+                            'timeTaken', time_taken
+                        ) ORDER BY position, score DESC NULLS LAST
+                    ),
+                    '[]'::jsonb
+                ) as next_sequential_options,
+                CASE WHEN COUNT(*) > 0 THEN true ELSE false END as has_options
+            FROM scenario_options_expanded
         )
         SELECT 
             jsonb_build_object(
@@ -1441,7 +1522,20 @@
                     FROM all_simulation_scenarios_with_previous_chats
                 ),
                 '[]'::jsonb
-            ) as "allSimulationScenarios"
+            ) as "allSimulationScenarios",
+            COALESCE(
+                (
+                    SELECT jsonb_build_object(
+                        'nextSequentialOptions', aco.next_sequential_options,
+                        'hasOptions', aco.has_options
+                    )
+                    FROM available_continuation_options aco
+                ),
+                jsonb_build_object(
+                    'nextSequentialOptions', '[]'::jsonb,
+                    'hasOptions', false
+                )
+            ) as "availableContinuationOptions"
         FROM attempt_base ab
         CROSS JOIN attempt_profiles_data apd
         CROSS JOIN scenario_documents_data sdd

@@ -260,6 +260,48 @@ class AllSimulationScenarioItem(BaseModel):
     previousChats: list[PreviousChat] = []
 
 
+class ContinuationOption(BaseModel):
+    """A single continuation option for a scenario."""
+    scenarioId: str
+    position: int
+    scenarioName: str
+    previousChatId: str | None  # null means "continue normally" (but we won't include these)
+    title: str
+    score: float | None
+    percentage: float | None
+    timeTaken: float | None
+
+
+class PermutationOption(BaseModel):
+    """A single option within a permutation."""
+    scenarioId: str
+    scenarioName: str
+    previousChatId: str | None
+    title: str
+    score: float | None
+    percentage: float | None
+    timeTaken: float | None
+
+
+class Permutation(BaseModel):
+    """A permutation of continuation options for sequential scenarios."""
+    id: str
+    options: list[PermutationOption]
+    totalScore: float
+    totalPercentage: float | None
+    totalTimeTaken: float
+
+
+class AvailableContinuationOptions(BaseModel):
+    """Available continuation options with order constraint enforcement."""
+    # Options for continuing to next sequential scenario(s)
+    # Only includes scenarios that can be advanced to in order (no gaps)
+    # Frontend will generate permutations from these
+    nextSequentialOptions: list[ContinuationOption] = []
+    # Whether there are any options available at all
+    hasOptions: bool = False
+
+
 class TimerItem(BaseModel):
     elapsed: int
     limit: int | None
@@ -298,6 +340,7 @@ class AttemptFullResponse(BaseModel):
     isActive: bool
     rubricStructure: RubricStructure | None = None
     allSimulationScenarios: list[AllSimulationScenarioItem]
+    availableContinuationOptions: AvailableContinuationOptions | None = None
 
 
 router = APIRouter()
@@ -426,6 +469,9 @@ async def get_attempt_full(
             else None
         )
         all_simulation_scenarios_data = parse_jsonb(result["allSimulationScenarios"])
+        available_continuation_options_data = parse_jsonb(
+            result.get("availableContinuationOptions", {})
+        )
 
         # Construct strongly typed models
         attempt = AttemptItem(**attempt_data)
@@ -557,6 +603,20 @@ async def get_attempt_full(
             AllSimulationScenarioItem(**s) for s in all_simulation_scenarios_data
         ]
 
+        # Construct available continuation options
+        available_continuation_options = None
+        if available_continuation_options_data:
+            next_sequential_options = [
+                ContinuationOption(**opt)
+                for opt in available_continuation_options_data.get(
+                    "nextSequentialOptions", []
+                )
+            ]
+            available_continuation_options = AvailableContinuationOptions(
+                nextSequentialOptions=next_sequential_options,
+                hasOptions=available_continuation_options_data.get("hasOptions", False),
+            )
+
         # Access result fields defensively (asyncpg may lowercase column names)
         # Try both camelCase and snake_case versions
         def get_result_field(key: str, default: Any = None) -> Any:  # noqa: ANN401
@@ -593,6 +653,7 @@ async def get_attempt_full(
             isActive=get_result_field("isActive", True),
             rubricStructure=rubric_structure,
             allSimulationScenarios=all_simulation_scenarios,
+            availableContinuationOptions=available_continuation_options,
         )
 
         # Cache response

@@ -4794,6 +4794,7 @@ export interface components {
             rubricStructure?: components["schemas"]["RubricStructure"] | null;
             /** Allsimulationscenarios */
             allSimulationScenarios: components["schemas"]["AllSimulationScenarioItem"][];
+            availableContinuationOptions?: components["schemas"]["AvailableContinuationOptions"] | null;
         };
         /**
          * AttemptImprovementData
@@ -4987,6 +4988,22 @@ export interface components {
             allowed: boolean;
             /** Reason */
             reason?: string | null;
+        };
+        /**
+         * AvailableContinuationOptions
+         * @description Available continuation options with order constraint enforcement.
+         */
+        AvailableContinuationOptions: {
+            /**
+             * Nextsequentialoptions
+             * @default []
+             */
+            nextSequentialOptions: components["schemas"]["ContinuationOption"][];
+            /**
+             * Hasoptions
+             * @default false
+             */
+            hasOptions: boolean;
         };
         /** BulkArchiveAttemptsRequest */
         BulkArchiveAttemptsRequest: {
@@ -5723,6 +5740,28 @@ export interface components {
             message: string;
             /** Allcorrect */
             allCorrect: boolean;
+        };
+        /**
+         * ContinuationOption
+         * @description A single continuation option for a scenario.
+         */
+        ContinuationOption: {
+            /** Scenarioid */
+            scenarioId: string;
+            /** Position */
+            position: number;
+            /** Scenarioname */
+            scenarioName: string;
+            /** Previouschatid */
+            previousChatId: string | null;
+            /** Title */
+            title: string;
+            /** Score */
+            score: number | null;
+            /** Percentage */
+            percentage: number | null;
+            /** Timetaken */
+            timeTaken: number | null;
         };
         /** CreateAgentRequest */
         CreateAgentRequest: {

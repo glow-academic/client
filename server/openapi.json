@@ -10612,6 +10612,16 @@
             },
             "type": "array",
             "title": "Allsimulationscenarios"
+          },
+          "availableContinuationOptions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AvailableContinuationOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -11086,6 +11096,26 @@
         ],
         "title": "AuthorizeEmulationResponse",
         "description": "Response indicating if emulation is allowed."
+      },
+      "AvailableContinuationOptions": {
+        "properties": {
+          "nextSequentialOptions": {
+            "items": {
+              "$ref": "#/components/schemas/ContinuationOption"
+            },
+            "type": "array",
+            "title": "Nextsequentialoptions",
+            "default": []
+          },
+          "hasOptions": {
+            "type": "boolean",
+            "title": "Hasoptions",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "AvailableContinuationOptions",
+        "description": "Available continuation options with order constraint enforcement."
       },
       "BulkArchiveAttemptsRequest": {
         "properties": {
@@ -12996,6 +13026,83 @@
           "allCorrect"
         ],
         "title": "CompleteQuizResponse"
+      },
+      "ContinuationOption": {
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "title": "Scenarioid"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "scenarioName": {
+            "type": "string",
+            "title": "Scenarioname"
+          },
+          "previousChatId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previouschatid"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "timeTaken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timetaken"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenarioId",
+          "position",
+          "scenarioName",
+          "previousChatId",
+          "title",
+          "score",
+          "percentage",
+          "timeTaken"
+        ],
+        "title": "ContinuationOption",
+        "description": "A single continuation option for a scenario."
       },
       "CreateAgentRequest": {
         "properties": {
