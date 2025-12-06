@@ -577,16 +577,11 @@ export function SimulationControls({
             {shouldShowUsePrevious && (
               <Button
                 type="button"
-                variant={isGrading ? "outline" : "default"}
+                variant={isGrading ? "outline" : "secondary"}
                 onClick={handleUsePrevious}
                 disabled={endChatLoading}
                 className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
               >
-                {/* Red dot indicator for previous chats - overlays on top right corner */}
-                {hasPreviousChats && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-                )}
-
                 {/* Grading progress overlay - fills from left to right */}
                 {isGrading && gradingProgress ? (
                   <span
@@ -609,7 +604,7 @@ export function SimulationControls({
             {/* End Session button - always visible in infinite mode to stop cycling */}
             <Button
               type="button"
-              variant="destructive"
+              variant="default"
               onClick={handleEndSession}
               disabled={endChatLoading}
               className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
@@ -626,17 +621,12 @@ export function SimulationControls({
             {shouldShowUsePrevious && shouldShowControls && (
               <Button
                 type="button"
-                variant={isGrading ? "outline" : "default"}
+                variant={isGrading ? "outline" : "secondary"}
                 onClick={handleUsePrevious}
                 disabled={endChatLoading}
                 className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
                 data-tour-end-chat
               >
-                {/* Red dot indicator for previous chats - overlays on top right corner */}
-                {hasPreviousChats && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-                )}
-
                 {/* Grading progress overlay - fills from left to right */}
                 {isGrading && gradingProgress ? (
                   <span
@@ -656,22 +646,19 @@ export function SimulationControls({
               </Button>
             )}
 
-            {/* End Session button - show when there are remaining scenarios OR when all scenarios have graded chats */}
-            {(shouldShowControls && remainingScenarios.length >= 1) ||
-            !shouldShowControls ? (
-              <Button
-                type="button"
-                variant={shouldShowControls ? "destructive" : "outline"}
-                onClick={handleEndSession}
-                disabled={endChatLoading}
-                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-                data-tour-end-all
-              >
-                {endChatLoading && endingAction === "endAll"
-                  ? "Ending..."
-                  : "End Session"}
-              </Button>
-            ) : null}
+            {/* End Session button - always visible */}
+            <Button
+              type="button"
+              variant={shouldShowControls ? "default" : "outline"}
+              onClick={handleEndSession}
+              disabled={endChatLoading}
+              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+              data-tour-end-all
+            >
+              {endChatLoading && endingAction === "endAll"
+                ? "Ending..."
+                : "End Session"}
+            </Button>
           </>
         )}
       </div>
