@@ -26,6 +26,12 @@ from app.utils.document.format_document_info import format_document_info
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
+from app.utils.scenario.format_document_template_info import format_document_template_info
+from app.utils.agents.tools.create_dynamic_document_function import (
+    dynamic_document_results,
+    available_templates,
+)
+from app.utils.documents.create_dynamic_document import create_dynamic_document
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -52,6 +58,7 @@ class GenerateScenarioAIResponse(BaseModel):
     title: str
     description: str
     objectives: list[str]
+    dynamic_document_mapping: dict[str, str] | None = None  # parent_document_id -> child_document_id
 
 
 router = APIRouter()
@@ -93,6 +100,8 @@ async def generate_scenario_ai(
         # Clear previous results
         scenario_results.clear()
         scenario_progress.clear()
+        dynamic_document_results.clear()
+        available_templates.clear()
 
         # Get all context data in a single optimized query using SQL file
         doc_ids_str = [str(d) for d in document_ids] if document_ids else []
@@ -125,6 +134,11 @@ async def generate_scenario_ai(
             if isinstance(context_row["parameter_items"], str)
             else context_row["parameter_items"]
         )
+        document_templates = (
+            json.loads(context_row["document_templates"])
+            if isinstance(context_row["document_templates"], str)
+            else context_row["document_templates"]
+        )
 
         context = {
             "agent_id": context_row["agent_id"],
@@ -150,6 +164,7 @@ async def generate_scenario_ai(
             else None,
             "documents": documents,
             "parameter_items": parameter_items,
+            "document_templates": document_templates,
             "default_guest_profile_id": context_row["guest_profile_id"],
             "req_per_day": context_row["req_per_day"],
             "runs_today_count": context_row["runs_today_count"],
@@ -176,11 +191,17 @@ async def generate_scenario_ai(
         else:
             parameter_item_info = format_parameter_item_info(context["parameter_items"])
 
+        # Format document template info if templates are available
+        document_template_info = format_document_template_info(context["document_templates"])
+
         # Create scenario generation tools
         group_id = None
         objectives_enabled = request.objectivesEnabled
+        documents_enabled = bool(document_ids and len(document_ids) > 0)
         scenario_tools = create_scenario_tools(
-            group_id, objectives_enabled=objectives_enabled
+            group_id,
+            objectives_enabled=objectives_enabled,
+            documents_enabled=documents_enabled,
         )
         scenario_tools.append(debug_info_tool)
 
@@ -204,14 +225,13 @@ async def generate_scenario_ai(
             system_prompt=context["system_prompt"],
             temperature=context["temperature"],
             model_name=context["model_name"],
-            model_provider=context["provider_name"],
+            provider=context["provider_name"],
             base_url=context["base_url"],
             api_key=context["api_key"],
             reasoning=context["reasoning"],
             tools=scenario_tools,
             parallel_tool_calls=False,
             tool_use_behavior=tool_use_behavior,
-            custom_model=context["custom_model"],
         )
 
         agent_instance = scenario_agent_generic.agent()
@@ -220,6 +240,7 @@ async def generate_scenario_ai(
             persona_info,
             document_info,
             parameter_item_info,
+            document_template_info,
         ]
 
         # Add user instructions as first input item if provided
@@ -313,12 +334,46 @@ async def generate_scenario_ai(
         # Limit objectives to maximum 3
         limited_objectives = objectives[:3] if objectives else []
 
+        # Process dynamic documents if any were created
+        dynamic_document_mapping: dict[str, str] | None = None
+        if dynamic_document_results.get("dynamic_documents"):
+            dynamic_document_mapping = {}
+            for doc_request in dynamic_document_results["dynamic_documents"]:
+                try:
+                    parent_id = uuid.UUID(doc_request["parent_document_id"])
+                    template_args = doc_request["template_args"]
+                    
+                    # Create child document
+                    child_id = await create_dynamic_document(
+                        conn=conn,
+                        parent_document_id=parent_id,
+                        template_args=template_args,
+                        department_id=department_id,
+                        profile_id=profile_id,
+                        http_request=http_request,
+                    )
+                    
+                    dynamic_document_mapping[str(parent_id)] = str(child_id)
+                    logger.info(
+                        f"Created dynamic child document {child_id} from parent {parent_id}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to create dynamic document from parent {doc_request.get('parent_document_id')}: {e}",
+                        exc_info=True,
+                    )
+                    # Continue with other documents even if one fails
+            
+            # Clear dynamic document results after processing
+            dynamic_document_results.clear()
+
         return GenerateScenarioAIResponse(
             success=True,
             message="Scenario generated successfully",
             title=title,
             description=description,
             objectives=limited_objectives,
+            dynamic_document_mapping=dynamic_document_mapping,
         )
     except HTTPException:
         raise

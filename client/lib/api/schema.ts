@@ -8372,6 +8372,10 @@ export interface components {
             description: string;
             /** Objectives */
             objectives: string[];
+            /** Dynamic Document Mapping */
+            dynamic_document_mapping?: {
+                [key: string]: string;
+            } | null;
         };
         /**
          * GenerateTemplateRequest

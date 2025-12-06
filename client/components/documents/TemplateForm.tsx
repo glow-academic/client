@@ -18,6 +18,8 @@ export interface TemplateField {
   name: string;
   type: "string" | "number" | "boolean" | "array" | "object";
   required?: boolean;
+  description?: string; // Human-readable description of what this field represents
+  placeholder?: string; // Example value or placeholder text
   item?: TemplateField; // For array items
   fields?: TemplateField[]; // For object fields
 }
@@ -202,11 +204,14 @@ export default function TemplateForm({
               {field.name}
               {field.required && <span className="text-destructive"> *</span>}
             </Label>
+            {field.description && (
+              <p className="text-sm text-muted-foreground">{field.description}</p>
+            )}
             <Textarea
               id={fieldPath.join(".")}
               value={typeof fieldValue === "string" ? fieldValue : ""}
               onChange={(e) => updateValue(fieldPath, e.target.value)}
-              placeholder={`Enter ${field.name}`}
+              placeholder={field.placeholder || `Enter ${field.name}`}
               rows={3}
             />
           </div>
@@ -219,6 +224,9 @@ export default function TemplateForm({
               {field.name}
               {field.required && <span className="text-destructive"> *</span>}
             </Label>
+            {field.description && (
+              <p className="text-sm text-muted-foreground">{field.description}</p>
+            )}
             <Input
               id={fieldPath.join(".")}
               type="number"
@@ -235,7 +243,7 @@ export default function TemplateForm({
                   e.target.value ? parseFloat(e.target.value) : undefined
                 )
               }
-              placeholder={`Enter ${field.name}`}
+              placeholder={field.placeholder || `Enter ${field.name}`}
             />
           </div>
         );
@@ -244,20 +252,25 @@ export default function TemplateForm({
         return (
           <div
             key={field.name}
-            className="flex items-center space-x-2"
+            className="space-y-2"
             style={{ paddingLeft }}
           >
-            <Checkbox
-              id={fieldPath.join(".")}
-              checked={typeof fieldValue === "boolean" ? fieldValue : false}
-              onCheckedChange={(checked) =>
-                updateValue(fieldPath, checked === true)
-              }
-            />
-            <Label htmlFor={fieldPath.join(".")}>
-              {field.name}
-              {field.required && <span className="text-destructive"> *</span>}
-            </Label>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={fieldPath.join(".")}
+                checked={typeof fieldValue === "boolean" ? fieldValue : false}
+                onCheckedChange={(checked) =>
+                  updateValue(fieldPath, checked === true)
+                }
+              />
+              <Label htmlFor={fieldPath.join(".")}>
+                {field.name}
+                {field.required && <span className="text-destructive"> *</span>}
+              </Label>
+            </div>
+            {field.description && (
+              <p className="text-sm text-muted-foreground ml-6">{field.description}</p>
+            )}
           </div>
         );
 
@@ -268,10 +281,15 @@ export default function TemplateForm({
         return (
           <div key={field.name} className="space-y-2" style={{ paddingLeft }}>
             <div className="flex items-center justify-between">
-              <Label>
-                {field.name}
-                {field.required && <span className="text-destructive"> *</span>}
-              </Label>
+              <div>
+                <Label>
+                  {field.name}
+                  {field.required && <span className="text-destructive"> *</span>}
+                </Label>
+                {field.description && (
+                  <p className="text-sm text-muted-foreground">{field.description}</p>
+                )}
+              </div>
               <Button
                 type="button"
                 variant="outline"
@@ -324,10 +342,15 @@ export default function TemplateForm({
         if (!field.fields) return null;
         return (
           <div key={field.name} className="space-y-4" style={{ paddingLeft }}>
-            <Label>
-              {field.name}
-              {field.required && <span className="text-destructive"> *</span>}
-            </Label>
+            <div>
+              <Label>
+                {field.name}
+                {field.required && <span className="text-destructive"> *</span>}
+              </Label>
+              {field.description && (
+                <p className="text-sm text-muted-foreground">{field.description}</p>
+              )}
+            </div>
             <div className="space-y-4">
               {field.fields.map((subField) =>
                 renderField(subField, fieldPath, indent + 1)

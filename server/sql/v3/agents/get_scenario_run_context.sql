@@ -89,6 +89,25 @@ SELECT
         '[]'::json
     ) as documents,
     
+    -- Document templates data (aggregated as JSON array for template documents)
+    COALESCE(
+        (SELECT json_agg(
+            json_build_object(
+                'document_id', d.id::text,
+                'document_name', d.name,
+                'template_args', dtu.args,
+                'template_upload_id', dtu.upload_id::text
+            )
+            ORDER BY array_position(p.document_ids, d.id)
+        )
+        FROM documents d
+        INNER JOIN document_template_uploads dtu ON dtu.document_id = d.id AND dtu.active = true
+        WHERE d.id = ANY(p.document_ids)
+          AND d.template = true
+        ),
+        '[]'::json
+    ) as document_templates,
+    
     -- Parameter items data (aggregated as JSON array with parameter info)
     COALESCE(
         (SELECT json_agg(

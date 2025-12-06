@@ -1972,6 +1972,20 @@ export default function Scenario({
         const newProblemStatement =
           result.description || formData.problemStatement || "";
 
+        // Handle dynamic document mapping: replace parent document IDs with child document IDs
+        let updatedDocumentIds = currentDocumentIds;
+        if (result.dynamic_document_mapping) {
+          const mapping = result.dynamic_document_mapping;
+          // Replace each parent ID with its corresponding child ID if it exists in mapping
+          updatedDocumentIds = currentDocumentIds.map(
+            (docId) => mapping[docId] || docId
+          );
+          setCurrentDocumentIds(updatedDocumentIds);
+          toast.success(
+            `Created ${Object.keys(mapping).length} dynamic document(s) from templates`
+          );
+        }
+
         // If in create mode and we have a new problem statement, add it to local versions
         if (!isEditMode && newProblemStatement.trim()) {
           const now = new Date().toISOString();
@@ -2016,7 +2030,7 @@ export default function Scenario({
                   : null,
               active: formData.active,
               persona_ids: selectedPersonaIds,
-              document_ids: currentDocumentIds,
+              document_ids: updatedDocumentIds, // Use updated IDs with child documents
               objective_ids: currentObjectives.filter((obj) => obj.trim()),
               parameters: groupParameterItemsByParameterId(
                 currentParameterItemIds,

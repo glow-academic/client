@@ -67,5 +67,21 @@ CREATE INDEX ON document_template_uploads (document_id);
 CREATE INDEX ON document_template_uploads (upload_id);
 CREATE INDEX ON document_template_uploads (document_id, active);
 
+-- Document hierarchy with no NULLs (self-edge denotes root)
+CREATE TABLE document_tree (
+  parent_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  child_id  UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  active    BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (parent_id, child_id)
+);
+
+CREATE INDEX ON document_tree (child_id);
+CREATE INDEX ON document_tree (parent_id);
+
+-- Enforce single parent per document (tree structure, not DAG)
+CREATE UNIQUE INDEX document_tree_one_parent_per_child ON document_tree(child_id);
+
 -- Note: Document tags are now managed via simulation_tags → simulation_tag_documents
 -- See simulations/init.sql for tag-related tables

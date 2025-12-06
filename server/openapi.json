@@ -19576,6 +19576,20 @@
             },
             "type": "array",
             "title": "Objectives"
+          },
+          "dynamic_document_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dynamic Document Mapping"
           }
         },
         "type": "object",
