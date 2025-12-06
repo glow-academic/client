@@ -13,11 +13,11 @@ scenario_objectives AS (
 ),
 scenario_parameters AS (
     SELECT 
-        spi.scenario_id,
+        sf.scenario_id,
         ARRAY_AGG(DISTINCT sf.field_id) as parameter_item_ids
     FROM scenario_fields sf
-    WHERE spi.active = true
-    GROUP BY spi.scenario_id
+    WHERE sf.active = true
+    GROUP BY sf.scenario_id
 ),
 scenario_simulations AS (
     SELECT 
@@ -145,15 +145,15 @@ all_parameter_item_ids AS (
 parameter_item_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            pi.id::text,
+            f.id::text,
             jsonb_build_object(
-                'name', pi.name,
-                'description', COALESCE(pi.description, ''),
-                'parameter_id', pi.parameter_id::text,
+                'name', f.name,
+                'description', COALESCE(f.description, ''),
+                'parameter_id', fp.parameter_id::text,
                 'parameter_name', p.name,
-                'value', COALESCE(pi.value, '')
+                'value', COALESCE(f.value, '')
             )
-        ) FILTER (WHERE pi.id IS NOT NULL),
+        ) FILTER (WHERE f.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
     FROM fields f

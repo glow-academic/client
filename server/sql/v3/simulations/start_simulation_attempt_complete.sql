@@ -175,13 +175,13 @@ scenario_full_data AS (
         COALESCE(
             json_agg(
                 json_build_object(
-                    'id', pi.id::text,
-                    'name', pi.name,
-                    'description', pi.description,
-                    'parameter_id', pi.parameter_id::text,
+                    'id', f.id::text,
+                    'name', f.name,
+                    'description', f.description,
+                    'parameter_id', fp.parameter_id::text,
                     'parameter_name', p_param.name
-                ) ORDER BY pi.id
-            ) FILTER (WHERE pi.id IS NOT NULL AND spi.active = true),
+                ) ORDER BY f.id
+            ) FILTER (WHERE f.id IS NOT NULL AND sf.active = true),
             '[]'::json
         ) as parameter_items,
         -- Check if scenario needs generation

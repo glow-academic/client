@@ -1179,13 +1179,13 @@ param_ids_categorical AS (
 cat_map AS (
     SELECT 
         f.id AS parameter_item_id,
-        pi.parameter_id,
+        fp.parameter_id,
         s.id AS scenario_id
     FROM fields f
     JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
     JOIN param_ids_categorical p ON p.id = fp.parameter_id
     JOIN scenario_fields sf ON sf.field_id = f.id
-    JOIN scenarios s ON s.id = spi.scenario_id
+    JOIN scenarios s ON s.id = sf.scenario_id
     WHERE s.active = TRUE
 ),
 scenario_seen AS (
@@ -1225,12 +1225,13 @@ nums AS (
 num_map AS (
     SELECT 
         s.id AS scenario_id, 
-        pi.parameter_id, 
-        pi.value::numeric AS level
+        fp.parameter_id, 
+        f.value::numeric AS level
     FROM scenarios s
     JOIN scenario_fields sf ON sf.scenario_id = s.id
     JOIN fields f ON f.id = sf.field_id
-    JOIN nums n ON n.id = pi.parameter_id
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN nums n ON n.id = fp.parameter_id
     WHERE s.active = TRUE
 ),
 num_map_seen AS (
@@ -1335,16 +1336,17 @@ sim_param_items_seen AS (
     JOIN scen_seen ss ON ss.scenario_id = sc.id
     JOIN scenario_fields sf ON sf.scenario_id = sc.id
     JOIN fields f ON f.id = sf.field_id
-    JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = FALSE
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id AND p.numerical = FALSE
     JOIN analytics a ON a.scenario_id = sc.id
     WHERE s.active = TRUE AND sc.active = TRUE
-    GROUP BY s.id, p.id, pi.id
+    GROUP BY s.id, p.id, f.id
 ),
 sim_param_nums_seen AS (
     SELECT
         s.id AS simulation_id,
         p.id AS parameter_id,
-        pi.value::numeric AS most_common_level,
+        f.value::numeric AS most_common_level,
         COUNT(a.chat_id)::int AS chat_count
     FROM simulations s
     JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
@@ -1352,10 +1354,11 @@ sim_param_nums_seen AS (
     JOIN scen_seen ss ON ss.scenario_id = sc.id
     JOIN scenario_fields sf ON sf.scenario_id = sc.id
     JOIN fields f ON f.id = sf.field_id
-    JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = TRUE
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id AND p.numerical = TRUE
     JOIN analytics a ON a.scenario_id = sc.id
     WHERE s.active = TRUE AND sc.active = TRUE
-    GROUP BY s.id, p.id, pi.value
+    GROUP BY s.id, p.id, f.value
 ),
 sim_param_nums_most_common AS (
     SELECT
@@ -1472,7 +1475,7 @@ parameter_mapping AS (
               FROM fields f
               JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
               JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-              WHERE pi.parameter_id = p.id AND pid.department_id = ANY($7::uuid[])
+              WHERE fp.parameter_id = p.id AND fd.department_id = ANY($7::uuid[])
           )
           OR NOT EXISTS (
               SELECT 1 
@@ -1486,13 +1489,13 @@ parameter_mapping AS (
             
 parameter_item_mapping AS (
     SELECT COALESCE(jsonb_object_agg(
-        pi.id::text,
+        f.id::text,
         jsonb_build_object(
-            'name', pi.name, 
-            'description', COALESCE(pi.description, ''),
-            'parameterId', pi.parameter_id::text,
+            'name', f.name, 
+            'description', COALESCE(f.description, ''),
+            'parameterId', fp.parameter_id::text,
             'parameterName', p.name,
-            'value', COALESCE(pi.value, '')
+            'value', COALESCE(f.value, '')
         )
     ), '{}'::jsonb) AS mapping
     FROM fields f
