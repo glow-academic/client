@@ -107,7 +107,7 @@ async def _voice_user_message_impl(sid: str, data: VoiceUserMessagePayload) -> N
             # Create user message
             sql_create_message = load_sql("sql/v3/simulations/create_message.sql")
             user_message_row = await conn.fetchrow(
-                sql_create_message, "user", message_str, True
+                sql_create_message, "user", message_str, True, None
             )
             user_message = {
                 "id": user_message_row["id"],

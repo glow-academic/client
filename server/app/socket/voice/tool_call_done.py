@@ -248,7 +248,7 @@ async def _voice_tool_call_done_impl(
                         "sql/v3/simulations/create_message.sql"
                     )
                     assistant_message_row = await conn.fetchrow(
-                        sql_create_message, "assistant", "", False
+                        sql_create_message, "assistant", "", False, None
                     )
                     db_message_id = assistant_message_row["id"]
                     tool_call_state["db_message_id"] = db_message_id

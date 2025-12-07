@@ -2,6 +2,7 @@
 import asyncio
 import base64
 import contextlib
+import datetime
 import json
 import logging
 import os
@@ -224,6 +225,15 @@ _simulation_tool_calls_locks: dict[str, dict[str, asyncio.Lock]] = {}
 def get_simulation_tool_calls_locks() -> dict[str, dict[str, asyncio.Lock]]:
     """Get the simulation tool calls locks dictionary."""
     return _simulation_tool_calls_locks
+
+
+# Global storage for voice speech started timestamps (chat_id -> {item_id -> datetime})
+_voice_speech_timestamps: dict[str, dict[str, datetime.datetime]] = {}
+
+
+def get_voice_speech_timestamps() -> dict[str, dict[str, datetime.datetime]]:
+    """Get the voice speech timestamps dictionary."""
+    return _voice_speech_timestamps
 
 
 def get_sio_instance() -> socketio.AsyncServer:

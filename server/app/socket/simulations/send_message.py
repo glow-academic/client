@@ -675,7 +675,7 @@ async def _send_simulation_message_impl(
                         # Create message without run_id
                         sql = load_sql("sql/v3/simulations/create_message.sql")
                         user_message_row = await conn.fetchrow(
-                            sql, "user", message_str, True
+                            sql, "user", message_str, True, None
                         )
                         user_message = {
                             "id": user_message_row["id"],
@@ -951,7 +951,7 @@ async def _send_simulation_message_impl(
                         # Create message without run_id
                         sql = load_sql("sql/v3/simulations/create_message.sql")
                         user_message_row = await conn.fetchrow(
-                            sql, "user", message_str, True
+                            sql, "user", message_str, True, None
                         )
                         user_message = {
                             "id": user_message_row["id"],
@@ -1155,7 +1155,7 @@ Tool Usage Instructions:
                         # Create message without run_id
                         sql = load_sql("sql/v3/simulations/create_message.sql")
                         user_message_row = await conn.fetchrow(
-                            sql, "user", message_str, True
+                            sql, "user", message_str, True, None
                         )
                         user_message = {
                             "id": user_message_row["id"],
@@ -1435,7 +1435,7 @@ Tool Usage Instructions:
                                         if tool_call_state["db_message_id"] is None:
                                             sql_create_message = load_sql("sql/v3/simulations/create_message.sql")
                                             assistant_message_row = await conn.fetchrow(
-                                                sql_create_message, "assistant", "", False
+                                                sql_create_message, "assistant", "", False, None
                                             )
                                             db_message_id = assistant_message_row["id"]
                                             tool_call_state["db_message_id"] = db_message_id

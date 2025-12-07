@@ -1,8 +1,9 @@
 """Handler for voice_speech_started WebSocket event."""
 
+import datetime
 from typing import Any
 
-from app.main import sio
+from app.main import get_voice_speech_timestamps, sio
 from app.utils.logging.db_logger import get_logger
 from pydantic import BaseModel, ValidationError
 
@@ -42,6 +43,33 @@ async def _voice_speech_started_impl(
         if not chat_id:
             logger.warning(f"Missing chat_id in voice_speech_started from {sid}")
             return
+
+        # Store timestamp for this speech event (for message ordering)
+        timestamps_dict = get_voice_speech_timestamps()
+        if chat_id not in timestamps_dict:
+            timestamps_dict[chat_id] = {}
+        timestamps_dict[chat_id][data.item_id] = datetime.datetime.now(
+            datetime.timezone.utc
+        )
+        logger.info(
+            f"Stored speech_started timestamp for chat_id={chat_id}, item_id={data.item_id}"
+        )
+
+        # Clean up stale timestamp entries (older than 5 minutes)
+        # This prevents memory leaks if transcript_ready never arrives
+        now = datetime.datetime.now(datetime.timezone.utc)
+        stale_threshold = datetime.timedelta(minutes=5)
+        for chat_id_key in list(timestamps_dict.keys()):
+            for item_id_key in list(timestamps_dict[chat_id_key].keys()):
+                timestamp = timestamps_dict[chat_id_key][item_id_key]
+                if now - timestamp > stale_threshold:
+                    logger.warning(
+                        f"Cleaning up stale timestamp for chat_id={chat_id_key}, item_id={item_id_key}"
+                    )
+                    del timestamps_dict[chat_id_key][item_id_key]
+            # Clean up empty chat_id entries
+            if not timestamps_dict[chat_id_key]:
+                del timestamps_dict[chat_id_key]
 
         # Relay the event back to the room so AttemptMessages can listen for it
         room = f"simulation_{chat_id}"

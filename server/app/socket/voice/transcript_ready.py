@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from app.main import get_pool, sio
+from app.main import get_pool, get_voice_speech_timestamps, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
@@ -86,10 +86,28 @@ async def _voice_transcript_ready_impl(
 
             run_id_for_message = latest_run_row["run_id"]
 
-            # Create user message
+            # Get stored timestamp for this speech event (if available)
+            timestamps_dict = get_voice_speech_timestamps()
+            speech_started_at = None
+            if chat_id in timestamps_dict and data.item_id in timestamps_dict[chat_id]:
+                speech_started_at = timestamps_dict[chat_id][data.item_id]
+                # Clean up the timestamp entry after use
+                del timestamps_dict[chat_id][data.item_id]
+                # Clean up empty chat_id entry if no more timestamps
+                if not timestamps_dict[chat_id]:
+                    del timestamps_dict[chat_id]
+                logger.info(
+                    f"Using stored speech_started timestamp for item_id={data.item_id}: {speech_started_at}"
+                )
+            else:
+                logger.warning(
+                    f"No stored timestamp found for item_id={data.item_id}, using NOW()"
+                )
+
+            # Create user message with stored timestamp (or NOW() if not found)
             sql_create_message = load_sql("sql/v3/simulations/create_message.sql")
             user_message_row = await conn.fetchrow(
-                sql_create_message, "user", transcript, True
+                sql_create_message, "user", transcript, True, speech_started_at
             )
             user_message = {
                 "id": user_message_row["id"],
@@ -130,9 +148,13 @@ async def _voice_transcript_ready_impl(
                     str(latest_message_row["id"]),
                     str(user_message["id"]),
                 )
-            logger.info(
-                f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
-            )
+                logger.info(
+                    f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
+                )
+            else:
+                logger.info(
+                    f"Created user message {user_message['id']} (no previous message to branch from)"
+                )
 
             # Link audio upload to message if upload_id is provided
             if data.upload_id:

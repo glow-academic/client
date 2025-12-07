@@ -244,7 +244,7 @@ async def _voice_tool_call_delta_impl(
                             "sql/v3/simulations/create_message.sql"
                         )
                         assistant_message_row = await conn.fetchrow(
-                            sql_create_message, "assistant", "", False
+                            sql_create_message, "assistant", "", False, None
                         )
                         db_message_id = assistant_message_row["id"]
                         assistant_created_at = assistant_message_row["created_at"]

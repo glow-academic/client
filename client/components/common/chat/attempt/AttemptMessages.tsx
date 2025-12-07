@@ -385,42 +385,62 @@ export default function AttemptMessages({
 
   // Clear streaming content for completed messages when SSR data refreshes
   // Also clear optimistic messages that are now in SSR data
+  // Add grace period to prevent premature clearing of messages that are still being updated
   useEffect(() => {
     // Don't clear if propMessages is undefined or empty - might be during refresh transition
     // This preserves optimistic messages and streaming content during router.refresh() gaps
     if (!propMessages || propMessages.length === 0) return;
 
-    // Clear streaming content for messages that are completed in SSR data
-    setStreamingContent((prev) => {
-      const newMap = new Map(prev);
-      let changed = false;
-      propMessages.forEach((msg) => {
-        if (msg.completed && newMap.has(msg.id)) {
-          // Only clear if SSR content matches or is longer (SSR has final content)
-          const streaming = newMap.get(msg.id);
-          if (streaming && msg.content.length >= streaming.length) {
-            newMap.delete(msg.id);
+    // Add grace period before clearing optimistic messages (500ms)
+    // This prevents clearing messages that are still being updated with deltas
+    const gracePeriodTimeout = setTimeout(() => {
+      // Clear streaming content for messages that are completed in SSR data
+      setStreamingContent((prev) => {
+        const newMap = new Map(prev);
+        let changed = false;
+        propMessages.forEach((msg) => {
+          if (msg.completed && newMap.has(msg.id)) {
+            // Only clear if SSR content matches or is longer (SSR has final content)
+            const streaming = newMap.get(msg.id);
+            if (streaming && msg.content.length >= streaming.length) {
+              newMap.delete(msg.id);
+              changed = true;
+            }
+          }
+        });
+        return changed ? newMap : prev;
+      });
+
+      // Clear optimistic messages that are now in SSR data
+      // BUT: Don't clear if they're still accumulating deltas (voice messages being updated)
+      setOptimisticMessages((prev) => {
+        const newMap = new Map(prev);
+        let changed = false;
+        const propMessageIds = new Set(propMessages.map((msg) => msg.id));
+        newMap.forEach((_msg, id) => {
+          // Check if this optimistic message is still accumulating deltas
+          let hasActiveDeltas = false;
+          for (const [
+            itemId,
+            optId,
+          ] of itemIdToOptimisticIdRef.current.entries()) {
+            if (optId === id && transcriptDeltasRef.current.has(itemId)) {
+              hasActiveDeltas = true;
+              break;
+            }
+          }
+
+          // Only clear if message is in SSR data AND not accumulating deltas
+          if (propMessageIds.has(id) && !hasActiveDeltas) {
+            newMap.delete(id);
             changed = true;
           }
-        }
+        });
+        return changed ? newMap : prev;
       });
-      return changed ? newMap : prev;
-    });
+    }, 500); // 500ms grace period
 
-    // Clear optimistic messages that are now in SSR data
-    // Only clear if the message actually exists in propMessages (not just because propMessages exists)
-    setOptimisticMessages((prev) => {
-      const newMap = new Map(prev);
-      let changed = false;
-      const propMessageIds = new Set(propMessages.map((msg) => msg.id));
-      newMap.forEach((_msg, id) => {
-        if (propMessageIds.has(id)) {
-          newMap.delete(id);
-          changed = true;
-        }
-      });
-      return changed ? newMap : prev;
-    });
+    return () => clearTimeout(gracePeriodTimeout);
   }, [targetChatId, propMessages]);
 
   // Listen for streaming token events to update message content in real-time
@@ -486,20 +506,44 @@ export default function AttemptMessages({
 
             // First, try to find matching optimistic message by content
             // Match both regular optimistic messages and voice optimistic messages
+            // Use fuzzy matching to handle slight differences between deltas and final transcript
             let matchedOptimisticId: string | null = null;
             for (const [tempId, optMsg] of newMap.entries()) {
               if (
                 optMsg.type === "query" &&
                 (tempId.startsWith("optimistic-user-") ||
-                  tempId.startsWith("optimistic-user-voice-")) &&
-                normalizeMessageContent(optMsg.content) === normalizedContent
+                  tempId.startsWith("optimistic-user-voice-"))
               ) {
-                // Replace temp message with real one (same content, real ID)
-                matchedOptimisticId = tempId;
-                newMap.delete(tempId);
-                foundMatch = true;
-                break;
+                const optNormalized = normalizeMessageContent(optMsg.content);
+                // Exact match
+                if (optNormalized === normalizedContent) {
+                  matchedOptimisticId = tempId;
+                  newMap.delete(tempId);
+                  foundMatch = true;
+                  break;
+                }
+                // Fuzzy match: check if one contains the other (handles delta vs final transcript differences)
+                // Only match if content is substantial (more than 5 chars) to avoid false matches
+                if (
+                  optNormalized.length > 5 &&
+                  normalizedContent.length > 5 &&
+                  (optNormalized.includes(normalizedContent) ||
+                    normalizedContent.includes(optNormalized))
+                ) {
+                  // Prefer voice optimistic messages for fuzzy matching
+                  if (
+                    !matchedOptimisticId ||
+                    tempId.startsWith("optimistic-user-voice-")
+                  ) {
+                    matchedOptimisticId = tempId;
+                  }
+                }
               }
+            }
+            // If we found a fuzzy match, use it
+            if (matchedOptimisticId && !foundMatch) {
+              newMap.delete(matchedOptimisticId);
+              foundMatch = true;
             }
 
             // Clean up item_id mapping and delta state if we found a match
