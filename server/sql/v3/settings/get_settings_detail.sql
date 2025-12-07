@@ -39,6 +39,76 @@ settings_providers_data AS (
     JOIN setting_providers sp ON sp.settings_id = s.id AND sp.active = true
     JOIN providers p ON p.id = sp.provider_id AND p.active = true
     WHERE s.id = $1::uuid
+),
+settings_provider_keys_data AS (
+    -- Get provider key mappings for this settings
+    SELECT COALESCE(
+        jsonb_object_agg(
+            spk.provider_id::text,
+            spk.key_id::text
+        ),
+        '{}'::jsonb
+    ) as provider_key_mapping
+    FROM setting_provider_keys spk
+    WHERE spk.settings_id = $1::uuid AND spk.active = true
+),
+settings_auth_keys_data AS (
+    -- Get auth key mappings (auth_id -> auth_item_id -> key_id)
+    SELECT COALESCE(
+        jsonb_object_agg(
+            auth_id::text,
+            item_key_mapping
+        ),
+        '{}'::jsonb
+    ) as auth_key_mapping
+    FROM (
+        SELECT 
+            sak.auth_id,
+            COALESCE(
+                jsonb_object_agg(
+                    sak.auth_item_id::text,
+                    sak.key_id::text
+                ) FILTER (WHERE sak.auth_item_id IS NOT NULL),
+                '{}'::jsonb
+            ) as item_key_mapping
+        FROM setting_auth_keys sak
+        WHERE sak.settings_id = $1::uuid AND sak.active = true
+        GROUP BY sak.auth_id
+    ) sak_grouped
+),
+auth_items_data AS (
+    -- Get auth items for each linked auth (to know which items are encrypted)
+    SELECT 
+        a.id::text as auth_id,
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'auth_item_id', ai.id::text,
+                    'name', ai.name,
+                    'description', COALESCE(ai.description, ''),
+                    'encrypted', ai.encrypted
+                )
+                ORDER BY ai.name
+            ) FILTER (WHERE ai.id IS NOT NULL),
+            '[]'::jsonb
+        ) as items
+    FROM settings s
+    JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
+    JOIN auth a ON a.id = sa.auth_id AND a.active = true
+    LEFT JOIN auth_items ai ON ai.auth_id = a.id
+    WHERE s.id = $1::uuid
+    GROUP BY a.id
+),
+auth_items_mapping_data AS (
+    -- Aggregate auth items mapping
+    SELECT COALESCE(
+        jsonb_object_agg(
+            aid.auth_id,
+            aid.items
+        ),
+        '{}'::jsonb
+    ) as auth_items_mapping
+    FROM auth_items_data aid
 )
 SELECT 
     s.id::text as settings_id,
@@ -65,10 +135,16 @@ SELECT
     COALESCE(sad.auth_ids, ARRAY[]::text[]) as auth_ids,
     COALESCE(sad.auth_mapping, '{}'::jsonb) as auth_mapping,
     COALESCE(spd.provider_ids, ARRAY[]::text[]) as provider_ids,
-    COALESCE(spd.provider_mapping, '{}'::jsonb) as provider_mapping
+    COALESCE(spd.provider_mapping, '{}'::jsonb) as provider_mapping,
+    COALESCE(spkd.provider_key_mapping, '{}'::jsonb) as provider_key_mapping,
+    COALESCE(sakd.auth_key_mapping, '{}'::jsonb) as auth_key_mapping,
+    COALESCE(aimd.auth_items_mapping, '{}'::jsonb) as auth_items_mapping
 FROM settings s
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
+LEFT JOIN settings_provider_keys_data spkd ON true
+LEFT JOIN settings_auth_keys_data sakd ON true
+LEFT JOIN auth_items_mapping_data aimd ON true
 WHERE s.id = $1::uuid
 LIMIT 1
 

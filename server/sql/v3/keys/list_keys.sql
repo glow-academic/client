@@ -8,29 +8,27 @@ WITH user_departments AS (
 user_profile AS (
     SELECT role FROM profiles WHERE id = $1
 ),
--- Get department_ids via provider_keys -> providers -> setting_providers -> settings -> department_settings
+-- Get department_ids via setting_provider_keys -> settings -> department_settings
 key_departments_data AS (
     SELECT 
-        pk.key_id,
-        ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id) as department_ids
-    FROM provider_keys pk
-    JOIN providers p ON p.id = pk.provider_id
-    JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
-    JOIN settings s ON s.id = sp.settings_id AND s.active = true
+        spk.key_id,
+        ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
+    FROM setting_provider_keys spk
+    JOIN settings s ON s.id = spk.settings_id AND s.active = true
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-    WHERE pk.active = true
-    GROUP BY pk.key_id
+    WHERE spk.active = true
+    GROUP BY spk.key_id
 ),
--- Get model_ids via provider_keys -> providers -> models
+-- Get model_ids via setting_provider_keys -> providers -> models
 key_models_data AS (
     SELECT 
-        pk.key_id,
+        spk.key_id,
         ARRAY_AGG(m.id::text ORDER BY m.name) as model_ids
-    FROM provider_keys pk
-    JOIN providers p ON p.id = pk.provider_id
+    FROM setting_provider_keys spk
+    JOIN providers p ON p.id = spk.provider_id
     JOIN models m ON m.provider_id = p.id
-    WHERE pk.active = true AND m.active = true
-    GROUP BY pk.key_id
+    WHERE spk.active = true AND m.active = true
+    GROUP BY spk.key_id
 ),
 key_data AS (
     SELECT 
@@ -51,15 +49,13 @@ key_data AS (
             WHEN COALESCE(kdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role = 'superadmin' THEN true
             WHEN up.role = 'admin' AND (
-                -- Check if key is linked to providers that are linked to user's department settings
+                -- Check if key is linked to settings that are linked to user's departments
                 EXISTS (
-                    SELECT 1 FROM provider_keys pk
-                    JOIN providers p ON p.id = pk.provider_id
-                    JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
-                    JOIN settings s ON s.id = sp.settings_id AND s.active = true
+                    SELECT 1 FROM setting_provider_keys spk
+                    JOIN settings s ON s.id = spk.settings_id AND s.active = true
                     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                     JOIN user_departments ud ON ud.department_id = ds.department_id
-                    WHERE pk.key_id = k.id AND pk.active = true
+                    WHERE spk.key_id = k.id AND spk.active = true
                 )
                 OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
             ) THEN true
@@ -71,13 +67,11 @@ key_data AS (
             WHEN up.role = 'superadmin' THEN true
             WHEN up.role = 'admin' AND (
                 EXISTS (
-                    SELECT 1 FROM provider_keys pk
-                    JOIN providers p ON p.id = pk.provider_id
-                    JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
-                    JOIN settings s ON s.id = sp.settings_id AND s.active = true
+                    SELECT 1 FROM setting_provider_keys spk
+                    JOIN settings s ON s.id = spk.settings_id AND s.active = true
                     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                     JOIN user_departments ud ON ud.department_id = ds.department_id
-                    WHERE pk.key_id = k.id AND pk.active = true
+                    WHERE spk.key_id = k.id AND spk.active = true
                 )
                 OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
             ) THEN true
@@ -91,13 +85,11 @@ key_data AS (
     WHERE 
         -- Include keys with matching department links OR default keys (no department links)
         EXISTS (
-            SELECT 1 FROM provider_keys pk
-            JOIN providers p ON p.id = pk.provider_id
-            JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
-            JOIN settings s ON s.id = sp.settings_id AND s.active = true
+            SELECT 1 FROM setting_provider_keys spk
+            JOIN settings s ON s.id = spk.settings_id AND s.active = true
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
-            WHERE pk.key_id = k.id AND pk.active = true
+            WHERE spk.key_id = k.id AND spk.active = true
         )
         OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
         OR up.role = 'superadmin'

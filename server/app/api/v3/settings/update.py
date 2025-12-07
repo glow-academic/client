@@ -35,6 +35,8 @@ class UpdateSettingsRequest(BaseModel):
     warning_threshold: int
     danger_threshold: int
     profileId: str  # Required for auditing/access control
+    provider_key_mapping: dict[str, str] | None = None  # Provider key mapping (provider_id -> key_id)
+    auth_key_mapping: dict[str, dict[str, str]] | None = None  # Auth key mapping (auth_id -> auth_item_id -> key_id)
 
 
 class UpdateSettingsResponse(BaseModel):
@@ -63,6 +65,13 @@ async def update_settings(
 
     try:
         async with transaction(conn):
+            # Prepare key mappings as JSONB
+            import json
+            provider_key_mapping_json = json.dumps(
+                request.provider_key_mapping or {}
+            )
+            auth_key_mapping_json = json.dumps(request.auth_key_mapping or {})
+
             # Update settings: deactivate current active, insert new active row
             sql_query = load_sql("sql/v3/settings/update_settings.sql")
             sql_params = (
@@ -85,6 +94,8 @@ async def update_settings(
                 request.warning_threshold,
                 request.danger_threshold,
                 request.profileId,
+                provider_key_mapping_json,
+                auth_key_mapping_json,
             )
             result = await conn.fetchrow(
                 sql_query,
@@ -107,6 +118,8 @@ async def update_settings(
                 request.warning_threshold,
                 request.danger_threshold,
                 request.profileId,
+                provider_key_mapping_json,
+                auth_key_mapping_json,
             )
 
             if not result:

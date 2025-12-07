@@ -26,6 +26,8 @@ type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
 type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
 type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
 type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
+type KeysListOut = OutputOf<"/api/v3/keys/list", "post">;
+type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -37,6 +39,35 @@ const getDepartment = async (
   return api.post(
     "/departments/detail",
     { body: { departmentId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    },
+  );
+};
+
+const getKeysList = async (profileId: string): Promise<KeysListOut> => {
+  return api.post(
+    "/keys/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    },
+  );
+};
+
+const getSettingsDetail = async (
+  settingsId: string,
+  profileId: string,
+): Promise<SettingsDetailOut> => {
+  return api.post(
+    "/settings/detail",
+    { body: { settingsId, profileId } },
     {
       cache: "no-store",
       headers: {
@@ -93,6 +124,19 @@ export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   return api.post("/keys/update", input);
 }
 
+async function getKeysListAction(profileId: string): Promise<KeysListOut> {
+  "use server";
+  return getKeysList(profileId);
+}
+
+async function getSettingsDetailAction(
+  settingsId: string,
+  profileId: string,
+): Promise<SettingsDetailOut> {
+  "use server";
+  return getSettingsDetail(settingsId, profileId);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function DepartmentEditPage({
   params,
@@ -106,6 +150,22 @@ export default async function DepartmentEditPage({
   // Fetch department detail (always fresh - source of truth)
   try {
     const departmentDetail = await getDepartment(departmentId, profileId);
+    
+    // Fetch keys list
+    const keysList = await getKeysList(profileId);
+    
+    // Fetch settings detail if department has linked settings
+    let settingsDetail: SettingsDetailOut | null = null;
+    if (departmentDetail.settings_id) {
+      try {
+        settingsDetail = await getSettingsDetail(
+          departmentDetail.settings_id,
+          profileId,
+        );
+      } catch {
+        // Settings might not exist, continue without it
+      }
+    }
 
     return (
       <div
@@ -116,11 +176,15 @@ export default async function DepartmentEditPage({
         <Department
           departmentId={departmentId}
           departmentDetail={departmentDetail}
+          keysList={keysList}
+          settingsDetail={settingsDetail}
           updateDepartmentAction={updateDepartment}
           deleteDepartmentAction={deleteDepartment}
           createKeyAction={createKey}
           decryptKeyAction={decryptKey}
           updateKeyAction={updateKey}
+          getKeysListAction={getKeysListAction}
+          getSettingsDetailAction={getSettingsDetailAction}
         />
       </div>
     );
@@ -155,4 +219,6 @@ export type {
   UpdateDepartmentOut,
   UpdateKeyIn,
   UpdateKeyOut,
+  KeysListOut,
+  SettingsDetailOut,
 };

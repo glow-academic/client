@@ -15,6 +15,7 @@ type SettingsDetailIn = InputOf<"/api/v3/settings/detail", "post">;
 type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
 type UpdateSettingsIn = InputOf<"/api/v3/settings/update", "post">;
 type UpdateSettingsOut = OutputOf<"/api/v3/settings/update", "post">;
+type KeysListOut = OutputOf<"/api/v3/keys/list", "post">;
 
 /** ---- Direct fetch for settings list ---- */
 const getSettingsList = async (profileId: string): Promise<SettingsListOut> => {
@@ -47,6 +48,20 @@ const getSettingsDetail = async (
   );
 };
 
+/** ---- Direct fetch for keys list ---- */
+const getKeysList = async (profileId: string): Promise<KeysListOut> => {
+  return api.post(
+    "/keys/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    },
+  );
+};
+
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateSettings(
   input: UpdateSettingsIn,
@@ -66,6 +81,11 @@ async function getSettingsDetailAction(
 ): Promise<SettingsDetailOut> {
   "use server";
   return getSettingsDetail(settingsId, profileId);
+}
+
+async function getKeysListAction(profileId: string): Promise<KeysListOut> {
+  "use server";
+  return getKeysList(profileId);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -92,6 +112,9 @@ export default async function SettingsPage() {
     );
   }
 
+  // Fetch keys list
+  const keysList = await getKeysList(profileId);
+
   return (
     <div className="space-y-6" data-page="settings-index">
       <Settings
@@ -99,7 +122,9 @@ export default async function SettingsPage() {
         settingsDetail={settingsDetail}
         selectedSettingsId={selectedSettingsId}
         profileId={profileId}
+        keysList={keysList}
         getSettingsDetailAction={getSettingsDetailAction}
+        getKeysListAction={getKeysListAction}
         updateSettingsAction={updateSettings}
       />
     </div>
@@ -114,4 +139,5 @@ export type {
   SettingsListOut,
   UpdateSettingsIn,
   UpdateSettingsOut,
+  KeysListOut,
 };

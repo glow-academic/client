@@ -49,6 +49,9 @@ class SettingsDetailResponse(BaseModel):
     auth_mapping: dict[str, dict[str, str]]  # Auth mapping with name, description, slug
     provider_ids: list[str]  # Linked provider IDs
     provider_mapping: dict[str, dict[str, str]]  # Provider mapping with name, description, value
+    provider_key_mapping: dict[str, str]  # Provider key mapping (provider_id -> key_id)
+    auth_key_mapping: dict[str, dict[str, str]]  # Auth key mapping (auth_id -> auth_item_id -> key_id)
+    auth_items_mapping: dict[str, list[dict[str, Any]]]  # Auth items mapping (auth_id -> list of auth_items)
 
 
 router = APIRouter()
@@ -115,6 +118,43 @@ async def get_settings_detail(
         if provider_mapping_data and isinstance(provider_mapping_data, dict):
             provider_mapping = provider_mapping_data
 
+        # Parse provider key mapping
+        provider_key_mapping: dict[str, str] = {}
+        provider_key_mapping_data = settings.get("provider_key_mapping")
+        if isinstance(provider_key_mapping_data, str):
+            provider_key_mapping_data = json.loads(provider_key_mapping_data)
+        if provider_key_mapping_data and isinstance(provider_key_mapping_data, dict):
+            provider_key_mapping = {
+                str(k): str(v) for k, v in provider_key_mapping_data.items()
+            }
+
+        # Parse auth key mapping
+        auth_key_mapping: dict[str, dict[str, str]] = {}
+        auth_key_mapping_data = settings.get("auth_key_mapping")
+        if isinstance(auth_key_mapping_data, str):
+            auth_key_mapping_data = json.loads(auth_key_mapping_data)
+        if auth_key_mapping_data and isinstance(auth_key_mapping_data, dict):
+            auth_key_mapping = {
+                str(auth_id): {
+                    str(item_id): str(key_id)
+                    for item_id, key_id in item_mapping.items()
+                }
+                if isinstance(item_mapping, dict)
+                else {}
+                for auth_id, item_mapping in auth_key_mapping_data.items()
+            }
+
+        # Parse auth items mapping
+        auth_items_mapping: dict[str, list[dict[str, Any]]] = {}
+        auth_items_mapping_data = settings.get("auth_items_mapping")
+        if isinstance(auth_items_mapping_data, str):
+            auth_items_mapping_data = json.loads(auth_items_mapping_data)
+        if auth_items_mapping_data and isinstance(auth_items_mapping_data, dict):
+            auth_items_mapping = {
+                str(auth_id): items if isinstance(items, list) else []
+                for auth_id, items in auth_items_mapping_data.items()
+            }
+
         response_data = SettingsDetailResponse(
             settings_id=settings["settings_id"],
             created_at=settings["created_at"].isoformat()
@@ -143,6 +183,9 @@ async def get_settings_detail(
             auth_mapping=auth_mapping,
             provider_ids=provider_ids,
             provider_mapping=provider_mapping,
+            provider_key_mapping=provider_key_mapping,
+            auth_key_mapping=auth_key_mapping,
+            auth_items_mapping=auth_items_mapping,
         )
 
         # Cache response

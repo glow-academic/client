@@ -51,10 +51,9 @@ image_model_check AS (
 ),
 model_endpoint_data AS (
     SELECT 
-        COALESCE(pe.base_url, '') as base_url
+        COALESCE(me.base_url, '') as base_url
     FROM models m
-    JOIN providers p ON p.id = m.provider_id
-    LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
+    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     WHERE m.id = $1::uuid
     LIMIT 1
 ),
@@ -106,32 +105,24 @@ valid_departments_data AS (
     FROM user_departments_data ud
 ),
 model_all_keys AS (
-    -- Default keys (no department-specific override)
-    SELECT 
-        mk.key_id::text as key_id,
+    -- Get keys via settings system: settings -> provider -> key
+    -- For each department that has this model, get keys from their settings
+    SELECT DISTINCT
+        spk.key_id::text as key_id,
         k.name,
         k.key,
         k.description,
         k.active,
-        ARRAY[]::text[] as department_ids
-    FROM model_keys mk
-    JOIN keys k ON k.id = mk.key_id
-    WHERE mk.model_id = $1::uuid AND mk.active = true AND k.active = true
-    
-    UNION ALL
-    
-    -- Department-specific keys
-    SELECT 
-        mdk.key_id::text as key_id,
-        k.name,
-        k.key,
-        k.description,
-        k.active,
-        ARRAY_AGG(mdk.department_id::text) as department_ids
-    FROM model_department_keys mdk
-    JOIN keys k ON k.id = mdk.key_id
-    WHERE mdk.model_id = $1::uuid AND mdk.active = true AND k.active = true
-    GROUP BY mdk.key_id, k.name, k.key, k.description, k.active
+        ARRAY_AGG(DISTINCT ds.department_id::text) as department_ids
+    FROM models m
+    JOIN providers p ON p.id = m.provider_id
+    JOIN setting_provider_keys spk ON spk.provider_id = p.id AND spk.active = true
+    JOIN keys k ON k.id = spk.key_id AND k.active = true
+    JOIN settings s ON s.id = spk.settings_id AND s.active = true
+    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    WHERE m.id = $1::uuid
+    AND ds.active = true
+    GROUP BY spk.key_id, k.name, k.key, k.description, k.active
     
     UNION ALL
     
@@ -145,26 +136,28 @@ model_all_keys AS (
         NULL::text[] as department_ids
     FROM keys k
     CROSS JOIN resolve_profile_id rpi
-    LEFT JOIN department_keys kd ON kd.key_id = k.id AND kd.active = true
     WHERE k.active = true
     AND NOT EXISTS (
-        -- Exclude keys already included via model_keys or model_department_keys
-        SELECT 1 FROM model_keys mk2 
-        WHERE mk2.model_id = $1::uuid AND mk2.key_id = k.id AND mk2.active = true
-    )
-    AND NOT EXISTS (
-        SELECT 1 FROM model_department_keys mdk2 
-        WHERE mdk2.model_id = $1::uuid AND mdk2.key_id = k.id AND mdk2.active = true
+        -- Exclude keys already included via setting_provider_keys for this model's provider
+        SELECT 1 FROM models m2
+        JOIN providers p2 ON p2.id = m2.provider_id
+        JOIN setting_provider_keys spk2 ON spk2.provider_id = p2.id AND spk2.key_id = k.id AND spk2.active = true
+        WHERE m2.id = $1::uuid
     )
     AND (
-        -- Include keys with no department links (general keys)
-        NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+        -- Include keys with no settings links (general keys)
+        NOT EXISTS (
+            SELECT 1 FROM setting_provider_keys spk3
+            WHERE spk3.key_id = k.id AND spk3.active = true
+        )
         OR
-        -- Include keys with department links that match user's departments
+        -- Include keys with settings links that match user's departments
         EXISTS (
-            SELECT 1 FROM department_keys kd3
-            JOIN user_departments ud ON ud.department_id = kd3.department_id
-            WHERE kd3.key_id = k.id AND kd3.active = true
+            SELECT 1 FROM setting_provider_keys spk4
+            JOIN settings s4 ON s4.id = spk4.settings_id AND s4.active = true
+            JOIN department_settings ds4 ON ds4.settings_id = s4.id AND ds4.active = true
+            JOIN user_departments ud ON ud.department_id = ds4.department_id
+            WHERE spk4.key_id = k.id AND spk4.active = true
         )
         OR
         -- Superadmin can see all keys

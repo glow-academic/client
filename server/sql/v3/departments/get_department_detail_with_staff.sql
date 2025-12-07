@@ -20,7 +20,7 @@ model_run_departments_via_agents AS (
     FROM model_run_costs mrc
     JOIN runs mr ON mr.id = mrc.run_id
     JOIN agent_departments ad ON ad.agent_id = mr.agent_id AND ad.active = true
-    WHERE ad.department_id = $1 AND mr.agent_id IS NOT NULL
+    WHERE ad.department_id = $1::uuid AND mr.agent_id IS NOT NULL
 ),
 model_run_departments_via_personas AS (
     SELECT DISTINCT
@@ -29,16 +29,16 @@ model_run_departments_via_personas AS (
     FROM model_run_costs mrc
     JOIN run_personas mrp ON mrp.run_id = mrc.run_id AND mrp.active = true
     JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
-    WHERE pd.department_id = $1
+    WHERE pd.department_id = $1::uuid
 ),
 model_run_departments AS (
-    SELECT run_id, department_id FROM model_run_departments_via_agents
+    SELECT run_id, department_id::uuid as department_id FROM model_run_departments_via_agents
     UNION
-    SELECT run_id, department_id FROM model_run_departments_via_personas
+    SELECT run_id, department_id::uuid as department_id FROM model_run_departments_via_personas
 ),
 department_price_spent AS (
     SELECT 
-        mrd.department_id,
+        mrd.department_id::uuid as department_id,
         SUM(mrc.cost) as total_price_spent
     FROM model_run_costs mrc
     JOIN model_run_departments mrd ON mrd.run_id = mrc.run_id
@@ -46,31 +46,31 @@ department_price_spent AS (
 ),
 department_staff_count AS (
     SELECT 
-        department_id, 
+        department_id::uuid as department_id, 
         COUNT(DISTINCT profile_id) as staff_count
     FROM profile_departments
-    WHERE department_id = $1 AND active = true
+    WHERE department_id = $1::uuid AND active = true
     GROUP BY department_id
 ),
 department_usage AS (
     SELECT
-        (SELECT COUNT(*) FROM profile_departments WHERE department_id = $1 AND active = true) +
-        (SELECT COUNT(*) FROM simulation_departments WHERE department_id = $1 AND active = true) +
-        (SELECT COUNT(*) FROM scenario_departments WHERE department_id = $1 AND active = true) +
-        (SELECT COUNT(*) FROM persona_departments WHERE department_id = $1 AND active = true) +
-        (SELECT COUNT(*) FROM document_departments WHERE department_id = $1 AND active = true) +
-        (SELECT COUNT(*) FROM cohort_departments WHERE department_id = $1 AND active = true) as total_usage
+        (SELECT COUNT(*) FROM profile_departments WHERE department_id = $1::uuid AND active = true) +
+        (SELECT COUNT(*) FROM simulation_departments WHERE department_id = $1::uuid AND active = true) +
+        (SELECT COUNT(*) FROM scenario_departments WHERE department_id = $1::uuid AND active = true) +
+        (SELECT COUNT(*) FROM persona_departments WHERE department_id = $1::uuid AND active = true) +
+        (SELECT COUNT(*) FROM document_departments WHERE department_id = $1::uuid AND active = true) +
+        (SELECT COUNT(*) FROM cohort_departments WHERE department_id = $1::uuid AND active = true) as total_usage
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $2
+    SELECT role FROM profiles WHERE id = $2::uuid
 ),
 user_department_access AS (
     -- Check if user has access to this department
     SELECT EXISTS(
         SELECT 1 FROM profile_departments pd
-        WHERE pd.profile_id = $2 AND pd.department_id = $1 AND pd.active = true
+        WHERE pd.profile_id = $2::uuid AND pd.department_id = $1::uuid AND pd.active = true
     ) OR EXISTS(
-        SELECT 1 FROM profiles p WHERE p.id = $2 AND p.role = 'superadmin'
+        SELECT 1 FROM profiles p WHERE p.id = $2::uuid AND p.role = 'superadmin'
     ) as has_access
 ),
 profile_active_cohort_links AS (
@@ -157,7 +157,7 @@ department_mapping_data AS (
         )
     ), '{}'::jsonb) as department_mapping
     FROM departments d
-    WHERE (d.id = $1::uuid OR d.id IN (SELECT department_id FROM all_department_ids))
+    WHERE (d.id = $1::uuid OR d.id = ANY(ARRAY(SELECT department_id::uuid FROM all_department_ids)))
     AND d.active = true
 ),
 department_models AS (
@@ -177,17 +177,20 @@ department_models AS (
     ORDER BY m.name
 ),
 department_keys AS (
-    -- Get all API keys available to this department (default + department-specific)
+    -- Get all API keys available to this department via settings
     SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
     FROM keys k
+    JOIN setting_provider_keys spk ON spk.key_id = k.id AND spk.active = true
+    JOIN settings s ON s.id = spk.settings_id AND s.active = true
+    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE k.active = true
+    AND ds.department_id = $1::uuid
+    AND ds.active = true
     UNION
-    -- Also include department-specific keys for this department
+    -- Also include all active keys (for backward compatibility and general access)
     SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
     FROM keys k
-    JOIN model_department_keys mdk ON mdk.key_id = k.id AND mdk.active = true
     WHERE k.active = true
-    AND mdk.department_id = $1::uuid
 ),
 model_mapping_data AS (
     SELECT COALESCE(
@@ -226,24 +229,19 @@ key_mapping_data AS (
     FROM department_keys dk
 ),
 model_key_associations AS (
-    -- Get model-key associations for this department (default + department-specific)
+    -- Get model-key associations for this department via settings
     SELECT 
         m.id::text as model_id,
-        COALESCE(
-            -- Prefer department-specific key if exists
-            (SELECT mdk.key_id::text
-             FROM model_department_keys mdk
-             WHERE mdk.model_id = m.id 
-             AND mdk.department_id = $1::uuid 
-             AND mdk.active = true
-             LIMIT 1),
-            -- Otherwise use default key
-            (SELECT mk.key_id::text
-             FROM model_keys mk
-             WHERE mk.model_id = m.id 
-             AND mk.active = true
-             LIMIT 1)
-        ) as key_id
+        -- Get key from setting_provider_keys for this department's settings and model's provider
+        (SELECT spk.key_id::text
+         FROM setting_provider_keys spk
+         JOIN settings s ON s.id = spk.settings_id AND s.active = true
+         JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+         WHERE spk.provider_id = m.provider_id
+         AND ds.department_id = $1::uuid
+         AND ds.active = true
+         AND spk.active = true
+         LIMIT 1) as key_id
     FROM models m
     WHERE m.active = true
     AND (
@@ -297,7 +295,7 @@ settings_mapping_data AS (
         '{}'::jsonb
     ) as settings_mapping
     FROM settings s
-    LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id::text
+    LEFT JOIN settings_departments_data sdd ON sdd.settings_id::text = s.id::text
     WHERE s.active = true
 )
 SELECT 
@@ -340,6 +338,6 @@ CROSS JOIN key_mapping_data kmd
 CROSS JOIN model_key_mapping_data mkmd
 LEFT JOIN department_current_settings dcs ON true
 CROSS JOIN settings_mapping_data smd
-WHERE d.id = $1
+WHERE d.id = $1::uuid
 AND uda.has_access = true
 

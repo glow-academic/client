@@ -11,6 +11,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { SettingsPicker } from "@/components/common/forms/SettingsPicker";
+import { KeyPicker } from "@/components/common/forms/KeyPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,7 @@ import type {
   SettingsDetailOut,
   UpdateSettingsIn,
   UpdateSettingsOut,
+  KeysListOut,
 } from "@/app/(main)/system/settings/page";
 
 export interface SettingsProps {
@@ -33,10 +35,12 @@ export interface SettingsProps {
   settingsDetail: SettingsDetailOut | null;
   selectedSettingsId: string | null;
   profileId: string;
+  keysList: KeysListOut;
   getSettingsDetailAction: (
     settingsId: string,
     profileId: string
   ) => Promise<SettingsDetailOut>;
+  getKeysListAction: (profileId: string) => Promise<KeysListOut>;
   updateSettingsAction?: (
     input: UpdateSettingsIn
   ) => Promise<UpdateSettingsOut>;
@@ -47,7 +51,9 @@ export default function Settings({
   settingsDetail: initialSettingsDetail,
   selectedSettingsId: initialSelectedSettingsId,
   profileId,
+  keysList: initialKeysList,
   getSettingsDetailAction,
+  getKeysListAction,
   updateSettingsAction,
 }: SettingsProps) {
   const router = useRouter();
@@ -60,6 +66,15 @@ export default function Settings({
   );
   const [settingsDetail, setSettingsDetail] =
     useState<SettingsDetailOut | null>(initialSettingsDetail);
+  const [keysList, setKeysList] = useState<KeysListOut>(initialKeysList);
+  
+  // Key mappings state
+  const [providerKeyMapping, setProviderKeyMapping] = useState<
+    Record<string, string>
+  >({});
+  const [authKeyMapping, setAuthKeyMapping] = useState<
+    Record<string, Record<string, string>>
+  >({});
 
   // Build settings mapping for picker
   const settingsMapping = useMemo(() => {
@@ -113,7 +128,29 @@ export default function Settings({
     "#f43f5e",
   ];
 
-  // Update form data when settings detail changes
+  // Build key mapping for KeyPicker
+  const keyMapping = useMemo(() => {
+    const mapping: Record<
+      string,
+      { name: string; description: string; key_masked: string; active: boolean; department_ids: string[] | null }
+    > = {};
+    keysList.keys.forEach((key) => {
+      mapping[key.key_id] = {
+        name: key.name,
+        description: key.description || "",
+        key_masked: key.key_masked,
+        active: key.active,
+        department_ids: key.department_ids || null,
+      };
+    });
+    return mapping;
+  }, [keysList]);
+
+  const validKeyIds = useMemo(() => {
+    return keysList.keys.map((key) => key.key_id);
+  }, [keysList]);
+
+  // Update form data and key mappings when settings detail changes
   useEffect(() => {
     if (settingsDetail) {
       setFormData({
@@ -136,6 +173,10 @@ export default function Settings({
         warning_threshold: settingsDetail.warning_threshold ?? 80,
         danger_threshold: settingsDetail.danger_threshold ?? 70,
       });
+      
+      // Initialize key mappings from settings detail
+      setProviderKeyMapping(settingsDetail.provider_key_mapping || {});
+      setAuthKeyMapping(settingsDetail.auth_key_mapping || {});
     }
   }, [settingsDetail]);
 
@@ -151,6 +192,9 @@ export default function Settings({
     try {
       const detailResult = await getSettingsDetailAction(settingsId, profileId);
       setSettingsDetail(detailResult);
+      // Refresh keys list
+      const freshKeysList = await getKeysListAction(profileId);
+      setKeysList(freshKeysList);
     } catch {
       toast.error("Failed to load settings detail");
     }
@@ -188,6 +232,8 @@ export default function Settings({
           warning_threshold: formData.warning_threshold,
           danger_threshold: formData.danger_threshold,
           profileId,
+          provider_key_mapping: Object.keys(providerKeyMapping).length > 0 ? providerKeyMapping : undefined,
+          auth_key_mapping: Object.keys(authKeyMapping).length > 0 ? authKeyMapping : undefined,
         },
       });
 
@@ -434,23 +480,69 @@ export default function Settings({
             <div className="space-y-2">
               <Label>Authentication Methods</Label>
               {settingsDetail.auth_ids && settingsDetail.auth_ids.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {settingsDetail.auth_ids.map((authId) => {
                     const auth = settingsDetail.auth_mapping?.[authId];
+                    const authItems = settingsDetail.auth_items_mapping?.[authId] || [];
+                    const encryptedItems = authItems.filter(
+                      (item: { encrypted?: boolean }) => item.encrypted === true
+                    );
                     return auth ? (
                       <div
                         key={authId}
-                        className="p-3 border rounded-lg bg-muted/50"
+                        className="p-3 border rounded-lg bg-muted/50 space-y-3"
                       >
-                        <div className="font-medium">{auth.name}</div>
-                        {auth.description && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {auth.description}
-                          </div>
-                        )}
-                        {auth.slug && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Slug: {auth.slug}
+                        <div>
+                          <div className="font-medium">{auth.name}</div>
+                          {auth.description && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {auth.description}
+                            </div>
+                          )}
+                          {auth.slug && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Slug: {auth.slug}
+                            </div>
+                          )}
+                        </div>
+                        {encryptedItems.length > 0 && (
+                          <div className="space-y-2">
+                            <Label className="text-xs">Encrypted Items</Label>
+                            {encryptedItems.map((item: { auth_item_id: string; name: string; description?: string }) => {
+                              const itemKeyMapping = authKeyMapping[authId] || {};
+                              const selectedKeyId = itemKeyMapping[item.auth_item_id] || null;
+                              return (
+                                <div key={item.auth_item_id} className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">
+                                    {item.name}
+                                    {item.description && (
+                                      <span className="ml-1 text-xs text-muted-foreground">
+                                        - {item.description}
+                                      </span>
+                                    )}
+                                  </Label>
+                                  <KeyPicker
+                                    mapping={keyMapping}
+                                    validIds={validKeyIds}
+                                    selectedIds={selectedKeyId ? [selectedKeyId] : []}
+                                    defaultKeyId={null}
+                                    onSelect={(ids) => {
+                                      setAuthKeyMapping((prev) => ({
+                                        ...prev,
+                                        [authId]: {
+                                          ...(prev[authId] || {}),
+                                          [item.auth_item_id]: ids[0] || "",
+                                        },
+                                      }));
+                                    }}
+                                    multiSelect={false}
+                                    placeholder="Select key..."
+                                    disabled={isSubmitting}
+                                    compact={true}
+                                  />
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -469,26 +561,46 @@ export default function Settings({
               <Label>AI Providers</Label>
               {settingsDetail.provider_ids &&
               settingsDetail.provider_ids.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {settingsDetail.provider_ids.map((providerId) => {
                     const provider =
                       settingsDetail.provider_mapping?.[providerId];
+                    const selectedKeyId = providerKeyMapping[providerId] || null;
                     return provider ? (
                       <div
                         key={providerId}
-                        className="p-3 border rounded-lg bg-muted/50"
+                        className="p-3 border rounded-lg bg-muted/50 space-y-2"
                       >
                         <div className="font-medium">{provider.name}</div>
                         {provider.description && (
-                          <div className="text-sm text-muted-foreground mt-1">
+                          <div className="text-sm text-muted-foreground">
                             {provider.description}
                           </div>
                         )}
                         {provider.value && (
-                          <div className="text-xs text-muted-foreground mt-1">
+                          <div className="text-xs text-muted-foreground">
                             Value: {provider.value}
                           </div>
                         )}
+                        <div className="space-y-1">
+                          <Label className="text-xs">API Key</Label>
+                          <KeyPicker
+                            mapping={keyMapping}
+                            validIds={validKeyIds}
+                            selectedIds={selectedKeyId ? [selectedKeyId] : []}
+                            defaultKeyId={null}
+                            onSelect={(ids) => {
+                              setProviderKeyMapping((prev) => ({
+                                ...prev,
+                                [providerId]: ids[0] || "",
+                              }));
+                            }}
+                            multiSelect={false}
+                            placeholder="Select key..."
+                            disabled={isSubmitting}
+                            compact={true}
+                          />
+                        </div>
                       </div>
                     ) : null;
                   })}

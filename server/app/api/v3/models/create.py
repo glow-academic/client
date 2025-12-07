@@ -27,6 +27,7 @@ class CreateModelRequest(BaseModel):
     active: bool
     value: str  # Model value identifier
     department_ids: list[str] | None = None
+    base_url: str | None = None  # Optional custom base URL for the model
     # Configuration fields
     temperature_bounds: dict[str, Any] | None = None  # { type: 'range', lower: float, upper: float } | { type: 'values', values: list[float] }
     pricing: list[PricingEntry] | None = None
@@ -66,6 +67,7 @@ async def create_model(
             sql_query = load_sql("sql/v3/models/create_model_complete.sql")
             # Ensure department_ids is always an array (empty if None)
             department_ids = request.department_ids if request.department_ids else []
+            base_url = request.base_url if request.base_url else None
             sql_params = (
                 request.provider_id,
                 request.name,
@@ -73,6 +75,7 @@ async def create_model(
                 request.active,
                 request.value,
                 department_ids,
+                base_url,
                 request.profileId,
             )
             result = await conn.fetchrow(
@@ -83,6 +86,7 @@ async def create_model(
                 request.active,
                 request.value,
                 department_ids,
+                base_url,
                 request.profileId,
             )
 

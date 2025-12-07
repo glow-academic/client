@@ -14269,6 +14269,17 @@
             ],
             "title": "Department Ids"
           },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
           "temperature_bounds": {
             "anyOf": [
               {
@@ -29016,6 +29027,34 @@
             },
             "type": "object",
             "title": "Provider Mapping"
+          },
+          "provider_key_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Provider Key Mapping"
+          },
+          "auth_key_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Auth Key Mapping"
+          },
+          "auth_items_mapping": {
+            "additionalProperties": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Auth Items Mapping"
           }
         },
         "type": "object",
@@ -29044,7 +29083,10 @@
           "auth_ids",
           "auth_mapping",
           "provider_ids",
-          "provider_mapping"
+          "provider_mapping",
+          "provider_key_mapping",
+          "auth_key_mapping",
+          "auth_items_mapping"
         ],
         "title": "SettingsDetailResponse",
         "description": "Detailed settings response."
@@ -31795,6 +31837,17 @@
             ],
             "title": "Department Ids"
           },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
           "temperature_bounds": {
             "anyOf": [
               {
@@ -32773,6 +32826,37 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
+          },
+          "provider_key_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Key Mapping"
+          },
+          "auth_key_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Key Mapping"
           }
         },
         "type": "object",

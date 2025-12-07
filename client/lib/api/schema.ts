@@ -6229,6 +6229,8 @@ export interface components {
             value: string;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Base Url */
+            base_url?: string | null;
             /** Temperature Bounds */
             temperature_bounds?: {
                 [key: string]: unknown;
@@ -11931,6 +11933,22 @@ export interface components {
                     [key: string]: string;
                 };
             };
+            /** Provider Key Mapping */
+            provider_key_mapping: {
+                [key: string]: string;
+            };
+            /** Auth Key Mapping */
+            auth_key_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Auth Items Mapping */
+            auth_items_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                }[];
+            };
         };
         /**
          * SettingsItem
@@ -13031,6 +13049,8 @@ export interface components {
             value: string;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Base Url */
+            base_url?: string | null;
             /** Temperature Bounds */
             temperature_bounds?: {
                 [key: string]: unknown;
@@ -13378,6 +13398,16 @@ export interface components {
             danger_threshold: number;
             /** Profileid */
             profileId: string;
+            /** Provider Key Mapping */
+            provider_key_mapping?: {
+                [key: string]: string;
+            } | null;
+            /** Auth Key Mapping */
+            auth_key_mapping?: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            } | null;
         };
         /**
          * UpdateSettingsResponse

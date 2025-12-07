@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { SettingsPicker } from "@/components/common/forms/SettingsPicker";
+import { KeyPicker } from "@/components/common/forms/KeyPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { Loader2, Power, Trash2 } from "lucide-react";
@@ -47,6 +48,8 @@ import type {
   UpdateDepartmentOut,
   UpdateKeyIn,
   UpdateKeyOut,
+  KeysListOut,
+  SettingsDetailOut,
 } from "@/app/(main)/departments/d/[departmentId]/page";
 // Import types from list page (delete/duplicate actions)
 import type {
@@ -61,6 +64,8 @@ export interface DepartmentProps {
   // Optional server-provided data (for server-side rendering)
   departmentDetail?: DepartmentDetailOut;
   departmentDetailDefault?: DepartmentNewOut;
+  keysList?: KeysListOut;
+  settingsDetail?: SettingsDetailOut | null;
   // Server actions (replaces useMutation)
   createDepartmentAction?: (
     input: CreateDepartmentIn
@@ -78,6 +83,11 @@ export interface DepartmentProps {
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
   decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
   updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
+  getKeysListAction?: (profileId: string) => Promise<KeysListOut>;
+  getSettingsDetailAction?: (
+    settingsId: string,
+    profileId: string
+  ) => Promise<SettingsDetailOut>;
 }
 
 interface FormErrors {
@@ -96,6 +106,8 @@ export default function Department({
   departmentId,
   departmentDetail: serverDepartmentDetail,
   departmentDetailDefault: serverDepartmentDetailDefault,
+  keysList: initialKeysList,
+  settingsDetail: initialSettingsDetail,
   createDepartmentAction,
   updateDepartmentAction,
   duplicateDepartmentAction: _duplicateDepartmentAction,
@@ -103,6 +115,8 @@ export default function Department({
   createKeyAction: _createKeyAction,
   decryptKeyAction: _decryptKeyAction,
   updateKeyAction: _updateKeyAction,
+  getKeysListAction,
+  getSettingsDetailAction,
 }: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -126,6 +140,22 @@ export default function Department({
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  // Keys and settings state
+  const [keysList, setKeysList] = useState<KeysListOut | undefined>(
+    initialKeysList
+  );
+  const [settingsDetail, setSettingsDetail] = useState<
+    SettingsDetailOut | null | undefined
+  >(initialSettingsDetail);
+  
+  // Key mappings state
+  const [providerKeyMapping, setProviderKeyMapping] = useState<
+    Record<string, string>
+  >({});
+  const [authKeyMapping, setAuthKeyMapping] = useState<
+    Record<string, Record<string, string>>
+  >({});
 
   // Use server-provided data (no React Query needed when server data is provided)
   const departmentDetail = serverDepartmentDetail;
@@ -305,12 +335,64 @@ export default function Department({
     }
   };
 
+  // Build key mapping for KeyPicker
+  const keyMapping = useMemo(() => {
+    if (!keysList) return {};
+    const mapping: Record<
+      string,
+      { name: string; description: string; key_masked: string; active: boolean; department_ids: string[] | null }
+    > = {};
+    keysList.keys.forEach((key) => {
+      mapping[key.key_id] = {
+        name: key.name,
+        description: key.description || "",
+        key_masked: key.key_masked,
+        active: key.active,
+        department_ids: key.department_ids || null,
+      };
+    });
+    return mapping;
+  }, [keysList]);
+
+  const validKeyIds = useMemo(() => {
+    return keysList?.keys.map((key) => key.key_id) || [];
+  }, [keysList]);
+
+  // Initialize key mappings from settings detail
+  useEffect(() => {
+    if (settingsDetail) {
+      setProviderKeyMapping(settingsDetail.provider_key_mapping || {});
+      setAuthKeyMapping(settingsDetail.auth_key_mapping || {});
+    }
+  }, [settingsDetail]);
+
   // Settings picker handler
-  const handleSettingsSelect = (settingsId: string | null) => {
+  const handleSettingsSelect = async (settingsId: string | null) => {
     setFormData((prev) => ({
       ...prev,
       settingsId: settingsId,
     }));
+    
+    // Fetch settings detail when settings changes
+    if (settingsId && getSettingsDetailAction && effectiveProfile?.id) {
+      try {
+        const detail = await getSettingsDetailAction(
+          settingsId,
+          effectiveProfile.id
+        );
+        setSettingsDetail(detail);
+        // Refresh keys list
+        if (getKeysListAction) {
+          const freshKeysList = await getKeysListAction(effectiveProfile.id);
+          setKeysList(freshKeysList);
+        }
+      } catch {
+        // Settings might not exist
+        setSettingsDetail(null);
+      }
+    } else {
+      setSettingsDetail(null);
+    }
   };
 
   const handleDelete = async () => {
@@ -475,6 +557,166 @@ export default function Department({
             )}
           </div>
         )}
+
+        {/* Key Pickers for Linked Settings */}
+        {isEditMode &&
+          settingsDetail &&
+          keysList &&
+          formData?.settingsId && (
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="text-lg font-semibold">
+                Settings Key Configuration
+              </h3>
+
+              {/* Provider Keys */}
+              {settingsDetail.provider_ids &&
+                settingsDetail.provider_ids.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>AI Provider Keys</Label>
+                    <div className="space-y-4">
+                      {settingsDetail.provider_ids.map((providerId) => {
+                        const provider =
+                          settingsDetail.provider_mapping?.[providerId];
+                        const selectedKeyId =
+                          providerKeyMapping[providerId] || null;
+                        return provider ? (
+                          <div
+                            key={providerId}
+                            className="p-3 border rounded-lg bg-muted/50 space-y-2"
+                          >
+                            <div className="font-medium">{provider.name}</div>
+                            {provider.description && (
+                              <div className="text-sm text-muted-foreground">
+                                {provider.description}
+                              </div>
+                            )}
+                            <div className="space-y-1">
+                              <Label className="text-xs">API Key</Label>
+                              <KeyPicker
+                                mapping={keyMapping}
+                                validIds={validKeyIds}
+                                selectedIds={
+                                  selectedKeyId ? [selectedKeyId] : []
+                                }
+                                defaultKeyId={null}
+                                onSelect={(ids) => {
+                                  setProviderKeyMapping((prev) => ({
+                                    ...prev,
+                                    [providerId]: ids[0] || "",
+                                  }));
+                                }}
+                                multiSelect={false}
+                                placeholder="Select key..."
+                                disabled={isReadonly || isSubmitting}
+                                compact={true}
+                              />
+                            </div>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              {/* Auth Keys */}
+              {settingsDetail.auth_ids &&
+                settingsDetail.auth_ids.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Authentication Method Keys</Label>
+                    <div className="space-y-4">
+                      {settingsDetail.auth_ids.map((authId) => {
+                        const auth = settingsDetail.auth_mapping?.[authId];
+                        const authItems =
+                          settingsDetail.auth_items_mapping?.[authId] || [];
+                        const encryptedItems = authItems.filter(
+                          (item: { encrypted?: boolean }) =>
+                            item.encrypted === true
+                        );
+                        return auth ? (
+                          <div
+                            key={authId}
+                            className="p-3 border rounded-lg bg-muted/50 space-y-3"
+                          >
+                            <div>
+                              <div className="font-medium">{auth.name}</div>
+                              {auth.description && (
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {auth.description}
+                                </div>
+                              )}
+                            </div>
+                            {encryptedItems.length > 0 && (
+                              <div className="space-y-2">
+                                <Label className="text-xs">
+                                  Encrypted Items
+                                </Label>
+                                {encryptedItems.map(
+                                  (item: {
+                                    auth_item_id: string;
+                                    name: string;
+                                    description?: string;
+                                  }) => {
+                                    const itemKeyMapping =
+                                      authKeyMapping[authId] || {};
+                                    const selectedKeyId =
+                                      itemKeyMapping[item.auth_item_id] || null;
+                                    return (
+                                      <div
+                                        key={item.auth_item_id}
+                                        className="space-y-1"
+                                      >
+                                        <Label className="text-xs text-muted-foreground">
+                                          {item.name}
+                                          {item.description && (
+                                            <span className="ml-1 text-xs text-muted-foreground">
+                                              - {item.description}
+                                            </span>
+                                          )}
+                                        </Label>
+                                        <KeyPicker
+                                          mapping={keyMapping}
+                                          validIds={validKeyIds}
+                                          selectedIds={
+                                            selectedKeyId
+                                              ? [selectedKeyId]
+                                              : []
+                                          }
+                                          defaultKeyId={null}
+                                          onSelect={(ids) => {
+                                            setAuthKeyMapping((prev) => ({
+                                              ...prev,
+                                              [authId]: {
+                                                ...(prev[authId] || {}),
+                                                [item.auth_item_id]:
+                                                  ids[0] || "",
+                                              },
+                                            }));
+                                          }}
+                                          multiSelect={false}
+                                          placeholder="Select key..."
+                                          disabled={
+                                            isReadonly || isSubmitting
+                                          }
+                                          compact={true}
+                                        />
+                                      </div>
+                                    );
+                                  }
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              <p className="text-xs text-muted-foreground">
+                Note: Key changes will update the linked settings version.
+              </p>
+            </div>
+          )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
