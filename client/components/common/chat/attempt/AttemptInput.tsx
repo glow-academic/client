@@ -682,6 +682,48 @@ export default function AttemptInput({
         }
       );
 
+      // Listen for speech started event and transport to server
+      session.transport.on(
+        "input_audio_buffer.speech_started",
+        (evt: {
+          type: "input_audio_buffer.speech_started";
+          event_id: string;
+          item_id: string;
+          audio_start_ms: number;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== SPEECH STARTED =====");
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Speech started event:", {
+            type: evt.type,
+            item_id: evt.item_id,
+            audio_start_ms: evt.audio_start_ms,
+          });
+
+          if (!socket || !currentChat?.id) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] Missing socket or chat_id, cannot transport event"
+            );
+            return;
+          }
+
+          // Transport event to server (AttemptMessages will handle optimistic UI)
+          socket.emit("voice_speech_started", {
+            chat_id: currentChat.id,
+            item_id: evt.item_id,
+          });
+
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Transported voice_speech_started to server:", {
+            chat_id: currentChat.id,
+            item_id: evt.item_id,
+          });
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== END SPEECH STARTED =====");
+        }
+      );
+
       // Listen for audio transcription completion events
       // These fire when mic audio is transcribed (not from history_added)
       session.transport.on(
@@ -714,25 +756,27 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot forward transcript"
+              "[Voice] Missing socket or chat_id, cannot transport transcript"
             );
             return;
           }
 
-          socket.emit("voice_user_message", {
+          // Transport transcript to server
+          // This will:
+          // 1. Update optimistic UI (via voice_transcript_ready event)
+          // 2. Create the real user message (via simulation_new_message event)
+          socket.emit("voice_transcript_ready", {
             chat_id: currentChat.id,
-            message: transcript,
+            item_id: evt.item_id,
+            transcript: transcript,
           });
 
           // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Forwarded transcript from input_audio_transcription.completed:",
-            {
-              chat_id: currentChat.id,
-              transcript: transcript.substring(0, 100),
-              transcript_length: transcript.length,
-            }
-          );
+          console.log("[Voice] Transported voice_transcript_ready to server:", {
+            chat_id: currentChat.id,
+            item_id: evt.item_id,
+            transcript: transcript.substring(0, 100),
+          });
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSCRIPTION COMPLETED =====");
         }

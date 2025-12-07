@@ -74,12 +74,25 @@
         "chat_id": "string"
       }
     },
+    "voice_speech_started": {
+      "payload": {
+        "chat_id": "string",
+        "item_id": "string"
+      }
+    },
     "voice_tool_call": {
       "payload": {
         "chat_id": "string",
         "persona_id": "string",
         "message": "string",
         "profile_id": "?string"
+      }
+    },
+    "voice_transcript_ready": {
+      "payload": {
+        "chat_id": "string",
+        "item_id": "string",
+        "transcript": "string"
       }
     },
     "voice_user_message": {
@@ -436,10 +449,23 @@
         "message": "string"
       }
     },
+    "voice_speech_started_emit": {
+      "payload": {
+        "chat_id": "string",
+        "item_id": "string"
+      }
+    },
     "voice_tool_call_error": {
       "payload": {
         "success": "boolean",
         "message": "string"
+      }
+    },
+    "voice_transcript_ready_emit": {
+      "payload": {
+        "chat_id": "string",
+        "item_id": "string",
+        "transcript": "string"
       }
     },
     "voice_user_message_error": {

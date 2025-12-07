@@ -414,7 +414,8 @@ from app.socket.videos.generate_outline import \
 from app.socket.videos.generate_video import \
     generate_video  # noqa: E402; type: ignore
 from app.socket.voice import start_voice  # noqa: E402; type: ignore
-from app.socket.voice import (stop_voice, voice_interrupted, voice_tool_call,
+from app.socket.voice import (stop_voice, voice_interrupted, voice_speech_started,
+                              voice_tool_call, voice_transcript_ready,
                               voice_user_message)
 
 
@@ -858,7 +859,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             start_voice,
             stop_voice,
             voice_interrupted,
+            voice_speech_started,
             voice_tool_call,
+            voice_transcript_ready,
             voice_user_message,
             # AI generation events
             generate_scenario_ai,
@@ -901,11 +904,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.videos.generate_video import (
             video_generation_complete, video_generation_error,
             video_generation_progress)
+        from app.socket.voice.speech_started import voice_speech_started_emit
         from app.socket.voice.start_voice import (start_voice_error,
                                                   start_voice_response)
         from app.socket.voice.stop_voice import (stop_voice_error,
                                                  stop_voice_response)
         from app.socket.voice.tool_call import voice_tool_call_error
+        from app.socket.voice.transcript_ready import voice_transcript_ready_emit
         from app.socket.voice.user_message import voice_user_message_error
 
         # Collect all unique emit functions (use one instance of each event name)
@@ -952,7 +957,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             start_voice_error,
             stop_voice_response,
             stop_voice_error,
+            voice_speech_started_emit,
             voice_tool_call_error,
+            voice_transcript_ready_emit,
             voice_user_message_error,
         ]
 

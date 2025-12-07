@@ -242,9 +242,18 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
+  voice_speech_started_emit: (payload: {
+    chat_id: string;
+    item_id: string;
+  }) => void;
   voice_tool_call_error: (payload: {
     success: boolean;
     message: string;
+  }) => void;
+  voice_transcript_ready_emit: (payload: {
+    chat_id: string;
+    item_id: string;
+    transcript: string;
   }) => void;
   voice_user_message_error: (payload: {
     success: boolean;
@@ -305,11 +314,20 @@ export type ClientToServerEvents = {
   voice_interrupted: (payload: {
     chat_id: string;
   }) => void;
+  voice_speech_started: (payload: {
+    chat_id: string;
+    item_id: string;
+  }) => void;
   voice_tool_call: (payload: {
     chat_id: string;
     persona_id: string;
     message: string;
     profile_id?: string;
+  }) => void;
+  voice_transcript_ready: (payload: {
+    chat_id: string;
+    item_id: string;
+    transcript: string;
   }) => void;
   voice_user_message: (payload: {
     chat_id: string;

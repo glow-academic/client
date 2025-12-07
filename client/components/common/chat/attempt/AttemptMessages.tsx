@@ -127,6 +127,8 @@ export default function AttemptMessages({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const prevChatIdRef = useRef<string | null>(null);
+  // Track item_id -> optimistic_message_id mapping for voice mode
+  const itemIdToOptimisticIdRef = useRef<Map<string, string>>(new Map());
   const targetChatId = chatId || currentChat?.id;
 
   // Create persona lookup map for efficient persona lookup by ID
@@ -373,6 +375,7 @@ export default function AttemptMessages({
       // Chat actually changed, clear optimistic state
       setStreamingContent(new Map());
       setOptimisticMessages(new Map());
+      itemIdToOptimisticIdRef.current = new Map(); // Reset item_id mapping
     }
     prevChatIdRef.current = currentChatId;
   }, [targetChatId]);
@@ -478,10 +481,12 @@ export default function AttemptMessages({
             const normalizedContent = normalizeMessageContent(data.content);
 
             // Find matching optimistic user message by content
+            // Match both regular optimistic messages and voice optimistic messages
             for (const [tempId, optMsg] of newMap.entries()) {
               if (
                 optMsg.type === "query" &&
-                tempId.startsWith("optimistic-user-") &&
+                (tempId.startsWith("optimistic-user-") ||
+                  tempId.startsWith("optimistic-user-voice-")) &&
                 normalizeMessageContent(optMsg.content) === normalizedContent
               ) {
                 // Replace temp message with real one (same content, real ID)
@@ -515,9 +520,90 @@ export default function AttemptMessages({
       }
     };
 
+    // Listen for voice mode events
+    const handleVoiceSpeechStarted = (data: {
+      chat_id: string;
+      item_id: string;
+    }) => {
+      if (data.chat_id === targetChatId) {
+        // Generate optimistic message ID locally
+        const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
+
+        // Store mapping from item_id to optimistic_message_id
+        itemIdToOptimisticIdRef.current.set(data.item_id, optimisticMessageId);
+
+        // Create optimistic user message with empty content (will show LoadingDots)
+        setOptimisticMessages((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(optimisticMessageId, {
+            id: optimisticMessageId,
+            type: "query",
+            content: "", // Empty content will trigger LoadingDots display
+            createdAt: new Date().toISOString(),
+            completed: false,
+          });
+          return newMap;
+        });
+        // eslint-disable-next-line no-console
+        console.log("[Voice] Created optimistic message for speech started:", {
+          optimistic_message_id: optimisticMessageId,
+          item_id: data.item_id,
+        });
+      }
+    };
+
+    const handleVoiceTranscriptReady = (data: {
+      chat_id: string;
+      item_id: string;
+      transcript: string;
+    }) => {
+      if (data.chat_id === targetChatId) {
+        // Look up optimistic message ID by item_id
+        const optimisticMessageId = itemIdToOptimisticIdRef.current.get(
+          data.item_id
+        );
+
+        if (optimisticMessageId) {
+          // Update optimistic message with transcript
+          setOptimisticMessages((prev) => {
+            const newMap = new Map(prev);
+            const existingMessage = newMap.get(optimisticMessageId);
+            if (existingMessage) {
+              newMap.set(optimisticMessageId, {
+                ...existingMessage,
+                content: data.transcript,
+                completed: true,
+              });
+              // eslint-disable-next-line no-console
+              console.log(
+                "[Voice] Updated optimistic message with transcript:",
+                {
+                  optimistic_message_id: optimisticMessageId,
+                  item_id: data.item_id,
+                  transcript: data.transcript.substring(0, 100),
+                }
+              );
+            }
+            return newMap;
+          });
+
+          // Clean up the mapping
+          itemIdToOptimisticIdRef.current.delete(data.item_id);
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[Voice] No optimistic message found for item_id:",
+            data.item_id
+          );
+        }
+      }
+    };
+
     socket.on("simulation_message_token", handleSimulationMessageToken);
     socket.on("simulation_message_complete", handleSimulationMessageComplete);
     socket.on("simulation_new_message", handleSimulationNewMessage);
+    socket.on("voice_speech_started", handleVoiceSpeechStarted);
+    socket.on("voice_transcript_ready", handleVoiceTranscriptReady);
 
     return () => {
       socket.off("simulation_message_token", handleSimulationMessageToken);
@@ -526,6 +612,8 @@ export default function AttemptMessages({
         handleSimulationMessageComplete
       );
       socket.off("simulation_new_message", handleSimulationNewMessage);
+      socket.off("voice_speech_started", handleVoiceSpeechStarted);
+      socket.off("voice_transcript_ready", handleVoiceTranscriptReady);
     };
   }, [socket, targetChatId]);
 
@@ -613,6 +701,11 @@ export default function AttemptMessages({
                 sortedMessages.map((message) => {
                   // Render user messages (query type)
                   if (message.type === "query") {
+                    // Check if this is an optimistic voice message with empty content (show LoadingDots)
+                    const isOptimisticVoiceMessage =
+                      message.id.startsWith("optimistic-user-voice-") &&
+                      message.content === "";
+
                     return (
                       <div key={message.id} className="flex justify-end mb-3">
                         <div className="max-w-[80%] flex items-stretch gap-2">
@@ -622,7 +715,14 @@ export default function AttemptMessages({
                             data-message-id={message.id}
                             data-message-type="user"
                           >
-                            <Markdown>{message.content}</Markdown>
+                            {isOptimisticVoiceMessage ? (
+                              // Show LoadingDots for optimistic voice messages (same as assistant)
+                              <div className="flex items-center">
+                                <LoadingDots />
+                              </div>
+                            ) : (
+                              <Markdown>{message.content}</Markdown>
+                            )}
                           </div>
                           {/* Right-aligned controls */}
                           <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
