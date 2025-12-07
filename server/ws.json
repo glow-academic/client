@@ -412,7 +412,12 @@
         "persona_tools": "string[]",
         "tool_context_map": "object{string:object{persona_id:string,profile_id:string|null}}",
         "instructions": "string",
-        "config": "object"
+        "model": "string",
+        "voice": "?string",
+        "transcription_model": "?string",
+        "transcription_prompt": "?string",
+        "audio_enabled": "?boolean",
+        "text_enabled": "?boolean"
       }
     },
     "start_voice_error": {

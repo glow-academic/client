@@ -313,7 +313,12 @@ export default function AttemptInput({
         }>;
         tool_context_map: ToolContextMap;
         instructions: string;
-        config: Record<string, unknown>;
+        model: string;
+        voice?: string | null;
+        transcription_model?: string | null;
+        transcription_prompt?: string | null;
+        audio_enabled: boolean;
+        text_enabled: boolean;
       };
       const responseData = await new Promise<StartVoiceResponsePayload>(
         (resolve, reject) => {
@@ -487,16 +492,78 @@ export default function AttemptInput({
         tool_names: realtimeTools.map((t) => t.name),
       });
 
-      // Create RealtimeSession with config from server
+      // Map server fields to full RealtimeSessionConfigDefinition
+      // Build outputModalities array from audio_enabled and text_enabled
+      const outputModalities: ("text" | "audio")[] = [];
+      if (responseData.text_enabled) {
+        outputModalities.push("text");
+      }
+      if (responseData.audio_enabled) {
+        outputModalities.push("audio");
+      }
+
+      // Build audio.input.transcription from transcription_model and transcription_prompt
+      const audioInputTranscription: {
+        model?: string;
+        prompt?: string;
+        language?: string;
+      } = {};
+      if (responseData.transcription_model) {
+        audioInputTranscription.model = responseData.transcription_model;
+      }
+      if (responseData.transcription_prompt) {
+        audioInputTranscription.prompt = responseData.transcription_prompt;
+      }
+
+      // Build audio config with input and output
+      const audioConfig: {
+        input?: {
+          format?: string | { type: string; rate: number };
+          transcription?: {
+            model?: string;
+            prompt?: string;
+            language?: string;
+          };
+        };
+        output?: {
+          format?: string | { type: string; rate: number };
+          voice?: string;
+          speed?: number;
+        };
+      } = {
+        input: {
+          format: "pcm16", // Default format
+          ...(Object.keys(audioInputTranscription).length > 0
+            ? { transcription: audioInputTranscription }
+            : {}),
+        },
+        output: {
+          format: "pcm16", // Default format
+          ...(responseData.voice ? { voice: responseData.voice } : {}),
+        },
+      };
+
+      // Construct full config object
+      // Use Record<string, unknown> to match RealtimeSessionConfig type requirements
+      const config: Record<string, unknown> = {
+        model: responseData.model,
+        instructions: responseData.instructions,
+        tools: realtimeTools,
+        ...(outputModalities.length > 0 ? { outputModalities } : {}),
+        ...(Object.keys(audioConfig).length > 0 ? { audio: audioConfig } : {}),
+        ...(responseData.voice ? { voice: responseData.voice } : {}), // Backwards compatibility
+      };
+
+      // Create RealtimeSession with mapped config
       const session = new RealtimeSession(agent, {
-        model: "gpt-realtime-mini",
-        config: responseData.config,
+        model: responseData.model,
+        config,
       });
 
       // eslint-disable-next-line no-console
       console.log("[Voice] Created RealtimeSession:", {
-        model: "gpt-realtime-mini",
-        config: responseData.config,
+        model: responseData.model,
+        config,
       });
 
       // Set up event listeners - library handles audio playback automatically

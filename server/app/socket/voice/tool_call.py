@@ -281,6 +281,22 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                 sql_link, str(assistant_message["id"]), run_id
             )
 
+            # Link message to persona
+            sql_link_persona = load_sql(
+                "sql/v3/simulations/link_message_to_persona.sql"
+            )
+            try:
+                await conn.execute(
+                    sql_link_persona,
+                    str(assistant_message["id"]),
+                    persona_id,
+                )
+                logger.info(
+                    f"Linked message {assistant_message['id']} to persona {persona_id}"
+                )
+            except Exception as link_err:
+                logger.warning(f"Failed to link message to persona: {link_err}")
+
             # Get latest message in chat to use as parent for message_tree
             # (messages with no active children are the latest/leaf nodes)
             latest_message_row = await conn.fetchrow(
@@ -313,7 +329,7 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                     f"Created message_tree branch from {parent_message_id} to assistant message {assistant_message['id']}"
                 )
 
-            # Emit new message event
+            # Emit new message event (with persona_id)
             from app.socket.simulations.send_message import (
                 SimulationNewMessagePayload, simulation_new_message)
 
@@ -325,6 +341,7 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                     content="",
                     completed=False,
                     created_at=assistant_message["created_at"].isoformat(),
+                    persona_id=persona_id,
                 ),
                 room=f"simulation_{chat_id_uuid}",
             )
@@ -377,6 +394,20 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                     message_id=str(assistant_message["id"]),
                     chat_id=chat_id,
                     final_content=accumulated_content.strip(),
+                ),
+                room=f"simulation_{chat_id_uuid}",
+            )
+
+            # Emit updated message with completed=True (with persona_id)
+            await simulation_new_message(
+                SimulationNewMessagePayload(
+                    message_id=str(assistant_message["id"]),
+                    chat_id=chat_id,
+                    role="assistant",
+                    content=accumulated_content.strip(),
+                    completed=True,
+                    created_at=assistant_message["created_at"].isoformat(),
+                    persona_id=persona_id,
                 ),
                 room=f"simulation_{chat_id_uuid}",
             )

@@ -46,7 +46,12 @@ class StartVoiceResponsePayload(BaseModel):
     persona_tools: list[dict[str, str]]  # List of {name, description, parameters} for each tool
     tool_context_map: dict[str, PersonaToolContext]  # Map of tool_name -> PersonaToolContext
     instructions: str  # Orchestrator instructions telling model to use tools
-    config: dict[str, Any]  # Session config (model, audio format, etc.)
+    model: str  # Model name (e.g., "gpt-realtime-mini")
+    voice: str | None = None  # Voice ID for audio output
+    transcription_model: str | None = None  # Transcription model (e.g., "gpt-4o-mini-transcribe")
+    transcription_prompt: str | None = None  # Transcription prompt
+    audio_enabled: bool = True  # Whether audio output is enabled
+    text_enabled: bool = True  # Whether text output is enabled
 
 
 # Emit helper functions
@@ -143,8 +148,178 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 "reasoning": context_row.get("reasoning"),
             }
 
-            # Create persona tools
-            persona_tools = create_persona_tools(personas, chat_id_uuid, conn)
+            # Get or create run_id for persona tools
+            # We need: department_id, model_id, persona_id, agent_id, key_id, profile_id
+            department_id_str = context_row.get("department_id")
+            model_id_str = context_row.get("model_id")
+            profile_id_str = context_row.get("profile_id")
+            
+            if not department_id_str or not model_id_str:
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message="Missing department_id or model_id in context",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            # Get first persona ID for run creation
+            first_persona_id_str = None
+            for persona in personas:
+                persona_id_val = persona.get("persona_id") or persona.get("id")
+                if persona_id_val:
+                    first_persona_id_str = str(persona_id_val)
+                    break
+            
+            if not first_persona_id_str:
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message="No valid persona ID found",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            # Convert to UUID objects
+            try:
+                department_id_uuid = uuid.UUID(str(department_id_str))
+                model_id_uuid = uuid.UUID(str(model_id_str))
+                first_persona_id_uuid = uuid.UUID(first_persona_id_str)
+                profile_id_uuid = uuid.UUID(str(profile_id_str)) if profile_id_str else None
+            except (ValueError, TypeError) as e:
+                logger.error(f"Invalid UUID format: {e}")
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message=f"Invalid UUID format: {str(e)}",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            # Get key_id from model_keys table
+            key_id_row = await conn.fetchrow(
+                """
+                SELECT mk.key_id::text as key_id
+                FROM model_keys mk
+                WHERE mk.model_id = $1::uuid AND mk.active = true
+                LIMIT 1
+                """,
+                model_id_uuid,
+            )
+            key_id_uuid = None
+            if key_id_row and key_id_row["key_id"]:
+                try:
+                    key_id_uuid = uuid.UUID(key_id_row["key_id"])
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid key_id format from database: {key_id_row['key_id']}")
+            
+            # Get Simulation Voice Agent ID for first persona
+            simulation_agent_row = await conn.fetchrow(
+                """
+                SELECT pa.agent_id
+                FROM persona_agents pa
+                JOIN agents a ON a.id = pa.agent_id
+                WHERE pa.persona_id = $1::uuid 
+                AND pa.active = true 
+                AND a.role = 'simulation-voice'
+                AND a.active = true
+                LIMIT 1
+                """,
+                first_persona_id_uuid,
+            )
+            if not simulation_agent_row:
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message=f"Simulation Voice Agent not found for persona {first_persona_id_str}",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            agent_id_value = simulation_agent_row["agent_id"]
+            if isinstance(agent_id_value, str):
+                simulation_agent_id = uuid.UUID(agent_id_value)
+            elif isinstance(agent_id_value, uuid.UUID):
+                simulation_agent_id = agent_id_value
+            else:
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message="Invalid agent_id format",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            # Get or create run for this chat
+            sql_get_or_create_run = load_sql(
+                "sql/v3/simulations/get_or_create_run_for_chat.sql"
+            )
+            run_row = await conn.fetchrow(
+                sql_get_or_create_run,
+                chat_id_uuid,  # $1: chat_id
+                department_id_uuid,  # $2: department_id
+                model_id_uuid,  # $3: model_id
+                first_persona_id_uuid,  # $4: entity_id (persona_id)
+                "persona",  # $5: entity_type
+                profile_id_uuid,  # $6: profile_id (can be None)
+                key_id_uuid,  # $7: key_id (can be None)
+                simulation_agent_id,  # $8: agent_id
+            )
+            
+            if not run_row:
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message="Failed to get or create run for chat",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            model_run_id = uuid.UUID(run_row["run_id"])
+            
+            # Import emit functions from send_message
+            from app.socket.simulations.send_message import (
+                SimulationMessageCompletePayload,
+                SimulationMessageTokenPayload, SimulationNewMessagePayload,
+                simulation_message_complete, simulation_message_token,
+                simulation_new_message)
+
+            # Create emit wrapper functions for persona tools
+            async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:
+                await simulation_new_message(
+                    SimulationNewMessagePayload(**event_data),
+                    room=f"simulation_{chat_id_uuid}",
+                )
+            
+            async def emit_token_wrapper(event_data: dict[str, Any]) -> None:
+                await simulation_message_token(
+                    SimulationMessageTokenPayload(**event_data),
+                    room=f"simulation_{chat_id_uuid}",
+                )
+            
+            async def emit_complete_wrapper(event_data: dict[str, Any]) -> None:
+                await simulation_message_complete(
+                    SimulationMessageCompletePayload(**event_data),
+                    room=f"simulation_{chat_id_uuid}",
+                )
+            
+            # Create persona tools with all required arguments
+            persona_tools = create_persona_tools(
+                personas,
+                chat_id_uuid,
+                conn,
+                model_run_id,
+                emit_new_message_wrapper,
+                emit_token_wrapper,
+                emit_complete_wrapper,
+                parent_message_id=None,  # No parent message during initialization
+            )
 
             # Build tool context map: tool_name -> PersonaToolContext
             # Import sanitize function to match tool names
@@ -342,15 +517,16 @@ You should call exactly one persona tool per user message."""
                     }
                 )
 
-            # Build session config
-            session_config = {
-                "model": "gpt-realtime-mini",
-                "inputAudioFormat": "pcm16",
-                "outputAudioFormat": "pcm16",
-                "inputAudioTranscription": {
-                    "model": "gpt-4o-mini-transcribe",
-                }
-            }
+            # Build session config with simple typed fields
+            # Model defaults to "gpt-realtime-mini" if not specified in context
+            model_name = context.get("model_name", "gpt-realtime-mini")
+            
+            # Default transcription model
+            transcription_model_default = "gpt-4o-mini-transcribe"
+            
+            # For transcript mode, both audio and text should be enabled
+            audio_enabled = True
+            text_enabled = True
 
             logger.info(
                 f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools"
@@ -364,7 +540,12 @@ You should call exactly one persona tool per user message."""
                     persona_tools=persona_tools_response,
                     tool_context_map=tool_context_map,
                     instructions=orchestrator_instructions,
-                    config=session_config,
+                    model=model_name,
+                    voice=None,  # Can be set from context if available
+                    transcription_model=transcription_model_default,
+                    transcription_prompt=None,  # Can be set from context if available
+                    audio_enabled=audio_enabled,
+                    text_enabled=text_enabled,
                 ),
                 room=sid,
             )
