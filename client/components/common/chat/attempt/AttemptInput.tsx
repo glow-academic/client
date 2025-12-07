@@ -945,6 +945,39 @@ export default function AttemptInput({
         });
       });
 
+      // Assistant finished speaking (natural completion)
+      // Listen for response.output_audio.done which fires when audio generation completes
+      // This is the equivalent of audio_end and includes item_id
+      session.transport.on(
+        "response.output_audio.done",
+        (evt: {
+          type: "response.output_audio.done";
+          event_id: string;
+          item_id: string;
+          content_index: number;
+          output_index: number;
+          response_id: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] response.output_audio.done (assistant turn complete):",
+            {
+              item_id: evt.item_id,
+              content_index: evt.content_index,
+              response_id: evt.response_id,
+            }
+          );
+
+          if (!socket || !currentChat?.id) return;
+
+          // Tell your backend "this assistant turn is done"
+          socket.emit("voice_assistant_turn_complete", {
+            chat_id: currentChat.id,
+            item_id: evt.item_id,
+          });
+        }
+      );
+
       // Unify *all* user messages (typed or microphone transcripts)
       session.on("history_added", (item: RealtimeItem) => {
         try {
