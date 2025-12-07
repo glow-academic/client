@@ -119,9 +119,6 @@ export default function AttemptInput({
   const userMediaStreamRef = useRef<MediaStream | null>(null);
   const userRecorderRef = useRef<MediaRecorder | null>(null);
   const userAudioChunksRef = useRef<BlobPart[]>([]);
-  const assistantAudioBuffersRef = useRef<Map<string, ArrayBuffer[]>>(
-    new Map()
-  );
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -301,9 +298,6 @@ export default function AttemptInput({
       // eslint-disable-next-line no-console
       console.warn("[Voice] Error cleaning up user audio recorder:", err);
     }
-
-    // Cleanup assistant audio buffers
-    assistantAudioBuffersRef.current.clear();
 
     setVoiceModeEnabled(false);
     setIsMicMuted(false);
@@ -753,7 +747,7 @@ export default function AttemptInput({
         console.error("[Voice] ===== END ERROR =====");
       });
 
-      // Listen to ALL transport events for debugging and audio capture
+      // Listen to ALL transport events for debugging
       session.transport.on(
         "*",
         (event: { type: string; [key: string]: unknown }) => {
@@ -765,50 +759,6 @@ export default function AttemptInput({
           console.log("[Voice] Transport event data:", event);
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSPORT EVENT =====");
-
-          // Capture assistant audio data from transport events
-          // Check if this event contains audio data
-          if (
-            event.type.includes("audio") &&
-            ("delta" in event || "data" in event || "audio" in event)
-          ) {
-            // eslint-disable-next-line no-console
-            console.log("[Voice] [AUDIO CAPTURE] Potential audio event:", {
-              type: event.type,
-              has_delta: "delta" in event,
-              has_data: "data" in event,
-              has_audio: "audio" in event,
-              response_id: "response_id" in event ? event["response_id"] : null,
-            });
-
-            // If we find audio data with a response_id, buffer it
-            if (
-              "response_id" in event &&
-              typeof event["response_id"] === "string" &&
-              ("data" in event || "delta" in event)
-            ) {
-              const responseId = event["response_id"] as string;
-              const audioData =
-                "data" in event && event["data"] instanceof ArrayBuffer
-                  ? event["data"]
-                  : "delta" in event && event["delta"] instanceof ArrayBuffer
-                    ? event["delta"]
-                    : null;
-
-              if (audioData) {
-                const existing =
-                  assistantAudioBuffersRef.current.get(responseId) ?? [];
-                existing.push(audioData);
-                assistantAudioBuffersRef.current.set(responseId, existing);
-                // eslint-disable-next-line no-console
-                console.log("[Voice] Buffered audio chunk for response:", {
-                  response_id: responseId,
-                  chunk_size: audioData.byteLength,
-                  total_chunks: existing.length,
-                });
-              }
-            }
-          }
         }
       );
 
@@ -1038,96 +988,6 @@ export default function AttemptInput({
           });
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSCRIPTION DELTA =====");
-        }
-      );
-
-      // Listen for assistant audio buffer started - reset buffer for this response
-      session.transport.on(
-        "output_audio_buffer.started",
-        (evt: {
-          type: "output_audio_buffer.started";
-          event_id?: string;
-          response_id: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Assistant audio buffer started:", {
-            response_id: evt.response_id,
-          });
-          assistantAudioBuffersRef.current.set(evt.response_id, []);
-        }
-      );
-
-      // Listen for assistant audio buffer stopped - merge and upload
-      session.transport.on(
-        "output_audio_buffer.stopped",
-        async (evt: {
-          type: "output_audio_buffer.stopped";
-          event_id?: string;
-          response_id: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Assistant audio buffer stopped:", {
-            response_id: evt.response_id,
-          });
-
-          const chunks =
-            assistantAudioBuffersRef.current.get(evt.response_id) ?? [];
-          assistantAudioBuffersRef.current.delete(evt.response_id);
-
-          if (!chunks.length) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] No audio chunks to upload for response:",
-              evt.response_id
-            );
-            return;
-          }
-
-          if (!socket || !currentChat?.id) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] Missing socket or chat_id, cannot upload assistant audio"
-            );
-            return;
-          }
-
-          try {
-            // Merge ArrayBuffers into one
-            const totalBytes = chunks.reduce(
-              (sum, buf) => sum + buf.byteLength,
-              0
-            );
-            const merged = new Uint8Array(totalBytes);
-            let offset = 0;
-            for (const buf of chunks) {
-              merged.set(new Uint8Array(buf), offset);
-              offset += buf.byteLength;
-            }
-
-            const blob = new Blob([merged.buffer], {
-              type: "audio/raw; codecs=pcm16",
-            });
-
-            const uploadId = await uploadAudioWithTus(blob, {
-              filename: `assistant-${evt.response_id}.pcm`,
-              role: "assistant",
-            });
-
-            socket.emit("voice_assistant_audio_uploaded", {
-              chat_id: currentChat.id,
-              response_id: evt.response_id,
-              upload_id: uploadId,
-            });
-
-            // eslint-disable-next-line no-console
-            console.log("[Voice] Uploaded assistant audio:", {
-              response_id: evt.response_id,
-              upload_id: uploadId,
-            });
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error("[Voice] Failed to upload assistant audio:", err);
-          }
         }
       );
 
