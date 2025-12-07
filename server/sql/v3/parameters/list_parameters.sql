@@ -257,7 +257,7 @@ CROSS JOIN scenario_mapping_data sm
 CROSS JOIN department_mapping_data dmd
 CROSS JOIN document_mapping_data docmd
 GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pidd.department_ids, pic.num_items, 
-         ps.scenario_ids, pd.document_ids, pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, sm.mapping, dmd.mapping, docmd.mapping
+         ps.scenario_ids, spd.scenario_ids, pd.document_ids, pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, sm.mapping, dmd.mapping, docmd.mapping
 HAVING 
     -- Include if has matching department link via parameter_departments or field_departments OR has no department links at all (cross-dept)
     COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT ud.department_id FROM user_departments ud)) > 0

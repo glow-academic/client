@@ -84,9 +84,9 @@ export async function createParameterItem(
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Parameters",
-    description: "Manage system parameters and configuration settings for teaching assistant training platform. Configure platform-wide parameters, learning environment settings, and system-wide configurations for effective L&D program administration.",
+    description:
+      "Manage system parameters and configuration settings for teaching assistant training platform. Configure platform-wide parameters, learning environment settings, and system-wide configurations for effective L&D program administration.",
   };
-}
 }
 
 export default async function ContextPage() {
