@@ -45,6 +45,7 @@ import {
   type RealtimeSessionConfig,
 } from "@openai/agents/realtime";
 import { toast } from "sonner";
+import * as tus from "tus-js-client";
 import { z } from "zod";
 
 export interface AttemptInputProps {
@@ -113,6 +114,14 @@ export default function AttemptInput({
     }
   >;
   const toolContextMapRef = useRef<ToolContextMap>({});
+
+  // Audio recording refs
+  const userMediaStreamRef = useRef<MediaStream | null>(null);
+  const userRecorderRef = useRef<MediaRecorder | null>(null);
+  const userAudioChunksRef = useRef<BlobPart[]>([]);
+  const assistantAudioBuffersRef = useRef<Map<string, ArrayBuffer[]>>(
+    new Map()
+  );
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -203,6 +212,59 @@ export default function AttemptInput({
   };
   const handleStopMessage = () => stopMessage();
 
+  // TUS upload helper for audio files
+  const uploadAudioWithTus = async (
+    blob: Blob,
+    metadata: Record<string, string> = {}
+  ): Promise<string> => {
+    return new Promise<string>((resolve, reject) => {
+      let tusUploadInstance: tus.Upload | null = null;
+
+      tusUploadInstance = new tus.Upload(blob, {
+        endpoint: `/api/uploads/upload`,
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: metadata["filename"] ?? "audio.webm",
+          filetype: metadata["filetype"] ?? blob.type,
+          ...metadata,
+        },
+        onError: (error) => {
+          reject(error);
+        },
+        onSuccess: async () => {
+          try {
+            const uploadUrl = tusUploadInstance?.url || "";
+            const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^/]+)/);
+            if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+              throw new Error("Could not extract TUS upload ID");
+            }
+            const tusUploadId = tusUploadIdMatch[1];
+
+            const res = await fetch(
+              `/api/uploads/upload/${tusUploadId}/finalize`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+              }
+            );
+
+            const json = await res.json();
+            if (!json.success || !json.uploadId) {
+              throw new Error(json.message || "Failed to finalize upload");
+            }
+
+            resolve(json.uploadId as string);
+          } catch (e) {
+            reject(e);
+          }
+        },
+      });
+
+      tusUploadInstance.start();
+    });
+  };
+
   // Cleanup helper for Realtime session
   // WebRTC transport handles mic/speaker automatically, so we only need to close the session
   const cleanupRealtime = useCallback(() => {
@@ -222,6 +284,27 @@ export default function AttemptInput({
     }
 
     processedItemIdsRef.current = new Set(); // reset
+
+    // Cleanup audio recording
+    try {
+      if (
+        userRecorderRef.current &&
+        userRecorderRef.current.state !== "inactive"
+      ) {
+        userRecorderRef.current.stop();
+      }
+      userRecorderRef.current = null;
+      userMediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      userMediaStreamRef.current = null;
+      userAudioChunksRef.current = [];
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[Voice] Error cleaning up user audio recorder:", err);
+    }
+
+    // Cleanup assistant audio buffers
+    assistantAudioBuffersRef.current.clear();
+
     setVoiceModeEnabled(false);
     setIsMicMuted(false);
   }, []);
@@ -670,7 +753,7 @@ export default function AttemptInput({
         console.error("[Voice] ===== END ERROR =====");
       });
 
-      // Listen to ALL transport events for debugging
+      // Listen to ALL transport events for debugging and audio capture
       session.transport.on(
         "*",
         (event: { type: string; [key: string]: unknown }) => {
@@ -682,6 +765,50 @@ export default function AttemptInput({
           console.log("[Voice] Transport event data:", event);
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSPORT EVENT =====");
+
+          // Capture assistant audio data from transport events
+          // Check if this event contains audio data
+          if (
+            event.type.includes("audio") &&
+            ("delta" in event || "data" in event || "audio" in event)
+          ) {
+            // eslint-disable-next-line no-console
+            console.log("[Voice] [AUDIO CAPTURE] Potential audio event:", {
+              type: event.type,
+              has_delta: "delta" in event,
+              has_data: "data" in event,
+              has_audio: "audio" in event,
+              response_id: "response_id" in event ? event["response_id"] : null,
+            });
+
+            // If we find audio data with a response_id, buffer it
+            if (
+              "response_id" in event &&
+              typeof event["response_id"] === "string" &&
+              ("data" in event || "delta" in event)
+            ) {
+              const responseId = event["response_id"] as string;
+              const audioData =
+                "data" in event && event["data"] instanceof ArrayBuffer
+                  ? event["data"]
+                  : "delta" in event && event["delta"] instanceof ArrayBuffer
+                    ? event["delta"]
+                    : null;
+
+              if (audioData) {
+                const existing =
+                  assistantAudioBuffersRef.current.get(responseId) ?? [];
+                existing.push(audioData);
+                assistantAudioBuffersRef.current.set(responseId, existing);
+                // eslint-disable-next-line no-console
+                console.log("[Voice] Buffered audio chunk for response:", {
+                  response_id: responseId,
+                  chunk_size: audioData.byteLength,
+                  total_chunks: existing.length,
+                });
+              }
+            }
+          }
         }
       );
 
@@ -724,6 +851,112 @@ export default function AttemptInput({
           });
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END SPEECH STARTED =====");
+
+          // Start user audio recording
+          (async () => {
+            try {
+              if (!userMediaStreamRef.current) {
+                userMediaStreamRef.current =
+                  await navigator.mediaDevices.getUserMedia({ audio: true });
+              }
+
+              if (!userRecorderRef.current) {
+                userRecorderRef.current = new MediaRecorder(
+                  userMediaStreamRef.current,
+                  {
+                    mimeType: "audio/webm;codecs=opus",
+                  }
+                );
+
+                userRecorderRef.current.ondataavailable = (e) => {
+                  if (e.data.size > 0) {
+                    userAudioChunksRef.current.push(e.data);
+                  }
+                };
+              }
+
+              userAudioChunksRef.current = [];
+              userRecorderRef.current.start();
+              // eslint-disable-next-line no-console
+              console.log(
+                "[Voice] Started user audio recording for item:",
+                evt.item_id
+              );
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.error(
+                "[Voice] Failed to start user audio recording:",
+                err
+              );
+            }
+          })();
+        }
+      );
+
+      // Listen for speech stopped event to stop user audio recording
+      session.transport.on(
+        "input_audio_buffer.speech_stopped",
+        async (evt: {
+          type: "input_audio_buffer.speech_stopped";
+          event_id: string;
+          item_id: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Speech stopped event:", {
+            type: evt.type,
+            item_id: evt.item_id,
+          });
+
+          if (
+            !userRecorderRef.current ||
+            userRecorderRef.current.state === "inactive"
+          ) {
+            return;
+          }
+
+          try {
+            userRecorderRef.current.stop();
+
+            userRecorderRef.current.onstop = async () => {
+              try {
+                const blob = new Blob(userAudioChunksRef.current, {
+                  type: "audio/webm",
+                });
+                userAudioChunksRef.current = [];
+
+                if (!socket || !currentChat?.id) {
+                  // eslint-disable-next-line no-console
+                  console.warn(
+                    "[Voice] Missing socket or chat_id, cannot upload user audio"
+                  );
+                  return;
+                }
+
+                const uploadId = await uploadAudioWithTus(blob, {
+                  filename: `user-${evt.item_id}.webm`,
+                  role: "user",
+                });
+
+                socket.emit("voice_user_audio_uploaded", {
+                  chat_id: currentChat.id,
+                  item_id: evt.item_id,
+                  upload_id: uploadId,
+                });
+
+                // eslint-disable-next-line no-console
+                console.log("[Voice] Uploaded user audio:", {
+                  item_id: evt.item_id,
+                  upload_id: uploadId,
+                });
+              } catch (err) {
+                // eslint-disable-next-line no-console
+                console.error("[Voice] Failed to upload user audio:", err);
+              }
+            };
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error("[Voice] Error stopping user audio recorder:", err);
+          }
         }
       );
 
@@ -805,6 +1038,96 @@ export default function AttemptInput({
           });
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSCRIPTION DELTA =====");
+        }
+      );
+
+      // Listen for assistant audio buffer started - reset buffer for this response
+      session.transport.on(
+        "output_audio_buffer.started",
+        (evt: {
+          type: "output_audio_buffer.started";
+          event_id?: string;
+          response_id: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Assistant audio buffer started:", {
+            response_id: evt.response_id,
+          });
+          assistantAudioBuffersRef.current.set(evt.response_id, []);
+        }
+      );
+
+      // Listen for assistant audio buffer stopped - merge and upload
+      session.transport.on(
+        "output_audio_buffer.stopped",
+        async (evt: {
+          type: "output_audio_buffer.stopped";
+          event_id?: string;
+          response_id: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Assistant audio buffer stopped:", {
+            response_id: evt.response_id,
+          });
+
+          const chunks =
+            assistantAudioBuffersRef.current.get(evt.response_id) ?? [];
+          assistantAudioBuffersRef.current.delete(evt.response_id);
+
+          if (!chunks.length) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] No audio chunks to upload for response:",
+              evt.response_id
+            );
+            return;
+          }
+
+          if (!socket || !currentChat?.id) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] Missing socket or chat_id, cannot upload assistant audio"
+            );
+            return;
+          }
+
+          try {
+            // Merge ArrayBuffers into one
+            const totalBytes = chunks.reduce(
+              (sum, buf) => sum + buf.byteLength,
+              0
+            );
+            const merged = new Uint8Array(totalBytes);
+            let offset = 0;
+            for (const buf of chunks) {
+              merged.set(new Uint8Array(buf), offset);
+              offset += buf.byteLength;
+            }
+
+            const blob = new Blob([merged.buffer], {
+              type: "audio/raw; codecs=pcm16",
+            });
+
+            const uploadId = await uploadAudioWithTus(blob, {
+              filename: `assistant-${evt.response_id}.pcm`,
+              role: "assistant",
+            });
+
+            socket.emit("voice_assistant_audio_uploaded", {
+              chat_id: currentChat.id,
+              response_id: evt.response_id,
+              upload_id: uploadId,
+            });
+
+            // eslint-disable-next-line no-console
+            console.log("[Voice] Uploaded assistant audio:", {
+              response_id: evt.response_id,
+              upload_id: uploadId,
+            });
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error("[Voice] Failed to upload assistant audio:", err);
+          }
         }
       );
 
@@ -1051,7 +1374,10 @@ export default function AttemptInput({
 
           const textParts: string[] = [];
 
-          for (const c of contentArray ?? []) {
+          for (let i = 0; i < (contentArray ?? []).length; i++) {
+            const c = contentArray[i];
+            if (!c) continue;
+
             if (c.type === "input_text" && typeof c.text === "string") {
               textParts.push(c.text);
             } else if (
