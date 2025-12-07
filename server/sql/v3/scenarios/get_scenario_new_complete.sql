@@ -151,24 +151,43 @@ document_mapping_data AS (
     ) as mapping
     FROM document_data d
 ),
+available_scenario_parameters AS (
+    -- Get all parameters that could be linked to scenarios (via scenario_parameters)
+    -- For new scenarios, show all active parameters that are linked to at least one scenario
+    SELECT DISTINCT
+        p.id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        p.numerical,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+    FROM parameters p
+    WHERE p.active = true
+    AND EXISTS (
+        SELECT 1 FROM scenario_parameters sp 
+        WHERE sp.parameter_id = p.id 
+        AND sp.active = true
+    )
+),
 parameter_data AS (
     SELECT DISTINCT 
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
         p.numerical,
-        p.document_parameter,
-        p.persona_parameter
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters p
     JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    CROSS JOIN user_departments ud
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
+    GROUP BY p.id, p.name, p.description, p.numerical
     HAVING 
-        COUNT(fd.field_id) FILTER (WHERE pid.department_id IN (SELECT id FROM user_departments)) > 0
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
-                      WHERE pi2.parameter_id = p.id AND pid2.active = true)
+                      WHERE fp2.parameter_id = p.id AND fp2.active = true)
     ORDER BY p.name
 ),
 parameter_mapping_data AS (
@@ -184,8 +203,9 @@ parameter_mapping_data AS (
             )
         ),
         '{}'::jsonb
-    ) as mapping
-    FROM parameter_data p
+    ) as mapping,
+    array_agg(p.id::text ORDER BY p.name) as parameter_ids
+    FROM available_scenario_parameters p
 ),
 parameter_item_data AS (
     SELECT 
@@ -357,6 +377,7 @@ SELECT
     (SELECT mapping FROM persona_mapping_data) as persona_mapping,
     (SELECT mapping FROM document_mapping_data) as document_mapping,
     (SELECT mapping FROM parameter_mapping_data) as parameter_mapping,
+    (SELECT parameter_ids FROM parameter_mapping_data) as valid_parameter_ids,
     (SELECT mapping FROM parameter_item_mapping_data) as parameter_item_mapping,
     (SELECT parameters_json FROM parameters_structure) as parameters_json,
     (SELECT document_details FROM document_details_data) as document_details,

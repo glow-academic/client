@@ -214,42 +214,71 @@ export function UnifiedSidebar({
       }
     }
 
-    // Analytics - Available from instructor level and up
+    // Leaderboard - Available for TA users as standalone item
     if (
-      availableSections.includes("dashboard") ||
-      availableSections.includes("reports") ||
-      availableSections.includes("leaderboard") ||
-      availableSections.includes("pricing")
+      effectiveProfile.role === "ta" &&
+      availableSections.includes("leaderboard")
     ) {
-      const analyticsItems: MenuItem[] = [
-        {
+      menu.push({
+        title: "Leaderboard",
+        url: "#",
+        icon: PieChart,
+        section: "leaderboard",
+      });
+    }
+
+    // Analytics - Available from instructional level and up
+    if (
+      ["instructional", "admin", "superadmin"].includes(
+        effectiveProfile.role,
+      ) &&
+      (availableSections.includes("dashboard") ||
+        availableSections.includes("reports") ||
+        availableSections.includes("leaderboard") ||
+        availableSections.includes("pricing"))
+    ) {
+      const analyticsItems: MenuItem[] = [];
+
+      if (availableSections.includes("dashboard")) {
+        analyticsItems.push({
           title: "Dashboard",
           url: "#",
           section: "dashboard",
-        },
-        {
+        });
+      }
+
+      if (availableSections.includes("reports")) {
+        analyticsItems.push({
           title: "Reports",
           url: "#",
           section: "reports",
-        },
-        {
-          title: "Pricing",
-          url: "#",
-          section: "pricing",
-        },
-        {
+        });
+      }
+
+      if (availableSections.includes("leaderboard")) {
+        analyticsItems.push({
           title: "Leaderboard",
           url: "#",
           section: "leaderboard",
-        },
-      ];
+        });
+      }
 
-      menu.push({
-        title: "Analytics",
-        url: "#",
-        icon: PieChart,
-        items: analyticsItems,
-      });
+      if (availableSections.includes("pricing")) {
+        analyticsItems.push({
+          title: "Pricing",
+          url: "#",
+          section: "pricing",
+        });
+      }
+
+      if (analyticsItems.length > 0) {
+        menu.push({
+          title: "Analytics",
+          url: "#",
+          icon: PieChart,
+          items: analyticsItems,
+        });
+      }
     }
 
     // Create - Available from instructor level and up

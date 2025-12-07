@@ -26,6 +26,7 @@ class UpdatePersonaRequest(BaseModel):
     instructions: str
     text_agent_id: str | None
     voice_agent_id: str | None
+    parameter_ids: list[str] | None
     profileId: str  # Required for auditing/access control
 
 
@@ -82,6 +83,9 @@ async def update_persona(
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
 
+            # Ensure parameter_ids is always an array (empty array if None)
+            param_ids = request.parameter_ids if request.parameter_ids else []
+
             # Convert description None to empty string
             description = request.description if request.description is not None else ""
             
@@ -106,6 +110,7 @@ async def update_persona(
                 voice_agent_id,
                 dept_ids,  # Always pass array (empty array if no departments)
                 request.profileId,
+                param_ids,  # Always pass array (empty array if no parameters)
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

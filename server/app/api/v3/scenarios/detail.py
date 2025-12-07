@@ -125,6 +125,10 @@ class ScenarioDetailResponse(BaseModel):
     department_mapping: DepartmentMapping
     problem_statement_mapping: dict[str, ProblemStatementInfo]
     
+    # Parameter IDs
+    scenario_parameter_ids: list[str]
+    valid_parameter_ids: list[str]
+    
     # Agent IDs
     scenario_agent_id: str
     image_agent_id: str
@@ -297,6 +301,8 @@ async def get_scenario_detail(
                         numerical=pdata.get("numerical", False),
                         document_parameter=pdata.get("document_parameter", False),
                         persona_parameter=pdata.get("persona_parameter", False),
+                        scenario_parameter=pdata.get("scenario_parameter", False),
+                        video_parameter=pdata.get("video_parameter", False),
                     )
 
         param_item_full_mapping: ParameterItemMapping = {}
@@ -459,6 +465,15 @@ async def get_scenario_detail(
             str(aid) for aid in (scenario.get("valid_agent_ids") or [])
         ]
 
+        # Parse scenario_parameter_ids and valid_parameter_ids
+        scenario_parameter_ids = scenario.get("parameter_ids") or []
+        if not isinstance(scenario_parameter_ids, list):
+            scenario_parameter_ids = []
+        scenario_parameter_ids = [str(pid) for pid in scenario_parameter_ids]
+
+        # valid_parameter_ids are all keys in parameter_mapping
+        valid_parameter_ids = list(parameter_mapping.keys())
+
         response_data = ScenarioDetailResponse(
             name=scenario["name"],
             problem_statement=scenario["problem_statement"],
@@ -494,6 +509,8 @@ async def get_scenario_detail(
             objective_mapping=objective_mapping,
             department_mapping=department_mapping,
             problem_statement_mapping=problem_statement_mapping,
+            scenario_parameter_ids=scenario_parameter_ids,
+            valid_parameter_ids=valid_parameter_ids,
             scenario_agent_id=scenario.get("scenario_agent_id", ""),
             image_agent_id=scenario.get("image_agent_id", ""),
             agent_mapping=agent_mapping,

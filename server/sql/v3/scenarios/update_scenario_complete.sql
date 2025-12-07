@@ -5,7 +5,8 @@
 --            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
 --            $12=document_ids (text array), $13=objective_ids (text array),
 --            $14=parameter_item_ids (text array, flattened from parameters dict),
---            $15=upload_images_json (JSONB string with upload images array), $16=scenario_agent_id (nullable uuid), $17=image_agent_id (nullable uuid)
+--            $15=upload_images_json (JSONB string with upload images array), $16=scenario_agent_id (nullable uuid), $17=image_agent_id (nullable uuid),
+--            $18=parameter_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Returns: scenario_id, name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
@@ -218,6 +219,32 @@ link_images AS (
     ON CONFLICT (scenario_id, upload_id) DO UPDATE SET
         active = true,
         name = EXCLUDED.name,
+        updated_at = NOW()
+),
+deactivate_scenario_parameters AS (
+    -- Soft-delete removed parameters (set active = false for parameters not in new list)
+    UPDATE scenario_parameters
+    SET active = false, updated_at = NOW()
+    WHERE scenario_id = $1::uuid
+    AND active = true
+    AND (
+        COALESCE(array_length($18::text[], 1), 0) = 0
+        OR parameter_id NOT IN (SELECT unnest($18::text[])::uuid)
+    )
+),
+link_scenario_parameters AS (
+    -- Insert or reactivate parameter links if provided (array is never NULL, but may be empty)
+    INSERT INTO scenario_parameters (scenario_id, parameter_id, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        param_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($18::text[]) as param_id
+    WHERE COALESCE(array_length($18::text[], 1), 0) > 0
+    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
+        active = true,
         updated_at = NOW()
 )
 SELECT scenario_id, name FROM update_scenario

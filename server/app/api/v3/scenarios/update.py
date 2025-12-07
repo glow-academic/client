@@ -74,6 +74,8 @@ async def update_scenario(
             for param_item_ids in request.parameters.values()
             for param_item_id in param_item_ids
         ]
+        # Extract parameter IDs from parameters dict keys
+        parameter_ids = list(request.parameters.keys()) if request.parameters else []
 
         # Ensure arrays are not None (use empty arrays)
         department_ids = request.department_ids or []
@@ -83,6 +85,7 @@ async def update_scenario(
         upload_ids = request.upload_ids or []
         image_names = request.image_names or []
         parameter_item_ids = parameter_item_ids or []
+        parameter_ids = parameter_ids or []
 
         # Validate upload_ids and image_names match in length
         if len(upload_ids) != len(image_names):
@@ -114,6 +117,7 @@ async def update_scenario(
             upload_images_json,
             request.scenario_agent_id,
             request.image_agent_id,
+            parameter_ids if parameter_ids else None,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

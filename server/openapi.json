@@ -13804,6 +13804,20 @@
             ],
             "title": "Parameteritemids"
           },
+          "parameterIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterids"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -14540,11 +14554,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter",
-            "default": false
-          },
           "practice_parameter": {
             "type": "boolean",
             "title": "Practice Parameter",
@@ -14570,6 +14579,62 @@
             },
             "type": "array",
             "title": "Parameter Items"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
           },
           "profileId": {
             "type": "string",
@@ -14682,6 +14747,20 @@
             ],
             "title": "Voice Agent Id"
           },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -14698,6 +14777,7 @@
           "instructions",
           "text_agent_id",
           "voice_agent_id",
+          "parameter_ids",
           "profileId"
         ],
         "title": "CreatePersonaRequest",
@@ -15574,6 +15654,20 @@
               }
             ],
             "title": "Parameter Item Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
           },
           "persona_ids": {
             "anyOf": [
@@ -17554,6 +17648,20 @@
             "type": "object",
             "title": "Parameter Item Mapping"
           },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "linked_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Linked Parameter Ids"
+          },
           "classify_agent_id": {
             "type": "string",
             "title": "Classify Agent Id"
@@ -17665,6 +17773,8 @@
           "parameter_item_ids",
           "valid_parameter_item_ids",
           "parameter_item_mapping",
+          "parameter_mapping",
+          "linked_parameter_ids",
           "classify_agent_id",
           "document_agent_id",
           "agent_mapping",
@@ -31306,6 +31416,20 @@
             "title": "Parameter Item Ids",
             "default": []
           },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
           "classify_agent_id": {
             "anyOf": [
               {
@@ -31815,10 +31939,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
           "practice_parameter": {
             "type": "boolean",
             "title": "Practice Parameter"
@@ -31844,6 +31964,62 @@
             "type": "array",
             "title": "Parameter Items"
           },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -31856,7 +32032,6 @@
           "description",
           "numerical",
           "active",
-          "document_parameter",
           "practice_parameter",
           "department_ids",
           "parameter_items",
@@ -31957,6 +32132,20 @@
             ],
             "title": "Voice Agent Id"
           },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -31974,6 +32163,7 @@
           "instructions",
           "text_agent_id",
           "voice_agent_id",
+          "parameter_ids",
           "profileId"
         ],
         "title": "UpdatePersonaRequest",
@@ -33003,6 +33193,20 @@
               }
             ],
             "title": "Parameter Item Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
           },
           "persona_ids": {
             "anyOf": [
@@ -35950,6 +36154,41 @@
             "type": "object",
             "title": "Department Mapping"
           },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterItemMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "linked_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Linked Parameter Ids"
+          },
+          "parameter_field_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Field Ids"
+          },
+          "valid_parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Item Ids"
+          },
           "debug_info": {
             "items": {
               "$ref": "#/components/schemas/app__api__v3__personas__detail__DebugInfoItem"
@@ -35981,6 +36220,11 @@
           "valid_department_ids",
           "agent_mapping",
           "department_mapping",
+          "parameter_mapping",
+          "parameter_item_mapping",
+          "linked_parameter_ids",
+          "parameter_field_ids",
+          "valid_parameter_item_ids",
           "debug_info"
         ],
         "title": "PersonaDetailResponse",
@@ -36307,6 +36551,34 @@
             "type": "object",
             "title": "Department Mapping"
           },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterItemMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "valid_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Ids"
+          },
+          "valid_parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Item Ids"
+          },
           "debug_info": {
             "items": {
               "$ref": "#/components/schemas/app__api__v3__personas__new__DebugInfoItem"
@@ -36338,6 +36610,10 @@
           "valid_department_ids",
           "agent_mapping",
           "department_mapping",
+          "parameter_mapping",
+          "parameter_item_mapping",
+          "valid_parameter_ids",
+          "valid_parameter_item_ids",
           "debug_info"
         ],
         "title": "PersonaDetailResponse",
@@ -37413,6 +37689,20 @@
             "type": "object",
             "title": "Problem Statement Mapping"
           },
+          "scenario_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Parameter Ids"
+          },
+          "valid_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Ids"
+          },
           "scenario_agent_id": {
             "type": "string",
             "title": "Scenario Agent Id"
@@ -37472,6 +37762,8 @@
           "objective_mapping",
           "department_mapping",
           "problem_statement_mapping",
+          "scenario_parameter_ids",
+          "valid_parameter_ids",
           "scenario_agent_id",
           "image_agent_id",
           "agent_mapping",
@@ -37861,6 +38153,20 @@
             },
             "type": "object",
             "title": "Problem Statement Mapping"
+          },
+          "scenario_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Parameter Ids"
+          },
+          "valid_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Ids"
           }
         },
         "type": "object",
@@ -37896,7 +38202,9 @@
           "document_mapping",
           "objective_mapping",
           "department_mapping",
-          "problem_statement_mapping"
+          "problem_statement_mapping",
+          "scenario_parameter_ids",
+          "valid_parameter_ids"
         ],
         "title": "ScenarioDetailResponse",
         "description": "Response for scenario detail."
@@ -39332,8 +39640,7 @@
           },
           "agent_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/AgentMappingItem"
             },
             "type": "object",
             "title": "Agent Mapping"
@@ -39347,16 +39654,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/ParameterItemMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -39368,6 +39673,20 @@
             "type": "array",
             "title": "Parameter Item Ids"
           },
+          "video_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Video Parameter Ids"
+          },
+          "valid_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Ids"
+          },
           "persona_ids": {
             "items": {
               "type": "string"
@@ -39377,8 +39696,7 @@
           },
           "persona_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/PersonaMappingItem"
             },
             "type": "object",
             "title": "Persona Mapping"
@@ -39423,6 +39741,8 @@
           "parameter_mapping",
           "parameter_item_mapping",
           "parameter_item_ids",
+          "video_parameter_ids",
+          "valid_parameter_ids",
           "persona_ids",
           "persona_mapping",
           "valid_persona_ids"
@@ -39695,8 +40015,7 @@
           },
           "agent_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/AgentMappingItem"
             },
             "type": "object",
             "title": "Agent Mapping"
@@ -39710,16 +40029,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/ParameterItemMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -39731,6 +40048,20 @@
             "type": "array",
             "title": "Parameter Item Ids"
           },
+          "video_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Video Parameter Ids"
+          },
+          "valid_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Ids"
+          },
           "persona_ids": {
             "items": {
               "type": "string"
@@ -39740,8 +40071,7 @@
           },
           "persona_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/PersonaMappingItem"
             },
             "type": "object",
             "title": "Persona Mapping"
@@ -39787,6 +40117,8 @@
           "parameter_mapping",
           "parameter_item_mapping",
           "parameter_item_ids",
+          "video_parameter_ids",
+          "valid_parameter_ids",
           "persona_ids",
           "persona_mapping",
           "valid_persona_ids"
@@ -40217,6 +40549,14 @@
           "persona_parameter": {
             "type": "boolean",
             "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter"
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter"
           }
         },
         "type": "object",
@@ -40225,7 +40565,9 @@
           "description",
           "numerical",
           "document_parameter",
-          "persona_parameter"
+          "persona_parameter",
+          "scenario_parameter",
+          "video_parameter"
         ],
         "title": "ParameterMappingItem",
         "description": "Parameter mapping item - extends MappingItem"

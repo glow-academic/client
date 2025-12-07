@@ -64,7 +64,8 @@ policy_param_item AS (
     FROM fields f
     JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
-    WHERE p.name = 'Document Type' AND p.document_parameter = true
+    WHERE p.name = 'Document Type' 
+    AND EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true)
     AND f.value = 'policy'
     LIMIT 1
 ),
@@ -162,25 +163,43 @@ valid_agents AS (
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
 ),
--- Video parameters (filtered by video_parameter = true OR document_parameter = true)
-video_parameter_data AS (
-    SELECT DISTINCT 
+-- Video parameters (filtered by video_parameters junction table OR parameter_documents junction table)
+available_video_parameters AS (
+    -- Get all parameters that could be linked to videos (via video_parameters)
+    -- For new videos, show all active parameters that are linked to at least one video
+    SELECT DISTINCT
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
         p.numerical,
-        p.document_parameter,
-        p.video_parameter
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
     FROM parameters p
-    JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
-    WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
-    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.video_parameter
-    HAVING 
-        COUNT(fd.field_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
-                      WHERE pi2.parameter_id = p.id AND pid2.active = true)
+    WHERE p.active = true
+    AND EXISTS (
+        SELECT 1 FROM video_parameters vp 
+        WHERE vp.parameter_id = p.id 
+        AND vp.active = true
+    )
+),
+document_parameters_for_video AS (
+    -- Also include parameters linked via parameter_documents (for document filtering)
+    SELECT DISTINCT
+        p.id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        p.numerical,
+        true as document_parameter,
+        false as video_parameter
+    FROM parameter_documents pd
+    JOIN parameters p ON p.id = pd.parameter_id
+    WHERE pd.active = true
+    AND p.active = true
+),
+video_parameter_data AS (
+    SELECT * FROM available_video_parameters
+    UNION
+    SELECT * FROM document_parameters_for_video
 ),
 video_parameter_mapping_data AS (
     SELECT 
@@ -197,22 +216,18 @@ video_parameter_mapping_data AS (
     FROM video_parameter_data p
 ),
 video_parameter_items_data AS (
-    SELECT 
+    SELECT DISTINCT
         pi.id,
         pi.name,
         COALESCE(pi.description, '') as description,
-        pi.parameter_id,
-        p.name as parameter_name,
-        pi.value
-    FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+        pi.value,
+        fp.parameter_id,
+        p.name as parameter_name
+    FROM video_parameter_data vpd
+    JOIN field_parameters fp ON fp.parameter_id = vpd.id AND fp.active = true
+    JOIN fields pi ON pi.id = fp.field_id
     JOIN parameters p ON p.id = fp.parameter_id
-    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
-    GROUP BY f.id, f.name, f.description, fp.parameter_id, p.id, p.name, f.value
-    HAVING 
-        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
+    WHERE p.active = true
 ),
 video_parameter_item_mapping_data AS (
     SELECT 
@@ -284,6 +299,7 @@ SELECT
     COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
     COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids,
     COALESCE((SELECT parameter_mapping FROM video_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,
+    COALESCE((SELECT array_agg(id::text) FROM video_parameter_data), ARRAY[]::text[]) as valid_parameter_ids,
     COALESCE((SELECT parameter_item_mapping FROM video_parameter_item_mapping_data), '{}'::jsonb) as parameter_item_mapping,
     COALESCE((SELECT valid_persona_ids FROM valid_personas_data), ARRAY[]::text[]) as valid_persona_ids,
     COALESCE((SELECT persona_mapping FROM valid_personas_data), '{}'::jsonb) as persona_mapping

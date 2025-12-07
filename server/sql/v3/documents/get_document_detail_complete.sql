@@ -108,6 +108,37 @@ valid_depts AS (
     FROM user_departments ud
     LEFT JOIN department_parameter_ids dparami ON dparami.department_id = ud.id
 ),
+linked_parameters AS (
+    -- Get parameters linked to this document via parameter_documents junction table
+    SELECT DISTINCT
+        p.id as parameter_id,
+        p.name as parameter_name,
+        p.description as parameter_description,
+        p.numerical
+    FROM parameter_documents pd
+    JOIN parameters p ON p.id = pd.parameter_id
+    CROSS JOIN document_data dd
+    WHERE pd.document_id = dd.document_id::uuid
+    AND pd.active = true
+    AND p.active = true
+),
+parameter_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            lp.parameter_id::text,
+            jsonb_build_object(
+                'name', lp.parameter_name,
+                'description', lp.parameter_description,
+                'numerical', lp.numerical,
+                'document_parameter', true,
+                'persona_parameter', false
+            )
+        ),
+        '{}'::jsonb
+    ) as parameter_mapping,
+    array_agg(lp.parameter_id::text ORDER BY lp.parameter_name) as parameter_ids
+    FROM linked_parameters lp
+),
 valid_param_items AS (
     SELECT 
         COALESCE(
@@ -117,14 +148,16 @@ valid_param_items AS (
                     'name', f.name,
                     'description', COALESCE(f.description, ''),
                     'parameter_id', fp.parameter_id::text,
-                    'parameter_name', p.name
+                    'parameter_name', p.name,
+                    'value', f.value
                 )
             ),
             '{}'::jsonb
         ) as param_item_mapping,
         array_agg(f.id::text ORDER BY f.name) as param_item_ids
-    FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    FROM linked_parameters lp
+    JOIN field_parameters fp ON fp.parameter_id = lp.parameter_id AND fp.active = true
+    JOIN fields f ON f.id = fp.field_id
     JOIN parameters p ON p.id = fp.parameter_id
     CROSS JOIN document_data dd
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
@@ -193,6 +226,8 @@ SELECT
     doc.*,
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
+    COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
+    COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
     vpi.param_item_mapping as parameter_item_mapping,
     vpi.param_item_ids as valid_parameter_item_ids,
     COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
@@ -216,6 +251,7 @@ SELECT
 FROM document_data doc
 CROSS JOIN user_profile up
 CROSS JOIN valid_depts vd
+CROSS JOIN parameter_mapping_data pmd
 CROSS JOIN valid_param_items vpi
 CROSS JOIN valid_agents va
 LEFT JOIN document_active_template dat ON dat.document_id = doc.document_id::uuid

@@ -76,6 +76,7 @@ import { cn } from "@/lib/utils";
 // Custom Components
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { ParameterPicker } from "@/components/common/forms/ParameterPicker";
 import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
 import {
   DocumentMappingItem,
@@ -384,6 +385,9 @@ export default function Video({
     }
     if (currentParameterItemIds.length > 0) {
       (createPayload as any).parameter_item_ids = currentParameterItemIds;
+    }
+    if (formData.parameterIds && formData.parameterIds.length > 0) {
+      (createPayload as any).parameter_ids = formData.parameterIds;
     }
     // Note: outline_agent_id is not supported in create endpoint
     // It will be set via update after creation if needed
@@ -1150,6 +1154,7 @@ export default function Video({
     active: boolean;
     outlineAgentId: string | null;
     personaIds: string[];
+    parameterIds: string[];
   };
 
   // Outline state
@@ -1199,6 +1204,7 @@ export default function Video({
       active: true,
       outlineAgentId: null,
       personaIds: [],
+      parameterIds: [],
     }),
     [defaultDepartmentIds]
   );
@@ -1384,6 +1390,7 @@ export default function Video({
         active: videoData.active ?? true,
         outlineAgentId: videoData.outline_agent_id || null,
         personaIds: videoData.persona_ids || [],
+        parameterIds: (videoData as any).video_parameter_ids || [],
       });
 
       // Load parameter items
@@ -1607,6 +1614,9 @@ export default function Video({
         }
         if (currentParameterItemIds.length > 0) {
           (updatePayload as any).parameter_item_ids = currentParameterItemIds;
+        }
+        if (formData.parameterIds && formData.parameterIds.length > 0) {
+          (updatePayload as any).parameter_ids = formData.parameterIds;
         }
 
         await handleUpdateVideo(updatePayload as any);
@@ -1963,6 +1973,25 @@ export default function Video({
                     selectedIds={formData.departmentIds || []}
                     onSelect={(ids) => handleInputChange("departmentIds", ids)}
                     placeholder="All Departments"
+                    disabled={isReadonly}
+                    multiSelect={true}
+                  />
+                ) : null}
+              </div>
+            )}
+
+          {/* Parameter Selection */}
+          {videoData?.valid_parameter_ids &&
+            videoData.valid_parameter_ids.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="parameters">Parameters</Label>
+                {formData?.parameterIds !== undefined ? (
+                  <ParameterPicker
+                    mapping={parameterMapping}
+                    validIds={videoData.valid_parameter_ids || []}
+                    selectedIds={formData.parameterIds || []}
+                    onSelect={(ids) => handleInputChange("parameterIds", ids)}
+                    placeholder="Select parameters..."
                     disabled={isReadonly}
                     multiSelect={true}
                   />

@@ -12,7 +12,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMappingItem, ParameterItemMappingItem)
+                              DepartmentMappingItem, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -74,6 +75,8 @@ class DocumentDetailResponse(BaseModel):
     parameter_item_ids: list[str]
     valid_parameter_item_ids: list[str]
     parameter_item_mapping: dict[str, ParameterItemMappingItem]
+    parameter_mapping: ParameterMapping
+    linked_parameter_ids: list[str]
     classify_agent_id: str
     document_agent_id: str
     agent_mapping: AgentMapping
@@ -180,6 +183,30 @@ async def get_document_detail(
         parameter_item_ids: list[str] = []
         if row.get("parameter_item_ids"):
             parameter_item_ids = [str(pid) for pid in row["parameter_item_ids"]]
+
+        # Parse parameter mapping
+        parameter_mapping: ParameterMapping = {}
+        if row.get("parameter_mapping"):
+            param_mapping_data = row.get("parameter_mapping")
+            if isinstance(param_mapping_data, str):
+                param_mapping_data = json.loads(param_mapping_data)
+            if isinstance(param_mapping_data, dict):
+                for param_id, pdata in param_mapping_data.items():
+                    if isinstance(pdata, dict):
+                        parameter_mapping[param_id] = ParameterMappingItem(
+                            name=pdata.get("name", ""),
+                            description=pdata.get("description", ""),
+                            numerical=pdata.get("numerical", False),
+                            document_parameter=pdata.get("document_parameter", False),
+                            persona_parameter=pdata.get("persona_parameter", False),
+                            scenario_parameter=pdata.get("scenario_parameter", False),
+                            video_parameter=pdata.get("video_parameter", False),
+                        )
+
+        # Parse linked_parameter_ids
+        linked_parameter_ids: list[str] = []
+        if row.get("linked_parameter_ids"):
+            linked_parameter_ids = [str(pid) for pid in row["linked_parameter_ids"]]
 
         # Parse agent mapping
         agent_mapping: AgentMapping = {}
@@ -310,6 +337,8 @@ async def get_document_detail(
             parameter_item_ids=parameter_item_ids,
             valid_parameter_item_ids=valid_parameter_item_ids,
             parameter_item_mapping=parameter_item_mapping,
+            parameter_mapping=parameter_mapping,
+            linked_parameter_ids=linked_parameter_ids,
             classify_agent_id=row.get("classify_agent_id", ""),
             document_agent_id=row.get("document_agent_id", ""),
             agent_mapping=agent_mapping,

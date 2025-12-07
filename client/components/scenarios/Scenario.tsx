@@ -78,6 +78,7 @@ import type {
 } from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { ParameterPicker } from "@/components/common/forms/ParameterPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -437,6 +438,7 @@ export default function Scenario({
       departmentIds: defaultDepartmentIds,
       active: true,
       scenarioAgentId: null as string | null,
+      parameterIds: [] as string[],
     }),
     [defaultDepartmentIds],
   );
@@ -2109,6 +2111,7 @@ export default function Scenario({
                 currentParameterItemIds,
                 parameterItemMapping,
               ),
+              parameter_ids: formData.parameterIds && formData.parameterIds.length > 0 ? formData.parameterIds : null,
               documents_enabled: useDocuments,
               document_vision_enabled: documentVisionEnabled,
               objectives_enabled: useObjectives,
@@ -2160,6 +2163,10 @@ export default function Scenario({
       );
 
       // Prepare payload for V2 API
+      const parametersDict = groupParameterItemsByParameterId(
+        currentParameterItemIds,
+        parameterItemMapping,
+      );
       const payload: {
         name: string;
         problem_statement: string;
@@ -2172,6 +2179,7 @@ export default function Scenario({
         upload_ids: string[] | null;
         image_names: string[] | null;
         parameters: Record<string, string[]>;
+        parameter_ids?: string[] | null;
         scenario_agent_id?: string | null;
       } = {
         name: formData.name?.trim() || "",
@@ -2184,10 +2192,8 @@ export default function Scenario({
         upload_ids:
           image?.upload_id || image?.id ? [image.upload_id || image.id] : null,
         image_names: image?.name ? [image.name] : null,
-        parameters: groupParameterItemsByParameterId(
-          currentParameterItemIds,
-          parameterItemMapping,
-        ),
+        parameters: parametersDict,
+        parameter_ids: formData.parameterIds && formData.parameterIds.length > 0 ? formData.parameterIds : null,
         scenario_agent_id: formData.scenarioAgentId || null,
       };
 
@@ -2381,6 +2387,25 @@ export default function Scenario({
                     selectedIds={formData.departmentIds || []}
                     onSelect={(ids) => handleInputChange("departmentIds", ids)}
                     placeholder="All Departments"
+                    disabled={isReadonly}
+                    multiSelect={true}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* Parameter Selection */}
+            {scenarioData?.valid_parameter_ids &&
+            scenarioData.valid_parameter_ids.length > 0 ? (
+              <div className="space-y-2">
+                <Label htmlFor="parameters">Parameters</Label>
+                {formData?.parameterIds !== undefined ? (
+                  <ParameterPicker
+                    mapping={parameterMapping}
+                    validIds={scenarioData.valid_parameter_ids || []}
+                    selectedIds={formData.parameterIds || []}
+                    onSelect={(ids) => handleInputChange("parameterIds", ids)}
+                    placeholder="Select parameters..."
                     disabled={isReadonly}
                     multiSelect={true}
                   />

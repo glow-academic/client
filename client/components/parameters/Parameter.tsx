@@ -11,6 +11,10 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { DocumentPicker } from "@/components/common/forms/DocumentPicker";
+import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
+import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
+import { VideoPicker } from "@/components/common/forms/VideoPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +41,6 @@ import {
 } from "@/utils/department-picker-helpers";
 import {
   Calculator,
-  FileText,
   GraduationCap,
   Plus,
   Power,
@@ -66,9 +69,12 @@ interface FormData {
   description?: string;
   numerical?: boolean;
   active?: boolean;
-  document_parameter?: boolean;
   practice_parameter?: boolean;
   departmentIds?: string[] | null;
+  personaIds?: string[];
+  documentIds?: string[];
+  scenarioIds?: string[];
+  videoIds?: string[];
 }
 
 interface ParameterItemFormData {
@@ -124,10 +130,13 @@ export default function Parameter({
       description: "",
       numerical: false,
       active: false,
-      document_parameter: false,
       practice_parameter: false,
       departmentIds:
         defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
+      personaIds: [],
+      documentIds: [],
+      scenarioIds: [],
+      videoIds: [],
     }),
     [defaultDepartmentIds],
   );
@@ -212,9 +221,12 @@ export default function Parameter({
         description: parameterData.description,
         numerical: parameterData.numerical,
         active: parameterData.active,
-        document_parameter: parameterData.document_parameter ?? false,
         practice_parameter: parameterData.practice_parameter ?? false,
         departmentIds: parameterData.department_ids || null,
+        personaIds: parameterData.persona_ids || [],
+        documentIds: parameterData.document_ids || [],
+        scenarioIds: parameterData.scenario_ids || [],
+        videoIds: parameterData.video_ids || [],
       });
     } else if (!isEditMode && parameterData) {
       // For create mode, use data from default detail endpoint
@@ -224,7 +236,7 @@ export default function Parameter({
           defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
       });
     }
-  }, [parameterData, isEditMode, initialFormData]);
+  }, [parameterData, isEditMode, initialFormData, defaultDepartmentIds]);
 
   // Initialize parameter items from v3 nested data
   useEffect(() => {
@@ -309,17 +321,20 @@ export default function Parameter({
         });
 
       if (isEditMode) {
-        // V2 API: Single atomic update with nested items
+        // V3 API: Single atomic update with nested items
         await handleUpdateParameter({
           parameterId: parameterId!,
           name: formData.name!,
           description: formData.description!,
           numerical: formData.numerical || false,
           active: formData.active || false,
-          document_parameter: formData.document_parameter || false,
           practice_parameter: formData.practice_parameter || false,
           department_ids: formData.departmentIds ?? null,
           parameter_items,
+          persona_ids: formData.personaIds && formData.personaIds.length > 0 ? formData.personaIds : null,
+          document_ids: formData.documentIds && formData.documentIds.length > 0 ? formData.documentIds : null,
+          scenario_ids: formData.scenarioIds && formData.scenarioIds.length > 0 ? formData.scenarioIds : null,
+          video_ids: formData.videoIds && formData.videoIds.length > 0 ? formData.videoIds : null,
         });
 
         toast.success("Parameter updated successfully!");
@@ -330,10 +345,13 @@ export default function Parameter({
           description: formData.description!,
           numerical: formData.numerical || false,
           active: formData.active || false,
-          document_parameter: formData.document_parameter || false,
           practice_parameter: formData.practice_parameter || false,
           department_ids: formData.departmentIds ?? null,
           parameter_items,
+          persona_ids: formData.personaIds && formData.personaIds.length > 0 ? formData.personaIds : null,
+          document_ids: formData.documentIds && formData.documentIds.length > 0 ? formData.documentIds : null,
+          scenario_ids: formData.scenarioIds && formData.scenarioIds.length > 0 ? formData.scenarioIds : null,
+          video_ids: formData.videoIds && formData.videoIds.length > 0 ? formData.videoIds : null,
         });
 
         toast.success("Parameter created successfully!");
@@ -612,41 +630,123 @@ export default function Parameter({
               </div>
             </div>
 
-            {/* Document Parameter Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="document_parameter"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                    Require Documents
-                  </Label>
-                  {formData?.document_parameter !== undefined ? (
-                    <Switch
-                      id="document_parameter"
-                      data-testid="switch-parameter-document"
-                      checked={formData.document_parameter}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          document_parameter: checked,
-                        }))
-                      }
-                      disabled={
-                        isEditMode &&
-                        parameterDetail &&
-                        !parameterDetail.can_edit
-                      }
-                    />
-                  ) : null}
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Documents must be connected to this parameter
+            {/* Persona Links */}
+            {parameterData?.persona_mapping && (
+              <div className="space-y-2">
+                <Label>Link to Personas</Label>
+                {formData?.personaIds !== undefined ? (
+                  <PersonaPicker
+                    mapping={parameterData.persona_mapping}
+                    validIds={parameterData.valid_persona_ids || []}
+                    selectedIds={formData.personaIds}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        personaIds: ids,
+                      }))
+                    }
+                    placeholder="Select personas..."
+                    multiSelect={true}
+                    disabled={
+                      isEditMode &&
+                      parameterDetail &&
+                      !parameterDetail.can_edit
+                    }
+                  />
+                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  Select which personas this parameter applies to
                 </p>
               </div>
-            </div>
+            )}
+
+            {/* Document Links */}
+            {parameterData?.document_mapping && (
+              <div className="space-y-2">
+                <Label>Link to Documents</Label>
+                {formData?.documentIds !== undefined ? (
+                  <DocumentPicker
+                    mapping={parameterData.document_mapping}
+                    validIds={parameterData.valid_document_ids || []}
+                    selectedIds={formData.documentIds}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        documentIds: ids,
+                      }))
+                    }
+                    placeholder="Select documents..."
+                    multiSelect={true}
+                    disabled={
+                      isEditMode &&
+                      parameterDetail &&
+                      !parameterDetail.can_edit
+                    }
+                  />
+                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  Select which documents this parameter applies to
+                </p>
+              </div>
+            )}
+
+            {/* Scenario Links */}
+            {parameterData?.scenario_mapping && (
+              <div className="space-y-2">
+                <Label>Link to Scenarios</Label>
+                {formData?.scenarioIds !== undefined ? (
+                  <ScenarioPicker
+                    scenarioMapping={parameterData.scenario_mapping}
+                    validScenarioIds={parameterData.valid_scenario_ids || []}
+                    selectedScenarioIds={formData.scenarioIds}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        scenarioIds: ids,
+                      }))
+                    }
+                    placeholder="Select scenarios..."
+                    disabled={
+                      isEditMode &&
+                      parameterDetail &&
+                      !parameterDetail.can_edit
+                    }
+                  />
+                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  Select which scenarios this parameter applies to
+                </p>
+              </div>
+            )}
+
+            {/* Video Links */}
+            {parameterData?.video_mapping && (
+              <div className="space-y-2">
+                <Label>Link to Videos</Label>
+                {formData?.videoIds !== undefined ? (
+                  <VideoPicker
+                    videoMapping={parameterData.video_mapping}
+                    validVideoIds={parameterData.valid_video_ids || []}
+                    selectedVideoIds={formData.videoIds}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoIds: ids,
+                      }))
+                    }
+                    placeholder="Select videos..."
+                    disabled={
+                      isEditMode &&
+                      parameterDetail &&
+                      !parameterDetail.can_edit
+                    }
+                  />
+                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  Select which videos this parameter applies to
+                </p>
+              </div>
+            )}
 
             {/* Practice Parameter Switch */}
             <div className="space-y-2 pt-2">

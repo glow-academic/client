@@ -1,5 +1,5 @@
 -- Create parameter with items and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=numerical, $4=active, $5=document_parameter, $6=practice_parameter, $7=parameter_level_department_ids (text array, nullable), $8=items_json (jsonb array), $9=profile_id (uuid or "guest-profile-id")
+-- Parameters: $1=name, $2=description, $3=numerical, $4=active, $5=practice_parameter, $6=parameter_level_department_ids (text array, nullable), $7=items_json (jsonb array), $8=persona_ids (text array, nullable), $9=document_ids (text array, nullable), $10=scenario_ids (text array, nullable), $11=video_ids (text array, nullable), $12=profile_id (uuid or "guest-profile-id")
 -- items_json format: [{"name": "Item 1", "description": "Desc 1", "value": "val1", "department_ids": ["dept1", "dept2"]}, ...]
 -- If item.department_ids is null, use parameter_level_department_ids
 WITH resolve_guest_profile AS (
@@ -11,7 +11,7 @@ WITH resolve_guest_profile AS (
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
              JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $9::uuid AND sdg.active = true
+             WHERE pd.profile_id = $12::uuid AND sdg.active = true
              LIMIT 1),
             -- Fallback to default (active) settings guest profile
             (SELECT sdg.profile_id FROM settings_default_guest sdg
@@ -23,10 +23,10 @@ WITH resolve_guest_profile AS (
 resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $9::text = 'guest-profile-id' THEN
+            WHEN $12::text = 'guest-profile-id' THEN
                 (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $9::text IS NULL OR $9::text = '' THEN NULL::uuid
-            ELSE $9::uuid
+            WHEN $12::text IS NULL OR $12::text = '' THEN NULL::uuid
+            ELSE $12::uuid
         END as resolved_profile_id
 ),
 new_parameter AS (
@@ -35,10 +35,9 @@ new_parameter AS (
         description,
         numerical,
         active,
-        document_parameter,
         practice_parameter
     )
-    VALUES ($1, $2, $3, $4, $5, $6)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING id::text as parameter_id
 ),
 items_expanded AS (
@@ -58,17 +57,17 @@ items_expanded AS (
                 FROM jsonb_array_elements_text(item->'department_ids') AS elem
                 WHERE elem != 'None' AND elem IS NOT NULL
             )
-            WHEN $7::text[] IS NOT NULL AND array_length($7::text[], 1) > 0
+            WHEN $6::text[] IS NOT NULL AND array_length($6::text[], 1) > 0
             THEN (
                 SELECT COALESCE(array_agg(elem), ARRAY[]::text[])
-                FROM unnest($7::text[]) AS elem
+                FROM unnest($6::text[]) AS elem
                 WHERE elem != 'None' AND elem IS NOT NULL
             )
             ELSE NULL::text[]
         END as department_ids,
         ordinality as item_order
-    FROM jsonb_array_elements(COALESCE($8::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
-    WHERE COALESCE(jsonb_array_length(COALESCE($8::jsonb, '[]'::jsonb)), 0) > 0
+    FROM jsonb_array_elements(COALESCE($7::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
+    WHERE COALESCE(jsonb_array_length(COALESCE($7::jsonb, '[]'::jsonb)), 0) > 0
 ),
 new_fields AS (
     -- Create all fields (formerly parameter items)
@@ -148,9 +147,73 @@ link_parameter_departments AS (
         NOW(),
         NOW()
     FROM new_parameter np
-    CROSS JOIN UNNEST($7::text[]) as dept_id
-    WHERE $7::text[] IS NOT NULL AND array_length($7::text[], 1) > 0
+    CROSS JOIN UNNEST($6::text[]) as dept_id
+    WHERE $6::text[] IS NOT NULL AND array_length($6::text[], 1) > 0
     ON CONFLICT (parameter_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_parameter_personas AS (
+    -- Link personas to parameter if provided
+    INSERT INTO parameter_personas (parameter_id, persona_id, active, created_at, updated_at)
+    SELECT 
+        np.parameter_id::uuid,
+        persona_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN UNNEST($8::text[]) as persona_id
+    WHERE $8::text[] IS NOT NULL AND array_length($8::text[], 1) > 0
+    ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_parameter_documents AS (
+    -- Link documents to parameter if provided
+    INSERT INTO parameter_documents (parameter_id, document_id, active, created_at, updated_at)
+    SELECT 
+        np.parameter_id::uuid,
+        document_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN UNNEST($9::text[]) as document_id
+    WHERE $9::text[] IS NOT NULL AND array_length($9::text[], 1) > 0
+    ON CONFLICT (parameter_id, document_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_scenario_parameters AS (
+    -- Link scenarios to parameter if provided
+    INSERT INTO scenario_parameters (scenario_id, parameter_id, active, created_at, updated_at)
+    SELECT 
+        scenario_id::uuid,
+        np.parameter_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN UNNEST($10::text[]) as scenario_id
+    WHERE $10::text[] IS NOT NULL AND array_length($10::text[], 1) > 0
+    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_video_parameters AS (
+    -- Link videos to parameter if provided
+    INSERT INTO video_parameters (video_id, parameter_id, active, created_at, updated_at)
+    SELECT 
+        video_id::uuid,
+        np.parameter_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN UNNEST($11::text[]) as video_id
+    WHERE $11::text[] IS NOT NULL AND array_length($11::text[], 1) > 0
+    ON CONFLICT (video_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

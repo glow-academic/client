@@ -29,10 +29,13 @@ class CreateParameterRequest(BaseModel):
     description: str
     numerical: bool
     active: bool
-    document_parameter: bool = False
     practice_parameter: bool = False
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_items: list[ParameterItemCreate]
+    persona_ids: list[str] | None = None  # Optional: link to specific personas
+    document_ids: list[str] | None = None  # Optional: link to specific documents
+    scenario_ids: list[str] | None = None  # Optional: link to specific scenarios
+    video_ids: list[str] | None = None  # Optional: link to specific videos
     profileId: str  # Required for auditing/access control
 
 
@@ -86,10 +89,13 @@ async def create_parameter(
                 request.description,
                 request.numerical,
                 request.active,
-                request.document_parameter,
                 request.practice_parameter,
                 request.department_ids,  # Parameter-level department_ids (fallback)
                 items_json,  # JSONB array of items
+                request.persona_ids,  # Persona IDs for junction table
+                request.document_ids,  # Document IDs for junction table
+                request.scenario_ids,  # Scenario IDs for junction table
+                request.video_ids,  # Video IDs for junction table
                 request.profileId,
             )
             parameter_result = await conn.fetchrow(sql_query, *sql_params)

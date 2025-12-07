@@ -102,6 +102,8 @@ class ScenarioDetailResponse(BaseModel):
     objective_mapping: dict[str, Any]
     department_mapping: DepartmentMapping
     problem_statement_mapping: dict[str, ProblemStatementInfo]
+    scenario_parameter_ids: list[str]
+    valid_parameter_ids: list[str]
 
 
 router = APIRouter()
@@ -201,6 +203,8 @@ async def get_scenario_new(
                         numerical=pdata.get("numerical", False),
                         document_parameter=pdata.get("document_parameter", False),
                         persona_parameter=pdata.get("persona_parameter", False),
+                        scenario_parameter=pdata.get("scenario_parameter", False),
+                        video_parameter=pdata.get("video_parameter", False),
                     )
 
         parameter_item_mapping_data = parse_jsonb(result.get("parameter_item_mapping"))
@@ -338,6 +342,10 @@ async def get_scenario_new(
         # For default scenarios, only superadmin can edit
         can_edit_default = not (is_default and not is_superadmin)
 
+        # Parse scenario_parameter_ids and valid_parameter_ids
+        scenario_parameter_ids: list[str] = []  # Empty for new scenario
+        valid_parameter_ids = list(parameter_mapping.keys())
+
         response_data = ScenarioDetailResponse(
             # Basic fields (empty defaults)
             name="",
@@ -380,6 +388,8 @@ async def get_scenario_new(
             objective_mapping={},
             department_mapping=department_mapping,
             problem_statement_mapping=problem_statement_mapping,
+            scenario_parameter_ids=scenario_parameter_ids,
+            valid_parameter_ids=valid_parameter_ids,
         )
 
         # Cache response

@@ -1,5 +1,5 @@
 -- Update persona with agents and department links in a single transaction
--- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=text_agent_id (nullable), $9=voice_agent_id (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id")
+-- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=text_agent_id (nullable), $9=voice_agent_id (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id"), $12=parameter_ids (nullable text array)
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -99,6 +99,65 @@ link_departments AS (
     WHERE COALESCE(array_length($10::text[], 1), 0) > 0
     ON CONFLICT (persona_id, department_id) DO UPDATE SET
         active = true,
+        updated_at = NOW()
+),
+deactivate_parameters AS (
+    -- Soft-delete removed parameters (set active = false for parameters not in new list)
+    UPDATE parameter_personas
+    SET active = false, updated_at = NOW()
+    WHERE persona_id = $1::uuid
+    AND active = true
+    AND (
+        COALESCE(array_length($12::text[], 1), 0) = 0
+        OR parameter_id NOT IN (SELECT unnest($12::text[])::uuid)
+    )
+),
+link_parameters AS (
+    -- Insert or reactivate parameter links if provided (array is never NULL, but may be empty)
+    INSERT INTO parameter_personas (parameter_id, persona_id, active, created_at, updated_at)
+    SELECT 
+        param_id::uuid,
+        $1::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($12::text[]) as param_id
+    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+    ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+backfill_persona_fields AS (
+    -- Backfill persona_fields for linked parameters (pick first field if none exists)
+    -- Only runs if persona_fields table exists
+    INSERT INTO persona_fields (persona_id, field_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        pp.persona_id,
+        fp.field_id,
+        TRUE,
+        NOW(),
+        NOW()
+    FROM parameter_personas pp
+    JOIN field_parameters fp ON fp.parameter_id = pp.parameter_id AND fp.active = TRUE
+    WHERE pp.persona_id = $1::uuid
+    AND pp.active = TRUE
+    AND NOT EXISTS (
+        SELECT 1 FROM persona_fields pf
+        WHERE pf.persona_id = pp.persona_id
+        AND pf.field_id = fp.field_id
+        AND pf.active = TRUE
+    )
+    AND fp.field_id = (
+        SELECT fp2.field_id
+        FROM field_parameters fp2
+        WHERE fp2.parameter_id = pp.parameter_id
+        AND fp2.active = TRUE
+        ORDER BY fp2.created_at ASC
+        LIMIT 1
+    )
+    AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'persona_fields')
+    ON CONFLICT (persona_id, field_id) DO UPDATE SET
+        active = TRUE,
         updated_at = NOW()
 )
 SELECT persona_id FROM update_persona

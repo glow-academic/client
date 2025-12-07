@@ -73,7 +73,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
   },
   {
     section: "analytics",
-    roles: ["instructional", "admin", "superadmin"],
+    roles: ["ta", "instructional", "admin", "superadmin"],
     title: "Analytics",
     description: "Analytics and reporting tools",
     routes: [
@@ -97,7 +97,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
       },
       {
         path: "/analytics/leaderboard",
-        roles: ["instructional", "admin", "superadmin"],
+        roles: ["ta", "instructional", "admin", "superadmin"],
         title: "Leaderboard",
         redirectTo: "/analytics/leaderboard",
       },
@@ -418,6 +418,24 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         roles: ["superadmin"],
         title: "Settings",
         redirectTo: "/system/settings",
+      },
+      {
+        path: "/system/providers",
+        roles: ["superadmin"],
+        title: "Providers",
+        redirectTo: "/system/providers",
+      },
+      {
+        path: "/system/providers/new",
+        roles: ["superadmin"],
+        title: "Create Provider",
+        redirectTo: "/system/providers",
+      },
+      {
+        path: "/system/providers/p/[providerId]",
+        roles: ["superadmin"],
+        title: "Edit Provider",
+        redirectTo: "/system/providers",
       },
     ],
   },

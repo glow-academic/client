@@ -67,7 +67,7 @@ selected_settings AS (
                     (SELECT id FROM settings WHERE active = true LIMIT 1)
                 )
         END as settings_id
-)
+),
 settings_auths_data AS (
     -- Get linked auths for this settings
     SELECT 

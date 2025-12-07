@@ -23,6 +23,7 @@ class UpdateDocumentRequest(BaseModel):
     template: bool | None = None  # Enable/disable template mode
     department_id: str | None = None
     parameter_item_ids: list[str] = []
+    parameter_ids: list[str] | None = None
     classify_agent_id: str | None = None
     document_agent_id: str | None = None
     templateUploadId: str | None = None  # Template HTML upload
@@ -63,6 +64,8 @@ async def update_document(
             sql_query = load_sql("sql/v3/documents/update_document_complete.sql")
             # Ensure parameter_item_ids is always an array (empty if None)
             param_item_ids = request.parameter_item_ids or []
+            # Ensure parameter_ids is always an array (empty if None)
+            param_ids = request.parameter_ids if request.parameter_ids else []
             sql_params = (
                 uuid.UUID(request.documentId),
                 request.name,
@@ -75,21 +78,9 @@ async def update_document(
                 uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
                 uuid.UUID(request.templateUploadId) if request.templateUploadId else None,
                 template_args_jsonb,
+                param_ids,
             )
-            await conn.execute(
-                sql_query,
-                uuid.UUID(request.documentId),
-                request.name,
-                request.description,
-                request.active,
-                request.template,
-                uuid.UUID(request.department_id) if request.department_id else None,
-                param_item_ids,
-                uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
-                uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
-                uuid.UUID(request.templateUploadId) if request.templateUploadId else None,
-                template_args_jsonb,
-            )
+            await conn.execute(sql_query, *sql_params)
 
         result = UpdateDocumentResponse(
             success=True,

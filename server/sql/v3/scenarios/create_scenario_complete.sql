@@ -6,7 +6,8 @@
 --            $12=document_ids (text array), $13=objective_ids (text array), 
 --            $14=parameter_item_ids (text array, flattened from parameters dict),
 --            $15=upload_images_json (JSONB string with upload images array),
---            $16=run_id (uuid, nullable - for linking AI-generated problem_statements and objectives to runs)
+--            $16=run_id (uuid, nullable - for linking AI-generated problem_statements and objectives to runs),
+--            $17=parameter_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
@@ -35,6 +36,22 @@ link_departments AS (
     CROSS JOIN UNNEST($10::text[]) as dept_id
     WHERE COALESCE(array_length($10::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_scenario_parameters AS (
+    -- Link parameters if provided (array is never NULL, but may be empty)
+    INSERT INTO scenario_parameters (scenario_id, parameter_id, active, created_at, updated_at)
+    SELECT 
+        ns.scenario_id::uuid,
+        param_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_scenario ns
+    CROSS JOIN UNNEST($17::text[]) as param_id
+    WHERE COALESCE(array_length($17::text[], 1), 0) > 0
+    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

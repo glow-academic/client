@@ -8,7 +8,8 @@
 --            $10=questions_json (JSONB string with questions array),
 --            $11=outline_agent_id (nullable uuid), $12=image_agent_id (nullable uuid),
 --            $13=parameter_item_ids (text array, nullable),
---            $14=persona_ids (text array, nullable)
+--            $14=persona_ids (text array, nullable),
+--            $15=parameter_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Questions JSON structure: [{"question_text": "...", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
@@ -337,6 +338,32 @@ insert_video_personas AS (
     CROSS JOIN UNNEST(COALESCE($14::text[], ARRAY[]::text[])) as persona_id
     WHERE COALESCE(array_length($14::text[], 1), 0) > 0
     ON CONFLICT (video_id, persona_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+deactivate_video_parameters AS (
+    -- Soft-delete removed parameters (set active = false for parameters not in new list)
+    UPDATE video_parameters
+    SET active = false, updated_at = NOW()
+    WHERE video_id = $1::uuid
+    AND active = true
+    AND (
+        COALESCE(array_length($15::text[], 1), 0) = 0
+        OR parameter_id NOT IN (SELECT unnest($15::text[])::uuid)
+    )
+),
+link_video_parameters AS (
+    -- Insert or reactivate parameter links if provided (array is never NULL, but may be empty)
+    INSERT INTO video_parameters (video_id, parameter_id, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        param_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($15::text[]) as param_id
+    WHERE COALESCE(array_length($15::text[], 1), 0) > 0
+    ON CONFLICT (video_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

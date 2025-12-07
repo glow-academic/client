@@ -1,5 +1,5 @@
 -- Update document with department links and parameter items in a single transaction
--- Parameters: $1=documentId, $2=name (nullable text), $3=description (nullable text), $4=active (nullable boolean), $5=template (nullable boolean), $6=department_id (nullable uuid), $7=field_ids (nullable text array), $8=classify_agent_id (nullable uuid), $9=document_agent_id (nullable uuid), $10=template_upload_id (nullable uuid), $11=template_args (nullable jsonb)
+-- Parameters: $1=documentId, $2=name (nullable text), $3=description (nullable text), $4=active (nullable boolean), $5=template (nullable boolean), $6=department_id (nullable uuid), $7=field_ids (nullable text array), $8=classify_agent_id (nullable uuid), $9=document_agent_id (nullable uuid), $10=template_upload_id (nullable uuid), $11=template_args (nullable jsonb), $12=parameter_ids (nullable text array)
 WITH update_document AS (
     UPDATE documents
     SET 
@@ -103,6 +103,63 @@ link_fields AS (
     WHERE COALESCE(array_length($7::text[], 1), 0) > 0
     ON CONFLICT (document_id, field_id) DO UPDATE SET
         active = EXCLUDED.active,
+        updated_at = NOW()
+),
+deactivate_parameters AS (
+    -- Soft-delete removed parameters (set active = false for parameters not in new list)
+    UPDATE parameter_documents
+    SET active = false, updated_at = NOW()
+    WHERE document_id = $1::uuid
+    AND active = true
+    AND (
+        COALESCE(array_length($12::text[], 1), 0) = 0
+        OR parameter_id NOT IN (SELECT unnest($12::text[])::uuid)
+    )
+),
+link_parameters AS (
+    -- Insert or reactivate parameter links if provided (array is never NULL, but may be empty)
+    INSERT INTO parameter_documents (parameter_id, document_id, active, created_at, updated_at)
+    SELECT 
+        param_id::uuid,
+        $1::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($12::text[]) as param_id
+    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+    ON CONFLICT (parameter_id, document_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+backfill_document_fields AS (
+    -- Backfill document_fields for linked parameters (pick first field if none exists)
+    INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        pd.document_id,
+        fp.field_id,
+        TRUE,
+        NOW(),
+        NOW()
+    FROM parameter_documents pd
+    JOIN field_parameters fp ON fp.parameter_id = pd.parameter_id AND fp.active = TRUE
+    WHERE pd.document_id = $1::uuid
+    AND pd.active = TRUE
+    AND NOT EXISTS (
+        SELECT 1 FROM document_fields df
+        WHERE df.document_id = pd.document_id
+        AND df.field_id = fp.field_id
+        AND df.active = TRUE
+    )
+    AND fp.field_id = (
+        SELECT fp2.field_id
+        FROM field_parameters fp2
+        WHERE fp2.parameter_id = pd.parameter_id
+        AND fp2.active = TRUE
+        ORDER BY fp2.created_at ASC
+        LIMIT 1
+    )
+    ON CONFLICT (document_id, field_id) DO UPDATE SET
+        active = TRUE,
         updated_at = NOW()
 )
 SELECT document_id FROM update_document

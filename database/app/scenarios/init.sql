@@ -35,12 +35,7 @@ CREATE TABLE parameters (
   description TEXT        NOT NULL,
   numerical BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT FALSE,
-  practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  document_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  persona_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  policy_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  scenario_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  video_parameter BOOLEAN     NOT NULL DEFAULT FALSE
+  practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE fields (
@@ -97,6 +92,66 @@ CREATE TABLE parameter_departments (
 
 CREATE INDEX ON parameter_departments (parameter_id);
 CREATE INDEX ON parameter_departments (department_id);
+
+-- Parameters → Personas junction table (BCNF normalization)
+-- Links parameters to personas (when parameter applies to specific personas)
+-- No records = parameter not linked to any persona
+CREATE TABLE parameter_personas (
+  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  persona_id UUID NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (parameter_id, persona_id)
+);
+
+CREATE INDEX ON parameter_personas (parameter_id);
+CREATE INDEX ON parameter_personas (persona_id);
+
+-- Parameters → Documents junction table (BCNF normalization)
+-- Links parameters to documents (when parameter applies to specific documents)
+-- No records = parameter not linked to any document
+CREATE TABLE parameter_documents (
+  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (parameter_id, document_id)
+);
+
+CREATE INDEX ON parameter_documents (parameter_id);
+CREATE INDEX ON parameter_documents (document_id);
+
+-- Scenarios → Parameters junction table (BCNF normalization)
+-- Links scenarios to parameters (when scenario uses specific parameters)
+-- No records = scenario not linked to any parameter
+CREATE TABLE scenario_parameters (
+  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, parameter_id)
+);
+
+CREATE INDEX ON scenario_parameters (scenario_id);
+CREATE INDEX ON scenario_parameters (parameter_id);
+
+-- Videos → Parameters junction table (BCNF normalization)
+-- Links videos to parameters (when video uses specific parameters)
+-- No records = video not linked to any parameter
+CREATE TABLE video_parameters (
+  video_id UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (video_id, parameter_id)
+);
+
+CREATE INDEX ON video_parameters (video_id);
+CREATE INDEX ON video_parameters (parameter_id);
   
 CREATE TABLE scenarios (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

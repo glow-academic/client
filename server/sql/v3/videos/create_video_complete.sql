@@ -6,7 +6,8 @@
 --            $7=upload_images_json (JSONB string with upload images array),
 --            $8=questions_json (JSONB string with questions array),
 --            $9=parameter_item_ids (text array, nullable),
---            $10=persona_ids (text array, nullable)
+--            $10=persona_ids (text array, nullable),
+--            $11=parameter_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Questions JSON structure: [{"question_text": "...", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 
@@ -32,6 +33,22 @@ link_departments AS (
     CROSS JOIN UNNEST($4::text[]) as dept_id
     WHERE COALESCE(array_length($4::text[], 1), 0) > 0
     ON CONFLICT (video_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_video_parameters AS (
+    -- Link parameters if provided (array is never NULL, but may be empty)
+    INSERT INTO video_parameters (video_id, parameter_id, active, created_at, updated_at)
+    SELECT 
+        nv.video_id,
+        param_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_video nv
+    CROSS JOIN UNNEST($11::text[]) as param_id
+    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
+    ON CONFLICT (video_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

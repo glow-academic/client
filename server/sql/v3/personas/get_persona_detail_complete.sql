@@ -153,6 +153,64 @@ profile_data AS (
     SELECT role as user_role 
     FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
+linked_parameters AS (
+    -- Get parameters linked to this persona via parameter_personas junction table
+    SELECT DISTINCT
+        p.id as parameter_id,
+        p.name as parameter_name,
+        p.description as parameter_description,
+        p.numerical
+    FROM parameter_personas pp
+    JOIN parameters p ON p.id = pp.parameter_id
+    WHERE pp.persona_id = $1
+    AND pp.active = true
+    AND p.active = true
+),
+parameter_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            lp.parameter_id::text,
+            jsonb_build_object(
+                'name', lp.parameter_name,
+                'description', lp.parameter_description,
+                'numerical', lp.numerical,
+                'document_parameter', false,
+                'persona_parameter', true
+            )
+        ),
+        '{}'::jsonb
+    ) as parameter_mapping,
+    array_agg(lp.parameter_id::text ORDER BY lp.parameter_name) as parameter_ids
+    FROM linked_parameters lp
+),
+parameter_item_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            f.id::text,
+            jsonb_build_object(
+                'name', f.name,
+                'description', COALESCE(f.description, ''),
+                'parameter_id', fp.parameter_id::text,
+                'parameter_name', p.name,
+                'value', f.value
+            )
+        ),
+        '{}'::jsonb
+    ) as parameter_item_mapping,
+    array_agg(f.id::text ORDER BY f.name) as parameter_item_ids
+    FROM linked_parameters lp
+    JOIN field_parameters fp ON fp.parameter_id = lp.parameter_id AND fp.active = true
+    JOIN fields f ON f.id = fp.field_id
+    JOIN parameters p ON p.id = fp.parameter_id
+    WHERE p.active = true
+),
+persona_field_ids AS (
+    -- Get field IDs already assigned to this persona (if persona_fields table exists)
+    SELECT array_agg(pf.field_id::text) as field_ids
+    FROM persona_fields pf
+    WHERE pf.persona_id = $1 AND pf.active = true
+    AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'persona_fields')
 )
 SELECT 
     p.*,
@@ -161,9 +219,17 @@ SELECT
     COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
     COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     u.usage_count,
-    pr.user_role
+    pr.user_role,
+    COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
+    COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
+    COALESCE(pimd.parameter_item_mapping, '{}'::jsonb) as parameter_item_mapping,
+    COALESCE(pimd.parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
+    COALESCE(pfi.field_ids, ARRAY[]::text[]) as parameter_field_ids
 FROM persona_data p
 CROSS JOIN valid_depts vd
 CROSS JOIN valid_agents va
 CROSS JOIN usage_data u
 CROSS JOIN profile_data pr
+CROSS JOIN parameter_mapping_data pmd
+CROSS JOIN parameter_item_mapping_data pimd
+CROSS JOIN persona_field_ids pfi

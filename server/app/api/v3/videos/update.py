@@ -48,6 +48,7 @@ class UpdateVideoRequest(BaseModel):
     outline_agent_id: str | None = None
     image_agent_id: str | None = None
     parameter_item_ids: list[str] | None = None  # Parameter items for video
+    parameter_ids: list[str] | None = None  # Parameters for video
     persona_ids: list[str] | None = None  # Personas for video
 
 
@@ -89,6 +90,7 @@ async def update_video(
         image_names = request.image_names or []
         questions = request.questions or []
         parameter_item_ids = request.parameter_item_ids or []
+        parameter_ids = request.parameter_ids or []
         persona_ids = request.persona_ids or []
 
         # Validate upload_ids and image_names match in length
@@ -126,6 +128,7 @@ async def update_video(
             request.image_agent_id,
             parameter_item_ids,  # Always pass array, SQL handles empty arrays
             persona_ids,  # Always pass array, SQL handles empty arrays
+            parameter_ids,  # Always pass array, SQL handles empty arrays
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

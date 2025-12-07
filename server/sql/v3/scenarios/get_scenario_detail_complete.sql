@@ -458,25 +458,40 @@ simulation_mapping_data AS (
         COALESCE((SELECT simulation_ids::uuid[] FROM scenario_simulations_agg), ARRAY[]::uuid[])
     )
 ),
+linked_scenario_parameters AS (
+    -- Get parameters linked to this scenario via scenario_parameters junction table
+    SELECT DISTINCT
+        p.id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        p.numerical,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+    FROM scenario_parameters sp
+    JOIN parameters p ON p.id = sp.parameter_id
+    WHERE sp.scenario_id = $1
+    AND sp.active = true
+    AND p.active = true
+),
 parameter_data_for_mapping AS (
     SELECT DISTINCT 
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
         p.numerical,
-        p.document_parameter,
-        p.persona_parameter
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters p
     JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
+    GROUP BY p.id, p.name, p.description, p.numerical
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
-                      WHERE fp2.parameter_id = p.id AND fd2.active = true)
+                      WHERE fp2.parameter_id = p.id AND fp2.active = true)
     ORDER BY p.name
 ),
 parameter_mapping_data AS (
@@ -507,11 +522,7 @@ scenario_parameters_mapping_data AS (
         ),
         '{}'::jsonb
     ) as parameter_mapping
-    FROM scenario_fields sf
-    JOIN fields f ON f.id = sf.field_id
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
-    JOIN parameters p ON p.id = fp.parameter_id
-    WHERE sf.scenario_id = $1 AND sf.active = true AND p.active = true
+    FROM linked_scenario_parameters p
 ),
 enhanced_parameter_mapping_data AS (
     SELECT 
@@ -833,7 +844,9 @@ SELECT
     COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history,
     COALESCE((SELECT scenario_images FROM scenario_images_data), '[]'::jsonb) as scenario_images,
     sc.scenario_agent_id,
-    sc.image_agent_id
+    sc.image_agent_id,
+    COALESCE((SELECT array_agg(parameter_id::text) FROM linked_scenario_parameters), ARRAY[]::text[]) as parameter_ids
+),
 user_departments_for_agents AS (
     SELECT department_id
     FROM resolve_profile_id rpi

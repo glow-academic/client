@@ -109,15 +109,42 @@ user_has_parameter_access AS (
              AND fd.active = true) = 0
     ) as has_access
 ),
+linked_persona_ids AS (
+    SELECT 
+        ARRAY_AGG(pp.persona_id::text ORDER BY pp.created_at) as persona_ids
+    FROM parameter_id_resolved pid
+    JOIN parameter_personas pp ON pp.parameter_id = pid.parameter_id AND pp.active = true
+),
+linked_document_ids AS (
+    SELECT 
+        ARRAY_AGG(pd.document_id::text ORDER BY pd.created_at) as document_ids
+    FROM parameter_id_resolved pid
+    JOIN parameter_documents pd ON pd.parameter_id = pid.parameter_id AND pd.active = true
+),
+linked_scenario_ids AS (
+    SELECT 
+        ARRAY_AGG(sp.scenario_id::text ORDER BY sp.created_at) as scenario_ids
+    FROM parameter_id_resolved pid
+    JOIN scenario_parameters sp ON sp.parameter_id = pid.parameter_id AND sp.active = true
+),
+linked_video_ids AS (
+    SELECT 
+        ARRAY_AGG(vp.video_id::text ORDER BY vp.created_at) as video_ids
+    FROM parameter_id_resolved pid
+    JOIN video_parameters vp ON vp.parameter_id = pid.parameter_id AND vp.active = true
+),
 parameter_data AS (
     SELECT 
         p.name,
         p.description,
         p.numerical,
         p.active,
-        p.document_parameter,
         p.practice_parameter,
         COALESCE(pda.department_ids, NULL) as department_ids,
+        COALESCE(lpi.persona_ids, ARRAY[]::text[]) as persona_ids,
+        COALESCE(ldi.document_ids, ARRAY[]::text[]) as document_ids,
+        COALESCE(lsi.scenario_ids, ARRAY[]::text[]) as scenario_ids,
+        COALESCE(lvi.video_ids, ARRAY[]::text[]) as video_ids,
         CASE 
             WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
             -- Default parameters (no department_ids) are read-only for non-superadmin
@@ -130,6 +157,10 @@ parameter_data AS (
     JOIN parameters p ON p.id = pid.parameter_id
     LEFT JOIN parameter_departments_aggregated pda ON true
     LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
+    LEFT JOIN linked_persona_ids lpi ON true
+    LEFT JOIN linked_document_ids ldi ON true
+    LEFT JOIN linked_scenario_ids lsi ON true
+    LEFT JOIN linked_video_ids lvi ON true
     CROSS JOIN user_profile up
 ),
 fields_with_usage AS (

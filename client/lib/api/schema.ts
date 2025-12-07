@@ -6038,6 +6038,8 @@ export interface components {
             departmentIds?: string[] | null;
             /** Parameteritemids */
             parameterItemIds?: string[] | null;
+            /** Parameterids */
+            parameterIds?: string[] | null;
             /** Profileid */
             profileId: string;
             /** Templateuploadid */
@@ -6338,11 +6340,6 @@ export interface components {
             /** Active */
             active: boolean;
             /**
-             * Document Parameter
-             * @default false
-             */
-            document_parameter: boolean;
-            /**
              * Practice Parameter
              * @default false
              */
@@ -6351,6 +6348,14 @@ export interface components {
             department_ids: string[] | null;
             /** Parameter Items */
             parameter_items: components["schemas"]["ParameterItemCreate"][];
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -6389,6 +6394,8 @@ export interface components {
             text_agent_id: string | null;
             /** Voice Agent Id */
             voice_agent_id: string | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -6725,6 +6732,8 @@ export interface components {
             questions: components["schemas"]["app__api__v3__videos__create__QuestionItem"][];
             /** Parameter Item Ids */
             parameter_item_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
         };
@@ -7531,6 +7540,12 @@ export interface components {
             parameter_item_mapping: {
                 [key: string]: components["schemas"]["ParameterItemMappingItem"];
             };
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+            };
+            /** Linked Parameter Ids */
+            linked_parameter_ids: string[];
             /** Classify Agent Id */
             classify_agent_id: string;
             /** Document Agent Id */
@@ -12876,6 +12891,8 @@ export interface components {
              * @default []
              */
             parameter_item_ids: string[];
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
             /** Classify Agent Id */
             classify_agent_id?: string | null;
             /** Document Agent Id */
@@ -13058,14 +13075,20 @@ export interface components {
             numerical: boolean;
             /** Active */
             active: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
             /** Practice Parameter */
             practice_parameter: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Parameter Items */
             parameter_items: components["schemas"]["ParameterItemCreate"][];
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -13104,6 +13127,8 @@ export interface components {
             text_agent_id: string | null;
             /** Voice Agent Id */
             voice_agent_id: string | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -13477,6 +13502,8 @@ export interface components {
             image_agent_id?: string | null;
             /** Parameter Item Ids */
             parameter_item_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
         };
@@ -14489,6 +14516,20 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+            };
+            /** Linked Parameter Ids */
+            linked_parameter_ids: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids: string[];
+            /** Valid Parameter Item Ids */
+            valid_parameter_item_ids: string[];
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__detail__DebugInfoItem"][];
         };
@@ -14599,6 +14640,18 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+            };
+            /** Valid Parameter Ids */
+            valid_parameter_ids: string[];
+            /** Valid Parameter Item Ids */
+            valid_parameter_item_ids: string[];
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__new__DebugInfoItem"][];
         };
@@ -14987,6 +15040,10 @@ export interface components {
             problem_statement_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__scenarios__detail__ProblemStatementInfo"];
             };
+            /** Scenario Parameter Ids */
+            scenario_parameter_ids: string[];
+            /** Valid Parameter Ids */
+            valid_parameter_ids: string[];
             /** Scenario Agent Id */
             scenario_agent_id: string;
             /** Image Agent Id */
@@ -15147,6 +15204,10 @@ export interface components {
             problem_statement_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__scenarios__new__ProblemStatementInfo"];
             };
+            /** Scenario Parameter Ids */
+            scenario_parameter_ids: string[];
+            /** Valid Parameter Ids */
+            valid_parameter_ids: string[];
         };
         /**
          * ContentItemInRequest
@@ -15654,33 +15715,29 @@ export interface components {
             image_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
+            /** Video Parameter Ids */
+            video_parameter_ids: string[];
+            /** Valid Parameter Ids */
+            valid_parameter_ids: string[];
             /** Persona Ids */
             persona_ids: string[];
             /** Persona Mapping */
             persona_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["PersonaMappingItem"];
             };
             /** Valid Persona Ids */
             valid_persona_ids: string[];
@@ -15798,33 +15855,29 @@ export interface components {
             image_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
+            /** Video Parameter Ids */
+            video_parameter_ids: string[];
+            /** Valid Parameter Ids */
+            valid_parameter_ids: string[];
             /** Persona Ids */
             persona_ids: string[];
             /** Persona Mapping */
             persona_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["PersonaMappingItem"];
             };
             /** Valid Persona Ids */
             valid_persona_ids: string[];
@@ -15955,6 +16008,10 @@ export interface components {
             document_parameter: boolean;
             /** Persona Parameter */
             persona_parameter: boolean;
+            /** Scenario Parameter */
+            scenario_parameter: boolean;
+            /** Video Parameter */
+            video_parameter: boolean;
         };
         /**
          * StandardGroupMappingItem

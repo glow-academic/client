@@ -23,6 +23,7 @@ import type {
 } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -65,6 +66,8 @@ interface FormData {
   icon?: string;
   active?: boolean;
   departmentIds?: string[] | null;
+  parameterIds?: string[] | null;
+  parameterFieldIds?: string[] | null;
 }
 
 export interface PersonaProps {
@@ -96,9 +99,9 @@ export default function Persona({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null,
+        effectiveProfile?.primaryDepartmentId || null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = useMemo(
@@ -114,7 +117,7 @@ export default function Persona({
       active: true,
       departmentIds: defaultDepartmentIds,
     }),
-    [defaultDepartmentIds],
+    [defaultDepartmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,7 +158,7 @@ export default function Persona({
   // Wrapper functions for compatibility (matching original mutate signature with callbacks)
   const createPersona = (
     body: CreatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
   ) => {
     handleCreatePersona(body)
       .then(() => {
@@ -172,7 +175,7 @@ export default function Persona({
 
   const updatePersona = (
     body: UpdatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
   ) => {
     handleUpdatePersona(body)
       .then(() => {
@@ -217,6 +220,15 @@ export default function Persona({
         icon: personaData.icon || "Zap",
         active: personaData.active ?? true,
         departmentIds: deptIds,
+        parameterIds:
+          (
+            personaData as PersonaDetailOut & {
+              linked_parameter_ids?: string[];
+            }
+          ).linked_parameter_ids || [],
+        parameterFieldIds:
+          (personaData as PersonaDetailOut & { parameter_field_ids?: string[] })
+            .parameter_field_ids || [],
       });
     } else if (!isEditMode && personaData) {
       // For create mode, use defaults from the API response
@@ -228,6 +240,8 @@ export default function Persona({
           personaData.text_agent_id || initialFormData.textAgentId || null,
         instructions:
           personaData.instructions || initialFormData.instructions || "",
+        parameterIds: [],
+        parameterFieldIds: [],
       });
     }
   }, [personaData, isEditMode, initialFormData, simulationTypeFromAgents]);
@@ -282,7 +296,7 @@ export default function Persona({
     if (formData.simulationType === "both") {
       if (!formData.textAgentId || !formData.voiceAgentId) {
         toast.error(
-          "Both text and voice agents are required for combined simulation",
+          "Both text and voice agents are required for combined simulation"
         );
         return;
       }
@@ -295,7 +309,7 @@ export default function Persona({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        personaData?.valid_department_ids || [],
+        personaData?.valid_department_ids || []
       );
 
       if (isEditMode) {
@@ -311,6 +325,7 @@ export default function Persona({
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
             department_ids: finalDepartmentIds,
+            parameter_ids: formData.parameterIds || [],
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
           {
@@ -322,7 +337,7 @@ export default function Persona({
               toast.error(`Failed to update persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          },
+          }
         );
       } else {
         createPersona(
@@ -336,6 +351,7 @@ export default function Persona({
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
             department_ids: finalDepartmentIds,
+            parameter_ids: formData.parameterIds || [],
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
           {
@@ -347,12 +363,12 @@ export default function Persona({
               toast.error(`Failed to create persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          },
+          }
         );
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
       );
       setIsSubmitting(false);
     }
@@ -467,6 +483,74 @@ export default function Persona({
                     disabled={isReadonly}
                     multiSelect={true}
                     triggerProps={{ "data-testid": "picker-department" }}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* Required Parameters */}
+            {personaData &&
+            (
+              personaData as PersonaDetailOut & {
+                linked_parameter_ids?: string[];
+              }
+            ).linked_parameter_ids &&
+            (
+              personaData as PersonaDetailOut & {
+                linked_parameter_ids?: string[];
+              }
+            ).linked_parameter_ids!.length > 0 ? (
+              <div className="space-y-4">
+                <Label>Required Parameters</Label>
+                {formData?.parameterFieldIds !== undefined ? (
+                  <ParameterSelector
+                    parameterMapping={
+                      (
+                        personaData as PersonaDetailOut & {
+                          parameter_mapping?: Record<
+                            string,
+                            {
+                              name: string;
+                              description: string;
+                              numerical: boolean;
+                              document_parameter: boolean;
+                              persona_parameter: boolean;
+                            }
+                          >;
+                        }
+                      ).parameter_mapping || {}
+                    }
+                    parameterItemMapping={
+                      (
+                        personaData as PersonaDetailOut & {
+                          parameter_item_mapping?: Record<
+                            string,
+                            {
+                              name: string;
+                              description: string;
+                              parameter_id: string;
+                              parameter_name: string;
+                              value: string;
+                            }
+                          >;
+                        }
+                      ).parameter_item_mapping || {}
+                    }
+                    validParameterItemIds={
+                      (
+                        personaData as PersonaDetailOut & {
+                          valid_parameter_item_ids?: string[];
+                        }
+                      ).valid_parameter_item_ids || []
+                    }
+                    selectedParameterItemIds={formData.parameterFieldIds || []}
+                    onParameterItemIdsChange={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        parameterFieldIds: ids,
+                      }))
+                    }
+                    disabled={isReadonly}
                   />
                 ) : null}
               </div>
@@ -645,7 +729,7 @@ export default function Persona({
                                           "mr-2 h-4 w-4",
                                           formData.icon === iconName
                                             ? "opacity-100"
-                                            : "opacity-0",
+                                            : "opacity-0"
                                         )}
                                       />
                                       <IconComponent className="mr-2 h-4 w-4" />
@@ -683,14 +767,14 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0",
+                                          : "opacity-0"
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
                                     {iconName}
                                   </CommandItem>
                                 );
-                              },
+                              }
                             )}
                           </CommandGroup>
                         </CommandList>
@@ -731,7 +815,7 @@ export default function Persona({
                     "rounded-lg border-2 transition-colors",
                     formData?.simulationType === "text"
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50",
+                      : "border-border hover:border-primary/50"
                   )}
                 >
                   <RadioGroupItem value="text" className="sr-only" />
@@ -748,7 +832,7 @@ export default function Persona({
                     "rounded-lg border-2 transition-colors",
                     formData?.simulationType === "voice"
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50",
+                      : "border-border hover:border-primary/50"
                   )}
                 >
                   <RadioGroupItem value="voice" className="sr-only" />
@@ -765,7 +849,7 @@ export default function Persona({
                     "rounded-lg border-2 transition-colors",
                     formData?.simulationType === "both"
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50",
+                      : "border-border hover:border-primary/50"
                   )}
                 >
                   <RadioGroupItem value="both" className="sr-only" />

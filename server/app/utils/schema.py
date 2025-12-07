@@ -69,6 +69,8 @@ class ParameterMappingItem(MappingItem):
     numerical: bool
     document_parameter: bool
     persona_parameter: bool
+    scenario_parameter: bool
+    video_parameter: bool
 
 
 class ParameterItemMappingItem(MappingItem):

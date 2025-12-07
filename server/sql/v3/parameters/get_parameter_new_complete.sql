@@ -81,13 +81,70 @@ parameter_departments_aggregated AS (
         WHERE fp.active = true
     ) combined_depts
 ),
+available_personas_mapping AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            per.id::text,
+            jsonb_build_object(
+                'name', per.name,
+                'description', per.description
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping,
+    array_agg(per.id::text ORDER BY per.name) as ids
+    FROM personas per
+    WHERE per.active = true
+),
+available_documents_mapping AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            d.id::text,
+            jsonb_build_object(
+                'name', d.name,
+                'description', d.description
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping,
+    array_agg(d.id::text ORDER BY d.name) as ids
+    FROM documents d
+    WHERE d.active = true
+),
+available_scenarios_mapping AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            s.id::text,
+            jsonb_build_object(
+                'name', s.name
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping,
+    array_agg(s.id::text ORDER BY s.name) as ids
+    FROM scenarios s
+    WHERE s.active = true
+),
+available_videos_mapping AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            v.id::text,
+            jsonb_build_object(
+                'name', v.name
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping,
+    array_agg(v.id::text ORDER BY v.name) as ids
+    FROM videos v
+    WHERE v.active = true
+),
 parameter_data AS (
     SELECT 
         p.name,
         p.description,
         p.numerical,
         p.active,
-        p.document_parameter,
         p.practice_parameter,
         COALESCE(pda.department_ids, NULL) as department_ids
     FROM parameters p
@@ -166,9 +223,21 @@ SELECT
     ij.items as parameter_items_json,
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
-    pdi.department_id as primary_department_id
+    pdi.department_id as primary_department_id,
+    apm.mapping as persona_mapping,
+    apm.ids as valid_persona_ids,
+    adm.mapping as document_mapping,
+    adm.ids as valid_document_ids,
+    asm.mapping as scenario_mapping,
+    asm.ids as valid_scenario_ids,
+    avm.mapping as video_mapping,
+    avm.ids as valid_video_ids
 FROM parameter_data p
 CROSS JOIN items_json ij
 CROSS JOIN valid_depts vd
 LEFT JOIN primary_department_id pdi ON true
+CROSS JOIN available_personas_mapping apm
+CROSS JOIN available_documents_mapping adm
+CROSS JOIN available_scenarios_mapping asm
+CROSS JOIN available_videos_mapping avm
 

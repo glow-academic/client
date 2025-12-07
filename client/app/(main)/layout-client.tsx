@@ -249,6 +249,15 @@ function MainLayoutContent({
       );
     }
 
+    if (pathname === "/system/providers") {
+      return (
+        <Button onClick={() => router.push("/system/providers/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Provider
+        </Button>
+      );
+    }
+
     if (pathname === "/create/scenarios") {
       return (
         <Button onClick={() => router.push("/create/scenarios/new")} size="sm">

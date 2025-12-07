@@ -45,6 +45,7 @@ class CreateVideoRequest(BaseModel):
     active: bool = True
     questions: list[QuestionItem] = []  # Questions with times and options
     parameter_item_ids: list[str] | None = None  # Parameter items for video
+    parameter_ids: list[str] | None = None  # Parameters for video
     persona_ids: list[str] | None = None  # Personas for video
 
 
@@ -85,6 +86,7 @@ async def create_video(
         image_names = request.image_names or []
         questions = request.questions or []
         parameter_item_ids = request.parameter_item_ids or []
+        parameter_ids = request.parameter_ids or []
         persona_ids = request.persona_ids or []
 
         # Validate upload_ids and image_names match in length
@@ -113,6 +115,7 @@ async def create_video(
             questions_json,
             parameter_item_ids if parameter_item_ids else None,
             persona_ids if persona_ids else None,
+            parameter_ids if parameter_ids else None,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

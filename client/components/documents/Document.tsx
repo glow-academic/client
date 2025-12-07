@@ -26,6 +26,7 @@ import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
+import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { TemplatePicker } from "@/components/common/forms/TemplatePicker";
 import TemplateForm, {
   type TemplateSchema,
@@ -145,6 +146,7 @@ export default function Document({
     active: boolean;
     departmentIds: string[];
     parameterItemIds: string[];
+    parameterIds: string[];
     classifyAgentId: string | null;
     documentAgentId: string | null;
   }>({
@@ -153,6 +155,7 @@ export default function Document({
     active: true,
     departmentIds: [],
     parameterItemIds: [],
+    parameterIds: [],
     classifyAgentId: null,
     documentAgentId: null,
   });
@@ -342,6 +345,7 @@ export default function Document({
         active: documentDetail.active ?? true,
         departmentIds: documentDetail.department_ids || [],
         parameterItemIds: documentDetail.parameter_item_ids || [],
+        parameterIds: (documentDetail as any).linked_parameter_ids || [],
         classifyAgentId: documentDetail.classify_agent_id || null,
         documentAgentId: documentDetail.document_agent_id || null,
       });
@@ -870,6 +874,7 @@ export default function Document({
                 uploadId: databaseUploadId,
                 departmentIds: finalDepartmentIds,
                 parameterItemIds: finalParameterItemIds,
+                parameterIds: formData.parameterIds || [],
                 profileId: effectiveProfile?.id || "",
               } as CreateDocumentBody,
             });
@@ -1181,6 +1186,7 @@ export default function Document({
           uploadId: null,
           departmentIds: finalDepartmentIds,
           parameterItemIds: [],
+          parameterIds: formData.parameterIds || [],
           profileId: effectiveProfile.id,
           templateUploadId: templateUploadId,
           // TemplateSchema is a structured object that needs to be sent as Record<string, unknown>
@@ -1228,6 +1234,7 @@ export default function Document({
               ? (formData.departmentIds[0] ?? null)
               : null,
           parameter_item_ids: formData.parameterItemIds,
+          parameter_ids: formData.parameterIds,
           classify_agent_id: formData.classifyAgentId ?? null,
           document_agent_id: formData.documentAgentId ?? null,
           templateUploadId:
@@ -1683,6 +1690,35 @@ export default function Document({
                 multiSelect={true}
                 disabled={isSubmitting}
               />
+            </div>
+
+            {/* Required Parameters */}
+            {isEditMode &&
+            documentDetail &&
+            (documentDetail as any).linked_parameter_ids &&
+            (documentDetail as any).linked_parameter_ids.length > 0 ? (
+              <div className="space-y-4">
+                <Label>Required Parameters</Label>
+                {formData?.parameterItemIds !== undefined ? (
+                  <ParameterSelector
+                    parameterMapping={(documentDetail as any).parameter_mapping || {}}
+                    parameterItemMapping={parameterItemMapping}
+                    validParameterItemIds={documentDetail.valid_parameter_item_ids || []}
+                    selectedParameterItemIds={formData.parameterItemIds}
+                    onParameterItemIdsChange={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        parameterItemIds: ids,
+                      }))
+                    }
+                    disabled={isSubmitting}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
+            {!isEditMode ? (
+              <div className="space-y-2">
             </div>
           )}
 

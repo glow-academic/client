@@ -84,7 +84,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     ),
     SectionPermission(
         section="analytics",
-        roles=["instructional", "admin", "superadmin"],
+        roles=["ta", "instructional", "admin", "superadmin"],
         title="Analytics",
         description="Analytics and reporting tools",
         routes=[
@@ -108,7 +108,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
             ),
             RoutePermission(
                 path="/analytics/leaderboard",
-                roles=["instructional", "admin", "superadmin"],
+                roles=["ta", "instructional", "admin", "superadmin"],
                 title="Leaderboard",
                 redirectTo="/analytics/leaderboard",
             ),
@@ -410,7 +410,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 path="/system",
                 roles=["superadmin"],
                 title="System Overview",
-                redirectTo="/system/keys",
+                redirectTo="/system/providers",
             ),
             RoutePermission(
                 path="/system/keys",
@@ -447,6 +447,24 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["superadmin"],
                 title="Settings",
                 redirectTo="/system/settings",
+            ),
+            RoutePermission(
+                path="/system/providers",
+                roles=["superadmin"],
+                title="Providers",
+                redirectTo="/system/providers",
+            ),
+            RoutePermission(
+                path="/system/providers/new",
+                roles=["superadmin"],
+                title="Create Provider",
+                redirectTo="/system/providers",
+            ),
+            RoutePermission(
+                path="/system/providers/p/[providerId]",
+                roles=["superadmin"],
+                title="Edit Provider",
+                redirectTo="/system/providers",
             ),
         ],
     ),

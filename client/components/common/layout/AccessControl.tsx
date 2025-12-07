@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
+import { hasRouteAccess } from "@/utils/route-permissions";
 import { AlertTriangle, Home, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -23,18 +24,8 @@ interface AccessControlProps {
   pathname: string;
 }
 
-/**
- * Helper to extract the top-level section from a pathname
- * e.g., "/analytics/dashboard" -> "analytics"
- */
-const extractSection = (pathname: string): string => {
-  const parts = pathname.split("/").filter(Boolean);
-  return parts[0] || "";
-};
-
 export function AccessControl({ children, pathname }: AccessControlProps) {
-  const { effectiveProfile, isLoading, availableSections, redirectPath } =
-    useProfile();
+  const { effectiveProfile, isLoading, redirectPath } = useProfile();
   const [showAccessDenied, setShowAccessDenied] = React.useState(false);
 
   // Add a small delay to prevent flickering access denied screens during profile transitions
@@ -47,9 +38,15 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
 
     // Small delay to prevent flickering during profile transitions
     const timer = setTimeout(() => {
-      // Use server-provided permissions (authoritative source)
-      const currentSection = extractSection(pathname);
-      const hasAccess = availableSections.includes(currentSection);
+      // Use route permissions check (more accurate than section check)
+      // This handles cases like TA accessing /analytics/leaderboard
+      const role = effectiveProfile.role as
+        | "guest"
+        | "ta"
+        | "instructional"
+        | "admin"
+        | "superadmin";
+      const hasAccess = hasRouteAccess(pathname, role);
 
       if (!hasAccess) {
         setShowAccessDenied(true);
@@ -59,7 +56,7 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [effectiveProfile, pathname, isLoading, availableSections]);
+  }, [effectiveProfile, pathname, isLoading]);
 
   // If still loading, show loading state instead of access denied
   // Also show loading if we don't have a profile yet (prevents premature access denied)

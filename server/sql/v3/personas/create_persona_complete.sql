@@ -1,5 +1,5 @@
 -- Create persona with agents and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=active, $4=color, $5=icon, $6=instructions, $7=text_agent_id (nullable), $8=voice_agent_id (nullable), $9=department_ids (nullable text array), $10=profile_id (uuid or "guest-profile-id")
+-- Parameters: $1=name, $2=description, $3=active, $4=color, $5=icon, $6=instructions, $7=text_agent_id (nullable), $8=voice_agent_id (nullable), $9=department_ids (nullable text array), $10=profile_id (uuid or "guest-profile-id"), $11=parameter_ids (nullable text array)
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -78,6 +78,56 @@ link_departments AS (
     WHERE COALESCE(array_length($9::text[], 1), 0) > 0
     ON CONFLICT (persona_id, department_id) DO UPDATE SET
         active = true,
+        updated_at = NOW()
+),
+link_parameters AS (
+    -- Link parameters if provided (array is never NULL, but may be empty)
+    INSERT INTO parameter_personas (parameter_id, persona_id, active, created_at, updated_at)
+    SELECT 
+        param_id::uuid,
+        np.persona_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_persona np
+    CROSS JOIN UNNEST($11::text[]) as param_id
+    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
+    ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+backfill_persona_fields AS (
+    -- Backfill persona_fields for linked parameters (pick first field if none exists)
+    -- Only runs if persona_fields table exists
+    INSERT INTO persona_fields (persona_id, field_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        pp.persona_id,
+        fp.field_id,
+        TRUE,
+        NOW(),
+        NOW()
+    FROM parameter_personas pp
+    JOIN field_parameters fp ON fp.parameter_id = pp.parameter_id AND fp.active = TRUE
+    CROSS JOIN new_persona np
+    WHERE pp.persona_id = np.persona_id::uuid
+    AND pp.active = TRUE
+    AND NOT EXISTS (
+        SELECT 1 FROM persona_fields pf
+        WHERE pf.persona_id = pp.persona_id
+        AND pf.field_id = fp.field_id
+        AND pf.active = TRUE
+    )
+    AND fp.field_id = (
+        SELECT fp2.field_id
+        FROM field_parameters fp2
+        WHERE fp2.parameter_id = pp.parameter_id
+        AND fp2.active = TRUE
+        ORDER BY fp2.created_at ASC
+        LIMIT 1
+    )
+    AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'persona_fields')
+    ON CONFLICT (persona_id, field_id) DO UPDATE SET
+        active = TRUE,
         updated_at = NOW()
 )
 SELECT persona_id FROM new_persona

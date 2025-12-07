@@ -211,13 +211,13 @@ parameter_data AS (
         p.name,
         COALESCE(p.description, '') as description,
         p.numerical,
-        p.document_parameter,
-        p.persona_parameter
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters p
     JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
+    GROUP BY p.id, p.name, p.description, p.numerical
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 

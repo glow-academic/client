@@ -49,16 +49,20 @@ parameter_all_scenario_links AS (
     WHERE fp.active = true
     GROUP BY fp.parameter_id
 ),
-parameter_scenarios AS (
+scenario_parameters_data AS (
     SELECT 
-        fp.parameter_id,
+        sp.parameter_id,
         ARRAY_AGG(DISTINCT st.parent_id::text ORDER BY st.parent_id::text) as scenario_ids,
         COUNT(DISTINCT st.parent_id) as num_scenarios
-    FROM field_parameters fp
-    JOIN scenario_fields sf ON sf.field_id = fp.field_id
-    JOIN scenario_tree st ON st.child_id = sf.scenario_id AND st.parent_id = st.child_id
-    WHERE fp.active = true AND sf.active = true
-    GROUP BY fp.parameter_id
+    FROM scenario_parameters sp
+    JOIN scenarios s ON s.id = sp.scenario_id
+    JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id = st.child_id
+    WHERE sp.active = true AND s.active = true
+    GROUP BY sp.parameter_id
+),
+parameter_scenarios AS (
+    -- Legacy CTE name for compatibility, uses new scenario_parameters table
+    SELECT * FROM scenario_parameters_data
 ),
 parameter_item_counts AS (
     SELECT 
@@ -216,7 +220,7 @@ SELECT
     p.updated_at,
     COALESCE(pidd.department_ids, NULL) as department_ids,
     COALESCE(pic.num_items, 0) as num_items,
-    COALESCE(ps.scenario_ids, ARRAY[]::text[]) as scenario_ids,
+    COALESCE(spd.scenario_ids, ARRAY[]::text[]) as scenario_ids,
     COALESCE(pd.document_ids, ARRAY[]::text[]) as document_ids,
     COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
     COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
@@ -242,6 +246,7 @@ FROM parameters p
 LEFT JOIN parameter_item_departments_for_filter pidf ON pidf.parameter_id = p.id
 LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_id = p.id
 LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
+LEFT JOIN scenario_parameters_data spd ON spd.parameter_id = p.id
 LEFT JOIN parameter_scenarios ps ON ps.parameter_id = p.id
 LEFT JOIN parameter_documents pd ON pd.parameter_id = p.id
 LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id

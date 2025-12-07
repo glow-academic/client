@@ -10,7 +10,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem)
+                              DepartmentMapping, DepartmentMappingItem,
+                              ParameterItemMapping, ParameterMapping)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -61,6 +62,12 @@ class PersonaDetailResponse(BaseModel):
     # Mappings
     agent_mapping: AgentMapping
     department_mapping: DepartmentMapping
+    parameter_mapping: ParameterMapping
+    parameter_item_mapping: ParameterItemMapping
+
+    # Parameter fields
+    valid_parameter_ids: list[str]
+    valid_parameter_item_ids: list[str]
 
     # Debug info
     debug_info: list[DebugInfoItem]
@@ -170,6 +177,51 @@ async def get_persona_new(
                         roles=roles,
                     )
 
+        # Parse parameter mapping
+        parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
+        parameter_mapping: ParameterMapping = {}
+        if isinstance(parameter_mapping_data, dict):
+            for param_id, pdata in parameter_mapping_data.items():
+                if isinstance(pdata, dict):
+                    from app.utils.schema import ParameterMappingItem
+                    parameter_mapping[param_id] = ParameterMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                        numerical=pdata.get("numerical", False),
+                        document_parameter=pdata.get("document_parameter", False),
+                        persona_parameter=pdata.get("persona_parameter", False),
+                        scenario_parameter=pdata.get("scenario_parameter", False),
+                        video_parameter=pdata.get("video_parameter", False),
+                    )
+
+        # Parse parameter item mapping
+        parameter_item_mapping_data = parse_jsonb(result.get("parameter_item_mapping"))
+        parameter_item_mapping: ParameterItemMapping = {}
+        if isinstance(parameter_item_mapping_data, dict):
+            for item_id, idata in parameter_item_mapping_data.items():
+                if isinstance(idata, dict):
+                    from app.utils.schema import ParameterItemMappingItem
+                    parameter_item_mapping[item_id] = ParameterItemMappingItem(
+                        name=idata.get("name", ""),
+                        description=idata.get("description", ""),
+                        parameter_id=idata.get("parameter_id", ""),
+                        parameter_name=idata.get("parameter_name", ""),
+                        value=idata.get("value", ""),
+                    )
+
+        # Parse parameter arrays
+        valid_parameter_ids = result.get("valid_parameter_ids", [])
+        if valid_parameter_ids:
+            valid_parameter_ids = [str(p) for p in valid_parameter_ids]
+        else:
+            valid_parameter_ids = []
+
+        valid_parameter_item_ids = result.get("valid_parameter_item_ids", [])
+        if valid_parameter_item_ids:
+            valid_parameter_item_ids = [str(i) for i in valid_parameter_item_ids]
+        else:
+            valid_parameter_item_ids = []
+
         # Hardcoded metadata
         preset_colors = [
             "#EF4444",
@@ -253,6 +305,11 @@ async def get_persona_new(
             # Mappings
             agent_mapping=agent_mapping,
             department_mapping=department_mapping,
+            parameter_mapping=parameter_mapping,
+            parameter_item_mapping=parameter_item_mapping,
+            # Parameter fields
+            valid_parameter_ids=valid_parameter_ids,
+            valid_parameter_item_ids=valid_parameter_item_ids,
             # Debug info
             debug_info=debug_info,
         )

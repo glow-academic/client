@@ -345,20 +345,6 @@ export default function Providers({
 
   return (
     <div className="space-y-6" data-page="providers-index">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Providers</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage AI providers and their configurations
-          </p>
-        </div>
-        <Button onClick={handleCreateNew} data-testid="btn-create-provider">
-          <Plus className="mr-2 h-4 w-4" />
-          Create Provider
-        </Button>
-      </div>
-
       {/* Toolbar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
         <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">

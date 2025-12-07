@@ -9,7 +9,10 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import DepartmentMapping, DepartmentMappingItem
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              ParameterItemMapping, ParameterMapping,
+                              PersonaMapping, PersonaMappingItem)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -78,13 +81,15 @@ class VideoDetailResponse(BaseModel):
     questions: list[QuestionResponse]
     outline_agent_id: str
     image_agent_id: str
-    agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format
+    agent_mapping: AgentMapping
     valid_agent_ids: list[str]
-    parameter_mapping: dict[str, dict[str, Any]]
-    parameter_item_mapping: dict[str, dict[str, Any]]
+    parameter_mapping: ParameterMapping
+    parameter_item_mapping: ParameterItemMapping
     parameter_item_ids: list[str]
+    video_parameter_ids: list[str]
+    valid_parameter_ids: list[str]
     persona_ids: list[str]
-    persona_mapping: dict[str, dict[str, Any]]
+    persona_mapping: PersonaMapping
     valid_persona_ids: list[str]
 
 
@@ -303,7 +308,7 @@ async def get_video_detail(
             objectives_history = []
 
         # Parse agent_mapping
-        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping: AgentMapping = {}
         agent_mapping_data = parse_jsonb(video.get("agent_mapping"))
         if isinstance(agent_mapping_data, dict):
             for agent_id, adata in agent_mapping_data.items():
@@ -316,47 +321,47 @@ async def get_video_detail(
                             roles = []
                     if not isinstance(roles, list):
                         roles = []
-                    agent_mapping[agent_id] = {
-                        "name": adata.get("name", ""),
-                        "description": adata.get("description", ""),
-                        "roles": [str(r) for r in roles],
-                    }
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=adata.get("name", ""),
+                        description=adata.get("description", ""),
+                        roles=[str(r) for r in roles],
+                    )
 
         valid_agent_ids = [
             str(aid) for aid in (video.get("valid_agent_ids") or [])
         ]
 
         # Parse parameter_mapping from JSONB
+        from app.utils.schema import ParameterMapping, ParameterMappingItem
         parameter_mapping_data = parse_jsonb(video.get("parameter_mapping"))
-        parameter_mapping: dict[str, dict[str, Any]] = {}
+        parameter_mapping: ParameterMapping = {}
         if isinstance(parameter_mapping_data, dict):
-            parameter_mapping = {
-                k: {
-                    "name": v.get("name", ""),
-                    "description": v.get("description", ""),
-                    "numerical": bool(v.get("numerical", False)),
-                    "document_parameter": bool(v.get("document_parameter", False)),
-                    "video_parameter": bool(v.get("video_parameter", False)),
-                }
-                for k, v in parameter_mapping_data.items()
-                if isinstance(v, dict)
-            }
+            for param_id, pdata in parameter_mapping_data.items():
+                if isinstance(pdata, dict):
+                    parameter_mapping[param_id] = ParameterMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                        numerical=pdata.get("numerical", False),
+                        document_parameter=pdata.get("document_parameter", False),
+                        persona_parameter=pdata.get("persona_parameter", False),
+                        scenario_parameter=pdata.get("scenario_parameter", False),
+                        video_parameter=pdata.get("video_parameter", False),
+                    )
 
         # Parse parameter_item_mapping from JSONB
+        from app.utils.schema import ParameterItemMappingItem
         parameter_item_mapping_data = parse_jsonb(video.get("parameter_item_mapping"))
-        parameter_item_mapping: dict[str, dict[str, Any]] = {}
+        parameter_item_mapping: ParameterItemMapping = {}
         if isinstance(parameter_item_mapping_data, dict):
-            parameter_item_mapping = {
-                k: {
-                    "name": v.get("name", ""),
-                    "description": v.get("description", ""),
-                    "parameter_id": str(v.get("parameter_id", "")),
-                    "parameter_name": v.get("parameter_name", ""),
-                    "value": v.get("value"),
-                }
-                for k, v in parameter_item_mapping_data.items()
-                if isinstance(v, dict)
-            }
+            for item_id, idata in parameter_item_mapping_data.items():
+                if isinstance(idata, dict):
+                    parameter_item_mapping[item_id] = ParameterItemMappingItem(
+                        name=idata.get("name", ""),
+                        description=idata.get("description", ""),
+                        parameter_id=idata.get("parameter_id", ""),
+                        parameter_name=idata.get("parameter_name", ""),
+                        value=idata.get("value", ""),
+                    )
 
         # Parse parameter_item_ids
         parameter_item_ids = video.get("parameter_item_ids") or []
@@ -372,25 +377,32 @@ async def get_video_detail(
 
         # Parse persona_mapping from JSONB
         persona_mapping_data = parse_jsonb(video.get("persona_mapping"))
-        persona_mapping: dict[str, dict[str, Any]] = {}
+        persona_mapping: PersonaMapping = {}
         if isinstance(persona_mapping_data, dict):
-            persona_mapping = {
-                k: {
-                    "name": v.get("name", ""),
-                    "description": v.get("description", ""),
-                    "color": v.get("color", ""),
-                    "icon": v.get("icon", ""),
-                    "image_model": bool(v.get("image_model", False)),
-                }
-                for k, v in persona_mapping_data.items()
-                if isinstance(v, dict)
-            }
+            for persona_id, pdata in persona_mapping_data.items():
+                if isinstance(pdata, dict):
+                    persona_mapping[persona_id] = PersonaMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                        color=pdata.get("color", ""),
+                        icon=pdata.get("icon", ""),
+                        image_model=pdata.get("image_model", False),
+                    )
 
         # Parse valid_persona_ids
         valid_persona_ids = video.get("valid_persona_ids") or []
         if not isinstance(valid_persona_ids, list):
             valid_persona_ids = []
         valid_persona_ids = [str(pid) for pid in valid_persona_ids]
+
+        # Parse video_parameter_ids and valid_parameter_ids
+        video_parameter_ids = video.get("parameter_ids") or []
+        if not isinstance(video_parameter_ids, list):
+            video_parameter_ids = []
+        video_parameter_ids = [str(pid) for pid in video_parameter_ids]
+
+        # valid_parameter_ids are all keys in parameter_mapping
+        valid_parameter_ids = list(parameter_mapping.keys())
 
         # Extract upload_id and convert to string if present
         upload_id_raw = video.get("upload_id")
@@ -432,6 +444,8 @@ async def get_video_detail(
             parameter_mapping=parameter_mapping,
             parameter_item_mapping=parameter_item_mapping,
             parameter_item_ids=parameter_item_ids,
+            video_parameter_ids=video_parameter_ids,
+            valid_parameter_ids=valid_parameter_ids,
             persona_ids=persona_ids,
             persona_mapping=persona_mapping,
             valid_persona_ids=valid_persona_ids,

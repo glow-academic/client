@@ -8,6 +8,7 @@
 --   $6 = field_ids (uuid[])
 --   $7 = template_upload_id (uuid, nullable - for template HTML)
 --   $8 = template_args (jsonb, nullable - template schema)
+--   $9 = parameter_ids (text array, nullable)
 -- Returns: document_id (text)
 
 WITH insert_doc AS (
@@ -103,5 +104,51 @@ insert_fields AS (
     FROM unnest($6::uuid[]) as field_id
     WHERE cardinality($6::uuid[]) > 0
     RETURNING document_id
+),
+link_parameters AS (
+    -- Link parameters if provided (array is never NULL, but may be empty)
+    INSERT INTO parameter_documents (parameter_id, document_id, active, created_at, updated_at)
+    SELECT 
+        param_id::uuid,
+        $1,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($9::text[]) as param_id
+    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
+    ON CONFLICT (parameter_id, document_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+backfill_document_fields AS (
+    -- Backfill document_fields for linked parameters (pick first field if none exists)
+    INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        pd.document_id,
+        fp.field_id,
+        TRUE,
+        NOW(),
+        NOW()
+    FROM parameter_documents pd
+    JOIN field_parameters fp ON fp.parameter_id = pd.parameter_id AND fp.active = TRUE
+    WHERE pd.document_id = $1
+    AND pd.active = TRUE
+    AND NOT EXISTS (
+        SELECT 1 FROM document_fields df
+        WHERE df.document_id = pd.document_id
+        AND df.field_id = fp.field_id
+        AND df.active = TRUE
+    )
+    AND fp.field_id = (
+        SELECT fp2.field_id
+        FROM field_parameters fp2
+        WHERE fp2.parameter_id = pd.parameter_id
+        AND fp2.active = TRUE
+        ORDER BY fp2.created_at ASC
+        LIMIT 1
+    )
+    ON CONFLICT (document_id, field_id) DO UPDATE SET
+        active = TRUE,
+        updated_at = NOW()
 )
 SELECT $1::text as document_id
