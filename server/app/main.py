@@ -443,7 +443,8 @@ from app.socket.voice import start_voice  # noqa: E402; type: ignore
 from app.socket.voice import (stop_voice, voice_debug_info, voice_interrupted,
                               voice_response_done, voice_speech_started,
                               voice_tool_call_delta, voice_tool_call_done,
-                              voice_transcript_ready, voice_user_message)
+                              voice_transcript_delta, voice_transcript_ready,
+                              voice_user_message)
 
 
 # Create a combined lifespan to manage both session managers
@@ -888,6 +889,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             voice_interrupted,
             voice_response_done,
             voice_speech_started,
+            voice_transcript_delta,
             voice_transcript_ready,
             voice_user_message,
             # AI generation events
@@ -937,6 +939,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.voice.stop_voice import (stop_voice_error,
                                                  stop_voice_response)
         from app.socket.voice.tool_call_delta import voice_tool_call_error
+        from app.socket.voice.transcript_delta import \
+            voice_transcript_delta_emit
         from app.socket.voice.transcript_ready import \
             voice_transcript_ready_emit
         from app.socket.voice.user_message import voice_user_message_error
@@ -987,6 +991,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             stop_voice_error,
             voice_speech_started_emit,
             voice_tool_call_error,
+            voice_transcript_delta_emit,
             voice_transcript_ready_emit,
             voice_user_message_error,
         ]

@@ -10,6 +10,8 @@ from app.socket.voice.stop_voice import stop_voice  # noqa: F401
 from app.socket.voice.tool_call_delta import \
     voice_tool_call_delta  # noqa: F401
 from app.socket.voice.tool_call_done import voice_tool_call_done  # noqa: F401
+from app.socket.voice.transcript_delta import \
+    voice_transcript_delta  # noqa: F401
 from app.socket.voice.transcript_ready import \
     voice_transcript_ready  # noqa: F401
 from app.socket.voice.user_message import voice_user_message  # noqa: F401
@@ -23,6 +25,7 @@ __all__ = [
     "voice_speech_started",
     "voice_tool_call_delta",
     "voice_tool_call_done",
+    "voice_transcript_delta",
     "voice_transcript_ready",
     "voice_user_message",
 ]

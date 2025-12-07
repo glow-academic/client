@@ -129,6 +129,8 @@ export default function AttemptMessages({
   const prevChatIdRef = useRef<string | null>(null);
   // Track item_id -> optimistic_message_id mapping for voice mode
   const itemIdToOptimisticIdRef = useRef<Map<string, string>>(new Map());
+  // Track transcript deltas accumulation per item_id (using ref to avoid state sync issues)
+  const transcriptDeltasRef = useRef<Map<string, string>>(new Map());
   const targetChatId = chatId || currentChat?.id;
 
   // Create persona lookup map for efficient persona lookup by ID
@@ -375,6 +377,7 @@ export default function AttemptMessages({
       // Chat actually changed, clear optimistic state
       setStreamingContent(new Map());
       setOptimisticMessages(new Map());
+      transcriptDeltasRef.current.clear(); // Clear transcript deltas
       itemIdToOptimisticIdRef.current = new Map(); // Reset item_id mapping
     }
     prevChatIdRef.current = currentChatId;
@@ -499,17 +502,23 @@ export default function AttemptMessages({
               }
             }
 
-            // Clean up item_id mapping if we found a match
+            // Clean up item_id mapping and delta state if we found a match
             if (foundMatch && matchedOptimisticId) {
               // Find and remove the item_id mapping for this optimistic message
+              let matchedItemId: string | null = null;
               for (const [
                 itemId,
                 optId,
               ] of itemIdToOptimisticIdRef.current.entries()) {
                 if (optId === matchedOptimisticId) {
+                  matchedItemId = itemId;
                   itemIdToOptimisticIdRef.current.delete(itemId);
                   break;
                 }
+              }
+              // Clear delta state for the matched item_id
+              if (matchedItemId) {
+                transcriptDeltasRef.current.delete(matchedItemId);
               }
             }
 
@@ -545,16 +554,22 @@ export default function AttemptMessages({
                 }
               }
 
-              // Clean up item_id mapping if we found a fallback match
+              // Clean up item_id mapping and delta state if we found a fallback match
               if (foundMatch && matchedOptimisticId) {
+                let matchedItemId: string | null = null;
                 for (const [
                   itemId,
                   optId,
                 ] of itemIdToOptimisticIdRef.current.entries()) {
                   if (optId === matchedOptimisticId) {
+                    matchedItemId = itemId;
                     itemIdToOptimisticIdRef.current.delete(itemId);
                     break;
                   }
+                }
+                // Clear delta state for the matched item_id
+                if (matchedItemId) {
+                  transcriptDeltasRef.current.delete(matchedItemId);
                 }
               }
             }
@@ -583,16 +598,22 @@ export default function AttemptMessages({
                 }
               }
 
-              // Clean up item_id mapping for last resort match
+              // Clean up item_id mapping and delta state for last resort match
               if (foundMatch && matchedOptimisticId) {
+                let matchedItemId: string | null = null;
                 for (const [
                   itemId,
                   optId,
                 ] of itemIdToOptimisticIdRef.current.entries()) {
                   if (optId === matchedOptimisticId) {
+                    matchedItemId = itemId;
                     itemIdToOptimisticIdRef.current.delete(itemId);
                     break;
                   }
+                }
+                // Clear delta state for the matched item_id
+                if (matchedItemId) {
+                  transcriptDeltasRef.current.delete(matchedItemId);
                 }
               }
             }
@@ -679,10 +700,11 @@ export default function AttemptMessages({
       }
     };
 
-    const handleVoiceTranscriptReady = (data: {
+    const handleVoiceTranscriptDelta = (data: {
       chat_id: string;
       item_id: string;
-      transcript: string;
+      delta: string;
+      content_index: number;
     }) => {
       if (data.chat_id === targetChatId) {
         // Look up optimistic message ID by item_id
@@ -691,7 +713,50 @@ export default function AttemptMessages({
         );
 
         if (optimisticMessageId) {
-          // Update optimistic message with transcript
+          // Accumulate delta text in ref
+          const currentAccumulated =
+            transcriptDeltasRef.current.get(data.item_id) || "";
+          const newAccumulated = currentAccumulated + data.delta;
+          transcriptDeltasRef.current.set(data.item_id, newAccumulated);
+
+          // Update optimistic message with accumulated deltas
+          setOptimisticMessages((prev) => {
+            const newMap = new Map(prev);
+            const existingMessage = newMap.get(optimisticMessageId);
+            if (existingMessage) {
+              newMap.set(optimisticMessageId, {
+                ...existingMessage,
+                content: newAccumulated,
+              });
+            }
+            return newMap;
+          });
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[Voice] No optimistic message found for item_id in delta:",
+            data.item_id
+          );
+        }
+      }
+    };
+
+    const handleVoiceTranscriptReady = (data: {
+      chat_id: string;
+      item_id: string;
+      transcript: string;
+    }) => {
+      if (data.chat_id === targetChatId) {
+        // Clear delta state for this item_id (final transcript overrides accumulated deltas)
+        transcriptDeltasRef.current.delete(data.item_id);
+
+        // Look up optimistic message ID by item_id
+        const optimisticMessageId = itemIdToOptimisticIdRef.current.get(
+          data.item_id
+        );
+
+        if (optimisticMessageId) {
+          // Update optimistic message with final transcript (overrides accumulated deltas)
           setOptimisticMessages((prev) => {
             const newMap = new Map(prev);
             const existingMessage = newMap.get(optimisticMessageId);
@@ -703,7 +768,7 @@ export default function AttemptMessages({
               });
               // eslint-disable-next-line no-console
               console.log(
-                "[Voice] Updated optimistic message with transcript:",
+                "[Voice] Updated optimistic message with final transcript:",
                 {
                   optimistic_message_id: optimisticMessageId,
                   item_id: data.item_id,
@@ -730,6 +795,7 @@ export default function AttemptMessages({
     socket.on("simulation_message_complete", handleSimulationMessageComplete);
     socket.on("simulation_new_message", handleSimulationNewMessage);
     socket.on("voice_speech_started", handleVoiceSpeechStarted);
+    socket.on("voice_transcript_delta", handleVoiceTranscriptDelta);
     socket.on("voice_transcript_ready", handleVoiceTranscriptReady);
 
     return () => {
@@ -740,6 +806,7 @@ export default function AttemptMessages({
       );
       socket.off("simulation_new_message", handleSimulationNewMessage);
       socket.off("voice_speech_started", handleVoiceSpeechStarted);
+      socket.off("voice_transcript_delta", handleVoiceTranscriptDelta);
       socket.off("voice_transcript_ready", handleVoiceTranscriptReady);
     };
   }, [socket, targetChatId]);

@@ -89,6 +89,14 @@
         "item_id": "string"
       }
     },
+    "voice_transcript_delta": {
+      "payload": {
+        "chat_id": "string",
+        "item_id": "string",
+        "delta": "string",
+        "content_index": "number"
+      }
+    },
     "voice_transcript_ready": {
       "payload": {
         "chat_id": "string",
@@ -462,6 +470,14 @@
       "payload": {
         "success": "boolean",
         "message": "string"
+      }
+    },
+    "voice_transcript_delta_emit": {
+      "payload": {
+        "chat_id": "string",
+        "item_id": "string",
+        "delta": "string",
+        "content_index": "number"
       }
     },
     "voice_transcript_ready_emit": {

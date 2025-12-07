@@ -1086,6 +1086,29 @@ export default function AttemptInput({
             item_id: evt.item_id,
             content_index: evt.content_index,
           });
+
+          if (!socket || !currentChat?.id) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] Missing socket or chat_id, cannot transport delta event"
+            );
+            return;
+          }
+
+          // Transport delta event to server (AttemptMessages will handle optimistic UI updates)
+          socket.emit("voice_transcript_delta", {
+            chat_id: currentChat.id,
+            item_id: evt.item_id,
+            delta: evt.delta,
+            content_index: evt.content_index,
+          });
+
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Transported voice_transcript_delta to server:", {
+            chat_id: currentChat.id,
+            item_id: evt.item_id,
+            delta: evt.delta.substring(0, 50),
+          });
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSCRIPTION DELTA =====");
         }

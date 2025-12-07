@@ -251,6 +251,12 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
+  voice_transcript_delta_emit: (payload: {
+    chat_id: string;
+    item_id: string;
+    delta: string;
+    content_index: number;
+  }) => void;
   voice_transcript_ready_emit: (payload: {
     chat_id: string;
     item_id: string;
@@ -326,6 +332,12 @@ export type ClientToServerEvents = {
   voice_speech_started: (payload: {
     chat_id: string;
     item_id: string;
+  }) => void;
+  voice_transcript_delta: (payload: {
+    chat_id: string;
+    item_id: string;
+    delta: string;
+    content_index: number;
   }) => void;
   voice_transcript_ready: (payload: {
     chat_id: string;
