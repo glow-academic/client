@@ -318,6 +318,7 @@ export default function AttemptInput({
         voice?: string | null;
         transcription_model?: string | null;
         transcription_prompt?: string | null;
+        history?: RealtimeItem[]; // Conversation history in RealtimeItem format
       };
       const responseData = await new Promise<StartVoiceResponsePayload>(
         (resolve, reject) => {
@@ -1022,6 +1023,29 @@ export default function AttemptInput({
       console.log("[Voice] RealtimeSession connected successfully");
       // eslint-disable-next-line no-console
       console.log("[Voice] ===== END CONNECTION =====");
+
+      // Reset history with existing conversation history after connecting
+      // This ensures the RealtimeSession sees the same history as the React chat
+      // resetHistory is the officially supported way to load existing chat history
+      // Must be called after connect() because it sends events to the API
+      if (responseData.history && responseData.history.length > 0) {
+        // eslint-disable-next-line no-console
+        console.log(
+          "[Voice] Resetting history with",
+          responseData.history.length,
+          "items"
+        );
+        // eslint-disable-next-line no-console
+        console.log("[Voice] History items:", responseData.history);
+        // resetHistory is available on the transport layer, not directly on session
+        session.transport.resetHistory([], responseData.history);
+        // eslint-disable-next-line no-console
+        console.log("[Voice] History reset completed");
+      } else {
+        // eslint-disable-next-line no-console
+        console.log("[Voice] No history to reset (new chat)");
+      }
+
       realtimeSessionRef.current = session;
 
       // Ensure we start unmuted when entering voice mode

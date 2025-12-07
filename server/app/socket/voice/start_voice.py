@@ -9,6 +9,7 @@ from app.api.v3.realtime.ephemeral_key import _generate_ephemeral_key_internal
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
+from app.utils.chat.get_realtime_history import get_realtime_history
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
@@ -50,6 +51,7 @@ class StartVoiceResponsePayload(BaseModel):
     voice: str | None = None  # Voice ID for audio output
     transcription_model: str | None = None  # Transcription model (e.g., "gpt-4o-mini-transcribe")
     transcription_prompt: str | None = None  # Transcription prompt
+    history: list[dict[str, Any]] = []  # Conversation history in RealtimeItem format
 
 
 # Emit helper functions
@@ -586,8 +588,17 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             # Default transcription model
             transcription_model_default = "gpt-4o-mini-transcribe"
 
+            # Get conversation history for RealtimeSession
+            # Fetch messages using the same SQL as text mode
+            sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+            message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
+            messages = [dict(row) for row in message_rows]
+            
+            # Convert messages to RealtimeItem format
+            realtime_history = get_realtime_history(messages)
+            
             logger.info(
-                f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools"
+                f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools and {len(realtime_history)} history items"
             )
 
             await start_voice_response(
@@ -602,6 +613,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     voice=None,  # Can be set from context if available
                     transcription_model=transcription_model_default,
                     transcription_prompt=None,  # Can be set from context if available
+                    history=realtime_history,
                 ),
                 room=sid,
             )

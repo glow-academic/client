@@ -428,7 +428,8 @@
         "model": "string",
         "voice": "?string",
         "transcription_model": "?string",
-        "transcription_prompt": "?string"
+        "transcription_prompt": "?string",
+        "history": "?string[]"
       }
     },
     "start_voice_error": {

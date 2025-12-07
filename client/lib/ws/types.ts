@@ -229,6 +229,7 @@ export type ServerToClientEvents = {
     voice?: string;
     transcription_model?: string;
     transcription_prompt?: string;
+    history?: string[];
   }) => void;
   start_voice_error: (payload: {
     success: boolean;
