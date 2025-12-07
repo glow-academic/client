@@ -18,10 +18,7 @@ type RubricDetailIn = InputOf<"/api/v3/rubrics/detail", "post">;
 type RubricDetailOut = OutputOf<"/api/v3/rubrics/detail", "post">;
 
 type RubricNewIn = InputOf<"/api/v3/rubrics/new", "post">;
-type RubricNewOut = OutputOf<
-  "/api/v3/rubrics/new",
-  "post"
->;
+type RubricNewOut = OutputOf<"/api/v3/rubrics/new", "post">;
 type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
 type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 
@@ -30,7 +27,7 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
  */
 const getRubric = async (
   rubricId: string,
-  profileId: string
+  profileId: string,
 ): Promise<RubricDetailOut> => {
   return api.post(
     "/rubrics/detail",
@@ -40,13 +37,11 @@ const getRubric = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
-const getRubricDefault = async (
-  profileId: string
-): Promise<RubricNewOut> => {
+const getRubricDefault = async (profileId: string): Promise<RubricNewOut> => {
   return api.post(
     "/rubrics/new",
     { body: { profileId } },
@@ -55,7 +50,7 @@ const getRubricDefault = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -68,32 +63,17 @@ export async function generateMetadata(
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const rubric = await getRubric(rubricId, profileId);
     return {
       title: `${rubric?.name || "Rubric"}`,
-      description: `${rubric ? `${rubric.name} ${rubric.description || ""}` : "Rubric"} in GLOW${orgPart}.`,
+      description: `${rubric?.name ? `${rubric.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description ? ` ${rubric.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
     };
   } catch {
     return {
       title: "Rubric",
-      description: `Rubric in GLOW${orgPart}.`,
+      description:
+        "Assessment rubric for teaching assistant evaluation. Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.",
     };
   }
 }
@@ -154,9 +134,7 @@ export default async function EditRubricPage({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateRubric(
-  input: UpdateRubricIn,
-): Promise<UpdateRubricOut> {
+async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";

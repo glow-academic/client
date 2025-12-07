@@ -33,7 +33,11 @@ export function TemperatureBoundsPicker({
   const upper = bounds.upper ?? 1.0;
 
   const handleSliderChange = (values: number[]) => {
-    if (values.length >= 2 && values[0] !== undefined && values[1] !== undefined) {
+    if (
+      values.length >= 2 &&
+      values[0] !== undefined &&
+      values[1] !== undefined
+    ) {
       onBoundsChange({
         type: "range",
         lower: Math.max(0.0, Math.min(2.0, values[0])),
@@ -62,4 +66,3 @@ export function TemperatureBoundsPicker({
     </div>
   );
 }
-

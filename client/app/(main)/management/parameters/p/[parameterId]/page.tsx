@@ -17,14 +17,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 type ParameterDetailIn = InputOf<"/api/v3/parameters/detail", "post">;
 type ParameterDetailOut = OutputOf<"/api/v3/parameters/detail", "post">;
 
-type ParameterNewIn = InputOf<
-  "/api/v3/parameters/new",
-  "post"
->;
-type ParameterNewOut = OutputOf<
-  "/api/v3/parameters/new",
-  "post"
->;
+type ParameterNewIn = InputOf<"/api/v3/parameters/new", "post">;
+type ParameterNewOut = OutputOf<"/api/v3/parameters/new", "post">;
 
 type CreateParameterIn = InputOf<"/api/v3/parameters/create", "post">;
 type CreateParameterOut = OutputOf<"/api/v3/parameters/create", "post">;
@@ -37,7 +31,7 @@ type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
  */
 const getParameter = async (
   parameterId: string,
-  profileId: string
+  profileId: string,
 ): Promise<ParameterDetailOut> => {
   return api.post(
     "/parameters/detail",
@@ -47,52 +41,37 @@ const getParameter = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ parameterId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { parameterId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const parameter = await getParameter(parameterId, profileId);
     return {
       title: `${parameter?.name || "Parameter"} Parameter`,
-      description: `${parameter ? `${parameter.name} ${parameter.description || ""}` : "Parameter"} in GLOW${orgPart}.`,
+      description: `${parameter?.name ? `${parameter.name} - ` : ""}System parameter configuration for teaching assistant training platform.${parameter?.description ? ` ${parameter.description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
     };
   } catch {
     return {
       title: "Parameter",
-      description: `Parameter in GLOW${orgPart}.`,
+      description:
+        "System parameter configuration for teaching assistant training platform. Manage platform-wide settings and learning environment configurations for effective L&D program administration.",
     };
   }
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createParameter(
-  input: CreateParameterIn
+  input: CreateParameterIn,
 ): Promise<CreateParameterOut> {
   "use server";
   const session = await getSession();
@@ -105,7 +84,7 @@ async function createParameter(
 }
 
 async function updateParameter(
-  input: UpdateParameterIn
+  input: UpdateParameterIn,
 ): Promise<UpdateParameterOut> {
   "use server";
   const session = await getSession();

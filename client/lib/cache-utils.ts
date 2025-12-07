@@ -27,4 +27,3 @@ export async function isHardRefresh(): Promise<boolean> {
     return false;
   }
 }
-

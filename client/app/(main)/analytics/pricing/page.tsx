@@ -39,14 +39,13 @@ const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
   });
 };
 
-
 /** ---- Direct fetch (no Next.js cache) ----
  * Pricing runs responses can get large and exceed Next.js 2MB cache limit.
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getPricingRuns = async (
-  input: PricingRunsIn
+  input: PricingRunsIn,
 ): Promise<PricingRunsOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -70,16 +69,12 @@ const getProfileContext = async (input: {
     pathname: string;
   };
 }) => {
-  return api.post(
-    "/profile/context",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/profile/context", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Inline filters function for pricing page ---- */
@@ -157,28 +152,10 @@ async function getPricingFilters(searchParams?: URLSearchParams) {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Pricing",
-    description: `Manage pricing for GLOW${orgPart}.`,
+    description:
+      "Manage pricing and subscription plans for GLOW teaching assistant training platform. Configure access levels, feature sets, and billing options for educational institutions and learning and development programs.",
   };
 }
 
@@ -202,7 +179,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 
   // Get filters from search params or defaults
   const filters = await getPricingFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Fetch summary data server-side (for chart - all runs, no pagination)

@@ -23,9 +23,7 @@ type DeleteAgentOut = OutputOf<"/api/v3/agents/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getAgentsList = async (
-  profileId: string
-): Promise<AgentsListOut> => {
+const getAgentsList = async (profileId: string): Promise<AgentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/agents/list",
@@ -37,7 +35,7 @@ const getAgentsList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
@@ -50,37 +48,17 @@ async function duplicateAgent(
   return api.post("/agents/duplicate", input);
 }
 
-async function deleteAgent(
-  input: DeleteAgentIn,
-): Promise<DeleteAgentOut> {
+async function deleteAgent(input: DeleteAgentIn): Promise<DeleteAgentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/agents/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Agents",
-    description: `Agents in GLOW${orgPart}.`,
+    description:
+      "Manage AI agents for teaching assistant training simulations. Configure intelligent agents to power student personas, enhance simulation-based learning experiences, and support pedagogical development through advanced AI capabilities.",
   };
 }
 

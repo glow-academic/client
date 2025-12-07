@@ -279,7 +279,7 @@ export default function GradedAttemptView({
                               displayChat?.documentIds || [];
                             const hasDocumentsForCurrentChat =
                               scenarioDocuments?.some((doc) =>
-                                currentChatDocIds.includes(doc.document_id)
+                                currentChatDocIds.includes(doc.document_id),
                               );
                             return hasDocumentsForCurrentChat;
                           })() && (
@@ -314,7 +314,7 @@ export default function GradedAttemptView({
                                 className={`flex items-center gap-2 px-3 py-1 rounded-full ${(() => {
                                   if (!displayChat) return "bg-muted";
                                   const rubric = allDynamicRubrics.find(
-                                    (r) => r && r.chatId === displayChat.id
+                                    (r) => r && r.chatId === displayChat.id,
                                   );
                                   if (rubric) {
                                     return rubric.passed
@@ -350,7 +350,7 @@ export default function GradedAttemptView({
                                 >
                                   {displayChat && displayChat.completed
                                     ? formatTime(
-                                        calculateChatTimeTaken(displayChat)
+                                        calculateChatTimeTaken(displayChat),
                                       )
                                     : isInfiniteMode
                                       ? infiniteLimitMinutes
@@ -359,8 +359,8 @@ export default function GradedAttemptView({
                                       : simulation?.timeLimit && displayChat
                                         ? formatTime(
                                             calculateAdjustedTimeLimit(
-                                              displayChat
-                                            )
+                                              displayChat,
+                                            ),
                                           )
                                         : "No time limit"}
                                 </span>
@@ -370,7 +370,7 @@ export default function GradedAttemptView({
                               if (!displayChat) return null;
                               const rubric = allDynamicRubrics.find(
                                 (r): r is DynamicRubric =>
-                                  r?.chatId === displayChat.id
+                                  r?.chatId === displayChat.id,
                               );
                               if (displayChat && showGrades && rubric) {
                                 return (
@@ -386,7 +386,9 @@ export default function GradedAttemptView({
                                           <span className="text-xs text-muted-foreground ml-2">
                                             +
                                             {formatTime(
-                                              calculateTimeExceeded(displayChat)
+                                              calculateTimeExceeded(
+                                                displayChat,
+                                              ),
                                             )}
                                           </span>
                                         )}
@@ -408,8 +410,7 @@ export default function GradedAttemptView({
                                       {aggregatedResults.passed
                                         ? "Passed"
                                         : "Failed"}{" "}
-                                      (
-                                      {aggregatedResults.totalScore}/
+                                      ({aggregatedResults.totalScore}/
                                       {aggregatedResults.totalPossiblePoints}{" "}
                                       points)
                                     </p>
@@ -531,7 +532,7 @@ export default function GradedAttemptView({
                                 displayChat?.documentIds || [];
                               const hasDocumentsForCurrentChat =
                                 scenarioDocuments?.some((doc) =>
-                                  currentChatDocIds.includes(doc.document_id)
+                                  currentChatDocIds.includes(doc.document_id),
                                 );
                               return hasDocumentsForCurrentChat;
                             })() && (
@@ -576,7 +577,7 @@ export default function GradedAttemptView({
                                   className={`flex items-center justify-center gap-2 px-3 py-1 rounded-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${(() => {
                                     if (!displayChat) return "bg-muted";
                                     const rubric = allDynamicRubrics.find(
-                                      (r) => r && r.chatId === displayChat.id
+                                      (r) => r && r.chatId === displayChat.id,
                                     );
                                     if (rubric) {
                                       return rubric.passed
@@ -612,19 +613,19 @@ export default function GradedAttemptView({
                                   >
                                     {displayChat && displayChat.completed
                                       ? formatTime(
-                                          calculateChatTimeTaken(displayChat)
+                                          calculateChatTimeTaken(displayChat),
                                         )
                                       : isInfiniteMode
                                         ? infiniteLimitMinutes
                                           ? formatTime(
-                                              infiniteLimitMinutes * 60
+                                              infiniteLimitMinutes * 60,
                                             )
                                           : formatTime(timer.elapsed || 0)
                                         : simulation?.timeLimit && displayChat
                                           ? formatTime(
                                               calculateAdjustedTimeLimit(
-                                                displayChat
-                                              )
+                                                displayChat,
+                                              ),
                                             )
                                           : "No time limit"}
                                   </span>
@@ -634,7 +635,7 @@ export default function GradedAttemptView({
                                 if (!displayChat) return null;
                                 const rubric = allDynamicRubrics.find(
                                   (r): r is DynamicRubric =>
-                                    r?.chatId === displayChat.id
+                                    r?.chatId === displayChat.id,
                                 );
                                 if (displayChat && showGrades && rubric) {
                                   return (
@@ -652,8 +653,8 @@ export default function GradedAttemptView({
                                               +
                                               {formatTime(
                                                 calculateTimeExceeded(
-                                                  displayChat
-                                                )
+                                                  displayChat,
+                                                ),
                                               )}
                                             </span>
                                           )}
@@ -675,8 +676,7 @@ export default function GradedAttemptView({
                                         {aggregatedResults.passed
                                           ? "Passed"
                                           : "Failed"}{" "}
-                                        (
-                                        {aggregatedResults.totalScore}/
+                                        ({aggregatedResults.totalScore}/
                                         {aggregatedResults.totalPossiblePoints}{" "}
                                         points)
                                       </p>
@@ -802,7 +802,7 @@ export default function GradedAttemptView({
             const currentChatDocIds = displayChat?.documentIds || [];
             const filteredDocs =
               scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id)
+                currentChatDocIds.includes(doc.document_id),
               ) || [];
 
             return (
@@ -834,7 +834,7 @@ export default function GradedAttemptView({
                               const document =
                                 filteredDocs.find(
                                   (doc) =>
-                                    doc.document_id === selectedDocumentId
+                                    doc.document_id === selectedDocumentId,
                                 ) || filteredDocs[0];
                               return document ? (
                                 <DocumentViewer
@@ -891,7 +891,7 @@ export default function GradedAttemptView({
               if (!currentChat) return null;
 
               const rubricResult = allDynamicRubrics.find(
-                (rubric) => rubric.chatId === currentChat.id
+                (rubric) => rubric.chatId === currentChat.id,
               );
 
               return (
@@ -902,9 +902,7 @@ export default function GradedAttemptView({
                     </Badge>
                   ) : rubricResult ? (
                     <Badge
-                      variant={
-                        rubricResult.passed ? "default" : "destructive"
-                      }
+                      variant={rubricResult.passed ? "default" : "destructive"}
                       className={`text-xs ${
                         rubricResult.passed
                           ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
@@ -968,11 +966,11 @@ export default function GradedAttemptView({
                   const currentChatDocIds = displayChat?.documentIds || [];
                   const filteredDocs =
                     scenarioDocuments.filter((doc) =>
-                      currentChatDocIds.includes(doc.document_id)
+                      currentChatDocIds.includes(doc.document_id),
                     ) || [];
                   return (
                     filteredDocs.find(
-                      (doc) => doc.document_id === selectedDocumentId
+                      (doc) => doc.document_id === selectedDocumentId,
                     )?.name ||
                     filteredDocs[0]?.name ||
                     "Document"
@@ -987,7 +985,7 @@ export default function GradedAttemptView({
               const currentChatDocIds = displayChat?.documentIds || [];
               const filteredDocs =
                 scenarioDocuments.filter((doc) =>
-                  currentChatDocIds.includes(doc.document_id)
+                  currentChatDocIds.includes(doc.document_id),
                 ) || [];
               return filteredDocs.length > 1 ? (
                 <div className="pb-3">
@@ -1007,11 +1005,11 @@ export default function GradedAttemptView({
                   const currentChatDocIds = displayChat?.documentIds || [];
                   const filteredDocs =
                     scenarioDocuments.filter((doc) =>
-                      currentChatDocIds.includes(doc.document_id)
+                      currentChatDocIds.includes(doc.document_id),
                     ) || [];
                   const document =
                     filteredDocs.find(
-                      (doc) => doc.document_id === selectedDocumentId
+                      (doc) => doc.document_id === selectedDocumentId,
                     ) || filteredDocs[0];
                   return document ? (
                     <DocumentViewer document={document} bare={true} />

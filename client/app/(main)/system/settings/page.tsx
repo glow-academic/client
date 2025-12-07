@@ -26,14 +26,14 @@ const getSettingsList = async (profileId: string): Promise<SettingsListOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Direct fetch for settings detail ---- */
 const getSettingsDetail = async (
   settingsId: string,
-  profileId: string
+  profileId: string,
 ): Promise<SettingsDetailOut> => {
   return api.post(
     "/settings/detail",
@@ -43,13 +43,13 @@ const getSettingsDetail = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateSettings(
-  input: UpdateSettingsIn
+  input: UpdateSettingsIn,
 ): Promise<UpdateSettingsOut> {
   "use server";
   const session = await getSession();
@@ -62,7 +62,7 @@ async function updateSettings(
 
 async function getSettingsDetailAction(
   settingsId: string,
-  profileId: string
+  profileId: string,
 ): Promise<SettingsDetailOut> {
   "use server";
   return getSettingsDetail(settingsId, profileId);
@@ -88,7 +88,7 @@ export default async function SettingsPage() {
     selectedSettingsId = defaultSettings.settings_id;
     settingsDetail = await getSettingsDetail(
       defaultSettings.settings_id,
-      profileId
+      profileId,
     );
   }
 

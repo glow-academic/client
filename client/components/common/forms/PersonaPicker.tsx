@@ -397,7 +397,7 @@ function PersonaItem<T extends PersonaMappingItem>({
         <Check
           className={cn(
             "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>

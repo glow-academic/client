@@ -47,9 +47,7 @@ export interface ReportProblemProps {
   initialType?: "feature" | "bug" | "question" | "other";
   initialMessage?: string;
   onDialogStateChange?: (isOpen: boolean) => void;
-  createFeedback?: (
-    input: CreateFeedbackIn,
-  ) => Promise<CreateFeedbackOut>;
+  createFeedback?: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
 }
 
 export default function ReportProblem({

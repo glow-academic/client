@@ -130,7 +130,7 @@ export default function ScenarioStats({
         numerical: true,
         active: true,
       })),
-    [parameterMapping, validNumericParameterIds]
+    [parameterMapping, validNumericParameterIds],
   );
 
   // Build parameter mapping for GenericPicker
@@ -155,13 +155,13 @@ export default function ScenarioStats({
 
   const activeParamId = useMemo(
     () => selectedParameterId || validParameterIdsForPicker[0] || "",
-    [selectedParameterId, validParameterIdsForPicker]
+    [selectedParameterId, validParameterIdsForPicker],
   );
 
   // Build chart rows + scenarioCount using facts
   const chartRows = useMemo(() => {
     const facts = numericAttemptFacts.filter(
-      (f) => f.parameterId === activeParamId
+      (f) => f.parameterId === activeParamId,
     );
     const byLevel = new Map<
       string,
@@ -190,13 +190,13 @@ export default function ScenarioStats({
 
     // scenario counts per level
     const scen = numericScenarioFacts.filter(
-      (s) => s.parameterId === activeParamId
+      (s) => s.parameterId === activeParamId,
     );
     const scenCountByLevel = new Map<string, number>();
     for (const s of scen) {
       scenCountByLevel.set(
         s.levelLabel,
-        (scenCountByLevel.get(s.levelLabel) ?? 0) + 1
+        (scenCountByLevel.get(s.levelLabel) ?? 0) + 1,
       );
     }
 
@@ -218,7 +218,7 @@ export default function ScenarioStats({
   // Create lookup for custom tooltip
   const chartRowsByName = useMemo(
     () => Object.fromEntries(chartRows.map((r) => [r.metricLevel, r] as const)),
-    [chartRows]
+    [chartRows],
   );
 
   return (

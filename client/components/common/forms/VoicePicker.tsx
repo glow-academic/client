@@ -112,7 +112,9 @@ export function VoicePicker({
                     <Check
                       className={cn(
                         "ml-auto flex-shrink-0",
-                        selectedVoice === voice.id ? "opacity-100" : "opacity-0",
+                        selectedVoice === voice.id
+                          ? "opacity-100"
+                          : "opacity-0",
                       )}
                     />
                   </div>
@@ -125,4 +127,3 @@ export function VoicePicker({
     </Popover>
   );
 }
-

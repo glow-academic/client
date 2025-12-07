@@ -23,9 +23,7 @@ type DeleteModelOut = OutputOf<"/api/v3/models/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getModelsList = async (
-  profileId: string
-): Promise<ModelsListOut> => {
+const getModelsList = async (profileId: string): Promise<ModelsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/models/list",
@@ -37,7 +35,7 @@ const getModelsList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
@@ -50,37 +48,17 @@ async function duplicateModel(
   return api.post("/models/duplicate", input);
 }
 
-async function deleteModel(
-  input: DeleteModelIn,
-): Promise<DeleteModelOut> {
+async function deleteModel(input: DeleteModelIn): Promise<DeleteModelOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/models/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Models",
-    description: `Manage AI models in GLOW${orgPart}.`,
+    description:
+      "Manage AI language models for teaching assistant training simulations. Configure and customize AI models to power realistic student personas and enhance simulation-based learning experiences for pedagogical development.",
   };
 }
 
@@ -110,4 +88,3 @@ export type {
   DuplicateModelOut,
   ModelsListOut,
 };
-

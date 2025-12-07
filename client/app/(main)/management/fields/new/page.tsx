@@ -20,7 +20,7 @@ type CreateFieldOut = OutputOf<"/api/v3/fields/create", "post">;
 
 /** ---- Direct fetch for default field data ---- */
 const getFieldDetailDefault = async (
-  profileId: string
+  profileId: string,
 ): Promise<FieldNewOut> => {
   return api.post(
     "/fields/new",
@@ -30,41 +30,21 @@ const getFieldDetailDefault = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Create Field",
-    description: `Create a new field in GLOW${orgPart}.`,
+    description:
+      "Create a new custom field for teaching assistant training platform. Define custom field configurations to track additional educational data, assessment criteria, and learning metrics for comprehensive L&D program management.",
   };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createField(
-  input: CreateFieldIn,
-): Promise<CreateFieldOut> {
+async function createField(input: CreateFieldIn): Promise<CreateFieldOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
@@ -93,10 +73,4 @@ export default async function NewFieldPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  CreateFieldIn,
-  CreateFieldOut,
-  FieldNewIn,
-  FieldNewOut,
-};
-
+export type { CreateFieldIn, CreateFieldOut, FieldNewIn, FieldNewOut };

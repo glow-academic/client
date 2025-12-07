@@ -15,14 +15,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonaDetailOut = OutputOf<"/api/v3/personas/detail", "post">;
-type PersonaNewIn = InputOf<
-  "/api/v3/personas/new",
-  "post"
->;
-type PersonaNewOut = OutputOf<
-  "/api/v3/personas/new",
-  "post"
->;
+type PersonaNewIn = InputOf<"/api/v3/personas/new", "post">;
+type PersonaNewOut = OutputOf<"/api/v3/personas/new", "post">;
 type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
 type UpdatePersonaIn = InputOf<"/api/v3/personas/update", "post">;
@@ -33,7 +27,7 @@ type UpdatePersonaOut = OutputOf<"/api/v3/personas/update", "post">;
  */
 const getPersona = async (
   personaId: string,
-  profileId: string
+  profileId: string,
 ): Promise<PersonaDetailOut> => {
   return api.post(
     "/personas/detail",
@@ -43,53 +37,37 @@ const getPersona = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ personaId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { personaId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch active settings for organization name and description
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const persona = await getPersona(personaId, profileId);
     return {
       title: `${persona?.name || "Persona"} Persona`,
-      description: `${persona ? `${persona.name} ${persona.description || ""}` : "Persona"} in GLOW${orgPart}.`,
+      description: `${persona?.name ? `${persona.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description ? ` ${persona.description}` : ""}`,
     };
   } catch {
     return {
       title: "Persona",
-      description: `Persona in GLOW${orgPart}.`,
+      description:
+        "AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.",
     };
   }
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createPersona(
-  input: CreatePersonaIn
+  input: CreatePersonaIn,
 ): Promise<CreatePersonaOut> {
   "use server";
   const session = await getSession();
@@ -102,7 +80,7 @@ async function createPersona(
 }
 
 async function updatePersona(
-  input: UpdatePersonaIn
+  input: UpdatePersonaIn,
 ): Promise<UpdatePersonaOut> {
   "use server";
   const session = await getSession();
@@ -113,7 +91,6 @@ async function updatePersona(
     body: { ...input.body, profileId },
   });
 }
-
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function PersonaEditPage({

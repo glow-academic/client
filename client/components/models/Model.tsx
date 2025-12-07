@@ -130,9 +130,9 @@ export default function Model({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primaryDepartmentId || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(
@@ -145,7 +145,7 @@ export default function Model({
       departmentIds: defaultDepartmentIds,
       keyId: null,
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -241,7 +241,7 @@ export default function Model({
         const isForSelectedDepartment =
           keyInfo.department_ids &&
           keyInfo.department_ids.some((deptId) =>
-            selectedDeptIds.includes(deptId)
+            selectedDeptIds.includes(deptId),
           );
 
         if (isDefaultOrCrossDepartment || isForSelectedDepartment) {
@@ -340,7 +340,7 @@ export default function Model({
             type: (p.type || p.pricing_type) as "input" | "output" | "cached",
             unit_id: p.unit_id,
             price: p.price,
-          })
+          }),
         ) || [];
 
       // Parse modalities
@@ -387,7 +387,7 @@ export default function Model({
         voices: modelDetail.voices
           ? (modelDetail.voices as Array<string | { voice: string }>)
               .map((v: string | { voice: string }) =>
-                typeof v === "string" ? v : v.voice
+                typeof v === "string" ? v : v.voice,
               )
               .filter(Boolean)
           : [],
@@ -420,7 +420,7 @@ export default function Model({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -578,7 +578,7 @@ export default function Model({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }

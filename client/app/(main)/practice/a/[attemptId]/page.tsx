@@ -28,18 +28,14 @@ import type { Metadata, ResolvingMetadata } from "next";
  */
 const getAttemptFull = async (
   attemptId: string,
-  input: AttemptFullIn
+  input: AttemptFullIn,
 ): Promise<AttemptFullOut> => {
-  return api.post(
-    "/attempts/full",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/attempts/full", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -52,22 +48,6 @@ export async function generateMetadata(
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const attemptData = await getAttemptFull(attemptId, {
       body: { attemptId, profileId },
@@ -75,12 +55,13 @@ export async function generateMetadata(
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
       title: `Practice ${simulationTitle || "Attempt"}`,
-      description: `Practice ${simulationTitle || "Attempt"} in GLOW${orgPart}.`,
+      description: `${simulationTitle ? `${simulationTitle} - ` : ""}Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.`,
     };
   } catch {
     return {
       title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
-      description: `Practice Attempt ${attemptId.substring(0, 8)}... in GLOW${orgPart}.`,
+      description:
+        "Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.",
     };
   }
 }
@@ -100,7 +81,7 @@ async function createQuiz(input: CreateQuizIn): Promise<CreateQuizOut> {
 }
 
 async function submitQuizResponse(
-  input: SubmitQuizResponseIn
+  input: SubmitQuizResponseIn,
 ): Promise<SubmitQuizResponseOut> {
   "use server";
   return api.post("/attempts/quizzes/submit-response", input);

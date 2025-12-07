@@ -103,7 +103,7 @@ export function SimulationContentTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "position", desc: false }, // Default sort by position ascending
@@ -141,7 +141,9 @@ export function SimulationContentTable({
         cell: ({ row }) => {
           return (
             <div className="flex items-center justify-center">
-              <span className="text-sm font-medium">{row.original.position}</span>
+              <span className="text-sm font-medium">
+                {row.original.position}
+              </span>
             </div>
           );
         },
@@ -282,13 +284,18 @@ export function SimulationContentTable({
                 <Switch
                   checked={item.show_problem_statement ?? true}
                   onCheckedChange={(checked) =>
-                    onShowProblemStatementToggle?.(`${item.type}:${item.id}`, checked)
+                    onShowProblemStatementToggle?.(
+                      `${item.type}:${item.id}`,
+                      checked,
+                    )
                   }
                   disabled={readonly || !onShowProblemStatementToggle}
                 />
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Objectives</span>
+                <span className="text-xs text-muted-foreground">
+                  Objectives
+                </span>
                 <Switch
                   checked={item.show_objectives ?? true}
                   onCheckedChange={(checked) =>
@@ -318,7 +325,7 @@ export function SimulationContentTable({
           const item = row.original;
           const contentId = `${item.type}:${item.id}`;
           const index = data.findIndex(
-            (d) => `${d.type}:${d.id}` === contentId
+            (d) => `${d.type}:${d.id}` === contentId,
           );
           const canMoveUp = index > 0;
           const canMoveDown = index < data.length - 1;
@@ -412,7 +419,7 @@ export function SimulationContentTable({
       onShowProblemStatementToggle,
       onShowObjectivesToggle,
       onShowImageToggle,
-    ]
+    ],
   );
 
   const table = useReactTable({
@@ -459,7 +466,7 @@ export function SimulationContentTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -480,7 +487,7 @@ export function SimulationContentTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}

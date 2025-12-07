@@ -24,7 +24,7 @@ type DeleteDepartmentOut = OutputOf<"/api/v3/departments/delete", "post">;
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getDepartmentsList = async (
-  profileId: string
+  profileId: string,
 ): Promise<DepartmentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -37,13 +37,13 @@ const getDepartmentsList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateDepartment(
-  input: DuplicateDepartmentIn
+  input: DuplicateDepartmentIn,
 ): Promise<DuplicateDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -51,7 +51,7 @@ export async function duplicateDepartment(
 }
 
 export async function deleteDepartment(
-  input: DeleteDepartmentIn
+  input: DeleteDepartmentIn,
 ): Promise<DeleteDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -62,26 +62,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Departments",
-    description: `Departments in GLOW${orgPart}.`,
+    description: "Manage academic departments and organizational units for teaching assistant training programs. Organize departments, configure department-specific settings, and coordinate L&D programs across different academic units.",
   };
+}
 }
 
 export default async function DepartmentsPage() {

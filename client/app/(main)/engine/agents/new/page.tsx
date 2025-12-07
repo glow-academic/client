@@ -24,9 +24,7 @@ type DeleteAgentPromptOut = OutputOf<"/api/v3/agents/delete-prompt", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getAgentDefault = async (
-  profileId: string
-): Promise<AgentNewOut> => {
+const getAgentDefault = async (profileId: string): Promise<AgentNewOut> => {
   return api.post(
     "/agents/new",
     { body: { profileId } },
@@ -35,14 +33,12 @@ const getAgentDefault = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createAgent(
-  input: CreateAgentIn
-): Promise<CreateAgentOut> {
+async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
@@ -53,9 +49,7 @@ async function createAgent(
   });
 }
 
-async function updateAgent(
-  input: UpdateAgentIn
-): Promise<UpdateAgentOut> {
+async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
@@ -67,7 +61,7 @@ async function updateAgent(
 }
 
 async function deleteAgentPrompt(
-  input: DeleteAgentPromptIn
+  input: DeleteAgentPromptIn,
 ): Promise<DeleteAgentPromptOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -75,28 +69,10 @@ async function deleteAgentPrompt(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Agent",
-    description: `Create new AI agents in GLOW${orgPart}.`,
+    description:
+      "Create a new AI agent for teaching assistant training simulations. Configure intelligent agents to power student personas, enhance simulation-based learning experiences, and support pedagogical development through advanced AI capabilities.",
   };
 }
 

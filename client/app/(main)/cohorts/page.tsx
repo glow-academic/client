@@ -25,9 +25,7 @@ type LeaveCohortOut = OutputOf<"/api/v3/cohorts/leave", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getCohortsList = async (
-  profileId: string
-): Promise<CohortsListOut> => {
+const getCohortsList = async (profileId: string): Promise<CohortsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/cohorts/list",
@@ -39,7 +37,7 @@ const getCohortsList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
@@ -52,17 +50,13 @@ async function duplicateCohort(
   return api.post("/cohorts/duplicate", input);
 }
 
-async function deleteCohort(
-  input: DeleteCohortIn,
-): Promise<DeleteCohortOut> {
+async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/cohorts/delete", input);
 }
 
-async function leaveCohort(
-  input: LeaveCohortIn,
-): Promise<LeaveCohortOut> {
+async function leaveCohort(input: LeaveCohortIn): Promise<LeaveCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/cohorts/leave", input);
@@ -72,25 +66,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Cohorts",
-    description: `Manage cohorts in GLOW${orgPart}.`,
+    description: "Manage learning cohorts for teaching assistant training programs. Organize groups of teaching assistants, track cohort progress, and coordinate group-based learning activities for effective L&D program administration.",
   };
 }
 

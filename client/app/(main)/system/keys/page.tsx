@@ -19,9 +19,7 @@ type DeleteKeyOut = OutputOf<"/api/v3/keys/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getKeysList = async (
-  profileId: string
-): Promise<KeysListOut> => {
+const getKeysList = async (profileId: string): Promise<KeysListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/keys/list",
@@ -33,14 +31,12 @@ const getKeysList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function deleteKey(
-  input: DeleteKeyIn,
-): Promise<DeleteKeyOut> {
+async function deleteKey(input: DeleteKeyIn): Promise<DeleteKeyOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
@@ -55,26 +51,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Keys",
-    description: `Manage keys in GLOW${orgPart}.`,
+    description: "Manage API keys and authentication credentials for teaching assistant training platform. Configure secure access keys, manage API integrations, and maintain platform security for educational institutions and L&D programs.",
   };
+}
 }
 
 export default async function KeysPage() {
@@ -86,17 +67,10 @@ export default async function KeysPage() {
 
   return (
     <div className="space-y-6" data-page="keys-index">
-      <Keys
-        listData={listData}
-        deleteKeyAction={deleteKey}
-      />
+      <Keys listData={listData} deleteKeyAction={deleteKey} />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  KeysListOut,
-  DeleteKeyIn,
-  DeleteKeyOut,
-};
+export type { KeysListOut, DeleteKeyIn, DeleteKeyOut };

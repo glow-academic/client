@@ -15,14 +15,8 @@ import { cache } from "react";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 /** ---- Strong types from OpenAPI ---- */
-type DepartmentNewIn = InputOf<
-  "/api/v3/departments/new",
-  "post"
->;
-type DepartmentNewOut = OutputOf<
-  "/api/v3/departments/new",
-  "post"
->;
+type DepartmentNewIn = InputOf<"/api/v3/departments/new", "post">;
+type DepartmentNewOut = OutputOf<"/api/v3/departments/new", "post">;
 
 type CreateDepartmentIn = InputOf<"/api/v3/departments/create", "post">;
 type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
@@ -37,9 +31,7 @@ type DepartmentSearchProfileOut = OutputOf<
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
-  async (
-    input: DepartmentNewIn,
-  ): Promise<DepartmentNewOut> => {
+  async (input: DepartmentNewIn): Promise<DepartmentNewOut> => {
     return api.post("/departments/new", input);
   },
 );
@@ -68,23 +60,11 @@ export async function generateMetadata(): Promise<Metadata> {
   let organizationName = "";
   let organizationDescription = "";
   try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Department",
-    description: `New department creation page for the departments section in GLOW${orgPart}.`,
+    description: "Create a new academic department for teaching assistant training programs. Set up department-specific configurations, organize teaching staff, and coordinate L&D programs across different academic units.",
   };
+}
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -109,8 +89,7 @@ export default async function NewDepartmentPage() {
 }
 
 /** ---- Derived types from server responses ---- */
-type DepartmentDefaultStaffItem =
-  DepartmentNewOut["staff"][number];
+type DepartmentDefaultStaffItem = DepartmentNewOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {

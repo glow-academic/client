@@ -76,11 +76,11 @@ export interface UnifiedSidebarProps
   activeSection: string;
   onSectionChange?: (section: string) => void;
   switchEffectiveProfile: (
-    input: SwitchEffectiveProfileParams
+    input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn
+    input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
 }
 
@@ -339,7 +339,8 @@ export function UnifiedSidebar({
 
     // Engine - Available for admin and superadmin
     if (
-      (effectiveProfile.role === "admin" || effectiveProfile.role === "superadmin") &&
+      (effectiveProfile.role === "admin" ||
+        effectiveProfile.role === "superadmin") &&
       (availableSections.includes("agents") ||
         availableSections.includes("models") ||
         availableSections.includes("rubrics") ||
@@ -453,7 +454,7 @@ export function UnifiedSidebar({
             section.items?.filter(
               (item) =>
                 item.title.toLowerCase().includes(searchLower) ||
-                item.section?.toLowerCase().includes(searchLower)
+                item.section?.toLowerCase().includes(searchLower),
             ) || [];
 
           // Also check if the section title itself matches
@@ -482,7 +483,7 @@ export function UnifiedSidebar({
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
     onSectionChange,
-    pathname
+    pathname,
   );
 
   // Wrapper function that closes mobile sidebar on section change
@@ -494,7 +495,7 @@ export function UnifiedSidebar({
         setOpenMobile(false);
       }
     },
-    [handleSectionChange, isMobile, setOpenMobile]
+    [handleSectionChange, isMobile, setOpenMobile],
   );
 
   const handleItemClick = useCallback(
@@ -520,7 +521,7 @@ export function UnifiedSidebar({
       // Reset navigation state after a short delay
       setTimeout(() => setIsNavigating(false), 500);
     },
-    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
+    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile],
   );
 
   // Handle exit emulation
@@ -593,7 +594,7 @@ export function UnifiedSidebar({
           return "Logged out successfully";
         } catch (error) {
           throw new Error(
-            typeof error === "string" ? error : "Failed to log out"
+            typeof error === "string" ? error : "Failed to log out",
           );
         } finally {
           setIsLoggingOut(false);
@@ -603,7 +604,7 @@ export function UnifiedSidebar({
         loading: "Logging out...",
         success: (message) => message,
         error: (error) => error.message || "Failed to log out",
-      }
+      },
     );
   };
 
@@ -637,7 +638,7 @@ export function UnifiedSidebar({
                           : getInitials(
                               effectiveProfile?.firstName +
                                 " " +
-                                effectiveProfile?.lastName
+                                effectiveProfile?.lastName,
                             )}
                       </AvatarFallback>
                     </Avatar>
@@ -802,7 +803,7 @@ export function UnifiedSidebar({
                 <ReportProblem createFeedback={createFeedback}>
                   <Button variant="outline" className="w-full">
                     <AlertCircle className="h-4 w-4 mr-2" />
-                          Report Problem
+                    Report Problem
                   </Button>
                 </ReportProblem>
               </div>

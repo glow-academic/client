@@ -37,15 +37,15 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
   // Extract data from bundle
   const healthKPIs = useMemo(
     () => serverBundleData?.health_kpis,
-    [serverBundleData]
+    [serverBundleData],
   );
   const metrics = useMemo(
     () => serverBundleData?.metrics || [],
-    [serverBundleData]
+    [serverBundleData],
   );
   const feedback = useMemo(
     () => serverBundleData?.feedback || [],
-    [serverBundleData]
+    [serverBundleData],
   );
 
   // Get chart colors from design system

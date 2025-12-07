@@ -24,7 +24,7 @@ type DeleteSimulationOut = OutputOf<"/api/v3/simulations/delete", "post">;
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getSimulationsList = async (
-  profileId: string
+  profileId: string,
 ): Promise<SimulationsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -37,13 +37,13 @@ const getSimulationsList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateSimulation(
-  input: DuplicateSimulationIn
+  input: DuplicateSimulationIn,
 ): Promise<DuplicateSimulationOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -51,7 +51,7 @@ async function duplicateSimulation(
 }
 
 async function deleteSimulation(
-  input: DeleteSimulationIn
+  input: DeleteSimulationIn,
 ): Promise<DeleteSimulationOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -59,28 +59,10 @@ async function deleteSimulation(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Simulations",
-    description: `Simulations in GLOW${orgPart}.`,
+    description:
+      "Manage teaching practice simulations for graduate teaching assistant training. Create and organize realistic student interaction scenarios to practice pedagogical techniques, improve communication skills, and enhance teaching effectiveness through simulation-based learning.",
   };
 }
 

@@ -22,7 +22,7 @@ type StopEvalOut = OutputOf<"/api/v3/evals/stop", "post">;
 /** ---- Direct fetch for eval detail ---- */
 const getEvalDetail = async (
   evalId: string,
-  profileId: string
+  profileId: string,
 ): Promise<EvalDetailOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -35,7 +35,7 @@ const getEvalDetail = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
@@ -43,7 +43,8 @@ const getEvalDetail = async (
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Eval Details",
-    description: "View eval status and results",
+    description:
+      "View automated evaluation status and results for teaching assistant assessments. Monitor batch evaluation progress, review pedagogical performance metrics, and analyze teaching effectiveness across multiple practice sessions.",
   };
 }
 
@@ -93,11 +94,4 @@ export default async function EvalDetailPage({
 }
 
 /** ---- Export types for client component ---- */
-export type {
-  EvalDetailOut,
-  RunEvalIn,
-  RunEvalOut,
-  StopEvalIn,
-  StopEvalOut,
-};
-
+export type { EvalDetailOut, RunEvalIn, RunEvalOut, StopEvalIn, StopEvalOut };

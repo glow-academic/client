@@ -46,7 +46,7 @@ const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
  * Note: Practice history endpoint doesn't use Redis cache, but header is sent for consistency.
  */
 const getPracticeHistory = async (
-  input: PracticeHistoryIn
+  input: PracticeHistoryIn,
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -79,28 +79,10 @@ const getProfileContext = async (input: {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Practice",
-    description: `Practice page for GLOW${orgPart}.`,
+    description:
+      "Simulation-based practice sessions for teaching assistant training. Engage in realistic student interaction scenarios to practice pedagogical techniques, improve communication skills, and enhance teaching effectiveness through hands-on learning experiences.",
   };
 }
 
@@ -324,10 +306,10 @@ async function PracticeHistorySection({
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
   const archivedCount = historyData.data.filter(
-    (item) => item.isArchived
+    (item) => item.isArchived,
   ).length;
   const unarchivedCount = historyData.data.filter(
-    (item) => !item.isArchived
+    (item) => !item.isArchived,
   ).length;
 
   // Use server-provided data directly (no transformation needed)

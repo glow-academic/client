@@ -166,7 +166,7 @@ const formatLastActive = (timestamp: string | null): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60)
+    (now.getTime() - date.getTime()) / (1000 * 60),
   );
 
   if (diffInMinutes < 1) return "Just now";
@@ -189,7 +189,7 @@ type ProfileListItemWithRemove = ProfileListItem & {
 };
 
 const normalizeDepartmentStaffItem = (
-  item: DepartmentStaffItem | DepartmentDefaultStaffItem
+  item: DepartmentStaffItem | DepartmentDefaultStaffItem,
 ): ProfileListItemWithRemove => {
   return {
     profile_id: item.profile_id,
@@ -222,19 +222,19 @@ export interface DepartmentProps {
   departmentDetailDefault?: DepartmentNewOut;
   // Server actions (replaces useMutation)
   createDepartmentAction?: (
-    input: CreateDepartmentIn
+    input: CreateDepartmentIn,
   ) => Promise<CreateDepartmentOut>;
   updateDepartmentAction?: (
-    input: UpdateDepartmentIn
+    input: UpdateDepartmentIn,
   ) => Promise<UpdateDepartmentOut>;
   removeProfilesFromDepartmentAction?: (
-    input: RemoveProfilesFromDepartmentIn
+    input: RemoveProfilesFromDepartmentIn,
   ) => Promise<RemoveProfilesFromDepartmentOut>;
   duplicateDepartmentAction?: (
-    input: DuplicateDepartmentIn
+    input: DuplicateDepartmentIn,
   ) => Promise<DuplicateDepartmentOut>;
   deleteDepartmentAction?: (
-    input: DeleteDepartmentIn
+    input: DeleteDepartmentIn,
   ) => Promise<DeleteDepartmentOut>;
   // Add-staff search function (search-only, no mutation - profiles are staged and sent in update)
   searchAddStaff?: (input: {
@@ -292,7 +292,7 @@ export default function Department({
       description: "",
       active: true,
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -305,7 +305,7 @@ export default function Department({
   const [showBulkRemoveDialog, setShowBulkRemoveDialog] = useState(false);
   // Simplified staging - just track profile IDs
   const [stagedProfileIdsToAdd, setStagedProfileIdsToAdd] = useState<string[]>(
-    []
+    [],
   );
   const [stagedProfileIdsToRemove, setStagedProfileIdsToRemove] = useState<
     string[]
@@ -394,7 +394,7 @@ export default function Department({
   };
 
   const handleRemoveProfilesFromDepartment = async (
-    body: RemoveProfilesFromDepartmentBody
+    body: RemoveProfilesFromDepartmentBody,
   ) => {
     if (!removeProfilesFromDepartmentAction) {
       throw new Error("removeProfilesFromDepartmentAction is required");
@@ -474,7 +474,7 @@ export default function Department({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -520,10 +520,10 @@ export default function Department({
           : [];
       const finalProfileIds = [
         ...existingProfileIds.filter(
-          (id) => !stagedProfileIdsToRemove.includes(id)
+          (id) => !stagedProfileIdsToRemove.includes(id),
         ),
         ...stagedProfileIdsToAdd.filter(
-          (id) => !existingProfileIds.includes(id)
+          (id) => !existingProfileIds.includes(id),
         ),
       ];
 
@@ -559,7 +559,7 @@ export default function Department({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -592,7 +592,7 @@ export default function Department({
         setIsSearchingStaff(false);
       }
     },
-    [effectiveProfile?.id, searchAddStaff, departmentId]
+    [effectiveProfile?.id, searchAddStaff, departmentId],
   );
 
   const handleStaffSearchQueryChange = useCallback(
@@ -611,7 +611,7 @@ export default function Department({
         handleStaffSearch(value);
       }, 500);
     },
-    [handleStaffSearch]
+    [handleStaffSearch],
   );
 
   // Initial search when modal opens
@@ -693,7 +693,7 @@ export default function Department({
     }
 
     const selectedProfilesArray = Array.from(
-      staffSearchSelectedProfiles.values()
+      staffSearchSelectedProfiles.values(),
     );
     if (selectedProfilesArray.length === 0) {
       toast.error("No profiles selected.");
@@ -711,7 +711,7 @@ export default function Department({
     setStaffSearchSelectedProfiles(new Map());
     setStaffSearchResults([]);
     toast.success(
-      `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`
+      `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`,
     );
   };
 
@@ -724,7 +724,7 @@ export default function Department({
 
     // Filter out staged removals
     const filteredExistingStaff = existingStaff.filter(
-      (s) => !stagedProfileIdsToRemove.includes(s.profile_id)
+      (s) => !stagedProfileIdsToRemove.includes(s.profile_id),
     );
 
     // Get staged profiles from search results (if available) or create minimal entries
@@ -767,7 +767,7 @@ export default function Department({
 
     // Normalize existing staff
     const normalizedExistingStaff = filteredExistingStaff.map(
-      normalizeDepartmentStaffItem
+      normalizeDepartmentStaffItem,
     );
 
     return [...stagedProfiles, ...normalizedExistingStaff];
@@ -803,7 +803,7 @@ export default function Department({
                   });
                 } else {
                   setSelectedStaffIds((prev) =>
-                    prev.filter((id) => !visibleRowIds.includes(id))
+                    prev.filter((id) => !visibleRowIds.includes(id)),
                   );
                 }
               }}
@@ -820,7 +820,7 @@ export default function Department({
               onCheckedChange={(value) => {
                 const id = row.original.profile_id;
                 setSelectedStaffIds((prev) =>
-                  value ? [...prev, id] : prev.filter((x) => x !== id)
+                  value ? [...prev, id] : prev.filter((x) => x !== id),
                 );
               }}
               aria-label="Select row"
@@ -888,7 +888,7 @@ export default function Department({
           return Boolean(
             staff.first_name.toLowerCase().includes(valueLower) ||
               staff.last_name.toLowerCase().includes(valueLower) ||
-              emailMatch
+              emailMatch,
           );
         },
       },
@@ -962,7 +962,7 @@ export default function Department({
           const date = new Date(lastActive);
           const now = new Date();
           const diffInDays = Math.floor(
-            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
           );
 
           if (diffInDays < 7) return "recent";
@@ -1021,7 +1021,7 @@ export default function Department({
                     onClick={() =>
                       window.open(
                         `/analytics/reports/p/${staff.profile_id}`,
-                        "_blank"
+                        "_blank",
                       )
                     }
                   >
@@ -1043,13 +1043,13 @@ export default function Department({
                       onClick={() => {
                         if (staff.isStaged) {
                           setStagedProfileIdsToAdd((prev) =>
-                            prev.filter((id) => id !== staff.profile_id)
+                            prev.filter((id) => id !== staff.profile_id),
                           );
                           toast.success("Removed staged profile");
                         } else {
                           if (!staff.can_remove) {
                             toast.error(
-                              "You cannot remove this staff member from the department."
+                              "You cannot remove this staff member from the department.",
                             );
                             return;
                           }
@@ -1060,7 +1060,7 @@ export default function Department({
                             return prev;
                           });
                           toast.success(
-                            "Staff member staged for removal. Changes will be applied when you save."
+                            "Staff member staged for removal. Changes will be applied when you save.",
                           );
                         }
                       }}
@@ -1080,7 +1080,7 @@ export default function Department({
         enableHiding: false,
       },
     ],
-    [selectedStaffIds, isReadonly, departmentId]
+    [selectedStaffIds, isReadonly, departmentId],
   );
 
   // Staff table state
@@ -1170,7 +1170,7 @@ export default function Department({
       router.push("/departments");
     } catch (error) {
       toast.error(
-        `Failed to delete department: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to delete department: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -1438,7 +1438,7 @@ export default function Department({
                                   ? null
                                   : flexRender(
                                       header.column.columnDef.header,
-                                      header.getContext()
+                                      header.getContext(),
                                     )}
                               </TableHead>
                             );
@@ -1463,7 +1463,7 @@ export default function Department({
                               >
                                 {flexRender(
                                   cell.column.columnDef.cell,
-                                  cell.getContext()
+                                  cell.getContext(),
                                 )}
                               </TableCell>
                             ))}
@@ -1563,12 +1563,12 @@ export default function Department({
                   if (selectedStaffIds.length === 0 || !departmentId) return;
 
                   const existingStaffIds = new Set(
-                    departmentData?.staff?.map((s) => s.profile_id) || []
+                    departmentData?.staff?.map((s) => s.profile_id) || [],
                   );
 
                   const removableIds = selectedStaffIds.filter((id) => {
                     const staff = staffDataForTable.find(
-                      (s) => s.profile_id === id
+                      (s) => s.profile_id === id,
                     );
                     if (!staff) return false;
                     if (staff.isStaged) return true;
@@ -1576,29 +1576,29 @@ export default function Department({
                   });
 
                   const stagedIds = removableIds.filter(
-                    (id) => !existingStaffIds.has(id)
+                    (id) => !existingStaffIds.has(id),
                   );
                   const existingIds = removableIds.filter((id) =>
-                    existingStaffIds.has(id)
+                    existingStaffIds.has(id),
                   );
 
                   if (stagedIds.length > 0) {
                     setStagedProfileIdsToAdd((prev) =>
-                      prev.filter((p) => !stagedIds.includes(p))
+                      prev.filter((p) => !stagedIds.includes(p)),
                     );
                   }
 
                   if (existingIds.length > 0) {
                     setStagedProfileIdsToRemove((prev) => {
                       const newRemovals = existingIds.filter(
-                        (id) => !prev.includes(id)
+                        (id) => !prev.includes(id),
                       );
                       return [...prev, ...newRemovals];
                     });
                   }
 
                   toast.success(
-                    `${removableIds.length} staff member(s) staged for removal. Changes will be applied when you save the department.`
+                    `${removableIds.length} staff member(s) staged for removal. Changes will be applied when you save the department.`,
                   );
                   setSelectedStaffIds([]);
                   setShowBulkRemoveDialog(false);
@@ -1667,7 +1667,7 @@ export default function Department({
                     <TableBody>
                       {staffSearchResults.map((profile) => {
                         const isSelected = staffSearchSelectedIds.has(
-                          profile.profile_id
+                          profile.profile_id,
                         );
                         return (
                           <TableRow
@@ -1697,7 +1697,7 @@ export default function Department({
                             <TableCell>
                               {(() => {
                                 const roleData = STAFF_ROLES.find(
-                                  (r) => r.id === profile.role
+                                  (r) => r.id === profile.role,
                                 );
                                 if (!roleData) {
                                   return (
@@ -1765,7 +1765,7 @@ export default function Department({
                           <X className="h-3 w-3" />
                         </button>
                       </Badge>
-                    )
+                    ),
                   )}
                 </div>
                 <div className="flex items-center gap-2">

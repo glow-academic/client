@@ -41,7 +41,7 @@ export function ImagePicker({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageFileSelect = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -102,14 +102,14 @@ export function ImagePicker({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({}),
-              }
+              },
             );
 
             const finalizeResult = await finalizeResponse.json();
 
             if (!finalizeResult.success || !finalizeResult.uploadId) {
               throw new Error(
-                finalizeResult.message || "Failed to finalize upload"
+                finalizeResult.message || "Failed to finalize upload",
               );
             }
 
@@ -135,7 +135,7 @@ export function ImagePicker({
                   ? finalizeError.message
                   : "Unknown error"
               }`,
-              { id: toastId }
+              { id: toastId },
             );
           } finally {
             setIsUploadingImage(false);
@@ -151,7 +151,7 @@ export function ImagePicker({
         }`,
         {
           id: toastId,
-        }
+        },
       );
       setIsUploadingImage(false);
     }
@@ -223,4 +223,3 @@ export function ImagePicker({
     </div>
   );
 }
-

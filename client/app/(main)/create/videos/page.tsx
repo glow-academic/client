@@ -35,13 +35,13 @@ const getVideosList = async (profileId: string): Promise<VideosListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateVideo(
-  input: DuplicateVideoIn
+  input: DuplicateVideoIn,
 ): Promise<DuplicateVideoOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -58,26 +58,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Videos",
-    description: `Videos in GLOW${orgPart}.`,
+    description: "Manage instructional videos and multimedia resources for teaching assistant training. Upload, organize, and share educational video content to support pedagogical development and enhance learning experiences.",
   };
+}
 }
 
 export default async function VideosPage() {

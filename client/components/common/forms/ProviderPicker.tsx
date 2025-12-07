@@ -123,7 +123,9 @@ export function ProviderPicker({
                     <Check
                       className={cn(
                         "ml-auto flex-shrink-0",
-                        selectedProvider === provider.id ? "opacity-100" : "opacity-0",
+                        selectedProvider === provider.id
+                          ? "opacity-100"
+                          : "opacity-0",
                       )}
                     />
                   </div>
@@ -136,4 +138,3 @@ export function ProviderPicker({
     </Popover>
   );
 }
-

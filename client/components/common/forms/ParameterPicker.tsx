@@ -103,7 +103,7 @@ export function ParameterPicker<T extends MappingItem = MappingItem>({
           className={cn(
             "w-full justify-between",
             buttonClassName,
-            disabled && "cursor-not-allowed opacity-50"
+            disabled && "cursor-not-allowed opacity-50",
           )}
           disabled={disabled}
           {...triggerProps}
@@ -143,7 +143,7 @@ export function ParameterPicker<T extends MappingItem = MappingItem>({
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        isSelected ? "opacity-100" : "opacity-0"
+                        isSelected ? "opacity-100" : "opacity-0",
                       )}
                     />
                     <div className="flex flex-col">
@@ -164,4 +164,3 @@ export function ParameterPicker<T extends MappingItem = MappingItem>({
     </Popover>
   );
 }
-

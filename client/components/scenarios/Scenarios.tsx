@@ -68,10 +68,10 @@ export interface ScenariosProps {
   listData: ScenariosListOut;
   // Server actions (replaces useMutation)
   duplicateScenarioAction?: (
-    input: DuplicateScenarioIn
+    input: DuplicateScenarioIn,
   ) => Promise<DuplicateScenarioOut>;
   deleteScenarioAction?: (
-    input: DeleteScenarioIn
+    input: DeleteScenarioIn,
   ) => Promise<DeleteScenarioOut>;
 }
 
@@ -90,7 +90,7 @@ export function Scenarios({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   // Table state
@@ -107,11 +107,11 @@ export function Scenarios({
   // Extract data from response
   const scenarios = useMemo(
     () => scenariosData?.scenarios || [],
-    [scenariosData?.scenarios]
+    [scenariosData?.scenarios],
   );
   const personaMapping = useMemo(
     () => scenariosData?.persona_mapping || {},
-    [scenariosData?.persona_mapping]
+    [scenariosData?.persona_mapping],
   );
 
   // Define GroupedScenario type based on scenarios
@@ -129,7 +129,7 @@ export function Scenarios({
 
     roots.forEach((parent) => {
       const children = scenarios.filter(
-        (s) => s.parent_scenario_id === parent.scenario_id
+        (s) => s.parent_scenario_id === parent.scenario_id,
       );
       groups.push({ parent, children });
     });
@@ -146,7 +146,7 @@ export function Scenarios({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [scenariosData?.persona_options]
+    [scenariosData?.persona_options],
   );
   const simulationOptions = useMemo(
     () =>
@@ -156,7 +156,7 @@ export function Scenarios({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [scenariosData?.simulation_options]
+    [scenariosData?.simulation_options],
   );
   const departmentOptions = useMemo(
     () =>
@@ -166,7 +166,7 @@ export function Scenarios({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [scenariosData?.department_options]
+    [scenariosData?.department_options],
   );
 
   // Define table columns inline
@@ -329,13 +329,13 @@ export function Scenarios({
     for (const parentId of orderedParentIds) {
       const parent = scenarios.find(
         (scenario) =>
-          !scenario.parent_scenario_id && scenario.scenario_id === parentId
+          !scenario.parent_scenario_id && scenario.scenario_id === parentId,
       );
       if (!parent) continue;
 
       // Find children using parent_scenario_id from V2 API
       const children = scenarios.filter(
-        (s) => s.parent_scenario_id === parentId
+        (s) => s.parent_scenario_id === parentId,
       );
 
       groups.push({ parent, children });
@@ -409,7 +409,7 @@ export function Scenarios({
     isChild: boolean = false,
     showDropdown?: boolean,
     isCollapsed?: boolean,
-    onToggleCollapse?: () => void
+    onToggleCollapse?: () => void,
   ) => (
     <Card
       key={scenario.scenario_id}
@@ -545,7 +545,7 @@ export function Scenarios({
                     onClick={() =>
                       handleDeleteClick(
                         scenario.scenario_id,
-                        scenario.title || "Unnamed Scenario"
+                        scenario.title || "Unnamed Scenario",
                       )
                     }
                     className="h-9 px-3"
@@ -651,7 +651,7 @@ export function Scenarios({
             false,
             hasChildren,
             isCollapsed,
-            () => toggleGroupCollapse(group.parent.scenario_id)
+            () => toggleGroupCollapse(group.parent.scenario_id),
           )}
 
           {/* Child Scenarios */}

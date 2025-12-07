@@ -52,7 +52,9 @@ async function updateVideo(input: UpdateVideoIn): Promise<UpdateVideoOut> {
   return api.post("/videos/update", input);
 }
 
-async function randomizeVideo(input: RandomizeVideoIn): Promise<RandomizeVideoOut> {
+async function randomizeVideo(
+  input: RandomizeVideoIn,
+): Promise<RandomizeVideoOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/videos/randomize", input);

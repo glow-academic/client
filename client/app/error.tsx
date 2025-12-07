@@ -21,7 +21,11 @@ export default function Error({
 
   const handleBackToGlow = () => {
     // Navigate based on effective role if available, otherwise default to home
-    if (effectiveProfile?.role && effectiveProfile.role !== "ta" && effectiveProfile.role !== "guest") {
+    if (
+      effectiveProfile?.role &&
+      effectiveProfile.role !== "ta" &&
+      effectiveProfile.role !== "guest"
+    ) {
       router.push("/analytics");
     } else {
       router.push("/home");
@@ -40,7 +44,9 @@ export default function Error({
             <h3 className="text-xl font-semibold text-foreground">
               An error occurred
             </h3>
-            <p className="text-muted-foreground text-sm break-words">{error.message}</p>
+            <p className="text-muted-foreground text-sm break-words">
+              {error.message}
+            </p>
             {error.stack && (
               <details className="mt-4 text-left">
                 <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">

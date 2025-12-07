@@ -130,11 +130,12 @@ export default function ImageViewer({
     <div className="w-full h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between p-3 border-b bg-muted/30 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-medium truncate">{name || "Image"}</span>
+          <span className="text-sm font-medium truncate">
+            {name || "Image"}
+          </span>
         </div>
       </div>
       <div className="flex-1 min-h-0">{renderContent()}</div>
     </div>
   );
 }
-

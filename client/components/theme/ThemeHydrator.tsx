@@ -40,4 +40,3 @@ export function ThemeHydrator({
 
   return null; // No UI
 }
-

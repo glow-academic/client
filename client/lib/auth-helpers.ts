@@ -15,9 +15,10 @@ export type TestProfileIds = {
 };
 
 export function validateTestHeaders(
-  headers: HeaderLike
+  headers: HeaderLike,
 ): TestProfileIds | null {
-  const secret = process.env["AUTH_SECRET"] || "test_secret_key_for_integration_tests";
+  const secret =
+    process.env["AUTH_SECRET"] || "test_secret_key_for_integration_tests";
   const profileId = headers.get(PROFILE_ID_HEADER)?.trim();
   const effectiveProfileId = headers.get(EFFECTIVE_PROFILE_ID_HEADER)?.trim();
   const signature = headers.get(SIGNATURE_HEADER)?.trim();

@@ -95,7 +95,7 @@ export default function Departments({
         string,
         { name: string; description: string }
       >) || {},
-    [departmentsData?.cohort_mapping]
+    [departmentsData?.cohort_mapping],
   );
   const profileMapping = useMemo(
     () =>
@@ -103,7 +103,7 @@ export default function Departments({
         string,
         { name: string; description: string }
       >) || {},
-    [departmentsData?.profile_mapping]
+    [departmentsData?.profile_mapping],
   );
 
   // Build filter options from mappings
@@ -165,7 +165,8 @@ export default function Departments({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof departments)[number]) => row.profile_ids ?? [],
+        accessorFn: (row: (typeof departments)[number]) =>
+          row.profile_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("profiles") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -235,20 +236,17 @@ export default function Departments({
   const profilesColumn = table.getColumn("profiles");
   const priceSpentFacets = priceSpentColumn?.getFacetedUniqueValues();
 
-  const priceSpentOptions = useMemo(
-    () => {
-      const allOptions = [
-        { value: "0-10", label: "$0 - $10" },
-        { value: "10-50", label: "$10 - $50" },
-        { value: "50-100", label: "$50 - $100" },
-        { value: "100+", label: "$100+" },
-      ];
-      // Filter to only show options that have matching departments
-      if (!priceSpentFacets) return allOptions;
-      return allOptions.filter(opt => priceSpentFacets.has(opt.value));
-    },
-    [priceSpentFacets],
-  );
+  const priceSpentOptions = useMemo(() => {
+    const allOptions = [
+      { value: "0-10", label: "$0 - $10" },
+      { value: "10-50", label: "$10 - $50" },
+      { value: "50-100", label: "$50 - $100" },
+      { value: "100+", label: "$100+" },
+    ];
+    // Filter to only show options that have matching departments
+    if (!priceSpentFacets) return allOptions;
+    return allOptions.filter((opt) => priceSpentFacets.has(opt.value));
+  }, [priceSpentFacets]);
 
   const handleEdit = (id: string) => {
     router.push(`/departments/d/${id}`);
@@ -381,7 +379,9 @@ export default function Departments({
                   <Copy className="h-4 w-4 md:mr-0 mr-2" />
                 )}
                 <span className="md:hidden">
-                  {isDuplicating === department.department_id ? "Duplicating..." : "Duplicate"}
+                  {isDuplicating === department.department_id
+                    ? "Duplicating..."
+                    : "Duplicate"}
                 </span>
               </Button>
             )}

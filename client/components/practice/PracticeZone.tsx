@@ -131,7 +131,7 @@ export default function PracticeZone({
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
               />
-            )
+            ),
         )}
       </div>
 
@@ -143,9 +143,7 @@ export default function PracticeZone({
               key={index}
               onClick={() => setCarouselIndex(index)}
               className={`w-2 h-2 rounded-full transition-colors ${
-                index === carouselIndex
-                  ? "bg-primary"
-                  : "bg-muted"
+                index === carouselIndex ? "bg-primary" : "bg-muted"
               }`}
             />
           ))}

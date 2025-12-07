@@ -12,28 +12,9 @@ import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Profile",
-    description: `View your profile in GLOW${orgPart}.`,
+    description: "View and manage your teaching assistant profile. Access your training progress, review performance metrics, update personal information, and track your professional development in the L&D program.",
   };
 }
 

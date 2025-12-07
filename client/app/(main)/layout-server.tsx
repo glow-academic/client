@@ -60,13 +60,13 @@ type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
     return api.post("/profile/context", input);
-  }
+  },
 );
 
 const getActiveSettings = cache(
   async (input: SettingsActiveIn): Promise<SettingsActiveOut> => {
     return api.post("/settings/active", input);
-  }
+  },
 );
 
 /** ---- Direct fetch (no caching - source of truth) ----
@@ -74,7 +74,7 @@ const getActiveSettings = cache(
  */
 const getAttemptFull = async (
   _attemptId: string,
-  input: AttemptFullIn
+  input: AttemptFullIn,
 ): Promise<AttemptFullOut> => {
   return api.post("/attempts/full", input, {
     cache: "no-store",
@@ -169,7 +169,7 @@ type SwitchEffectiveProfileResult = {
 };
 
 async function authorizeEmulation(
-  input: AuthorizeEmulationIn
+  input: AuthorizeEmulationIn,
 ): Promise<AuthorizeEmulationOut> {
   return api.post("/profile/authorize-emulation", input);
 }
@@ -180,7 +180,7 @@ async function authorizeEmulation(
  * Uses server-side session mutation via NextAuth's unstable_update.
  */
 export async function switchEffectiveProfile(
-  input: SwitchEffectiveProfileParams
+  input: SwitchEffectiveProfileParams,
 ): Promise<SwitchEffectiveProfileResult> {
   try {
     const session = await getSession();
@@ -222,35 +222,35 @@ export async function switchEffectiveProfile(
 
 /** ---- Strongly-typed server actions for Feedback (single source of truth) ---- */
 export async function createFeedback(
-  input: CreateFeedbackIn
+  input: CreateFeedbackIn,
 ): Promise<CreateFeedbackOut> {
   return api.post("/feedback/create", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */
 export async function refreshAnalytics(
-  input: RefreshAnalyticsIn
+  input: RefreshAnalyticsIn,
 ): Promise<RefreshAnalyticsOut> {
   return api.post("/analytics/refresh", input);
 }
 
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
 export async function searchSimulatableProfiles(
-  input: SearchSimulatableProfilesIn
+  input: SearchSimulatableProfilesIn,
 ): Promise<SearchSimulatableProfilesOut> {
   return api.post("/profile/search-simulatable-profiles", input);
 }
 
 /** ---- Strongly-typed server actions for Staff (single source of truth) ---- */
 export async function searchStaff(
-  input: SearchStaffIn
+  input: SearchStaffIn,
 ): Promise<SearchStaffOut> {
   "use server";
   return api.post("/profile/staff/search-staff", input);
 }
 
 export async function getCreateStaffData(
-  input: CreateStaffDataIn
+  input: CreateStaffDataIn,
 ): Promise<CreateStaffDataOut> {
   "use server";
   return api.post("/profile/staff/create-staff-data", input);
@@ -262,7 +262,7 @@ export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
 }
 
 export async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn
+  input: BulkCreateOrUpdateStaffIn,
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

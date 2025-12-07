@@ -41,8 +41,7 @@ export function PricingRunsClient({
         id: run.model_run_id,
         createdAt: run.created_at,
         modelId,
-        modelName:
-          (modelId && model_mapping[modelId]?.name) || modelId || "",
+        modelName: (modelId && model_mapping[modelId]?.name) || modelId || "",
         agentId,
         agentName: (agentId && agent_mapping[agentId]) || agentId || "",
         personaId,
@@ -86,4 +85,3 @@ export function PricingRunsClient({
     </div>
   );
 }
-

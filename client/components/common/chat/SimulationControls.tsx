@@ -60,7 +60,7 @@ export function SimulationControls({
   const currentMessages = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     return chatData?.messages ?? [];
   }, [attemptData, currentChat]);
@@ -84,7 +84,7 @@ export function SimulationControls({
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
-    null
+    null,
   );
   const [endChatLoading, setEndChatLoading] = useState(false);
 
@@ -121,7 +121,7 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [currentChatId, socket, attemptId]
+    [currentChatId, socket, attemptId],
   );
 
   // End all chats function
@@ -156,7 +156,7 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [attempt, currentChatId, attemptId, socket]
+    [attempt, currentChatId, attemptId, socket],
   );
 
   // Listen for WebSocket events to reset loading state and handle grading
@@ -237,7 +237,7 @@ export function SimulationControls({
         data.total_count !== undefined
       ) {
         const progress = Math.round(
-          (data.completed_count / data.total_count) * 100
+          (data.completed_count / data.total_count) * 100,
         );
         setGradingProgress({
           completed: data.completed_count,
@@ -269,7 +269,7 @@ export function SimulationControls({
       socket.off("end_all_completed", handleEndAllCompleted);
       socket.off(
         "simulation_grading_progress",
-        handleSimulationGradingProgress
+        handleSimulationGradingProgress,
       );
     };
   }, [socket, currentChatId]);
@@ -294,12 +294,12 @@ export function SimulationControls({
       // Use parentScenarioId to match correctly (child scenarios map to parent scenarios)
       const scenarioChats =
         attemptData.chats?.filter(
-          (c) => c.chat.parentScenarioId === scenarioData.id
+          (c) => c.chat.parentScenarioId === scenarioData.id,
         ) || [];
 
       // Check if this scenario has at least one chat with a grade (completed and graded)
       const hasGradedChat = scenarioChats.some(
-        (c) => c.chat.completed && c.gradingState !== null
+        (c) => c.chat.completed && c.gradingState !== null,
       );
 
       // Get the first chat ID if any exist
@@ -321,7 +321,7 @@ export function SimulationControls({
   // Filter to only include scenarios without completed chats
   const remainingScenarios = useMemo(() => {
     return allSimulationScenarios.filter(
-      (scenario) => !scenario.hasCompletedChat
+      (scenario) => !scenario.hasCompletedChat,
     );
   }, [allSimulationScenarios]);
 
@@ -359,7 +359,10 @@ export function SimulationControls({
     if (!continuationOptions?.nextSequentialOptions?.length) return [];
 
     // Group options by scenario position
-    const optionsByPosition = new Map<number, ContinuationPermutationOption[]>();
+    const optionsByPosition = new Map<
+      number,
+      ContinuationPermutationOption[]
+    >();
     continuationOptions.nextSequentialOptions.forEach((opt) => {
       const pos = opt.position || 0;
       if (!optionsByPosition.has(pos)) {
@@ -377,17 +380,19 @@ export function SimulationControls({
     });
 
     // Generate sequential permutations (1, 1+2, 1+2+3, etc.)
-    const positions = Array.from(optionsByPosition.keys()).sort((a, b) => a - b);
+    const positions = Array.from(optionsByPosition.keys()).sort(
+      (a, b) => a - b,
+    );
     const allPermutations: ContinuationPermutation[] = [];
 
     // For each sequence length (1, 2, 3, ...)
     for (let seqLen = 1; seqLen <= positions.length; seqLen++) {
       const seqPositions = positions.slice(0, seqLen);
-      
+
       // Generate all permutations for this sequence using cartesian product
       const generatePermutations = (
         posIndex: number = 0,
-        currentPerm: ContinuationPermutationOption[] = []
+        currentPerm: ContinuationPermutationOption[] = [],
       ): ContinuationPermutationOption[][] => {
         if (posIndex >= seqPositions.length) {
           return [currentPerm];
@@ -398,7 +403,9 @@ export function SimulationControls({
         const results: ContinuationPermutationOption[][] = [];
 
         for (const option of options) {
-          results.push(...generatePermutations(posIndex + 1, [...currentPerm, option]));
+          results.push(
+            ...generatePermutations(posIndex + 1, [...currentPerm, option]),
+          );
         }
 
         return results;
@@ -407,11 +414,18 @@ export function SimulationControls({
       const perms = generatePermutations();
       perms.forEach((perm, idx) => {
         const totalScore = perm.reduce((sum, opt) => sum + (opt.score || 0), 0);
-        const totalTimeTaken = perm.reduce((sum, opt) => sum + (opt.timeTaken || 0), 0);
-        const percentages = perm.map((opt) => opt.percentage).filter((p) => p !== null) as number[];
+        const totalTimeTaken = perm.reduce(
+          (sum, opt) => sum + (opt.timeTaken || 0),
+          0,
+        );
+        const percentages = perm
+          .map((opt) => opt.percentage)
+          .filter((p) => p !== null) as number[];
         const totalPercentage =
           percentages.length > 0
-            ? Math.round(percentages.reduce((sum, p) => sum + p, 0) / percentages.length)
+            ? Math.round(
+                percentages.reduce((sum, p) => sum + p, 0) / percentages.length,
+              )
             : null;
 
         allPermutations.push({
@@ -464,7 +478,7 @@ export function SimulationControls({
 
     // Find the matching scenario in allSimulationScenarios
     const matchingScenario = allSimulationScenarios.find(
-      (s) => s.scenarioId === parentScenarioId
+      (s) => s.scenarioId === parentScenarioId,
     );
 
     return matchingScenario?.previousChats || [];
@@ -672,7 +686,8 @@ export function SimulationControls({
           <AlertDialogHeader>
             <AlertDialogTitle>Use Previous Attempt?</AlertDialogTitle>
             <AlertDialogDescription>
-              Choose which previous attempts to use. Permutations are sorted by highest total score.
+              Choose which previous attempts to use. Permutations are sorted by
+              highest total score.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -771,7 +786,7 @@ export function SimulationControls({
                 }
 
                 const selectedPerm = continuationPermutations.find(
-                  (p) => p.id === selectedContinuationPermutation
+                  (p) => p.id === selectedContinuationPermutation,
                 );
 
                 if (selectedPerm && selectedPerm.options.length > 0) {
@@ -792,7 +807,11 @@ export function SimulationControls({
                         previousChatMap[opt.scenarioId] = opt.previousChatId;
                       }
                     });
-                    endAllChats(Object.keys(previousChatMap).length > 0 ? previousChatMap : undefined);
+                    endAllChats(
+                      Object.keys(previousChatMap).length > 0
+                        ? previousChatMap
+                        : undefined,
+                    );
                   }
                 } else {
                   // Fallback: continue normally
@@ -860,7 +879,6 @@ export function SimulationControls({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </>
   );
 }

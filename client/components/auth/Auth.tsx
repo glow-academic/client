@@ -82,7 +82,7 @@ export default function Auth({
       description: "",
       active: false,
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,7 +95,6 @@ export default function Auth({
   const authDetail = serverAuthDetail;
   const authDetailDefault = serverAuthDetailDefault;
   const authData = isEditMode ? authDetail : authDetailDefault;
-
 
   // Extract body types from server action types for type safety
   type CreateAuthBody = CreateAuthIn extends { body: infer B } ? B : never;
@@ -155,7 +154,7 @@ export default function Auth({
       const sorted = authItems
         .slice()
         .sort((a: { name: string }, b: { name: string }) =>
-          a.name.localeCompare(b.name)
+          a.name.localeCompare(b.name),
         );
       const formData = sorted.map(
         (item: {
@@ -170,7 +169,7 @@ export default function Auth({
           value: "", // Values are encrypted, so we don't show them - user must re-enter
           isNew: false,
           isDeleted: false,
-        })
+        }),
       );
       setAuthItemsFormData(formData);
       setInitiallySorted(true);
@@ -187,7 +186,7 @@ export default function Auth({
 
     const mapped = authItems
       .sort((a: { name: string }, b: { name: string }) =>
-        a.name.localeCompare(b.name)
+        a.name.localeCompare(b.name),
       )
       .map(
         (item: {
@@ -202,7 +201,7 @@ export default function Auth({
           value: "", // Values are encrypted, so we don't show them - user must re-enter
           isNew: false,
           isDeleted: false,
-        })
+        }),
       );
     setAuthItemsFormData(mapped);
   }, [authItems, mode, initiallySorted]);
@@ -257,7 +256,7 @@ export default function Auth({
       router.push("/system/auth");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} auth: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} auth: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -327,7 +326,7 @@ export default function Auth({
   const handleAuthItemInputChange = (
     index: number,
     field: keyof AuthItemFormData,
-    value: string | string[]
+    value: string | string[],
   ) => {
     setAuthItemsFormData((prev) => {
       const newItems = [...prev];
@@ -444,7 +443,7 @@ export default function Auth({
                               handleAuthItemInputChange(
                                 itemIndex,
                                 "name",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="text-sm font-medium w-full"
@@ -473,7 +472,7 @@ export default function Auth({
                             handleAuthItemInputChange(
                               itemIndex,
                               "description",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="text-sm min-h-[80px] w-full"
@@ -493,7 +492,7 @@ export default function Auth({
                             handleAuthItemInputChange(
                               itemIndex,
                               "value",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="text-sm w-full"
@@ -502,7 +501,7 @@ export default function Auth({
                         />
                       </div>
                     </div>
-                  )
+                  ),
                 )}
               </div>
 
@@ -528,7 +527,7 @@ export default function Auth({
                                 handleAuthItemInputChange(
                                   itemIndex,
                                   "name",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="text-sm w-full"
@@ -543,7 +542,7 @@ export default function Auth({
                                 handleAuthItemInputChange(
                                   itemIndex,
                                   "description",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="text-sm min-h-[60px] w-full"
@@ -560,7 +559,7 @@ export default function Auth({
                                 handleAuthItemInputChange(
                                   itemIndex,
                                   "value",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="text-sm w-full"
@@ -584,7 +583,7 @@ export default function Auth({
                             )}
                           </TableCell>
                         </TableRow>
-                      )
+                      ),
                     )}
                   </TableBody>
                 </Table>

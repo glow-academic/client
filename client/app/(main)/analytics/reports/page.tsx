@@ -130,28 +130,10 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Reports",
-    description: `Reports in GLOW${orgPart}.`,
+    description:
+      "Comprehensive assessment reports and evaluation data for teaching assistant training. Generate detailed performance analytics, pedagogical assessment summaries, and learning progress reports to track teaching effectiveness and professional development.",
   };
 }
 
@@ -177,7 +159,7 @@ export default async function ReportsFullPage({
 
   // Get filters from search params or defaults
   const filters = await getReportsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Extract pagination and filter params from search params for reports table
@@ -333,7 +315,7 @@ async function ReportsSection({
       value: opt.value,
       label: opt.label,
       count: opt.count,
-    })
+    }),
   );
 
   const scenarioOptions = (reportsData?.scenarioOptions || []).map((opt) => ({

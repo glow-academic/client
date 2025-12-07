@@ -9,7 +9,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BulkDeleteLogsDialog } from "./BulkDeleteLogsDialog";
-import type { BulkDeleteLogsIn, BulkDeleteLogsOut, LogsRunsOut } from "@/app/(main)/system/logs/page";
+import type {
+  BulkDeleteLogsIn,
+  BulkDeleteLogsOut,
+  LogsRunsOut,
+} from "@/app/(main)/system/logs/page";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -58,7 +62,7 @@ export default function LogsTable({
 
   // Local search state, initialized from URL
   const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("logsSearch") || ""
+    searchParams.get("logsSearch") || "",
   );
 
   // Ref to track debounce timeout for search
@@ -103,7 +107,7 @@ export default function LogsTable({
       });
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   // Commit search to URL (called on Enter or blur, or after debounce)
@@ -114,7 +118,7 @@ export default function LogsTable({
         logsSearch: value.trim() || null,
       });
     },
-    [updateURLParams]
+    [updateURLParams],
   );
 
   // Handle search input change with debounce
@@ -139,15 +143,20 @@ export default function LogsTable({
         commitSearch(value);
       }, 500);
     },
-    [commitSearch]
+    [commitSearch],
   );
 
   // Sync URL params for sorting
   const sortBy = searchParams.get("logsSortBy") || "createdAt";
   const sortOrder = searchParams.get("logsSortOrder") || "desc";
   const sorting: SortingState = useMemo(
-    () => [{ id: sortBy === "createdAt" ? "created_at" : sortBy, desc: sortOrder === "desc" }],
-    [sortBy, sortOrder]
+    () => [
+      {
+        id: sortBy === "createdAt" ? "created_at" : sortBy,
+        desc: sortOrder === "desc",
+      },
+    ],
+    [sortBy, sortOrder],
   );
 
   // Sync URL params for filters
@@ -157,19 +166,19 @@ export default function LogsTable({
 
   const logsLevels = useMemo(
     () => (logsLevelsParam ? logsLevelsParam.split(",").filter(Boolean) : []),
-    [logsLevelsParam]
+    [logsLevelsParam],
   );
   const logsLoggerNames = useMemo(
     () =>
       logsLoggerNamesParam
         ? logsLoggerNamesParam.split(",").filter(Boolean)
         : [],
-    [logsLoggerNamesParam]
+    [logsLoggerNamesParam],
   );
   const logsActorNames = useMemo(
     () =>
       logsActorNamesParam ? logsActorNamesParam.split(",").filter(Boolean) : [],
-    [logsActorNamesParam]
+    [logsActorNamesParam],
   );
 
   // Sync column filters with URL params (for DataTableFacetedFilter compatibility)
@@ -290,14 +299,14 @@ export default function LogsTable({
         },
       },
     ],
-    []
+    [],
   );
 
   const handleColumnFiltersChange = useCallback(
     (
       updater:
         | ColumnFiltersState
-        | ((prev: ColumnFiltersState) => ColumnFiltersState)
+        | ((prev: ColumnFiltersState) => ColumnFiltersState),
     ) => {
       const newFilters =
         typeof updater === "function" ? updater(columnFilters) : updater;
@@ -327,7 +336,7 @@ export default function LogsTable({
             : null,
       });
     },
-    [columnFilters, updateURLParams]
+    [columnFilters, updateURLParams],
   );
 
   const table = useReactTable({
@@ -407,7 +416,7 @@ export default function LogsTable({
         label: opt.label,
         count: opt.count,
       })) || [],
-    [runsData]
+    [runsData],
   );
 
   const loggerOptions = useMemo(
@@ -417,7 +426,7 @@ export default function LogsTable({
         label: opt.label,
         count: opt.count,
       })) || [],
-    [runsData]
+    [runsData],
   );
 
   const actorOptions = useMemo(
@@ -427,7 +436,7 @@ export default function LogsTable({
         label: opt.label,
         count: opt.count,
       })) || [],
-    [runsData]
+    [runsData],
   );
 
   const isFiltered = columnFilters.length > 0 || searchTerm.length > 0;
@@ -528,7 +537,9 @@ export default function LogsTable({
               disabled={isLoading}
               className="h-8 px-2"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+              />
             </Button>
             <DataTableViewOptions table={table} />
           </div>
@@ -550,7 +561,7 @@ export default function LogsTable({
                         : typeof header.column.columnDef.header === "string"
                           ? header.column.columnDef.header
                           : header.column.columnDef.header?.(
-                              header.getContext()
+                              header.getContext(),
                             )}
                     </th>
                   ))}
@@ -734,4 +745,3 @@ export default function LogsTable({
     </>
   );
 }
-

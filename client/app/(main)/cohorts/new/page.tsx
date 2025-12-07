@@ -65,7 +65,7 @@ const getCohortDefault = async (profileId: string): Promise<CohortNewOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -78,7 +78,7 @@ async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
 
 /** ---- Server action for searching profiles to add to cohort ---- */
 async function searchCohortProfile(
-  input: CohortSearchProfileIn
+  input: CohortSearchProfileIn,
 ): Promise<CohortSearchProfileOut> {
   "use server";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,25 +94,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Cohort",
-    description: `Create new cohorts in GLOW${orgPart}.`,
+    description: "Create a new learning cohort for teaching assistant training programs. Organize groups of teaching assistants, configure cohort settings, and set up group-based learning activities for effective L&D program administration.",
   };
 }
 

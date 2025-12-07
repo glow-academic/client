@@ -229,7 +229,7 @@ export default function PersonaPerformance({
 
     const selectedIds = new Set(selectedSimulations);
     return persona.trendData.filter(
-      (d) => !d.simulationId || selectedIds.has(d.simulationId)
+      (d) => !d.simulationId || selectedIds.has(d.simulationId),
     );
   };
 
@@ -348,7 +348,7 @@ export default function PersonaPerformance({
                   <div
                     className={cn(
                       "flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors",
-                      getBackgroundColor(persona.score)
+                      getBackgroundColor(persona.score),
                     )}
                   >
                     <div className="flex items-center gap-3">

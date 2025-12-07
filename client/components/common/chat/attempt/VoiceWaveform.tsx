@@ -211,7 +211,7 @@ export default function VoiceWaveform({
         "relative w-full h-full flex items-center justify-center",
         // Use standard input height to match Textarea feel
         "min-h-[40px] max-h-32",
-        className
+        className,
       )}
       aria-label="Voice waveform visualization"
     >

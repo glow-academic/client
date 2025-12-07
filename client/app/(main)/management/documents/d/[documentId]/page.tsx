@@ -29,7 +29,7 @@ type GenerateTemplateOut = never;
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getDocument = async (
   documentId: string,
-  profileId: string
+  profileId: string,
 ): Promise<DocumentDetailOut> => {
   return api.post(
     "/documents/detail",
@@ -39,53 +39,37 @@ const getDocument = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ documentId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { documentId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch active settings for organization name and description
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const document = await getDocument(documentId, profileId);
     return {
       title: `${document?.name || "Document"}`,
-      description: `${document ? `${document.name}` : "Document"} in GLOW${orgPart}.`,
+      description: `${document?.name ? `${document.name} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
     };
   } catch {
     return {
       title: "Document",
-      description: `Document in GLOW${orgPart}.`,
+      description:
+        "Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.",
     };
   }
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateDocument(
-  input: UpdateDocumentIn
+  input: UpdateDocumentIn,
 ): Promise<UpdateDocumentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -93,7 +77,7 @@ async function updateDocument(
 }
 
 async function renderTemplate(
-  input: RenderTemplateIn
+  input: RenderTemplateIn,
 ): Promise<RenderTemplateOut> {
   "use server";
   return api.post("/documents/render", input);
@@ -142,14 +126,16 @@ export default async function DocumentEditPage({
           // Extract template args from search params
           const templateArgs = searchParamsToTemplateArgs(
             searchParamsObj,
-            templateSchema
+            templateSchema,
           );
 
           // Call render endpoint server-side
           // Use first departmentId from document for department-specific theme
-          const departmentIds = documentDetail.department_ids && documentDetail.department_ids.length > 0
-            ? documentDetail.department_ids
-            : undefined;
+          const departmentIds =
+            documentDetail.department_ids &&
+            documentDetail.department_ids.length > 0
+              ? documentDetail.department_ids
+              : undefined;
 
           try {
             const renderResult = await renderTemplate({

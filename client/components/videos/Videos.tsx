@@ -53,7 +53,7 @@ export interface VideosProps {
   listData: VideosListOut;
   // Server actions (replaces useMutation)
   duplicateVideoAction?: (
-    input: DuplicateVideoIn
+    input: DuplicateVideoIn,
   ) => Promise<DuplicateVideoOut>;
   deleteVideoAction?: (input: DeleteVideoIn) => Promise<DeleteVideoOut>;
 }
@@ -95,7 +95,7 @@ export function Videos({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [videosData?.department_options]
+    [videosData?.department_options],
   );
 
   // Format length_seconds to MM:SS
@@ -306,7 +306,7 @@ export function Videos({
                 onClick={() =>
                   handleDeleteClick(
                     video.video_id,
-                    video.name || "Unnamed Video"
+                    video.name || "Unnamed Video",
                   )
                 }
                 className="h-9 px-3"

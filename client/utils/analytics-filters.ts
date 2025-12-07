@@ -51,7 +51,7 @@ function datesEqual(a: string, b: string): boolean {
  */
 export function filtersToSearchParams(
   filters: AnalyticsFilters,
-  defaults: DefaultAnalyticsFilters
+  defaults: DefaultAnalyticsFilters,
 ): URLSearchParams {
   const params = new URLSearchParams();
 
@@ -108,7 +108,7 @@ export function filtersToSearchParams(
  */
 export function searchParamsToFilters(
   searchParams: URLSearchParams,
-  defaults: DefaultAnalyticsFilters
+  defaults: DefaultAnalyticsFilters,
 ): AnalyticsFilters {
   const filters: AnalyticsFilters = {
     startDate: defaults.startDate,

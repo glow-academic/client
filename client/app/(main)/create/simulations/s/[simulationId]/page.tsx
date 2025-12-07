@@ -17,14 +17,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 type SimulationDetailIn = InputOf<"/api/v3/simulations/detail", "post">;
 type SimulationDetailOut = OutputOf<"/api/v3/simulations/detail", "post">;
 
-type SimulationNewIn = InputOf<
-  "/api/v3/simulations/new",
-  "post"
->;
-type SimulationNewOut = OutputOf<
-  "/api/v3/simulations/new",
-  "post"
->;
+type SimulationNewIn = InputOf<"/api/v3/simulations/new", "post">;
+type SimulationNewOut = OutputOf<"/api/v3/simulations/new", "post">;
 
 type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
 type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
@@ -37,7 +31,7 @@ type UpdateSimulationOut = OutputOf<"/api/v3/simulations/update", "post">;
  */
 const getSimulation = async (
   simulationId: string,
-  profileId: string
+  profileId: string,
 ): Promise<SimulationDetailOut> => {
   return api.post(
     "/simulations/detail",
@@ -47,7 +41,7 @@ const getSimulation = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -60,32 +54,17 @@ export async function generateMetadata(
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const simulation = await getSimulation(simulationId, profileId);
     return {
       title: `${simulation?.name || "Simulation"}`,
-      description: `${simulation?.name || "Simulation"} in GLOW${orgPart}.`,
+      description: `${simulation?.name ? `${simulation.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
     };
   } catch {
     return {
       title: "Simulation",
-      description: `Simulation in GLOW${orgPart}.`,
+      description:
+        "Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.",
     };
   }
 }

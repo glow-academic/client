@@ -30,7 +30,7 @@ const getEvalsList = async (profileId: string): Promise<EvalsListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
@@ -46,28 +46,10 @@ async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Evals",
-    description: `Manage evals in GLOW${orgPart}.`,
+    description:
+      "Manage automated evaluation runs for teaching assistant assessments. Configure and execute batch evaluations to analyze pedagogical performance, teaching effectiveness, and student interaction quality across multiple practice sessions.",
   };
 }
 

@@ -154,7 +154,7 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
       // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
       router.push(
-        `/${item.practiceSimulation ? "practice" : "home"}/a/${attemptId}`
+        `/${item.practiceSimulation ? "practice" : "home"}/a/${attemptId}`,
       );
     };
 
@@ -172,14 +172,14 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as unknown as EventListener
+      handleSimulationStarted as unknown as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as unknown as EventListener
+        handleSimulationStarted as unknown as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -332,7 +332,7 @@ export interface SimulationHistoryProps {
 
   // Optional: Server action for bulk archiving attempts (only needed when showArchive is true)
   bulkArchiveAttemptsAction?: (
-    input: BulkArchiveAttemptsIn
+    input: BulkArchiveAttemptsIn,
   ) => Promise<BulkArchiveAttemptsOut>;
 
   // Optional: Initial filters for history (for filter options only)
@@ -381,7 +381,7 @@ export default function SimulationHistory({
 
   // Local search state, initialized from URL
   const [searchTerm, setSearchTerm] = React.useState(
-    searchParams?.get("historySearch") || ""
+    searchParams?.get("historySearch") || "",
   );
 
   // Ref to track debounce timeout for search
@@ -482,7 +482,7 @@ export default function SimulationHistory({
   // State for archive dialog
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
   const [archiveAction, setArchiveAction] = React.useState<boolean | null>(
-    null
+    null,
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
   // State to track if "Select All Rows" is active (all filtered rows selected)
@@ -553,7 +553,7 @@ export default function SimulationHistory({
       if (updates.infiniteMode !== undefined) {
         params.set(
           "historyInfiniteMode",
-          updates.infiniteMode ? "true" : "false"
+          updates.infiniteMode ? "true" : "false",
         );
       } else {
         // If infiniteMode is explicitly undefined, don't change the param
@@ -573,7 +573,7 @@ export default function SimulationHistory({
       const newUrl = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
       router.replace(newUrl, { scroll: false });
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
   );
 
   // Commit search to URL (called on Enter or blur, or after debounce)
@@ -584,7 +584,7 @@ export default function SimulationHistory({
         search: value.trim() || "",
       });
     },
-    [updateHistoryParams]
+    [updateHistoryParams],
   );
 
   // Handle search input change with debounce
@@ -609,7 +609,7 @@ export default function SimulationHistory({
         commitSearch(value);
       }, 500);
     },
-    [commitSearch]
+    [commitSearch],
   );
 
   // Filter profile options - always return available options for filter visibility
@@ -651,7 +651,7 @@ export default function SimulationHistory({
     (
       updater:
         | ColumnFiltersState
-        | ((prev: ColumnFiltersState) => ColumnFiltersState)
+        | ((prev: ColumnFiltersState) => ColumnFiltersState),
     ) => {
       const newFilters =
         typeof updater === "function" ? updater(columnFilters) : updater;
@@ -680,7 +680,7 @@ export default function SimulationHistory({
         ...(infiniteMode !== undefined && { infiniteMode }),
       });
     },
-    [columnFilters, updateHistoryParams]
+    [columnFilters, updateHistoryParams],
   );
 
   // Handle sorting change
@@ -700,7 +700,7 @@ export default function SimulationHistory({
         sortOrder,
       });
     },
-    [sorting, updateHistoryParams]
+    [sorting, updateHistoryParams],
   );
 
   // Handle pagination change
@@ -711,7 +711,7 @@ export default function SimulationHistory({
         | ((prev: { pageIndex: number; pageSize: number }) => {
             pageIndex: number;
             pageSize: number;
-          })
+          }),
     ) => {
       const newPagination =
         typeof updater === "function"
@@ -722,7 +722,7 @@ export default function SimulationHistory({
         pageSize: newPagination.pageSize,
       });
     },
-    [pageIndex, pageSize, updateHistoryParams]
+    [pageIndex, pageSize, updateHistoryParams],
   );
 
   // Create column definitions that work with the new data structure
@@ -751,7 +751,7 @@ export default function SimulationHistory({
           // Search in persona names
           if (
             item.personaNames.some((name) =>
-              name.toLowerCase().includes(searchValue)
+              name.toLowerCase().includes(searchValue),
             )
           ) {
             return true;
@@ -905,7 +905,7 @@ export default function SimulationHistory({
               filterFn: (
                 row: Row<HistoryDataItem>,
                 _id: string,
-                value: string[]
+                value: string[],
               ) => {
                 return value.includes(row.original.profileId);
               },
@@ -1018,7 +1018,7 @@ export default function SimulationHistory({
           if (!value || value.length === 0) return true;
           const scenarioIds = row.original.scenario_ids || [];
           return value.some((scenarioId: string) =>
-            scenarioIds.includes(scenarioId)
+            scenarioIds.includes(scenarioId),
           );
         },
       },
@@ -1035,7 +1035,7 @@ export default function SimulationHistory({
           if (!value || !Array.isArray(value) || value.length === 0)
             return true;
           return value.some((filterPersona: string) =>
-            personaNames?.includes(filterPersona)
+            personaNames?.includes(filterPersona),
           );
         },
       },
@@ -1061,11 +1061,11 @@ export default function SimulationHistory({
           const badgeClassName =
             scoreStatus === "high"
               ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
-            : scoreStatus === "medium"
+              : scoreStatus === "medium"
                 ? "bg-warning/10 text-warning border-warning/30 hover:bg-warning/20"
-              : scoreStatus === "low"
+                : scoreStatus === "low"
                   ? "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
-                : ""; // fallback to default badge styling if status is null
+                  : ""; // fallback to default badge styling if status is null
           return (
             <div className="text-center min-w-0 max-w-[100px]">
               <Badge
@@ -1686,7 +1686,7 @@ export default function SimulationHistory({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -1795,7 +1795,7 @@ export default function SimulationHistory({
                     <TableCell key={cell.id} className="px-6">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

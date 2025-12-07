@@ -75,9 +75,9 @@ export default function Key({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primaryDepartmentId || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(
@@ -88,7 +88,7 @@ export default function Key({
       active: true,
       departmentIds: defaultDepartmentIds,
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -177,7 +177,7 @@ export default function Key({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | undefined
+    value: string | boolean | string[] | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -232,7 +232,7 @@ export default function Key({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && keyId ? "update" : "create"} key: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && keyId ? "update" : "create"} key: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }

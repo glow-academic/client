@@ -41,45 +41,25 @@ type CompleteQuizOut = OutputOf<"/api/v3/attempts/quizzes/complete", "post">;
  */
 const getAttemptFull = async (
   attemptId: string,
-  input: AttemptFullIn
+  input: AttemptFullIn,
 ): Promise<AttemptFullOut> => {
-  return api.post(
-    "/attempts/full",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/attempts/full", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { attemptId } = await params;
 
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
 
   try {
     const attemptData = await getAttemptFull(attemptId, {
@@ -88,19 +68,20 @@ export async function generateMetadata(
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
       title: `${simulationTitle || "Attempt"}`,
-      description: `${simulationTitle || "Attempt"} in GLOW${orgPart}.`,
+      description: `${simulationTitle ? `${simulationTitle} - ` : ""}Teaching practice session for graduate teaching assistant training. Review pedagogical performance, student interaction strategies, and teaching effectiveness through simulation-based learning assessment.`,
     };
   } catch {
     return {
       title: `Attempt ${attemptId.substring(0, 8)}...`,
-      description: `Attempt ${attemptId.substring(0, 8)}... in GLOW${orgPart}.`,
+      description:
+        "Teaching practice session for graduate teaching assistant training. Review pedagogical performance, student interaction strategies, and teaching effectiveness through simulation-based learning assessment.",
     };
   }
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateChatCreatedAt(
-  input: UpdateChatCreatedAtIn
+  input: UpdateChatCreatedAtIn,
 ): Promise<UpdateChatCreatedAtOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -113,7 +94,7 @@ async function createQuiz(input: CreateQuizIn): Promise<CreateQuizOut> {
 }
 
 async function submitQuizResponse(
-  input: SubmitQuizResponseIn
+  input: SubmitQuizResponseIn,
 ): Promise<SubmitQuizResponseOut> {
   "use server";
   return api.post("/attempts/quizzes/submit-response", input);

@@ -5,15 +5,7 @@
  * 12/05/2025
  */
 "use client";
-import {
-  Copy,
-  Edit,
-  Eye,
-  Plus,
-  Sparkles,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Copy, Edit, Eye, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -62,7 +54,7 @@ export interface FieldsProps {
   listData: FieldsListOut;
   // Server actions (replaces useMutation)
   duplicateFieldAction?: (
-    input: DuplicateFieldIn
+    input: DuplicateFieldIn,
   ) => Promise<DuplicateFieldOut>;
   deleteFieldAction?: (input: DeleteFieldIn) => Promise<DeleteFieldOut>;
 }
@@ -94,10 +86,7 @@ export default function Fields({
   const isLoading = false; // No loading when using server data
 
   // Extract data from response
-  const fields = useMemo(
-    () => fieldsData?.fields || [],
-    [fieldsData?.fields]
-  );
+  const fields = useMemo(() => fieldsData?.fields || [], [fieldsData?.fields]);
 
   // Use server-provided facet options directly (no client-side computation)
   const parameterOptions = useMemo(
@@ -108,7 +97,7 @@ export default function Fields({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [fieldsData?.parameter_options]
+    [fieldsData?.parameter_options],
   );
   const departmentOptions = useMemo(
     () =>
@@ -118,7 +107,7 @@ export default function Fields({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [fieldsData?.department_options]
+    [fieldsData?.department_options],
   );
 
   // Define table columns inline
@@ -167,7 +156,7 @@ export default function Fields({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -206,13 +195,7 @@ export default function Fields({
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    sortingKey,
-    columnFiltersKey,
-    fields.length,
-    pageIndex,
-    pageSize,
-  ]);
+  }, [sortingKey, columnFiltersKey, fields.length, pageIndex, pageSize]);
 
   if (isLoading) {
     return (
@@ -272,7 +255,7 @@ export default function Fields({
       router.refresh();
     } catch (error) {
       toast.error(
-        `Failed to delete field: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to delete field: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsDeleting(false);
@@ -297,7 +280,7 @@ export default function Fields({
       router.refresh();
     } catch (error) {
       toast.error(
-        `Failed to duplicate field: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to duplicate field: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsDuplicating(null);
@@ -572,4 +555,3 @@ export default function Fields({
     </div>
   );
 }
-

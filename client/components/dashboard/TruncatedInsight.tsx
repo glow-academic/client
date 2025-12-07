@@ -53,7 +53,7 @@ export function TruncatedInsight({
         ref={textRef}
         className={cn(
           "text-muted-foreground line-clamp-2",
-          isMobile ? "text-xs" : "text-sm"
+          isMobile ? "text-xs" : "text-sm",
         )}
       >
         {text}

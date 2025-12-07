@@ -17,14 +17,8 @@ import type {
 } from "@/app/(main)/system/auth/page";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthNewIn = InputOf<
-  "/api/v3/auth/new",
-  "post"
->;
-type AuthNewOut = OutputOf<
-  "/api/v3/auth/new",
-  "post"
->;
+type AuthNewIn = InputOf<"/api/v3/auth/new", "post">;
+type AuthNewOut = OutputOf<"/api/v3/auth/new", "post">;
 
 type CreateAuthIn = InputOf<"/api/v3/auth/create", "post">;
 type CreateAuthOut = OutputOf<"/api/v3/auth/create", "post">;
@@ -32,9 +26,7 @@ type CreateAuthOut = OutputOf<"/api/v3/auth/create", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for create pages.
  */
-const getAuthDefault = async (
-  profileId: string
-): Promise<AuthNewOut> => {
+const getAuthDefault = async (profileId: string): Promise<AuthNewOut> => {
   return api.post(
     "/auth/new",
     { body: { profileId } },
@@ -43,7 +35,7 @@ const getAuthDefault = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -54,22 +46,9 @@ export async function generateMetadata(): Promise<Metadata> {
   let organizationName = "";
   let organizationDescription = "";
   try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Create Auth",
-    description: `Create a new authentication method in GLOW${orgPart}.`,
+    description: "Create a new authentication method for teaching assistant training platform. Configure SSO, OAuth, and other identity providers for secure access to educational institutions and L&D programs.",
   };
 }
 
@@ -129,10 +108,4 @@ export default async function AuthCreatePage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  AuthNewIn,
-  AuthNewOut,
-  CreateAuthIn,
-  CreateAuthOut,
-};
-
+export type { AuthNewIn, AuthNewOut, CreateAuthIn, CreateAuthOut };

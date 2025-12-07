@@ -42,7 +42,7 @@ export default function Practice({
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null
+    null,
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   // Practice customize dialog state
@@ -64,31 +64,31 @@ export default function Practice({
   // Extract entity mappings for PracticeCustomizeDialog (memoized to prevent reference changes)
   const personaMapping = useMemo(
     () => bundle?.persona_mapping || {},
-    [bundle?.persona_mapping]
+    [bundle?.persona_mapping],
   );
   const scenarioMapping = useMemo(
     () => bundle?.scenario_mapping || {},
-    [bundle?.scenario_mapping]
+    [bundle?.scenario_mapping],
   );
   const parameterMapping = useMemo(
     () => bundle?.parameter_mapping || {},
-    [bundle?.parameter_mapping]
+    [bundle?.parameter_mapping],
   );
   const parameterItemMapping = useMemo(
     () => bundle?.parameter_item_mapping || {},
-    [bundle?.parameter_item_mapping]
+    [bundle?.parameter_item_mapping],
   );
   const simulationMapping = useMemo(
     () => bundle?.simulation_mapping || {},
-    [bundle?.simulation_mapping]
+    [bundle?.simulation_mapping],
   );
   const departmentMapping = useMemo(
     () => bundle?.department_mapping || {},
-    [bundle?.department_mapping]
+    [bundle?.department_mapping],
   );
   const validDepartmentIds = useMemo(
     () => bundle?.valid_department_ids || [],
-    [bundle?.valid_department_ids]
+    [bundle?.valid_department_ids],
   );
 
   // Normalize simulation items to ensure required fields are present
@@ -105,11 +105,11 @@ export default function Practice({
   // Extract rubric mappings from practice overview data
   const standardGroupsMapping = useMemo(
     () => practiceOverview?.standard_groups_mapping || {},
-    [practiceOverview]
+    [practiceOverview],
   );
   const standardsMapping = useMemo(
     () => practiceOverview?.standards_mapping || {},
-    [practiceOverview]
+    [practiceOverview],
   );
 
   // Set up simulation-specific event listeners using global WebSocket
@@ -145,14 +145,14 @@ export default function Practice({
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as unknown as EventListener
+      handleSimulationStarted as unknown as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as unknown as EventListener
+        handleSimulationStarted as unknown as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -172,7 +172,7 @@ export default function Practice({
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
+            "WebSocket not connected. Please wait for connection or refresh the page.",
           );
           return;
         }
@@ -209,7 +209,7 @@ export default function Practice({
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-    ]
+    ],
   );
 
   const handleStartInfiniteMode = useCallback(
@@ -223,7 +223,7 @@ export default function Practice({
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
+            "WebSocket not connected. Please wait for connection or refresh the page.",
           );
           return;
         }
@@ -261,7 +261,7 @@ export default function Practice({
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-    ]
+    ],
   );
 
   if (!effectiveProfile) {
@@ -336,7 +336,7 @@ export default function Practice({
               "Creating practice scenario...",
               {
                 dismissible: true,
-              }
+              },
             );
             setLoadingToastId(practiceToastId);
 
@@ -345,7 +345,7 @@ export default function Practice({
             timeoutRef.current = setTimeout(() => {
               toast.dismiss(practiceToastId);
               toast.error(
-                "Practice scenario creation timed out. Please try again."
+                "Practice scenario creation timed out. Please try again.",
               );
               setLoadingToastId(null);
               setIsStartingAttempt(false);

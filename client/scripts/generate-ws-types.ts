@@ -123,7 +123,7 @@ function jsonTypeToTsType(jsonType: string): {
 // Generate TypeScript type definition for a payload
 function generatePayloadType(
   payload: Record<string, string>,
-  indent: string = "    "
+  indent: string = "    ",
 ): string {
   if (Object.keys(payload).length === 0) {
     return "Record<string, never>";
@@ -140,7 +140,7 @@ function generatePayloadType(
 
 // Generate TypeScript type definition for a return type
 function generateReturnType(
-  returnSchema: Record<string, string> | undefined
+  returnSchema: Record<string, string> | undefined,
 ): string {
   if (!returnSchema || Object.keys(returnSchema).length === 0) {
     return "void";
@@ -178,7 +178,7 @@ function generateClientToServerEvents(contract: WsContract): string {
       returnType === "void" ? "void" : `Promise<${returnType}>`;
 
     events.push(
-      `  ${eventName}: (payload: ${payloadType}) => ${functionReturnType};`
+      `  ${eventName}: (payload: ${payloadType}) => ${functionReturnType};`,
     );
   }
   // If no events, return empty object type

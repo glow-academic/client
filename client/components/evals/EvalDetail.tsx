@@ -68,12 +68,11 @@ export function EvalDetail({
               ...prev,
               completed_runs: newCompletedRuns,
               pending_runs: newPendingRuns,
-              status:
-                newPendingRuns === 0 ? "completed" : prev.status,
+              status: newPendingRuns === 0 ? "completed" : prev.status,
               model_runs: prev.model_runs.map((mr) =>
                 mr.model_run_id === data.model_run_id
                   ? { ...mr, completed: true }
-                  : mr
+                  : mr,
               ),
             };
           }
@@ -82,7 +81,10 @@ export function EvalDetail({
       }
     };
 
-    const handleEvalCompleted = (data: { eval_id: string; message: string }) => {
+    const handleEvalCompleted = (data: {
+      eval_id: string;
+      message: string;
+    }) => {
       if (data.eval_id === evalDetail.eval_id) {
         setEvalDetail((prev) => ({
           ...prev,
@@ -326,4 +328,3 @@ export function EvalDetail({
     </div>
   );
 }
-

@@ -49,7 +49,7 @@ export interface SearchExistingStaffModalProps {
       role?: string;
       requestsPerDay?: number | null;
       totalRequests?: number;
-    }>
+    }>,
   ) => void;
   initialSearchData?: SearchStaffOut;
   searchStaffAction?: SearchStaffAction;
@@ -72,13 +72,13 @@ export default function SearchExistingStaffModal({
   const { effectiveProfile } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileIds, setSelectedProfileIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [selectedProfiles, setSelectedProfiles] = useState<
     Map<string, ProfileListItem>
   >(new Map());
   const [searchData, setSearchData] = useState<SearchStaffOut | null>(
-    initialSearchData || null
+    initialSearchData || null,
   );
   const [isLoading, setIsLoading] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -119,7 +119,7 @@ export default function SearchExistingStaffModal({
       scopedCohortIds,
       _scopedDepartmentIds,
       initialSearchData,
-    ]
+    ],
   );
 
   // Handle search input change with debounce
@@ -141,7 +141,7 @@ export default function SearchExistingStaffModal({
         handleSearch(value);
       }, 500);
     },
-    [handleSearch, initialSearchData]
+    [handleSearch, initialSearchData],
   );
 
   // Initial search when modal opens (if no initial data)
@@ -233,7 +233,8 @@ export default function SearchExistingStaffModal({
         profileId: profile.profile_id,
         firstName: profile.first_name,
         lastName: profile.last_name,
-        email: profile.primary_email || (profile.emails && profile.emails[0]) || "",
+        email:
+          profile.primary_email || (profile.emails && profile.emails[0]) || "",
         role: profile.role,
         requestsPerDay: profile.requests_per_day,
         totalRequests: profile.total_requests,
@@ -242,12 +243,12 @@ export default function SearchExistingStaffModal({
       if (onStagedProfiles) {
         onStagedProfiles(profileData);
         toast.success(
-          `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`
+          `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`,
         );
       } else {
         // If no onStagedProfiles callback, just notify user
         toast.info(
-          `${selectedProfilesArray.length} profile(s) selected. No action handler provided.`
+          `${selectedProfilesArray.length} profile(s) selected. No action handler provided.`,
         );
       }
 
@@ -320,7 +321,7 @@ export default function SearchExistingStaffModal({
                 <TableBody>
                   {searchResults.map((profile) => {
                     const isSelected = selectedProfileIds.has(
-                      profile.profile_id
+                      profile.profile_id,
                     );
                     return (
                       <TableRow
@@ -348,7 +349,7 @@ export default function SearchExistingStaffModal({
                         <TableCell>
                           {(() => {
                             const roleData = STAFF_ROLES.find(
-                              (r) => r.id === profile.role
+                              (r) => r.id === profile.role,
                             );
                             if (!roleData) {
                               return (

@@ -12,28 +12,10 @@ import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Management",
-    description: `Manage cohorts, evals, logs, models, and staff in GLOW${orgPart}.`,
+    description:
+      "Administrative management hub for teaching assistant training platform. Manage learning cohorts, staff assignments, educational resources, evaluation configurations, and system settings for comprehensive L&D program administration.",
   };
 }
 

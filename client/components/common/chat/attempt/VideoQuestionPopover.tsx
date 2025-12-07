@@ -36,7 +36,7 @@ interface VideoQuestionPopoverProps {
   onSubmitAnswer: (
     questionId: string,
     optionId: string,
-    isCorrect: boolean
+    isCorrect: boolean,
   ) => void;
   onClose: () => void;
 }
@@ -50,11 +50,13 @@ export default function VideoQuestionPopover({
   // Initialize answered state from quiz responses
   const isAnswered = useMemo(() => {
     return quizResponses.some(
-      (r) => r.questionId === question.id && r.completed
+      (r) => r.questionId === question.id && r.completed,
     );
   }, [quizResponses, question.id]);
 
-  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
+  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(
+    new Set(),
+  );
   const [isCorrect, setIsCorrect] = useState(false);
 
   // Handle option selection
@@ -80,13 +82,13 @@ export default function VideoQuestionPopover({
 
     // Determine if answer is correct
     const correctOptionIds = new Set(
-      question.options.filter((opt) => opt.isCorrect).map((opt) => opt.id)
+      question.options.filter((opt) => opt.isCorrect).map((opt) => opt.id),
     );
     const selectedAndCorrect = Array.from(selectedOptions).filter((id) =>
-      correctOptionIds.has(id)
+      correctOptionIds.has(id),
     );
     const selectedAndIncorrect = Array.from(selectedOptions).filter(
-      (id) => !correctOptionIds.has(id)
+      (id) => !correctOptionIds.has(id),
     );
 
     const isAnswerCorrect =
@@ -210,4 +212,3 @@ export default function VideoQuestionPopover({
     </div>
   );
 }
-

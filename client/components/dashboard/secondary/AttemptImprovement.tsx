@@ -41,9 +41,7 @@ function CustomComposedTooltip({
           const name = item.name || "";
           const value = item.value;
           const formattedValue =
-            name === "Average Time"
-              ? `${value} min`
-              : `${value}%`;
+            name === "Average Time" ? `${value} min` : `${value}%`;
           return (
             <div key={index}>
               {name}: {formattedValue}

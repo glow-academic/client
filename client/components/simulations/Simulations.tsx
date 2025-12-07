@@ -58,10 +58,10 @@ export interface SimulationsProps {
   listData: SimulationsListOut;
   // Server actions (replaces useMutation)
   duplicateSimulationAction?: (
-    input: DuplicateSimulationIn
+    input: DuplicateSimulationIn,
   ) => Promise<DuplicateSimulationOut>;
   deleteSimulationAction?: (
-    input: DeleteSimulationIn
+    input: DeleteSimulationIn,
   ) => Promise<DeleteSimulationOut>;
 }
 
@@ -93,11 +93,11 @@ export function Simulations({
   // Extract data from response
   const simulations = useMemo(
     () => simulationsData?.simulations || [],
-    [simulationsData?.simulations]
+    [simulationsData?.simulations],
   );
   const scenarioMapping = useMemo(
     () => simulationsData?.scenario_mapping || {},
-    [simulationsData?.scenario_mapping]
+    [simulationsData?.scenario_mapping],
   );
 
   // Use server-provided facet options directly (no client-side computation)
@@ -109,7 +109,7 @@ export function Simulations({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [simulationsData?.rubric_options]
+    [simulationsData?.rubric_options],
   );
   const cohortOptions = useMemo(
     () =>
@@ -119,7 +119,7 @@ export function Simulations({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [simulationsData?.cohort_options]
+    [simulationsData?.cohort_options],
   );
   const departmentOptions = useMemo(
     () =>
@@ -129,7 +129,7 @@ export function Simulations({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [simulationsData?.department_options]
+    [simulationsData?.department_options],
   );
 
   // Define table columns inline
@@ -180,7 +180,7 @@ export function Simulations({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -262,7 +262,7 @@ export function Simulations({
 
   const handleDuplicate = async (
     simulationId: string,
-    _simulationName: string
+    _simulationName: string,
   ) => {
     if (!duplicateSimulationAction) return;
 
@@ -290,7 +290,9 @@ export function Simulations({
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{simulation.name}</CardTitle>
+            <CardTitle className="text-lg truncate">
+              {simulation.name}
+            </CardTitle>
             <div className="mt-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">
@@ -362,7 +364,9 @@ export function Simulations({
                   <Copy className="h-4 w-4 md:mr-0 mr-2" />
                 )}
                 <span className="md:hidden">
-                  {isDuplicating === simulation.simulation_id ? "Duplicating..." : "Duplicate"}
+                  {isDuplicating === simulation.simulation_id
+                    ? "Duplicating..."
+                    : "Duplicate"}
                 </span>
               </Button>
             )}
@@ -400,35 +404,35 @@ export function Simulations({
           {/* Scenario dots - colored by persona */}
           {simulation.scenario_ids && simulation.scenario_ids.length > 0 && (
             <div className="flex items-center gap-1">
-                {simulation.scenario_ids.map((scenarioId) => {
-                  const scenario = scenarioMapping[scenarioId];
-                  if (!scenario) return null;
-                  
-                  // Get first persona color
-                  const firstPersonaId = scenario.persona_ids?.[0];
-                  const persona = firstPersonaId
-                    ? scenario.persona_mapping?.[firstPersonaId]
-                    : null;
-                  const personaColor = persona?.color || "#9CA3AF"; // gray-400 fallback
+              {simulation.scenario_ids.map((scenarioId) => {
+                const scenario = scenarioMapping[scenarioId];
+                if (!scenario) return null;
 
-                  return (
-                    <Tooltip key={scenarioId}>
-                      <TooltipTrigger asChild>
-                        <div
-                          className="w-2 h-2 rounded-full cursor-pointer"
-                          style={{
-                            backgroundColor: personaColor,
-                          }}
-                          aria-label={scenario.name}
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{scenario.name}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
+                // Get first persona color
+                const firstPersonaId = scenario.persona_ids?.[0];
+                const persona = firstPersonaId
+                  ? scenario.persona_mapping?.[firstPersonaId]
+                  : null;
+                const personaColor = persona?.color || "#9CA3AF"; // gray-400 fallback
+
+                return (
+                  <Tooltip key={scenarioId}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="w-2 h-2 rounded-full cursor-pointer"
+                        style={{
+                          backgroundColor: personaColor,
+                        }}
+                        aria-label={scenario.name}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{scenario.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
           )}
         </div>
       </CardContent>
@@ -445,127 +449,128 @@ export function Simulations({
   return (
     <TooltipProvider>
       <div className="space-y-6" data-page="simulations-index">
-      <div className="space-y-4">
-        {/* Toolbar */}
-        <div
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-          data-testid="simulations-toolbar"
-        >
-          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-            <div className="w-full md:w-auto">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  data-testid="simulations-search"
-                  placeholder="Search simulations..."
-                  value={(nameColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    nameColumn?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-full md:w-[150px] lg:w-[250px] pl-8"
-                  aria-label="Search simulations by name"
-                  aria-controls="simulations-grid"
-                />
+        <div className="space-y-4">
+          {/* Toolbar */}
+          <div
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+            data-testid="simulations-toolbar"
+          >
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+              <div className="w-full md:w-auto">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    data-testid="simulations-search"
+                    placeholder="Search simulations..."
+                    value={(nameColumn?.getFilterValue() as string) ?? ""}
+                    onChange={(event) =>
+                      nameColumn?.setFilterValue(event.target.value)
+                    }
+                    className="h-8 w-full md:w-[150px] lg:w-[250px] pl-8"
+                    aria-label="Search simulations by name"
+                    aria-controls="simulations-grid"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap">
+                {/* Rubric Filter */}
+                {rubricColumn && rubricOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={rubricColumn}
+                    title="Rubric"
+                    options={rubricOptions}
+                  />
+                )}
+
+                {/* Cohort Filter */}
+                {cohortColumn && cohortOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={cohortColumn}
+                    title="Cohort"
+                    options={cohortOptions}
+                  />
+                )}
+
+                {/* Department Filter */}
+                {departmentsColumn && departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
-
-            <div className="flex items-center space-x-2 flex-wrap">
-              {/* Rubric Filter */}
-              {rubricColumn && rubricOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={rubricColumn}
-                  title="Rubric"
-                  options={rubricOptions}
-                />
-              )}
-
-              {/* Cohort Filter */}
-              {cohortColumn && cohortOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={cohortColumn}
-                  title="Cohort"
-                  options={cohortOptions}
-                />
-              )}
-
-              {/* Department Filter */}
-              {departmentsColumn && departmentOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={departmentsColumn}
-                  title="Department"
-                  options={departmentOptions}
-                />
-              )}
-
-              {isFiltered && (
-                <Button
-                  variant="ghost"
-                  onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3 hidden md:flex"
-                >
-                  Reset
-                  <X className="ml-2 h-4 w-4" />
-                </Button>
-              )}
-            </div>
           </div>
+
+          {/* Cards Grid */}
+          <div
+            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            role="grid"
+            aria-label="simulations grid"
+            data-testid="simulations-grid"
+          >
+            {tableRows.length ? (
+              tableRows.map((row) => (
+                <div key={row.id}>{renderSimulationCard(row.original)}</div>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No simulations match the current filters.
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <DataTablePagination table={table} card={true} />
         </div>
 
-        {/* Cards Grid */}
-        <div
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          role="grid"
-          aria-label="simulations grid"
-          data-testid="simulations-grid"
-        >
-          {tableRows.length ? (
-            tableRows.map((row) => (
-              <div key={row.id}>{renderSimulationCard(row.original)}</div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
-              No simulations match the current filters.
-            </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        <DataTablePagination table={table} card={true} />
-      </div>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent
-          aria-labelledby="delete-simulation-title"
-          data-testid="dialog-delete-simulation"
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle id="delete-simulation-title">
-              Delete Simulation
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete the simulation "{deleteItem?.name}
-              "? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isDeleting}
-              data-testid="btn-cancel-delete"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              variant="destructive"
-              data-testid="btn-confirm-delete"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent
+            aria-labelledby="delete-simulation-title"
+            data-testid="dialog-delete-simulation"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle id="delete-simulation-title">
+                Delete Simulation
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the simulation "
+                {deleteItem?.name}
+                "? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                disabled={isDeleting}
+                data-testid="btn-cancel-delete"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                variant="destructive"
+                data-testid="btn-confirm-delete"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );

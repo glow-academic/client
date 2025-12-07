@@ -156,7 +156,7 @@ export function ModalityPicker({
                             "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
                             inputModalities.includes(modality.id)
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                       </div>
@@ -224,7 +224,7 @@ export function ModalityPicker({
                             "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
                             outputModalities.includes(modality.id)
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                       </div>
@@ -239,4 +239,3 @@ export function ModalityPicker({
     </div>
   );
 }
-

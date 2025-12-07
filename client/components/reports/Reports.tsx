@@ -79,7 +79,7 @@ export default function Reports({
   const profiles = useMemo(() => reportsData?.data || [], [reportsData?.data]);
   const simulationMapping = useMemo(
     () => reportsData?.simulation_mapping || {},
-    [reportsData?.simulation_mapping]
+    [reportsData?.simulation_mapping],
   );
 
   // Extract pagination metadata from server response
@@ -108,7 +108,7 @@ export default function Reports({
   const sortOrder = searchParams.get("reportsSortOrder") || "desc";
   const sorting: SortingState = useMemo(
     () => [{ id: sortBy, desc: sortOrder === "desc" }],
-    [sortBy, sortOrder]
+    [sortBy, sortOrder],
   );
 
   // Ref for the search input
@@ -116,7 +116,7 @@ export default function Reports({
 
   // Local search state, initialized from URL
   const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("reportsSearch") || ""
+    searchParams.get("reportsSearch") || "",
   );
 
   // Ref to track debounce timeout for search
@@ -164,21 +164,21 @@ export default function Reports({
       reportsProfileIdsParam
         ? reportsProfileIdsParam.split(",").filter(Boolean)
         : [],
-    [reportsProfileIdsParam]
+    [reportsProfileIdsParam],
   );
   const reportsSimulationIds = useMemo(
     () =>
       reportsSimulationIdsParam
         ? reportsSimulationIdsParam.split(",").filter(Boolean)
         : [],
-    [reportsSimulationIdsParam]
+    [reportsSimulationIdsParam],
   );
   const reportsScenarioIds = useMemo(
     () =>
       reportsScenarioIdsParam
         ? reportsScenarioIdsParam.split(",").filter(Boolean)
         : [],
-    [reportsScenarioIdsParam]
+    [reportsScenarioIdsParam],
   );
 
   // Sync column filters with URL params (for DataTableFacetedFilter compatibility)
@@ -220,7 +220,7 @@ export default function Reports({
       });
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   // Commit search to URL (called on Enter or blur, or after debounce)
@@ -231,7 +231,7 @@ export default function Reports({
         reportsSearch: value.trim() || null,
       });
     },
-    [updateURLParams]
+    [updateURLParams],
   );
 
   // Handle search input change with debounce
@@ -256,7 +256,7 @@ export default function Reports({
         commitSearch(value);
       }, 500);
     },
-    [commitSearch]
+    [commitSearch],
   );
 
   // Options are now provided as props from server
@@ -267,31 +267,30 @@ export default function Reports({
         id,
         title: simulation.name,
       })),
-    [simulationMapping]
+    [simulationMapping],
   );
 
   // Define columns using typeof pattern
   const columns: ColumnDef<(typeof profiles)[number]>[] = useMemo(() => {
     const formatValue = (
-      metric: (typeof profiles)[number]["metrics"][keyof (typeof profiles)[number]["metrics"]]
+      metric: (typeof profiles)[number]["metrics"][keyof (typeof profiles)[number]["metrics"]],
     ): string => {
       if (!metric.hasData) return "N/A";
       if (metric.currentValue == null) return "N/A";
       return `${metric.currentValue}${metric.valueField === "percent" ? "%" : metric.valueField === "seconds" ? "s" : metric.valueField === "minutes" ? "m" : ""}`;
     };
 
-    const getGradientClasses = (
-      status: string | undefined
-    ): string => {
-      if (status === "success") return "bg-gradient-to-br from-success/10 to-success/5 dark:from-success/20 dark:to-success/10 border-success/30";
-      if (status === "warning") return "bg-gradient-to-br from-warning/10 to-warning/5 dark:from-warning/20 dark:to-warning/10 border-warning/30";
-      if (status === "danger") return "bg-gradient-to-br from-destructive/10 to-destructive/5 dark:from-destructive/20 dark:to-destructive/10 border-destructive/30";
+    const getGradientClasses = (status: string | undefined): string => {
+      if (status === "success")
+        return "bg-gradient-to-br from-success/10 to-success/5 dark:from-success/20 dark:to-success/10 border-success/30";
+      if (status === "warning")
+        return "bg-gradient-to-br from-warning/10 to-warning/5 dark:from-warning/20 dark:to-warning/10 border-warning/30";
+      if (status === "danger")
+        return "bg-gradient-to-br from-destructive/10 to-destructive/5 dark:from-destructive/20 dark:to-destructive/10 border-destructive/30";
       return "bg-gradient-to-br from-muted to-muted/50 dark:from-muted dark:to-muted/50 border-border";
     };
 
-    const getTextClasses = (
-      status: string | undefined
-    ): string => {
+    const getTextClasses = (status: string | undefined): string => {
       if (status === "success") return "text-success";
       if (status === "warning") return "text-warning";
       if (status === "danger") return "text-destructive";
@@ -300,7 +299,7 @@ export default function Reports({
 
     const getHoverBullets = (
       metricKey: string,
-      profile: (typeof profiles)[number]
+      profile: (typeof profiles)[number],
     ): string[] => {
       const metric = profile.metrics[metricKey as keyof typeof profile.metrics];
       if (!metric?.hover) return [];
@@ -318,14 +317,14 @@ export default function Reports({
             bullets.push(
               `Mean: ${hover["mean"]}%`,
               `Median: ${hover["median"]}%`,
-              `Mode: ${hover["mode"]}%`
+              `Mode: ${hover["mode"]}%`,
             );
           }
           break;
         case "highestScore":
           if (Array.isArray(hover["top"])) {
             bullets.push(
-              ...hover["top"].map((v, i) => `${i + 1}. ${v}%`).slice(0, 3)
+              ...hover["top"].map((v, i) => `${i + 1}. ${v}%`).slice(0, 3),
             );
           }
           break;
@@ -337,7 +336,7 @@ export default function Reports({
           ) {
             bullets.push(
               `Completed: ${hover["completed"]}/${hover["total"]}`,
-              `Rate: ${hover["percent"]}%`
+              `Rate: ${hover["percent"]}%`,
             );
           }
           break;
@@ -349,7 +348,7 @@ export default function Reports({
           ) {
             bullets.push(
               `First-pass: ${hover["passed"]}/${hover["total"]}`,
-              `Rate: ${hover["percent"]}%`
+              `Rate: ${hover["percent"]}%`,
             );
           }
           break;
@@ -362,7 +361,7 @@ export default function Reports({
             bullets.push(
               `Mean msgs/chat: ${hover["mean"]}`,
               `Median msgs/chat: ${hover["median"]}`,
-              `Chats counted: ${hover["count"]}`
+              `Chats counted: ${hover["count"]}`,
             );
           }
           break;
@@ -375,7 +374,7 @@ export default function Reports({
             bullets.push(
               `Mean: ${hover["meanSeconds"]}s`,
               `Median: ${hover["medianSeconds"]}s`,
-              `Samples: ${hover["samples"]}`
+              `Samples: ${hover["samples"]}`,
             );
           }
           break;
@@ -388,7 +387,7 @@ export default function Reports({
             bullets.push(
               `Avg score: ${hover["avgScorePercent"]}%`,
               `Avg time: ${hover["avgMinutes"]}m`,
-              `Efficiency: ${hover["efficiency"]}`
+              `Efficiency: ${hover["efficiency"]}`,
             );
           }
           break;
@@ -401,7 +400,7 @@ export default function Reports({
             bullets.push(
               `Tracked: ${hover["tracked"]}`,
               `Stagnant: ${hover["stagnant"]}`,
-              `Rate: ${hover["ratePercent"]}%`
+              `Rate: ${hover["ratePercent"]}%`,
             );
           }
           break;
@@ -414,7 +413,7 @@ export default function Reports({
             bullets.push(
               `Avg session: ${hover["avgSessionMinutes"]}m`,
               `Avg chat: ${hover["avgChatMinutes"]}m`,
-              `Avg time spent: ${hover["avgOverallMinutes"]}m`
+              `Avg time spent: ${hover["avgOverallMinutes"]}m`,
             );
           }
           break;
@@ -487,7 +486,7 @@ export default function Reports({
               onClick={() =>
                 router.push(`/analytics/reports/p/${profile.profileId}`)
               }
-              title={`${displayName}${(profile.emails && profile.emails.length > 0) || profile.primaryEmail ? ` (${(profile.emails && profile.emails.length > 0) ? profile.emails.join(", ") : profile.primaryEmail || ""})` : ""} - Click to view detailed report`}
+              title={`${displayName}${(profile.emails && profile.emails.length > 0) || profile.primaryEmail ? ` (${profile.emails && profile.emails.length > 0 ? profile.emails.join(", ") : profile.primaryEmail || ""})` : ""} - Click to view detailed report`}
               data-testid={`reports-profile-row-${profile.profileId}`}
             >
               <div className="flex flex-col items-start min-w-0 w-full">
@@ -497,12 +496,19 @@ export default function Reports({
                 >
                   {displayName}
                 </span>
-                {((profile.emails && profile.emails.length > 0) || profile.primaryEmail) && (
+                {((profile.emails && profile.emails.length > 0) ||
+                  profile.primaryEmail) && (
                   <span
                     className="text-xs text-muted-foreground truncate w-full"
-                    title={(profile.emails && profile.emails.length > 0) ? profile.emails.join(", ") : profile.primaryEmail || ""}
+                    title={
+                      profile.emails && profile.emails.length > 0
+                        ? profile.emails.join(", ")
+                        : profile.primaryEmail || ""
+                    }
                   >
-                    {(profile.emails && profile.emails.length > 0) ? profile.emails.join(", ") : profile.primaryEmail || ""}
+                    {profile.emails && profile.emails.length > 0
+                      ? profile.emails.join(", ")
+                      : profile.primaryEmail || ""}
                   </span>
                 )}
               </div>
@@ -1156,7 +1162,7 @@ export default function Reports({
           error: "Failed to export data",
         }));
         throw new Error(
-          errorData.message || errorData.error || "Failed to export data"
+          errorData.message || errorData.error || "Failed to export data",
         );
       }
 
@@ -1192,12 +1198,12 @@ export default function Reports({
       window.URL.revokeObjectURL(url);
 
       toast.success(
-        `Exported ${profileIds.length} ${profileIds.length === 1 ? "row" : "rows"} successfully`
+        `Exported ${profileIds.length} ${profileIds.length === 1 ? "row" : "rows"} successfully`,
       );
       setExportPopoverOpen(false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to export data"
+        error instanceof Error ? error.message : "Failed to export data",
       );
     } finally {
       setIsExporting(false);
@@ -1226,37 +1232,37 @@ export default function Reports({
             <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
               {/* Mobile: Wrap search and export button in 50/50 flex */}
               <div className="flex gap-2 w-full md:w-auto md:flex-initial">
-                  <Input
-                    ref={searchInputRef}
-                    placeholder="Search profiles by name or email..."
-                    value={searchTerm}
-                    onChange={(event) => {
-                      handleSearchChange(event.target.value);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        // Clear timeout and commit immediately
-                        if (searchTimeoutRef.current) {
-                          clearTimeout(searchTimeoutRef.current);
-                        }
-                        commitSearch(event.currentTarget.value);
-                      }
-                    }}
-                    onBlur={(event) => {
-                      // Clear timeout and commit immediately on blur
+                <Input
+                  ref={searchInputRef}
+                  placeholder="Search profiles by name or email..."
+                  value={searchTerm}
+                  onChange={(event) => {
+                    handleSearchChange(event.target.value);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      // Clear timeout and commit immediately
                       if (searchTimeoutRef.current) {
                         clearTimeout(searchTimeoutRef.current);
                       }
-                      // Commit on blur so URL stays in sync
-                      if (
-                        event.currentTarget.value !==
-                        (searchParams.get("reportsSearch") || "")
-                      ) {
-                        commitSearch(event.currentTarget.value);
-                      }
-                    }}
-                    className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
-                  />
+                      commitSearch(event.currentTarget.value);
+                    }
+                  }}
+                  onBlur={(event) => {
+                    // Clear timeout and commit immediately on blur
+                    if (searchTimeoutRef.current) {
+                      clearTimeout(searchTimeoutRef.current);
+                    }
+                    // Commit on blur so URL stays in sync
+                    if (
+                      event.currentTarget.value !==
+                      (searchParams.get("reportsSearch") || "")
+                    ) {
+                      commitSearch(event.currentTarget.value);
+                    }
+                  }}
+                  className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
+                />
                 {/* Export Button - Mobile */}
                 <div className="flex-1 md:flex-initial md:w-auto md:hidden">
                   <PopoverTrigger asChild>
@@ -1464,7 +1470,7 @@ export default function Reports({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -1522,7 +1528,7 @@ export default function Reports({
                   className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() =>
                     router.push(
-                      `/analytics/reports/p/${row.original.profileId}`
+                      `/analytics/reports/p/${row.original.profileId}`,
                     )
                   }
                 >
@@ -1538,7 +1544,7 @@ export default function Reports({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     );

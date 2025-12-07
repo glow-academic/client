@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   try {
     const { upload_id } = await params;
@@ -15,14 +15,14 @@ export async function GET(
           // Forward any auth headers if needed
           Cookie: request.headers.get("cookie") || "",
         },
-      }
+      },
     );
 
     if (!response.ok) {
       const errorText = await response.text();
       return NextResponse.json(
         { error: errorText || "Failed to download upload" },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -47,8 +47,7 @@ export async function GET(
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

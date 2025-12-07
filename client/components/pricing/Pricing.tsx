@@ -157,19 +157,19 @@ export default function Pricing({
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
   const modelMapping = useMemo(
     () => pricingData?.model_mapping || {},
-    [pricingData]
+    [pricingData],
   );
   const profileMapping = useMemo(
     () => pricingData?.profile_mapping || {},
-    [pricingData]
+    [pricingData],
   );
   const agentMapping = useMemo(
     () => pricingData?.agent_mapping || {},
-    [pricingData]
+    [pricingData],
   );
   const personaMapping = useMemo(
     () => pricingData?.persona_mapping || {},
-    [pricingData]
+    [pricingData],
   );
 
   // Get chart colors from CSS variables
@@ -241,7 +241,7 @@ export default function Pricing({
         row["total"] = Number(
           Object.values(values)
             .reduce((s, v) => s + (v || 0), 0)
-            .toFixed(2)
+            .toFixed(2),
         );
         return row;
       });
@@ -377,7 +377,7 @@ export default function Pricing({
                 Object.entries(chartConfig).map(([k, v]) => [
                   k,
                   { label: v.label, color: v.color },
-                ])
+                ]),
               )}
               className="aspect-[16/7]"
             >

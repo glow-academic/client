@@ -236,16 +236,16 @@ export interface ScenarioProps {
   scenarioDetailDefault?: ScenarioNewOut;
   // Server actions (replaces useMutation)
   createScenarioAction?: (
-    input: CreateScenarioIn
+    input: CreateScenarioIn,
   ) => Promise<CreateScenarioOut>;
   updateScenarioAction?: (
-    input: UpdateScenarioIn
+    input: UpdateScenarioIn,
   ) => Promise<UpdateScenarioOut>;
   generateAIScenarioAction?: (
-    input: GenerateAIScenarioIn
+    input: GenerateAIScenarioIn,
   ) => Promise<GenerateAIScenarioOut>;
   randomizeScenarioAction?: (
-    input: RandomizeScenarioIn
+    input: RandomizeScenarioIn,
   ) => Promise<RandomizeScenarioOut>;
 }
 
@@ -330,7 +330,7 @@ export default function Scenario({
   };
 
   const handleGenerateAIScenario = async (
-    body: GenerateAIScenarioBody
+    body: GenerateAIScenarioBody,
   ): Promise<GenerateAIScenarioOut> => {
     if (!socket || !isConnected) {
       throw new Error("WebSocket not connected");
@@ -425,9 +425,9 @@ export default function Scenario({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primaryDepartmentId || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData = useMemo(
@@ -438,7 +438,7 @@ export default function Scenario({
       active: true,
       scenarioAgentId: null as string | null,
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [formData, setFormData] = useState(initialFormData);
@@ -509,13 +509,13 @@ export default function Scenario({
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
 
   // Extract mappings from V2 response
   const personaMapping = useMemo(
     () => scenarioData?.persona_mapping || {},
-    [scenarioData]
+    [scenarioData],
   );
   // Backend now includes selected documents in document_mapping with all necessary fields
   const documentMapping = useMemo((): Record<string, DocumentMappingItem> => {
@@ -526,7 +526,7 @@ export default function Scenario({
   }, [scenarioData]);
   const parameterMapping = useMemo(
     () => scenarioData?.parameter_mapping || {},
-    [scenarioData]
+    [scenarioData],
   );
   // Backend now includes selected parameter items in parameter_item_mapping with all necessary fields
   const parameterItemMapping = useMemo(() => {
@@ -534,7 +534,7 @@ export default function Scenario({
   }, [scenarioData]);
   const simulationMapping = useMemo(
     () => scenarioData?.simulation_mapping || {},
-    [scenarioData]
+    [scenarioData],
   );
   // Backend now includes selected departments in department_mapping
   const departmentMapping = useMemo(() => {
@@ -688,7 +688,7 @@ export default function Scenario({
           // Check if this is a document parameter by checking parameterMapping
           const param = parameterMapping[paramId];
           return param?.document_parameter === true;
-        }
+        },
       );
 
       if (currentDocParamItemIds.length > 0) {
@@ -706,7 +706,7 @@ export default function Scenario({
             // Check if document has all selected document parameter items
             const docParamItemsSet = new Set(doc.parameter_item_ids);
             const hasAllSelectedParams = currentDocParamItemIds.every(
-              (paramId) => docParamItemsSet.has(paramId)
+              (paramId) => docParamItemsSet.has(paramId),
             );
             if (hasAllSelectedParams) {
               docsWithSelectedParams.add(doc.document_id);
@@ -722,7 +722,7 @@ export default function Scenario({
         // Intersect: only show documents that have the selected parameter items
         // Also include currently selected documents
         return allValidIds.filter(
-          (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id)
+          (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id),
         );
       }
 
@@ -757,7 +757,7 @@ export default function Scenario({
     });
 
     const deptFilteredIds = Array.from(
-      new Set([...filtered, ...selectedDocIds])
+      new Set([...filtered, ...selectedDocIds]),
     );
 
     // Filter by selected document parameter items if any are selected
@@ -786,7 +786,7 @@ export default function Scenario({
           // Check if document has all selected document parameter items
           const docParamItemsSet = new Set(doc.parameter_item_ids);
           const hasAllSelectedParams = currentDocParamItemIds.every((paramId) =>
-            docParamItemsSet.has(paramId)
+            docParamItemsSet.has(paramId),
           );
           if (hasAllSelectedParams) {
             docsWithSelectedParams.add(doc.document_id);
@@ -802,7 +802,7 @@ export default function Scenario({
       // Intersect: only show documents that have the selected parameter items
       // Also include currently selected documents
       return deptFilteredIds.filter(
-        (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id)
+        (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id),
       );
     }
 
@@ -843,7 +843,7 @@ export default function Scenario({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          allDeptParameterItemIds.add(id)
+          allDeptParameterItemIds.add(id),
         );
       }
     });
@@ -857,7 +857,7 @@ export default function Scenario({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          selectedDeptParameterItemIds.add(id)
+          selectedDeptParameterItemIds.add(id),
         );
       }
     });
@@ -883,13 +883,13 @@ export default function Scenario({
   // Filter parameters by type
   const documentParameterIds = useMemo(() => {
     return Object.keys(parameterMapping).filter(
-      (paramId) => parameterMapping[paramId]?.document_parameter === true
+      (paramId) => parameterMapping[paramId]?.document_parameter === true,
     );
   }, [parameterMapping]);
 
   const personaParameterIds = useMemo(() => {
     return Object.keys(parameterMapping).filter(
-      (paramId) => parameterMapping[paramId]?.persona_parameter === true
+      (paramId) => parameterMapping[paramId]?.persona_parameter === true,
     );
   }, [parameterMapping]);
 
@@ -897,7 +897,7 @@ export default function Scenario({
     return Object.keys(parameterMapping).filter(
       (paramId) =>
         parameterMapping[paramId]?.document_parameter !== true &&
-        parameterMapping[paramId]?.persona_parameter !== true
+        parameterMapping[paramId]?.persona_parameter !== true,
     );
   }, [parameterMapping]);
 
@@ -956,7 +956,7 @@ export default function Scenario({
     const paramItemsFromSelectedDocs = new Set<string>();
     currentDocumentIds.forEach((docId) => {
       const docDetails = scenarioData.document_details.find(
-        (d) => d.document_id === docId
+        (d) => d.document_id === docId,
       );
       if (docDetails?.parameter_item_ids) {
         docDetails.parameter_item_ids.forEach((paramItemId) => {
@@ -983,7 +983,7 @@ export default function Scenario({
     return documentParamItems.filter(
       (itemId) =>
         paramItemsFromSelectedDocs.has(itemId) ||
-        selectedDocParamItems.has(itemId)
+        selectedDocParamItems.has(itemId),
     );
   }, [
     validParameterItemIds,
@@ -1062,12 +1062,12 @@ export default function Scenario({
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id)
+      (id) => !currentDeptIds.includes(id),
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id)
+      (id) => !prevDeptIds.includes(id),
     );
 
     // Save selections for deselected departments
@@ -1096,7 +1096,7 @@ export default function Scenario({
               // Restore personas that are still valid
               const validPersonaSet = new Set(validPersonaIds);
               const validPersonas = staged.persona_ids.filter((id) =>
-                validPersonaSet.has(id)
+                validPersonaSet.has(id),
               );
               if (validPersonas.length > 0) {
                 setSelectedPersonaIds((prevPersonas) => {
@@ -1111,7 +1111,7 @@ export default function Scenario({
             if (staged.document_ids && staged.document_ids.length > 0) {
               const validDocSet = new Set(validDocumentIds);
               const validDocs = staged.document_ids.filter((id) =>
-                validDocSet.has(id)
+                validDocSet.has(id),
               );
               if (validDocs.length > 0) {
                 setCurrentDocumentIds((prevDocs) => {
@@ -1129,7 +1129,7 @@ export default function Scenario({
             ) {
               const validParamSet = new Set(validParameterItemIds);
               const validParams = staged.parameter_item_ids.filter((id) =>
-                validParamSet.has(id)
+                validParamSet.has(id),
               );
               if (validParams.length > 0) {
                 setCurrentParameterItemIds((prevParams) => {
@@ -1220,7 +1220,7 @@ export default function Scenario({
     const documentParamItemIdsFromDocs = new Set<string>();
     currentDocumentIds.forEach((docId) => {
       const docDetails = scenarioData?.document_details?.find(
-        (d) => d.document_id === docId
+        (d) => d.document_id === docId,
       );
       if (docDetails?.parameter_item_ids) {
         docDetails.parameter_item_ids.forEach((paramItemId) => {
@@ -1237,7 +1237,7 @@ export default function Scenario({
     });
 
     const newDocumentParamItemIdsArray = Array.from(
-      documentParamItemIdsFromDocs
+      documentParamItemIdsFromDocs,
     );
 
     // Update document parameters to match documents
@@ -1251,7 +1251,7 @@ export default function Scenario({
         return documentParameterIds.includes(paramId);
       });
       const currentDocumentParamItemIdsSet = new Set(
-        currentDocumentParamItemIds
+        currentDocumentParamItemIds,
       );
       const newDocumentParamItemIdsSet = new Set(newDocumentParamItemIdsArray);
 
@@ -1260,7 +1260,7 @@ export default function Scenario({
         currentDocumentParamItemIdsSet.size !==
           newDocumentParamItemIdsSet.size ||
         !Array.from(currentDocumentParamItemIdsSet).every((id) =>
-          newDocumentParamItemIdsSet.has(id)
+          newDocumentParamItemIdsSet.has(id),
         );
 
       if (isDifferent) {
@@ -1318,7 +1318,7 @@ export default function Scenario({
       setLocalProblemStatementVersions([]);
       setCurrentDocumentIds(scenarioData.document_ids);
       setCurrentParameterItemIds(
-        getParameterItemIdsFromStructure(scenarioData.parameters)
+        getParameterItemIdsFromStructure(scenarioData.parameters),
       );
       setCurrentObjectives(
         getObjectivesFromMapping(
@@ -1326,8 +1326,8 @@ export default function Scenario({
           (scenarioData.objective_mapping || {}) as Record<
             string,
             { name: string }
-          >
-        )
+          >,
+        ),
       );
       // Load scenario flags from server data
       const scenarioDataWithFlags = scenarioData as ScenarioDetailOut & {
@@ -1346,11 +1346,11 @@ export default function Scenario({
       setUseDocuments(
         scenarioDataWithFlags.documents_enabled ??
           scenarioDataWithFlags.use_documents ??
-          true
+          true,
       );
       // Load document_vision_enabled
       setDocumentVisionEnabled(
-        scenarioDataWithFlags.document_vision_enabled ?? false
+        scenarioDataWithFlags.document_vision_enabled ?? false,
       );
       // Load objectives_enabled
       setUseObjectives(scenarioDataWithFlags.objectives_enabled ?? false);
@@ -1391,7 +1391,7 @@ export default function Scenario({
       });
       setOriginalDocumentIds(scenarioData.document_ids);
       setOriginalParameterItemIds(
-        getParameterItemIdsFromStructure(scenarioData.parameters)
+        getParameterItemIdsFromStructure(scenarioData.parameters),
       );
       setOriginalObjectives(
         getObjectivesFromMapping(
@@ -1399,8 +1399,8 @@ export default function Scenario({
           (scenarioData.objective_mapping || {}) as Record<
             string,
             { name: string }
-          >
-        )
+          >,
+        ),
       );
       formDataInitializedRef.current = true;
     } else if (!isEditMode && scenarioData && !formDataInitializedRef.current) {
@@ -1562,7 +1562,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: string,
-    value: string | string[] | boolean | null
+    value: string | string[] | boolean | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -1619,7 +1619,7 @@ export default function Scenario({
   // Handler for document parameters
   // With bidirectional filtering, we just update state - the UI prevents invalid selections
   const handleDocumentParameterItemIdsChange = (
-    newDocumentParamItemIds: string[]
+    newDocumentParamItemIds: string[],
   ) => {
     // Remove old document parameter items
     const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
@@ -1644,7 +1644,7 @@ export default function Scenario({
 
   // Handler for persona parameters
   const handlePersonaParameterItemIdsChange = (
-    newPersonaParamItemIds: string[]
+    newPersonaParamItemIds: string[],
   ) => {
     // Remove old persona parameter items
     const nonPersonaParamIds = currentParameterItemIds.filter((itemId) => {
@@ -1664,7 +1664,7 @@ export default function Scenario({
 
   // Handler for general parameters
   const handleGeneralParameterItemIdsChange = (
-    newGeneralParamItemIds: string[]
+    newGeneralParamItemIds: string[],
   ) => {
     // Remove old general parameter items
     const nonGeneralParamIds = currentParameterItemIds.filter((itemId) => {
@@ -1697,7 +1697,7 @@ export default function Scenario({
           if (!item) return true;
           const paramId = item.parameter_id;
           return !personaParameterIds.includes(paramId);
-        }
+        },
       );
       const resp = await handleRandomizeScenario({
         name: formData.name || "",
@@ -1767,7 +1767,7 @@ export default function Scenario({
           if (!item) return true;
           const paramId = item.parameter_id;
           return !documentParameterIds.includes(paramId);
-        }
+        },
       );
       const resp = await handleRandomizeScenario({
         name: formData.name || "",
@@ -1791,7 +1791,7 @@ export default function Scenario({
             if (!item) return false;
             const paramId = item.parameter_id;
             return documentParameterIds.includes(paramId);
-          }
+          },
         );
         // Keep persona and general parameters from current selection
         const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
@@ -1960,14 +1960,14 @@ export default function Scenario({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({}),
-              }
+              },
             );
 
             const finalizeResult = await finalizeResponse.json();
 
             if (!finalizeResult.success || !finalizeResult.uploadId) {
               throw new Error(
-                finalizeResult.message || "Failed to finalize upload"
+                finalizeResult.message || "Failed to finalize upload",
               );
             }
 
@@ -1988,7 +1988,7 @@ export default function Scenario({
                   ? finalizeError.message
                   : "Unknown error"
               }`,
-              { id: toastId }
+              { id: toastId },
             );
           } finally {
             setIsUploadingImage(false);
@@ -2004,7 +2004,7 @@ export default function Scenario({
         }`,
         {
           id: toastId,
-        }
+        },
       );
       setIsUploadingImage(false);
     }
@@ -2015,7 +2015,7 @@ export default function Scenario({
 
   const handleGenerateScenario = async (
     userInstructions?: string,
-    shouldRegenerateObjectives?: boolean
+    shouldRegenerateObjectives?: boolean,
   ) => {
     setIsGeneratingScenario(true);
 
@@ -2051,11 +2051,11 @@ export default function Scenario({
           const mapping = result.dynamic_document_mapping;
           // Replace each parent ID with its corresponding child ID if it exists in mapping
           updatedDocumentIds = currentDocumentIds.map(
-            (docId) => mapping[docId] || docId
+            (docId) => mapping[docId] || docId,
           );
           setCurrentDocumentIds(updatedDocumentIds);
           toast.success(
-            `Created ${Object.keys(mapping).length} dynamic document(s) from templates`
+            `Created ${Object.keys(mapping).length} dynamic document(s) from templates`,
           );
         }
 
@@ -2107,7 +2107,7 @@ export default function Scenario({
               objective_ids: currentObjectives.filter((obj) => obj.trim()),
               parameters: groupParameterItemsByParameterId(
                 currentParameterItemIds,
-                parameterItemMapping
+                parameterItemMapping,
               ),
               documents_enabled: useDocuments,
               document_vision_enabled: documentVisionEnabled,
@@ -2120,7 +2120,7 @@ export default function Scenario({
             toast.success("Problem statement regenerated and saved!");
           } catch (error) {
             toast.error(
-              `Failed to save regenerated problem statement: ${error instanceof Error ? error.message : "Unknown error"}`
+              `Failed to save regenerated problem statement: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
           }
         }
@@ -2141,7 +2141,7 @@ export default function Scenario({
       }
     } catch (error) {
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -2156,7 +2156,7 @@ export default function Scenario({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        scenarioData?.valid_department_ids || []
+        scenarioData?.valid_department_ids || [],
       );
 
       // Prepare payload for V2 API
@@ -2186,7 +2186,7 @@ export default function Scenario({
         image_names: image?.name ? [image.name] : null,
         parameters: groupParameterItemsByParameterId(
           currentParameterItemIds,
-          parameterItemMapping
+          parameterItemMapping,
         ),
         scenario_agent_id: formData.scenarioAgentId || null,
       };
@@ -2194,7 +2194,7 @@ export default function Scenario({
       // Include problem_statement_versions if in create mode and we have local versions
       if (!isEditMode && localProblemStatementVersions.length > 0) {
         const versions = localProblemStatementVersions.map(
-          (v) => v.problem_statement
+          (v) => v.problem_statement,
         );
         // Ensure current problem statement is included as the last version (most recent)
         const currentProblemStatement = formData.problemStatement?.trim() || "";
@@ -2222,7 +2222,7 @@ export default function Scenario({
           router.push("/create/scenarios");
         } catch (error) {
           toast.error(
-            `Failed to update scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Failed to update scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
           setIsSubmitting(false);
         }
@@ -2242,14 +2242,14 @@ export default function Scenario({
           router.push("/create/scenarios");
         } catch (error) {
           toast.error(
-            `Failed to create scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Failed to create scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
           setIsSubmitting(false);
         }
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }
@@ -2376,7 +2376,7 @@ export default function Scenario({
                       new Set([
                         ...(scenarioData?.valid_department_ids || []),
                         ...(formData.departmentIds || []),
-                      ])
+                      ]),
                     )}
                     selectedIds={formData.departmentIds || []}
                     onSelect={(ids) => handleInputChange("departmentIds", ids)}
@@ -2801,7 +2801,7 @@ export default function Scenario({
                     if (id && problemStatementMapping[id]) {
                       handleInputChange(
                         "problemStatement",
-                        problemStatementMapping[id].problem_statement
+                        problemStatementMapping[id].problem_statement,
                       );
                     }
                   }}
@@ -3123,7 +3123,7 @@ export default function Scenario({
               onClick={() => {
                 handleGenerateScenario(
                   regenerationInstructions.trim() || undefined,
-                  regenerateObjectives
+                  regenerateObjectives,
                 );
                 setShowRegenerationDialog(false);
                 setRegenerationInstructions("");

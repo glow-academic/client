@@ -145,7 +145,7 @@ export function ProfileProviderClient({
 
   // Department filter state
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
 
   const bootstrapProfile = initial.actualProfile ?? null;
@@ -229,7 +229,7 @@ export function ProfileProviderClient({
 
         if (connectionAttempts.current >= maxConnectionAttempts) {
           toast.error(
-            "Unable to connect to real-time updates. Some features may be limited."
+            "Unable to connect to real-time updates. Some features may be limited.",
           );
         }
       });
@@ -249,12 +249,12 @@ export function ProfileProviderClient({
             window.dispatchEvent(
               new CustomEvent("simulationStarted", {
                 detail: { attemptId: data.attempt_id },
-              })
+              }),
             );
           } else {
             toast.error(data.message);
           }
-        }
+        },
       );
 
       socket.on(
@@ -263,7 +263,7 @@ export function ProfileProviderClient({
           setStartingSimulationId(null);
           toast.error(data.message);
           window.dispatchEvent(new CustomEvent("simulationError"));
-        }
+        },
       );
     };
 
@@ -302,7 +302,7 @@ export function ProfileProviderClient({
         effectiveProfile &&
         effectiveProfile.id !== bootstrapProfile.id &&
         sessionSnapshot.emulationTTL &&
-        sessionSnapshot.fullEmulation
+        sessionSnapshot.fullEmulation,
     );
   }, [
     bootstrapProfile,
@@ -342,7 +342,7 @@ export function ProfileProviderClient({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname]
+    [router, pathname],
   );
 
   const isSectionAvailable = useCallback(
@@ -352,7 +352,7 @@ export function ProfileProviderClient({
         "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role]
+    [effectiveProfile?.role],
   );
 
   // WebSocket helper methods
@@ -383,7 +383,7 @@ export function ProfileProviderClient({
       setStartingSimulationId(data.simulation_id);
       socketRef.current.emit("start_simulation", payload);
     },
-    [isConnected]
+    [isConnected],
   );
 
   const emitCreatePracticeScenario = useCallback(
@@ -430,7 +430,7 @@ export function ProfileProviderClient({
       }
       socketRef.current.emit("create_practice_scenario", payload);
     },
-    [isConnected]
+    [isConnected],
   );
 
   const value: ProfileContextType = {

@@ -29,7 +29,7 @@ type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getScenarioDefault = async (
-  input: ScenarioNewIn
+  input: ScenarioNewIn,
 ): Promise<ScenarioNewOut> => {
   return api.post("/scenarios/new", input, {
     cache: "no-store",
@@ -41,7 +41,7 @@ const getScenarioDefault = async (
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createScenario(
-  input: CreateScenarioIn
+  input: CreateScenarioIn,
 ): Promise<CreateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -49,7 +49,7 @@ async function createScenario(
 }
 
 async function updateScenario(
-  input: UpdateScenarioIn
+  input: UpdateScenarioIn,
 ): Promise<UpdateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -59,7 +59,7 @@ async function updateScenario(
 // generateAIScenario removed - component now uses WebSocket directly
 
 async function randomizeScenario(
-  input: RandomizeScenarioIn
+  input: RandomizeScenarioIn,
 ): Promise<RandomizeScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -70,25 +70,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Scenario",
-    description: `New scenario creation in GLOW${orgPart}.`,
+    description:
+      "Create a new problem-based learning scenario for teaching assistant training. Design realistic educational challenges and problem statements to practice pedagogical problem-solving and enhance instructional design skills.",
   };
 }
 

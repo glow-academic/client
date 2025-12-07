@@ -71,10 +71,10 @@ export interface DocumentsProps {
   listData: DocumentsListOut;
   // Server actions (replaces useMutation)
   deleteDocumentAction?: (
-    input: DeleteDocumentIn
+    input: DeleteDocumentIn,
   ) => Promise<DeleteDocumentOut>;
   generateTemplateAction?: (
-    input: GenerateTemplateIn
+    input: GenerateTemplateIn,
   ) => Promise<GenerateTemplateOut>;
 }
 
@@ -107,19 +107,19 @@ export default function Documents({
   // Extract data from V3 response
   const documents = useMemo(
     () => documentsData?.documents || [],
-    [documentsData]
+    [documentsData],
   );
   const scenarioMapping = useMemo(
     () => documentsData?.scenario_mapping || {},
-    [documentsData]
+    [documentsData],
   );
   const parameterItemMapping = useMemo(
     () => documentsData?.parameter_item_mapping || {},
-    [documentsData]
+    [documentsData],
   );
   const departmentMapping = useMemo(
     () => documentsData?.department_mapping || {},
-    [documentsData]
+    [documentsData],
   );
 
   // Use server-provided filter options directly (no client-side computation)
@@ -131,7 +131,7 @@ export default function Documents({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [documentsData?.scenario_options]
+    [documentsData?.scenario_options],
   );
   const departmentOptions = useMemo(
     () =>
@@ -141,7 +141,7 @@ export default function Documents({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [documentsData?.department_options]
+    [documentsData?.department_options],
   );
 
   // Handle document preview
@@ -278,7 +278,7 @@ export default function Documents({
         sortingFn: "datetime",
       },
     ],
-    [scenarioMapping, parameterItemMapping]
+    [scenarioMapping, parameterItemMapping],
   );
 
   // Permission checking using server-provided flags
@@ -287,7 +287,7 @@ export default function Documents({
       const doc = documents.find((d) => d.document_id === documentId);
       return doc?.can_delete ?? false;
     },
-    [documents]
+    [documents],
   );
 
   // Handle document edit - navigate to edit page
@@ -295,7 +295,7 @@ export default function Documents({
     (document: (typeof documents)[number]) => {
       router.push(`/management/documents/d/${document.document_id}`);
     },
-    [router]
+    [router],
   );
 
   // Handle single document delete
@@ -304,7 +304,7 @@ export default function Documents({
       setDeletingDocument(document);
       setShowDeleteDialog(true);
     },
-    []
+    [],
   );
 
   // Create table instance for filtering and sorting (cards are rendered from rows)
@@ -356,7 +356,7 @@ export default function Documents({
 
     if (!canDeleteDocument(deletingDocument.document_id)) {
       toast.error(
-        "This document cannot be deleted as it is used in active scenarios"
+        "This document cannot be deleted as it is used in active scenarios",
       );
       setShowDeleteDialog(false);
       setDeletingDocument(null);
@@ -375,7 +375,7 @@ export default function Documents({
       setDeletingDocument(null);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete document"
+        error instanceof Error ? error.message : "Failed to delete document",
       );
     } finally {
       setIsDeleting(false);

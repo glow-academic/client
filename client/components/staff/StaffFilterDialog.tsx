@@ -21,7 +21,7 @@ type ProfileListItem = {
   profile_id: string;
   first_name: string;
   last_name: string;
-    email: string;
+  email: string;
   name: string;
   role: string;
   email: string;

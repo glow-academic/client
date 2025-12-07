@@ -660,7 +660,10 @@ export default function CSVImportStaffModal({
             updated[field] = value;
           } else if (typeof value === "string") {
             // Parse comma-separated emails
-            updated[field] = value.split(",").map(e => e.trim()).filter(e => e.length > 0);
+            updated[field] = value
+              .split(",")
+              .map((e) => e.trim())
+              .filter((e) => e.length > 0);
           } else {
             updated[field] = [];
           }
@@ -810,7 +813,9 @@ export default function CSVImportStaffModal({
             .filter((id): id is string => id !== null);
         }
 
-        const emails = (row.emails || []).map(e => normalizeEmail(e)).filter(e => e.length > 0);
+        const emails = (row.emails || [])
+          .map((e) => normalizeEmail(e))
+          .filter((e) => e.length > 0);
         if (emails.length === 0) {
           // Fallback to empty array if no emails (shouldn't happen due to validation)
           emails.push("");
@@ -819,9 +824,11 @@ export default function CSVImportStaffModal({
           firstName: row.firstName!,
           lastName: row.lastName!,
           emails: emails,
-          primary_email_index: row.primary_email_index !== undefined && row.primary_email_index < emails.length
-            ? row.primary_email_index
-            : 0,
+          primary_email_index:
+            row.primary_email_index !== undefined &&
+            row.primary_email_index < emails.length
+              ? row.primary_email_index
+              : 0,
           role: row.role || "ta",
           department_ids: deptIds,
           cohort_ids: cohortIds,
@@ -906,7 +913,10 @@ export default function CSVImportStaffModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" data-testid="csv-upload-modal">
+      <DialogContent
+        className="max-w-5xl max-h-[90vh] overflow-y-auto"
+        data-testid="csv-upload-modal"
+      >
         <DialogHeader>
           <DialogTitle>Import Staff from CSV</DialogTitle>
         </DialogHeader>
@@ -1060,7 +1070,10 @@ export default function CSVImportStaffModal({
           {stage === "mapping" && (
             <div className="space-y-4" data-testid="csv-upload-stage-mapping">
               {/* Mapping Table */}
-              <div className="rounded-md border" data-testid="csv-column-mapping-table">
+              <div
+                className="rounded-md border"
+                data-testid="csv-column-mapping-table"
+              >
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1090,7 +1103,10 @@ export default function CSVImportStaffModal({
                       const isIncluded = includedColumns[header] !== false;
 
                       return (
-                        <TableRow key={header} data-testid={`csv-column-mapping-${header}`}>
+                        <TableRow
+                          key={header}
+                          data-testid={`csv-column-mapping-${header}`}
+                        >
                           <TableCell className="font-medium">
                             {header}
                           </TableCell>
@@ -1164,7 +1180,10 @@ export default function CSVImportStaffModal({
                 )}
               </div>
 
-              <div className="rounded-md border max-h-96 overflow-auto" data-testid="csv-review-table">
+              <div
+                className="rounded-md border max-h-96 overflow-auto"
+                data-testid="csv-review-table"
+              >
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1224,7 +1243,10 @@ export default function CSVImportStaffModal({
                           );
 
                         return (
-                          <TableRow key={index} data-testid={`csv-review-row-${index}`}>
+                          <TableRow
+                            key={index}
+                            data-testid={`csv-review-row-${index}`}
+                          >
                             <TableCell>{row.row_index}</TableCell>
                             <TableCell
                               className={
@@ -1268,7 +1290,9 @@ export default function CSVImportStaffModal({
                               }
                             >
                               <Input
-                                value={(editableRow.emails || []).join(", ") || ""}
+                                value={
+                                  (editableRow.emails || []).join(", ") || ""
+                                }
                                 onChange={(e) =>
                                   updateEditableRow(
                                     index,
@@ -1303,7 +1327,9 @@ export default function CSVImportStaffModal({
                               validDepartmentIds.length > 1 && (
                                 <TableCell
                                   className={
-                                    hasDepartmentError ? "bg-destructive/10" : ""
+                                    hasDepartmentError
+                                      ? "bg-destructive/10"
+                                      : ""
                                   }
                                 >
                                   <DepartmentPicker

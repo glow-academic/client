@@ -64,10 +64,10 @@ export interface SimulationProps {
   simulationDetail?: SimulationDetailOut;
   simulationDetailDefault?: SimulationNewOut;
   createSimulationAction?: (
-    input: CreateSimulationIn
+    input: CreateSimulationIn,
   ) => Promise<CreateSimulationOut>;
   updateSimulationAction?: (
-    input: UpdateSimulationIn
+    input: UpdateSimulationIn,
   ) => Promise<UpdateSimulationOut>;
 }
 
@@ -99,7 +99,7 @@ export default function Simulation({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null
+    null,
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -165,9 +165,9 @@ export default function Simulation({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primaryDepartmentId ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(
@@ -179,7 +179,7 @@ export default function Simulation({
       practiceSimulation: false,
       departmentIds: defaultDepartmentIds,
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -195,24 +195,24 @@ export default function Simulation({
   // Extract department mapping
   const departmentMapping = useMemo(
     () => simulationData?.department_mapping || {},
-    [simulationData]
+    [simulationData],
   );
   // Extract agent mapping
   const agentMapping = useMemo(
     () => simulationData?.agent_mapping || {},
-    [simulationData]
+    [simulationData],
   );
   const validAgentIds = useMemo(
     () => simulationData?.valid_agent_ids || [],
-    [simulationData]
+    [simulationData],
   );
 
   // State for managing unified content (scenarios + videos)
   const [currentContentItems, setCurrentContentItems] = useState<ContentItem[]>(
-    []
+    [],
   );
   const [stagedContentItems, setStagedContentItems] = useState<ContentItem[]>(
-    []
+    [],
   ); // New items not yet saved
   const [contentActiveStates, setContentActiveStates] = useState<
     Record<string, boolean>
@@ -243,9 +243,9 @@ export default function Simulation({
     useState<
       Record<
         string,
-          {
-            hints_enabled?: boolean;
-            copy_paste_allowed?: boolean;
+        {
+          hints_enabled?: boolean;
+          copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
           text_enabled?: boolean;
           show_problem_statement?: boolean;
@@ -417,7 +417,7 @@ export default function Simulation({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | number | boolean | string[] | null
+    value: string | number | boolean | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -445,7 +445,7 @@ export default function Simulation({
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
   // Convert server data to unified ContentItem format
   const unifiedContentItems = useMemo(() => {
@@ -490,8 +490,10 @@ export default function Simulation({
             switchState?.time_limit_seconds ??
             scenario.time_limit_seconds ??
             null,
-          hint_agent_id: switchState?.hint_agent_id ?? scenario.hint_agent_id ?? null,
-          grade_agent_ids: switchState?.grade_agent_ids ?? scenario.grade_agent_ids ?? [],
+          hint_agent_id:
+            switchState?.hint_agent_id ?? scenario.hint_agent_id ?? null,
+          grade_agent_ids:
+            switchState?.grade_agent_ids ?? scenario.grade_agent_ids ?? [],
         });
       });
     }
@@ -700,12 +702,12 @@ export default function Simulation({
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id)
+      (id) => !currentDeptIds.includes(id),
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id)
+      (id) => !prevDeptIds.includes(id),
     );
 
     // Save selections for deselected departments
@@ -733,7 +735,7 @@ export default function Simulation({
             if (staged.scenario_ids && staged.scenario_ids.length > 0) {
               const validScenarioSet = new Set(validScenarioIds);
               const validScenarios = staged.scenario_ids.filter((id) =>
-                validScenarioSet.has(id)
+                validScenarioSet.has(id),
               );
               if (validScenarios.length > 0) {
                 setCurrentScenarioIds((prevScenarios) => {
@@ -794,7 +796,6 @@ export default function Simulation({
 
   // Note: rubric_id is now per-scenario, not simulation-level, so we don't clear it here
 
-
   // Legacy drag-and-drop handler - replaced by table's up/down buttons
   const _handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
     e.preventDefault();
@@ -848,7 +849,7 @@ export default function Simulation({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData?.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds
+        validDepartmentIds,
       );
 
       const targetSimulationId = simulationId || editingSimulationId;
@@ -923,7 +924,7 @@ export default function Simulation({
           }
 
           return baseItem;
-        }
+        },
       );
 
       if (targetSimulationId) {
@@ -964,7 +965,7 @@ export default function Simulation({
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -1066,7 +1067,7 @@ export default function Simulation({
         [contentId]: active,
       }));
     },
-    []
+    [],
   );
 
   // Switch toggle handlers
@@ -1080,7 +1081,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleHintAgentChange = useCallback(
@@ -1093,7 +1094,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleGradeAgentsChange = useCallback(
@@ -1106,7 +1107,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleCopyPasteToggle = useCallback(
@@ -1119,7 +1120,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleRubricChange = useCallback(
@@ -1132,7 +1133,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleTimeLimitChange = useCallback(
@@ -1147,13 +1148,13 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleContentMoveUp = useCallback((contentId: string) => {
     setCurrentContentItems((prev) => {
       const index = prev.findIndex(
-        (item) => `${item.type}:${item.id}` === contentId
+        (item) => `${item.type}:${item.id}` === contentId,
       );
       if (index <= 0) return prev;
       const newItems = [...prev];
@@ -1169,7 +1170,7 @@ export default function Simulation({
   const handleContentMoveDown = useCallback((contentId: string) => {
     setCurrentContentItems((prev) => {
       const index = prev.findIndex(
-        (item) => `${item.type}:${item.id}` === contentId
+        (item) => `${item.type}:${item.id}` === contentId,
       );
       if (index < 0 || index >= prev.length - 1) return prev;
       const newItems = [...prev];
@@ -1188,10 +1189,10 @@ export default function Simulation({
       setCurrentScenarioIds((prev) => prev.filter((sid) => sid !== id));
     }
     setCurrentContentItems((prev) =>
-      prev.filter((item) => `${item.type}:${item.id}` !== contentId)
+      prev.filter((item) => `${item.type}:${item.id}` !== contentId),
     );
     setStagedContentItems((prev) =>
-      prev.filter((item) => `${item.type}:${item.id}` !== contentId)
+      prev.filter((item) => `${item.type}:${item.id}` !== contentId),
     );
     setContentActiveStates((prev) => {
       const newStates = { ...prev };
@@ -1210,7 +1211,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleTextToggle = useCallback(
@@ -1223,7 +1224,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleShowProblemStatementToggle = useCallback(
@@ -1236,7 +1237,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleShowObjectivesToggle = useCallback(
@@ -1249,7 +1250,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   const handleShowImageToggle = useCallback(
@@ -1262,7 +1263,7 @@ export default function Simulation({
         },
       }));
     },
-    []
+    [],
   );
 
   // Handler for scenario picker selection - adds scenarios directly
@@ -1272,17 +1273,17 @@ export default function Simulation({
       const existingScenarioIds = new Set(
         currentContentItems
           .filter((item) => item.type === "scenario")
-          .map((item) => item.id)
+          .map((item) => item.id),
       );
       const newScenarioIds = scenarioIds.filter(
-        (id) => !existingScenarioIds.has(id)
+        (id) => !existingScenarioIds.has(id),
       );
 
       if (newScenarioIds.length === 0) return;
 
       const maxPosition = Math.max(
         ...currentContentItems.map((item) => item.position),
-        0
+        0,
       );
       const newItems: ContentItem[] = newScenarioIds.map((scenarioId, idx) => {
         const scenarioData = simulationData?.scenario_mapping?.[scenarioId];
@@ -1303,7 +1304,7 @@ export default function Simulation({
       setStagedContentItems((prev) => [...prev, ...newItems]);
       setCurrentScenarioIds((prev) => [...prev, ...newScenarioIds]);
     },
-    [currentContentItems, simulationData?.scenario_mapping]
+    [currentContentItems, simulationData?.scenario_mapping],
   );
 
   // Handler for video picker selection - adds videos directly
@@ -1313,7 +1314,7 @@ export default function Simulation({
       const existingVideoIds = new Set(
         currentContentItems
           .filter((item) => item.type === "video")
-          .map((item) => item.id)
+          .map((item) => item.id),
       );
       const newVideoIds = videoIds.filter((id) => !existingVideoIds.has(id));
 
@@ -1321,7 +1322,7 @@ export default function Simulation({
 
       const maxPosition = Math.max(
         ...currentContentItems.map((item) => item.position),
-        0
+        0,
       );
       const newItems: ContentItem[] = newVideoIds.map((videoId, idx) => {
         const videoData = simulationData?.video_mapping?.[videoId];
@@ -1342,7 +1343,7 @@ export default function Simulation({
       });
       setStagedContentItems((prev) => [...prev, ...newItems]);
     },
-    [currentContentItems, simulationData?.video_mapping]
+    [currentContentItems, simulationData?.video_mapping],
   );
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)

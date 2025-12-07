@@ -9,12 +9,7 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import {
-  Check,
-  ChevronsUpDown,
-  Video,
-  X,
-} from "lucide-react";
+import { Check, ChevronsUpDown, Video, X } from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -186,7 +181,11 @@ export function VideoPicker({
         </div>
       )}
 
-      <Popover open={disabled ? false : open} onOpenChange={disabled ? () => {} : setOpen} {...props}>
+      <Popover
+        open={disabled ? false : open}
+        onOpenChange={disabled ? () => {} : setOpen}
+        {...props}
+      >
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -264,12 +263,7 @@ interface VideoItemProps {
   onPeek: (video: { id: string } & VideoMappingItem) => void;
 }
 
-function VideoItem({
-  video,
-  isSelected,
-  onSelect,
-  onPeek,
-}: VideoItemProps) {
+function VideoItem({ video, isSelected, onSelect, onPeek }: VideoItemProps) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -321,4 +315,3 @@ function VideoItem({
     </CommandItem>
   );
 }
-

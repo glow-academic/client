@@ -113,7 +113,7 @@ export default function Parameters({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [parametersData?.scenario_options]
+    [parametersData?.scenario_options],
   );
   const departmentOptions = useMemo(() => {
     const mapping = parametersData?.department_mapping || {};
@@ -130,7 +130,7 @@ export default function Parameters({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [parametersData?.document_options]
+    [parametersData?.document_options],
   );
 
   // Column definitions for TanStack Table
@@ -165,7 +165,8 @@ export default function Parameters({
         enableHiding: true,
         enableSorting: false,
         // Return the array of scenario IDs for this row
-        accessorFn: (row: (typeof parameters)[number]) => row.scenario_ids ?? [],
+        accessorFn: (row: (typeof parameters)[number]) =>
+          row.scenario_ids ?? [],
         // Let filtering check membership - show if parameter is used in ANY selected scenario
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("scenarios") as string[]) ?? [];
@@ -180,7 +181,8 @@ export default function Parameters({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof parameters)[number]) => row.document_ids ?? [],
+        accessorFn: (row: (typeof parameters)[number]) =>
+          row.document_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("documents") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -475,7 +477,9 @@ export default function Parameters({
                     <Copy className="h-4 w-4 md:mr-0 mr-2" />
                   )}
                   <span className="md:hidden">
-                    {isDuplicating === parameter.parameter_id ? "Duplicating..." : "Duplicate"}
+                    {isDuplicating === parameter.parameter_id
+                      ? "Duplicating..."
+                      : "Duplicate"}
                   </span>
                 </Button>
               )}

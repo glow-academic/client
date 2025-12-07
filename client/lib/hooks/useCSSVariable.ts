@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
  */
 export function useCSSVariable(
   variableName: string,
-  fallback: string = ""
+  fallback: string = "",
 ): string {
   // Read CSS variable synchronously on first render (client-side only)
   // This prevents flashing when components mount with fallback values

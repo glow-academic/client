@@ -12,28 +12,9 @@ import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Create",
-    description: `Create new simulations in GLOW${orgPart}.`,
+    description: "Create new teaching resources for teaching assistant training. Design simulations, scenarios, personas, and other educational content to support simulation-based learning and pedagogical development.",
   };
 }
 

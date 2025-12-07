@@ -12,28 +12,10 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Login",
-    description: `Login to GLOW${orgPart}.`,
+    description:
+      "Login to GLOW - Graduate Learning Orientation Workshop. Access your teaching assistant training platform for simulation-based learning, pedagogical assessment, and professional development.",
   };
 }
 
@@ -71,7 +53,7 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
 
 /** ---- Direct fetch for settings (separate call, like settings page pattern) ---- */
 async function getActiveSettings(
-  departmentId?: string
+  departmentId?: string,
 ): Promise<SettingsActiveOut | null> {
   try {
     // Type assertion needed because departmentId is optional in the API
@@ -88,7 +70,7 @@ async function getActiveSettings(
         headers: {
           "X-Bypass-Cache": "1",
         },
-      }
+      },
     )) as SettingsActiveOut;
   } catch {
     // If settings fetch fails, return null - theme will use defaults

@@ -18,14 +18,13 @@ import type { Metadata } from "next";
 type LeaderboardIn = InputOf<"/api/v3/leaderboard/bundle", "post">;
 type LeaderboardOut = OutputOf<"/api/v3/leaderboard/bundle", "post">;
 
-
 /** ---- Direct fetch (no Next.js cache) ----
  * Leaderboard responses can get large and exceed Next.js 2MB cache limit.
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getLeaderboard = async (
-  input: LeaderboardIn
+  input: LeaderboardIn,
 ): Promise<LeaderboardOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -49,16 +48,12 @@ const getProfileContext = async (input: {
     pathname: string;
   };
 }) => {
-  return api.post(
-    "/profile/context",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/profile/context", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Inline filters function for leaderboard page ---- */
@@ -136,28 +131,10 @@ async function getLeaderboardFilters(searchParams?: URLSearchParams) {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Leaderboard",
-    description: `Leaderboard in GLOW${orgPart}.`,
+    description:
+      "Teaching assistant performance leaderboard and comparative analytics. View rankings, performance metrics, and comparative assessment data to track teaching effectiveness and identify top performers in pedagogical practice.",
   };
 }
 
@@ -183,7 +160,7 @@ export default async function LeaderboardPage({
 
   // Get filters from search params or defaults
   const filters = await getLeaderboardFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Fetch leaderboard data server-side

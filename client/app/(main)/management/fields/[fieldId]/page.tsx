@@ -22,7 +22,7 @@ type UpdateFieldOut = OutputOf<"/api/v3/fields/update", "post">;
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getField = async (
   fieldId: string,
-  profileId: string
+  profileId: string,
 ): Promise<FieldDetailOut> => {
   return api.post(
     "/fields/detail",
@@ -32,34 +32,18 @@ const getField = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ fieldId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { fieldId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
 
   try {
     const field = await getField(fieldId, profileId);
@@ -67,12 +51,13 @@ export async function generateMetadata(
       title: `${field?.name || "Field"}`,
       description:
         field?.description ||
-        `Manage field in GLOW${orgPart}.`,
+        `${field?.name ? `${field.name} - ` : ""}Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.`,
     };
   } catch {
     return {
       title: "Field",
-      description: `Manage field in GLOW${orgPart}.`,
+      description:
+        "Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.",
     };
   }
 }
@@ -113,10 +98,4 @@ export default async function FieldEditPage({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  FieldDetailIn,
-  FieldDetailOut,
-  UpdateFieldIn,
-  UpdateFieldOut,
-};
-
+export type { FieldDetailIn, FieldDetailOut, UpdateFieldIn, UpdateFieldOut };

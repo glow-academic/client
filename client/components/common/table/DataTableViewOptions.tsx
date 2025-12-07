@@ -142,7 +142,7 @@ export function DataTableViewOptions<TData>({
             (column) =>
               typeof column.accessorFn !== "undefined" &&
               column.getCanHide() &&
-              !allHiddenColumns.has(column.id)
+              !allHiddenColumns.has(column.id),
           )
           .map((column) => {
             return (

@@ -55,10 +55,7 @@ export default function HintDisplay({
         ) : hints.length > 0 ? (
           <ul className="space-y-1 list-disc ml-4">
             {hints.map((hintObj) => (
-              <li
-                key={hintObj.idx}
-                className="text-sm text-popover-foreground"
-              >
+              <li key={hintObj.idx} className="text-sm text-popover-foreground">
                 {hintObj.hint}
               </li>
             ))}

@@ -45,7 +45,8 @@ export function GlowLogo({
   lightBackground = false,
 }: GlowLogoProps) {
   const iconSize = size === "sm" ? 20 : size === "md" ? 24 : 32;
-  const textSize = size === "sm" ? "text-xl" : size === "md" ? "text-3xl" : "text-4xl";
+  const textSize =
+    size === "sm" ? "text-xl" : size === "md" ? "text-3xl" : "text-4xl";
 
   const handleClick = () => {
     if (clickable && onClick) {

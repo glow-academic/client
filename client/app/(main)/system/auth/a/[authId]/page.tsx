@@ -34,7 +34,7 @@ type AuthNewOut = OutputOf<"/api/v3/auth/new", "post">;
  */
 const getAuth = async (
   authId: string,
-  profileId: string
+  profileId: string,
 ): Promise<AuthDetailOut> => {
   return api.post(
     "/auth/detail",
@@ -44,45 +44,29 @@ const getAuth = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ authId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { authId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const auth = await getAuth(authId, profileId);
     return {
       title: `${auth?.name || "Auth"} Auth`,
-      description: `${auth ? `${auth.name} ${auth.description || ""}` : "Auth"} in GLOW${orgPart}.`,
+      description: `${auth?.name ? `${auth.name} - ` : ""}Authentication method configuration for teaching assistant training platform.${auth?.description ? ` ${auth.description}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
     };
   } catch {
     return {
       title: "Auth",
-      description: `Auth in GLOW${orgPart}.`,
+      description: "Authentication method configuration for teaching assistant training platform. Manage identity providers and secure access mechanisms for educational institutions and L&D programs.",
     };
   }
 }
@@ -199,4 +183,3 @@ export type {
   UpdateAuthIn,
   UpdateAuthOut,
 };
-

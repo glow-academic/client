@@ -25,7 +25,7 @@ export interface CreateStaffButtonProps {
       lastName?: string;
       email?: string;
       role?: string;
-    }>
+    }>,
   ) => void;
   searchStaffAction?: SearchStaffAction;
   processCSVAction?: ProcessCSVAction;

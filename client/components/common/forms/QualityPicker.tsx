@@ -73,7 +73,7 @@ export function QualityPicker({
 
   const validIds = QUALITIES.map((q) => q.id);
   const mapping = Object.fromEntries(
-    QUALITIES.map((q) => [q.id, { name: q.name, description: q.description }])
+    QUALITIES.map((q) => [q.id, { name: q.name, description: q.description }]),
   );
 
   const qualities = React.useMemo(() => {
@@ -268,11 +268,10 @@ function QualityItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>
     </CommandItem>
   );
 }
-

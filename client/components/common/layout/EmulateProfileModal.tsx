@@ -36,10 +36,10 @@ export interface EmulateProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn
+    input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
   switchEffectiveProfile: (
-    input: SwitchEffectiveProfileParams
+    input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
 }
 
@@ -52,7 +52,7 @@ export function EmulateProfileModal({
   const { activeProfile } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
-    null
+    null,
   );
   const [searchData, setSearchData] =
     useState<SearchSimulatableProfilesOut | null>(null);
@@ -84,7 +84,7 @@ export function EmulateProfileModal({
         setIsLoading(false);
       }
     },
-    [activeProfile?.id, searchSimulatableProfiles]
+    [activeProfile?.id, searchSimulatableProfiles],
   );
 
   // Handle search input change with debounce
@@ -105,7 +105,7 @@ export function EmulateProfileModal({
         handleSearch(value);
       }, 500);
     },
-    [handleSearch]
+    [handleSearch],
   );
 
   // Get search results from API response
@@ -160,7 +160,7 @@ export function EmulateProfileModal({
       toast.success(
         fullEmulation && isSuperadmin
           ? "Full emulation enabled. You must log out to exit."
-          : "Emulation enabled successfully"
+          : "Emulation enabled successfully",
       );
 
       // Close modal and refresh page
@@ -262,7 +262,7 @@ export function EmulateProfileModal({
                         <TableCell>
                           {(() => {
                             const roleData = STAFF_ROLES.find(
-                              (r) => r.id === profile.role
+                              (r) => r.id === profile.role,
                             );
                             if (!roleData) {
                               return (

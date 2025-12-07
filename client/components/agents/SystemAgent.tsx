@@ -95,7 +95,7 @@ export interface SystemAgentProps {
   createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
   updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
   deleteAgentPromptAction?: (
-    input: DeleteAgentPromptIn
+    input: DeleteAgentPromptIn,
   ) => Promise<DeleteAgentPromptOut>;
 }
 
@@ -123,7 +123,7 @@ export default function SystemAgent({
   const [formData, setFormData] = useState<SystemAgentFormData>();
   const [errors, setErrors] = useState<FormErrors>({});
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor"
+    "editor",
   );
   const prevDepartmentIdsRef = React.useRef<string[]>([]);
   const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
@@ -204,7 +204,7 @@ export default function SystemAgent({
       const matchingLevel = levels.find(
         (l) =>
           !l.is_upper &&
-          Math.abs(parseFloat(l.temperature) - temperature) < 0.001
+          Math.abs(parseFloat(l.temperature) - temperature) < 0.001,
       );
       return matchingLevel?.id || null;
     };
@@ -265,7 +265,7 @@ export default function SystemAgent({
     const filtered: Record<string, PromptInfo> = {};
 
     for (const [promptId, promptInfoRaw] of Object.entries(
-      agentDetail.prompt_mapping
+      agentDetail.prompt_mapping,
     )) {
       // Add default values for name and description if missing (for backward compatibility)
       // Type assertion needed because API schema may not be fully updated in TypeScript types
@@ -292,7 +292,7 @@ export default function SystemAgent({
         // Specific departments selected - show prompts for those departments
         if (
           promptInfo.department_ids.some((deptId) =>
-            selectedDeptIds.includes(deptId)
+            selectedDeptIds.includes(deptId),
           )
         ) {
           filtered[promptId] = promptInfo;
@@ -379,14 +379,14 @@ export default function SystemAgent({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primaryDepartmentId ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   // Helper function to get required modalities based on agent_type
   const getRequiredModalities = (
-    agentType: string
+    agentType: string,
   ): {
     input: string[];
     output: string[];
@@ -424,7 +424,7 @@ export default function SystemAgent({
   // Helper to extract modalities from model info
   // The API returns input_modalities and output_modalities as separate fields
   const getModelModalities = (
-    modelInfo: AgentModelMappingItem | undefined
+    modelInfo: AgentModelMappingItem | undefined,
   ): { input: string[]; output: string[] } => {
     if (!modelInfo) return { input: [], output: [] };
 
@@ -489,7 +489,7 @@ export default function SystemAgent({
         const hasRequiredOutput =
           requiredModalities.output.length === 0 ||
           requiredModalities.output.every((mod) =>
-            modelOutputMods.includes(mod)
+            modelOutputMods.includes(mod),
           );
 
         if (hasRequiredInput && hasRequiredOutput) {
@@ -540,7 +540,7 @@ export default function SystemAgent({
       reasoning: "none",
       voices: [],
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   // Set breadcrumb context when agent data is loaded
@@ -678,7 +678,7 @@ export default function SystemAgent({
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,
-    value: string | number | boolean | string[] | null | undefined
+    value: string | number | boolean | string[] | null | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -731,7 +731,7 @@ export default function SystemAgent({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds
+        validDepartmentIds,
       );
 
       if (isEditMode && agentId && agentDetail) {
@@ -763,7 +763,7 @@ export default function SystemAgent({
               const allShareSamePrompt =
                 existingPromptIds.length > 0 &&
                 existingPromptIds.every(
-                  (promptId) => promptId === existingPromptIds[0]
+                  (promptId) => promptId === existingPromptIds[0],
                 );
 
               if (allShareSamePrompt) {
@@ -843,7 +843,7 @@ export default function SystemAgent({
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
+        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`,
       );
       setIsSubmitting(false);
     }
@@ -978,11 +978,11 @@ export default function SystemAgent({
                           } = getModelModalities(modelInfo);
                           const hasRequiredInput =
                             requiredModalities.input.every((mod) =>
-                              modelInputMods.includes(mod)
+                              modelInputMods.includes(mod),
                             );
                           const hasRequiredOutput =
                             requiredModalities.output.every((mod) =>
-                              modelOutputMods.includes(mod)
+                              modelOutputMods.includes(mod),
                             );
                           if (!hasRequiredInput || !hasRequiredOutput) {
                             // Reset to first valid model or empty
@@ -994,10 +994,10 @@ export default function SystemAgent({
                                   getModelModalities(info);
                                 return (
                                   requiredModalities.input.every((mod) =>
-                                    inputMods.includes(mod)
+                                    inputMods.includes(mod),
                                   ) &&
                                   requiredModalities.output.every((mod) =>
-                                    outputMods.includes(mod)
+                                    outputMods.includes(mod),
                                   )
                                 );
                               }) || [];
@@ -1118,7 +1118,7 @@ export default function SystemAgent({
                         formData.model_reasoning_level_id
                           ? [
                               getReasoningLevelFromId(
-                                formData.model_reasoning_level_id
+                                formData.model_reasoning_level_id,
                               ),
                             ]
                           : formData.reasoning
@@ -1136,7 +1136,7 @@ export default function SystemAgent({
                             | "minimal"
                             | "low"
                             | "medium"
-                            | "high"
+                            | "high",
                         );
                       }}
                       placeholder="Select reasoning effort"
@@ -1158,7 +1158,7 @@ export default function SystemAgent({
                         formData.model_voice_ids.length > 0
                           ? availableVoices
                               .filter((v) =>
-                                formData.model_voice_ids?.includes(v.id)
+                                formData.model_voice_ids?.includes(v.id),
                               )
                               .map((v) => v.voice)
                           : formData.voices || []
@@ -1200,7 +1200,7 @@ export default function SystemAgent({
                             handleInputChange("temperature", tempValue);
                             handleInputChange(
                               "model_temperature_level_id",
-                              levelId
+                              levelId,
                             );
                           }}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1227,7 +1227,7 @@ export default function SystemAgent({
                               handleInputChange("temperature", tempValue);
                               handleInputChange(
                                 "model_temperature_level_id",
-                                levelId
+                                levelId,
                               );
                             }}
                             className="w-full"
@@ -1320,7 +1320,7 @@ export default function SystemAgent({
                             size="sm"
                             onClick={() =>
                               setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview"
+                                editorMode === "preview" ? "editor" : "preview",
                               )
                             }
                             className="h-8 w-8 p-0"
@@ -1343,7 +1343,7 @@ export default function SystemAgent({
                               size="sm"
                               onClick={() =>
                                 setEditorMode(
-                                  editorMode === "debug" ? "editor" : "debug"
+                                  editorMode === "debug" ? "editor" : "debug",
                                 )
                               }
                               className="h-8 w-8 p-0"

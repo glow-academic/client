@@ -106,7 +106,7 @@ export function RunsDataTable({
 
   // Local search state, initialized from URL
   const [searchTerm, setSearchTerm] = React.useState(
-    searchParams.get("pricingSearch") || ""
+    searchParams.get("pricingSearch") || "",
   );
 
   // Ref to track debounce timeout for search
@@ -155,7 +155,7 @@ export function RunsDataTable({
   const sortOrder = searchParams.get("pricingSortOrder") || "desc";
   const sorting: SortingState = React.useMemo(
     () => [{ id: sortBy, desc: sortOrder === "desc" }],
-    [sortBy, sortOrder]
+    [sortBy, sortOrder],
   );
 
   // Sync URL params for filters
@@ -168,21 +168,21 @@ export function RunsDataTable({
       pricingModelIdsParam
         ? pricingModelIdsParam.split(",").filter(Boolean)
         : [],
-    [pricingModelIdsParam]
+    [pricingModelIdsParam],
   );
   const pricingProfileIds = React.useMemo(
     () =>
       pricingProfileIdsParam
         ? pricingProfileIdsParam.split(",").filter(Boolean)
         : [],
-    [pricingProfileIdsParam]
+    [pricingProfileIdsParam],
   );
   const pricingActorIds = React.useMemo(
     () =>
       pricingActorIdsParam
         ? pricingActorIdsParam.split(",").filter(Boolean)
         : [],
-    [pricingActorIdsParam]
+    [pricingActorIdsParam],
   );
 
   // Sync column filters with URL params (for DataTableFacetedFilter compatibility)
@@ -224,7 +224,7 @@ export function RunsDataTable({
       });
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   // Commit search to URL (called on Enter or blur, or after debounce)
@@ -235,7 +235,7 @@ export function RunsDataTable({
         pricingSearch: value.trim() || null,
       });
     },
-    [updateURLParams]
+    [updateURLParams],
   );
 
   // Handle search input change with debounce
@@ -260,7 +260,7 @@ export function RunsDataTable({
         commitSearch(value);
       }, 500);
     },
-    [commitSearch]
+    [commitSearch],
   );
 
   const columns = React.useMemo<ColumnDef<ModelRunRow>[]>(() => {
@@ -482,7 +482,7 @@ export function RunsDataTable({
         pricingSortOrder: sortOrder,
       });
     },
-    [sorting, updateURLParams]
+    [sorting, updateURLParams],
   );
 
   // Handle column filters change
@@ -490,7 +490,7 @@ export function RunsDataTable({
     (
       updater:
         | ColumnFiltersState
-        | ((prev: ColumnFiltersState) => ColumnFiltersState)
+        | ((prev: ColumnFiltersState) => ColumnFiltersState),
     ) => {
       const newFilters =
         typeof updater === "function" ? updater(columnFilters) : updater;
@@ -521,7 +521,7 @@ export function RunsDataTable({
             : null,
       });
     },
-    [columnFilters, updateURLParams]
+    [columnFilters, updateURLParams],
   );
 
   // Handle pagination change
@@ -532,7 +532,7 @@ export function RunsDataTable({
         | ((prev: { pageIndex: number; pageSize: number }) => {
             pageIndex: number;
             pageSize: number;
-          })
+          }),
     ) => {
       const newPagination =
         typeof updater === "function"
@@ -543,7 +543,7 @@ export function RunsDataTable({
         pricingPageSize: String(newPagination.pageSize),
       });
     },
-    [pricingPage, pricingPageSize, updateURLParams]
+    [pricingPage, pricingPageSize, updateURLParams],
   );
 
   const table = useReactTable({

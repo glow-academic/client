@@ -89,10 +89,10 @@ export interface ParameterProps {
   parameterDetail?: ParameterDetailOut;
   parameterDetailDefault?: ParameterNewOut;
   createParameterAction?: (
-    input: CreateParameterIn
+    input: CreateParameterIn,
   ) => Promise<CreateParameterOut>;
   updateParameterAction?: (
-    input: UpdateParameterIn
+    input: UpdateParameterIn,
   ) => Promise<UpdateParameterOut>;
 }
 
@@ -113,9 +113,9 @@ export default function Parameter({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primaryDepartmentId || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(
@@ -126,9 +126,10 @@ export default function Parameter({
       active: false,
       document_parameter: false,
       practice_parameter: false,
-      departmentIds: defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
+      departmentIds:
+        defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -187,18 +188,18 @@ export default function Parameter({
   const departmentMapping = useMemo(
     () =>
       (parameterData?.department_mapping || {}) as Record<string, MappingItem>,
-    [parameterData]
+    [parameterData],
   );
 
   const validDepartmentIds = useMemo(
     () => parameterData?.valid_department_ids || [],
-    [parameterData]
+    [parameterData],
   );
 
   // Parameter items come nested in response
   const parameterItems = useMemo(
     () => parameterData?.parameter_items || [],
-    [parameterData]
+    [parameterData],
   );
 
   const [initiallySorted, setInitiallySorted] = useState(false);
@@ -219,7 +220,8 @@ export default function Parameter({
       // For create mode, use data from default detail endpoint
       setFormData({
         ...initialFormData,
-        departmentIds: defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
+        departmentIds:
+          defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
       });
     }
   }, [parameterData, isEditMode, initialFormData]);
@@ -296,7 +298,7 @@ export default function Parameter({
           const transformedDepartmentIds = transformDepartmentIdsForSubmit(
             itemDepartmentIds,
             isSuperadmin,
-            validDepartmentIds
+            validDepartmentIds,
           );
           return {
             name: item.name,
@@ -340,7 +342,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -350,7 +352,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string | boolean | string[] | null
+    value: string | boolean | string[] | null,
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -401,7 +403,7 @@ export default function Parameter({
 
     // Validate parameter items
     const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted
+      (item) => !item.isDeleted,
     );
 
     activeItems.forEach((item, index) => {
@@ -419,7 +421,7 @@ export default function Parameter({
         const numValue = parseFloat(item.value);
         if (isNaN(numValue)) {
           errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`
+            `Parameter item ${index + 1}: Value must be a valid number`,
           );
         }
       }
@@ -538,7 +540,8 @@ export default function Parameter({
                   />
                 ) : null}
                 <p className="text-xs text-muted-foreground">
-                  Leave empty to make this parameter available to all departments
+                  Leave empty to make this parameter available to all
+                  departments
                 </p>
               </div>
             )}
@@ -717,7 +720,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "name",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="text-sm font-medium w-full"
@@ -748,7 +751,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "description",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="text-sm min-h-[80px] w-full"
@@ -769,7 +772,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "value",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="text-sm w-full"
@@ -791,7 +794,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "departmentIds",
-                                  ids.length > 0 ? ids : null
+                                  ids.length > 0 ? ids : null,
                                 )
                               }
                               placeholder="All Departments"
@@ -804,7 +807,7 @@ export default function Parameter({
                           </div>
                         )}
                       </div>
-                    )
+                    ),
                   )}
                 </div>
 
@@ -833,7 +836,7 @@ export default function Parameter({
                                   handleParameterItemInputChange(
                                     itemIndex,
                                     "name",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 className="text-sm"
@@ -848,7 +851,7 @@ export default function Parameter({
                                   handleParameterItemInputChange(
                                     itemIndex,
                                     "description",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 className="text-sm min-h-[96px]"
@@ -866,7 +869,7 @@ export default function Parameter({
                                     handleParameterItemInputChange(
                                       itemIndex,
                                       "value",
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   className="text-sm"
@@ -885,7 +888,7 @@ export default function Parameter({
                                     handleParameterItemInputChange(
                                       itemIndex,
                                       "departmentIds",
-                                      ids.length > 0 ? ids : null
+                                      ids.length > 0 ? ids : null,
                                     )
                                   }
                                   placeholder="All Departments"
@@ -924,7 +927,7 @@ export default function Parameter({
                               </div>
                             </TableCell>
                           </TableRow>
-                        )
+                        ),
                       )}
                     </TableBody>
                   </Table>
@@ -976,7 +979,7 @@ export default function Parameter({
                         departmentIds: item.department_ids ?? null,
                         isNew: false,
                         isDeleted: false,
-                      }))
+                      })),
                     ))
               }
               className="w-full sm:w-auto"

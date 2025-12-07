@@ -36,10 +36,10 @@ export interface SettingsProps {
   profileId: string;
   getSettingsDetailAction: (
     settingsId: string,
-    profileId: string
+    profileId: string,
   ) => Promise<SettingsDetailOut>;
   updateSettingsAction?: (
-    input: UpdateSettingsIn
+    input: UpdateSettingsIn,
   ) => Promise<UpdateSettingsOut>;
 }
 
@@ -57,7 +57,7 @@ export default function Settings({
     Record<string, boolean>
   >({});
   const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(
-    initialSelectedSettingsId
+    initialSelectedSettingsId,
   );
   const [settingsDetail, setSettingsDetail] =
     useState<SettingsDetailOut | null>(initialSettingsDetail);
@@ -209,7 +209,7 @@ export default function Settings({
       toast.error(
         `Failed to update settings: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     } finally {
       setIsSubmitting(false);
@@ -475,7 +475,7 @@ export default function Settings({
         {/* Authentication & Analytics */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Authentication & Analytics</h3>
-          
+
           {/* Guest Login Enabled */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -493,7 +493,8 @@ export default function Settings({
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              When enabled, users can access the application as a guest without signing in.
+              When enabled, users can access the application as a guest without
+              signing in.
             </p>
           </div>
 
@@ -501,7 +502,9 @@ export default function Settings({
           <div className="space-y-4">
             <h4 className="text-md font-medium">Analytics Thresholds</h4>
             <p className="text-sm text-muted-foreground">
-              Configure thresholds for dashboard metrics (0-100). These values determine when metrics are displayed as success, warning, or danger.
+              Configure thresholds for dashboard metrics (0-100). These values
+              determine when metrics are displayed as success, warning, or
+              danger.
             </p>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
               <div className="space-y-2">
@@ -517,7 +520,7 @@ export default function Settings({
                       ...prev,
                       success_threshold: Math.min(
                         100,
-                        Math.max(0, parseInt(e.target.value) || 85)
+                        Math.max(0, parseInt(e.target.value) || 85),
                       ),
                     }))
                   }
@@ -538,7 +541,7 @@ export default function Settings({
                       ...prev,
                       warning_threshold: Math.min(
                         100,
-                        Math.max(0, parseInt(e.target.value) || 80)
+                        Math.max(0, parseInt(e.target.value) || 80),
                       ),
                     }))
                   }
@@ -559,7 +562,7 @@ export default function Settings({
                       ...prev,
                       danger_threshold: Math.min(
                         100,
-                        Math.max(0, parseInt(e.target.value) || 70)
+                        Math.max(0, parseInt(e.target.value) || 70),
                       ),
                     }))
                   }

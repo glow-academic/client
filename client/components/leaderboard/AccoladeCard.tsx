@@ -67,14 +67,17 @@ export default function AccoladeCard({
     <div
       className="rounded-2xl p-[1px] h-full relative"
       data-testid={dataTestId}
-      style={{
-        background: `linear-gradient(90deg, ${gradientStartColor}, ${gradientEndColor}, ${gradientStartColor})`,
-        backgroundSize: "300% 100%",
-        animation: "gradient-move 4s linear infinite",
-        WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-        WebkitMaskComposite: "xor",
-        maskComposite: "exclude",
-      } as React.CSSProperties}
+      style={
+        {
+          background: `linear-gradient(90deg, ${gradientStartColor}, ${gradientEndColor}, ${gradientStartColor})`,
+          backgroundSize: "300% 100%",
+          animation: "gradient-move 4s linear infinite",
+          WebkitMask:
+            "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
+        } as React.CSSProperties
+      }
     >
       <motion.div
         ref={ref}

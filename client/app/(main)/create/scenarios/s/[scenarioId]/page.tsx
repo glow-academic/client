@@ -16,14 +16,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 /** ---- Strong types from OpenAPI ---- */
 type ScenarioDetailIn = InputOf<"/api/v3/scenarios/detail", "post">;
 type ScenarioDetailOut = OutputOf<"/api/v3/scenarios/detail", "post">;
-type ScenarioNewIn = InputOf<
-  "/api/v3/scenarios/new",
-  "post"
->;
-type ScenarioNewOut = OutputOf<
-  "/api/v3/scenarios/new",
-  "post"
->;
+type ScenarioNewIn = InputOf<"/api/v3/scenarios/new", "post">;
+type ScenarioNewOut = OutputOf<"/api/v3/scenarios/new", "post">;
 type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v3/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v3/scenarios/update", "post">;
@@ -39,7 +33,7 @@ type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
  */
 const getScenario = async (
   scenarioId: string,
-  profileId: string
+  profileId: string,
 ): Promise<ScenarioDetailOut> => {
   return api.post(
     "/scenarios/detail",
@@ -49,52 +43,37 @@ const getScenario = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { scenarioId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const scenario = await getScenario(scenarioId, profileId);
     return {
       title: `${scenario?.name || "Scenario"}`,
-      description: `${scenario ? `${scenario.name} ${scenario.problem_statement || ""}` : "Scenario"} in GLOW${orgPart}.`,
+      description: `${scenario?.name ? `${scenario.name} - ` : ""}Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.${scenario?.problem_statement ? ` ${scenario.problem_statement}` : ""}`,
     };
   } catch {
     return {
       title: "Scenario",
-      description: `Scenario in GLOW${orgPart}.`,
+      description:
+        "Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.",
     };
   }
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createScenario(
-  input: CreateScenarioIn
+  input: CreateScenarioIn,
 ): Promise<CreateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -102,7 +81,7 @@ async function createScenario(
 }
 
 async function updateScenario(
-  input: UpdateScenarioIn
+  input: UpdateScenarioIn,
 ): Promise<UpdateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -112,7 +91,7 @@ async function updateScenario(
 // generateAIScenario removed - component now uses WebSocket directly
 
 async function randomizeScenario(
-  input: RandomizeScenarioIn
+  input: RandomizeScenarioIn,
 ): Promise<RandomizeScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

@@ -46,7 +46,9 @@ export function BulkDeleteLogsDialog({
     useState<DeletePercentage>("10");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const getLogsToDelete = (percentage: DeletePercentage): LogsListOut["logs"][number][] => {
+  const getLogsToDelete = (
+    percentage: DeletePercentage,
+  ): LogsListOut["logs"][number][] => {
     const totalLogs = logs.length;
     if (totalLogs === 0) return [];
 

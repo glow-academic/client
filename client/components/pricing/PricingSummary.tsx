@@ -128,7 +128,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
   const modelMapping = useMemo(
     () => pricingData?.model_mapping || {},
-    [pricingData]
+    [pricingData],
   );
 
   // Get chart colors from CSS variables
@@ -200,7 +200,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
         row["total"] = Number(
           Object.values(values)
             .reduce((s, v) => s + (v || 0), 0)
-            .toFixed(2)
+            .toFixed(2),
         );
         return row;
       });
@@ -288,7 +288,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
                 Object.entries(chartConfig).map(([k, v]) => [
                   k,
                   { label: v.label, color: v.color },
-                ])
+                ]),
               )}
               className="aspect-[16/7]"
             >
@@ -364,4 +364,3 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
     </div>
   );
 }
-

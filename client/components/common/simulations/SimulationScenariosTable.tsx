@@ -61,7 +61,7 @@ export interface SimulationScenariosTableProps {
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
   onTimeLimitChange?: (
     contentId: string,
-    timeLimitMinutes: number | null
+    timeLimitMinutes: number | null,
   ) => void;
   // Agent change handlers
   onHintAgentChange?: (contentId: string, agentId: string | null) => void;
@@ -103,7 +103,7 @@ export function SimulationScenariosTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "position", desc: false },
@@ -112,7 +112,7 @@ export function SimulationScenariosTable({
   // Filter to only scenarios
   const scenarioItems = React.useMemo(
     () => data.filter((item) => item.type === "scenario"),
-    [data]
+    [data],
   );
 
   // Compute available agents per role (for conditional column visibility)
@@ -163,7 +163,10 @@ export function SimulationScenariosTable({
       }
 
       // Auto-select grade agents (if only one)
-      if ((!item.grade_agent_ids || item.grade_agent_ids.length === 0) && gradeAgentIds.length === 1) {
+      if (
+        (!item.grade_agent_ids || item.grade_agent_ids.length === 0) &&
+        gradeAgentIds.length === 1
+      ) {
         onGradeAgentsChange(contentId, [gradeAgentIds[0]!]);
       }
 
@@ -278,9 +281,14 @@ export function SimulationScenariosTable({
                     <AgentPicker
                       mapping={agentMapping}
                       validIds={hintAgentIds}
-                      selectedIds={item.hint_agent_id ? [item.hint_agent_id] : []}
+                      selectedIds={
+                        item.hint_agent_id ? [item.hint_agent_id] : []
+                      }
                       onSelect={(ids) =>
-                        onHintAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
+                        onHintAgentChange?.(
+                          `${item.type}:${item.id}`,
+                          ids[0] || null,
+                        )
                       }
                       placeholder="Select agent"
                       disabled={readonly || !onHintAgentChange}
@@ -521,7 +529,7 @@ export function SimulationScenariosTable({
       agentMapping,
       hintAgentIds,
       gradeAgentIds,
-    ]
+    ],
   );
 
   const table = useReactTable({
@@ -592,7 +600,7 @@ export function SimulationScenariosTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -613,7 +621,7 @@ export function SimulationScenariosTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
@@ -636,4 +644,3 @@ export function SimulationScenariosTable({
     </TooltipProvider>
   );
 }
-

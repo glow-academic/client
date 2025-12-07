@@ -20,9 +20,7 @@ type DeleteFieldIn = InputOf<"/api/v3/fields/delete", "post">;
 type DeleteFieldOut = OutputOf<"/api/v3/fields/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
-const getFieldsList = async (
-  profileId: string
-): Promise<FieldsListOut> => {
+const getFieldsList = async (profileId: string): Promise<FieldsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/fields/list",
@@ -34,7 +32,7 @@ const getFieldsList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
@@ -46,36 +44,16 @@ async function duplicateField(
   return api.post("/fields/duplicate", input);
 }
 
-async function deleteField(
-  input: DeleteFieldIn,
-): Promise<DeleteFieldOut> {
+async function deleteField(input: DeleteFieldIn): Promise<DeleteFieldOut> {
   "use server";
   return api.post("/fields/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Fields",
-    description: `Manage fields in GLOW${orgPart}.`,
+    description:
+      "Manage custom fields and data configuration for teaching assistant training platform. Configure custom field definitions to track additional educational data, assessment criteria, and learning metrics for comprehensive L&D program management.",
   };
 }
 

@@ -30,9 +30,7 @@ type GenerateVideoOut = never;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getVideoDefault = async (
-  input: VideoNewIn
-): Promise<VideoNewOut> => {
+const getVideoDefault = async (input: VideoNewIn): Promise<VideoNewOut> => {
   return api.post("/videos/new", input, {
     cache: "no-store",
     headers: {
@@ -55,7 +53,7 @@ async function updateVideo(input: UpdateVideoIn): Promise<UpdateVideoOut> {
 }
 
 async function randomizeVideo(
-  input: RandomizeVideoIn
+  input: RandomizeVideoIn,
 ): Promise<RandomizeVideoOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -68,26 +66,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Video",
-    description: `New video creation in GLOW${orgPart}.`,
+    description: "Upload a new instructional video for teaching assistant training. Add multimedia resources to support pedagogical development, enhance learning experiences, and provide visual learning content for L&D programs.",
   };
+}
 }
 
 export default async function NewVideoPage() {

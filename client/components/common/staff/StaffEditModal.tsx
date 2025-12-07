@@ -56,9 +56,12 @@ export default function StaffEditModal({
   // Extract data from ProfileListItem
   const targetUser = useMemo(() => {
     if (!staffItem) return null;
-    const emails = staffItem.emails && staffItem.emails.length > 0 
-      ? staffItem.emails 
-      : (staffItem.primary_email ? [staffItem.primary_email] : []);
+    const emails =
+      staffItem.emails && staffItem.emails.length > 0
+        ? staffItem.emails
+        : staffItem.primary_email
+          ? [staffItem.primary_email]
+          : [];
     const primaryIndex = emails.length > 0 ? 0 : -1;
     return {
       firstName: staffItem.first_name || "",
@@ -93,7 +96,8 @@ export default function StaffEditModal({
         firstName: targetUser.firstName || "",
         lastName: targetUser.lastName || "",
         emails: targetUser.emails.length > 0 ? targetUser.emails : [""],
-        primaryEmailIndex: targetUser.primaryEmailIndex >= 0 ? targetUser.primaryEmailIndex : 0,
+        primaryEmailIndex:
+          targetUser.primaryEmailIndex >= 0 ? targetUser.primaryEmailIndex : 0,
         role: targetUser.role || "",
         reqPerDay: targetUser.reqPerDay ?? "",
         primaryDepartmentId: targetUser.departmentId || "",
@@ -106,7 +110,7 @@ export default function StaffEditModal({
     (field: string, value: string | number | boolean) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    []
+    [],
   );
 
   // Email management functions
@@ -176,7 +180,7 @@ export default function StaffEditModal({
       }
 
       // Validate emails
-      const validEmails = formData.emails.filter(e => e.trim().length > 0);
+      const validEmails = formData.emails.filter((e) => e.trim().length > 0);
       if (validEmails.length === 0) {
         toast.error("At least one email is required");
         setIsSubmitting(false);
@@ -200,9 +204,11 @@ export default function StaffEditModal({
         first_name: formData.firstName,
         last_name: formData.lastName,
         emails: validEmails,
-        primary_email_index: formData.primaryEmailIndex >= 0 && formData.primaryEmailIndex < validEmails.length 
-          ? formData.primaryEmailIndex 
-          : 0,
+        primary_email_index:
+          formData.primaryEmailIndex >= 0 &&
+          formData.primaryEmailIndex < validEmails.length
+            ? formData.primaryEmailIndex
+            : 0,
         role: formData.role,
         requests_per_day: parsedReqPerDay,
         primary_department_id: departmentId,
@@ -243,7 +249,7 @@ export default function StaffEditModal({
       if (!profileId) return;
       await handleConfirm();
     },
-    [profileId, handleConfirm]
+    [profileId, handleConfirm],
   );
 
   if (!profileId) return null;
@@ -309,7 +315,11 @@ export default function StaffEditModal({
                           placeholder="redacted@purdue.edu"
                           disabled={isSubmitting}
                           data-testid={`input-staff-email-${index}`}
-                          className={formData.primaryEmailIndex === index ? "border-primary" : ""}
+                          className={
+                            formData.primaryEmailIndex === index
+                              ? "border-primary"
+                              : ""
+                          }
                         />
                         {formData.primaryEmailIndex === index && (
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
@@ -320,10 +330,16 @@ export default function StaffEditModal({
                       <div className="flex items-center gap-1">
                         <Button
                           type="button"
-                          variant={formData.primaryEmailIndex === index ? "default" : "outline"}
+                          variant={
+                            formData.primaryEmailIndex === index
+                              ? "default"
+                              : "outline"
+                          }
                           size="icon"
                           onClick={() => setPrimaryEmail(index)}
-                          disabled={isSubmitting || formData.primaryEmailIndex === index}
+                          disabled={
+                            isSubmitting || formData.primaryEmailIndex === index
+                          }
                           className="h-8 w-8 shrink-0"
                           title="Set as primary"
                         >
@@ -423,7 +439,7 @@ export default function StaffEditModal({
                               const num = parseInt(val, 10);
                               handleInputChange(
                                 "reqPerDay",
-                                Number.isNaN(num) ? "" : num
+                                Number.isNaN(num) ? "" : num,
                               );
                             }
                           }}
@@ -439,37 +455,35 @@ export default function StaffEditModal({
                 </div>
 
                 {/* Primary Department Section (superadmin only) */}
-                {isSuperadmin &&
-                  validDepartmentIds.length > 1 && (
-                    <div className="space-y-2 pt-2">
-                      <Label htmlFor="primaryDepartment">
-                        Primary Department
-                      </Label>
-                      <DepartmentPicker
-                        mapping={departmentMapping}
-                        validIds={validDepartmentIds}
-                        selectedIds={
-                          formData.primaryDepartmentId
-                            ? [formData.primaryDepartmentId]
-                            : []
+                {isSuperadmin && validDepartmentIds.length > 1 && (
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="primaryDepartment">
+                      Primary Department
+                    </Label>
+                    <DepartmentPicker
+                      mapping={departmentMapping}
+                      validIds={validDepartmentIds}
+                      selectedIds={
+                        formData.primaryDepartmentId
+                          ? [formData.primaryDepartmentId]
+                          : []
+                      }
+                      onSelect={(ids) => {
+                        const deptId = ids.length > 0 ? ids[0] : "";
+                        if (deptId !== undefined) {
+                          handleInputChange("primaryDepartmentId", deptId);
                         }
-                        onSelect={(ids) => {
-                          const deptId = ids.length > 0 ? ids[0] : "";
-                          if (deptId !== undefined) {
-                            handleInputChange("primaryDepartmentId", deptId);
-                          }
-                        }}
-                        multiSelect={false}
-                        placeholder="Select primary department"
-                        disabled={isSubmitting}
-                        buttonClassName="h-10"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Set the primary department for this staff member
-                      </p>
-                    </div>
-                  )}
-
+                      }}
+                      multiSelect={false}
+                      placeholder="Select primary department"
+                      disabled={isSubmitting}
+                      buttonClassName="h-10"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Set the primary department for this staff member
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-2">

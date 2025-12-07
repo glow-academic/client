@@ -75,7 +75,7 @@ export function VoiceMultiPicker({
 
   const validIds = VOICES.map((v) => v.id);
   const mapping = Object.fromEntries(
-    VOICES.map((v) => [v.id, { name: v.name, description: "" }])
+    VOICES.map((v) => [v.id, { name: v.name, description: "" }]),
   );
 
   const voices = React.useMemo(() => {
@@ -226,12 +226,7 @@ interface VoiceItemProps {
   onPeek: (voice: { id: string; name: string; description: string }) => void;
 }
 
-function VoiceItem({
-  voice,
-  isSelected,
-  onSelect,
-  onPeek,
-}: VoiceItemProps) {
+function VoiceItem({ voice, isSelected, onSelect, onPeek }: VoiceItemProps) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -262,11 +257,10 @@ function VoiceItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>
     </CommandItem>
   );
 }
-

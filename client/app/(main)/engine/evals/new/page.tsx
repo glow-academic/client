@@ -26,34 +26,16 @@ const getRubricsList = async (profileId: string): Promise<RubricsListOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Create Eval",
-    description: `Create a new eval in GLOW${orgPart}.`,
+    description:
+      "Create a new automated evaluation run for teaching assistant assessments. Configure batch evaluations to analyze pedagogical performance, teaching effectiveness, and student interaction quality across multiple practice sessions.",
   };
 }
 
@@ -87,4 +69,3 @@ export default async function NewEvalPage() {
 
 /** ---- Export types for client component ---- */
 export type { CreateEvalIn, CreateEvalOut, RubricsListOut };
-

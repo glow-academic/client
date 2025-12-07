@@ -27,9 +27,7 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getRubricsList = async (
-  profileId: string
-): Promise<RubricsListOut> => {
+const getRubricsList = async (profileId: string): Promise<RubricsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/rubrics/list",
@@ -41,13 +39,13 @@ const getRubricsList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateRubric(
-  input: DuplicateRubricIn
+  input: DuplicateRubricIn,
 ): Promise<DuplicateRubricOut> {
   "use server";
   const session = await getSession();
@@ -60,7 +58,7 @@ export async function duplicateRubric(
 }
 
 export async function deleteRubric(
-  input: DeleteRubricIn
+  input: DeleteRubricIn,
 ): Promise<DeleteRubricOut> {
   "use server";
   const session = await getSession();
@@ -73,7 +71,7 @@ export async function deleteRubric(
 }
 
 export async function createRubric(
-  input: CreateRubricIn
+  input: CreateRubricIn,
 ): Promise<CreateRubricOut> {
   "use server";
   const session = await getSession();
@@ -86,7 +84,7 @@ export async function createRubric(
 }
 
 export async function updateRubric(
-  input: UpdateRubricIn
+  input: UpdateRubricIn,
 ): Promise<UpdateRubricOut> {
   "use server";
   const session = await getSession();
@@ -99,28 +97,10 @@ export async function updateRubric(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Rubrics",
-    description: `Rubrics in GLOW${orgPart}.`,
+    description:
+      "Manage assessment rubrics for teaching assistant evaluation. Create and customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.",
   };
 }
 

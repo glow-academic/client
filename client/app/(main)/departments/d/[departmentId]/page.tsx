@@ -32,7 +32,7 @@ type DepartmentSearchProfileOut = OutputOf<
 
 // Search function for department profile search (search-only, no mutation)
 async function searchDepartmentProfile(
-  input: DepartmentSearchProfileIn
+  input: DepartmentSearchProfileIn,
 ): Promise<DepartmentSearchProfileOut> {
   "use server";
   return api.post("/departments/search-profile", input);
@@ -57,7 +57,7 @@ type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
  */
 const getDepartment = async (
   departmentId: string,
-  profileId: string
+  profileId: string,
 ): Promise<DepartmentDetailOut> => {
   return api.post(
     "/departments/detail",
@@ -67,52 +67,36 @@ const getDepartment = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ departmentId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { departmentId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const department = await getDepartment(departmentId, profileId);
     return {
       title: `${department?.title || "Department"} Department`,
-      description: `${department ? `${department.title} ${department.description || ""}` : "Department"} in GLOW${orgPart}.`,
+      description: `${department?.title ? `${department.title} - ` : ""}Academic department for teaching assistant training programs.${department?.description ? ` ${department.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
     };
   } catch {
     return {
       title: "Department",
-      description: `Department in GLOW${orgPart}.`,
+      description: "Academic department for teaching assistant training programs. Manage department-specific settings and coordinate L&D programs across different academic units.",
     };
   }
 }
 
 /** ---- Strongly-typed server actions ---- */
 async function updateDepartment(
-  input: UpdateDepartmentIn
+  input: UpdateDepartmentIn,
 ): Promise<UpdateDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -120,7 +104,7 @@ async function updateDepartment(
 }
 
 async function removeProfilesFromDepartment(
-  input: RemoveProfilesFromDepartmentIn
+  input: RemoveProfilesFromDepartmentIn,
 ): Promise<RemoveProfilesFromDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

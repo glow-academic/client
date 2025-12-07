@@ -124,17 +124,17 @@ import type {
 
 // Explicitly define server action types (matching the page exports)
 export type DeleteStaffAction = (
-  input: DeleteStaffIn
+  input: DeleteStaffIn,
 ) => Promise<DeleteStaffOut>;
 export type BulkDeleteStaffAction = (
-  input: BulkDeleteStaffIn
+  input: BulkDeleteStaffIn,
 ) => Promise<BulkDeleteStaffOut>;
 export type SearchStaffAction = (
-  input: SearchStaffIn
+  input: SearchStaffIn,
 ) => Promise<SearchStaffOut>;
 export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
 export type BulkCreateOrUpdateStaffAction = (
-  input: BulkCreateOrUpdateStaffIn
+  input: BulkCreateOrUpdateStaffIn,
 ) => Promise<BulkCreateOrUpdateStaffOut>;
 
 export interface StaffProps {
@@ -194,7 +194,7 @@ const formatLastActive = (timestamp: string | null): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60)
+    (now.getTime() - date.getTime()) / (1000 * 60),
   );
 
   if (diffInMinutes < 1) return "Just now";
@@ -270,7 +270,7 @@ const unparseCSV = (data: Record<string, string>[]): string => {
           }
           return value;
         })
-        .join(",")
+        .join(","),
     ),
   ];
   return csvContent.join("\n");
@@ -288,7 +288,7 @@ const autoMapColumn = (columnName: string): string | null => {
   }
   if (
     ["email", "alias", "username", "user", "login", "email address"].includes(
-      lower
+      lower,
     )
   ) {
     return "email";
@@ -383,7 +383,7 @@ function ColumnPicker({
                     <Check
                       className={cn(
                         "ml-auto h-4 w-4 shrink-0",
-                        value === field.value ? "opacity-100" : "opacity-0"
+                        value === field.value ? "opacity-100" : "opacity-0",
                       )}
                     />
                   </div>
@@ -466,15 +466,15 @@ export default function Staff({
   // Extract data from server-provided data
   const staff = useMemo(
     () => serverListData?.staff || [],
-    [serverListData?.staff]
+    [serverListData?.staff],
   );
   const cohortMapping = useMemo(
     () => serverListData?.cohort_mapping || {},
-    [serverListData?.cohort_mapping]
+    [serverListData?.cohort_mapping],
   );
   const departmentMapping = useMemo(
     () => serverListData?.department_mapping || {},
-    [serverListData?.department_mapping]
+    [serverListData?.department_mapping],
   );
   const trendData = useMemo(
     () =>
@@ -485,7 +485,7 @@ export default function Staff({
         ta: [],
         total_requests: [],
       },
-    [serverListData?.trend_data]
+    [serverListData?.trend_data],
   );
 
   // Calculate counts for KPI cards
@@ -528,7 +528,7 @@ export default function Staff({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [serverListData?.role_options]
+    [serverListData?.role_options],
   );
 
   const lastActiveOptions = useMemo(
@@ -539,7 +539,7 @@ export default function Staff({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [serverListData?.last_active_options]
+    [serverListData?.last_active_options],
   );
 
   // Transform mappings for CSV import
@@ -555,7 +555,7 @@ export default function Staff({
               description: String(dept.description || ""),
             };
           }
-        }
+        },
       );
     }
     return mapping;
@@ -579,15 +579,15 @@ export default function Staff({
 
   const validDepartmentIdsForCSV = useMemo(
     () => Object.keys(departmentMappingForCSV),
-    [departmentMappingForCSV]
+    [departmentMappingForCSV],
   );
   const validCohortIdsForCSV = useMemo(
     () => Object.keys(cohortMappingForCSV),
-    [cohortMappingForCSV]
+    [cohortMappingForCSV],
   );
   const roleOptionsForCSV = useMemo(
     () => initialCreateStaffData?.role_options || [],
-    [initialCreateStaffData]
+    [initialCreateStaffData],
   );
 
   // CSV Import logic
@@ -624,7 +624,7 @@ export default function Staff({
 
   const hasErrors = useMemo(
     () => processedRows.some((row) => row.errors.length > 0),
-    [processedRows]
+    [processedRows],
   );
 
   React.useEffect(() => {
@@ -635,7 +635,7 @@ export default function Staff({
 
   const parseCSV = useCallback(
     (
-      csvText: string
+      csvText: string,
     ): { headers: string[]; rows: Record<string, string>[] } => {
       const lines = csvText.split("\n").filter((line) => line.trim());
       if (lines.length < 2) {
@@ -659,7 +659,7 @@ export default function Staff({
 
       return { headers, rows };
     },
-    []
+    [],
   );
 
   const handleFileUpload = useCallback(
@@ -699,13 +699,13 @@ export default function Staff({
           toast.success(`CSV file loaded with ${rows.length} row(s).`);
         } catch (error) {
           toast.error(
-            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
         }
       };
       reader.readAsText(file);
     },
-    [parseCSV]
+    [parseCSV],
   );
 
   const onDrop = useCallback(
@@ -715,7 +715,7 @@ export default function Staff({
         handleFileUpload(file);
       }
     },
-    [handleFileUpload]
+    [handleFileUpload],
   );
 
   const {
@@ -774,7 +774,7 @@ export default function Staff({
 
   const handleProcessCSV = useCallback(async () => {
     const activeMappings = columnMappings.filter(
-      (m) => includedColumns[m.csv_column] !== false
+      (m) => includedColumns[m.csv_column] !== false,
     );
 
     const requiredFields = ["firstName", "lastName", "email"];
@@ -783,11 +783,11 @@ export default function Staff({
       .filter((f): f is string => f !== null);
 
     const missingFields = requiredFields.filter(
-      (field) => !mappedFields.includes(field)
+      (field) => !mappedFields.includes(field),
     );
     if (missingFields.length > 0) {
       toast.error(
-        `Please map the following required fields: ${missingFields.join(", ")}`
+        `Please map the following required fields: ${missingFields.join(", ")}`,
       );
       return;
     }
@@ -878,7 +878,7 @@ export default function Staff({
         return { ...prev, [rowIndex]: updated };
       });
     },
-    [processedRows]
+    [processedRows],
   );
 
   const handleCSVSubmit = useCallback(async () => {
@@ -906,7 +906,7 @@ export default function Staff({
     if (invalidRoles.length > 0) {
       toast.error(
         `Invalid roles found: ${invalidRoles.map((r) => r.role).join(", ")}. ` +
-          `Allowed roles: ${validRoles.join(", ")}`
+          `Allowed roles: ${validRoles.join(", ")}`,
       );
       return;
     }
@@ -931,7 +931,7 @@ export default function Staff({
 
     if (duplicateEmails.length > 0) {
       toast.error(
-        `Duplicate emails found in CSV: ${duplicateEmails.join(", ")}`
+        `Duplicate emails found in CSV: ${duplicateEmails.join(", ")}`,
       );
       return;
     }
@@ -947,7 +947,7 @@ export default function Staff({
             }
             const found = Object.entries(departmentMappingForCSV).find(
               ([_, dept]) =>
-                dept.name.toLowerCase() === deptIdOrName.toLowerCase()
+                dept.name.toLowerCase() === deptIdOrName.toLowerCase(),
             );
             return found ? found[0] : null;
           })
@@ -961,7 +961,7 @@ export default function Staff({
             }
             const found = Object.entries(cohortMappingForCSV).find(
               ([_, cohort]) =>
-                cohort.name.toLowerCase() === cohortIdOrName.toLowerCase()
+                cohort.name.toLowerCase() === cohortIdOrName.toLowerCase(),
             );
             return found ? found[0] : null;
           })
@@ -1002,7 +1002,7 @@ export default function Staff({
 
       router.refresh();
       toast.success(
-        `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
+        `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`,
       );
 
       setShowCSVImportModal(false);
@@ -1029,7 +1029,7 @@ export default function Staff({
   ]);
 
   const validRowCount = processedRows.filter(
-    (row) => row.errors.length === 0
+    (row) => row.errors.length === 0,
   ).length;
 
   // Table columns definition
@@ -1086,7 +1086,7 @@ export default function Staff({
           return Boolean(
             staff.first_name.toLowerCase().includes(valueLower) ||
               staff.last_name.toLowerCase().includes(valueLower) ||
-              emailMatch
+              emailMatch,
           );
         },
       },
@@ -1212,7 +1212,7 @@ export default function Staff({
           const date = new Date(lastActive);
           const now = new Date();
           const diffInDays = Math.floor(
-            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
           );
 
           if (diffInDays < 7) return "recent";
@@ -1301,7 +1301,7 @@ export default function Staff({
         },
       },
     ],
-    [cohortMapping, departmentMapping]
+    [cohortMapping, departmentMapping],
   );
 
   // Build columns with checkbox + actions
@@ -1332,7 +1332,7 @@ export default function Staff({
                 });
               } else {
                 setSelectedStaffIds((prev) =>
-                  prev.filter((id) => !visibleRowIds.includes(id))
+                  prev.filter((id) => !visibleRowIds.includes(id)),
                 );
               }
             }}
@@ -1350,7 +1350,7 @@ export default function Staff({
               setSelectedStaffIds((prev) =>
                 value
                   ? [...prev, row.original.profile_id]
-                  : prev.filter((x) => x !== row.original.profile_id)
+                  : prev.filter((x) => x !== row.original.profile_id),
               );
             }}
             aria-label="Select row"
@@ -1383,7 +1383,7 @@ export default function Staff({
                     window.open(
                       `/analytics/reports/p/${staff.profile_id}`,
                       "_blank",
-                      "noopener,noreferrer"
+                      "noopener,noreferrer",
                     );
                   }}
                   data-testid="btn-preview-staff"
@@ -1446,7 +1446,7 @@ export default function Staff({
     };
 
     const filtered = columns.filter(
-      (c) => c.id !== "select" && c.id !== "actions"
+      (c) => c.id !== "select" && c.id !== "actions",
     );
     return [checkboxColumn, ...filtered, actionsColumn];
   }, [columns, selectedStaffIds, router]);
@@ -1592,7 +1592,7 @@ export default function Staff({
                       ([id, item]) => ({
                         value: id,
                         label: item.name,
-                      })
+                      }),
                     )}
                   />
                 )}
@@ -1688,7 +1688,7 @@ export default function Staff({
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                         </TableHead>
                       );
@@ -1710,7 +1710,9 @@ export default function Staff({
                         .getVisibleCells()
                         .map(
                           (
-                            cell: ReturnType<typeof row.getVisibleCells>[number]
+                            cell: ReturnType<
+                              typeof row.getVisibleCells
+                            >[number],
                           ) => (
                             <TableCell
                               key={cell.id}
@@ -1718,10 +1720,10 @@ export default function Staff({
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
-                                cell.getContext()
+                                cell.getContext(),
                               )}
                             </TableCell>
-                          )
+                          ),
                         )}
                     </TableRow>
                   ))
@@ -1836,7 +1838,7 @@ export default function Staff({
                         "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative",
                         isDragActive
                           ? "border-primary bg-primary/5"
-                          : "border-muted-foreground/25 hover:border-primary/50"
+                          : "border-muted-foreground/25 hover:border-primary/50",
                       )}
                     >
                       <input
@@ -1950,7 +1952,7 @@ export default function Staff({
                         <TableBody>
                           {csvHeaders.map((header) => {
                             const mapping = columnMappings.find(
-                              (m) => m.csv_column === header
+                              (m) => m.csv_column === header,
                             );
                             const targetField = mapping?.target_field || null;
                             const sampleData = csvRows[0]?.[header] || "";
@@ -1980,8 +1982,8 @@ export default function Staff({
                                         prev.map((m) =>
                                           m.csv_column === header
                                             ? { ...m, target_field: newValue }
-                                            : m
-                                        )
+                                            : m,
+                                        ),
                                       );
                                     }}
                                     availableFields={availableTargetFields}
@@ -2080,30 +2082,30 @@ export default function Staff({
                             .map((row, index) => {
                               const editableRow = editableRows[index] || row;
                               const hasFirstNameError = editableRow.errors.some(
-                                (e) => e.field === "firstName"
+                                (e) => e.field === "firstName",
                               );
                               const hasLastNameError = editableRow.errors.some(
-                                (e) => e.field === "lastName"
+                                (e) => e.field === "lastName",
                               );
                               const hasAliasError = editableRow.errors.some(
-                                (e) => e.field === "email"
+                                (e) => e.field === "email",
                               );
                               const hasDuplicateAlias =
                                 duplicateAliasMap.has(index);
                               const hasRoleError = editableRow.errors.some(
-                                (e) => e.field === "role"
+                                (e) => e.field === "role",
                               );
                               const hasDepartmentError =
                                 validDepartmentIdsForCSV.length > 1 &&
                                 editableRow.errors.some(
                                   (e) =>
                                     e.field === "department_ids" ||
-                                    e.field === "department_id"
+                                    e.field === "department_id",
                                 );
                               const hasCohortError = editableRow.errors.some(
                                 (e) =>
                                   e.field === "cohort_ids" ||
-                                  e.field === "cohort_id"
+                                  e.field === "cohort_id",
                               );
 
                               return (
@@ -2125,7 +2127,7 @@ export default function Staff({
                                         updateEditableRow(
                                           index,
                                           "firstName",
-                                          e.target.value || null
+                                          e.target.value || null,
                                         )
                                       }
                                       className="h-8 w-full min-w-[120px]"
@@ -2144,7 +2146,7 @@ export default function Staff({
                                         updateEditableRow(
                                           index,
                                           "lastName",
-                                          e.target.value || null
+                                          e.target.value || null,
                                         )
                                       }
                                       className="h-8 w-full min-w-[120px]"
@@ -2166,7 +2168,7 @@ export default function Staff({
                                         updateEditableRow(
                                           index,
                                           "emails",
-                                          e.target.value || ""
+                                          e.target.value || "",
                                         )
                                       }
                                       placeholder="redacted@purdue.edu, redacted@purdue.edu"
@@ -2184,7 +2186,7 @@ export default function Staff({
                                         updateEditableRow(
                                           index,
                                           "role",
-                                          value || null
+                                          value || null,
                                         )
                                       }
                                       roleOptions={validRoles}
@@ -2212,7 +2214,7 @@ export default function Staff({
                                           updateEditableRow(
                                             index,
                                             "department_ids",
-                                            ids
+                                            ids,
                                           )
                                         }
                                         placeholder="Select departments"
@@ -2238,7 +2240,7 @@ export default function Staff({
                                         updateEditableRow(
                                           index,
                                           "cohort_ids",
-                                          ids
+                                          ids,
                                         )
                                       }
                                       placeholder="Select cohorts"
@@ -2294,7 +2296,7 @@ export default function Staff({
             </AlertDialogHeader>
             {(() => {
               const selected = staff.filter((s) =>
-                selectedStaffIds.includes(s.profile_id)
+                selectedStaffIds.includes(s.profile_id),
               );
               const nonDeletable = selected.filter((s) => !s.can_delete);
               const deletable = selected.filter((s) => s.can_delete);
@@ -2383,7 +2385,7 @@ export default function Staff({
                       .filter(
                         (s) =>
                           selectedStaffIds.includes(s.profile_id) &&
-                          s.can_delete
+                          s.can_delete,
                       )
                       .map((s) => s.profile_id);
                     if (deletableIds.length === 0) {

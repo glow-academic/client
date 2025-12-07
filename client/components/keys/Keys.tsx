@@ -90,7 +90,7 @@ export default function Keys({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [keysData?.department_options]
+    [keysData?.department_options],
   );
   const modelOptions = useMemo(
     () =>
@@ -100,7 +100,7 @@ export default function Keys({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [keysData?.model_options]
+    [keysData?.model_options],
   );
 
   // Define table columns inline
@@ -145,7 +145,7 @@ export default function Keys({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance

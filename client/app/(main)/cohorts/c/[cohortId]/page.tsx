@@ -23,7 +23,7 @@ type LeaderboardOut = OutputOf<"/api/v3/leaderboard/cohort", "post">;
 const getLeaderboard = cache(
   async (input: LeaderboardIn): Promise<LeaderboardOut> => {
     return api.post("/leaderboard/cohort", input);
-  }
+  },
 );
 
 /** ---- Inline filters function for cohort page ---- */
@@ -74,27 +74,11 @@ const getCohortFilters = cache(async (searchParams?: URLSearchParams) => {
 /** ---- Metadata ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { cohortId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
 
   try {
     const cohort = await api.post("/cohorts/detail", {
@@ -102,12 +86,12 @@ export async function generateMetadata(
     });
     return {
       title: `${cohort?.title || "Cohort"}`,
-      description: `${cohort ? `${cohort.title} ${cohort.description || ""}` : "Cohort"} in GLOW${orgPart}.`,
+      description: `${cohort?.title ? `${cohort.title} - ` : ""}Learning cohort for teaching assistant training programs.${cohort?.description ? ` ${cohort.description}` : ""} Organize groups of teaching assistants and coordinate group-based learning activities for effective L&D program administration.`,
     };
   } catch {
     return {
       title: "Cohort",
-      description: `Cohort in GLOW${orgPart}.`,
+      description: "Learning cohort for teaching assistant training programs. Organize groups of teaching assistants and coordinate group-based learning activities for effective L&D program administration.",
     };
   }
 }
@@ -139,7 +123,7 @@ export default async function CohortDashboardPage({
 
   // Get filters from search params or defaults
   const defaultFilters = await getCohortFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Build filters for cohort detail endpoint (uses cohortId instead of cohortIds)

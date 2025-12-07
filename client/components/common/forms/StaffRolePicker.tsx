@@ -213,7 +213,9 @@ export function StaffRolePicker({
                       <Check
                         className={cn(
                           "ml-auto",
-                          selectedRole === role.id ? "opacity-100" : "opacity-0",
+                          selectedRole === role.id
+                            ? "opacity-100"
+                            : "opacity-0",
                         )}
                       />
                     </div>

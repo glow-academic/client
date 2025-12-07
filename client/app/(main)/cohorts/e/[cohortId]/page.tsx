@@ -60,7 +60,7 @@ type CohortStaffItem = CohortDetailOut["staff"][number];
  */
 const getCohort = async (
   cohortId: string,
-  profileId: string
+  profileId: string,
 ): Promise<CohortDetailOut> => {
   return api.post(
     "/cohorts/detail",
@@ -70,45 +70,29 @@ const getCohort = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { cohortId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const cohort = await getCohort(cohortId, profileId);
     return {
       title: `${cohort?.title || "Cohort"} Edit`,
-      description: `${cohort ? `${cohort.title} ${cohort.description || ""}` : "Cohort"} in GLOW${orgPart}.`,
+      description: `${cohort?.title ? `${cohort.title} - ` : ""}Edit learning cohort for teaching assistant training programs.${cohort?.description ? ` ${cohort.description}` : ""} Manage group settings and coordinate group-based learning activities for effective L&D program administration.`,
     };
   } catch {
     return {
       title: "Cohort Edit",
-      description: `Cohort in GLOW${orgPart}.`,
+      description: "Edit learning cohort for teaching assistant training programs. Manage group settings and coordinate group-based learning activities for effective L&D program administration.",
     };
   }
 }
@@ -122,7 +106,7 @@ async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
 
 /** ---- Server action for searching profiles to add to cohort ---- */
 async function searchCohortProfile(
-  input: CohortSearchProfileIn
+  input: CohortSearchProfileIn,
 ): Promise<CohortSearchProfileOut> {
   "use server";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

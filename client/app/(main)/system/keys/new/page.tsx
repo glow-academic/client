@@ -19,9 +19,7 @@ type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getKeyDefault = async (
-  profileId: string
-): Promise<KeyNewOut> => {
+const getKeyDefault = async (profileId: string): Promise<KeyNewOut> => {
   return api.post(
     "/keys/new",
     { body: { profileId } },
@@ -30,7 +28,7 @@ const getKeyDefault = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -50,26 +48,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Key",
-    description: `Create new keys in GLOW${orgPart}.`,
+    description: "Create a new API key for teaching assistant training platform. Generate secure access credentials, configure API integrations, and maintain platform security for educational institutions and L&D programs.",
   };
+}
 }
 
 export default async function NewKeyPage() {
@@ -91,9 +74,4 @@ export default async function NewKeyPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  CreateKeyIn,
-  CreateKeyOut,
-  KeyNewIn,
-  KeyNewOut,
-};
+export type { CreateKeyIn, CreateKeyOut, KeyNewIn, KeyNewOut };

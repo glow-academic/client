@@ -13,19 +13,14 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonaNewOut = OutputOf<
-  "/api/v3/personas/new",
-  "post"
->;
+type PersonaNewOut = OutputOf<"/api/v3/personas/new", "post">;
 type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getPersonaDefault = async (
-  profileId: string
-): Promise<PersonaNewOut> => {
+const getPersonaDefault = async (profileId: string): Promise<PersonaNewOut> => {
   return api.post(
     "/personas/new",
     { body: { profileId } },
@@ -53,28 +48,10 @@ async function createPersona(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Persona",
-    description: `New persona creation page for the personas section in GLOW${orgPart}.`,
+    description:
+      "Create a new AI-powered student persona for teaching assistant training. Design realistic student profiles with unique personalities and learning styles to practice pedagogical techniques and improve student interaction skills through simulation-based learning.",
   };
 }
 

@@ -209,7 +209,7 @@ export default function StaffBulkEditModal({
       if (profileIds.length === 0) return;
       await handleConfirm();
     },
-    [profileIds, handleConfirm]
+    [profileIds, handleConfirm],
   );
 
   return (

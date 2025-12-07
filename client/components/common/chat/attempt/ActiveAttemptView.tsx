@@ -261,7 +261,7 @@ export default function ActiveAttemptView({
                                   displayChat?.documentIds || [];
                                 const hasDocumentsForCurrentChat =
                                   scenarioDocuments?.some((doc) =>
-                                    currentChatDocIds.includes(doc.document_id)
+                                    currentChatDocIds.includes(doc.document_id),
                                   );
                                 return hasDocumentsForCurrentChat;
                               })() && (
@@ -333,7 +333,7 @@ export default function ActiveAttemptView({
                                       {attempt?.infiniteMode
                                         ? simulation?.timeLimit
                                           ? formatTime(
-                                              Math.max(timer.remaining || 0, 0)
+                                              Math.max(timer.remaining || 0, 0),
                                             )
                                           : formatTime(timer.elapsed)
                                         : simulation?.timeLimit &&
@@ -466,7 +466,7 @@ export default function ActiveAttemptView({
             const currentChatDocIds = displayChat?.documentIds || [];
             const filteredDocs =
               scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id)
+                currentChatDocIds.includes(doc.document_id),
               ) || [];
 
             return (
@@ -498,7 +498,7 @@ export default function ActiveAttemptView({
                               const document =
                                 filteredDocs.find(
                                   (doc) =>
-                                    doc.document_id === selectedDocumentId
+                                    doc.document_id === selectedDocumentId,
                                 ) || filteredDocs[0];
                               return document ? (
                                 <DocumentViewer
@@ -529,11 +529,11 @@ export default function ActiveAttemptView({
                 const currentChatDocIds = displayChat?.documentIds || [];
                 const filteredDocs =
                   scenarioDocuments.filter((doc) =>
-                    currentChatDocIds.includes(doc.document_id)
+                    currentChatDocIds.includes(doc.document_id),
                   ) || [];
                 return (
                   filteredDocs.find(
-                    (doc) => doc.document_id === selectedDocumentId
+                    (doc) => doc.document_id === selectedDocumentId,
                   )?.name ||
                   filteredDocs[0]?.name ||
                   "Document"
@@ -548,7 +548,7 @@ export default function ActiveAttemptView({
             const currentChatDocIds = displayChat?.documentIds || [];
             const filteredDocs =
               scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id)
+                currentChatDocIds.includes(doc.document_id),
               ) || [];
             return filteredDocs.length > 1 ? (
               <div className="pb-3">
@@ -568,11 +568,11 @@ export default function ActiveAttemptView({
                 const currentChatDocIds = displayChat?.documentIds || [];
                 const filteredDocs =
                   scenarioDocuments.filter((doc) =>
-                    currentChatDocIds.includes(doc.document_id)
+                    currentChatDocIds.includes(doc.document_id),
                   ) || [];
                 const document =
                   filteredDocs.find(
-                    (doc) => doc.document_id === selectedDocumentId
+                    (doc) => doc.document_id === selectedDocumentId,
                   ) || filteredDocs[0];
                 return document ? (
                   <DocumentViewer document={document} bare={true} />

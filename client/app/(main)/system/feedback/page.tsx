@@ -38,29 +38,11 @@ async function bulkDeleteFeedback(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Feedback",
-    description: `Manage feedback in GLOW${orgPart}.`,
+    description: "Manage user feedback and feature requests for teaching assistant training platform. Collect and review platform feedback, prioritize improvements, and enhance user experience for educational institutions and L&D programs.",
   };
+}
 }
 
 export default async function FeedbackPage() {

@@ -42,7 +42,7 @@ interface DocumentUploadDialogProps {
   parameterMapping: Record<string, ParameterMappingItem>;
   validParameterItemIds: string[];
   finalizeDocumentUploadAction?: (
-    input: FinalizeDocumentUploadIn
+    input: FinalizeDocumentUploadIn,
   ) => Promise<FinalizeDocumentUploadOut>;
 }
 
@@ -108,7 +108,7 @@ export function DocumentUploadDialog({
       type: string;
       parameterItemIds: string[];
       departmentIds?: string[];
-    }
+    },
   ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
@@ -126,7 +126,7 @@ export function DocumentUploadDialog({
         progress: 0,
         toastId: toastId as string,
         status: "uploading",
-      })
+      }),
     );
 
     try {

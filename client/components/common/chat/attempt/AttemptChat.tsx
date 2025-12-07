@@ -55,11 +55,11 @@ interface AttemptChatProps {
   attemptId: string;
   attemptData: AttemptFullOut;
   updateChatCreatedAtAction?: (
-    input: UpdateChatCreatedAtIn
+    input: UpdateChatCreatedAtIn,
   ) => Promise<UpdateChatCreatedAtOut>;
   createQuizAction?: (input: CreateQuizIn) => Promise<CreateQuizOut>;
   submitQuizResponseAction?: (
-    input: SubmitQuizResponseIn
+    input: SubmitQuizResponseIn,
   ) => Promise<SubmitQuizResponseOut>;
   completeQuizAction?: (input: CompleteQuizIn) => Promise<CompleteQuizOut>;
 }
@@ -88,7 +88,7 @@ export default function AttemptChat({
       }
       await updateChatCreatedAtAction({ body });
     },
-    [updateChatCreatedAtAction]
+    [updateChatCreatedAtAction],
   );
 
   // Wrapper function for compatibility (matching original async signature)
@@ -96,19 +96,19 @@ export default function AttemptChat({
     async (request: { chatId: string; createdAt: string }) => {
       await handleUpdateChatCreatedAt(request);
     },
-    [handleUpdateChatCreatedAt]
+    [handleUpdateChatCreatedAt],
   );
 
   // Initialize state from server snapshot
   const [attemptData, setAttemptData] = useState<AttemptFullResponse | null>(
-    initialAttemptData
+    initialAttemptData,
   );
 
   // Simulation state management
   // Track if we've initialized from server data to prevent overwriting user's current view
   const hasInitializedFromServerRef = useRef(false);
   const [currentChatIndex, setCurrentChatIndex] = useState(
-    initialAttemptData.currentChatIndex ?? 0
+    initialAttemptData.currentChatIndex ?? 0,
   );
 
   // Content index state - tracks which content item (chat/video) is currently displayed
@@ -136,7 +136,7 @@ export default function AttemptChat({
         // Use attemptData (current state) to check current chat, not initialAttemptData
         const currentChatId = attemptData?.chats?.[currentChatIndex]?.chat?.id;
         const currentChatStillExists = initialAttemptData.chats.some(
-          (c) => c.chat.id === currentChatId
+          (c) => c.chat.id === currentChatId,
         );
         if (!currentChatStillExists && initialAttemptData.chats.length > 0) {
           // Current chat no longer exists, sync to server's suggestion
@@ -165,7 +165,7 @@ export default function AttemptChat({
         Object.entries(prev).forEach(([chatId, optimisticState]) => {
           // Keep optimistic state only if server doesn't have grading state for this chat
           const chatData = initialAttemptData?.chats?.find(
-            (c) => c.chat.id === chatId
+            (c) => c.chat.id === chatId,
           );
           if (!chatData?.gradingState) {
             updated[chatId] = optimisticState;
@@ -178,7 +178,7 @@ export default function AttemptChat({
         const updated: Record<string, HintsByMessage[]> = {};
         Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
           const chatData = initialAttemptData?.chats?.find(
-            (c) => c.chat.id === chatId
+            (c) => c.chat.id === chatId,
           );
           const serverHints = chatData?.hints || [];
 
@@ -207,10 +207,10 @@ export default function AttemptChat({
               }
               // Check if server hints have actual content (non-empty hint text)
               const hasContent = serverHint.hints.some(
-                (h) => h.hint && h.hint.trim().length > 0
+                (h) => h.hint && h.hint.trim().length > 0,
               );
               return !hasContent; // Keep if server hints don't have content yet
-            }
+            },
           );
 
           if (missingOrIncompleteHints.length > 0) {
@@ -224,7 +224,7 @@ export default function AttemptChat({
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const [showResults, setShowResults] = useState(
-    initialAttemptData.showResults ?? false
+    initialAttemptData.showResults ?? false,
   );
   const [showGrades, setShowGrades] = useState(false);
   const [showDocuments, setShowDocuments] = useState(true);
@@ -261,7 +261,7 @@ export default function AttemptChat({
   // Extract data from v3 response
   const chats = useMemo(
     () => attemptData?.chats.map((c) => c.chat) || [],
-    [attemptData]
+    [attemptData],
   );
   const attempt = attemptData?.attempt || null;
   const simulation = attemptData?.simulation || null;
@@ -297,18 +297,18 @@ export default function AttemptChat({
   const scenario = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return null;
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     return chatData?.scenario ?? null;
   }, [attemptData, currentChat]);
 
   const scenarioDocuments = useMemo(
     () => attemptData?.scenarioDocuments || [],
-    [attemptData?.scenarioDocuments]
+    [attemptData?.scenarioDocuments],
   );
   const attemptProfiles = useMemo(
     () => attemptData?.attemptProfiles || [],
-    [attemptData?.attemptProfiles]
+    [attemptData?.attemptProfiles],
   );
   const attemptProfileId = useMemo(() => {
     const activeProfile = attemptProfiles.find((ap) => ap["active"]);
@@ -383,7 +383,7 @@ export default function AttemptChat({
           // Use optimistic state if no server state exists yet
           map[chatId] = optimisticState;
         }
-      }
+      },
     );
 
     return map;
@@ -393,7 +393,7 @@ export default function AttemptChat({
   const currentMessages = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     const messages = chatData?.messages ?? [];
     // Transform messages to match expected type (personaId: string | null -> optional string)
@@ -423,7 +423,7 @@ export default function AttemptChat({
   const currentPersonas = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     const personas = chatData?.personas ?? [];
     // Transform personas to match expected type (icon/color optional -> required but nullable)
@@ -439,7 +439,7 @@ export default function AttemptChat({
   const currentChatHints = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     const serverHints = chatData?.hints || [];
     const optimisticChatHints = optimisticHints[currentChat.id] || [];
@@ -459,7 +459,7 @@ export default function AttemptChat({
 
       // Check if server hints have actual content
       const serverHasContent = hintGroup.hints.some(
-        (h) => h.hint && h.hint.trim().length > 0
+        (h) => h.hint && h.hint.trim().length > 0,
       );
 
       if (serverHasContent) {
@@ -481,7 +481,7 @@ export default function AttemptChat({
   const currentDynamicRubric = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return null;
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     return chatData?.dynamicRubric;
   }, [attemptData, currentChat]);
@@ -491,9 +491,9 @@ export default function AttemptChat({
       attemptData?.chats
         .map((c) => c.dynamicRubric)
         .filter(
-          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null
+          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null,
         ) || [],
-    [attemptData]
+    [attemptData],
   );
 
   const aggregatedResults = attemptData?.aggregatedResults || null;
@@ -538,7 +538,7 @@ export default function AttemptChat({
     const interval = setInterval(() => {
       const now = Date.now();
       const secondsSinceFetch = Math.floor(
-        (now - dataFetchedAtRef.current) / 1000
+        (now - dataFetchedAtRef.current) / 1000,
       );
       setLocalElapsedOffset(secondsSinceFetch);
     }, 1000);
@@ -573,11 +573,11 @@ export default function AttemptChat({
     if (chats && chats.length > 0 && currentChatIndex === 0) {
       const sortedChats = [...chats].sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
 
       const firstIncompleteIndex = sortedChats.findIndex(
-        (chat) => !chat.completed
+        (chat) => !chat.completed,
       );
 
       if (
@@ -605,7 +605,7 @@ export default function AttemptChat({
             setCurrentChatIndex((prev) => {
               const nextIndex = prev + 1;
               toast.success(
-                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`
+                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`,
               );
               return nextIndex;
             });
@@ -699,7 +699,7 @@ export default function AttemptChat({
         setIsSendingMessage(false);
       }
     },
-    [currentChat, isSendingMessage, socket]
+    [currentChat, isSendingMessage, socket],
   );
 
   // Stop message function
@@ -872,10 +872,10 @@ export default function AttemptChat({
             const sortedChats = [...(chats || [])].sort(
               (a, b) =>
                 new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime()
+                new Date(b.createdAt).getTime(),
             );
             const nextIndex = sortedChats.findIndex(
-              (c) => c.id === data.next_chat_id
+              (c) => c.id === data.next_chat_id,
             );
             if (nextIndex !== -1) {
               setCurrentChatIndex(nextIndex);
@@ -1001,7 +1001,7 @@ export default function AttemptChat({
             if (newPhase === "tools") {
               displayedProgress = Math.min(
                 (completedCount / totalCount) * 90,
-                90
+                90,
               );
             } else {
               displayedProgress = 95;
@@ -1073,7 +1073,7 @@ export default function AttemptChat({
       ) {
         // Find the standard group by name (since shortName is not in the type)
         const standardGroupEntry = Object.entries(
-          rubricStructure.standardGroupsMapping
+          rubricStructure.standardGroupsMapping,
         ).find(([_, group]) => group.name === data.standard_group_name);
 
         if (standardGroupEntry) {
@@ -1215,7 +1215,7 @@ export default function AttemptChat({
           const chatHints = prev[data.chat_id] || [];
           // Check if we already have hints for this messageId
           const existingIndex = chatHints.findIndex(
-            (h) => h.messageId === data.message_id
+            (h) => h.messageId === data.message_id,
           );
 
           const newHintGroup: HintsByMessage = {
@@ -1253,7 +1253,7 @@ export default function AttemptChat({
     socket.on("end_all_completed", handleEndAllCompleted);
     socket.on(
       "send_simulation_message_error",
-      handleSendSimulationMessageError
+      handleSendSimulationMessageError,
     );
     socket.on("stop_simulation_error", handleStopSimulationError);
     socket.on("continue_simulation_error", handleContinueSimulationError);
@@ -1265,12 +1265,12 @@ export default function AttemptChat({
       socket.off("message_sent", handleMessageSent);
       socket.off(
         "simulation_message_complete",
-        handleSimulationMessageComplete
+        handleSimulationMessageComplete,
       );
       socket.off("simulation_run_complete", handleSimulationRunComplete);
       socket.off(
         "simulation_message_cancelled",
-        handleSimulationMessageCancelled
+        handleSimulationMessageCancelled,
       );
       socket.off("simulation_message_error", handleSimulationMessageError);
       socket.off("simulation_stopped", handleSimulationStopped);
@@ -1278,13 +1278,13 @@ export default function AttemptChat({
       socket.off("end_all_completed", handleEndAllCompleted);
       socket.off(
         "send_simulation_message_error",
-        handleSendSimulationMessageError
+        handleSendSimulationMessageError,
       );
       socket.off("stop_simulation_error", handleStopSimulationError);
       socket.off("continue_simulation_error", handleContinueSimulationError);
       socket.off(
         "simulation_grading_progress",
-        handleSimulationGradingProgress
+        handleSimulationGradingProgress,
       );
       socket.off("hint_generation_progress", handleHintGenerationProgress);
 
@@ -1321,7 +1321,7 @@ export default function AttemptChat({
 
     const sortedChats = [...chats].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
     const idx = sortedChats.findIndex((c) => c.id === desiredNextId);
     if (idx !== -1) {
@@ -1340,7 +1340,7 @@ export default function AttemptChat({
   }, [chats, attemptId, router]);
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
-    null
+    null,
   );
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70); // Default height in pixels
   const [showObjectives, setShowObjectives] = useState<boolean>(false);
@@ -1407,7 +1407,7 @@ export default function AttemptChat({
           {chats?.map((chat: Chat) => {
             // Find rubric result for this chat
             const rubricResult = allDynamicRubrics.find(
-              (rubric) => rubric.chatId === chat.id
+              (rubric) => rubric.chatId === chat.id,
             );
 
             return (
@@ -1476,7 +1476,7 @@ export default function AttemptChat({
       // For single simulation attempts, use the full time limit
       return totalTimeLimitSeconds;
     },
-    [simulation?.timeLimit, chats]
+    [simulation?.timeLimit, chats],
   );
 
   // Helper function to calculate how much time was exceeded for a chat
@@ -1489,7 +1489,7 @@ export default function AttemptChat({
 
       return Math.max(0, timeTaken - adjustedTimeLimit);
     },
-    [calculateChatTimeTaken, calculateAdjustedTimeLimit]
+    [calculateChatTimeTaken, calculateAdjustedTimeLimit],
   );
 
   // Reset createdAt timestamp when chat is first loaded (if createdAt and updatedAt are the same)
@@ -1560,7 +1560,7 @@ export default function AttemptChat({
     // Filter documents to only include current chat's documents
     const currentChatDocIds = displayChat.documentIds || [];
     const filteredDocs = scenarioDocuments.filter((doc) =>
-      currentChatDocIds.includes(doc.document_id)
+      currentChatDocIds.includes(doc.document_id),
     );
 
     // Set to first document of current chat, or null if no documents
@@ -1594,7 +1594,7 @@ export default function AttemptChat({
         // Error handling - quiz completion failed silently
       }
     },
-    [completeQuizAction, router]
+    [completeQuizAction, router],
   );
 
   // Helper function to handle quiz response submission
@@ -1603,7 +1603,7 @@ export default function AttemptChat({
       quizId: string,
       questionId: string,
       optionId: string,
-      _isCorrect: boolean
+      _isCorrect: boolean,
     ) => {
       if (!submitQuizResponseAction) return;
       try {
@@ -1615,7 +1615,7 @@ export default function AttemptChat({
         // Error handling - quiz response submission failed silently
       }
     },
-    [submitQuizResponseAction, router]
+    [submitQuizResponseAction, router],
   );
 
   if (!chats || chats.length === 0) {
@@ -1706,7 +1706,7 @@ export default function AttemptChat({
         doc.type === "policy" ||
         (doc.field_ids &&
           Array.isArray(doc.field_ids) &&
-          doc.field_ids.length > 0)
+          doc.field_ids.length > 0),
     );
     // Combine and deduplicate by document_id
     // videoDocuments are VideoDocumentItem (has 'id'), scenarioDocuments are ScenarioDocumentItem (has 'document_id')
@@ -1715,7 +1715,7 @@ export default function AttemptChat({
       ...scenarioPolicyDocuments,
     ];
     const uniquePolicyDocuments = Array.from(
-      new Map(allPolicyDocuments.map((doc) => [doc.document_id, doc])).values()
+      new Map(allPolicyDocuments.map((doc) => [doc.document_id, doc])).values(),
     ) as typeof scenarioDocuments;
 
     return (

@@ -7,7 +7,7 @@ export type SocketQuery = Record<string, QueryValue>;
 
 /** Browser sockets typically go direct to backend; swap to BFF if you proxy WS. */
 export async function createSocketClient(
-  query: SocketQuery
+  query: SocketQuery,
 ): Promise<Socket<ServerToClientEvents, ClientToServerEvents>> {
   // Dynamic import to prevent socket.io-client from being loaded during SSR
   // socket.io-client accesses localStorage which fails on Node.js 22+

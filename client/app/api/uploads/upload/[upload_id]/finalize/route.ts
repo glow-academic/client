@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   // Proxy finalize upload request to backend
   try {
@@ -20,7 +20,7 @@ export async function POST(
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
-      }
+      },
     );
 
     // Parse JSON response
@@ -38,12 +38,11 @@ export async function POST(
     });
   } catch (error) {
     return NextResponse.json(
-      { 
-        error: "Internal server error", 
-        message: error instanceof Error ? error.message : String(error) 
+      {
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

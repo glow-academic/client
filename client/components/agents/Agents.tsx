@@ -52,7 +52,7 @@ export interface AgentsProps {
   listData: AgentsListOut;
   // Server actions (replaces useMutation)
   duplicateAgentAction?: (
-    input: DuplicateAgentIn
+    input: DuplicateAgentIn,
   ) => Promise<DuplicateAgentOut>;
   deleteAgentAction?: (input: DeleteAgentIn) => Promise<DeleteAgentOut>;
 }
@@ -91,7 +91,7 @@ export default function Agents({
         string,
         { name: string; description: string }
       >) || {},
-    [agentsData?.model_mapping]
+    [agentsData?.model_mapping],
   );
 
   // Filter options (inline)
@@ -101,7 +101,7 @@ export default function Agents({
         value: id,
         label: name.name,
       })),
-    [modelMapping]
+    [modelMapping],
   );
 
   // Build role options from unique agent roles
@@ -121,7 +121,7 @@ export default function Agents({
         string,
         { name: string; description: string }
       >) || {},
-    [agentsData?.department_mapping]
+    [agentsData?.department_mapping],
   );
 
   const departmentOptions = useMemo(() => {
@@ -175,7 +175,7 @@ export default function Agents({
         },
       },
     ],
-    [modelMapping]
+    [modelMapping],
   );
 
   // Create table instance
@@ -355,7 +355,7 @@ export default function Agents({
                 onClick={() =>
                   handleDeleteClick(
                     agent.agent_id,
-                    agent.name || "Unnamed Agent"
+                    agent.name || "Unnamed Agent",
                   )
                 }
                 aria-label={`Delete agent ${agent.name}`}

@@ -69,7 +69,7 @@ interface VideoAttemptViewProps {
     quizId: string,
     questionId: string,
     optionId: string,
-    isCorrect: boolean
+    isCorrect: boolean,
   ) => void;
   onContinue: () => void;
   onPrevious: () => void;
@@ -111,7 +111,7 @@ export default function VideoAttemptView({
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [questionAnswers, setQuestionAnswers] = useState<
     Record<string, string>
@@ -206,7 +206,7 @@ export default function VideoAttemptView({
         (q) =>
           q.times &&
           q.times.includes(currentTimeSeconds) &&
-          !answeredQuestions.has(q.id)
+          !answeredQuestions.has(q.id),
       );
 
       if (unansweredQuestion) {
@@ -235,7 +235,7 @@ export default function VideoAttemptView({
         }
       }
     },
-    [quiz, onSubmitQuizResponse, isPlaying]
+    [quiz, onSubmitQuizResponse, isPlaying],
   );
 
   // Check if all questions are answered correctly
@@ -465,7 +465,7 @@ export default function VideoAttemptView({
                       {activeQuestionId &&
                         (() => {
                           const question = sortedQuestions.find(
-                            (q) => q.id === activeQuestionId
+                            (q) => q.id === activeQuestionId,
                           );
                           if (!question) return null;
 
@@ -561,7 +561,7 @@ export default function VideoAttemptView({
                       (() => {
                         const policy =
                           videoPolicies.find(
-                            (p) => p.id === selectedPolicyId
+                            (p) => p.id === selectedPolicyId,
                           ) || videoPolicies[0];
                         return policy ? (
                           <PolicyViewer

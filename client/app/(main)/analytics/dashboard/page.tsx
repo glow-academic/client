@@ -30,7 +30,7 @@ type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/bulk-archive", "post">;
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getDashboardOverview = async (
-  input: DashboardIn
+  input: DashboardIn,
 ): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -50,7 +50,7 @@ const getDashboardOverview = async (
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getDashboardHistory = async (
-  input: DashboardHistoryIn
+  input: DashboardHistoryIn,
 ): Promise<DashboardHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -157,28 +157,10 @@ async function getDashboardFilters(searchParams?: URLSearchParams) {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Dashboard",
-    description: `Dashboard in GLOW${orgPart}.`,
+    description:
+      "Learning analytics dashboard for teaching assistant performance metrics. Track simulation-based practice sessions, review pedagogical assessments, analyze teaching effectiveness, and monitor professional development progress.",
   };
 }
 
@@ -204,7 +186,7 @@ export default async function DashboardPage({
 
   // Get filters from search params or defaults
   const filters = await getDashboardFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Dashboard bundle no longer uses profileId - removed from request
@@ -325,7 +307,7 @@ export default async function DashboardPage({
 
 /** ---- Strongly-typed server actions for Dashboard (single source of truth) ---- */
 async function bulkArchiveAttempts(
-  input: BulkArchiveAttemptsIn
+  input: BulkArchiveAttemptsIn,
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
   // Server invalidates Redis cache with "dashboard" and "history" tags
@@ -365,7 +347,7 @@ async function DashboardHistorySection({
   historySortBy: string;
   historySortOrder: string;
   bulkArchiveAttemptsAction?: (
-    input: BulkArchiveAttemptsIn
+    input: BulkArchiveAttemptsIn,
   ) => Promise<BulkArchiveAttemptsOut>;
 }) {
   // Build history filters matching logic from dashboard page

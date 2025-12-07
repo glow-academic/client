@@ -81,7 +81,7 @@ export interface PersonasProps {
   listData: PersonasListOut;
   // Server actions (replaces useMutation)
   duplicatePersonaAction?: (
-    input: DuplicatePersonaIn
+    input: DuplicatePersonaIn,
   ) => Promise<DuplicatePersonaOut>;
   deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
 }
@@ -124,7 +124,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.scenario_options]
+    [personasData?.scenario_options],
   );
   const agentOptions = useMemo(
     () =>
@@ -134,7 +134,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.agent_options]
+    [personasData?.agent_options],
   );
   const departmentOptions = useMemo(
     () =>
@@ -144,7 +144,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.department_options]
+    [personasData?.department_options],
   );
 
   // Define table columns
@@ -500,7 +500,7 @@ export default function Personas({
                   onClick={() =>
                     handleDeleteClick(
                       persona.persona_id,
-                      persona.name || "Unnamed Persona"
+                      persona.name || "Unnamed Persona",
                     )
                   }
                   aria-label={`Delete persona ${persona.name}`}
@@ -537,126 +537,126 @@ export default function Personas({
 
   return (
     <div className="space-y-8" data-page="personas-index">
-        <div className="space-y-4">
-          {/* Toolbar */}
-          <div
-            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-            data-testid="personas-toolbar"
-          >
-            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-              <div className="w-full md:w-auto">
-                <Input
-                  data-testid="personas-search"
-                  placeholder="Search personas..."
-                  value={(nameColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    nameColumn?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                  aria-label="Search personas by name"
-                  aria-controls="personas-grid"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 flex-wrap">
-                {/* Scenario Filter */}
-                {scenarioColumn && scenarioOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={scenarioColumn}
-                    title="Scenario"
-                    options={scenarioOptions}
-                  />
-                )}
-
-                {/* Agent Filter */}
-                {agentColumn && agentOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={agentColumn}
-                    title="Agent"
-                    options={agentOptions}
-                  />
-                )}
-
-                {/* Department Filter */}
-                {departmentsColumn &&
-                  departmentOptions.length > 0 &&
-                  departmentIds.length > 1 && (
-                    <DataTableFacetedFilter
-                      column={departmentsColumn}
-                      title="Department"
-                      options={departmentOptions}
-                    />
-                  )}
-
-                {isFiltered && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
-                    className="h-8 px-2 lg:px-3 hidden md:flex"
-                  >
-                    Reset
-                    <X className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+      <div className="space-y-4">
+        {/* Toolbar */}
+        <div
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+          data-testid="personas-toolbar"
+        >
+          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+            <div className="w-full md:w-auto">
+              <Input
+                data-testid="personas-search"
+                placeholder="Search personas..."
+                value={(nameColumn?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  nameColumn?.setFilterValue(event.target.value)
+                }
+                className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                aria-label="Search personas by name"
+                aria-controls="personas-grid"
+              />
             </div>
-          </div>
 
-          {/* Cards Grid */}
-          <div
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-            role="grid"
-            aria-label="personas grid"
-            data-testid="personas-grid"
-          >
-            {tableRows.length ? (
-              tableRows.map((row) => renderPersonaCard(row.original))
-            ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No personas match the current filters.
-              </div>
-            )}
-          </div>
+            <div className="flex items-center space-x-2 flex-wrap">
+              {/* Scenario Filter */}
+              {scenarioColumn && scenarioOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={scenarioColumn}
+                  title="Scenario"
+                  options={scenarioOptions}
+                />
+              )}
 
-          {/* Pagination */}
-          <div aria-label="pagination controls">
-            <DataTablePagination table={table} card={true} />
+              {/* Agent Filter */}
+              {agentColumn && agentOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={agentColumn}
+                  title="Agent"
+                  options={agentOptions}
+                />
+              )}
+
+              {/* Department Filter */}
+              {departmentsColumn &&
+                departmentOptions.length > 0 &&
+                departmentIds.length > 1 && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3 hidden md:flex"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent
-            aria-labelledby="delete-persona-title"
-            data-testid="dialog-delete-persona"
-          >
-            <AlertDialogHeader>
-              <AlertDialogTitle id="delete-persona-title">
-                Delete Persona
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete the persona "{deleteItem?.name}
-                "? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel
-                disabled={isDeleting}
-                data-testid="btn-cancel-delete"
-              >
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                disabled={isDeleting}
-                variant="destructive"
-                data-testid="btn-confirm-delete"
-              >
-                {isDeleting ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Cards Grid */}
+        <div
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          role="grid"
+          aria-label="personas grid"
+          data-testid="personas-grid"
+        >
+          {tableRows.length ? (
+            tableRows.map((row) => renderPersonaCard(row.original))
+          ) : (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              No personas match the current filters.
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <div aria-label="pagination controls">
+          <DataTablePagination table={table} card={true} />
+        </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent
+          aria-labelledby="delete-persona-title"
+          data-testid="dialog-delete-persona"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle id="delete-persona-title">
+              Delete Persona
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the persona "{deleteItem?.name}
+              "? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              data-testid="btn-cancel-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              variant="destructive"
+              data-testid="btn-confirm-delete"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

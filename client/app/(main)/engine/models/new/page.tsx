@@ -26,7 +26,7 @@ type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
-  profileId: string
+  profileId: string,
 ): Promise<ModelNewOut> => {
   return api.post(
     "/models/new",
@@ -36,41 +36,21 @@ const getModelDetailDefault = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Create Model",
-    description: `Create a new AI model in GLOW${orgPart}.`,
+    description:
+      "Create a new AI language model configuration for teaching assistant training simulations. Set up custom models to power realistic student personas and enhance simulation-based learning experiences for pedagogical development.",
   };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createModel(
-  input: CreateModelIn,
-): Promise<CreateModelOut> {
+async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
@@ -140,4 +120,3 @@ export type {
   UpdateKeyIn,
   UpdateKeyOut,
 };
-

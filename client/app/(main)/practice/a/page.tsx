@@ -12,28 +12,10 @@ import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Practice Attempts",
-    description: `Practice Attempts in GLOW${orgPart}.`,
+    description:
+      "View and manage simulation-based practice sessions for teaching assistant training. Track practice attempts, review pedagogical performance, and monitor progress in student interaction and teaching effectiveness.",
   };
 }
 

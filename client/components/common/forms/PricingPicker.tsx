@@ -52,7 +52,7 @@ export function PricingPicker({
   const handleEntryChange = (
     index: number,
     field: keyof PricingEntry,
-    value: string | number
+    value: string | number,
   ) => {
     const newPricing = [...pricing];
     newPricing[index] = {
@@ -66,9 +66,7 @@ export function PricingPicker({
     return units.find((u) => u.id === unitId);
   };
 
-  const getFilteredUnitsForType = (
-    pricingType: PricingType
-  ): UnitItem[] => {
+  const getFilteredUnitsForType = (pricingType: PricingType): UnitItem[] => {
     // Filter units based on pricing type
     // Input/Output typically use tokens, cached uses tokens, but could also use other units
     if (pricingType === "cached") {
@@ -108,15 +106,16 @@ export function PricingPicker({
                 {/* Pricing Type */}
                 <div className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}>
                   {index === 0 && (
-                    <Label htmlFor={`pricing-type-${index}`} className="text-sm font-medium">
+                    <Label
+                      htmlFor={`pricing-type-${index}`}
+                      className="text-sm font-medium"
+                    >
                       Type
                     </Label>
                   )}
                   <PricingTypePicker
                     selectedType={entry.type}
-                    onSelect={(type) =>
-                      handleEntryChange(index, "type", type)
-                    }
+                    onSelect={(type) => handleEntryChange(index, "type", type)}
                     placeholder="Select type..."
                     disabled={disabled}
                   />
@@ -125,7 +124,10 @@ export function PricingPicker({
                 {/* Unit */}
                 <div className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}>
                   {index === 0 && (
-                    <Label htmlFor={`pricing-unit-${index}`} className="text-sm font-medium">
+                    <Label
+                      htmlFor={`pricing-unit-${index}`}
+                      className="text-sm font-medium"
+                    >
                       Unit
                     </Label>
                   )}
@@ -143,7 +145,10 @@ export function PricingPicker({
                 {/* Price */}
                 <div className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}>
                   {index === 0 && (
-                    <Label htmlFor={`pricing-price-${index}`} className="text-sm font-medium">
+                    <Label
+                      htmlFor={`pricing-price-${index}`}
+                      className="text-sm font-medium"
+                    >
                       Price
                     </Label>
                   )}
@@ -157,11 +162,15 @@ export function PricingPicker({
                       handleEntryChange(
                         index,
                         "price",
-                        parseFloat(e.target.value) || 0.0
+                        parseFloat(e.target.value) || 0.0,
                       )
                     }
                     disabled={disabled}
-                    placeholder={unit ? `Price (per ${unit.value.toLocaleString()} ${unit.name})` : "Price (USD)"}
+                    placeholder={
+                      unit
+                        ? `Price (per ${unit.value.toLocaleString()} ${unit.name})`
+                        : "Price (USD)"
+                    }
                   />
                 </div>
 
@@ -196,4 +205,3 @@ export function PricingPicker({
     </div>
   );
 }
-

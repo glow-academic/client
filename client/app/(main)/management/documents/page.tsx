@@ -27,7 +27,7 @@ type GenerateTemplateOut = never;
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getDocumentsList = async (
-  profileId: string
+  profileId: string,
 ): Promise<DocumentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -40,7 +40,7 @@ const getDocumentsList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
@@ -56,28 +56,10 @@ async function deleteDocument(
 // generateTemplate removed - component now uses WebSocket directly
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Documents",
-    description: `Documents in GLOW${orgPart}.`,
+    description:
+      "Manage learning resources and educational documents for teaching assistant training. Organize course materials, instructional resources, and reference documents to support pedagogical development and L&D program content.",
   };
 }
 
@@ -90,10 +72,7 @@ export default async function DocumentsPage() {
 
   return (
     <div className="space-y-6" data-page="documents-index">
-      <Documents
-        listData={listData}
-        deleteDocumentAction={deleteDocument}
-      />
+      <Documents listData={listData} deleteDocumentAction={deleteDocument} />
     </div>
   );
 }

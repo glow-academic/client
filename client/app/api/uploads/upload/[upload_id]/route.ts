@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function OPTIONS(
   request: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   // Proxy TUS OPTIONS request for specific upload
   try {
@@ -16,7 +16,7 @@ export async function OPTIONS(
           "Tus-Resumable": request.headers.get("Tus-Resumable") || "1.0.0",
           "Tus-Version": request.headers.get("Tus-Version") || "1.0.0",
         },
-      }
+      },
     );
 
     // Forward all TUS headers
@@ -32,14 +32,14 @@ export async function OPTIONS(
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function HEAD(
   request: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   // Proxy TUS HEAD request to get upload status
   try {
@@ -51,7 +51,7 @@ export async function HEAD(
         headers: {
           "Tus-Resumable": request.headers.get("Tus-Resumable") || "1.0.0",
         },
-      }
+      },
     );
 
     // Forward all TUS headers
@@ -67,14 +67,14 @@ export async function HEAD(
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   // Proxy TUS PATCH request to upload chunk
   try {
@@ -102,7 +102,7 @@ export async function PATCH(
         method: "PATCH",
         headers: tusHeaders,
         body,
-      }
+      },
     );
 
     // Forward all TUS response headers
@@ -121,8 +121,7 @@ export async function PATCH(
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

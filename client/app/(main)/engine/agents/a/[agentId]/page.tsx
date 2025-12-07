@@ -15,30 +15,21 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type AgentDetailOut = OutputOf<"/api/v3/agents/detail", "post">;
-type AgentNewIn = InputOf<
-  "/api/v3/agents/new",
-  "post"
->;
-type AgentNewOut = OutputOf<
-  "/api/v3/agents/new",
-  "post"
->;
+type AgentNewIn = InputOf<"/api/v3/agents/new", "post">;
+type AgentNewOut = OutputOf<"/api/v3/agents/new", "post">;
 type CreateAgentIn = InputOf<"/api/v3/agents/create", "post">;
 type CreateAgentOut = OutputOf<"/api/v3/agents/create", "post">;
 type UpdateAgentIn = InputOf<"/api/v3/agents/update", "post">;
 type UpdateAgentOut = OutputOf<"/api/v3/agents/update", "post">;
 type DeleteAgentPromptIn = InputOf<"/api/v3/agents/delete-prompt", "post">;
-type DeleteAgentPromptOut = OutputOf<
-  "/api/v3/agents/delete-prompt",
-  "post"
->;
+type DeleteAgentPromptOut = OutputOf<"/api/v3/agents/delete-prompt", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getAgent = async (
   agentId: string,
-  profileId: string
+  profileId: string,
 ): Promise<AgentDetailOut> => {
   return api.post(
     "/agents/detail",
@@ -48,7 +39,7 @@ const getAgent = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -61,40 +52,23 @@ export async function generateMetadata(
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const agent = await getAgent(agentId, profileId);
     return {
       title: `${agent?.name || "Agent"} Agent`,
-      description: `${agent ? `${agent.name} ${agent.description}` : "Agent"} in GLOW${orgPart}.`,
+      description: `${agent?.name ? `${agent.name} - ` : ""}AI agent configuration for teaching assistant training simulations.${agent?.description ? ` ${agent.description}` : ""} Customize intelligent agents to power student personas and enhance simulation-based learning experiences.`,
     };
   } catch {
     return {
       title: "Agent",
-      description: `Agent in GLOW${orgPart}.`,
+      description:
+        "AI agent configuration for teaching assistant training simulations. Customize intelligent agents to power student personas and enhance simulation-based learning experiences.",
     };
   }
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createAgent(
-  input: CreateAgentIn,
-): Promise<CreateAgentOut> {
+async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
@@ -105,9 +79,7 @@ async function createAgent(
   });
 }
 
-async function updateAgent(
-  input: UpdateAgentIn,
-): Promise<UpdateAgentOut> {
+async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
@@ -138,16 +110,10 @@ export default async function AgentEditPage({
 
   // Fetch agent detail (always fresh - source of truth)
   try {
-    const agentDetail = agentId
-      ? await getAgent(agentId, profileId)
-      : null;
+    const agentDetail = agentId ? await getAgent(agentId, profileId) : null;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="agent-edit"
-        data-agent-id={agentId}
-      >
+      <div className="space-y-6" data-page="agent-edit" data-agent-id={agentId}>
         <SystemAgent
           agentId={agentId}
           {...(agentDetail && { agentDetail })}

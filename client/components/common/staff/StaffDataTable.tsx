@@ -108,7 +108,7 @@ const formatLastActive = (timestamp: string | null): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60)
+    (now.getTime() - date.getTime()) / (1000 * 60),
   );
 
   if (diffInMinutes < 1) return "Just now";
@@ -153,7 +153,7 @@ export interface StaffDataTableProps {
       lastName?: string;
       email?: string;
       role?: string;
-    }>
+    }>,
   ) => void;
   onPreview: (staff: ProfileListItem) => void;
   onEdit?: (staff: ProfileListItem) => void;
@@ -243,7 +243,7 @@ export function StaffDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>(initialColumnVisibility);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "last_active", desc: true }, // Default sort by last active descending
@@ -470,7 +470,7 @@ export function StaffDataTable({
           const date = new Date(lastActive);
           const now = new Date();
           const diffInDays = Math.floor(
-            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
           );
 
           if (diffInDays < 7) return "recent";
@@ -559,7 +559,7 @@ export function StaffDataTable({
         },
       },
     ],
-    [cohortMapping, departmentMapping]
+    [cohortMapping, departmentMapping],
   );
 
   // Build columns with checkbox + actions
@@ -724,7 +724,7 @@ export function StaffDataTable({
     };
 
     const filtered = columns.filter(
-      (c) => c.id !== "select" && c.id !== "actions"
+      (c) => c.id !== "select" && c.id !== "actions",
     );
     return [checkboxColumn, ...filtered, actionsColumn];
   }, [
@@ -895,7 +895,7 @@ export function StaffDataTable({
                       ([id, item]) => ({
                         value: id,
                         label: item.name,
-                      })
+                      }),
                     )}
                   />
                 )}
@@ -1017,7 +1017,7 @@ export function StaffDataTable({
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     );
@@ -1039,7 +1039,7 @@ export function StaffDataTable({
                       .getVisibleCells()
                       .map(
                         (
-                          cell: ReturnType<typeof row.getVisibleCells>[number]
+                          cell: ReturnType<typeof row.getVisibleCells>[number],
                         ) => (
                           <TableCell
                             key={cell.id}
@@ -1047,10 +1047,10 @@ export function StaffDataTable({
                           >
                             {flexRender(
                               cell.column.columnDef.cell,
-                              cell.getContext()
+                              cell.getContext(),
                             )}
                           </TableCell>
-                        )
+                        ),
                       )}
                   </TableRow>
                 ))

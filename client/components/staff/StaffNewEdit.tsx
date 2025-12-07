@@ -30,13 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  CheckCircle2,
-  Clock,
-  PlusCircle,
-  Trash2,
-  User,
-} from "lucide-react";
+import { CheckCircle2, Clock, PlusCircle, Trash2, User } from "lucide-react";
 
 interface FormData {
   firstName?: string;
@@ -88,7 +82,7 @@ export default function StaffNewEdit({
       primaryDepartmentId: "",
       active: true,
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,9 +97,7 @@ export default function StaffNewEdit({
   const staffData = isEditMode ? staffDetail : staffDetailDefault;
 
   // Extract body types for type safety
-  type CreateStaffBody = CreateStaffIn extends { body: infer B }
-    ? B
-    : never;
+  type CreateStaffBody = CreateStaffIn extends { body: infer B } ? B : never;
   type UpdateStaffBody = UpdateStaffIn extends { body: infer B } ? B : never;
 
   // Server action handlers
@@ -136,7 +128,7 @@ export default function StaffNewEdit({
       const primaryIndex =
         emails.length > 0
           ? emails.findIndex(
-              (e) => e === staffData.primary_email || e === emails[0]
+              (e) => e === staffData.primary_email || e === emails[0],
             )
           : 0;
       setFormData({
@@ -227,7 +219,7 @@ export default function StaffNewEdit({
     (field: string, value: string | number | boolean) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    []
+    [],
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -240,7 +232,7 @@ export default function StaffNewEdit({
 
     // Validate emails
     const validEmails = (formData.emails || []).filter(
-      (e) => e.trim().length > 0
+      (e) => e.trim().length > 0,
     );
     if (validEmails.length === 0) {
       toast.error("At least one email is required");
@@ -323,7 +315,7 @@ export default function StaffNewEdit({
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} staff: ${errorMessage}`
+        `Failed to ${isEditMode ? "update" : "create"} staff: ${errorMessage}`,
       );
       setIsSubmitting(false);
     }
@@ -543,7 +535,7 @@ export default function StaffNewEdit({
                           const num = parseInt(val, 10);
                           handleInputChange(
                             "reqPerDay",
-                            Number.isNaN(num) ? "" : num
+                            Number.isNaN(num) ? "" : num,
                           );
                         }
                       }}
@@ -563,9 +555,7 @@ export default function StaffNewEdit({
               staffData?.valid_department_ids &&
               staffData.valid_department_ids.length > 1 && (
                 <div className="space-y-2 pt-2">
-                  <Label htmlFor="primaryDepartment">
-                    Primary Department
-                  </Label>
+                  <Label htmlFor="primaryDepartment">Primary Department</Label>
                   {formData?.primaryDepartmentId !== undefined ? (
                     <DepartmentPicker
                       mapping={staffData?.department_mapping || {}}
@@ -622,7 +612,6 @@ export default function StaffNewEdit({
               </div>
             )}
 
-
             {/* Action buttons */}
             <div className="flex justify-end gap-2 pt-4">
               <Button
@@ -654,4 +643,3 @@ export default function StaffNewEdit({
     </TooltipProvider>
   );
 }
-

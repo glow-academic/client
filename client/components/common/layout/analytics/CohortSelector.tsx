@@ -155,9 +155,7 @@ export function CohortSelector({
                   <CohortItem
                     key={cohort.id}
                     cohort={cohort}
-                    isSelected={selectedCohorts.some(
-                      (c) => c.id === cohort.id,
-                    )}
+                    isSelected={selectedCohorts.some((c) => c.id === cohort.id)}
                     onSelect={() => handleSelect(cohort)}
                   />
                 ))}

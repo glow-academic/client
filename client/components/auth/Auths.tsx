@@ -73,7 +73,7 @@ export default function Auths({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to duplicate auth entry"
+          : "Failed to duplicate auth entry",
       );
     } finally {
       setIsDuplicating(null);
@@ -89,7 +89,7 @@ export default function Auths({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete auth entry"
+        error instanceof Error ? error.message : "Failed to delete auth entry",
       );
     } finally {
       setShowDeleteDialog(false);
@@ -104,7 +104,7 @@ export default function Auths({
 
   const renderPreview = (
     items: AuthListOut["auths"][number]["sample_items"],
-    totalCount: number
+    totalCount: number,
   ) => {
     return (
       <div className="space-y-2">
@@ -165,9 +165,7 @@ export default function Auths({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    router.push(`/system/auth/a/${auth.auth_id}`)
-                  }
+                  onClick={() => router.push(`/system/auth/a/${auth.auth_id}`)}
                   aria-label={`Edit ${auth.name}`}
                   data-testid="btn-edit-auth"
                   title={`Edit ${auth.name}`}
@@ -180,9 +178,7 @@ export default function Auths({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    router.push(`/system/auth/a/${auth.auth_id}`)
-                  }
+                  onClick={() => router.push(`/system/auth/a/${auth.auth_id}`)}
                   aria-label={`View ${auth.name}`}
                   data-testid="btn-view-auth"
                   title={`View ${auth.name}`}

@@ -278,9 +278,7 @@ export function DocumentPicker<
                     // Final fallback to icon if no ID
                     return (
                       <div className="flex items-center justify-center h-full">
-                        <span className="text-4xl">
-                          {getDocumentIcon()}
-                        </span>
+                        <span className="text-4xl">{getDocumentIcon()}</span>
                       </div>
                     );
                   })()}
@@ -328,9 +326,7 @@ export function DocumentPicker<
                 </h4>
                 {peekedDocument && (
                   <div className="mt-4 text-center">
-                    <div className="text-6xl mb-2">
-                      {getDocumentIcon()}
-                    </div>
+                    <div className="text-6xl mb-2">{getDocumentIcon()}</div>
                     <div className="text-xs text-muted-foreground">
                       {peekedDocument.filePath || "No file path"}
                     </div>

@@ -45,7 +45,7 @@ export function isTemplateSchema(value: unknown): value is TemplateSchema {
         typeof field === "object" &&
         field !== null &&
         "name" in field &&
-        "type" in field
+        "type" in field,
     )
   );
 }
@@ -140,7 +140,7 @@ export default function TemplateForm({
         }, 100);
       }, 500);
     },
-    [schema, searchParams, router]
+    [schema, searchParams, router],
   );
 
   const updateValue = (path: string[], value: unknown) => {
@@ -239,7 +239,7 @@ export default function TemplateForm({
   const renderField = (
     field: TemplateField,
     path: string[] = [],
-    indent: number = 0
+    indent: number = 0,
   ): React.JSX.Element | null => {
     // Skip if field doesn't have a name (can happen with malformed schemas)
     if (!field.name) {
@@ -297,7 +297,7 @@ export default function TemplateForm({
               onChange={(e) =>
                 updateValue(
                   fieldPath,
-                  e.target.value ? parseFloat(e.target.value) : undefined
+                  e.target.value ? parseFloat(e.target.value) : undefined,
                 )
               }
               placeholder={field.placeholder || `Enter ${field.name}`}
@@ -374,7 +374,7 @@ export default function TemplateForm({
                     size="sm"
                     onClick={() => {
                       const newArray = arrayValue.filter(
-                        (_: unknown, i: number) => i !== index
+                        (_: unknown, i: number) => i !== index,
                       );
                       updateValue(fieldPath, newArray);
                     }}
@@ -389,8 +389,8 @@ export default function TemplateForm({
                       renderField(
                         subField,
                         [...fieldPath, index.toString()],
-                        indent + 1
-                      )
+                        indent + 1,
+                      ),
                     )}
                   </div>
                 ) : (
@@ -398,7 +398,7 @@ export default function TemplateForm({
                   renderField(
                     field.item!,
                     [...fieldPath, index.toString()],
-                    indent + 1
+                    indent + 1,
                   )
                 )}
               </div>
@@ -428,7 +428,7 @@ export default function TemplateForm({
             </div>
             <div className="space-y-4">
               {field.fields.map((subField) =>
-                renderField(subField, fieldPath, indent + 1)
+                renderField(subField, fieldPath, indent + 1),
               )}
             </div>
           </div>
@@ -441,7 +441,7 @@ export default function TemplateForm({
 
   const getNestedValue = (
     obj: Record<string, unknown>,
-    path: string[]
+    path: string[],
   ): unknown => {
     let current: unknown = obj;
     for (let i = 0; i < path.length; i++) {

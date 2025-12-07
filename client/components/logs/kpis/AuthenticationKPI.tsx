@@ -122,7 +122,8 @@ export default function AuthenticationKPI({
           <DialogHeader>
             <DialogTitle>Authentication Health Trend</DialogTitle>
             <DialogDescription hidden>
-              This chart shows authentication (Keycloak) health metrics over time.
+              This chart shows authentication (Keycloak) health metrics over
+              time.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -134,8 +135,12 @@ export default function AuthenticationKPI({
                 </Badge>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Current Latency</div>
-                <div className="text-lg font-semibold">{formatLatency(latency_ms)}</div>
+                <div className="text-sm text-muted-foreground">
+                  Current Latency
+                </div>
+                <div className="text-lg font-semibold">
+                  {formatLatency(latency_ms)}
+                </div>
               </div>
             </div>
             {error && (
@@ -192,4 +197,3 @@ export default function AuthenticationKPI({
     </>
   );
 }
-

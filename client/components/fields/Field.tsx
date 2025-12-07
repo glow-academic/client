@@ -78,9 +78,9 @@ export default function Field({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primaryDepartmentId || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(
@@ -92,7 +92,7 @@ export default function Field({
       departmentIds: defaultDepartmentIds,
       parameterIds: [],
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -112,7 +112,10 @@ export default function Field({
       fieldDetailDefault?.valid_department_ids ||
       []
     );
-  }, [fieldDetail?.valid_department_ids, fieldDetailDefault?.valid_department_ids]);
+  }, [
+    fieldDetail?.valid_department_ids,
+    fieldDetailDefault?.valid_department_ids,
+  ]);
 
   const departmentMapping = useMemo(() => {
     return (
@@ -128,7 +131,10 @@ export default function Field({
       fieldDetailDefault?.valid_parameter_ids ||
       []
     );
-  }, [fieldDetail?.valid_parameter_ids, fieldDetailDefault?.valid_parameter_ids]);
+  }, [
+    fieldDetail?.valid_parameter_ids,
+    fieldDetailDefault?.valid_parameter_ids,
+  ]);
 
   const parameterMapping = useMemo(() => {
     return (
@@ -190,7 +196,7 @@ export default function Field({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | null | undefined
+    value: string | boolean | string[] | null | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -261,12 +267,11 @@ export default function Field({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && fieldId ? "update" : "create"} field: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && fieldId ? "update" : "create"} field: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }
   };
-
 
   return (
     <div className="space-y-6">
@@ -420,4 +425,3 @@ export default function Field({
     </div>
   );
 }
-

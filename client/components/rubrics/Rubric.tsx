@@ -134,7 +134,7 @@ export default function Rubric({
   const [showAddStandardModal, setShowAddStandardModal] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingStandardId, setEditingStandardId] = useState<string | null>(
-    null
+    null,
   );
 
   // Form states for modals
@@ -197,11 +197,11 @@ export default function Rubric({
     const groups: StandardGroup[] = [];
     if (rubricData.standard_group_ids) {
       rubricData.standard_group_ids.forEach((groupId) => {
-      const groupMapping = rubricData.standard_groups_mapping[groupId];
-      const groupDetail = rubricData.standard_groups_detail[groupId];
+        const groupMapping = rubricData.standard_groups_mapping[groupId];
+        const groupDetail = rubricData.standard_groups_detail[groupId];
         if (groupMapping && groupDetail) {
           groups.push({
-        id: groupId,
+            id: groupId,
             name: groupMapping["name"] || "",
             description: groupMapping["description"] || "",
             points: groupDetail["points"] || 0,
@@ -217,30 +217,30 @@ export default function Rubric({
     const cells: GridCell[] = [];
     if (rubricData.standard_group_ids) {
       rubricData.standard_group_ids.forEach((groupId) => {
-      const groupDetail = rubricData.standard_groups_detail[groupId];
-      const standardIds = groupDetail?.["standard_ids"] || [];
-      standardIds.forEach((standardId) => {
-        const standard = rubricData.standards_mapping[standardId];
-        if (standard) {
-          const name = standard["name"];
-          const points = standard["points"];
-          if (name && typeof points === "number") {
+        const groupDetail = rubricData.standard_groups_detail[groupId];
+        const standardIds = groupDetail?.["standard_ids"] || [];
+        standardIds.forEach((standardId) => {
+          const standard = rubricData.standards_mapping[standardId];
+          if (standard) {
+            const name = standard["name"];
+            const points = standard["points"];
+            if (name && typeof points === "number") {
               standardsList.push({
-              id: standardId,
-              name,
-              points,
-              standardGroupId: groupId,
+                id: standardId,
+                name,
+                points,
+                standardGroupId: groupId,
               });
               // Initialize grid cell with standard's description for its group
               cells.push({
                 standardGroupId: groupId,
                 standardId,
                 description: standard["description"] || "",
-            });
+              });
+            }
           }
-        }
+        });
       });
-    });
     }
     setStandards(standardsList);
     setGridCells(cells);
@@ -256,9 +256,9 @@ export default function Rubric({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primaryDepartmentId ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   // Unified update helper
@@ -281,7 +281,7 @@ export default function Rubric({
       const allGroups = updates.standardGroups.map((group) => {
         // Find standards that belong to this group
         const groupStandards = updates.standards.filter(
-          (s) => s.standardGroupId === group.id
+          (s) => s.standardGroupId === group.id,
         );
         return {
           name: group.name,
@@ -293,8 +293,7 @@ export default function Rubric({
             // Get description from grid cell for this group-standard pair
             // If not found, use empty string (will be set from standard's description on first save)
             const cell = updates.gridCells.find(
-              (c) =>
-                c.standardGroupId === group.id && c.standardId === s.id
+              (c) => c.standardGroupId === group.id && c.standardId === s.id,
             );
             return {
               name: s.name,
@@ -309,7 +308,7 @@ export default function Rubric({
       const totalPoints = allGroups.reduce((sum, g) => sum + g.points, 0);
       const totalPassPoints = allGroups.reduce(
         (sum, g) => sum + g.passPoints,
-        0
+        0,
       );
 
       return updateRubricAction({
@@ -326,7 +325,7 @@ export default function Rubric({
         },
       });
     },
-    [updateRubricAction, rubricId, effectiveProfile?.id]
+    [updateRubricAction, rubricId, effectiveProfile?.id],
   );
 
   // Handle save
@@ -335,7 +334,7 @@ export default function Rubric({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        rubricData?.valid_department_ids || []
+        rubricData?.valid_department_ids || [],
       );
 
       if (isEditMode) {
@@ -380,9 +379,8 @@ export default function Rubric({
       toast.error(
         isEditMode ? "Failed to update rubric" : "Failed to create rubric",
         {
-          description:
-            error instanceof Error ? error.message : "Unknown error",
-        }
+          description: error instanceof Error ? error.message : "Unknown error",
+        },
       );
     } finally {
       setIsSaving(false);
@@ -454,8 +452,8 @@ export default function Rubric({
                 points,
                 passPoints,
               }
-            : g
-        )
+            : g,
+        ),
       );
     } else {
       // Add new group
@@ -477,7 +475,7 @@ export default function Rubric({
   const handleDeleteGroup = async (groupId: string) => {
     if (
       !confirm(
-        "Are you sure you want to delete this standard group? This will also delete all associated standards."
+        "Are you sure you want to delete this standard group? This will also delete all associated standards.",
       )
     ) {
       return;
@@ -486,9 +484,7 @@ export default function Rubric({
     // Remove group and its standards
     setStandardGroups((prev) => prev.filter((g) => g.id !== groupId));
     setStandards((prev) => prev.filter((s) => s.standardGroupId !== groupId));
-    setGridCells((prev) =>
-      prev.filter((c) => c.standardGroupId !== groupId)
-    );
+    setGridCells((prev) => prev.filter((c) => c.standardGroupId !== groupId));
 
     // If in edit mode, save immediately
     if (isEditMode && updateRubricAction) {
@@ -496,7 +492,7 @@ export default function Rubric({
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           formData.departmentIds || [],
           isSuperadmin,
-          rubricData?.valid_department_ids || []
+          rubricData?.valid_department_ids || [],
         );
         await updateRubricUnified({
           name: formData.name,
@@ -511,8 +507,7 @@ export default function Rubric({
         router.refresh();
       } catch (error) {
         toast.error("Failed to delete standard group", {
-          description:
-            error instanceof Error ? error.message : "Unknown error",
+          description: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
@@ -566,8 +561,8 @@ export default function Rubric({
         prev.map((s) =>
           s.id === editingStandardId
             ? { ...s, name: standardFormData.name, points }
-            : s
-        )
+            : s,
+        ),
       );
     } else {
       // Add new standard - assign to first group for now
@@ -587,11 +582,11 @@ export default function Rubric({
       standardGroups.forEach((group) => {
         const existingCell = gridCells.find(
           (c) =>
-            c.standardGroupId === group.id && c.standardId === newStandard.id
+            c.standardGroupId === group.id && c.standardId === newStandard.id,
         );
         if (!existingCell) {
           setGridCells((prev) => [
-      ...prev,
+            ...prev,
             {
               standardGroupId: group.id,
               standardId: newStandard.id,
@@ -621,7 +616,7 @@ export default function Rubric({
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           formData.departmentIds || [],
           isSuperadmin,
-          rubricData?.valid_department_ids || []
+          rubricData?.valid_department_ids || [],
         );
         await updateRubricUnified({
           name: formData.name,
@@ -636,8 +631,7 @@ export default function Rubric({
         router.refresh();
       } catch (error) {
         toast.error("Failed to delete standard", {
-          description:
-            error instanceof Error ? error.message : "Unknown error",
+          description: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
@@ -647,17 +641,17 @@ export default function Rubric({
   const handleCellChange = (
     groupId: string,
     standardId: string,
-    description: string
+    description: string,
   ) => {
     setGridCells((prev) => {
       const existing = prev.find(
-        (c) => c.standardGroupId === groupId && c.standardId === standardId
+        (c) => c.standardGroupId === groupId && c.standardId === standardId,
       );
       if (existing) {
         return prev.map((c) =>
           c.standardGroupId === groupId && c.standardId === standardId
             ? { ...c, description }
-            : c
+            : c,
         );
       } else {
         return [...prev, { standardGroupId: groupId, standardId, description }];
@@ -677,16 +671,21 @@ export default function Rubric({
       }
     });
     // Convert to array and sort by points descending
-    return Array.from(standardsByName.values()).sort((a, b) => b.points - a.points);
+    return Array.from(standardsByName.values()).sort(
+      (a, b) => b.points - a.points,
+    );
   }, [standards]);
 
   // Helper function to find the standard ID for a given group and standard name
-  const findStandardIdForGroup = useCallback((groupId: string, standardName: string): string | null => {
-    const standard = standards.find(
-      (s) => s.standardGroupId === groupId && s.name === standardName
-    );
-    return standard?.id || null;
-  }, [standards]);
+  const findStandardIdForGroup = useCallback(
+    (groupId: string, standardName: string): string | null => {
+      const standard = standards.find(
+        (s) => s.standardGroupId === groupId && s.name === standardName,
+      );
+      return standard?.id || null;
+    },
+    [standards],
+  );
 
   // Table columns definition
   const columns = useMemo<ColumnDef<StandardGroup>[]>(() => {
@@ -701,7 +700,9 @@ export default function Rubric({
           const searchValue = String(value).toLowerCase();
           const name = String(row.original.name).toLowerCase();
           const description = String(row.original.description).toLowerCase();
-          return name.includes(searchValue) || description.includes(searchValue);
+          return (
+            name.includes(searchValue) || description.includes(searchValue)
+          );
         },
         cell: ({ row }) => (
           <div className="space-y-1">
@@ -710,9 +711,7 @@ export default function Rubric({
               {row.original.description}
             </div>
             <div className="flex gap-2 text-xs">
-              <Badge variant="outline">
-                {row.original.points} pts
-              </Badge>
+              <Badge variant="outline">{row.original.points} pts</Badge>
               <Badge variant="outline">
                 Pass: {row.original.passPoints} pts
               </Badge>
@@ -777,7 +776,10 @@ export default function Rubric({
         cell: ({ row }) => {
           const group = row.original;
           // Find the actual standard ID for this group and standard name
-          const actualStandardId = findStandardIdForGroup(group.id, standard.name);
+          const actualStandardId = findStandardIdForGroup(
+            group.id,
+            standard.name,
+          );
           if (!actualStandardId) {
             return (
               <div className="text-xs text-muted-foreground text-center py-4">
@@ -787,7 +789,8 @@ export default function Rubric({
           }
           const cell = gridCells.find(
             (c) =>
-              c.standardGroupId === group.id && c.standardId === actualStandardId
+              c.standardGroupId === group.id &&
+              c.standardId === actualStandardId,
           );
           return (
             <Textarea
@@ -805,7 +808,14 @@ export default function Rubric({
     });
 
     return cols;
-  }, [uniqueStandardsByName, gridCells, isReadonly, findStandardIdForGroup, handleEditStandard, handleDeleteStandard]);
+  }, [
+    uniqueStandardsByName,
+    gridCells,
+    isReadonly,
+    findStandardIdForGroup,
+    handleEditStandard,
+    handleDeleteStandard,
+  ]);
 
   // Table state
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -848,7 +858,10 @@ export default function Rubric({
   }
 
   return (
-    <div className="space-y-6" data-page={`rubric-${isEditMode ? "edit" : "new"}`}>
+    <div
+      className="space-y-6"
+      data-page={`rubric-${isEditMode ? "edit" : "new"}`}
+    >
       {/* Readonly warning */}
       {isReadonly && (
         <div className="bg-muted border border-border rounded-lg p-4">
@@ -871,10 +884,10 @@ export default function Rubric({
                 Rubric is read-only
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                  {rubricData?.department_ids?.length === 0
+                {rubricData?.department_ids?.length === 0
                   ? "This is a default rubric that cannot be edited."
                   : "This rubric cannot be edited."}
-                </p>
+              </p>
             </div>
           </div>
         </div>
@@ -934,7 +947,10 @@ export default function Rubric({
         {/* Active Switch */}
         <div className="space-y-2 pt-2">
           <div className="flex items-center gap-2">
-            <Label htmlFor="active" className="text-sm flex items-center gap-1.5">
+            <Label
+              htmlFor="active"
+              className="text-sm flex items-center gap-1.5"
+            >
               <Power className="h-3.5 w-3.5 text-muted-foreground" />
               Active
             </Label>
@@ -952,7 +968,6 @@ export default function Rubric({
             Inactive rubrics will not be available for simulations
           </p>
         </div>
-
       </div>
 
       {/* Toolbar */}
@@ -1011,7 +1026,9 @@ export default function Rubric({
               <div className="w-full md:w-auto">
                 <Input
                   placeholder="Search standard groups..."
-                  value={(table.getColumn("group")?.getFilterValue() as string) ?? ""}
+                  value={
+                    (table.getColumn("group")?.getFilterValue() as string) ?? ""
+                  }
                   onChange={(event) =>
                     table.getColumn("group")?.setFilterValue(event.target.value)
                   }
@@ -1048,14 +1065,16 @@ export default function Rubric({
                           key={header.id}
                           colSpan={header.colSpan}
                           className={`border-r py-2 text-xs text-center min-w-[200px] ${
-                            header.id === "group" ? "sticky left-0 bg-background z-10" : ""
+                            header.id === "group"
+                              ? "sticky left-0 bg-background z-10"
+                              : ""
                           }`}
                         >
                           {header.isPlaceholder
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                         </TableHead>
                       );
@@ -1074,12 +1093,14 @@ export default function Rubric({
                         <TableCell
                           key={cell.id}
                           className={`border-r px-3 py-2 ${
-                            cell.column.id === "group" ? "sticky left-0 bg-background z-10" : ""
+                            cell.column.id === "group"
+                              ? "sticky left-0 bg-background z-10"
+                              : ""
                           }`}
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </TableCell>
                       ))}
@@ -1144,7 +1165,10 @@ export default function Rubric({
                 id="group-name"
                 value={groupFormData.name}
                 onChange={(e) =>
-                  setGroupFormData((prev) => ({ ...prev, name: e.target.value }))
+                  setGroupFormData((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
                 }
                 placeholder="Standard Group Name"
                 required
@@ -1218,7 +1242,10 @@ export default function Rubric({
       </Dialog>
 
       {/* Add Standard Modal */}
-      <Dialog open={showAddStandardModal} onOpenChange={setShowAddStandardModal}>
+      <Dialog
+        open={showAddStandardModal}
+        onOpenChange={setShowAddStandardModal}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>

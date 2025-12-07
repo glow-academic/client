@@ -47,13 +47,13 @@ function convertColorForRecharts(oklchValue: string): string {
  * @returns Color value in a format Recharts can use
  */
 export function useStatusColor(
-  status: "success" | "warning" | "danger" | "neutral"
+  status: "success" | "warning" | "danger" | "neutral",
 ): string {
   const successColor = useCSSVariable("--success", "oklch(0.6 0.2 150)");
   const warningColor = useCSSVariable("--warning", "oklch(0.7 0.2 70)");
   const destructiveColor = useCSSVariable(
     "--destructive",
-    "oklch(0.577 0.245 27.325)"
+    "oklch(0.577 0.245 27.325)",
   );
   const mutedColor = useCSSVariable("--muted-foreground", "oklch(0.556 0 0)");
 
@@ -115,7 +115,7 @@ export function getChartColors(): string[] {
   if (typeof window === "undefined" || typeof document === "undefined") {
     // SSR fallback
     return Object.values(chartColorFallbacks).map((color) =>
-      convertColorForRecharts(color)
+      convertColorForRecharts(color),
     );
   }
 
@@ -144,7 +144,7 @@ export function getChartColors(): string[] {
  * @returns Color value in a format Recharts can use
  */
 export function getStatusColor(
-  status: "success" | "warning" | "danger" | "neutral"
+  status: "success" | "warning" | "danger" | "neutral",
 ): string {
   if (typeof window === "undefined" || typeof document === "undefined") {
     // SSR fallback

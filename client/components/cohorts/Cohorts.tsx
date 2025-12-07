@@ -68,7 +68,7 @@ export interface CohortsProps {
   listData: CohortsListOut;
   // Server actions (replaces useMutation)
   duplicateCohortAction?: (
-    input: DuplicateCohortIn
+    input: DuplicateCohortIn,
   ) => Promise<DuplicateCohortOut>;
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
   leaveCohortAction?: (input: LeaveCohortIn) => Promise<LeaveCohortOut>;
@@ -111,7 +111,7 @@ export default function Cohorts({
   // Extract data from response
   const cohorts = useMemo(
     () => cohortsData?.cohorts || [],
-    [cohortsData?.cohorts]
+    [cohortsData?.cohorts],
   );
 
   // Use server-provided facet options directly (no client-side computation)
@@ -123,7 +123,7 @@ export default function Cohorts({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [cohortsData?.profile_options]
+    [cohortsData?.profile_options],
   );
   const simulationOptions = useMemo(
     () =>
@@ -133,7 +133,7 @@ export default function Cohorts({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [cohortsData?.simulation_options]
+    [cohortsData?.simulation_options],
   );
   const departmentOptions = useMemo(
     () =>
@@ -143,7 +143,7 @@ export default function Cohorts({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [cohortsData?.department_options]
+    [cohortsData?.department_options],
   );
 
   // Define table columns inline
@@ -177,7 +177,7 @@ export default function Cohorts({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance

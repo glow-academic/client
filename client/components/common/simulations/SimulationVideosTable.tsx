@@ -32,16 +32,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Clock,
-  Video,
-} from "lucide-react";
+import { Clock, Video } from "lucide-react";
 import type { ContentItem } from "./SimulationContentTable";
 
 export interface SimulationVideosTableProps {
   data: ContentItem[]; // Only video items
   // Video picker props
-  videoMapping?: Record<string, { name: string; description: string; length_seconds: number }>;
+  videoMapping?: Record<
+    string,
+    { name: string; description: string; length_seconds: number }
+  >;
   validVideoIds?: string[];
   selectedVideoIds?: string[];
   onVideoSelect?: (ids: string[]) => void;
@@ -59,7 +59,7 @@ export function SimulationVideosTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "position", desc: false },
@@ -68,7 +68,7 @@ export function SimulationVideosTable({
   // Filter to only videos
   const videoItems = React.useMemo(
     () => data.filter((item) => item.type === "video"),
-    [data]
+    [data],
   );
 
   // Format video length
@@ -138,9 +138,7 @@ export function SimulationVideosTable({
         cell: ({ row }) => {
           const item = row.original;
           if (!item.length_seconds) {
-            return (
-              <span className="text-xs text-muted-foreground">N/A</span>
-            );
+            return <span className="text-xs text-muted-foreground">N/A</span>;
           }
           return (
             <div className="flex items-center justify-center">
@@ -152,7 +150,7 @@ export function SimulationVideosTable({
         },
       },
     ],
-    [readonly]
+    [readonly],
   );
 
   const table = useReactTable({
@@ -223,7 +221,7 @@ export function SimulationVideosTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -244,7 +242,7 @@ export function SimulationVideosTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
@@ -267,4 +265,3 @@ export function SimulationVideosTable({
     </TooltipProvider>
   );
 }
-

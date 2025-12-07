@@ -59,7 +59,7 @@ export default function TableRubric({
   showFullStandardsOnMobile = false,
 }: TableRubricProps) {
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
-    () => new Set<string>()
+    () => new Set<string>(),
   );
 
   // Helper function to determine if a standard was achieved (from server-computed state)
@@ -88,13 +88,13 @@ export default function TableRubric({
           return bPoints - aPoints;
         }),
       };
-    }
+    },
   );
 
   // Determine the maximum number of standards across all groups for consistent column count
   const maxStandards = Math.max(
     ...groupedStandards.map((g) => g.standardIds.length),
-    0
+    0,
   );
 
   return (
@@ -117,7 +117,7 @@ export default function TableRubric({
                   ({ groupId, groupInfo, standardIds }, groupIndex) => {
                     // Find achieved standard for this group
                     const achievedStandardId = standardIds.find((sid) =>
-                      isStandardAchieved(sid)
+                      isStandardAchieved(sid),
                     );
                     const achievedStandard = achievedStandardId
                       ? standardsMapping[achievedStandardId]
@@ -191,7 +191,7 @@ export default function TableRubric({
                         </TableCell>
                       </TableRow>
                     );
-                  }
+                  },
                 )}
               </TableBody>
             </Table>
@@ -318,7 +318,7 @@ export default function TableRubric({
                                   const target = e.target as HTMLElement;
                                   if (
                                     target.closest(
-                                      "textarea, input, button, select, [contenteditable='true']"
+                                      "textarea, input, button, select, [contenteditable='true']",
                                     )
                                   ) {
                                     return; // do not hijack keys while typing or interacting with controls
@@ -397,10 +397,10 @@ export default function TableRubric({
                                 })()}
                               </TableCell>
                             );
-                          }
+                          },
                         )}
                       </TableRow>
-                    )
+                    ),
                   )}
                 </TableBody>
               </Table>

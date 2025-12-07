@@ -66,13 +66,10 @@ export default function PolicyViewer({
         // Call the API route using upload_id
         let response;
         if (policy.upload_id) {
-          response = await fetch(
-            `/api/uploads/download/${policy.upload_id}`,
-            {
-              method: "GET",
-              credentials: "include",
-            }
-          );
+          response = await fetch(`/api/uploads/download/${policy.upload_id}`, {
+            method: "GET",
+            credentials: "include",
+          });
         } else {
           throw new Error("Policy upload_id is required");
         }
@@ -130,9 +127,7 @@ export default function PolicyViewer({
       return (
         <div className="flex flex-col items-center justify-center h-32 gap-2">
           <FileText className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Failed to load policy
-          </p>
+          <p className="text-sm text-muted-foreground">Failed to load policy</p>
         </div>
       );
     }
@@ -287,4 +282,3 @@ export default function PolicyViewer({
     </div>
   );
 }
-

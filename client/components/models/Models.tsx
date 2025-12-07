@@ -61,7 +61,7 @@ export interface ModelsProps {
   listData: ModelsListOut;
   // Server actions (replaces useMutation)
   duplicateModelAction?: (
-    input: DuplicateModelIn
+    input: DuplicateModelIn,
   ) => Promise<DuplicateModelOut>;
   deleteModelAction?: (input: DeleteModelIn) => Promise<DeleteModelOut>;
 }
@@ -95,7 +95,7 @@ export default function Models({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [modelsData?.provider_options]
+    [modelsData?.provider_options],
   );
   const statusOptions = useMemo(
     () =>
@@ -105,7 +105,7 @@ export default function Models({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [modelsData?.status_options]
+    [modelsData?.status_options],
   );
 
   // Table state
@@ -170,7 +170,7 @@ export default function Models({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance

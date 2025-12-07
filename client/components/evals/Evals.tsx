@@ -88,7 +88,7 @@ export default function Evals({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [evalsData?.agent_options]
+    [evalsData?.agent_options],
   );
 
   // Update evals when server data changes
@@ -131,7 +131,7 @@ export default function Evals({
             return evalItem;
           }
           return evalItem;
-        })
+        }),
       );
     };
 
@@ -150,7 +150,7 @@ export default function Evals({
             };
           }
           return evalItem;
-        })
+        }),
       );
     };
 
@@ -167,13 +167,13 @@ export default function Evals({
               status: "completed",
               pending_runs: Math.max(
                 0,
-                evalItem.pending_runs - data.stopped_count
+                evalItem.pending_runs - data.stopped_count,
               ),
               completed_runs: evalItem.completed_runs + data.stopped_count,
             };
           }
           return evalItem;
-        })
+        }),
       );
     };
 
@@ -230,7 +230,7 @@ export default function Evals({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance

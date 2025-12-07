@@ -57,7 +57,7 @@ export interface RubricsProps {
   listData: RubricsListOut;
   // Server actions (replaces useMutation)
   duplicateRubricAction?: (
-    input: DuplicateRubricIn
+    input: DuplicateRubricIn,
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
   createRubricAction?: (input: CreateRubricIn) => Promise<CreateRubricOut>;
@@ -92,11 +92,11 @@ export default function Rubrics({
   const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
   const standardGroupsMapping = useMemo(
     () => rubricsData?.standard_groups_mapping || {},
-    [rubricsData]
+    [rubricsData],
   );
   const standardsMapping = useMemo(
     () => rubricsData?.standards_mapping || {},
-    [rubricsData]
+    [rubricsData],
   );
   const departmentMapping = useMemo(
     () =>
@@ -104,7 +104,7 @@ export default function Rubrics({
         string,
         { name: string; description: string }
       >) || {},
-    [rubricsData]
+    [rubricsData],
   );
 
   // Build filter options - filter to only show options that have actual data
@@ -137,7 +137,7 @@ export default function Rubrics({
         label: opt["label"] as string,
       }))
       .filter(
-        (opt) => opt.value && opt.label && allSimulationIds.has(opt.value)
+        (opt) => opt.value && opt.label && allSimulationIds.has(opt.value),
       );
   }, [rubricsData?.simulation_options, rubrics]);
 
@@ -235,7 +235,7 @@ export default function Rubrics({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance

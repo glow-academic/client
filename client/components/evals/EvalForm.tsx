@@ -14,7 +14,10 @@ import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { ModelRunsSelector } from "./ModelRunsSelector";
 import type { RubricsListOut } from "@/app/(main)/engine/rubrics/page";
-import type { CreateEvalIn, CreateEvalOut } from "@/app/(main)/engine/evals/new/page";
+import type {
+  CreateEvalIn,
+  CreateEvalOut,
+} from "@/app/(main)/engine/evals/new/page";
 import type { OutputOf } from "@/lib/api/types";
 import { toast } from "sonner";
 import { api } from "@/lib/api/client";
@@ -27,7 +30,11 @@ export interface EvalFormProps {
   createEvalAction: (input: CreateEvalIn) => Promise<CreateEvalOut>;
 }
 
-export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormProps) {
+export function EvalForm({
+  rubricsList,
+  profileId,
+  createEvalAction,
+}: EvalFormProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -69,7 +76,10 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
         };
         return acc;
       },
-      {} as Record<string, { name: string; description: string; roles: string[] }>
+      {} as Record<
+        string,
+        { name: string; description: string; roles: string[] }
+      >,
     );
   }, [agentsList]);
 
@@ -81,7 +91,7 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
         acc[agent.agent_id] = agent.name;
         return acc;
       },
-      {} as Record<string, string>
+      {} as Record<string, string>,
     );
   }, [agentsList]);
 
@@ -93,7 +103,9 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
   // Get selected agent's role
   const selectedAgentRole = useMemo(() => {
     if (selectedAgentId.length === 0 || !agentsList) return null;
-    const agent = agentsList.agents.find((a) => a.agent_id === selectedAgentId[0]);
+    const agent = agentsList.agents.find(
+      (a) => a.agent_id === selectedAgentId[0],
+    );
     return agent?.role || null;
   }, [selectedAgentId, agentsList]);
 
@@ -115,7 +127,7 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
         };
         return acc;
       },
-      {} as Record<string, { name: string; description: string }>
+      {} as Record<string, { name: string; description: string }>,
     );
   }, [filteredRubrics]);
 
@@ -206,7 +218,12 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
   return (
     <div className="space-y-6 py-4 px-4">
       {/* Form Fields */}
-      <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+        className="space-y-4"
+      >
         {/* Name */}
         <div className="space-y-2">
           <Label htmlFor="name">Name *</Label>
@@ -236,7 +253,9 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
         <div className="space-y-2">
           <Label>Agent *</Label>
           {loadingAgents ? (
-            <div className="text-sm text-muted-foreground">Loading agents...</div>
+            <div className="text-sm text-muted-foreground">
+              Loading agents...
+            </div>
           ) : (
             <AgentPicker
               mapping={agentMappingForPicker}

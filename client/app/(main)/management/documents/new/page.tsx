@@ -64,29 +64,11 @@ async function createDocument(
 // renderTemplate removed - not used on new page since we don't have documentId yet
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Document",
-    description: `Upload new documents in GLOW${orgPart}.`,
+    description: "Upload new learning resources and educational documents for teaching assistant training. Add course materials, instructional resources, and reference documents to support pedagogical development and L&D program content.",
   };
+}
 }
 
 export default async function NewDocumentPage() {

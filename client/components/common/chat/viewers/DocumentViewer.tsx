@@ -71,7 +71,7 @@ export default function DocumentViewer({
             {
               method: "GET",
               credentials: "include",
-            }
+            },
           );
         } else if (document.upload_id) {
           // Use upload_id for download
@@ -80,7 +80,7 @@ export default function DocumentViewer({
             {
               method: "GET",
               credentials: "include",
-            }
+            },
           );
         } else {
           throw new Error("Document upload_id is required");

@@ -12,7 +12,7 @@ export async function OPTIONS(request: NextRequest) {
           "Tus-Resumable": request.headers.get("Tus-Resumable") || "1.0.0",
           "Tus-Version": request.headers.get("Tus-Version") || "1.0.0",
         },
-      }
+      },
     );
 
     // Forward all TUS headers
@@ -28,7 +28,7 @@ export async function OPTIONS(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         method: "POST",
         headers: tusHeaders,
         body: body || null,
-      }
+      },
     );
 
     // Forward all TUS response headers, but rewrite Location to use BFF route
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         // Handle both with and without app prefix: /api/v3/uploads/upload/... or /prefix/api/v3/uploads/upload/...
         const location = value.replace(
           /\/api\/v3\/uploads\/upload\//,
-          "/api/uploads/upload/"
+          "/api/uploads/upload/",
         );
         headers.set(key, location);
       } else {
@@ -93,8 +93,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

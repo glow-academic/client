@@ -61,7 +61,7 @@ const DEFAULT_CONFIG: Required<GlowIconConfig> = {
  */
 export function generateGlowIconSVG(
   config: GlowIconConfig = {},
-  gradientId: string = "glowGradient"
+  gradientId: string = "glowGradient",
 ): string {
   const { size, viewBoxSize, borderRadius, gradientColors, sparkleScale } = {
     ...DEFAULT_CONFIG,

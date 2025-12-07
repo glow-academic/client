@@ -207,7 +207,7 @@ export default function EvalResultView({
         setRunData(data);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to load run data"
+          err instanceof Error ? err.message : "Failed to load run data",
         );
       } finally {
         setLoading(false);
@@ -222,7 +222,7 @@ export default function EvalResultView({
   // Extract data from response
   const chats = useMemo(
     () => runData?.chats.map((c) => c.chat) || [],
-    [runData]
+    [runData],
   );
 
   // Current chat based on index (default to first chat)
@@ -291,9 +291,9 @@ export default function EvalResultView({
       runData?.chats
         .map((c) => c.dynamicRubric)
         .filter(
-          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null
+          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null,
         ) || [],
-    [runData]
+    [runData],
   );
 
   const aggregatedResults = runData?.aggregatedResults || null;
@@ -353,7 +353,7 @@ export default function EvalResultView({
         <SelectContent>
           {chats?.map((chat: Chat) => {
             const rubricResult = allDynamicRubrics.find(
-              (rubric) => rubric.chatId === chat.id
+              (rubric) => rubric.chatId === chat.id,
             );
             return (
               <SelectItem key={chat.id} value={chat.id}>
@@ -399,7 +399,7 @@ export default function EvalResultView({
         completed?: boolean;
         completedAt?: string | null;
         createdAt?: string;
-      } | null
+      } | null,
     ): number => {
       if (!chat?.completed || !chat.completedAt || !chat.createdAt) return 0;
 
@@ -409,7 +409,7 @@ export default function EvalResultView({
 
       return timeTakenSeconds;
     },
-    []
+    [],
   );
 
   // Helper function to calculate adjusted time limit (not applicable for runs)
@@ -419,11 +419,11 @@ export default function EvalResultView({
         completed?: boolean;
         completedAt?: string | null;
         createdAt?: string;
-      } | null
+      } | null,
     ): number => {
       return 0; // Runs don't have time limits
     },
-    []
+    [],
   );
 
   // Helper function to calculate how much time was exceeded (not applicable for runs)
@@ -433,11 +433,11 @@ export default function EvalResultView({
         completed?: boolean;
         completedAt?: string | null;
         createdAt?: string;
-      } | null
+      } | null,
     ): number => {
       return 0; // Runs don't have time limits
     },
-    []
+    [],
   );
 
   // Auto-select first chat when data loads

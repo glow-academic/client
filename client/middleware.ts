@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
   ) {
     const practiceUrl = new URL(
       `${appPrefix}/practice`,
-      request.nextUrl.origin
+      request.nextUrl.origin,
     );
     return NextResponse.redirect(practiceUrl);
   }

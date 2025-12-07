@@ -16,10 +16,7 @@ import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type RubricNewIn = InputOf<"/api/v3/rubrics/new", "post">;
-type RubricNewOut = OutputOf<
-  "/api/v3/rubrics/new",
-  "post"
->;
+type RubricNewOut = OutputOf<"/api/v3/rubrics/new", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getRubricDefault = cache(
@@ -29,28 +26,10 @@ const getRubricDefault = cache(
 );
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Rubric",
-    description: `New rubric creation page using the unified rubric component in GLOW${orgPart}.`,
+    description:
+      "Create a new assessment rubric for teaching assistant evaluation. Design rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills through structured assessment frameworks.",
   };
 }
 

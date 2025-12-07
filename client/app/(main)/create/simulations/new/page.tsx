@@ -13,10 +13,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationNewOut = OutputOf<
-  "/api/v3/simulations/new",
-  "post"
->;
+type SimulationNewOut = OutputOf<"/api/v3/simulations/new", "post">;
 type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
 type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
 
@@ -24,7 +21,7 @@ type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getSimulationDefault = async (
-  profileId: string
+  profileId: string,
 ): Promise<SimulationNewOut> => {
   return api.post(
     "/simulations/new",
@@ -34,7 +31,7 @@ const getSimulationDefault = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -48,28 +45,10 @@ async function createSimulation(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "New Simulation",
-    description: `New simulation creation page for the simulations section in GLOW${orgPart}.`,
+    description:
+      "Create a new teaching practice simulation for graduate teaching assistant training. Design realistic student interaction scenarios to practice pedagogical techniques, improve communication skills, and enhance teaching effectiveness through simulation-based learning.",
   };
 }
 
@@ -95,8 +74,4 @@ export default async function NewSimulationPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  CreateSimulationIn,
-  CreateSimulationOut,
-  SimulationNewOut,
-};
+export type { CreateSimulationIn, CreateSimulationOut, SimulationNewOut };

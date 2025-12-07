@@ -198,7 +198,7 @@ export default function Dashboard({
         firstAttemptPassRate: point.firstAttemptPassRate ?? null,
         sessionEfficiency: point.sessionEfficiency ?? null,
         stagnationRate: point.stagnationRate ?? null,
-      })
+      }),
     );
 
     // Normalize PersonaPerformance trendData to ensure score is always present
@@ -228,10 +228,10 @@ export default function Dashboard({
           row.map((cell) => ({
             ...cell,
             pValue: cell.pValue ?? null,
-          }))
+          })),
         ),
         insights: matrix.insights ?? null,
-      })
+      }),
     );
 
     // Normalize windowAverages to ensure last and prev are always present
@@ -289,7 +289,7 @@ export default function Dashboard({
     // Normalize simulation_mapping to convert undefined to null for exactOptionalPropertyTypes
     // For CohortPerformance: optional department_ids and time_limit
     const normalizedSimulationMapping = Object.entries(
-      bundle.simulation_mapping
+      bundle.simulation_mapping,
     ).reduce(
       (acc, [key, value]) => {
         const normalized: {
@@ -319,12 +319,12 @@ export default function Dashboard({
           department_ids?: string[] | null;
           time_limit?: number | null;
         }
-      >
+      >,
     );
 
     // For AttemptImprovement: required department_ids (must always be present)
     const normalizedSimulationMappingRequired = Object.entries(
-      bundle.simulation_mapping
+      bundle.simulation_mapping,
     ).reduce(
       (acc, [key, value]) => {
         acc[key] = {
@@ -337,7 +337,7 @@ export default function Dashboard({
       {} as Record<
         string,
         { name: string; description: string; department_ids: string[] | null }
-      >
+      >,
     );
 
     // Normalize CohortPerformance dailyData to convert null to undefined
@@ -506,7 +506,7 @@ export default function Dashboard({
   ]);
 
   const totalHeaderPages = Math.ceil(
-    headerComponents.length / headerCardsPerPage
+    headerComponents.length / headerCardsPerPage,
   );
 
   const getVisibleHeaderComponents = () => {
@@ -518,7 +518,7 @@ export default function Dashboard({
   const navigateHeader = (direction: "prev" | "next") => {
     if (direction === "prev") {
       setHeaderCarouselIndex(
-        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages
+        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages,
       );
     } else {
       setHeaderCarouselIndex((prev: number) => (prev + 1) % totalHeaderPages);
@@ -553,7 +553,7 @@ export default function Dashboard({
 
     if (direction === "prev") {
       setLeftFooterCarouselIndex(
-        (prev: number) => (prev - 1 + length) % length
+        (prev: number) => (prev - 1 + length) % length,
       );
     } else {
       setLeftFooterCarouselIndex((prev: number) => (prev + 1) % length);
@@ -566,7 +566,7 @@ export default function Dashboard({
 
     if (direction === "prev") {
       setRightFooterCarouselIndex(
-        (prev: number) => (prev - 1 + length) % length
+        (prev: number) => (prev - 1 + length) % length,
       );
     } else {
       setRightFooterCarouselIndex((prev: number) => (prev + 1) % length);

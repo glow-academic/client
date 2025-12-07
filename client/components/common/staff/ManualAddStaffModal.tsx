@@ -38,7 +38,7 @@ export interface ManualAddStaffModalProps {
       lastName?: string;
       email?: string;
       role?: string;
-    }>
+    }>,
   ) => void;
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
 }
@@ -95,7 +95,7 @@ export default function ManualAddStaffModal({
 
     // Filter roleOptions to only include roles that are both in options and allowed by scope
     return roleOrder.filter(
-      (role) => allowedRoles.includes(role) && roleOptions.includes(role)
+      (role) => allowedRoles.includes(role) && roleOptions.includes(role),
     );
   }, [roleOptions, isCohortScoped, isDepartmentScoped]);
 
@@ -115,23 +115,26 @@ export default function ManualAddStaffModal({
     setEmails((prev) => [...prev, ""]);
   }, []);
 
-  const removeEmail = useCallback((index: number) => {
-    setEmails((prev) => {
-      const newEmails = prev.filter((_, i) => i !== index);
-      if (newEmails.length === 0) {
-        setPrimaryEmailIndex(0);
-        return [""];
-      }
-      let newPrimaryIndex = primaryEmailIndex;
-      if (index === primaryEmailIndex) {
-        newPrimaryIndex = 0;
-      } else if (index < primaryEmailIndex) {
-        newPrimaryIndex = primaryEmailIndex - 1;
-      }
-      setPrimaryEmailIndex(newPrimaryIndex);
-      return newEmails;
-    });
-  }, [primaryEmailIndex]);
+  const removeEmail = useCallback(
+    (index: number) => {
+      setEmails((prev) => {
+        const newEmails = prev.filter((_, i) => i !== index);
+        if (newEmails.length === 0) {
+          setPrimaryEmailIndex(0);
+          return [""];
+        }
+        let newPrimaryIndex = primaryEmailIndex;
+        if (index === primaryEmailIndex) {
+          newPrimaryIndex = 0;
+        } else if (index < primaryEmailIndex) {
+          newPrimaryIndex = primaryEmailIndex - 1;
+        }
+        setPrimaryEmailIndex(newPrimaryIndex);
+        return newEmails;
+      });
+    },
+    [primaryEmailIndex],
+  );
 
   const updateEmail = useCallback((index: number, value: string) => {
     setEmails((prev) => {
@@ -153,7 +156,9 @@ export default function ManualAddStaffModal({
       return;
     }
     // Validate emails
-    const validEmails = emails.filter(e => e.trim().length > 0).map(e => e.trim().toLowerCase());
+    const validEmails = emails
+      .filter((e) => e.trim().length > 0)
+      .map((e) => e.trim().toLowerCase());
     if (validEmails.length === 0) {
       toast.error("Please enter at least one email address");
       return;
@@ -201,9 +206,10 @@ export default function ManualAddStaffModal({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           emails: validEmails,
-          primary_email_index: primaryEmailIndex >= 0 && primaryEmailIndex < validEmails.length 
-            ? primaryEmailIndex 
-            : 0,
+          primary_email_index:
+            primaryEmailIndex >= 0 && primaryEmailIndex < validEmails.length
+              ? primaryEmailIndex
+              : 0,
           role,
           department_ids: finalDepartmentIds,
           cohort_ids: finalCohortIds,
@@ -228,7 +234,8 @@ export default function ManualAddStaffModal({
       // When scoped, stage the profiles
       const firstProfileId = response.profileIds?.[0];
       if (isScoped && onStagedProfiles && firstProfileId) {
-        const primaryEmail = validEmails[primaryEmailIndex] || validEmails[0] || "";
+        const primaryEmail =
+          validEmails[primaryEmailIndex] || validEmails[0] || "";
         const stagedProfiles = [
           {
             profileId: firstProfileId,
@@ -240,11 +247,11 @@ export default function ManualAddStaffModal({
         ];
         onStagedProfiles(stagedProfiles);
         toast.success(
-          "Profile staged. It will be added to the cohort when you click Update."
+          "Profile staged. It will be added to the cohort when you click Update.",
         );
       } else {
         toast.success(
-          `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
+          `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`,
         );
       }
 
@@ -334,7 +341,9 @@ export default function ManualAddStaffModal({
                       placeholder="redacted@purdue.edu"
                       required={index === 0}
                       disabled={isSubmitting}
-                      className={primaryEmailIndex === index ? "border-primary" : ""}
+                      className={
+                        primaryEmailIndex === index ? "border-primary" : ""
+                      }
                     />
                     {primaryEmailIndex === index && (
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
@@ -345,7 +354,9 @@ export default function ManualAddStaffModal({
                   <div className="flex items-center gap-1">
                     <Button
                       type="button"
-                      variant={primaryEmailIndex === index ? "default" : "outline"}
+                      variant={
+                        primaryEmailIndex === index ? "default" : "outline"
+                      }
                       size="icon"
                       onClick={() => setPrimaryEmailIndex(index)}
                       disabled={isSubmitting || primaryEmailIndex === index}
@@ -410,7 +421,7 @@ export default function ManualAddStaffModal({
                 isSubmitting ||
                 !firstName.trim() ||
                 !lastName.trim() ||
-                emails.filter(e => e.trim().length > 0).length === 0
+                emails.filter((e) => e.trim().length > 0).length === 0
               }
             >
               {isSubmitting ? "Processing..." : "Add Staff"}

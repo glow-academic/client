@@ -50,7 +50,8 @@ export function PricingTypePicker({
 }: PricingTypePickerProps) {
   const [open, setOpen] = React.useState(false);
 
-  const selectedLabel = PRICING_TYPES.find((pt) => pt.value === selectedType)?.label || placeholder;
+  const selectedLabel =
+    PRICING_TYPES.find((pt) => pt.value === selectedType)?.label || placeholder;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -85,7 +86,7 @@ export function PricingTypePicker({
                   <Check
                     className={cn(
                       "ml-auto h-4 w-4",
-                      selectedType === pt.value ? "opacity-100" : "opacity-0"
+                      selectedType === pt.value ? "opacity-100" : "opacity-0",
                     )}
                   />
                 </CommandItem>
@@ -97,4 +98,3 @@ export function PricingTypePicker({
     </Popover>
   );
 }
-

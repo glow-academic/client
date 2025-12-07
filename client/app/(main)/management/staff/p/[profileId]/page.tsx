@@ -24,7 +24,7 @@ type UpdateStaffOut = OutputOf<"/api/v3/profile/staff/update", "post">;
  */
 const getStaff = async (
   profileId: string,
-  currentProfileId: string
+  currentProfileId: string,
 ): Promise<StaffDetailOut> => {
   return api.post(
     "/profile/staff/detail",
@@ -34,45 +34,30 @@ const getStaff = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { profileId } = await params;
   const session = await getSession();
   const currentProfileId = session?.effectiveProfileId || "guest-profile-id";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId: currentProfileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const staffDetail = await getStaff(profileId, currentProfileId);
     return {
       title: `Edit ${staffDetail.name}`,
-      description: `Edit staff member in GLOW${orgPart}.`,
+      description: `${staffDetail.name ? `Edit ${staffDetail.name} - ` : ""}Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.`,
     };
   } catch {
     return {
       title: "Edit Staff",
-      description: `Edit staff member in GLOW${orgPart}.`,
+      description:
+        "Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.",
     };
   }
 }
@@ -137,10 +122,4 @@ export default async function StaffEditPage({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  StaffDetailIn,
-  StaffDetailOut,
-  UpdateStaffIn,
-  UpdateStaffOut,
-};
-
+export type { StaffDetailIn, StaffDetailOut, UpdateStaffIn, UpdateStaffOut };

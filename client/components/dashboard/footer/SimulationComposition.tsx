@@ -130,7 +130,7 @@ export default function SimulationComposition({
         name: param.name,
         description: param.description || "",
       })),
-    [parameterMapping]
+    [parameterMapping],
   );
 
   const allParameterItems = useMemo(
@@ -141,7 +141,7 @@ export default function SimulationComposition({
         description: item.description || "",
         parameterId: item.parameter_id,
       })),
-    [parameterItemMapping]
+    [parameterItemMapping],
   );
 
   const [config, setConfig] = useState<SimulationCompositionConfig>({
@@ -214,7 +214,7 @@ export default function SimulationComposition({
 
     // Sort simulations by average score
     const sortedSims = [...simulationFacts].sort(
-      (a, b) => b.avgScore - a.avgScore
+      (a, b) => b.avgScore - a.avgScore,
     );
 
     let topCount: number;
@@ -224,11 +224,11 @@ export default function SimulationComposition({
       case "percentile":
         topCount = Math.max(
           1,
-          Math.floor((config.topPercentage / 100) * sortedSims.length)
+          Math.floor((config.topPercentage / 100) * sortedSims.length),
         );
         bottomCount = Math.max(
           1,
-          Math.floor((config.bottomPercentage / 100) * sortedSims.length)
+          Math.floor((config.bottomPercentage / 100) * sortedSims.length),
         );
         break;
       case "quartile":
@@ -242,14 +242,14 @@ export default function SimulationComposition({
         const variance =
           sortedSims.reduce(
             (sum, sim) => sum + Math.pow(sim.avgScore - avgScore, 2),
-            0
+            0,
           ) / sortedSims.length;
         const stdDev = Math.sqrt(variance);
         topCount = sortedSims.filter(
-          (sim) => sim.avgScore >= avgScore + stdDev
+          (sim) => sim.avgScore >= avgScore + stdDev,
         ).length;
         bottomCount = sortedSims.filter(
-          (sim) => sim.avgScore <= avgScore - stdDev
+          (sim) => sim.avgScore <= avgScore - stdDev,
         ).length;
         break;
       default:
@@ -267,7 +267,7 @@ export default function SimulationComposition({
       simulationParameterFactsNumeric,
       allParameters,
       allParameterItems,
-      parameterItemColorMap
+      parameterItemColorMap,
     );
 
     // Build parameter composition for low performers
@@ -277,7 +277,7 @@ export default function SimulationComposition({
       simulationParameterFactsNumeric,
       allParameters,
       allParameterItems,
-      parameterItemColorMap
+      parameterItemColorMap,
     );
 
     // Build detailed simulation information
@@ -293,7 +293,7 @@ export default function SimulationComposition({
         simulationParameterFactsCategorical,
         simulationParameterFactsNumeric,
         allParameters,
-        allParameterItems
+        allParameterItems,
       ),
     }));
 
@@ -309,7 +309,7 @@ export default function SimulationComposition({
         simulationParameterFactsCategorical,
         simulationParameterFactsNumeric,
         allParameters,
-        allParameterItems
+        allParameterItems,
       ),
     }));
 
@@ -366,7 +366,7 @@ export default function SimulationComposition({
         <div
           className={cn(
             "flex",
-            isMobile ? "flex-col gap-2" : "items-start justify-between"
+            isMobile ? "flex-col gap-2" : "items-start justify-between",
           )}
         >
           <div className="flex flex-col items-start">
@@ -394,13 +394,13 @@ export default function SimulationComposition({
             <div
               className={cn(
                 "text-center bg-muted/50 rounded-lg flex-shrink-0",
-                isMobile ? "p-2" : "p-4"
+                isMobile ? "p-2" : "p-4",
               )}
             >
               <p
                 className={cn(
                   "text-muted-foreground",
-                  isMobile ? "text-xs mb-1" : "text-sm mb-2"
+                  isMobile ? "text-xs mb-1" : "text-sm mb-2",
                 )}
               >
                 No significant differences found between high and low performing
@@ -409,7 +409,7 @@ export default function SimulationComposition({
               <p
                 className={cn(
                   "text-muted-foreground",
-                  isMobile ? "text-[10px]" : "text-xs"
+                  isMobile ? "text-[10px]" : "text-xs",
                 )}
               >
                 Showing top 3 most common attributes across all simulations.
@@ -421,7 +421,7 @@ export default function SimulationComposition({
         <div
           className={cn(
             "flex-1 min-h-0 overflow-auto",
-            isMobile ? "min-h-[180px]" : "min-h-[260px]"
+            isMobile ? "min-h-[180px]" : "min-h-[260px]",
           )}
         >
           <div
@@ -429,7 +429,7 @@ export default function SimulationComposition({
               "grid items-start",
               isMobile
                 ? "grid-cols-1 gap-2"
-                : "grid-cols-1 lg:grid-cols-2 gap-4"
+                : "grid-cols-1 lg:grid-cols-2 gap-4",
             )}
           >
             {/* High Performing Side */}
@@ -438,7 +438,7 @@ export default function SimulationComposition({
                 <div
                   className={cn(
                     "cursor-pointer hover:bg-muted/50 rounded-lg transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm",
-                    isMobile ? "p-2" : "p-3"
+                    isMobile ? "p-2" : "p-3",
                   )}
                 >
                   <div
@@ -447,7 +447,7 @@ export default function SimulationComposition({
                     <h3
                       className={cn(
                         "font-semibold text-green-600 flex items-center justify-center gap-1",
-                        isMobile ? "text-xs" : "text-sm"
+                        isMobile ? "text-xs" : "text-sm",
                       )}
                     >
                       <TrendingUp
@@ -458,7 +458,7 @@ export default function SimulationComposition({
                     <p
                       className={cn(
                         "text-muted-foreground",
-                        isMobile ? "text-[10px]" : "text-xs"
+                        isMobile ? "text-[10px]" : "text-xs",
                       )}
                     >
                       {highPerformingDetails.length} simulations
@@ -468,7 +468,7 @@ export default function SimulationComposition({
                     <div
                       className={cn(
                         "overflow-auto rounded-md",
-                        isMobile ? "max-h-48" : "max-h-64"
+                        isMobile ? "max-h-48" : "max-h-64",
                       )}
                     >
                       <Table className="w-full table-fixed">
@@ -481,7 +481,7 @@ export default function SimulationComposition({
                             <TableHead
                               className={cn(
                                 "leading-snug",
-                                isMobile ? "p-1 text-[10px]" : "p-2 text-xs"
+                                isMobile ? "p-1 text-[10px]" : "p-2 text-xs",
                               )}
                             >
                               Parameter
@@ -491,7 +491,7 @@ export default function SimulationComposition({
                                 "leading-snug text-right shrink-0",
                                 isMobile
                                   ? "p-1 text-[10px] w-12"
-                                  : "p-2 text-xs w-16"
+                                  : "p-2 text-xs w-16",
                               )}
                             >
                               Count
@@ -509,21 +509,21 @@ export default function SimulationComposition({
                                 <TableCell
                                   className={cn(
                                     "leading-snug",
-                                    isMobile ? "p-1" : "p-2"
+                                    isMobile ? "p-1" : "p-2",
                                   )}
                                 >
                                   <div className="flex items-center gap-2 min-w-0">
                                     <div
                                       className={cn(
                                         "rounded-full shrink-0",
-                                        isMobile ? "w-1.5 h-1.5" : "w-2 h-2"
+                                        isMobile ? "w-1.5 h-1.5" : "w-2 h-2",
                                       )}
                                       style={{ backgroundColor: item.color }}
                                     />
                                     <span
                                       className={cn(
                                         "truncate",
-                                        isMobile ? "text-[10px]" : "text-xs"
+                                        isMobile ? "text-[10px]" : "text-xs",
                                       )}
                                       title={item.name}
                                     >
@@ -536,7 +536,7 @@ export default function SimulationComposition({
                                     "font-mono tabular-nums text-right shrink-0",
                                     isMobile
                                       ? "p-1 text-[10px] w-12"
-                                      : "p-2 text-xs w-16"
+                                      : "p-2 text-xs w-16",
                                   )}
                                 >
                                   {item.value}
@@ -622,7 +622,7 @@ export default function SimulationComposition({
                 <div
                   className={cn(
                     "cursor-pointer hover:bg-muted/50 rounded-lg transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm",
-                    isMobile ? "p-1.5" : "p-3"
+                    isMobile ? "p-1.5" : "p-3",
                   )}
                 >
                   <div
@@ -631,7 +631,7 @@ export default function SimulationComposition({
                     <h3
                       className={cn(
                         "font-semibold text-red-600 flex items-center justify-center gap-0.5",
-                        isMobile ? "text-[10px]" : "text-sm"
+                        isMobile ? "text-[10px]" : "text-sm",
                       )}
                     >
                       <TrendingDown
@@ -642,7 +642,7 @@ export default function SimulationComposition({
                     <p
                       className={cn(
                         "text-muted-foreground",
-                        isMobile ? "text-[9px] mt-0.5" : "text-xs"
+                        isMobile ? "text-[9px] mt-0.5" : "text-xs",
                       )}
                     >
                       {lowPerformingDetails.length} sims
@@ -652,7 +652,7 @@ export default function SimulationComposition({
                     <div
                       className={cn(
                         "overflow-auto rounded-md",
-                        isMobile ? "max-h-36" : "max-h-64"
+                        isMobile ? "max-h-36" : "max-h-64",
                       )}
                     >
                       <Table className="w-full table-fixed">
@@ -669,7 +669,7 @@ export default function SimulationComposition({
                             <TableHead
                               className={cn(
                                 "leading-tight",
-                                isMobile ? "p-0.5 text-[9px]" : "p-2 text-xs"
+                                isMobile ? "p-0.5 text-[9px]" : "p-2 text-xs",
                               )}
                             >
                               {isMobile ? "Param" : "Parameter"}
@@ -679,7 +679,7 @@ export default function SimulationComposition({
                                 "leading-tight text-right shrink-0",
                                 isMobile
                                   ? "p-0.5 text-[9px] w-8"
-                                  : "p-2 text-xs w-16"
+                                  : "p-2 text-xs w-16",
                               )}
                             >
                               #
@@ -697,21 +697,21 @@ export default function SimulationComposition({
                                 <TableCell
                                   className={cn(
                                     "leading-tight",
-                                    isMobile ? "p-0.5" : "p-2"
+                                    isMobile ? "p-0.5" : "p-2",
                                   )}
                                 >
                                   <div className="flex items-center gap-1 min-w-0">
                                     <div
                                       className={cn(
                                         "rounded-full shrink-0",
-                                        isMobile ? "w-1 h-1" : "w-2 h-2"
+                                        isMobile ? "w-1 h-1" : "w-2 h-2",
                                       )}
                                       style={{ backgroundColor: item.color }}
                                     />
                                     <span
                                       className={cn(
                                         "truncate",
-                                        isMobile ? "text-[9px]" : "text-xs"
+                                        isMobile ? "text-[9px]" : "text-xs",
                                       )}
                                       title={item.name}
                                     >
@@ -724,7 +724,7 @@ export default function SimulationComposition({
                                     "font-mono tabular-nums text-right shrink-0",
                                     isMobile
                                       ? "p-0.5 text-[9px] w-8"
-                                      : "p-2 text-xs w-16"
+                                      : "p-2 text-xs w-16",
                                   )}
                                 >
                                   {item.value}
@@ -824,7 +824,7 @@ function buildParameterComposition(
   numericFacts: SimulationParameterFactNumeric[],
   allParameters: LocalParameter[],
   allParameterItems: LocalParameterItem[],
-  parameterItemColorMap: Map<string, string>
+  parameterItemColorMap: Map<string, string>,
 ): HighLowPerforming[] {
   const parameterCounts = new Map<
     string,
@@ -843,7 +843,7 @@ function buildParameterComposition(
     if (simulations.some((sim) => sim.simulationId === fact.simulationId)) {
       const parameter = allParameters.find((p) => p.id === fact.parameterId);
       const parameterItem = allParameterItems.find(
-        (pi) => pi.id === fact.parameterItemId
+        (pi) => pi.id === fact.parameterItemId,
       );
 
       if (parameter && parameterItem) {
@@ -918,7 +918,7 @@ function buildParameterBreakdown(
   categoricalFacts: SimulationParameterFactCategorical[],
   numericFacts: SimulationParameterFactNumeric[],
   allParameters: LocalParameter[],
-  allParameterItems: LocalParameterItem[]
+  allParameterItems: LocalParameterItem[],
 ): { parameterName: string; parameterValue: string; isNumerical: boolean }[] {
   const breakdown: {
     parameterName: string;
@@ -931,7 +931,7 @@ function buildParameterBreakdown(
     if (fact.simulationId === simulationId) {
       const parameter = allParameters.find((p) => p.id === fact.parameterId);
       const parameterItem = allParameterItems.find(
-        (pi) => pi.id === fact.parameterItemId
+        (pi) => pi.id === fact.parameterItemId,
       );
 
       if (parameter && parameterItem) {

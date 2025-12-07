@@ -96,9 +96,9 @@ export default function Persona({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primaryDepartmentId || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(
@@ -114,7 +114,7 @@ export default function Persona({
       active: true,
       departmentIds: defaultDepartmentIds,
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,7 +155,7 @@ export default function Persona({
   // Wrapper functions for compatibility (matching original mutate signature with callbacks)
   const createPersona = (
     body: CreatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
   ) => {
     handleCreatePersona(body)
       .then(() => {
@@ -172,7 +172,7 @@ export default function Persona({
 
   const updatePersona = (
     body: UpdatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
   ) => {
     handleUpdatePersona(body)
       .then(() => {
@@ -282,7 +282,7 @@ export default function Persona({
     if (formData.simulationType === "both") {
       if (!formData.textAgentId || !formData.voiceAgentId) {
         toast.error(
-          "Both text and voice agents are required for combined simulation"
+          "Both text and voice agents are required for combined simulation",
         );
         return;
       }
@@ -295,7 +295,7 @@ export default function Persona({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        personaData?.valid_department_ids || []
+        personaData?.valid_department_ids || [],
       );
 
       if (isEditMode) {
@@ -322,7 +322,7 @@ export default function Persona({
               toast.error(`Failed to update persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          }
+          },
         );
       } else {
         createPersona(
@@ -347,12 +347,12 @@ export default function Persona({
               toast.error(`Failed to create persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          }
+          },
         );
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
       );
       setIsSubmitting(false);
     }
@@ -645,7 +645,7 @@ export default function Persona({
                                           "mr-2 h-4 w-4",
                                           formData.icon === iconName
                                             ? "opacity-100"
-                                            : "opacity-0"
+                                            : "opacity-0",
                                         )}
                                       />
                                       <IconComponent className="mr-2 h-4 w-4" />
@@ -683,14 +683,14 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0"
+                                          : "opacity-0",
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
                                     {iconName}
                                   </CommandItem>
                                 );
-                              }
+                              },
                             )}
                           </CommandGroup>
                         </CommandList>
@@ -731,7 +731,7 @@ export default function Persona({
                     "rounded-lg border-2 transition-colors",
                     formData?.simulationType === "text"
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                      : "border-border hover:border-primary/50",
                   )}
                 >
                   <RadioGroupItem value="text" className="sr-only" />
@@ -748,7 +748,7 @@ export default function Persona({
                     "rounded-lg border-2 transition-colors",
                     formData?.simulationType === "voice"
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                      : "border-border hover:border-primary/50",
                   )}
                 >
                   <RadioGroupItem value="voice" className="sr-only" />
@@ -765,7 +765,7 @@ export default function Persona({
                     "rounded-lg border-2 transition-colors",
                     formData?.simulationType === "both"
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                      : "border-border hover:border-primary/50",
                   )}
                 >
                   <RadioGroupItem value="both" className="sr-only" />

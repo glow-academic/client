@@ -29,20 +29,15 @@ type ReportsHistoryOut = OutputOf<"/api/v3/reports/history", "post">;
  */
 const getProfileDetail = async (
   profileId: string,
-  input: ProfileDetailIn
+  input: ProfileDetailIn,
 ): Promise<ProfileDetailOut> => {
-  return api.post(
-    "/profile/staff/detail",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/profile/staff/detail", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
-
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports overview responses exceed Next.js 2MB cache limit (~12.9MB).
@@ -50,7 +45,7 @@ const getProfileDetail = async (
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getReportsOverview = async (
-  input: ReportsOverviewIn
+  input: ReportsOverviewIn,
 ): Promise<ReportsOverviewOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -70,7 +65,7 @@ const getReportsOverview = async (
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getReportsHistory = async (
-  input: ReportsHistoryIn
+  input: ReportsHistoryIn,
 ): Promise<ReportsHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -94,16 +89,12 @@ const getProfileContext = async (input: {
     pathname: string;
   };
 }) => {
-  return api.post(
-    "/profile/context",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/profile/context", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Inline filters function for profile reports page ---- */
@@ -182,27 +173,11 @@ async function getProfileReportsFilters(searchParams?: URLSearchParams) {
 
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { profileId } = await params;
   const session = await getSession();
   const currentProfileId = session?.effectiveProfileId || profileId;
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId: currentProfileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
 
   try {
     const profileData = await getProfileDetail(profileId, {
@@ -216,12 +191,13 @@ export async function generateMetadata(
     const lastName = name.split(" ").slice(1).join(" ") || "";
     return {
       title: `${firstName} ${lastName}`,
-      description: `Reports for individual staff in GLOW${orgPart}.`,
+      description: `${name ? `${name} - ` : ""}Individual teaching assistant performance reports and assessment analytics. Track pedagogical progress, teaching effectiveness metrics, and professional development outcomes through detailed evaluation data.`,
     };
   } catch {
     return {
       title: "Profile Report",
-      description: `Reports for individual staff in GLOW${orgPart}.`,
+      description:
+        "Individual teaching assistant performance reports and assessment analytics. Track pedagogical progress, teaching effectiveness metrics, and professional development outcomes through detailed evaluation data.",
     };
   }
 }
@@ -252,7 +228,7 @@ export default async function ReportsPage({
 
   // Get filters from search params or defaults
   const defaultFilters = await getProfileReportsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
   const reportsFilters = {
     ...defaultFilters,

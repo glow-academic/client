@@ -66,18 +66,18 @@ function MainLayoutContent({
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams
+    input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn
+    input: RefreshAnalyticsIn,
   ) => Promise<RefreshAnalyticsOut>;
   searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn
+    input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
   processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
   bulkCreateOrUpdateStaffAction?: (
-    input: BulkCreateOrUpdateStaffIn
+    input: BulkCreateOrUpdateStaffIn,
   ) => Promise<BulkCreateOrUpdateStaffOut>;
   initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
@@ -106,7 +106,7 @@ function MainLayoutContent({
             description: dept.description ? String(dept.description) : null,
           };
         }
-      }
+      },
     );
     return mapping;
   }, [initialCreateStaffData?.department_mapping]);
@@ -125,19 +125,19 @@ function MainLayoutContent({
             description: cohort.description ? String(cohort.description) : null,
           };
         }
-      }
+      },
     );
     return mapping;
   }, [initialCreateStaffData?.cohort_mapping]);
 
   const validDepartmentIds = React.useMemo(
     () => Object.keys(departmentMapping),
-    [departmentMapping]
+    [departmentMapping],
   );
 
   const validCohortIds = React.useMemo(
     () => Object.keys(cohortMapping),
-    [cohortMapping]
+    [cohortMapping],
   );
 
   // Generate breadcrumbs client-side and enrich with entity names from context
@@ -221,7 +221,10 @@ function MainLayoutContent({
 
     if (pathname === "/management/documents") {
       return (
-        <Button onClick={() => router.push("/management/documents/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/documents/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Document
         </Button>
@@ -230,10 +233,7 @@ function MainLayoutContent({
 
     if (pathname === "/engine/rubrics") {
       return (
-        <Button
-          onClick={() => router.push("/engine/rubrics/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/engine/rubrics/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Rubric
         </Button>
@@ -445,18 +445,18 @@ export function MainLayoutClient({
   attemptData: AttemptFullOut | null;
   activeSettings: SettingsActiveOut | null;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams
+    input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn
+    input: RefreshAnalyticsIn,
   ) => Promise<RefreshAnalyticsOut>;
   searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn
+    input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
   processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
   bulkCreateOrUpdateStaffAction?: (
-    input: BulkCreateOrUpdateStaffIn
+    input: BulkCreateOrUpdateStaffIn,
   ) => Promise<BulkCreateOrUpdateStaffOut>;
   initialCreateStaffData?: CreateStaffDataOut | null;
 }) {

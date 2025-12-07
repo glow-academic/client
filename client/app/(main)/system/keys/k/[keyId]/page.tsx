@@ -3,9 +3,9 @@
  * Key editing page
  */
 
-import Key from "@/components/keys/Key";
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { getSession } from "@/auth";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import Key from "@/components/keys/Key";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -40,38 +40,23 @@ const getKey = async (
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ keyId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { keyId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   try {
     const key = await getKey(keyId, profileId);
     return {
       title: `${key?.name || "Key"}`,
-      description: `${key ? `${key.name}` : "Key"} in GLOW${orgPart}.`,
+      description: `${key?.name ? `${key.name} - ` : ""}API key configuration for teaching assistant training platform. Manage secure access credentials and API integrations for educational institutions and L&D programs.`,
     };
   } catch {
     return {
       title: "Key",
-      description: `Key in GLOW${orgPart}.`,
+      description:
+        "API key configuration for teaching assistant training platform. Manage secure access credentials and API integrations for educational institutions and L&D programs.",
     };
   }
 }
@@ -95,16 +80,8 @@ export default async function EditKeyPage({
     }
 
     return (
-      <div
-        className="space-y-6"
-        data-page="key-edit"
-        data-key-id={keyId}
-      >
-        <Key
-          keyId={keyId}
-          keyDetail={keyDetail}
-          updateKeyAction={updateKey}
-        />
+      <div className="space-y-6" data-page="key-edit" data-key-id={keyId}>
+        <Key keyId={keyId} keyDetail={keyDetail} updateKeyAction={updateKey} />
       </div>
     );
   } catch (error: unknown) {
@@ -128,9 +105,7 @@ export default async function EditKeyPage({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateKey(
-  input: UpdateKeyIn,
-): Promise<UpdateKeyOut> {
+async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
@@ -142,10 +117,4 @@ async function updateKey(
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  KeyDetailIn,
-  KeyDetailOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
-};
-
+export type { KeyDetailIn, KeyDetailOut, UpdateKeyIn, UpdateKeyOut };

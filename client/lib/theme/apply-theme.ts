@@ -65,6 +65,6 @@ export function applyThemeTokens(tokens: ThemeTokens): void {
       const cssVar = CSS_VAR_MAP[key];
       if (!cssVar || !value) return;
       root.style.setProperty(cssVar, value);
-    }
+    },
   );
 }

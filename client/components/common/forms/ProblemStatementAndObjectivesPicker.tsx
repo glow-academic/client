@@ -22,7 +22,6 @@ type ProblemStatementInfo = {
   updated_at: string;
 };
 
-
 // Component for objective input with autocomplete
 function ObjectiveInputWithAutocomplete({
   index,
@@ -173,7 +172,6 @@ export interface ProblemStatementAndObjectivesPickerProps {
   onObjectivesChange: (objectives: string[]) => void;
   objectivesHistory: string[];
 
-
   // Common props
   disabled?: boolean;
   readonly?: boolean;
@@ -237,7 +235,6 @@ export function ProblemStatementAndObjectivesPicker({
     setDraggedObjectiveIndex(null);
   };
 
-
   return (
     <div className="space-y-4">
       {/* Problem Statement */}
@@ -251,7 +248,7 @@ export function ProblemStatementAndObjectivesPicker({
               onProblemStatementSelect(id);
               if (id && problemStatementMapping[id]) {
                 onProblemStatementChange(
-                  problemStatementMapping[id].problem_statement
+                  problemStatementMapping[id].problem_statement,
                 );
               }
             }}
@@ -325,7 +322,6 @@ export function ProblemStatementAndObjectivesPicker({
           </div>
         )}
       </div>
-
     </div>
   );
 }

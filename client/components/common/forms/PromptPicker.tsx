@@ -106,7 +106,11 @@ export function PromptPicker({
   const { className: triggerClassName, ...restTriggerProps } =
     triggerProps ?? {};
 
-  const buttonClasses = cn("justify-between", buttonClassName, triggerClassName);
+  const buttonClasses = cn(
+    "justify-between",
+    buttonClassName,
+    triggerClassName,
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen} {...props}>
@@ -122,7 +126,10 @@ export function PromptPicker({
         >
           <div className="flex items-center gap-2 truncate">
             {isSelectedDefault && (
-              <Badge variant="secondary" className="text-xs h-5 px-1.5 flex-shrink-0">
+              <Badge
+                variant="secondary"
+                className="text-xs h-5 px-1.5 flex-shrink-0"
+              >
                 Default
               </Badge>
             )}
@@ -140,8 +147,10 @@ export function PromptPicker({
               <CommandGroup heading="Prompts">
                 {sortedPrompts.map((prompt) => {
                   const isSelected = selectedPromptId === prompt.id;
-                  const isDefault = prompt.id === defaultPromptId || 
-                    (!prompt.department_ids || prompt.department_ids.length === 0);
+                  const isDefault =
+                    prompt.id === defaultPromptId ||
+                    !prompt.department_ids ||
+                    prompt.department_ids.length === 0;
                   return (
                     <CommandItem
                       key={prompt.id}
@@ -152,33 +161,36 @@ export function PromptPicker({
                     >
                       <div className="flex items-center gap-3 w-full">
                         <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2">
                             {isDefault && (
-                              <Badge variant="secondary" className="text-xs h-5 px-1.5">
+                              <Badge
+                                variant="secondary"
+                                className="text-xs h-5 px-1.5"
+                              >
                                 Default
                               </Badge>
                             )}
                             <div className="font-medium truncate">
                               {prompt.name || "Unnamed Prompt"}
                             </div>
-                        </div>
+                          </div>
                           {prompt.description && (
                             <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
                               {prompt.description}
-                      </div>
+                            </div>
                           )}
-                      {prompt.department_ids &&
-                        prompt.department_ids.length > 0 && (
+                          {prompt.department_ids &&
+                            prompt.department_ids.length > 0 && (
                               <div className="text-xs text-muted-foreground mt-1">
-                            {prompt.department_ids.length} department
-                            {prompt.department_ids.length !== 1 ? "s" : ""}
+                                {prompt.department_ids.length} department
+                                {prompt.department_ids.length !== 1 ? "s" : ""}
                               </div>
-                        )}
+                            )}
                         </div>
                         <Check
                           className={cn(
                             "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-                            isSelected ? "opacity-100" : "opacity-0"
+                            isSelected ? "opacity-100" : "opacity-0",
                           )}
                         />
                       </div>

@@ -47,7 +47,7 @@ export function ModelRunsSelector({
   eval: evalFilter,
 }: ModelRunsSelectorProps) {
   const [modelRuns, setModelRuns] = useState<ModelRunsResponse["model_runs"]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<Partial<ModelRunsFilters["body"]>>({

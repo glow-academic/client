@@ -24,7 +24,7 @@ type DeleteScenarioOut = OutputOf<"/api/v3/scenarios/delete", "post">;
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getScenariosList = async (
-  profileId: string
+  profileId: string,
 ): Promise<ScenariosListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -37,13 +37,13 @@ const getScenariosList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateScenario(
-  input: DuplicateScenarioIn
+  input: DuplicateScenarioIn,
 ): Promise<DuplicateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -51,7 +51,7 @@ async function duplicateScenario(
 }
 
 async function deleteScenario(
-  input: DeleteScenarioIn
+  input: DeleteScenarioIn,
 ): Promise<DeleteScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -59,28 +59,10 @@ async function deleteScenario(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
-  let organizationName = "";
-  let organizationDescription = "";
-  try {
-    const activeSettings = await api.post("/settings/active", {
-      body: { profileId },
-    });
-    organizationName = activeSettings.organization_name || "";
-    organizationDescription = activeSettings.organization_description || "";
-  } catch {
-    // If settings unavailable, organizationName and organizationDescription will be empty
-  }
-
-  const orgPart = organizationName
-    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
-    : "";
-
   return {
     title: "Scenarios",
-    description: `Scenarios in GLOW${orgPart}.`,
+    description:
+      "Manage problem-based learning scenarios for teaching assistant training. Create and organize realistic educational challenges and problem statements to practice pedagogical problem-solving and enhance instructional design skills.",
   };
 }
 

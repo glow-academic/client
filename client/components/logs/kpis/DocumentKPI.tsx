@@ -134,8 +134,12 @@ export default function DocumentKPI({
                 </Badge>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Current Latency</div>
-                <div className="text-lg font-semibold">{formatLatency(latency_ms)}</div>
+                <div className="text-sm text-muted-foreground">
+                  Current Latency
+                </div>
+                <div className="text-lg font-semibold">
+                  {formatLatency(latency_ms)}
+                </div>
               </div>
             </div>
             {error && (
@@ -192,4 +196,3 @@ export default function DocumentKPI({
     </>
   );
 }
-
