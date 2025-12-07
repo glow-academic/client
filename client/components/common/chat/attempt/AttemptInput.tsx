@@ -667,6 +667,100 @@ export default function AttemptInput({
         console.error("[Voice] ===== END ERROR =====");
       });
 
+      // Listen to ALL transport events for debugging
+      session.transport.on(
+        "*",
+        (event: { type: string; [key: string]: unknown }) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== TRANSPORT EVENT =====");
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Transport event type:", event.type);
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Transport event data:", event);
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== END TRANSPORT EVENT =====");
+        }
+      );
+
+      // Listen for audio transcription completion events
+      // These fire when mic audio is transcribed (not from history_added)
+      session.transport.on(
+        "conversation.item.input_audio_transcription.completed",
+        (evt: {
+          type: "conversation.item.input_audio_transcription.completed";
+          transcript: string;
+          item_id: string;
+          content_index: number;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] ===== INPUT AUDIO TRANSCRIPTION COMPLETED ====="
+          );
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Transcription event:", {
+            type: evt.type,
+            transcript: evt.transcript,
+            item_id: evt.item_id,
+            content_index: evt.content_index,
+          });
+
+          const transcript = (evt.transcript || "").trim();
+          if (!transcript) {
+            // eslint-disable-next-line no-console
+            console.warn("[Voice] Empty transcript, skipping");
+            return;
+          }
+
+          if (!socket || !currentChat?.id) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] Missing socket or chat_id, cannot forward transcript"
+            );
+            return;
+          }
+
+          socket.emit("voice_user_message", {
+            chat_id: currentChat.id,
+            message: transcript,
+          });
+
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] Forwarded transcript from input_audio_transcription.completed:",
+            {
+              chat_id: currentChat.id,
+              transcript: transcript.substring(0, 100),
+              transcript_length: transcript.length,
+            }
+          );
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== END TRANSCRIPTION COMPLETED =====");
+        }
+      );
+
+      // Listen for audio transcription delta events (streaming partials)
+      session.transport.on(
+        "conversation.item.input_audio_transcription.delta",
+        (evt: {
+          type: "conversation.item.input_audio_transcription.delta";
+          delta: string;
+          item_id: string;
+          content_index: number;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== INPUT AUDIO TRANSCRIPTION DELTA =====");
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Transcription delta:", {
+            type: evt.type,
+            delta: evt.delta,
+            item_id: evt.item_id,
+            content_index: evt.content_index,
+          });
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== END TRANSCRIPTION DELTA =====");
+        }
+      );
+
       // Listen for tool calls using agent_tool_start event
       session.on("agent_tool_start", (_runCtx, _agent, toolDef, args) => {
         // eslint-disable-next-line no-console
