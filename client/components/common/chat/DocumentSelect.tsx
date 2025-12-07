@@ -27,7 +27,6 @@ import { Check, ChevronsUpDown } from "lucide-react";
 type DocumentItem = {
   document_id: string;
   name: string;
-  type: string;
   updatedAt: string;
   extension: string;
   scenario_ids: string[];
@@ -35,8 +34,8 @@ type DocumentItem = {
   can_delete: boolean;
   active: boolean;
   department_ids: string[] | null;
-  file_path: string;
-  mime_type: string;
+  file_path: string | null;
+  mime_type: string | null;
   parameter_item_ids: string[];
 };
 

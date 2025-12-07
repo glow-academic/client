@@ -193,6 +193,8 @@ async def get_documents_list(
                             numerical=pdata.get("numerical", False),
                             document_parameter=pdata.get("document_parameter", False),
                             persona_parameter=pdata.get("persona_parameter", False),
+                            scenario_parameter=pdata.get("scenario_parameter", False),
+                            video_parameter=pdata.get("video_parameter", False),
                         )
 
         for row in rows:

@@ -7464,8 +7464,6 @@ export interface components {
             document_id: string;
             /** Name */
             name: string;
-            /** Type */
-            type: string;
             /** Updatedat */
             updatedAt: string;
             /** Extension */
@@ -7481,9 +7479,9 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
             /** File Path */
-            file_path: string;
+            file_path: string | null;
             /** Mime Type */
-            mime_type: string;
+            mime_type: string | null;
             /** Parameter Item Ids */
             parameter_item_ids: string[];
         };

@@ -17441,10 +17441,6 @@
             "type": "string",
             "title": "Name"
           },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
           "updatedAt": {
             "type": "string",
             "title": "Updatedat"
@@ -17487,11 +17483,25 @@
             "title": "Department Ids"
           },
           "file_path": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "File Path"
           },
           "mime_type": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Mime Type"
           },
           "parameter_item_ids": {
@@ -17506,7 +17516,6 @@
         "required": [
           "document_id",
           "name",
-          "type",
           "updatedAt",
           "extension",
           "scenario_ids",

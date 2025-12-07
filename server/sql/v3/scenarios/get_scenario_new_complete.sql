@@ -267,7 +267,6 @@ document_details_data AS (
                 jsonb_build_object(
                     'document_id', d.id::text,
                     'name', d.name,
-                    'type', NULL,
                     'updatedAt', d.updated_at::text,
                     'extension', CASE WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$') ELSE NULL END,
                     'scenario_ids', '[]'::jsonb,

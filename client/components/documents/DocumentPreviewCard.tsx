@@ -31,8 +31,8 @@ type DocumentItem = {
   can_delete: boolean;
   active: boolean;
   department_ids: string[] | null;
-  file_path: string;
-  mime_type: string;
+  file_path: string | null;
+  mime_type: string | null;
   parameter_item_ids: string[];
 };
 

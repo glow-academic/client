@@ -114,7 +114,10 @@ linked_parameters AS (
         p.id as parameter_id,
         p.name as parameter_name,
         p.description as parameter_description,
-        p.numerical
+        p.numerical,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
     FROM parameter_documents pd
     JOIN parameters p ON p.id = pd.parameter_id
     CROSS JOIN document_data dd
@@ -131,7 +134,9 @@ parameter_mapping_data AS (
                 'description', lp.parameter_description,
                 'numerical', lp.numerical,
                 'document_parameter', true,
-                'persona_parameter', false
+                'persona_parameter', lp.persona_parameter,
+                'scenario_parameter', lp.scenario_parameter,
+                'video_parameter', lp.video_parameter
             )
         ),
         '{}'::jsonb

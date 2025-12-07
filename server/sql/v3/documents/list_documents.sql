@@ -212,7 +212,9 @@ parameter_data AS (
         COALESCE(p.description, '') as description,
         p.numerical,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
     FROM parameters p
     JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
@@ -234,7 +236,9 @@ parameter_mapping_data AS (
                 'description', p.description,
                 'numerical', p.numerical,
                 'document_parameter', p.document_parameter,
-                'persona_parameter', p.persona_parameter
+                'persona_parameter', p.persona_parameter,
+                'scenario_parameter', p.scenario_parameter,
+                'video_parameter', p.video_parameter
             )
         ),
         '{}'::jsonb

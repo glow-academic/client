@@ -42,7 +42,6 @@ class DocumentDetailItem(BaseModel):
 
     document_id: str
     name: str
-    type: str
     updatedAt: str
     extension: str
     scenario_ids: list[str]
@@ -50,8 +49,8 @@ class DocumentDetailItem(BaseModel):
     can_delete: bool
     active: bool
     department_ids: list[str] | None
-    file_path: str
-    mime_type: str
+    file_path: str | None
+    mime_type: str | None
     parameter_item_ids: list[str]
 
 
@@ -372,7 +371,6 @@ async def get_scenario_detail(
                         DocumentDetailItem(
                             document_id=doc.get("document_id", ""),
                             name=doc.get("name", ""),
-                            type=doc.get("type", ""),
                             updatedAt=doc.get("updatedAt", ""),
                             extension=doc.get("extension") or "",
                             scenario_ids=doc.get("scenario_ids", []),
@@ -384,8 +382,8 @@ async def get_scenario_detail(
                             ]
                             if doc.get("department_ids")
                             else None,
-                            file_path=doc.get("file_path", ""),
-                            mime_type=doc.get("mime_type", ""),
+                            file_path=doc.get("file_path") or None,
+                            mime_type=doc.get("mime_type") or None,
                             parameter_item_ids=doc.get("parameter_item_ids", []),
                         )
                     )

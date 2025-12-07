@@ -207,10 +207,9 @@ parameter_item_mapping_data AS (
 ),
 persona_field_ids AS (
     -- Get field IDs already assigned to this persona (if persona_fields table exists)
-    SELECT array_agg(pf.field_id::text) as field_ids
-    FROM persona_fields pf
-    WHERE pf.persona_id = $1 AND pf.active = true
-    AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'persona_fields')
+    -- Note: persona_fields table may not exist, so we return empty array for now
+    -- When the table exists, this can be updated to query from it
+    SELECT ARRAY[]::text[] as field_ids
 )
 SELECT 
     p.*,
