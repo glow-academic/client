@@ -16,8 +16,8 @@ async def test_get_active_settings(
 
     # Create an active settings row first
     settings_id = await db.fetchval(
-        "INSERT INTO settings (active, color, organization_name) "
-        "VALUES (true, '#3B82F6', 'Test University') RETURNING id"
+        "INSERT INTO settings (active, primary_color) "
+        "VALUES (true, '#3B82F6') RETURNING id"
     )
 
     response = await client.post(
@@ -34,10 +34,7 @@ async def test_get_active_settings(
     assert "created_at" in data
     assert "active" in data
     assert data["active"] is True
-    assert "color" in data
-    assert data["color"] == "#3B82F6"
-    assert "organization_name" in data
-    assert data["organization_name"] == "Test University"
+    assert "tokens" in data
 
 
 async def test_get_active_settings_not_found(
@@ -68,8 +65,8 @@ async def test_get_active_settings_caching(
 
     # Create an active settings row
     settings_id = await db.fetchval(
-        "INSERT INTO settings (active, color, organization_name) "
-        "VALUES (true, '#FF0000', 'Cached University') RETURNING id"
+        "INSERT INTO settings (active, primary_color) "
+        "VALUES (true, '#FF0000') RETURNING id"
     )
 
     # First request

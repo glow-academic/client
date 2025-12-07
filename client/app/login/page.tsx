@@ -5,7 +5,6 @@
  * @AshokSaravanan222 & @siladiea
  * 05/14/2025
  */
-import { getSession } from "@/auth";
 import Login from "@/components/auth/Login";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -52,17 +51,13 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
 }
 
 /** ---- Direct fetch for settings (separate call, like settings page pattern) ---- */
-async function getActiveSettings(
-  departmentId?: string,
-): Promise<SettingsActiveOut | null> {
+async function getActiveSettings(): Promise<SettingsActiveOut | null> {
   try {
-    // Type assertion needed because departmentId is optional in the API
     return (await api.post(
       "/settings/active",
       {
         body: {
           profileId: "guest-profile-id",
-          ...(departmentId ? { departmentId } : {}),
         },
       },
       {
@@ -70,7 +65,7 @@ async function getActiveSettings(
         headers: {
           "X-Bypass-Cache": "1",
         },
-      },
+      }
     )) as SettingsActiveOut;
   } catch {
     // If settings fetch fails, return null - theme will use defaults
@@ -90,7 +85,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const loginData: LoginDataOut = await getLoginData(departmentIdFromQuery);
 
   // Fetch settings separately (like settings page pattern)
-  const activeSettings = await getActiveSettings(departmentIdFromQuery);
+  // Always use guest-profile-id for login page (unauthenticated users)
+  const activeSettings = await getActiveSettings();
 
   // Business logic: Validate department_id from query param exists in departments list
   const validDepartmentId =

@@ -20,7 +20,6 @@ class SettingsActiveRequest(BaseModel):
     """Request to get active settings."""
 
     profileId: str
-    departmentId: str | None = None  # Optional department ID for department-specific settings
 
 
 class ThemePrimitives(BaseModel):
@@ -110,8 +109,6 @@ class SettingsActiveResponse(BaseModel):
     settings_id: str
     created_at: str
     active: bool
-    organization_name: str
-    organization_description: str
     mode: Literal["light", "dark", "system"] = "light"
     tokens: ThemeTokens
     guest_login_enabled: bool
@@ -267,17 +264,10 @@ async def get_active_settings(
 
     try:
         sql_query = load_sql("sql/v3/settings/get_active_settings.sql")
-        # Convert departmentId string to UUID if provided
-        department_uuid = None
-        if request.departmentId:
-            try:
-                from uuid import UUID as UUIDType
-                department_uuid = UUIDType(request.departmentId)
-            except ValueError:
-                # Invalid UUID format, treat as None
-                department_uuid = None
-        sql_params = (department_uuid,)
-        settings = await conn.fetchrow(sql_query, department_uuid)
+        # Pass profileId directly to SQL query
+        # SQL handles "guest-profile-id" specially to return default settings
+        sql_params = (request.profileId,)
+        settings = await conn.fetchrow(sql_query, request.profileId)
 
         if not settings:
             raise HTTPException(
@@ -315,8 +305,6 @@ async def get_active_settings(
             if settings["created_at"]
             else "",
             active=settings["active"],
-            organization_name=settings["organization_name"],
-            organization_description=settings["organization_description"],
             mode="light",
             tokens=theme_tokens,
             guest_login_enabled=settings["guest_login_enabled"],

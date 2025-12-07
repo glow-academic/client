@@ -136,8 +136,6 @@ async def create_dynamic_document(
         settings_response = await get_active_settings(
             settings_request, http_request, dummy_response, conn
         )
-        merged_args["organization_name"] = settings_response.organization_name
-        merged_args["organization_description"] = settings_response.organization_description
 
     # Render template HTML with Jinja
     rendered_html = render_template(

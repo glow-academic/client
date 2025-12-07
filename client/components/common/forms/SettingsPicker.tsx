@@ -30,7 +30,6 @@ type SettingsInfo = {
   settings_id: string;
   created_at: string;
   active: boolean;
-  organization_name: string;
 };
 
 export interface SettingsPickerProps extends PopoverProps {
@@ -143,7 +142,7 @@ export function SettingsPicker({
                         </div>
                       </div>
                       <span className="text-xs text-muted-foreground mt-1">
-                        {setting.organization_name}
+                        Settings {setting.settings_id.slice(0, 8)}
                       </span>
                     </CommandItem>
                   );

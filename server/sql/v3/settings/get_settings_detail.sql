@@ -4,8 +4,6 @@ SELECT
     id::text as settings_id,
     created_at,
     active,
-    organization_name,
-    organization_description,
     primary_color,
     accent,
     background,

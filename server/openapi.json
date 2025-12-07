@@ -28126,17 +28126,6 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
-          },
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
           }
         },
         "type": "object",
@@ -28159,14 +28148,6 @@
           "active": {
             "type": "boolean",
             "title": "Active"
-          },
-          "organization_name": {
-            "type": "string",
-            "title": "Organization Name"
-          },
-          "organization_description": {
-            "type": "string",
-            "title": "Organization Description"
           },
           "mode": {
             "type": "string",
@@ -28203,8 +28184,6 @@
           "settings_id",
           "created_at",
           "active",
-          "organization_name",
-          "organization_description",
           "tokens",
           "guest_login_enabled",
           "success_threshold",
@@ -28246,14 +28225,6 @@
           "active": {
             "type": "boolean",
             "title": "Active"
-          },
-          "organization_name": {
-            "type": "string",
-            "title": "Organization Name"
-          },
-          "organization_description": {
-            "type": "string",
-            "title": "Organization Description"
           },
           "primary_color": {
             "type": "string",
@@ -28333,8 +28304,6 @@
           "settings_id",
           "created_at",
           "active",
-          "organization_name",
-          "organization_description",
           "primary_color",
           "accent",
           "background",
@@ -28370,18 +28339,13 @@
           "active": {
             "type": "boolean",
             "title": "Active"
-          },
-          "organization_name": {
-            "type": "string",
-            "title": "Organization Name"
           }
         },
         "type": "object",
         "required": [
           "settings_id",
           "created_at",
-          "active",
-          "organization_name"
+          "active"
         ],
         "title": "SettingsItem",
         "description": "Settings item."
@@ -31824,14 +31788,6 @@
       },
       "UpdateSettingsRequest": {
         "properties": {
-          "organization_name": {
-            "type": "string",
-            "title": "Organization Name"
-          },
-          "organization_description": {
-            "type": "string",
-            "title": "Organization Description"
-          },
           "primary_color": {
             "type": "string",
             "title": "Primary Color"
@@ -31911,8 +31867,6 @@
         },
         "type": "object",
         "required": [
-          "organization_name",
-          "organization_description",
           "primary_color",
           "accent",
           "background",

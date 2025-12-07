@@ -397,9 +397,6 @@ async def render_document_template(
         # Validate and sanitize array variables based on schema only (no hardcoded names)
         merged_args = validate_and_sanitize_arrays(merged_args, array_field_names)
 
-        # Add organization info from settings to template context
-        merged_args["organization_name"] = settings_response.organization_name
-        merged_args["organization_description"] = settings_response.organization_description
 
         # Render template
         rendered_html = render_template(

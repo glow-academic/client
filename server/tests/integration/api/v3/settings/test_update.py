@@ -16,15 +16,31 @@ async def test_update_settings(
 
     # Create an active settings row first
     old_settings_id = await db.fetchval(
-        "INSERT INTO settings (active, color, organization_name) "
-        "VALUES (true, '#000000', 'Old Organization') RETURNING id"
+        "INSERT INTO settings (active, primary_color) "
+        "VALUES (true, '#000000') RETURNING id"
     )
 
     response = await client.post(
         "/api/v3/settings/update",
         json={
-            "color": "#3B82F6",
-            "organization_name": "New Organization",
+            "primary_color": "#3B82F6",
+            "accent": "#f5f5f5",
+            "background": "#ffffff",
+            "surface": "#ffffff",
+            "success": "#009e34",
+            "warning": "#ea8100",
+            "error": "#e7000b",
+            "sidebar_background": "#fafafa",
+            "sidebar_primary": "#171717",
+            "chart1": "#f54900",
+            "chart2": "#009689",
+            "chart3": "#104e64",
+            "chart4": "#ffb900",
+            "chart5": "#fe9a00",
+            "guest_login_enabled": True,
+            "success_threshold": 85,
+            "warning_threshold": 80,
+            "danger_threshold": 70,
             "profileId": profile_id,
         },
     )
@@ -49,13 +65,12 @@ async def test_update_settings(
 
     # Verify new settings is active
     new_settings = await db.fetchrow(
-        "SELECT active, color, organization_name FROM settings WHERE id = $1",
+        "SELECT active, primary_color FROM settings WHERE id = $1",
         new_settings_id,
     )
     assert new_settings is not None
     assert new_settings["active"] is True
-    assert new_settings["color"] == "#3B82F6"
-    assert new_settings["organization_name"] == "New Organization"
+    assert new_settings["primary_color"] == "#3B82F6"
 
     # Verify only one active settings exists
     active_count = await db.fetchval(
@@ -76,8 +91,24 @@ async def test_update_settings_no_existing_active(
     response = await client.post(
         "/api/v3/settings/update",
         json={
-            "color": "#FF0000",
-            "organization_name": "First Organization",
+            "primary_color": "#FF0000",
+            "accent": "#f5f5f5",
+            "background": "#ffffff",
+            "surface": "#ffffff",
+            "success": "#009e34",
+            "warning": "#ea8100",
+            "error": "#e7000b",
+            "sidebar_background": "#fafafa",
+            "sidebar_primary": "#171717",
+            "chart1": "#f54900",
+            "chart2": "#009689",
+            "chart3": "#104e64",
+            "chart4": "#ffb900",
+            "chart5": "#fe9a00",
+            "guest_login_enabled": True,
+            "success_threshold": 85,
+            "warning_threshold": 80,
+            "danger_threshold": 70,
             "profileId": profile_id,
         },
     )
@@ -90,11 +121,10 @@ async def test_update_settings_no_existing_active(
 
     # Verify new settings is active
     new_settings = await db.fetchrow(
-        "SELECT active, color, organization_name FROM settings WHERE id = $1",
+        "SELECT active, primary_color FROM settings WHERE id = $1",
         data["settings_id"],
     )
     assert new_settings is not None
     assert new_settings["active"] is True
-    assert new_settings["color"] == "#FF0000"
-    assert new_settings["organization_name"] == "First Organization"
+    assert new_settings["primary_color"] == "#FF0000"
 

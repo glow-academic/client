@@ -31,11 +31,7 @@ async def test_list_settings(
         assert "settings_id" in setting
         assert "created_at" in setting
         assert "active" in setting
-        assert "color" in setting
-        assert "organization_name" in setting
         assert isinstance(setting["active"], bool)
-        assert isinstance(setting["color"], str)
-        assert isinstance(setting["organization_name"], str)
 
 
 async def test_list_settings_ordered_by_created_at(
@@ -46,10 +42,10 @@ async def test_list_settings_ordered_by_created_at(
 
     # Create multiple settings
     await db.execute(
-        "INSERT INTO settings (active, color, organization_name) VALUES (false, '#000000', 'Old Org')"
+        "INSERT INTO settings (active, primary_color) VALUES (false, '#000000')"
     )
     await db.execute(
-        "INSERT INTO settings (active, color, organization_name) VALUES (true, '#FFFFFF', 'New Org')"
+        "INSERT INTO settings (active, primary_color) VALUES (true, '#FFFFFF')"
     )
 
     response = await client.post(

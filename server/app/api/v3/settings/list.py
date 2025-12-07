@@ -24,7 +24,6 @@ class SettingsItem(BaseModel):
     settings_id: str
     created_at: str
     active: bool
-    organization_name: str
 
 
 class SettingsListResponse(BaseModel):
@@ -72,7 +71,6 @@ async def list_settings(
                     if row["created_at"]
                     else "",
                     active=row["active"],
-                    organization_name=row["organization_name"],
                 )
             )
 
