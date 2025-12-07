@@ -414,9 +414,9 @@ from app.socket.videos.generate_outline import \
 from app.socket.videos.generate_video import \
     generate_video  # noqa: E402; type: ignore
 from app.socket.voice import start_voice  # noqa: E402; type: ignore
-from app.socket.voice import (stop_voice, voice_interrupted, voice_speech_started,
-                              voice_tool_call, voice_transcript_ready,
-                              voice_user_message)
+from app.socket.voice import (stop_voice, voice_debug_info, voice_interrupted,
+                              voice_speech_started, voice_tool_call,
+                              voice_transcript_ready, voice_user_message)
 
 
 # Create a combined lifespan to manage both session managers

@@ -7,7 +7,7 @@ from typing import Any, get_type_hints
 
 from app.api.v3.realtime.ephemeral_key import _generate_ephemeral_key_internal
 from app.main import _voice_sessions, get_pool, sio
-from app.utils.agents.build_orchestrator_agent import build_orchestrator_agent
+from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -45,7 +45,7 @@ class StartVoiceResponsePayload(BaseModel):
     ephemeral_key: str
     persona_tools: list[dict[str, str]]  # List of {name, description, parameters} for each tool
     tool_context_map: dict[str, PersonaToolContext]  # Map of tool_name -> PersonaToolContext
-    instructions: str  # Orchestrator instructions telling model to use tools
+    instructions: str  # Voice agent instructions telling model to use tools
     model: str  # Model name (e.g., "gpt-realtime-mini")
     voice: str | None = None  # Voice ID for audio output
     transcription_model: str | None = None  # Transcription model (e.g., "gpt-4o-mini-transcribe")
@@ -136,7 +136,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
 
             personas = [dict(row) for row in persona_rows]
 
-            # Build context for orchestrator agent (use voice fields with fallback to text fields)
+            # Build context for voice agent (use voice fields with fallback to text fields)
             voice_temperature = context_row.get("voice_temperature")
             context = {
                 "model_name": context_row.get("voice_model_name") or context_row.get("model_name"),
@@ -332,69 +332,81 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     profile_id=str(profile_id) if profile_id else None,
                 )
 
-            # Build orchestrator agent (we'll use it when processing realtime events)
-            orchestrator_agent = build_orchestrator_agent(context, persona_tools)
+            # Get base voice system prompt from context (simulation-voice prompt from agent)
+            base_voice_system_prompt = context_row.get("voice_system_prompt", "")
+            if not base_voice_system_prompt:
+                # Fallback to text system prompt if voice prompt not available
+                base_voice_system_prompt = context_row.get("system_prompt", "")
             
-            # Extract orchestrator instructions from the agent
-            # The instructions are in the agent's system_prompt
-            orchestrator_instructions = ""
-            if hasattr(orchestrator_agent, "agent"):
-                agent_instance = orchestrator_agent.agent()
-                if hasattr(agent_instance, "instructions"):
-                    instructions_value = getattr(agent_instance, "instructions", "")
-                    if isinstance(instructions_value, str):
-                        orchestrator_instructions = instructions_value
-                elif hasattr(agent_instance, "system_prompt"):
-                    prompt_value = getattr(agent_instance, "system_prompt", "")
-                    if isinstance(prompt_value, str):
-                        orchestrator_instructions = prompt_value
+            if not base_voice_system_prompt:
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message="No voice system prompt found for this scenario",
+                    ),
+                    room=sid,
+                )
+                return
             
-            # If we couldn't get it from the agent, construct it manually
-            if not orchestrator_instructions:
-                # List actual tool names (e.g., "speak_passive") not template strings
-                persona_names = [tool.name.replace("speak_", "").replace("_", " ") for tool in persona_tools]
-                actual_tool_names = [tool.name for tool in persona_tools]
+            # Get persona instructions only (not full system prompts)
+            sql_get_persona_instructions = load_sql("sql/v3/voice/get_persona_instructions.sql")
+            persona_instruction_rows = await conn.fetch(
+                sql_get_persona_instructions,
+                str(chat_id_uuid),
+            )
+            
+            # Build map of persona_name -> instructions
+            persona_instructions_map: dict[str, str] = {}
+            for row in persona_instruction_rows:
+                persona_name = row.get("persona_name", "")
+                instructions = row.get("instructions", "")
+                if persona_name:
+                    persona_instructions_map[persona_name] = instructions or ""
+            
+            # Create debug_info tool for voice agent
+            # We need to create a simple wrapper that can be called from Realtime API
+            # The actual execution will happen server-side via voice_debug_info event
+            from agents import function_tool
+            
+            async def debug_info_wrapper(content: str) -> str:
+                """Debug info tool wrapper for voice mode.
                 
-                # Build explicit tool usage instructions
-                tool_usage_examples = ""
-                if actual_tool_names:
-                    if len(actual_tool_names) == 1:
-                        tool_usage_examples = f"Use the tool: {actual_tool_names[0]}"
-                    else:
-                        tool_usage_examples = f"Use one of these tools: {', '.join(actual_tool_names)}"
-                
-                orchestrator_instructions = f"""You are an orchestrator managing a multi-party conversation.
+                This tool is called by the Realtime API agent. The actual execution
+                happens server-side via the voice_debug_info WebSocket event.
+                """
+                # This function is executed client-side by Realtime API
+                # The actual server-side handling happens in voice_debug_info handler
+                return "Debug info logged"
+            
+            debug_info_tool = function_tool(debug_info_wrapper)
+            
+            # Add debug_info tool to tools list
+            all_tools = list(persona_tools) + [debug_info_tool]
+            
+            # Build voice agent with base prompt and persona instructions
+            voice_agent, complete_instructions = build_voice_agent(
+                context,
+                all_tools,
+                base_voice_system_prompt,
+                persona_instructions_map,
+            )
+            
+            # Use complete_instructions for RealtimeAgent (this goes to instructions field)
+            voice_agent_instructions = complete_instructions
 
-Available personas:
-{chr(10).join(f"- {name}" for name in persona_names)}
-
-CRITICAL: You have access to these persona tools. You MUST use one of these EXACT tool names:
-{chr(10).join(f"- {tool_name}" for tool_name in actual_tool_names)}
-
-Your role:
-- Listen to the user's input
-- Decide which persona should respond based on the context
-- Use the exact tool name from the list above (e.g., use "{actual_tool_names[0] if actual_tool_names else "speak_persona"}" not "callAssistant" or any other name)
-- Never respond directly - always use a persona tool
-- Never make up tool names - only use the exact tool names listed above
-
-When a persona tool is used, that persona will generate and speak the response.
-You must use exactly one persona tool per user message.
-
-Example: To make the "{persona_names[0] if persona_names else "persona"}" persona respond, use the tool: {actual_tool_names[0] if actual_tool_names else "speak_persona"}"""
-
-            # Store orchestrator agent in a session store (we'll use Redis or in-memory dict)
+            # Store voice agent in a session store (we'll use Redis or in-memory dict)
             # For now, we'll store it per chat_id in a global dict
             # In production, use Redis for multi-server support
             # Note: context_row and personas are no longer needed - context is sent to client
             _voice_sessions[str(chat_id_uuid)] = {
-                "orchestrator_agent": orchestrator_agent,
-                "context": context,  # Keep for orchestrator agent if needed
+                "voice_agent": voice_agent,
+                "context": context,  # Keep for voice agent if needed
             }
 
-            # Format persona tools for client (include parameters for RealtimeAgent)
+            # Format all tools for client (persona tools + debug_info)
+            # Include both persona tools and debug_info tool in the same format
             persona_tools_response: list[dict[str, str]] = []
-            for tool in persona_tools:
+            for tool in all_tools:
                 # Handle different tool types - only FunctionTool has description
                 tool_description = ""
                 if hasattr(tool, "description"):
@@ -474,7 +486,44 @@ Example: To make the "{persona_names[0] if persona_names else "persona"}" person
                         }
                     except Exception as e:
                         logger.warning(f"Failed to extract schema from tool {tool.name}: {e}")
-                        # Fallback: construct schema manually for persona tools
+                        # Fallback: construct schema manually based on tool name
+                        tool_name_str = str(tool.name)
+                        if tool_name_str.startswith("speak_"):
+                            # Persona tool fallback
+                            tool_parameters = {
+                                "type": "object",
+                                "properties": {
+                                    "message": {
+                                        "type": "string",
+                                        "description": f"Respond as the persona. This is the message that will be said.",
+                                    }
+                                },
+                                "required": ["message"],
+                            }
+                        elif tool_name_str == "debug_info":
+                            # Debug info tool fallback
+                            tool_parameters = {
+                                "type": "object",
+                                "properties": {
+                                    "content": {
+                                        "type": "string",
+                                        "description": "A short, clear note describing what you were trying to do, what is unclear or failing, what you need to continue, and any assumptions you are considering.",
+                                    }
+                                },
+                                "required": ["content"],
+                            }
+                        else:
+                            # Generic fallback
+                            tool_parameters = {
+                                "type": "object",
+                                "properties": {},
+                                "required": [],
+                            }
+                else:
+                    # Fallback: construct schema manually based on tool name
+                    tool_name_str = str(tool.name)
+                    if tool_name_str.startswith("speak_"):
+                        # Persona tool fallback
                         tool_parameters = {
                             "type": "object",
                             "properties": {
@@ -485,23 +534,46 @@ Example: To make the "{persona_names[0] if persona_names else "persona"}" person
                             },
                             "required": ["message"],
                         }
-                else:
-                    # Fallback: construct schema manually for persona tools
-                    # All persona tools have the same signature
-                    tool_parameters = {
-                        "type": "object",
-                        "properties": {
-                            "message": {
-                                "type": "string",
-                                "description": f"Respond as the persona. This is the message that will be said.",
-                            }
-                        },
-                        "required": ["message"],
-                    }
+                    elif tool_name_str == "debug_info":
+                        # Debug info tool fallback
+                        tool_parameters = {
+                            "type": "object",
+                            "properties": {
+                                "content": {
+                                    "type": "string",
+                                    "description": "A short, clear note describing what you were trying to do, what is unclear or failing, what you need to continue, and any assumptions you are considering.",
+                                }
+                            },
+                            "required": ["content"],
+                        }
+                    else:
+                        # Generic fallback
+                        tool_parameters = {
+                            "type": "object",
+                            "properties": {},
+                            "required": [],
+                        }
 
+                # Only add to tool_context_map if it's a persona tool (starts with "speak_")
+                # debug_info tool doesn't need persona context
+                tool_name_str = str(tool.name)
+                if tool_name_str.startswith("speak_"):
+                    # Find matching persona for this tool to add to context map
+                    for persona in personas:
+                        persona_id_str = persona.get("persona_id") or persona.get("id")
+                        persona_name = persona.get("persona_name") or persona.get("name", "")
+                        expected_tool_name = f"speak_{sanitize_persona_name(persona_name)}"
+                        
+                        if tool_name_str == expected_tool_name and persona_id_str:
+                            tool_context_map[tool_name_str] = PersonaToolContext(
+                                persona_id=str(persona_id_str),
+                                profile_id=str(profile_id) if profile_id else None,
+                            )
+                            break
+                
                 persona_tools_response.append(
                     {
-                        "name": str(tool.name),
+                        "name": tool_name_str,
                         "description": str(tool_description),
                         "parameters": json.dumps(tool_parameters),
                     }
@@ -525,7 +597,7 @@ Example: To make the "{persona_names[0] if persona_names else "persona"}" person
                     ephemeral_key=ephemeral_key,
                     persona_tools=persona_tools_response,
                     tool_context_map=tool_context_map,
-                    instructions=orchestrator_instructions,
+                    instructions=voice_agent_instructions,
                     model=model_name,
                     voice=None,  # Can be set from context if available
                     transcription_model=transcription_model_default,

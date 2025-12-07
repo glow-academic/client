@@ -464,6 +464,8 @@ export default function AttemptInput({
           });
         }
 
+        // Tool descriptions are minimal (how to use, when to call)
+        // Persona instructions are included in the main instructions field
         const toolInstance = tool({
           name: toolDef.name,
           description: toolDef.description,
@@ -496,10 +498,10 @@ export default function AttemptInput({
 
       // Create RealtimeAgent with tools and server-provided instructions
       const agent = new RealtimeAgent({
-        name: "Voice Assistant",
+        name: "Voice Agent",
         instructions:
           responseData.instructions ||
-          "You are a helpful voice assistant that orchestrates conversations between personas.",
+          "You are a voice agent that manages conversations between personas.",
         tools: realtimeTools,
       });
 
@@ -854,7 +856,37 @@ export default function AttemptInput({
         // eslint-disable-next-line no-console
         console.log("[Voice] Extracted actual arguments:", actualArguments);
 
-        // Extract message from arguments
+        // Handle debug_info tool separately (doesn't start with "speak_")
+        if (!toolDef.name.startsWith("speak_")) {
+          // This is debug_info or another non-persona tool
+          if (toolDef.name === "debug_info") {
+            const content = actualArguments["content"] as string;
+            if (!content) {
+              // eslint-disable-next-line no-console
+              console.error(
+                `[Voice] No content in arguments for debug_info tool`
+              );
+              return;
+            }
+
+            // Emit debug_info event to server
+            socket.emit("voice_debug_info", {
+              chat_id: currentChat.id,
+              content: content,
+            });
+            // eslint-disable-next-line no-console
+            console.log("[Voice] Emitted voice_debug_info to server:", {
+              chat_id: currentChat.id,
+              content: content.substring(0, 100),
+            });
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn(`[Voice] Unknown non-persona tool: ${toolDef.name}`);
+          }
+          return;
+        }
+
+        // Handle persona tools (start with "speak_")
         const message = actualArguments["message"] as string;
         if (!message) {
           // eslint-disable-next-line no-console

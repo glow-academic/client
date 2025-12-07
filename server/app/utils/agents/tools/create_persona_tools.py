@@ -1,4 +1,4 @@
-"""Create persona speech tools for orchestrator agent."""
+"""Create persona speech tools for voice agent."""
 
 import asyncio
 import uuid
@@ -58,13 +58,12 @@ def create_persona_tool(
 
     async def speak_persona(
         message: str = Field(
-            description=f"Respond as {persona_name}. This is the message that {persona_name} will say.",
+            description=f"Respond as {persona_name}. Call this tool with your message.",
         ),
     ) -> str:
-        """Make {persona_name} speak.
+        """Respond as {persona_name}.
 
-        When called, this will create an assistant message and stream the response
-        via WebSocket events (simulation_message_token, simulation_message_complete).
+        Call this tool when you need {persona_name} to speak. Pass the message content as the 'message' parameter.
 
         Args:
             message: The message content for {persona_name} to say

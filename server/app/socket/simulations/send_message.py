@@ -970,13 +970,51 @@ async def _send_simulation_message_impl(
                             f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}"
                         )
                         
-                        # Add developer message listing available personas
+                        # Get persona instructions for developer message
+                        sql_get_persona_instructions = load_sql("sql/v3/voice/get_persona_instructions.sql")
+                        persona_instruction_rows = await conn.fetch(
+                            sql_get_persona_instructions,
+                            str(chat_id_uuid),
+                        )
+                        
+                        # Build map of persona_name -> instructions
+                        persona_instructions_map: dict[str, str] = {}
+                        for row in persona_instruction_rows:
+                            persona_name = row.get("persona_name", "")
+                            instructions = row.get("instructions", "")
+                            if persona_name:
+                                persona_instructions_map[persona_name] = instructions or ""
+                        
+                        # Build developer message with persona instructions
                         persona_names = [p.get("persona_name") or p.get("name", "Unknown") for p in personas]
+                        persona_descriptions = []
+                        for persona_name in persona_names:
+                            instructions = persona_instructions_map.get(persona_name, "")
+                            if instructions:
+                                persona_descriptions.append(f"- {persona_name}: {instructions}")
+                            else:
+                                persona_descriptions.append(f"- {persona_name}")
+                        
+                        # Build list of actual tool names
+                        actual_tool_names_list = [f"speak_{sanitize_persona_name(name)}" for name in persona_names]
+                        
                         developer_message_personas: TResponseInputItem = {
                             "role": "developer",
-                            "content": f"Available personas: {', '.join(persona_names)}. You must use the speak_{{persona_name}} tool to respond as that persona. Replace {{persona_name}} with the sanitized name of the persona you are playing.",
+                            "content": f"""Available personas and their personalities:
+{chr(10).join(persona_descriptions)}
+
+Tool Usage Instructions:
+- You MUST use one of these EXACT tool names to respond as a persona:
+  {chr(10).join(f'  - {tool_name}' for tool_name in actual_tool_names_list)}
+- Call exactly one tool per user message
+- Never respond directly - always use a persona tool
+- Never make up tool names - only use the exact tool names listed above""",
                         }
                         input_items.append(developer_message_personas)
+                        
+                        # Add debug_info tool to persona_tools
+                        from app.utils.debug_info import debug_info
+                        persona_tools.append(debug_info)
 
                     # Create agent instance using context data with persona tools
                     agent_instance = GenericAgent(
