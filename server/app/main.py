@@ -138,6 +138,10 @@ guardrail_progress: dict[str, bool] = {}
 # Global storage for voice sessions (chat_id -> session data)
 _voice_sessions: dict[str, dict[str, Any]] = {}
 
+# Global storage for voice message IDs (chat_id -> list of message IDs)
+# Accumulates message IDs created during voice tool calls, processed when response.done arrives
+_voice_message_ids: dict[str, list[str]] = {}
+
 # Cached guest profile UUID (initialized at startup)
 _guest_profile_id: str | None = None
 
@@ -414,10 +418,10 @@ from app.socket.videos.generate_outline import \
 from app.socket.videos.generate_video import \
     generate_video  # noqa: E402; type: ignore
 from app.socket.voice import start_voice  # noqa: E402; type: ignore
-from app.socket.voice import (stop_voice, voice_assistant_turn_complete,
-                               voice_debug_info, voice_interrupted,
-                               voice_speech_started, voice_tool_call,
-                               voice_transcript_ready, voice_user_message)
+from app.socket.voice import (stop_voice, voice_debug_info, voice_interrupted,
+                              voice_response_done, voice_speech_started,
+                              voice_tool_call, voice_transcript_ready,
+                              voice_user_message)
 
 
 # Create a combined lifespan to manage both session managers
@@ -860,7 +864,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             start_voice,
             stop_voice,
             voice_interrupted,
-            voice_assistant_turn_complete,
+            voice_response_done,
             voice_speech_started,
             voice_tool_call,
             voice_transcript_ready,
@@ -912,7 +916,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.voice.stop_voice import (stop_voice_error,
                                                  stop_voice_response)
         from app.socket.voice.tool_call import voice_tool_call_error
-        from app.socket.voice.transcript_ready import voice_transcript_ready_emit
+        from app.socket.voice.transcript_ready import \
+            voice_transcript_ready_emit
         from app.socket.voice.user_message import voice_user_message_error
 
         # Collect all unique emit functions (use one instance of each event name)

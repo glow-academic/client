@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from app.main import _voice_sessions, sio
+from app.main import _voice_message_ids, _voice_sessions, sio
 from app.utils.logging.db_logger import get_logger
 from pydantic import BaseModel, ValidationError
 
@@ -60,6 +60,11 @@ async def _stop_voice_impl(sid: str, data: StopVoicePayload) -> None:
             logger.info(f"Stopped voice session for chat {chat_id}")
         else:
             logger.warning(f"No voice session found for chat {chat_id}")
+
+        # Clear accumulated message IDs to prevent stale data
+        if chat_id in _voice_message_ids:
+            del _voice_message_ids[chat_id]
+            logger.info(f"Cleared accumulated message IDs for chat {chat_id}")
 
         await stop_voice_response(
             StopVoiceResponsePayload(

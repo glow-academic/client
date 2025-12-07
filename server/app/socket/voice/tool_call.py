@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from app.main import _voice_sessions, get_pool, sio
+from app.main import _voice_message_ids, _voice_sessions, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
@@ -272,6 +272,11 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                 "id": assistant_message_row["id"],
                 "created_at": assistant_message_row["created_at"],
             }
+
+            # Accumulate message ID for later run creation when response.done arrives
+            if chat_id not in _voice_message_ids:
+                _voice_message_ids[chat_id] = []
+            _voice_message_ids[chat_id].append(str(assistant_message["id"]))
 
             # Link message to run
             sql_link = load_sql(

@@ -315,9 +315,12 @@ export type ClientToServerEvents = {
   voice_interrupted: (payload: {
     chat_id: string;
   }) => void;
-  voice_assistant_turn_complete: (payload: {
+  voice_response_done: (payload: {
     chat_id: string;
-    item_id: string;
+    event_id: string;
+    response_id: string;
+    conversation_id: string;
+    usage: Record<string, unknown>;
   }) => void;
   voice_speech_started: (payload: {
     chat_id: string;

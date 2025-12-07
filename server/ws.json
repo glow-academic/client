@@ -74,10 +74,13 @@
         "chat_id": "string"
       }
     },
-    "voice_assistant_turn_complete": {
+    "voice_response_done": {
       "payload": {
         "chat_id": "string",
-        "item_id": "string"
+        "event_id": "string",
+        "response_id": "string",
+        "conversation_id": "string",
+        "usage": "object"
       }
     },
     "voice_speech_started": {

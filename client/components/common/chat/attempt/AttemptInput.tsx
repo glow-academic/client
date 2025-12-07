@@ -946,34 +946,81 @@ export default function AttemptInput({
       });
 
       // Assistant finished speaking (natural completion)
-      // Listen for response.output_audio.done which fires when audio generation completes
-      // This is the equivalent of audio_end and includes item_id
+      // Listen for response.done which fires when the entire response completes
+      // This includes usage data and signals the end of the response cycle
       session.transport.on(
-        "response.output_audio.done",
+        "response.done",
         (evt: {
-          type: "response.output_audio.done";
+          type: "response.done";
           event_id: string;
-          item_id: string;
-          content_index: number;
-          output_index: number;
-          response_id: string;
+          response: {
+            id: string;
+            conversation_id: string;
+            usage: {
+              input_token_details: {
+                audio_tokens: number;
+                text_tokens: number;
+                image_tokens: number;
+                cached_tokens: number;
+                cached_tokens_details?: {
+                  audio_tokens: number;
+                  text_tokens: number;
+                  image_tokens: number;
+                };
+              };
+              output_token_details: {
+                audio_tokens: number;
+                text_tokens: number;
+              };
+              input_tokens: number;
+              output_tokens: number;
+            };
+          };
         }) => {
           // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] response.output_audio.done (assistant turn complete):",
-            {
-              item_id: evt.item_id,
-              content_index: evt.content_index,
-              response_id: evt.response_id,
-            }
-          );
+          console.log("[Voice] response.done (response complete):", {
+            event_id: evt.event_id,
+            response_id: evt.response.id,
+            conversation_id: evt.response.conversation_id,
+            usage: evt.response.usage,
+          });
 
           if (!socket || !currentChat?.id) return;
 
-          // Tell your backend "this assistant turn is done"
-          socket.emit("voice_assistant_turn_complete", {
+          // Extract usage details
+          const inputTokenDetails = evt.response.usage.input_token_details;
+          const outputTokenDetails = evt.response.usage.output_token_details;
+          const cachedDetails = inputTokenDetails.cached_tokens_details || {
+            audio_tokens: 0,
+            text_tokens: 0,
+            image_tokens: 0,
+          };
+
+          // Send usage data to backend for run creation and token tracking
+          socket.emit("voice_response_done", {
             chat_id: currentChat.id,
-            item_id: evt.item_id,
+            event_id: evt.event_id,
+            response_id: evt.response.id,
+            conversation_id: evt.response.conversation_id,
+            usage: {
+              input_token_details: {
+                audio_tokens: inputTokenDetails.audio_tokens || 0,
+                text_tokens: inputTokenDetails.text_tokens || 0,
+                image_tokens: inputTokenDetails.image_tokens || 0,
+                cached_tokens: inputTokenDetails.cached_tokens || 0,
+                cached_tokens_details: {
+                  audio_tokens: cachedDetails.audio_tokens || 0,
+                  text_tokens: cachedDetails.text_tokens || 0,
+                  image_tokens: cachedDetails.image_tokens || 0,
+                },
+              },
+              output_token_details: {
+                audio_tokens: outputTokenDetails.audio_tokens || 0,
+                text_tokens: outputTokenDetails.text_tokens || 0,
+              },
+              input_tokens: evt.response.usage.input_tokens,
+              output_tokens: evt.response.usage.output_tokens,
+            },
           });
         }
       );
