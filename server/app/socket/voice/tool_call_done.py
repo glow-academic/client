@@ -5,7 +5,8 @@ import json
 import uuid
 from typing import Any
 
-from app.main import (get_pool, get_simulation_tool_calls_dict,
+from app.main import (_voice_message_ids, get_pool,
+                      get_simulation_tool_calls_dict,
                       get_simulation_tool_calls_locks, sio)
 from app.socket.simulations.send_message import (
     SimulationMessageCompletePayload, SimulationNewMessagePayload,
@@ -284,9 +285,37 @@ async def _voice_tool_call_done_impl(
                     except Exception as link_err:
                         logger.warning(f"Failed to link message to persona: {link_err}")
 
-                    # Create branch if parent exists
-                    if tool_call_state["parent_message_id"]:
+                    # Create branch from latest message (which may be user or assistant)
+                    # This ensures sequential branching: User1 -> Assistant1 -> Assistant2
+                    # Query finds message with no active children, excluding current message
+                    latest_message_row = await conn.fetchrow(
+                        """
+                        SELECT m.id
+                        FROM messages m
+                        JOIN message_runs mr ON mr.message_id = m.id
+                        JOIN chat_runs cr ON cr.run_id = mr.run_id
+                        WHERE cr.chat_id = $1::uuid
+                          AND m.id != $2::uuid
+                          AND NOT EXISTS (
+                              SELECT 1 FROM message_tree mt 
+                              WHERE mt.parent_id = m.id AND mt.active = true
+                          )
+                        ORDER BY m.created_at DESC
+                        LIMIT 1
+                        """,
+                        chat_id_uuid,
+                        db_message_id,
+                    )
+                    
+                    # Use latest message as parent (ensures sequential branching),
+                    # fallback to original parent_message_id
+                    parent_id_str = None
+                    if latest_message_row and latest_message_row.get("id"):
+                        parent_id_str = str(latest_message_row["id"])
+                    elif tool_call_state["parent_message_id"]:
                         parent_id_str = str(tool_call_state["parent_message_id"])
+                    
+                    if parent_id_str:
                         assistant_id_str = str(db_message_id)
                         if parent_id_str != assistant_id_str:
                             sql_branch = load_sql(
@@ -294,6 +323,9 @@ async def _voice_tool_call_done_impl(
                             )
                             await conn.execute(
                                 sql_branch, parent_id_str, assistant_id_str
+                            )
+                            logger.info(
+                                f"Created branch from message {parent_id_str} to assistant message {assistant_id_str}"
                             )
 
                     # Emit new message event FIRST (before completing) to match simulation mode
@@ -322,6 +354,12 @@ async def _voice_tool_call_done_impl(
                 # Complete message
                 sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
                 await conn.execute(sql_complete, final_content, str(db_message_id))
+
+                # Add message ID to accumulator for voice_response_done handler
+                if chat_id_str not in _voice_message_ids:
+                    _voice_message_ids[chat_id_str] = []
+                if str(db_message_id) not in _voice_message_ids[chat_id_str]:
+                    _voice_message_ids[chat_id_str].append(str(db_message_id))
 
                 # Emit completion event
                 await simulation_message_complete(

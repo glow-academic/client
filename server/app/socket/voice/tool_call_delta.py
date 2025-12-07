@@ -247,7 +247,53 @@ async def _voice_tool_call_delta_impl(
                             sql_create_message, "assistant", "", False
                         )
                         db_message_id = assistant_message_row["id"]
+                        assistant_created_at = assistant_message_row["created_at"]
                         tool_call_state["db_message_id"] = db_message_id
+
+                        # Ensure assistant message created_at is after latest user message
+                        # This fixes ordering issues in voice mode where messages are created concurrently
+                        latest_user_message_row = await conn.fetchrow(
+                            """
+                            SELECT m.created_at
+                            FROM messages m
+                            JOIN message_runs mr ON mr.message_id = m.id
+                            JOIN chat_runs cr ON cr.run_id = mr.run_id
+                            WHERE cr.chat_id = $1::uuid
+                              AND m.role = 'user'
+                              AND m.id != $2::uuid
+                            ORDER BY m.created_at DESC
+                            LIMIT 1
+                            """,
+                            chat_id_uuid,
+                            db_message_id,
+                        )
+                        
+                        if latest_user_message_row:
+                            user_created_at = latest_user_message_row["created_at"]
+                            # If user message was created after or very close to assistant message,
+                            # update assistant message created_at to be after user message
+                            # Use 1ms offset to ensure proper ordering
+                            if user_created_at >= assistant_created_at:
+                                await conn.execute(
+                                    """
+                                    UPDATE messages
+                                    SET created_at = $1::timestamp + INTERVAL '1 millisecond'
+                                    WHERE id = $2::uuid
+                                    """,
+                                    user_created_at,
+                                    db_message_id,
+                                )
+                                # Fetch updated created_at for emission
+                                updated_row = await conn.fetchrow(
+                                    "SELECT created_at FROM messages WHERE id = $1::uuid",
+                                    db_message_id,
+                                )
+                                if updated_row:
+                                    assistant_created_at = updated_row["created_at"]
+                                logger.info(
+                                    f"Updated assistant message {db_message_id} created_at to be after "
+                                    f"user message {user_created_at} to ensure proper ordering"
+                                )
 
                         # Link message to run if run_id exists
                         if tool_call_state.get("run_id"):
@@ -279,9 +325,37 @@ async def _voice_tool_call_delta_impl(
                                         f"Failed to link message to persona: {link_err}"
                                     )
 
-                        # Create branch if parent exists
-                        if tool_call_state["parent_message_id"]:
+                        # Create branch from latest message (which may be user or assistant)
+                        # This ensures sequential branching: User1 -> Assistant1 -> Assistant2
+                        # Query finds message with no active children, excluding current message
+                        latest_message_row = await conn.fetchrow(
+                            """
+                            SELECT m.id
+                            FROM messages m
+                            JOIN message_runs mr ON mr.message_id = m.id
+                            JOIN chat_runs cr ON cr.run_id = mr.run_id
+                            WHERE cr.chat_id = $1::uuid
+                              AND m.id != $2::uuid
+                              AND NOT EXISTS (
+                                  SELECT 1 FROM message_tree mt 
+                                  WHERE mt.parent_id = m.id AND mt.active = true
+                              )
+                            ORDER BY m.created_at DESC
+                            LIMIT 1
+                            """,
+                            chat_id_uuid,
+                            db_message_id,
+                        )
+                        
+                        # Use latest message as parent (ensures sequential branching),
+                        # fallback to original parent_message_id
+                        parent_id_str = None
+                        if latest_message_row and latest_message_row.get("id"):
+                            parent_id_str = str(latest_message_row["id"])
+                        elif tool_call_state["parent_message_id"]:
                             parent_id_str = str(tool_call_state["parent_message_id"])
+                        
+                        if parent_id_str:
                             assistant_id_str = str(db_message_id)
                             if parent_id_str != assistant_id_str:
                                 sql_branch = load_sql(
@@ -289,6 +363,9 @@ async def _voice_tool_call_delta_impl(
                                 )
                                 await conn.execute(
                                     sql_branch, parent_id_str, assistant_id_str
+                                )
+                                logger.info(
+                                    f"Created branch from message {parent_id_str} to assistant message {assistant_id_str}"
                                 )
 
                         # Emit new message event
@@ -307,9 +384,7 @@ async def _voice_tool_call_delta_impl(
                                 role="assistant",
                                 content="",
                                 completed=False,
-                                created_at=assistant_message_row[
-                                    "created_at"
-                                ].isoformat(),
+                                created_at=assistant_created_at.isoformat(),
                                 persona_id=persona_id_str,
                             ),
                             room=f"simulation_{chat_id_uuid}",
