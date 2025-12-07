@@ -245,6 +245,18 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         title: "Videos",
         redirectTo: "/create/videos",
       },
+      {
+        path: "/create/videos/new",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Create Video",
+        redirectTo: "/create/videos",
+      },
+      {
+        path: "/create/videos/v/[videoId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Edit Video",
+        redirectTo: "/create/videos",
+      },
     ],
   },
   {

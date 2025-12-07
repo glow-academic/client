@@ -53,7 +53,7 @@ async function updateVideo(input: UpdateVideoIn): Promise<UpdateVideoOut> {
 }
 
 async function randomizeVideo(
-  input: RandomizeVideoIn,
+  input: RandomizeVideoIn
 ): Promise<RandomizeVideoOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -63,14 +63,11 @@ async function randomizeVideo(
 // generateOutline and generateVideo removed - component now uses WebSocket directly
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
   return {
     title: "New Video",
-    description: "Upload a new instructional video for teaching assistant training. Add multimedia resources to support pedagogical development, enhance learning experiences, and provide visual learning content for L&D programs.",
+    description:
+      "Upload a new instructional video for teaching assistant training. Add multimedia resources to support pedagogical development, enhance learning experiences, and provide visual learning content for L&D programs.",
   };
-}
 }
 
 export default async function NewVideoPage() {

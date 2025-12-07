@@ -256,6 +256,18 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Videos",
                 redirectTo="/create/videos",
             ),
+            RoutePermission(
+                path="/create/videos/new",
+                roles=["instructional", "admin", "superadmin"],
+                title="Create Video",
+                redirectTo="/create/videos",
+            ),
+            RoutePermission(
+                path="/create/videos/v/[videoId]",
+                roles=["instructional", "admin", "superadmin"],
+                title="Edit Video",
+                redirectTo="/create/videos",
+            ),
         ],
     ),
     SectionPermission(

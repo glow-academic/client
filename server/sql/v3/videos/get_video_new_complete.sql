@@ -99,13 +99,16 @@ document_mapping_data AS (
             jsonb_build_object(
                 'name', d.name,
                 'description', d.description,
-                'extension', CASE 
-                    WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\.([^\.]+)$')
-                    ELSE NULL
-                END,
-                'filePath', u.file_path,
-                'mimeType', u.mime_type,
-                'uploadId', d.upload_id::text
+                'extension', COALESCE(
+                    CASE 
+                        WHEN d.file_path IS NOT NULL THEN SUBSTRING(d.file_path FROM '\.([^\.]+)$')
+                        ELSE NULL
+                    END,
+                    ''
+                ),
+                'filePath', COALESCE(d.file_path, ''),
+                'mimeType', COALESCE(d.mime_type, ''),
+                'uploadId', COALESCE(d.upload_id::text, '')
             )
         ) FILTER (WHERE d.id IS NOT NULL),
         '{}'::jsonb
@@ -269,7 +272,7 @@ valid_personas_filtered AS (
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.color, p.icon, imc.image_model
     HAVING 
-        COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY((SELECT ARRAY_AGG(department_id) FROM user_departments))) > 0
+        COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
 ),
 valid_personas_data AS (

@@ -35,13 +35,13 @@ const getVideosList = async (profileId: string): Promise<VideosListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateVideo(
-  input: DuplicateVideoIn,
+  input: DuplicateVideoIn
 ): Promise<DuplicateVideoOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -55,14 +55,11 @@ async function deleteVideo(input: DeleteVideoIn): Promise<DeleteVideoOut> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
   return {
     title: "Videos",
-    description: "Manage instructional videos and multimedia resources for teaching assistant training. Upload, organize, and share educational video content to support pedagogical development and enhance learning experiences.",
+    description:
+      "Manage instructional videos and multimedia resources for teaching assistant training. Upload, organize, and share educational video content to support pedagogical development and enhance learning experiences.",
   };
-}
 }
 
 export default async function VideosPage() {
