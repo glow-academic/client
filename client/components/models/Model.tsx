@@ -16,7 +16,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { KeyPicker } from "@/components/common/forms/KeyPicker";
 import { ModalityPicker } from "@/components/common/forms/ModalityPicker";
 import {
   PricingPicker,
@@ -40,6 +39,7 @@ import {
   Image,
   Layers,
   Power,
+  Settings,
   Thermometer,
   Volume2,
 } from "lucide-react";
@@ -50,6 +50,7 @@ interface FormErrors {
   description?: string;
   provider_id?: string;
   value?: string;
+  baseUrl?: string;
 }
 
 interface FormData {
@@ -59,7 +60,9 @@ interface FormData {
   value?: string;
   active?: boolean;
   departmentIds?: string[] | null;
-  keyId?: string | null;
+  keyId?: string | null; // Kept for backward compatibility, not rendered
+  customModel?: boolean;
+  baseUrl?: string;
   // Feature toggles
   enableModalities?: boolean;
   enableTemperature?: boolean;
@@ -144,6 +147,8 @@ export default function Model({
       active: true,
       departmentIds: defaultDepartmentIds,
       keyId: null,
+      customModel: false,
+      baseUrl: "",
     }),
     [defaultDepartmentIds],
   );
@@ -209,72 +214,6 @@ export default function Model({
     }));
   }, [providerMapping]);
 
-  // Get key mapping type for filteredKeyMapping
-  type KeyMappingType = typeof modelDataForMappings extends {
-    key_mapping?: infer K;
-  }
-    ? K
-    : Record<
-        string,
-        {
-          name: string;
-          description: string;
-          key_masked: string;
-          active: boolean;
-          department_ids: string[] | null;
-        }
-      >;
-
-  const validKeyIds = useMemo(() => {
-    return modelDataForMappings?.valid_key_ids || [];
-  }, [modelDataForMappings]);
-
-  // Filter key_mapping client-side based on selected departments from form
-  // API returns all keys user has access to, then we filter by selected departments
-  // Show: default keys + keys for selected departments + cross-department keys (no department_ids)
-  const filteredKeyMapping = useMemo(() => {
-    if (!isEditMode || !modelDetail?.key_mapping) {
-      return modelDetail?.key_mapping || modelDetailDefault?.key_mapping || {};
-    }
-
-    const selectedDeptIds = formData?.departmentIds || [];
-    const filtered: Record<string, NonNullable<KeyMappingType>[string]> = {};
-
-    for (const [keyId, keyInfoRaw] of Object.entries(modelDetail.key_mapping)) {
-      // Add default values for department_ids if missing (for backward compatibility)
-      const rawInfo = keyInfoRaw as typeof keyInfoRaw & {
-        department_ids?: string[] | null;
-      };
-      const keyInfo = {
-        ...keyInfoRaw,
-        department_ids: rawInfo.department_ids || null,
-      };
-
-      if (selectedDeptIds.length === 0) {
-        // "All Departments" selected - show ALL keys (default and department-specific)
-        filtered[keyId] = keyInfo;
-      } else {
-        // Specific departments selected - show default keys, cross-department keys, and keys for selected departments
-        const isDefaultOrCrossDepartment =
-          !keyInfo.department_ids || keyInfo.department_ids.length === 0;
-        const isForSelectedDepartment =
-          keyInfo.department_ids &&
-          keyInfo.department_ids.some((deptId) =>
-            selectedDeptIds.includes(deptId),
-          );
-
-        if (isDefaultOrCrossDepartment || isForSelectedDepartment) {
-          filtered[keyId] = keyInfo;
-        }
-      }
-    }
-    return filtered;
-  }, [
-    formData?.departmentIds,
-    modelDetail?.key_mapping,
-    modelDetailDefault?.key_mapping,
-    isEditMode,
-  ]);
 
   // Get current department_ids and key_id for edit mode
   const currentDepartmentIds = useMemo(() => {
@@ -381,6 +320,10 @@ export default function Model({
       const hasQualities =
         modelDetail.qualities && modelDetail.qualities.length > 0;
 
+      // Determine if custom model based on base_url
+      const baseUrl = modelDetail.base_url || "";
+      const customModel = baseUrl !== "" && baseUrl.trim() !== "";
+
       setFormData({
         name: modelDetail.name,
         description: modelDetail.description,
@@ -390,6 +333,8 @@ export default function Model({
           typeof modelDetail.active === "boolean" ? modelDetail.active : true,
         departmentIds: currentDepartmentIds,
         keyId: currentKeyId,
+        customModel,
+        baseUrl,
         enableModalities: hasModalities,
         enableTemperature: hasTemperature,
         enablePricing: hasPricing,
@@ -416,6 +361,8 @@ export default function Model({
       // We are in CREATE mode, so reset the form to its initial state
       setFormData({
         ...initialFormData,
+        customModel: false,
+        baseUrl: "",
         enableModalities: true, // Default to enabled with text/text
         enableTemperature: false,
         enablePricing: false,
@@ -484,6 +431,15 @@ export default function Model({
       return;
     }
 
+    // Validate base_url if custom model
+    if (formData.customModel && (!formData.baseUrl || formData.baseUrl.trim() === "")) {
+      setErrors((prev) => ({
+        ...prev,
+        baseUrl: "Base URL is required for custom models",
+      }));
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -536,6 +492,7 @@ export default function Model({
           active: formData.active ?? true,
           value: formData.value!,
           department_ids: formData.departmentIds || null,
+          base_url: formData.customModel ? formData.baseUrl || null : null,
           ...(temperature_bounds ? { temperature_bounds } : {}),
           ...(pricing ? { pricing } : {}),
           modalities,
@@ -565,6 +522,7 @@ export default function Model({
           active: formData.active ?? true,
           value: formData.value!,
           department_ids: formData.departmentIds || null,
+          base_url: formData.customModel ? formData.baseUrl || null : null,
           ...(temperature_bounds ? { temperature_bounds } : {}),
           ...(pricing ? { pricing } : {}),
           modalities,
@@ -705,48 +663,70 @@ export default function Model({
           </p>
         </div>
 
-        {/* Provider and API Key Selection - Side by Side */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Provider Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="provider">Provider</Label>
-            <div data-testid="picker-provider">
-              <ProviderPicker
-                providers={providerOptions}
-                selectedProvider={formData.provider_id || ""}
-                onSelect={(providerId) => {
-                  handleInputChange("provider_id", providerId);
+        {/* Custom Model Switch */}
+        <div className="space-y-1 pt-2">
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="customModel"
+              className="text-sm flex items-center gap-1.5"
+            >
+              <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+              Custom Model
+            </Label>
+            {formData.customModel !== undefined ? (
+              <Switch
+                id="customModel"
+                data-testid="switch-model-custom"
+                checked={formData.customModel}
+                onCheckedChange={(checked) => {
+                  handleInputChange("customModel", checked);
+                  if (!checked) {
+                    handleInputChange("baseUrl", "");
+                  }
                 }}
-                placeholder="Select a provider..."
-                buttonClassName={errors.provider_id ? "border-destructive" : ""}
-              />
-            </div>
-            {errors.provider_id && (
-              <p className="text-sm text-destructive">{errors.provider_id}</p>
-            )}
-          </div>
-
-          {/* API Key Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="keyId">API Key</Label>
-            {formData?.keyId !== undefined ? (
-              <KeyPicker
-                mapping={filteredKeyMapping}
-                validIds={validKeyIds.filter((id) => filteredKeyMapping[id])}
-                selectedIds={formData.keyId ? [formData.keyId] : []}
-                defaultKeyId={modelDetail?.default_key_id || null}
-                onSelect={(ids) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    keyId: ids[0] || null,
-                  }))
-                }
-                multiSelect={false}
-                placeholder="Select key..."
-                disabled={isReadonly || isSubmitting}
+                disabled={isSubmitting || isReadonly}
               />
             ) : null}
           </div>
+          <p className="text-xs text-muted-foreground pl-5">
+            Use a custom base URL for this model
+          </p>
+          {formData.customModel && (
+            <div className="space-y-2 pt-2 pl-5">
+              <Input
+                id="baseUrl"
+                type="url"
+                value={formData.baseUrl || ""}
+                onChange={(e) => handleInputChange("baseUrl", e.target.value)}
+                placeholder="e.g. https://api.example.com/v1"
+                disabled={isSubmitting || isReadonly}
+                className={errors.baseUrl ? "border-destructive" : ""}
+                data-testid="input-model-base-url"
+              />
+              {errors.baseUrl && (
+                <p className="text-sm text-destructive">{errors.baseUrl}</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Provider Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="provider">Provider</Label>
+          <div data-testid="picker-provider">
+            <ProviderPicker
+              providers={providerOptions}
+              selectedProvider={formData.provider_id || ""}
+              onSelect={(providerId) => {
+                handleInputChange("provider_id", providerId);
+              }}
+              placeholder="Select a provider..."
+              buttonClassName={errors.provider_id ? "border-destructive" : ""}
+            />
+          </div>
+          {errors.provider_id && (
+            <p className="text-sm text-destructive">{errors.provider_id}</p>
+          )}
         </div>
 
         {/* Modalities - Collapsible with Switch */}
