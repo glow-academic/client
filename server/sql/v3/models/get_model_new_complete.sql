@@ -124,9 +124,26 @@ all_units_data AS (
         ) as units
     FROM units
     WHERE active = true
+),
+valid_providers_data AS (
+    SELECT 
+        ARRAY_AGG(p.id::text ORDER BY p.name) as provider_ids,
+        COALESCE(
+            jsonb_object_agg(
+                p.id::text,
+                jsonb_build_object(
+                    'name', p.name,
+                    'description', COALESCE(p.description, '')
+                )
+            ),
+            '{}'::jsonb
+        ) as provider_mapping
+    FROM providers p
+    WHERE p.active = true
 )
 SELECT 
-    ARRAY['openai', 'gemini', 'custom']::text[] as valid_providers,
+    COALESCE(vpd.provider_ids, ARRAY[]::text[]) as valid_provider_ids,
+    COALESCE(vpd.provider_mapping, '{}'::jsonb) as provider_mapping,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
     COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
     COALESCE(
@@ -151,5 +168,6 @@ FROM valid_departments_data vdd
 CROSS JOIN key_mapping_data kmd
 CROSS JOIN profile_data pr
 CROSS JOIN all_units_data au
+CROSS JOIN valid_providers_data vpd
 LEFT JOIN primary_department_id pdi ON true
 

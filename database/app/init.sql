@@ -17,6 +17,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 \i app/keys/init.sql
 
+\i app/providers/init.sql
+
 \i app/models/init.sql
 
 \i app/auth/init.sql

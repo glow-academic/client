@@ -30,6 +30,7 @@ from app.api.v3.parameters import router as parameters_router
 from app.api.v3.personas import router as personas_router
 from app.api.v3.practice import router as practice_router
 from app.api.v3.pricing import router as pricing_router
+from app.api.v3.providers import router as providers_router
 # ============================================================================
 # Batch B: Profile Routes
 # ============================================================================
@@ -87,6 +88,7 @@ router.include_router(leaderboard_router)
 router.include_router(agents_router)
 router.include_router(keys_router)
 router.include_router(models_router)
+router.include_router(providers_router)
 router.include_router(parameters_router)
 router.include_router(prompts_router)
 router.include_router(fields_router)

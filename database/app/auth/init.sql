@@ -11,14 +11,15 @@ CREATE TABLE auth (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  provider_id TEXT       NOT NULL,
-  slug        TEXT       NOT NULL,
-  icon_url   TEXT,
+  auth_type  TEXT        NOT NULL, -- Authentication provider type (google, oidc, saml) - NOT related to providers table
+  slug        TEXT        NOT NULL,
+  icon_url   TEXT        NOT NULL DEFAULT '', -- Icon URL (empty string if no icon)
   active     BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
 CREATE INDEX ON auth (id);
 CREATE INDEX ON auth (active);
+CREATE INDEX ON auth (auth_type);
 CREATE UNIQUE INDEX auth_slug_unique ON auth(slug);
 CREATE INDEX auth_slug_idx ON auth(slug);
 
@@ -30,26 +31,10 @@ CREATE TABLE auth_items (
   auth_id    UUID        NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  value      TEXT        NOT NULL, -- Encrypted or plain text value
-  encrypted  BOOLEAN     NOT NULL DEFAULT TRUE -- TRUE for encrypted secrets, FALSE for plain text config
+  encrypted  BOOLEAN     NOT NULL DEFAULT TRUE -- TRUE for encrypted secrets (use auth_item_keys), FALSE for plain text config (use auth_item_values)
 );
 
 CREATE INDEX ON auth_items (auth_id);
 CREATE INDEX ON auth_items (auth_id, name);
-
--- Auth → Departments binary relationship table
--- Tracks which auth providers are available to departments
--- No records = available to all departments (cross-department)
-CREATE TABLE department_auths (
-  auth_id       UUID NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
-  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
-  active        BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (auth_id, department_id)
-);
-
-CREATE INDEX ON department_auths (auth_id);
-CREATE INDEX ON department_auths (department_id);
-CREATE INDEX ON department_auths (active);
+CREATE INDEX ON auth_items (encrypted);
 

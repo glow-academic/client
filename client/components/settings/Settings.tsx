@@ -20,7 +20,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 
 // Type-only import from server pages
 import type {
@@ -36,10 +35,10 @@ export interface SettingsProps {
   profileId: string;
   getSettingsDetailAction: (
     settingsId: string,
-    profileId: string,
+    profileId: string
   ) => Promise<SettingsDetailOut>;
   updateSettingsAction?: (
-    input: UpdateSettingsIn,
+    input: UpdateSettingsIn
   ) => Promise<UpdateSettingsOut>;
 }
 
@@ -57,7 +56,7 @@ export default function Settings({
     Record<string, boolean>
   >({});
   const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(
-    initialSelectedSettingsId,
+    initialSelectedSettingsId
   );
   const [settingsDetail, setSettingsDetail] =
     useState<SettingsDetailOut | null>(initialSettingsDetail);
@@ -203,7 +202,7 @@ export default function Settings({
       toast.error(
         `Failed to update settings: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     } finally {
       setIsSubmitting(false);
@@ -426,6 +425,83 @@ export default function Settings({
           </div>
         </div>
 
+        {/* Linked Auths & Providers */}
+        {settingsDetail && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Linked Auths & Providers</h3>
+
+            {/* Linked Auths */}
+            <div className="space-y-2">
+              <Label>Authentication Methods</Label>
+              {settingsDetail.auth_ids && settingsDetail.auth_ids.length > 0 ? (
+                <div className="space-y-2">
+                  {settingsDetail.auth_ids.map((authId) => {
+                    const auth = settingsDetail.auth_mapping?.[authId];
+                    return auth ? (
+                      <div
+                        key={authId}
+                        className="p-3 border rounded-lg bg-muted/50"
+                      >
+                        <div className="font-medium">{auth.name}</div>
+                        {auth.description && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {auth.description}
+                          </div>
+                        )}
+                        {auth.slug && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Slug: {auth.slug}
+                          </div>
+                        )}
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No authentication methods linked to this settings version.
+                </p>
+              )}
+            </div>
+
+            {/* Linked Providers */}
+            <div className="space-y-2">
+              <Label>AI Providers</Label>
+              {settingsDetail.provider_ids &&
+              settingsDetail.provider_ids.length > 0 ? (
+                <div className="space-y-2">
+                  {settingsDetail.provider_ids.map((providerId) => {
+                    const provider =
+                      settingsDetail.provider_mapping?.[providerId];
+                    return provider ? (
+                      <div
+                        key={providerId}
+                        className="p-3 border rounded-lg bg-muted/50"
+                      >
+                        <div className="font-medium">{provider.name}</div>
+                        {provider.description && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {provider.description}
+                          </div>
+                        )}
+                        {provider.value && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Value: {provider.value}
+                          </div>
+                        )}
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No AI providers linked to this settings version.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Authentication & Analytics */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Authentication & Analytics</h3>
@@ -474,7 +550,7 @@ export default function Settings({
                       ...prev,
                       success_threshold: Math.min(
                         100,
-                        Math.max(0, parseInt(e.target.value) || 85),
+                        Math.max(0, parseInt(e.target.value) || 85)
                       ),
                     }))
                   }
@@ -495,7 +571,7 @@ export default function Settings({
                       ...prev,
                       warning_threshold: Math.min(
                         100,
-                        Math.max(0, parseInt(e.target.value) || 80),
+                        Math.max(0, parseInt(e.target.value) || 80)
                       ),
                     }))
                   }
@@ -516,7 +592,7 @@ export default function Settings({
                       ...prev,
                       danger_threshold: Math.min(
                         100,
-                        Math.max(0, parseInt(e.target.value) || 70),
+                        Math.max(0, parseInt(e.target.value) || 70)
                       ),
                     }))
                   }

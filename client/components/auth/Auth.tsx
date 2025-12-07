@@ -45,7 +45,8 @@ type AuthItemFormData = {
   id?: string;
   name: string;
   description: string;
-  value: string; // Plain text value (will be encrypted on server)
+  value?: string; // Plain text value for non-encrypted items
+  encrypted: boolean; // Whether this item is encrypted (keys managed at settings level)
   isNew: boolean;
   isDeleted: boolean;
 };
@@ -162,11 +163,13 @@ export default function Auth({
           name: string;
           description: string;
           value_masked?: string;
+          encrypted?: boolean;
         }) => ({
           id: item.auth_item_id,
           name: item.name,
           description: item.description,
-          value: "", // Values are encrypted, so we don't show them - user must re-enter
+          value: item.encrypted ? undefined : (item.value_masked || ""), // Show value for non-encrypted items
+          encrypted: item.encrypted ?? false,
           isNew: false,
           isDeleted: false,
         }),
@@ -184,7 +187,7 @@ export default function Auth({
     if (!authItems) return;
     if (!initiallySorted) return;
 
-    const mapped = authItems
+      const mapped = authItems
       .sort((a: { name: string }, b: { name: string }) =>
         a.name.localeCompare(b.name),
       )
@@ -194,11 +197,13 @@ export default function Auth({
           name: string;
           description: string;
           value_masked?: string;
+          encrypted?: boolean;
         }) => ({
           id: item.auth_item_id,
           name: item.name,
           description: item.description,
-          value: "", // Values are encrypted, so we don't show them - user must re-enter
+          value: item.encrypted ? undefined : (item.value_masked || ""), // Show value for non-encrypted items
+          encrypted: item.encrypted ?? false,
           isNew: false,
           isDeleted: false,
         }),
@@ -224,12 +229,16 @@ export default function Auth({
 
     try {
       // Prepare auth items for submission (only non-deleted items)
+      // Note: Keys for encrypted items are managed at settings level via setting_auth_keys
       const auth_items = authItemsFormData
         .filter((item) => !item.isDeleted)
         .map((item) => ({
           name: item.name,
           description: item.description,
-          value: item.value, // Plain text value (will be encrypted on server)
+          encrypted: item.encrypted,
+          ...(item.encrypted
+            ? {} // Encrypted items: keys managed at settings level, no key_id needed here
+            : { value: item.value || "" }), // For non-encrypted items, send value
         }));
 
       if (isEditMode) {
@@ -289,9 +298,13 @@ export default function Auth({
         errors.push("All auth items must have a description");
         break;
       }
-      if (!item.value || item.value.trim() === "") {
-        errors.push("All auth items must have a value");
-        break;
+      // Validate non-encrypted items have value
+      // Note: Encrypted items don't need validation here - keys are managed at settings level
+      if (!item.encrypted) {
+        if (!item.value || item.value.trim() === "") {
+          errors.push(`Non-encrypted item "${item.name}" must have a value`);
+          break;
+        }
       }
     }
 
@@ -305,6 +318,7 @@ export default function Auth({
         name: "",
         description: "",
         value: "",
+        encrypted: false, // Default to non-encrypted
         isNew: true,
         isDeleted: false,
       },
@@ -326,11 +340,22 @@ export default function Auth({
   const handleAuthItemInputChange = (
     index: number,
     field: keyof AuthItemFormData,
-    value: string | string[],
+    value: string | boolean,
   ) => {
     setAuthItemsFormData((prev) => {
       const newItems = [...prev];
-      newItems[index] = { ...newItems[index]!, [field]: value };
+      const updatedItem = {
+        ...newItems[index]!,
+        [field]: value,
+      };
+      // When toggling encrypted, clear value appropriately
+      if (field === "encrypted") {
+        if (value === true) {
+          // Switching to encrypted: clear value (keys managed at settings level)
+          updatedItem.value = undefined;
+        }
+      }
+      newItems[index] = updatedItem;
       return newItems;
     });
   };
@@ -481,24 +506,51 @@ export default function Auth({
                           disabled={isReadonly}
                         />
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground mb-1 block">
-                          Value *
-                        </Label>
-                        <Input
-                          type="password"
-                          value={item.value}
-                          onChange={(e) =>
-                            handleAuthItemInputChange(
-                              itemIndex,
-                              "value",
-                              e.target.value,
-                            )
-                          }
-                          className="text-sm w-full"
-                          placeholder="Enter encrypted value"
-                          disabled={isReadonly}
-                        />
+                      {/* Encrypted vs Non-encrypted */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs text-muted-foreground">
+                            Encrypted
+                          </Label>
+                          <Switch
+                            checked={item.encrypted}
+                            onCheckedChange={(checked) =>
+                              handleAuthItemInputChange(
+                                itemIndex,
+                                "encrypted",
+                                checked,
+                              )
+                            }
+                            disabled={isReadonly || !item.isNew}
+                          />
+                        </div>
+                        {item.encrypted ? (
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              This item is encrypted. Keys are managed on the Settings page.
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <Label className="text-xs text-muted-foreground mb-1 block">
+                              Value *
+                            </Label>
+                            <Input
+                              type="text"
+                              value={item.value || ""}
+                              onChange={(e) =>
+                                handleAuthItemInputChange(
+                                  itemIndex,
+                                  "value",
+                                  e.target.value,
+                                )
+                              }
+                              className="text-sm w-full"
+                              placeholder="Enter value"
+                              disabled={isReadonly}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   ),
@@ -512,6 +564,7 @@ export default function Auth({
                     <TableRow>
                       <TableHead className="w-48">Name</TableHead>
                       <TableHead className="w-80">Description</TableHead>
+                      <TableHead className="w-32">Encrypted</TableHead>
                       <TableHead className="w-64">Value</TableHead>
                       <TableHead className="w-20">Actions</TableHead>
                     </TableRow>
@@ -551,21 +604,40 @@ export default function Auth({
                               disabled={isReadonly}
                             />
                           </TableCell>
-                          <TableCell className="w-64">
-                            <Input
-                              type="password"
-                              value={item.value}
-                              onChange={(e) =>
+                          <TableCell className="w-32">
+                            <Switch
+                              checked={item.encrypted}
+                              onCheckedChange={(checked) =>
                                 handleAuthItemInputChange(
                                   itemIndex,
-                                  "value",
-                                  e.target.value,
+                                  "encrypted",
+                                  checked,
                                 )
                               }
-                              className="text-sm w-full"
-                              placeholder="Enter encrypted value"
-                              disabled={isReadonly}
+                              disabled={isReadonly || !item.isNew}
                             />
+                          </TableCell>
+                          <TableCell className="w-64">
+                            {item.encrypted ? (
+                              <p className="text-xs text-muted-foreground">
+                                Encrypted (keys managed in Settings)
+                              </p>
+                            ) : (
+                              <Input
+                                type="text"
+                                value={item.value || ""}
+                                onChange={(e) =>
+                                  handleAuthItemInputChange(
+                                    itemIndex,
+                                    "value",
+                                    e.target.value,
+                                  )
+                                }
+                                className="text-sm w-full"
+                                placeholder="Enter value"
+                                disabled={isReadonly}
+                              />
+                            )}
                           </TableCell>
                           <TableCell className="w-20">
                             {!isReadonly && (

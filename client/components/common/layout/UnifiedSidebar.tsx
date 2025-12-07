@@ -392,11 +392,11 @@ export function UnifiedSidebar({
     if (effectiveProfile.role === "superadmin") {
       const systemItems: MenuItem[] = [];
 
-      if (availableSections.includes("keys")) {
+      if (availableSections.includes("providers")) {
         systemItems.push({
-          title: "Keys",
+          title: "Providers",
           url: "#",
-          section: "keys",
+          section: "providers",
         });
       }
 

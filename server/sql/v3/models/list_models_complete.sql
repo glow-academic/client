@@ -49,12 +49,15 @@ models_with_usage AS (
         m.active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
-        m.provider::text as provider,
-        COALESCE(me.base_url, '') as base_url,
+        p.value as provider,
+        p.id::text as provider_id,
+        p.name as provider_name,
+        COALESCE(pe.base_url, '') as base_url,
         COALESCE(pu.usage_count, 0) as persona_usage_count,
         COALESCE(au.usage_count, 0) as agent_usage_count
     FROM models m
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
+    JOIN providers p ON p.id = m.provider_id
+    LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
     LEFT JOIN persona_usage pu ON pu.model_id = m.id
     LEFT JOIN agent_usage au ON au.model_id = m.id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id

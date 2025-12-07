@@ -144,8 +144,8 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "engine";
 
     case "system":
-      if (second === "keys") {
-        return "keys";
+      if (second === "providers") {
+        return "providers";
       }
       if (second === "auth") {
         return "auth";
@@ -272,8 +272,8 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "settings":
         title = "Settings";
         break;
-      case "keys":
-        title = "Keys";
+      case "providers":
+        title = "Providers";
         break;
       case "evals":
         title = "Evals";

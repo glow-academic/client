@@ -106,6 +106,12 @@ async def get_model_new(
         valid_provider_ids_raw = result.get("valid_provider_ids")
         if valid_provider_ids_raw and isinstance(valid_provider_ids_raw, (list, tuple)):
             valid_provider_ids = [str(pid) for pid in valid_provider_ids_raw if pid]
+        elif isinstance(valid_provider_ids_raw, str):
+            # Handle JSON string
+            import json
+            valid_provider_ids_raw = json.loads(valid_provider_ids_raw)
+            if isinstance(valid_provider_ids_raw, list):
+                valid_provider_ids = [str(pid) for pid in valid_provider_ids_raw if pid]
 
         # Parse provider_mapping from JSONB
         provider_mapping: dict[str, ProviderMappingItem] = {}

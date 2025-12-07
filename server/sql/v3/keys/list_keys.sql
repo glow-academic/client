@@ -8,22 +8,29 @@ WITH user_departments AS (
 user_profile AS (
     SELECT role FROM profiles WHERE id = $1
 ),
-department_keys_data AS (
+-- Get department_ids via provider_keys -> providers -> setting_providers -> settings -> department_settings
+key_departments_data AS (
     SELECT 
-        kd.key_id,
-        ARRAY_AGG(kd.department_id::text ORDER BY kd.created_at) as department_ids
-    FROM department_keys kd
-    WHERE kd.active = true
-    GROUP BY kd.key_id
+        pk.key_id,
+        ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id) as department_ids
+    FROM provider_keys pk
+    JOIN providers p ON p.id = pk.provider_id
+    JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
+    JOIN settings s ON s.id = sp.settings_id AND s.active = true
+    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    WHERE pk.active = true
+    GROUP BY pk.key_id
 ),
+-- Get model_ids via provider_keys -> providers -> models
 key_models_data AS (
     SELECT 
-        mk.key_id,
-        ARRAY_AGG(mk.model_id::text ORDER BY m.name) as model_ids
-    FROM model_keys mk
-    JOIN models m ON m.id = mk.model_id
-    WHERE mk.active = true AND m.active = true
-    GROUP BY mk.key_id
+        pk.key_id,
+        ARRAY_AGG(m.id::text ORDER BY m.name) as model_ids
+    FROM provider_keys pk
+    JOIN providers p ON p.id = pk.provider_id
+    JOIN models m ON m.provider_id = p.id
+    WHERE pk.active = true AND m.active = true
+    GROUP BY pk.key_id
 ),
 key_data AS (
     SELECT 
@@ -44,8 +51,17 @@ key_data AS (
             WHEN COALESCE(kdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role = 'superadmin' THEN true
             WHEN up.role = 'admin' AND (
-                COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
-                OR NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+                -- Check if key is linked to providers that are linked to user's department settings
+                EXISTS (
+                    SELECT 1 FROM provider_keys pk
+                    JOIN providers p ON p.id = pk.provider_id
+                    JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
+                    JOIN settings s ON s.id = sp.settings_id AND s.active = true
+                    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+                    JOIN user_departments ud ON ud.department_id = ds.department_id
+                    WHERE pk.key_id = k.id AND pk.active = true
+                )
+                OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
             ) THEN true
             ELSE false
         END as can_edit,
@@ -54,27 +70,41 @@ key_data AS (
             WHEN COALESCE(kdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role = 'superadmin' THEN true
             WHEN up.role = 'admin' AND (
-                COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
-                OR NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+                EXISTS (
+                    SELECT 1 FROM provider_keys pk
+                    JOIN providers p ON p.id = pk.provider_id
+                    JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
+                    JOIN settings s ON s.id = sp.settings_id AND s.active = true
+                    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+                    JOIN user_departments ud ON ud.department_id = ds.department_id
+                    WHERE pk.key_id = k.id AND pk.active = true
+                )
+                OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
             ) THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate
     FROM keys k
-    LEFT JOIN department_keys kd ON kd.key_id = k.id AND kd.active = true
-    LEFT JOIN department_keys_data kdd ON kdd.key_id = k.id
+    LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
     LEFT JOIN key_models_data kmd ON kmd.key_id = k.id
     CROSS JOIN user_profile up
-    GROUP BY k.id, k.name, k.key, k.description, k.active, k.created_at, k.updated_at, kdd.department_ids, kmd.model_ids, up.role
-    HAVING 
+    WHERE 
         -- Include keys with matching department links OR default keys (no department links)
-        COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+        EXISTS (
+            SELECT 1 FROM provider_keys pk
+            JOIN providers p ON p.id = pk.provider_id
+            JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
+            JOIN settings s ON s.id = sp.settings_id AND s.active = true
+            JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+            JOIN user_departments ud ON ud.department_id = ds.department_id
+            WHERE pk.key_id = k.id AND pk.active = true
+        )
+        OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
         OR up.role = 'superadmin'
 ),
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM department_keys_data
+    FROM key_departments_data
     WHERE department_ids IS NOT NULL
 ),
 department_mapping_data AS (
@@ -104,13 +134,14 @@ model_mapping_data AS (
             jsonb_build_object(
                 'name', m.name,
                 'description', COALESCE(m.description, ''),
-                'provider', m.provider::text,
+                'provider', p.value,
                 'active', m.active
             )
         ) FILTER (WHERE m.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
     FROM models m
+    JOIN providers p ON p.id = m.provider_id
     WHERE m.id IN (SELECT model_id FROM all_model_ids)
 ),
 -- Build facet options for filters

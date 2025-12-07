@@ -17,24 +17,41 @@ default_department_from_settings AS (
     WHERE s.active = true AND sdd.active = true
     LIMIT 1
 ),
--- Get default providers (no department links)
-default_providers AS (
-    SELECT a.id
-    FROM auth a
-    WHERE a.active = true
-      AND NOT EXISTS (
-          SELECT 1 FROM department_auths ad 
-          WHERE ad.auth_id = a.id AND ad.active = true
-      )
+-- Get settings for the department (if department_id provided)
+dept_settings AS (
+    SELECT DISTINCT s.id as settings_id
+    FROM settings s
+    JOIN department_settings ds ON ds.settings_id = s.id
+    WHERE s.active = true
+      AND ds.active = true
+      AND ($1::uuid IS NULL OR ds.department_id = $1::uuid)
 ),
--- Get department-specific providers (if department_id provided)
-dept_providers AS (
-    SELECT a.id
+-- Get default settings (no department links)
+default_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings ds 
+          WHERE ds.settings_id = s.id AND ds.active = true
+      )
+    LIMIT 1
+),
+-- Get auths linked to department settings or default settings
+dept_auths AS (
+    SELECT DISTINCT a.id
     FROM auth a
-    JOIN department_auths ad ON ad.auth_id = a.id
+    JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
+    JOIN dept_settings ds ON ds.settings_id = sa.settings_id
     WHERE a.active = true
-      AND ad.active = true
-      AND ($1::uuid IS NULL OR ad.department_id = $1::uuid)
+),
+-- Get auths linked to default settings
+default_auths AS (
+    SELECT DISTINCT a.id
+    FROM auth a
+    JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
+    JOIN default_settings ds ON ds.settings_id = sa.settings_id
+    WHERE a.active = true
 ),
 -- Providers query (always returns at least one row)
 providers_data AS (
@@ -45,7 +62,7 @@ providers_data AS (
                     'id', a.slug,
                     'name', a.name,
                     'icon', a.icon_url,
-                    'is_default', EXISTS (SELECT 1 FROM default_providers dp WHERE dp.id = a.id)
+                    'is_default', EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id)
                 )
                 ORDER BY a.name
             ),
@@ -55,12 +72,12 @@ providers_data AS (
     CROSS JOIN (SELECT guest_login_enabled FROM active_settings LIMIT 1) s
     WHERE a.active = true
       AND (
-          -- Include if department_id not provided (show all)
+          -- Include if department_id not provided (show all auths from all settings)
           $1::uuid IS NULL
-          -- OR include if it's a default provider (no department links)
-          OR EXISTS (SELECT 1 FROM default_providers dp WHERE dp.id = a.id)
-          -- OR include if it's linked to the specified department
-          OR EXISTS (SELECT 1 FROM dept_providers dp WHERE dp.id = a.id)
+          -- OR include if it's linked to default settings
+          OR EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id)
+          -- OR include if it's linked to department-specific settings
+          OR EXISTS (SELECT 1 FROM dept_auths da WHERE da.id = a.id)
       )
 ),
 -- Ensure providers_data always returns a row

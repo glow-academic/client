@@ -399,25 +399,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         path: "/system",
         roles: ["superadmin"],
         title: "System Overview",
-        redirectTo: "/system/keys",
-      },
-      {
-        path: "/system/keys",
-        roles: ["admin", "superadmin"],
-        title: "Keys",
-        redirectTo: "/system/keys",
-      },
-      {
-        path: "/system/keys/new",
-        roles: ["admin", "superadmin"],
-        title: "Create Key",
-        redirectTo: "/system/keys",
-      },
-      {
-        path: "/system/keys/k/[keyId]",
-        roles: ["admin", "superadmin"],
-        title: "Edit Key",
-        redirectTo: "/system/keys",
+        redirectTo: "/system/providers",
       },
       {
         path: "/system/auth",

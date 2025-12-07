@@ -221,3 +221,106 @@ CREATE INDEX ON settings_default_department (active);
 -- Enforce only one active default department per settings
 CREATE UNIQUE INDEX settings_default_department_one_active
   ON settings_default_department(settings_id) WHERE active = true;
+
+-- ============================================================================
+-- SETTINGS ↔ AUTH JUNCTION TABLE
+-- ============================================================================
+
+-- Settings → Auth binary relationship table
+-- Tracks which auth providers are available to settings
+-- No records = available to all settings (cross-settings)
+CREATE TABLE setting_auths (
+  settings_id UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  auth_id     UUID NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, auth_id)
+);
+
+CREATE INDEX ON setting_auths (settings_id);
+CREATE INDEX ON setting_auths (auth_id);
+CREATE INDEX ON setting_auths (active);
+
+-- ============================================================================
+-- SETTINGS ↔ PROVIDERS JUNCTION TABLE
+-- ============================================================================
+
+-- Settings → Providers binary relationship table
+-- Tracks which providers are available to settings
+-- No records = available to all settings (cross-settings)
+CREATE TABLE setting_providers (
+  settings_id UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  provider_id UUID NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, provider_id)
+);
+
+CREATE INDEX ON setting_providers (settings_id);
+CREATE INDEX ON setting_providers (provider_id);
+CREATE INDEX ON setting_providers (active);
+
+-- ============================================================================
+-- SETTINGS ↔ PROVIDERS ↔ KEYS TERNARY JUNCTION TABLE
+-- ============================================================================
+
+-- Settings → Providers → Keys ternary relationship table
+-- Tracks which keys are used with which providers for a given settings
+-- No records = no keys configured for that provider in that settings
+CREATE TABLE setting_provider_keys (
+  settings_id UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  provider_id UUID NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+  key_id      UUID NOT NULL REFERENCES keys(id) ON DELETE CASCADE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, provider_id, key_id)
+);
+
+CREATE INDEX ON setting_provider_keys (settings_id);
+CREATE INDEX ON setting_provider_keys (provider_id);
+CREATE INDEX ON setting_provider_keys (key_id);
+CREATE INDEX ON setting_provider_keys (active);
+
+-- ============================================================================
+-- SETTINGS ↔ AUTH ↔ KEYS/VALUES TERNARY JUNCTION TABLES
+-- ============================================================================
+
+-- Settings → Auth → Keys ternary relationship table (for encrypted auth_items)
+-- Tracks which keys are used with which auth items for a given settings
+-- No records = no keys configured for that auth item in that settings
+CREATE TABLE setting_auth_keys (
+  settings_id UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  auth_id     UUID NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
+  auth_item_id UUID NOT NULL REFERENCES auth_items(id) ON DELETE CASCADE,
+  key_id      UUID NOT NULL REFERENCES keys(id) ON DELETE CASCADE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, auth_id, auth_item_id, key_id)
+);
+
+CREATE INDEX ON setting_auth_keys (settings_id);
+CREATE INDEX ON setting_auth_keys (auth_id);
+CREATE INDEX ON setting_auth_keys (auth_item_id);
+CREATE INDEX ON setting_auth_keys (key_id);
+CREATE INDEX ON setting_auth_keys (active);
+
+-- Settings → Auth → Values ternary relationship table (for non-encrypted auth_items)
+-- Tracks which values are used with which auth items for a given settings
+-- No records = no values configured for that auth item in that settings
+CREATE TABLE setting_auth_values (
+  settings_id UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  auth_id     UUID NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
+  auth_item_id UUID NOT NULL REFERENCES auth_items(id) ON DELETE CASCADE,
+  value       TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, auth_id, auth_item_id)
+);
+
+CREATE INDEX ON setting_auth_values (settings_id);
+CREATE INDEX ON setting_auth_values (auth_id);
+CREATE INDEX ON setting_auth_values (auth_item_id);

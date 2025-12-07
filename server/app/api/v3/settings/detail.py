@@ -45,6 +45,10 @@ class SettingsDetailResponse(BaseModel):
     success_threshold: int
     warning_threshold: int
     danger_threshold: int
+    auth_ids: list[str]  # Linked auth IDs
+    auth_mapping: dict[str, dict[str, str]]  # Auth mapping with name, description, slug
+    provider_ids: list[str]  # Linked provider IDs
+    provider_mapping: dict[str, dict[str, str]]  # Provider mapping with name, description, value
 
 
 router = APIRouter()
@@ -84,6 +88,33 @@ async def get_settings_detail(
                 status_code=404, detail=f"Settings not found: {request.settingsId}"
             )
 
+        # Parse auth_ids and provider_ids from arrays
+        import json
+        auth_ids: list[str] = []
+        auth_ids_raw = settings.get("auth_ids")
+        if auth_ids_raw and isinstance(auth_ids_raw, (list, tuple)):
+            auth_ids = [str(aid) for aid in auth_ids_raw if aid]
+
+        provider_ids: list[str] = []
+        provider_ids_raw = settings.get("provider_ids")
+        if provider_ids_raw and isinstance(provider_ids_raw, (list, tuple)):
+            provider_ids = [str(pid) for pid in provider_ids_raw if pid]
+
+        # Parse mappings from JSONB
+        auth_mapping: dict[str, dict[str, str]] = {}
+        auth_mapping_data = settings.get("auth_mapping")
+        if isinstance(auth_mapping_data, str):
+            auth_mapping_data = json.loads(auth_mapping_data)
+        if auth_mapping_data and isinstance(auth_mapping_data, dict):
+            auth_mapping = auth_mapping_data
+
+        provider_mapping: dict[str, dict[str, str]] = {}
+        provider_mapping_data = settings.get("provider_mapping")
+        if isinstance(provider_mapping_data, str):
+            provider_mapping_data = json.loads(provider_mapping_data)
+        if provider_mapping_data and isinstance(provider_mapping_data, dict):
+            provider_mapping = provider_mapping_data
+
         response_data = SettingsDetailResponse(
             settings_id=settings["settings_id"],
             created_at=settings["created_at"].isoformat()
@@ -108,6 +139,10 @@ async def get_settings_detail(
             success_threshold=settings["success_threshold"],
             warning_threshold=settings["warning_threshold"],
             danger_threshold=settings["danger_threshold"],
+            auth_ids=auth_ids,
+            auth_mapping=auth_mapping,
+            provider_ids=provider_ids,
+            provider_mapping=provider_mapping,
         )
 
         # Cache response

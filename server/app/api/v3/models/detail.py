@@ -53,14 +53,23 @@ class ModalitiesItem(BaseModel):
     output: list[str]
 
 
+class ProviderMappingItem(BaseModel):
+    name: str
+    description: str
+
+
 class ModelDetailResponse(BaseModel):
     name: str
     description: str
     active: bool
     image_model: bool  # Computed from modalities, kept for backward compatibility
-    provider: str  # enum: 'openai', 'gemini', 'custom'
+    provider: str  # provider value from providers table
+    provider_id: str  # provider UUID
+    provider_name: str  # provider display name
+    value: str  # model value identifier
     base_url: str  # empty string if not custom model
-    valid_providers: list[str]  # enum values
+    valid_provider_ids: list[str]  # provider UUIDs
+    provider_mapping: dict[str, ProviderMappingItem]
     valid_department_ids: list[str]
     department_mapping: dict[str, DepartmentMappingItem]
     department_ids: list[str]
@@ -115,11 +124,24 @@ async def get_model_detail(
                 status_code=404, detail=f"Model not found: {request.modelId}"
             )
 
-        # Parse valid_providers from array (enum values)
-        valid_providers: list[str] = []
-        valid_providers_raw = model.get("valid_providers")
-        if valid_providers_raw and isinstance(valid_providers_raw, (list, tuple)):
-            valid_providers = [str(p) for p in valid_providers_raw if p]
+        # Parse valid_provider_ids from array
+        valid_provider_ids: list[str] = []
+        valid_provider_ids_raw = model.get("valid_provider_ids")
+        if valid_provider_ids_raw and isinstance(valid_provider_ids_raw, (list, tuple)):
+            valid_provider_ids = [str(pid) for pid in valid_provider_ids_raw if pid]
+
+        # Parse provider_mapping from JSONB
+        provider_mapping: dict[str, ProviderMappingItem] = {}
+        provider_mapping_data = model.get("provider_mapping")
+        if isinstance(provider_mapping_data, str):
+            provider_mapping_data = json.loads(provider_mapping_data)
+        if provider_mapping_data and isinstance(provider_mapping_data, dict):
+            for provider_id, pdata in provider_mapping_data.items():
+                if isinstance(pdata, dict):
+                    provider_mapping[provider_id] = ProviderMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                    )
 
         # Parse valid_department_ids from array
         valid_department_ids: list[str] = []
@@ -279,9 +301,13 @@ async def get_model_detail(
             description=model["description"],
             active=model["active"],
             image_model=bool(model.get("image_model", False)),
-            provider=str(model["provider"]),
+            provider=str(model.get("provider", "")),
+            provider_id=str(model.get("provider_id", "")),
+            provider_name=str(model.get("provider_name", "")),
+            value=str(model.get("value", "")),
             base_url=str(model.get("base_url", "")),
-            valid_providers=valid_providers,
+            valid_provider_ids=valid_provider_ids,
+            provider_mapping=provider_mapping,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
             department_ids=final_department_ids,

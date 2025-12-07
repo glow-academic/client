@@ -26,7 +26,9 @@ class ModelItem(BaseModel):
     active: bool
     image_model: bool
     updated_at: str
-    provider: str  # enum: 'openai', 'gemini', 'custom'
+    provider: str  # provider value from providers table
+    provider_id: str  # provider UUID
+    provider_name: str  # provider display name
     base_url: str  # empty string if not custom model
     can_edit: bool
     can_delete: bool
@@ -87,18 +89,20 @@ async def get_models_list(
                 image_model=row["image_model"],
                 updated_at=updated_at,
                 provider=str(row["provider"]),
+                provider_id=str(row.get("provider_id", "")),
+                provider_name=str(row.get("provider_name", "")),
                 base_url=str(row.get("base_url", "")),
                 can_edit=row["can_edit"],
                 can_delete=row["can_delete"],
             )
             models.append(model_item)
 
-        # Build facet options server-side
-        # Provider options are enum values
+        # Build facet options server-side from providers table
+        provider_options_query = "SELECT value, name FROM providers WHERE active = true ORDER BY name"
+        provider_rows = await conn.fetch(provider_options_query)
         provider_options = [
-            {"value": "openai", "label": "OpenAI"},
-            {"value": "gemini", "label": "Gemini"},
-            {"value": "custom", "label": "Custom"},
+            {"value": str(row["value"]), "label": row["name"]}
+            for row in provider_rows
         ]
 
         status_options = [

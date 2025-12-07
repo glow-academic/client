@@ -130,8 +130,8 @@ export const getSectionRoute = (
     // System routes
     case "system":
       return "/system";
-    case "keys":
-      return "/system/keys";
+    case "providers":
+      return "/system/providers";
     case "auth":
       return "/system/auth";
     case "health":

@@ -48,16 +48,16 @@ import { useRouter } from "next/navigation";
 interface FormErrors {
   name?: string;
   description?: string;
-  provider?: string;
-  baseUrl?: string;
+  provider_id?: string;
+  value?: string;
 }
 
 interface FormData {
   name?: string;
   description?: string;
-  provider?: string;
+  provider_id?: string;
+  value?: string;
   active?: boolean;
-  baseUrl?: string;
   departmentIds?: string[] | null;
   keyId?: string | null;
   // Feature toggles
@@ -139,9 +139,9 @@ export default function Model({
     () => ({
       name: "",
       description: "",
-      provider: "",
+      provider_id: "",
+      value: "",
       active: true,
-      baseUrl: "",
       departmentIds: defaultDepartmentIds,
       keyId: null,
     }),
@@ -189,6 +189,25 @@ export default function Model({
   const validDepartmentIds = useMemo(() => {
     return modelDataForMappings?.valid_department_ids || [];
   }, [modelDataForMappings]);
+
+  // Get provider mapping and convert to ProviderOption array
+  const providerMapping = useMemo(() => {
+    return modelDataForMappings?.provider_mapping || {};
+  }, [modelDataForMappings]);
+
+  const validProviderIds = useMemo(() => {
+    return modelDataForMappings?.valid_provider_ids || [];
+  }, [modelDataForMappings]);
+
+  // Convert provider_mapping to ProviderOption array for ProviderPicker
+  const providerOptions = useMemo(() => {
+    return Object.entries(providerMapping).map(([id, data]) => ({
+      id,
+      name: data.name,
+      description: data.description,
+      value: "", // Will be populated from provider detail if needed
+    }));
+  }, [providerMapping]);
 
   // Get key mapping type for filteredKeyMapping
   type KeyMappingType = typeof modelDataForMappings extends {
@@ -365,10 +384,10 @@ export default function Model({
       setFormData({
         name: modelDetail.name,
         description: modelDetail.description,
-        provider: modelDetail.provider,
+        provider_id: modelDetail.provider_id,
+        value: modelDetail.value || "",
         active:
           typeof modelDetail.active === "boolean" ? modelDetail.active : true,
-        baseUrl: modelDetail.base_url || "",
         departmentIds: currentDepartmentIds,
         keyId: currentKeyId,
         enableModalities: hasModalities,
@@ -449,22 +468,18 @@ export default function Model({
       return;
     }
 
-    if (!formData.provider) {
+    if (!formData.provider_id) {
       setErrors((prev) => ({
         ...prev,
-        provider: "Provider is required",
+        provider_id: "Provider is required",
       }));
       return;
     }
 
-    // Validate base_url if custom provider
-    if (
-      formData.provider === "custom" &&
-      (!formData.baseUrl || formData.baseUrl.trim() === "")
-    ) {
+    if (!formData.value) {
       setErrors((prev) => ({
         ...prev,
-        baseUrl: "Base URL is required for custom models",
+        value: "Model value is required",
       }));
       return;
     }
@@ -515,14 +530,12 @@ export default function Model({
       if (isEditMode && modelId) {
         await handleUpdateModel({
           modelId: modelId,
-          provider: formData.provider!,
+          provider_id: formData.provider_id!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active ?? true,
+          value: formData.value!,
           department_ids: formData.departmentIds || null,
-          key_id: formData.keyId || null,
-          base_url:
-            formData.provider === "custom" ? formData.baseUrl || null : null,
           ...(temperature_bounds ? { temperature_bounds } : {}),
           ...(pricing ? { pricing } : {}),
           modalities,
@@ -546,14 +559,12 @@ export default function Model({
         router.push(`/engine/models`);
       } else {
         await handleCreateModel({
-          provider: formData.provider!,
+          provider_id: formData.provider_id!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active ?? true,
+          value: formData.value!,
           department_ids: formData.departmentIds || null,
-          key_id: formData.keyId || null,
-          base_url:
-            formData.provider === "custom" ? formData.baseUrl || null : null,
           ...(temperature_bounds ? { temperature_bounds } : {}),
           ...(pricing ? { pricing } : {}),
           modalities,
@@ -603,6 +614,28 @@ export default function Model({
           {errors.name && (
             <p className="text-sm text-destructive">{errors.name}</p>
           )}
+        </div>
+
+        {/* Value */}
+        <div className="space-y-2">
+          <Label htmlFor="value">Value</Label>
+          {formData.value !== undefined ? (
+            <Input
+              id="value"
+              data-testid="input-model-value"
+              value={formData.value}
+              onChange={(e) => handleInputChange("value", e.target.value)}
+              placeholder="Enter model value identifier (e.g., gpt-4, gemini-pro)"
+              className={errors.value ? "border-destructive" : ""}
+              disabled={isReadonly || isSubmitting}
+            />
+          ) : null}
+          {errors.value && (
+            <p className="text-sm text-destructive">{errors.value}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Unique identifier for this model (used in API calls)
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -679,39 +712,17 @@ export default function Model({
             <Label htmlFor="provider">Provider</Label>
             <div data-testid="picker-provider">
               <ProviderPicker
-                selectedProvider={formData.provider || ""}
-                onSelect={(provider) => {
-                  handleInputChange("provider", provider);
-                  // Clear base URL if switching away from custom
-                  if (provider !== "custom") {
-                    handleInputChange("baseUrl", "");
-                  }
+                providers={providerOptions}
+                selectedProvider={formData.provider_id || ""}
+                onSelect={(providerId) => {
+                  handleInputChange("provider_id", providerId);
                 }}
                 placeholder="Select a provider..."
-                buttonClassName={errors.provider ? "border-destructive" : ""}
+                buttonClassName={errors.provider_id ? "border-destructive" : ""}
               />
             </div>
-            {errors.provider && (
-              <p className="text-sm text-destructive">{errors.provider}</p>
-            )}
-            {/* Show base URL input when custom provider is selected */}
-            {formData.provider === "custom" && (
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="baseUrl">Base URL</Label>
-                <Input
-                  id="baseUrl"
-                  type="url"
-                  value={formData.baseUrl || ""}
-                  onChange={(e) => handleInputChange("baseUrl", e.target.value)}
-                  placeholder="e.g. https://api.example.com/v1"
-                  disabled={isSubmitting}
-                  className={errors.baseUrl ? "border-destructive" : ""}
-                  data-testid="input-model-base-url"
-                />
-                {errors.baseUrl && (
-                  <p className="text-sm text-destructive">{errors.baseUrl}</p>
-                )}
-              </div>
+            {errors.provider_id && (
+              <p className="text-sm text-destructive">{errors.provider_id}</p>
             )}
           </div>
 

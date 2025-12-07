@@ -31,12 +31,16 @@ resolve_profile_id AS (
 ),
 model_data AS (
     SELECT 
-        name,
-        description,
-        active,
-        provider::text as provider
-    FROM models
-    WHERE id = $1::uuid
+        m.name,
+        m.description,
+        m.active,
+        m.value,
+        p.value as provider,
+        p.id::text as provider_id,
+        p.name as provider_name
+    FROM models m
+    JOIN providers p ON p.id = m.provider_id
+    WHERE m.id = $1::uuid
 ),
 -- Determine if model is an image model (has 'image' output modality)
 image_model_check AS (
@@ -47,9 +51,11 @@ image_model_check AS (
 ),
 model_endpoint_data AS (
     SELECT 
-        me.base_url
-    FROM model_endpoints me
-    WHERE me.model_id = $1::uuid AND me.active = true
+        COALESCE(pe.base_url, '') as base_url
+    FROM models m
+    JOIN providers p ON p.id = m.provider_id
+    LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
+    WHERE m.id = $1::uuid
     LIMIT 1
 ),
 model_departments_data AS (
@@ -64,12 +70,11 @@ model_departments_fallback AS (
     SELECT ARRAY[]::text[] as department_ids
     WHERE NOT EXISTS (SELECT 1 FROM model_departments_data WHERE model_id = $1::uuid)
 ),
+-- Keys are now linked to providers, not models directly
+-- This CTE is kept for backward compatibility but will be empty
 model_default_key AS (
-    SELECT 
-        mk.key_id::text as key_id
-    FROM model_keys mk
-    WHERE mk.model_id = $1::uuid AND mk.active = true
-    LIMIT 1
+    SELECT NULL::text as key_id
+    WHERE false
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
@@ -281,7 +286,18 @@ all_units_data AS (
 SELECT 
     m.*,
     COALESCE(imc.image_model, false) as image_model,
-    ARRAY['openai', 'gemini', 'custom']::text[] as valid_providers,
+    -- Query providers table for valid providers
+    (SELECT ARRAY_AGG(p.id::text ORDER BY p.name) FROM providers p WHERE p.active = true) as valid_provider_ids,
+    (SELECT COALESCE(
+        jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.name,
+                'description', COALESCE(p.description, '')
+            )
+        ),
+        '{}'::jsonb
+    ) FROM providers p WHERE p.active = true) as provider_mapping,
     COALESCE(med.base_url, '') as base_url,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
     COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
