@@ -20,7 +20,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Loader2, Mic, MicOff, Send, Square, X } from "lucide-react";
+import { Loader2, Mic, MicOff, Send, Square, Volume2, X } from "lucide-react";
 
 // Tooltip
 import {
@@ -32,6 +32,7 @@ import {
 
 import { useProfile } from "@/contexts/profile-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
+import VoiceWaveform from "./VoiceWaveform";
 // Note: After ws.json is regenerated with start_voice_response, import and use:
 // import type { ServerToClientEvents } from "@/lib/ws/types";
 // type EventPayload<T extends keyof ServerToClientEvents> =
@@ -351,7 +352,6 @@ export default function AttemptInput({
 
       toolContextMapRef.current = {};
       await cleanupRealtime();
-      toast.success("Voice mode disabled");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to stop voice mode";
@@ -1386,6 +1386,26 @@ export default function AttemptInput({
 
       realtimeSessionRef.current = session;
 
+      // Get microphone stream for waveform visualization
+      // This is separate from the RealtimeSession's WebRTC stream
+      try {
+        if (!userMediaStreamRef.current) {
+          userMediaStreamRef.current =
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] Got microphone stream for waveform visualization"
+          );
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[Voice] Failed to get microphone stream for visualization:",
+          err
+        );
+        // Continue anyway - waveform will just not show audio levels
+      }
+
       // Ensure we start unmuted when entering voice mode
       try {
         session.mute(false);
@@ -1405,7 +1425,6 @@ export default function AttemptInput({
         tools_count: realtimeTools.length,
         session_connected: true,
       });
-      toast.success("Voice mode enabled");
     } catch (error) {
       // Log error for debugging (ESLint allows in catch blocks)
       const errorMessage =
@@ -1530,55 +1549,44 @@ export default function AttemptInput({
       >
         {/* --- Dynamic Input Area --- */}
         <div className="w-full flex items-end gap-2 shrink-0">
-          {/* Voice toggle button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant={voiceModeEnabled ? "default" : "outline"}
-                size="icon"
-                className="min-h-[40px] h-[40px] w-[40px] shrink-0"
-                onClick={handleVoiceToggle}
-                disabled={
-                  readOnly ||
-                  !isConnected ||
-                  !currentChat?.id ||
-                  isStartingVoice ||
-                  isStoppingVoice
-                }
-                data-testid="voice-toggle-button"
-              >
-                {isStartingVoice || isStoppingVoice ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : !voiceModeEnabled ? (
-                  // Voice OFF → button means "start voice"
-                  <Mic className="h-4 w-4" />
-                ) : isMicMuted ? (
-                  // Voice ON + muted
-                  <MicOff className="h-4 w-4" />
-                ) : (
-                  // Voice ON + unmuted
-                  <Mic className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {!voiceModeEnabled
-                  ? "Enable voice mode"
-                  : isMicMuted
-                    ? "Unmute microphone"
-                    : "Mute microphone"}
-              </p>
-            </TooltipContent>
-          </Tooltip>
+          {/* Voice toggle button - only show when voice mode is disabled */}
+          {!voiceModeEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="icon"
+                  className="min-h-[40px] h-[40px] w-[40px] shrink-0"
+                  onClick={handleVoiceToggle}
+                  disabled={
+                    readOnly ||
+                    !isConnected ||
+                    !currentChat?.id ||
+                    isStartingVoice ||
+                    isStoppingVoice
+                  }
+                  data-testid="voice-toggle-button"
+                >
+                  {isStartingVoice ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Volume2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Enable voice mode</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {voiceModeEnabled && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="destructive"
                   size="icon"
                   className="min-h-[40px] h-[40px] w-[40px] shrink-0"
                   onClick={handleVoiceStop}
@@ -1603,97 +1611,161 @@ export default function AttemptInput({
               </TooltipContent>
             </Tooltip>
           )}
-          <div className="flex-1 relative">
-            <Textarea
-              ref={textareaRef}
-              value={newMessage}
-              onChange={(e) =>
-                pastePrevention.handleChange(e, (value) =>
-                  setNewMessage(sanitizeInputLength(value))
-                )
-              }
-              placeholder={
-                voiceModeEnabled
-                  ? "Voice mode active – speak or type and press send"
-                  : "Type your message (LaTeX supported)"
-              }
-              disabled={readOnly ? true : false}
-              className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
-              rows={1}
-              maxLength={MAX_INPUT_CHARS}
-              data-testid="attempt-chat-input"
-              // Block paste/drop at the earliest stage
-              onBeforeInput={pastePrevention.handleBeforeInput}
-              onPaste={pastePrevention.handlePaste}
-              onPasteCapture={pastePrevention.handlePasteCapture}
-              onDrop={pastePrevention.handleDrop}
-              // Kill context menu (mouse + long-press)
-              onContextMenu={pastePrevention.handleContextMenu}
-              // Block middle-click paste (Linux/X11 primary selection)
-              onMouseDown={pastePrevention.handleMouseDown}
-              onKeyDown={(e) =>
-                pastePrevention.handleKeyDown(e, handleSendMessage)
-              }
-              // IME composition support
-              onCompositionStart={pastePrevention.handleCompositionStart}
-              onCompositionEnd={pastePrevention.handleCompositionEnd}
-              // Reduce "smart" automatic inserts that look like paste/autofill
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-            />
+          {/* Wrap both the Waveform and Textarea in a container that enforces the
+              "Input Box" look (Border, Radius, Background) */}
+          <div className="flex-1 relative min-h-[40px] max-h-32 flex items-center">
+            {voiceModeEnabled && !isMicMuted ? (
+              <div className="w-full h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
+                <VoiceWaveform
+                  mediaStream={userMediaStreamRef.current}
+                  className="w-full h-full"
+                />
+              </div>
+            ) : (
+              /* Show textarea when voice mode is disabled OR when muted */
+              <Textarea
+                ref={textareaRef}
+                value={newMessage}
+                onChange={(e) =>
+                  pastePrevention.handleChange(e, (value) =>
+                    setNewMessage(sanitizeInputLength(value))
+                  )
+                }
+                placeholder={
+                  voiceModeEnabled
+                    ? "Voice mode active – mute to type and send"
+                    : "Type your message (LaTeX supported)"
+                }
+                disabled={readOnly ? true : false}
+                className="w-full text-md resize-none overflow-y-auto text-base max-h-32 min-h-[40px]"
+                rows={1}
+                maxLength={MAX_INPUT_CHARS}
+                data-testid="attempt-chat-input"
+                // Block paste/drop at the earliest stage
+                onBeforeInput={pastePrevention.handleBeforeInput}
+                onPaste={pastePrevention.handlePaste}
+                onPasteCapture={pastePrevention.handlePasteCapture}
+                onDrop={pastePrevention.handleDrop}
+                // Kill context menu (mouse + long-press)
+                onContextMenu={pastePrevention.handleContextMenu}
+                // Block middle-click paste (Linux/X11 primary selection)
+                onMouseDown={pastePrevention.handleMouseDown}
+                onKeyDown={(e) =>
+                  pastePrevention.handleKeyDown(e, handleSendMessage)
+                }
+                // IME composition support
+                onCompositionStart={pastePrevention.handleCompositionStart}
+                onCompositionEnd={pastePrevention.handleCompositionEnd}
+                // Reduce "smart" automatic inserts that look like paste/autofill
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+              />
+            )}
           </div>
 
           <div className="flex gap-2">
-            {/* Always show the send/stop button, just disable as needed */}
-            <motion.div
-              layout
-              key="send-btn-short"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-            >
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="submit"
-                    className="min-h-[40px] h-[40px] px-3"
-                    variant={isSendingMessage ? "destructive" : "default"}
-                    disabled={
-                      readOnly || isSendingMessage
-                        ? isStoppingMessage
-                        : !isConnected || !hasTextMessage
-                    }
-                    onClick={
-                      isSendingMessage
-                        ? handleStopMessage
-                        : (e) => handleSendMessage(e)
-                    }
-                    data-testid={
-                      isSendingMessage
-                        ? "attempt-stop-button"
-                        : "attempt-send-button"
-                    }
-                  >
-                    {isSendingMessage ? (
-                      isStoppingMessage ? (
+            {/* Show stop button when sending message (takes priority) */}
+            {isSendingMessage ? (
+              <motion.div
+                layout
+                key="stop-btn"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      className="min-h-[40px] h-[40px] px-3"
+                      variant="destructive"
+                      disabled={readOnly || isStoppingMessage}
+                      onClick={handleStopMessage}
+                      data-testid="attempt-stop-button"
+                    >
+                      {isStoppingMessage ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Square className="h-4 w-4" />
-                      )
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                {getConnectionTooltip() && (
+                      )}
+                    </Button>
+                  </TooltipTrigger>
                   <TooltipContent>
-                    <p>{getConnectionTooltip()}</p>
+                    <p>Stop sending</p>
                   </TooltipContent>
-                )}
-              </Tooltip>
-            </motion.div>
+                </Tooltip>
+              </motion.div>
+            ) : voiceModeEnabled && !hasTextMessage ? (
+              /* Show mute/unmute button in send position when voice mode enabled and no text */
+              <motion.div
+                layout
+                key="mute-btn"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      className="min-h-[40px] h-[40px] px-3"
+                      variant={isMicMuted ? "outline" : "default"}
+                      disabled={
+                        readOnly ||
+                        !isConnected ||
+                        !currentChat?.id ||
+                        isStartingVoice ||
+                        isStoppingVoice
+                      }
+                      onClick={handleVoiceToggle}
+                      data-testid="voice-mute-toggle-button"
+                    >
+                      {isMicMuted ? (
+                        <MicOff className="h-4 w-4" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {isMicMuted ? "Unmute microphone" : "Mute microphone"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
+            ) : (
+              /* Show send button when text is present or voice mode is disabled */
+              <motion.div
+                layout
+                key="send-btn-short"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="submit"
+                      className="min-h-[40px] h-[40px] px-3"
+                      variant="default"
+                      disabled={readOnly || !isConnected || !hasTextMessage}
+                      onClick={(e) => handleSendMessage(e)}
+                      data-testid="attempt-send-button"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  {getConnectionTooltip() && (
+                    <TooltipContent>
+                      <p>{getConnectionTooltip()}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </motion.div>
+            )}
           </div>
         </div>
 
