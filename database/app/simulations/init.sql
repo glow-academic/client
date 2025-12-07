@@ -200,6 +200,19 @@ CREATE TABLE message_personas (
 CREATE INDEX ON message_personas (message_id);
 CREATE INDEX ON message_personas (persona_id);
 
+-- Message ↔ Audio Uploads junction table (BCNF normalization)
+-- Links messages to audio uploads for voice messages
+CREATE TABLE message_audio (
+  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  upload_id UUID NOT NULL REFERENCES uploads(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, upload_id)
+);
+
+CREATE INDEX ON message_audio (message_id);
+CREATE INDEX ON message_audio (upload_id);
+
 -- Simulation hints collection table (BCNF normalization)
 -- Normalized text collection pattern: composite PK with idx, created_at only (matches scenario_objectives)
 CREATE TABLE simulation_hints (

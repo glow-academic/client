@@ -119,6 +119,8 @@ export default function AttemptInput({
   const userMediaStreamRef = useRef<MediaStream | null>(null);
   const userRecorderRef = useRef<MediaRecorder | null>(null);
   const userAudioChunksRef = useRef<BlobPart[]>([]);
+  // Map item_id to upload_id for linking audio to messages when transcript arrives
+  const audioUploadIdRef = useRef<Map<string, string>>(new Map());
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -281,6 +283,7 @@ export default function AttemptInput({
     }
 
     processedItemIdsRef.current = new Set(); // reset
+    audioUploadIdRef.current.clear(); // reset audio upload mappings
 
     // Cleanup audio recording
     try {
@@ -884,14 +887,13 @@ export default function AttemptInput({
 
                 const uploadId = await uploadAudioWithTus(blob, {
                   filename: `user-${evt.item_id}.webm`,
+                  filetype: "audio/webm",
                   role: "user",
+                  subfolder: "audio",
                 });
 
-                socket.emit("voice_user_audio_uploaded", {
-                  chat_id: currentChat.id,
-                  item_id: evt.item_id,
-                  upload_id: uploadId,
-                });
+                // Store upload_id for this item_id to link when transcript arrives
+                audioUploadIdRef.current.set(evt.item_id, uploadId);
 
                 // eslint-disable-next-line no-console
                 console.log("[Voice] Uploaded user audio:", {
@@ -947,15 +949,25 @@ export default function AttemptInput({
             return;
           }
 
+          // Get upload_id for this item_id if it exists
+          const uploadId = audioUploadIdRef.current.get(evt.item_id);
+
           // Transport transcript to server
           // This will:
           // 1. Update optimistic UI (via voice_transcript_ready event)
           // 2. Create the real user message (via simulation_new_message event)
+          // 3. Link audio upload to message if upload_id is available
           socket.emit("voice_transcript_ready", {
             chat_id: currentChat.id,
             item_id: evt.item_id,
             transcript: transcript,
+            upload_id: uploadId || undefined,
           });
+
+          // Clean up stored upload_id after sending
+          if (uploadId) {
+            audioUploadIdRef.current.delete(evt.item_id);
+          }
 
           // eslint-disable-next-line no-console
           console.log("[Voice] Transported voice_transcript_ready to server:", {

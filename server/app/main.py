@@ -54,6 +54,10 @@ UPLOAD_FOLDER.mkdir(
     parents=True, exist_ok=True
 )  # saving each document as uploads/document_id.ext
 
+# Directory for storing audio uploads
+AUDIO_FOLDER = UPLOAD_FOLDER / "audio"
+AUDIO_FOLDER.mkdir(parents=True, exist_ok=True)
+
 # Directory for storing tus uploads in progress
 TUS_UPLOADS_DIR = UPLOAD_FOLDER / "tus_uploads"
 TUS_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)

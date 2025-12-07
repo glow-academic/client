@@ -8,7 +8,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 
-from app.main import UPLOAD_FOLDER, get_db
+from app.main import AUDIO_FOLDER, UPLOAD_FOLDER, get_db
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import load_sql
@@ -34,7 +34,12 @@ async def download_upload(
         if not result:
             raise HTTPException(status_code=404, detail="Upload not found")
 
-        file_path = os.path.join(UPLOAD_FOLDER, result["file_path"])
+        # Handle subfolder paths (e.g., "audio/uuid.ext")
+        stored_path = result["file_path"]
+        if stored_path.startswith("audio/"):
+            file_path = os.path.join(AUDIO_FOLDER, os.path.basename(stored_path))
+        else:
+            file_path = os.path.join(UPLOAD_FOLDER, stored_path)
 
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="Upload file not found")

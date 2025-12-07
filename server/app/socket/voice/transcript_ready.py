@@ -18,6 +18,7 @@ class VoiceTranscriptReadyPayload(BaseModel):
     chat_id: str
     item_id: str
     transcript: str
+    upload_id: str | None = None
 
 
 # Emit helper functions
@@ -129,9 +130,33 @@ async def _voice_transcript_ready_impl(
                     str(latest_message_row["id"]),
                     str(user_message["id"]),
                 )
-                logger.info(
-                    f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
-                )
+            logger.info(
+                f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
+            )
+
+            # Link audio upload to message if upload_id is provided
+            if data.upload_id:
+                try:
+                    upload_id_uuid = uuid.UUID(data.upload_id)
+                    sql_insert_message_audio = load_sql(
+                        "sql/v3/simulations/insert_message_audio.sql"
+                    )
+                    await conn.execute(
+                        sql_insert_message_audio,
+                        str(user_message["id"]),
+                        str(upload_id_uuid),
+                    )
+                    logger.info(
+                        f"Linked audio upload {data.upload_id} to message {user_message['id']}"
+                    )
+                except ValueError as e:
+                    logger.warning(
+                        f"Invalid upload_id format {data.upload_id} in voice_transcript_ready: {e}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error linking audio upload to message: {e}", exc_info=True
+                    )
 
             # Emit user message to connected clients (same pattern as voice_user_message.py)
             from app.socket.simulations.send_message import (

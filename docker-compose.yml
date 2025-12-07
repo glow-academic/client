@@ -92,6 +92,9 @@ services:
           cp -a /seed/uploads/. /app/uploads/
         fi
 
+        # Create audio folder in uploads if it doesn't exist
+        mkdir -p /app/uploads/audio
+
         # Copy history if the volume is still empty
         if [ -z "$$(ls -A /app/history 2>/dev/null)" ]; then
           echo "[init] Seeding history volume…"

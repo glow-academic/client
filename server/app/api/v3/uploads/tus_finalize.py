@@ -10,7 +10,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 
-from app.main import TUS_UPLOADS_DIR, UPLOAD_FOLDER, get_db
+from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.mime.get_content_type import get_content_type
@@ -73,14 +73,24 @@ async def tus_finalize(
         filename = metadata.get("filename", "unknown")
         file_size = file_path.stat().st_size
 
+        # Check if subfolder is specified in metadata
+        subfolder = metadata.get("subfolder")
+        
         # Generate final file path with UUID
         upload_uuid = uuid.uuid4()
         _, ext = os.path.splitext(filename)
         if not ext:
             ext = ".bin"
 
-        final_file_path = f"{upload_uuid}{ext}"
-        final_full_path = UPLOAD_FOLDER / final_file_path
+        # Determine target folder and file path
+        if subfolder == "audio":
+            target_folder = AUDIO_FOLDER
+            final_file_path = f"audio/{upload_uuid}{ext}"
+        else:
+            target_folder = UPLOAD_FOLDER
+            final_file_path = f"{upload_uuid}{ext}"
+
+        final_full_path = target_folder / f"{upload_uuid}{ext}"
 
         # Move file from TUS directory to final location
         shutil.copy2(str(file_path), str(final_full_path))
