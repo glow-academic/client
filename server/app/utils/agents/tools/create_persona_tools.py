@@ -1,6 +1,5 @@
 """Create persona speech tools for voice agent."""
 
-import asyncio
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -8,7 +7,6 @@ from typing import Any
 import asyncpg  # type: ignore
 from agents import Tool, function_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
 from pydantic import Field
 
 logger = get_logger(__name__)
@@ -191,123 +189,12 @@ def create_persona_tools(
             f"Matched persona '{persona}' to {persona_display_name} (ID: {persona_id_str})"
         )
 
-        # Create assistant message immediately
-        sql_create_message = load_sql("sql/v3/simulations/create_message.sql")
-        assistant_message_row = await conn.fetchrow(
-            sql_create_message, "assistant", "", False
-        )
-        assistant_message = {
-            "id": assistant_message_row["id"],
-            "created_at": assistant_message_row["created_at"],
-        }
-
-        # Link message to run via message_runs
-        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
-        await conn.execute(
-            sql_link, str(assistant_message["id"]), str(run_id)
-        )
-
-        # Link message to persona
-        sql_link_persona = load_sql(
-            "sql/v3/simulations/link_message_to_persona.sql"
-        )
-        try:
-            await conn.execute(
-                sql_link_persona,
-                str(assistant_message["id"]),
-                persona_id_str,
-            )
-            logger.info(
-                f"Linked message {assistant_message['id']} to persona {persona_id_str}"
-            )
-        except Exception as link_err:
-            logger.warning(f"Failed to link message to persona: {link_err}")
-
-        # Create branch from parent to this assistant message
-        if parent_message_id:
-            parent_id_str = str(parent_message_id)
-            assistant_id_str = str(assistant_message["id"])
-            # Prevent self-references (parent_id != child_id)
-            if parent_id_str != assistant_id_str:
-                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
-                await conn.execute(
-                    sql_branch,
-                    parent_id_str,
-                    assistant_id_str,
-                )
-                logger.info(
-                    f"Created branch from message {parent_id_str} to assistant message {assistant_id_str}"
-                )
-
-        # Emit new message event (with persona_id)
-        await emit_new_message_func(
-            {
-                "message_id": str(assistant_message["id"]),
-                "chat_id": chat_id_str,
-                "role": "assistant",
-                "content": "",
-                "completed": False,
-                "created_at": assistant_message["created_at"].isoformat(),
-                "persona_id": persona_id_str,
-            }
-        )
-
-        # Stream message content token by token (artificial streaming)
-        accumulated_content = ""
-        words = message.split()
-        for word in words:
-            token = word + " "
-            accumulated_content += token
-
-            await emit_token_func(
-                {
-                    "message_id": str(assistant_message["id"]),
-                    "chat_id": chat_id_str,
-                    "token": token,
-                    "accumulated_content": accumulated_content,
-                }
-            )
-            # Small delay for smooth streaming (relatively fast)
-            await asyncio.sleep(0.01)
-
-        final_content = accumulated_content.strip()
-
-        # Update message in database
-        sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
-        await conn.execute(sql_update, final_content, str(assistant_message["id"]))
-
-        # Complete message
-        sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-        await conn.execute(
-            sql_complete, final_content, str(assistant_message["id"])
-        )
-
-        # Emit completion event
-        await emit_complete_func(
-            {
-                "message_id": str(assistant_message["id"]),
-                "chat_id": chat_id_str,
-                "final_content": final_content,
-            }
-        )
-
-        # Emit updated message with completed=True (with persona_id)
-        await emit_new_message_func(
-            {
-                "message_id": str(assistant_message["id"]),
-                "chat_id": chat_id_str,
-                "role": "assistant",
-                "content": final_content,
-                "completed": True,
-                "created_at": assistant_message["created_at"].isoformat(),
-                "persona_id": persona_id_str,
-            }
-        )
-
+        # All DB operations and streaming are now handled in the streaming event handler
+        # This function is just a no-op confirmation that validates the persona
         logger.info(
-            f"Streamed persona message from persona_id={persona_id_str} for chat {chat_id_str}"
+            f"Speak tool confirmed: persona={persona_display_name}, message_length={len(message)}"
         )
-        return f"{persona_display_name} has responded"
+        return f"Tool call confirmed for {persona_display_name}"
 
     # Create single speak tool
     speak_tool = function_tool(speak)

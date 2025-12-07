@@ -89,14 +89,6 @@
         "item_id": "string"
       }
     },
-    "voice_tool_call": {
-      "payload": {
-        "chat_id": "string",
-        "persona": "string",
-        "message": "string",
-        "profile_id": "?string"
-      }
-    },
     "voice_transcript_ready": {
       "payload": {
         "chat_id": "string",

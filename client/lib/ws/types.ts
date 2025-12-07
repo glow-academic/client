@@ -327,12 +327,6 @@ export type ClientToServerEvents = {
     chat_id: string;
     item_id: string;
   }) => void;
-  voice_tool_call: (payload: {
-    chat_id: string;
-    persona: string;
-    message: string;
-    profile_id?: string;
-  }) => void;
   voice_transcript_ready: (payload: {
     chat_id: string;
     item_id: string;

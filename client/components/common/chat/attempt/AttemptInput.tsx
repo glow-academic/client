@@ -554,7 +554,7 @@ export default function AttemptInput({
           async execute(args) {
             // The tool's execute function is called by RealtimeSession
             // The actual forwarding to server happens in session.on("agent_tool_start") handler
-            // Just return a confirmation - the handler will emit voice_tool_call to server
+            // Just return a confirmation - streaming is handled via transport events (voice_tool_call_delta/done)
             // eslint-disable-next-line no-console
             console.log(`[Voice] ===== TOOL EXECUTE CALLED =====`, {
               tool_name: toolDef.name,
@@ -846,6 +846,94 @@ export default function AttemptInput({
         }
       );
 
+      // Listen for tool call argument deltas and forward to server
+      session.transport.on(
+        "response.function_call_arguments.delta",
+        (evt: {
+          type: "response.function_call_arguments.delta";
+          call_id: string;
+          item_id: string;
+          delta: string;
+          response_id: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== TOOL CALL DELTA =====");
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Tool call delta event:", {
+            call_id: evt.call_id,
+            item_id: evt.item_id,
+            delta_length: evt.delta.length,
+            response_id: evt.response_id,
+          });
+
+          if (!socket || !currentChat?.id) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] Missing socket or chat_id, cannot forward delta event"
+            );
+            return;
+          }
+
+          // Forward delta event to server
+          socket.emit("voice_tool_call_delta", {
+            chat_id: currentChat.id,
+            call_id: evt.call_id,
+            item_id: evt.item_id,
+            delta: evt.delta,
+            response_id: evt.response_id,
+          });
+
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Forwarded tool call delta to server");
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== END TOOL CALL DELTA =====");
+        }
+      );
+
+      // Listen for tool call argument completion and forward to server
+      session.transport.on(
+        "response.function_call_arguments.done",
+        (evt: {
+          type: "response.function_call_arguments.done";
+          call_id: string;
+          item_id: string;
+          arguments: string;
+          response_id: string;
+        }) => {
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== TOOL CALL DONE =====");
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Tool call done event:", {
+            call_id: evt.call_id,
+            item_id: evt.item_id,
+            arguments_length: evt.arguments.length,
+            response_id: evt.response_id,
+          });
+
+          if (!socket || !currentChat?.id) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] Missing socket or chat_id, cannot forward done event"
+            );
+            return;
+          }
+
+          // Forward done event to server
+          socket.emit("voice_tool_call_done", {
+            chat_id: currentChat.id,
+            call_id: evt.call_id,
+            item_id: evt.item_id,
+            arguments: evt.arguments,
+            response_id: evt.response_id,
+          });
+
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Forwarded tool call done to server");
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== END TOOL CALL DONE =====");
+        }
+      );
+
       // Listen for speech stopped event to stop user audio recording
       session.transport.on(
         "input_audio_buffer.speech_stopped",
@@ -1076,42 +1164,13 @@ export default function AttemptInput({
           return;
         }
 
-        // Handle speak tool (single tool for all personas)
+        // Handle speak tool - now handled via transport events (response.function_call_arguments.delta/done)
+        // The transport events are forwarded to voice_tool_call_delta/voice_tool_call_done handlers
         if (toolDef.name === "speak") {
-          const persona = actualArguments["persona"] as string;
-          const message = actualArguments["message"] as string;
-
-          if (!persona) {
-            // eslint-disable-next-line no-console
-            console.error(`[Voice] No persona in arguments for speak tool`);
-            return;
-          }
-
-          if (!message) {
-            // eslint-disable-next-line no-console
-            console.error(`[Voice] No message in arguments for speak tool`);
-            return;
-          }
-
-          // Get profile_id from tool context map if available (for backward compatibility)
-          // Note: tool_context_map is now empty, but we keep this for potential future use
-          const toolContext = toolContextMapRef.current[toolDef.name];
-          const profileId = toolContext?.profile_id || null;
-
-          // Forward tool call to server with persona name (not ID)
-          socket.emit("voice_tool_call", {
-            chat_id: currentChat.id,
-            persona: persona,
-            message: message,
-            profile_id: profileId,
-          });
           // eslint-disable-next-line no-console
-          console.log("[Voice] Emitted voice_tool_call to server:", {
-            chat_id: currentChat.id,
-            persona: persona,
-            message: message.substring(0, 100),
-            profile_id: profileId,
-          });
+          console.log(
+            "[Voice] speak tool detected - streaming handled via transport events"
+          );
           return;
         }
 

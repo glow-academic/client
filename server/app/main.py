@@ -146,6 +146,10 @@ _voice_sessions: dict[str, dict[str, Any]] = {}
 # Accumulates message IDs created during voice tool calls, processed when response.done arrives
 _voice_message_ids: dict[str, list[str]] = {}
 
+# Global storage for simulation tool calls (chat_id -> {tool_call_id: {state...}})
+# Tracks tool call state for streaming persona messages from tool call arguments
+_simulation_tool_calls: dict[str, dict[str, dict[str, Any]]] = {}
+
 # Cached guest profile UUID (initialized at startup)
 _guest_profile_id: str | None = None
 
@@ -206,6 +210,20 @@ def get_socket_owner_dict() -> dict[str, str]:
 def get_active_results_dict() -> dict[str, dict[str, Any]]:
     """Get the active results dictionary."""
     return active_results
+
+
+def get_simulation_tool_calls_dict() -> dict[str, dict[str, dict[str, Any]]]:
+    """Get the simulation tool calls dictionary."""
+    return _simulation_tool_calls
+
+
+# Global storage for tool call locks (chat_id -> {call_id -> Lock})
+_simulation_tool_calls_locks: dict[str, dict[str, asyncio.Lock]] = {}
+
+
+def get_simulation_tool_calls_locks() -> dict[str, dict[str, asyncio.Lock]]:
+    """Get the simulation tool calls locks dictionary."""
+    return _simulation_tool_calls_locks
 
 
 def get_sio_instance() -> socketio.AsyncServer:
@@ -424,8 +442,8 @@ from app.socket.videos.generate_video import \
 from app.socket.voice import start_voice  # noqa: E402; type: ignore
 from app.socket.voice import (stop_voice, voice_debug_info, voice_interrupted,
                               voice_response_done, voice_speech_started,
-                              voice_tool_call, voice_transcript_ready,
-                              voice_user_message)
+                              voice_tool_call_delta, voice_tool_call_done,
+                              voice_transcript_ready, voice_user_message)
 
 
 # Create a combined lifespan to manage both session managers
@@ -870,7 +888,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             voice_interrupted,
             voice_response_done,
             voice_speech_started,
-            voice_tool_call,
             voice_transcript_ready,
             voice_user_message,
             # AI generation events
@@ -919,7 +936,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                                   start_voice_response)
         from app.socket.voice.stop_voice import (stop_voice_error,
                                                  stop_voice_response)
-        from app.socket.voice.tool_call import voice_tool_call_error
+        from app.socket.voice.tool_call_delta import voice_tool_call_error
         from app.socket.voice.transcript_ready import \
             voice_transcript_ready_emit
         from app.socket.voice.user_message import voice_user_message_error
