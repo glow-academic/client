@@ -34,7 +34,7 @@ new_persona AS (
 ),
 link_text_agent AS (
     -- Link text agent if provided (must have role simulation-text)
-    INSERT INTO persona_agents (persona_id, agent_id, active, created_at, updated_at)
+    INSERT INTO persona_text_agents (persona_id, agent_id, active, created_at, updated_at)
     SELECT 
         np.persona_id::uuid,
         $7::uuid,
@@ -50,7 +50,7 @@ link_text_agent AS (
 ),
 link_voice_agent AS (
     -- Link voice agent if provided (must have role simulation-voice)
-    INSERT INTO persona_agents (persona_id, agent_id, active, created_at, updated_at)
+    INSERT INTO persona_voice_agents (persona_id, agent_id, active, created_at, updated_at)
     SELECT 
         np.persona_id::uuid,
         $8::uuid,

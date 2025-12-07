@@ -42,6 +42,7 @@ import {
   RealtimeSession,
   tool,
   type RealtimeItem,
+  type RealtimeSessionConfig,
 } from "@openai/agents/realtime";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -317,8 +318,6 @@ export default function AttemptInput({
         voice?: string | null;
         transcription_model?: string | null;
         transcription_prompt?: string | null;
-        audio_enabled: boolean;
-        text_enabled: boolean;
       };
       const responseData = await new Promise<StartVoiceResponsePayload>(
         (resolve, reject) => {
@@ -329,7 +328,14 @@ export default function AttemptInput({
           socket.once("start_voice_response", (data) => {
             clearTimeout(timeout);
             // eslint-disable-next-line no-console
-            console.log("[Voice] Received start_voice_response:", {
+            console.log("[Voice] ===== FULL SERVER RESPONSE =====");
+            // eslint-disable-next-line no-console
+            console.log(
+              "[Voice] Received start_voice_response (FULL):",
+              JSON.stringify(data, null, 2)
+            );
+            // eslint-disable-next-line no-console
+            console.log("[Voice] Response summary:", {
               success: data.success,
               message: data.message,
               ephemeral_key: data.ephemeral_key
@@ -338,9 +344,12 @@ export default function AttemptInput({
               persona_tools_count: data.persona_tools?.length || 0,
               persona_tools: data.persona_tools,
               tool_context_map: data.tool_context_map,
-              instructions: data.instructions,
-              config: data.config,
+              instructions_length: data.instructions?.length || 0,
+              instructions_full: data.instructions,
+              model: data.model,
             });
+            // eslint-disable-next-line no-console
+            console.log("[Voice] ===== END SERVER RESPONSE =====");
             if (data.success) {
               resolve(data);
             } else {
@@ -455,22 +464,34 @@ export default function AttemptInput({
           });
         }
 
-        return tool({
+        const toolInstance = tool({
           name: toolDef.name,
           description: toolDef.description,
           parameters: parametersSchema,
           async execute(args) {
             // The tool's execute function is called by RealtimeSession
-            // The actual forwarding to server happens in session.on("function_call") handler
+            // The actual forwarding to server happens in session.on("agent_tool_start") handler
             // Just return a confirmation - the handler will emit voice_tool_call to server
             // eslint-disable-next-line no-console
-            console.log(
-              `[Voice] Tool ${toolDef.name} execute called with args:`,
-              args
-            );
+            console.log(`[Voice] ===== TOOL EXECUTE CALLED =====`, {
+              tool_name: toolDef.name,
+              args,
+              args_type: typeof args,
+              args_stringified: JSON.stringify(args),
+            });
+            // eslint-disable-next-line no-console
+            console.log(`[Voice] ===== END TOOL EXECUTE =====`);
             return `Tool ${toolDef.name} executed`;
           },
         });
+
+        // eslint-disable-next-line no-console
+        console.log(`[Voice] Created tool instance:`, {
+          name: toolInstance.name,
+          description: toolInstance.description,
+        });
+
+        return toolInstance;
       });
 
       // Create RealtimeAgent with tools and server-provided instructions
@@ -483,24 +504,30 @@ export default function AttemptInput({
       });
 
       // eslint-disable-next-line no-console
+      console.log("[Voice] ===== REALTIME AGENT CREATION =====");
+      // eslint-disable-next-line no-console
       console.log("[Voice] Created RealtimeAgent:", {
         name: agent.name,
         instructions_length: responseData.instructions?.length || 0,
-        instructions_preview:
-          responseData.instructions?.substring(0, 200) || "",
+        instructions_full: responseData.instructions,
         tools_count: realtimeTools.length,
         tool_names: realtimeTools.map((t) => t.name),
+        tools_full: realtimeTools.map((t) => ({
+          name: t.name,
+          description: t.description,
+          // @ts-expect-error - accessing internal properties for debugging
+          parameters: t.parameters?._def?.shape || t.parameters,
+        })),
       });
+      // eslint-disable-next-line no-console
+      console.log("[Voice] RealtimeAgent instance:", agent);
+      // eslint-disable-next-line no-console
+      console.log("[Voice] ===== END REALTIME AGENT =====");
 
       // Map server fields to full RealtimeSessionConfigDefinition
-      // Build outputModalities array from audio_enabled and text_enabled
-      const outputModalities: ("text" | "audio")[] = [];
-      if (responseData.text_enabled) {
-        outputModalities.push("text");
-      }
-      if (responseData.audio_enabled) {
-        outputModalities.push("audio");
-      }
+      // Build outputModalities array - Realtime API only supports ONE modality at a time
+      // For voice mode, default to "audio" for output (we can still get transcripts from input transcription)
+      const outputModalities: ("text" | "audio")[] = ["audio"];
 
       // Build audio.input.transcription from transcription_model and transcription_prompt
       const audioInputTranscription: {
@@ -544,11 +571,17 @@ export default function AttemptInput({
       };
 
       // Construct full config object
-      // Use Record<string, unknown> to match RealtimeSessionConfig type requirements
-      const config: Record<string, unknown> = {
+      // Use strongly typed config that excludes tools - tools come from RealtimeAgent
+      // Explicitly exclude 'tools' from config type to enforce that tools come from agent
+      type RealtimeSessionConfigWithoutTools = Omit<
+        Partial<RealtimeSessionConfig>,
+        "tools"
+      >;
+
+      const config: RealtimeSessionConfigWithoutTools = {
         model: responseData.model,
         instructions: responseData.instructions,
-        tools: realtimeTools,
+        // Tools are provided via RealtimeAgent, not config - TypeScript will error if we try to add tools
         ...(outputModalities.length > 0 ? { outputModalities } : {}),
         ...(Object.keys(audioConfig).length > 0 ? { audio: audioConfig } : {}),
         ...(responseData.voice ? { voice: responseData.voice } : {}), // Backwards compatibility
@@ -561,12 +594,79 @@ export default function AttemptInput({
       });
 
       // eslint-disable-next-line no-console
+      console.log("[Voice] ===== REALTIME SESSION CREATION =====");
+      // eslint-disable-next-line no-console
       console.log("[Voice] Created RealtimeSession:", {
         model: responseData.model,
         config,
+        agent_name: agent.name,
       });
 
+      // Get the actual session config that will be sent to the API
+      session
+        .getInitialSessionConfig()
+        .then((actualConfig) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] ===== ACTUAL SESSION CONFIG (what gets sent to API) ====="
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] Actual session config:",
+            JSON.stringify(actualConfig, null, 2)
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] Config tools count:",
+            actualConfig.tools?.length || 0
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] Config tools:",
+            actualConfig.tools?.map((t) => {
+              if (t.type === "function") {
+                return {
+                  name: t.name,
+                  description: t.description,
+                  type: t.type,
+                };
+              } else {
+                return {
+                  type: t.type,
+                  server_label:
+                    "server_label" in t ? t.server_label : undefined,
+                };
+              }
+            }) || []
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            "[Voice] Config instructions:",
+            actualConfig.instructions
+          );
+          // eslint-disable-next-line no-console
+          console.log("[Voice] ===== END ACTUAL SESSION CONFIG =====");
+        })
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error("[Voice] Failed to get initial session config:", err);
+        });
+      // eslint-disable-next-line no-console
+      console.log("[Voice] ===== END REALTIME SESSION =====");
+
       // Set up event listeners - library handles audio playback automatically
+      // Listen for ALL events to debug tool call issues
+      session.on("error", (error) => {
+        // eslint-disable-next-line no-console
+        console.error("[Voice] ===== REALTIME SESSION ERROR =====");
+        // eslint-disable-next-line no-console
+        console.error("[Voice] Error object:", error);
+        // eslint-disable-next-line no-console
+        console.error("[Voice] Error string:", String(error));
+        // eslint-disable-next-line no-console
+        console.error("[Voice] ===== END ERROR =====");
+      });
+
       // Listen for tool calls using agent_tool_start event
       session.on("agent_tool_start", (_runCtx, _agent, toolDef, args) => {
         // eslint-disable-next-line no-console
@@ -736,9 +836,22 @@ export default function AttemptInput({
       // WebRTC transport will automatically handle mic/speaker
       // eslint-disable-next-line no-console
       console.log("[Voice] Connecting RealtimeSession with ephemeral key...");
+      // eslint-disable-next-line no-console
+      console.log("[Voice] ===== CONNECTING SESSION =====");
+      // eslint-disable-next-line no-console
+      console.log("[Voice] About to connect with ephemeral key:", {
+        ephemeral_key_preview:
+          responseData.ephemeral_key?.substring(0, 20) + "...",
+        config_instructions: config.instructions,
+        config_instructions_length: config.instructions?.length || 0,
+      });
+
       await session.connect({ apiKey: responseData.ephemeral_key });
+
       // eslint-disable-next-line no-console
       console.log("[Voice] RealtimeSession connected successfully");
+      // eslint-disable-next-line no-console
+      console.log("[Voice] ===== END CONNECTION =====");
       realtimeSessionRef.current = session;
 
       // Ensure we start unmuted when entering voice mode

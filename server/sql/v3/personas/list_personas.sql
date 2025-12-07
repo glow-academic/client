@@ -38,22 +38,40 @@ persona_departments_data AS (
     GROUP BY pd.persona_id
 ),
 persona_agents_data AS (
+    -- Combine text and voice agents with their metadata
     SELECT 
-        pa.persona_id,
-        pa.agent_id,
-        a.role,
+        pta.persona_id,
+        pta.agent_id,
+        'simulation-text'::text as role,
         a.model_id,
         mrl.reasoning_level as reasoning,
         COALESCE(mtl.temperature, 0.0) as temperature
-    FROM persona_agents pa
-    JOIN agents a ON a.id = pa.agent_id
+    FROM persona_text_agents pta
+    JOIN agents a ON a.id = pta.agent_id
     JOIN models m ON m.id = a.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
     LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
-    WHERE pa.active = true
+    WHERE pta.active = true
+    UNION ALL
+    SELECT 
+        pva.persona_id,
+        pva.agent_id,
+        'simulation-voice'::text as role,
+        a.model_id,
+        mrl.reasoning_level as reasoning,
+        COALESCE(mtl.temperature, 0.0) as temperature
+    FROM persona_voice_agents pva
+    JOIN agents a ON a.id = pva.agent_id
+    JOIN models m ON m.id = a.model_id
+    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
+    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+    -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
+    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
+    WHERE pva.active = true
 ),
 persona_primary_agent AS (
     -- Get primary agent: prefer simulation-text, fallback to simulation-voice

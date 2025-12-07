@@ -50,8 +50,6 @@ class StartVoiceResponsePayload(BaseModel):
     voice: str | None = None  # Voice ID for audio output
     transcription_model: str | None = None  # Transcription model (e.g., "gpt-4o-mini-transcribe")
     transcription_prompt: str | None = None  # Transcription prompt
-    audio_enabled: bool = True  # Whether audio output is enabled
-    text_enabled: bool = True  # Whether text output is enabled
 
 
 # Emit helper functions
@@ -138,27 +136,40 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
 
             personas = [dict(row) for row in persona_rows]
 
-            # Build context for orchestrator agent
+            # Build context for orchestrator agent (use voice fields with fallback to text fields)
+            voice_temperature = context_row.get("voice_temperature")
             context = {
-                "model_name": context_row["model_name"],
-                "provider_name": context_row["provider"],
-                "base_url": context_row.get("base_url", ""),
-                "api_key": context_row["api_key"],
-                "temperature": float(context_row.get("temperature", 0.7)),
-                "reasoning": context_row.get("reasoning"),
+                "model_name": context_row.get("voice_model_name") or context_row.get("model_name"),
+                "provider_name": context_row.get("voice_provider") or context_row.get("provider"),
+                "base_url": context_row.get("voice_base_url") or context_row.get("base_url", ""),
+                "api_key": context_row.get("voice_api_key") or context_row.get("api_key"),
+                "temperature": float(voice_temperature if voice_temperature is not None else context_row.get("temperature", 0.7)),
+                "reasoning": context_row.get("voice_reasoning") or context_row.get("reasoning"),
             }
 
             # Get or create run_id for persona tools
             # We need: department_id, model_id, persona_id, agent_id, key_id, profile_id
+            # Use voice fields from context
             department_id_str = context_row.get("department_id")
-            model_id_str = context_row.get("model_id")
+            model_id_str = context_row.get("voice_model_id") or context_row.get("model_id")
+            voice_agent_id_str = context_row.get("voice_agent_id")
             profile_id_str = context_row.get("profile_id")
             
             if not department_id_str or not model_id_str:
                 await start_voice_error(
                     StartVoiceErrorPayload(
                         success=False,
-                        message="Missing department_id or model_id in context",
+                        message="Missing department_id or voice_model_id in context",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            if not voice_agent_id_str:
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message="Missing voice_agent_id in context",
                     ),
                     room=sid,
                 )
@@ -188,6 +199,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 model_id_uuid = uuid.UUID(str(model_id_str))
                 first_persona_id_uuid = uuid.UUID(first_persona_id_str)
                 profile_id_uuid = uuid.UUID(str(profile_id_str)) if profile_id_str else None
+                simulation_agent_id = uuid.UUID(str(voice_agent_id_str))
             except (ValueError, TypeError) as e:
                 logger.error(f"Invalid UUID format: {e}")
                 await start_voice_error(
@@ -199,7 +211,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 )
                 return
             
-            # Get key_id from model_keys table
+            # Get key_id from model_keys table (use voice model)
             key_id_row = await conn.fetchrow(
                 """
                 SELECT mk.key_id::text as key_id
@@ -215,45 +227,6 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     key_id_uuid = uuid.UUID(key_id_row["key_id"])
                 except (ValueError, TypeError):
                     logger.warning(f"Invalid key_id format from database: {key_id_row['key_id']}")
-            
-            # Get Simulation Voice Agent ID for first persona
-            simulation_agent_row = await conn.fetchrow(
-                """
-                SELECT pa.agent_id
-                FROM persona_agents pa
-                JOIN agents a ON a.id = pa.agent_id
-                WHERE pa.persona_id = $1::uuid 
-                AND pa.active = true 
-                AND a.role = 'simulation-voice'
-                AND a.active = true
-                LIMIT 1
-                """,
-                first_persona_id_uuid,
-            )
-            if not simulation_agent_row:
-                await start_voice_error(
-                    StartVoiceErrorPayload(
-                        success=False,
-                        message=f"Simulation Voice Agent not found for persona {first_persona_id_str}",
-                    ),
-                    room=sid,
-                )
-                return
-            
-            agent_id_value = simulation_agent_row["agent_id"]
-            if isinstance(agent_id_value, str):
-                simulation_agent_id = uuid.UUID(agent_id_value)
-            elif isinstance(agent_id_value, uuid.UUID):
-                simulation_agent_id = agent_id_value
-            else:
-                await start_voice_error(
-                    StartVoiceErrorPayload(
-                        success=False,
-                        message="Invalid agent_id format",
-                    ),
-                    room=sid,
-                )
-                return
             
             # Get or create run for this chat
             sql_get_or_create_run = load_sql(
@@ -378,20 +351,37 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             
             # If we couldn't get it from the agent, construct it manually
             if not orchestrator_instructions:
+                # List actual tool names (e.g., "speak_passive") not template strings
                 persona_names = [tool.name.replace("speak_", "").replace("_", " ") for tool in persona_tools]
+                actual_tool_names = [tool.name for tool in persona_tools]
+                
+                # Build explicit tool usage instructions
+                tool_usage_examples = ""
+                if actual_tool_names:
+                    if len(actual_tool_names) == 1:
+                        tool_usage_examples = f"Use the tool: {actual_tool_names[0]}"
+                    else:
+                        tool_usage_examples = f"Use one of these tools: {', '.join(actual_tool_names)}"
+                
                 orchestrator_instructions = f"""You are an orchestrator managing a multi-party conversation.
 
 Available personas:
 {chr(10).join(f"- {name}" for name in persona_names)}
 
+CRITICAL: You have access to these persona tools. You MUST use one of these EXACT tool names:
+{chr(10).join(f"- {tool_name}" for tool_name in actual_tool_names)}
+
 Your role:
 - Listen to the user's input
 - Decide which persona should respond based on the context
-- Call the appropriate persona tool (speak_{{persona_name}}) to make that persona respond
+- Use the exact tool name from the list above (e.g., use "{actual_tool_names[0] if actual_tool_names else "speak_persona"}" not "callAssistant" or any other name)
 - Never respond directly - always use a persona tool
+- Never make up tool names - only use the exact tool names listed above
 
-When a persona tool is called, that persona will generate and speak the response.
-You should call exactly one persona tool per user message."""
+When a persona tool is used, that persona will generate and speak the response.
+You must use exactly one persona tool per user message.
+
+Example: To make the "{persona_names[0] if persona_names else "persona"}" persona respond, use the tool: {actual_tool_names[0] if actual_tool_names else "speak_persona"}"""
 
             # Store orchestrator agent in a session store (we'll use Redis or in-memory dict)
             # For now, we'll store it per chat_id in a global dict
@@ -523,10 +513,6 @@ You should call exactly one persona tool per user message."""
             
             # Default transcription model
             transcription_model_default = "gpt-4o-mini-transcribe"
-            
-            # For transcript mode, both audio and text should be enabled
-            audio_enabled = True
-            text_enabled = True
 
             logger.info(
                 f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools"
@@ -544,8 +530,6 @@ You should call exactly one persona tool per user message."""
                     voice=None,  # Can be set from context if available
                     transcription_model=transcription_model_default,
                     transcription_prompt=None,  # Can be set from context if available
-                    audio_enabled=audio_enabled,
-                    text_enabled=text_enabled,
                 ),
                 room=sid,
             )

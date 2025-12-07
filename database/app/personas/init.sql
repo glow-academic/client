@@ -36,10 +36,10 @@ CREATE INDEX ON persona_departments (persona_id);
 CREATE INDEX ON persona_departments (department_id);
 CREATE INDEX ON persona_departments (active);
 
--- Persona → Agents junction table (BCNF normalization)
--- Links personas to their agents (text/voice determined by agent role enum)
+-- Persona → Text Agents junction table (BCNF normalization)
+-- Links personas to their simulation-text agents
 -- Models are inferred from the agent (via agent.model_id)
-CREATE TABLE persona_agents (
+CREATE TABLE persona_text_agents (
   persona_id UUID NOT NULL REFERENCES personas(id)     ON DELETE CASCADE,
   agent_id   UUID NOT NULL REFERENCES agents(id)      ON DELETE RESTRICT,
   active     BOOLEAN NOT NULL DEFAULT TRUE,
@@ -48,10 +48,30 @@ CREATE TABLE persona_agents (
   PRIMARY KEY (persona_id, agent_id)
 );
 
-CREATE INDEX ON persona_agents (persona_id);
-CREATE INDEX ON persona_agents (agent_id);
-CREATE INDEX ON persona_agents (persona_id, active);
+CREATE INDEX ON persona_text_agents (persona_id);
+CREATE INDEX ON persona_text_agents (agent_id);
+CREATE INDEX ON persona_text_agents (persona_id, active);
 
--- Only one active agent per persona (enforced by unique partial index)
-CREATE UNIQUE INDEX persona_agents_one_active_per_persona
-  ON persona_agents(persona_id) WHERE active = true;
+-- Only one active text agent per persona (enforced by unique partial index)
+CREATE UNIQUE INDEX persona_text_agents_one_active
+  ON persona_text_agents(persona_id) WHERE active = true;
+
+-- Persona → Voice Agents junction table (BCNF normalization)
+-- Links personas to their simulation-voice agents
+-- Models are inferred from the agent (via agent.model_id)
+CREATE TABLE persona_voice_agents (
+  persona_id UUID NOT NULL REFERENCES personas(id)     ON DELETE CASCADE,
+  agent_id   UUID NOT NULL REFERENCES agents(id)      ON DELETE RESTRICT,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (persona_id, agent_id)
+);
+
+CREATE INDEX ON persona_voice_agents (persona_id);
+CREATE INDEX ON persona_voice_agents (agent_id);
+CREATE INDEX ON persona_voice_agents (persona_id, active);
+
+-- Only one active voice agent per persona (enforced by unique partial index)
+CREATE UNIQUE INDEX persona_voice_agents_one_active
+  ON persona_voice_agents(persona_id) WHERE active = true;

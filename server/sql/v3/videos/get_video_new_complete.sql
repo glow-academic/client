@@ -245,8 +245,8 @@ valid_personas_filtered AS (
         p.icon,
         COALESCE(imc.image_model, false) as image_model
     FROM personas p
-    LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
-    LEFT JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN persona_voice_agents pva ON pva.persona_id = p.id AND pva.active = true
+    LEFT JOIN agents a ON a.id = pva.agent_id
     LEFT JOIN models m ON m.id = a.model_id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true

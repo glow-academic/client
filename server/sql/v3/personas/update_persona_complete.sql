@@ -40,15 +40,21 @@ update_persona AS (
     WHERE id = $1::uuid
     RETURNING id::text as persona_id
 ),
-deactivate_all_agents AS (
-    -- Deactivate all existing agent links for this persona
-    UPDATE persona_agents
+deactivate_text_agents AS (
+    -- Deactivate all existing text agent links for this persona
+    UPDATE persona_text_agents
+    SET active = false, updated_at = NOW()
+    WHERE persona_id = $1::uuid AND active = true
+),
+deactivate_voice_agents AS (
+    -- Deactivate all existing voice agent links for this persona
+    UPDATE persona_voice_agents
     SET active = false, updated_at = NOW()
     WHERE persona_id = $1::uuid AND active = true
 ),
 link_text_agent AS (
     -- Link text agent if provided (must have role simulation-text)
-    INSERT INTO persona_agents (persona_id, agent_id, active, created_at, updated_at)
+    INSERT INTO persona_text_agents (persona_id, agent_id, active, created_at, updated_at)
     SELECT 
         $1::uuid,
         $8::uuid,
@@ -63,7 +69,7 @@ link_text_agent AS (
 ),
 link_voice_agent AS (
     -- Link voice agent if provided (must have role simulation-voice)
-    INSERT INTO persona_agents (persona_id, agent_id, active, created_at, updated_at)
+    INSERT INTO persona_voice_agents (persona_id, agent_id, active, created_at, updated_at)
     SELECT 
         $1::uuid,
         $9::uuid,

@@ -111,8 +111,9 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                 return
 
             # Extract required fields from context and validate they're valid UUIDs
+            # Use voice fields from context
             department_id_str = context_row.get("department_id")
-            model_id_str = context_row.get("model_id")
+            model_id_str = context_row.get("voice_model_id") or context_row.get("model_id")
             
             if not department_id_str:
                 logger.error(f"department_id missing from context for chat {chat_id}")
@@ -126,11 +127,11 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                 return
             
             if not model_id_str:
-                logger.error(f"model_id missing from context for chat {chat_id}")
+                logger.error(f"voice_model_id missing from context for chat {chat_id}")
                 await voice_tool_call_error(
                     VoiceToolCallErrorPayload(
                         success=False,
-                        message="Missing model_id in context",
+                        message="Missing voice_model_id in context",
                     ),
                     room=sid,
                 )
@@ -177,16 +178,15 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                 except (ValueError, TypeError):
                     logger.warning(f"Invalid profile_id format: {profile_id_val}")
 
-            # Get Simulation Voice Agent ID from persona_agents table (required for runs table)
-            # Personas are linked to agents via persona_agents junction table
+            # Get Simulation Voice Agent ID from persona_voice_agents table (required for runs table)
+            # Personas are linked to voice agents via persona_voice_agents junction table
             simulation_agent_row = await conn.fetchrow(
                 """
-                SELECT pa.agent_id
-                FROM persona_agents pa
-                JOIN agents a ON a.id = pa.agent_id
-                WHERE pa.persona_id = $1::uuid 
-                AND pa.active = true 
-                AND a.role = 'simulation-voice'
+                SELECT pva.agent_id
+                FROM persona_voice_agents pva
+                JOIN agents a ON a.id = pva.agent_id
+                WHERE pva.persona_id = $1::uuid 
+                AND pva.active = true 
                 AND a.active = true
                 LIMIT 1
                 """,

@@ -793,17 +793,15 @@ async def _send_simulation_message_impl(
                             error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                         raise ValueError(error_message)
 
-                    # Get Simulation Text Agent ID from persona_agents table (required for runs table)
-                    # Personas are linked to agents via persona_agents junction table
-                    # Note: We check for the link regardless of pa.active status, as long as the agent itself is active
-                    # The pa.active flag controls which agent is "primary" for the persona, but we can use any linked active agent
+                    # Get Simulation Text Agent ID from persona_text_agents table (required for runs table)
+                    # Personas are linked to text agents via persona_text_agents junction table
                     simulation_agent_row = await conn.fetchrow(
                         """
-                        SELECT pa.agent_id
-                        FROM persona_agents pa
-                        JOIN agents a ON a.id = pa.agent_id
-                        WHERE pa.persona_id = $1::uuid 
-                        AND a.role = 'simulation-text'
+                        SELECT pta.agent_id
+                        FROM persona_text_agents pta
+                        JOIN agents a ON a.id = pta.agent_id
+                        WHERE pta.persona_id = $1::uuid 
+                        AND pta.active = true
                         AND a.active = true
                         LIMIT 1
                         """,

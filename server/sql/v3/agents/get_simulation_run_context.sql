@@ -1,6 +1,9 @@
 -- Get all data needed to run simulation agent with optimized JOIN
 -- Parameters: $1=chat_id (uuid)
 -- Returns: chat, attempt, scenario, persona, model, provider, simulation settings, profile, and documents data
+-- Returns both text and voice agent/model fields for flexibility
+-- Existing fields (persona_id, model_id, etc.) point to text agent/model for backward compatibility
+-- Voice fields are prefixed with voice_* (voice_model_id, voice_model_name, etc.)
 WITH scenario_dept AS (
     SELECT 
         s.id as scenario_id,
@@ -77,29 +80,42 @@ SELECT
     (SELECT department_id::text FROM resolved_dept) as department_id,
     ps.problem_statement,
     
-    -- Persona data (via scenario_personas junction)
+    -- Persona data (via scenario_personas junction - first persona for orchestrator)
     p.id::text as persona_id,
     p.name as persona_name,
+    
+    -- Text agent/model data (backward compatibility - existing fields)
     COALESCE(
         COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
         ''
     ) as system_prompt,
     COALESCE(mtl.temperature, 0.0) as temperature,
     mrl.reasoning_level as reasoning,
-    
-    -- Model data
     m.id::text as model_id,
     m.name as model_name,
     m.provider::text as provider,
     COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
-    
-    -- Custom model (if any) - indicated by presence of base_url in model_endpoints
     CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.name ELSE NULL END as custom_model,
-    
-    -- Provider data (provider enum is now on models table, no separate providers table)
     NULL::text as provider_id,
     m.provider::text as provider_name,
+    a.id::text as agent_id,
+    
+    -- Voice agent/model data (prefixed with voice_*)
+    COALESCE(
+        COALESCE(pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt),
+        ''
+    ) as voice_system_prompt,
+    COALESCE(mtl_voice.temperature, 0.0) as voice_temperature,
+    mrl_voice.reasoning_level as voice_reasoning,
+    m_voice.id::text as voice_model_id,
+    m_voice.name as voice_model_name,
+    m_voice.provider::text as voice_provider,
+    COALESCE(me_voice.base_url, '') as voice_base_url,
+    k_voice.key as voice_api_key,
+    CASE WHEN me_voice.base_url IS NOT NULL AND me_voice.base_url != '' THEN m_voice.name ELSE NULL END as voice_custom_model,
+    m_voice.provider::text as voice_provider_name,
+    a_voice.id::text as voice_agent_id,
     
     -- Scenario settings (flags moved from scenarios to simulation_scenarios)
     COALESCE(s.image_enabled, false) as image_input_enabled,
@@ -135,18 +151,27 @@ LEFT JOIN simulation_scenarios ss ON ss.simulation_id = sa.simulation_id AND ss.
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
 LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
 INNER JOIN simulations sim ON sim.id = sa.simulation_id
-LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
-LEFT JOIN personas p ON p.id = sp.persona_id
-LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
-LEFT JOIN agents a ON a.id = pa.agent_id
+-- Get first persona for orchestrator (ensures single row for orchestrator config)
+LEFT JOIN (
+    SELECT DISTINCT ON (sp.scenario_id) 
+        sp.scenario_id,
+        sp.persona_id,
+        p.name as persona_name
+    FROM scenario_personas sp
+    JOIN personas p ON p.id = sp.persona_id
+    WHERE sp.active = true AND p.active = true
+    ORDER BY sp.scenario_id, p.name
+) first_persona ON first_persona.scenario_id = s.id
+LEFT JOIN personas p ON p.id = first_persona.persona_id
+
+-- Text agent joins (for backward compatibility)
+LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
+LEFT JOIN agents a ON a.id = pta.agent_id AND a.active = true
 LEFT JOIN models m ON m.id = a.model_id
--- Join temperature and reasoning from model levels via agent
--- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
 LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
 LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
--- Try department-specific agent prompt first, fall back to default prompt
 LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
     AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
     AND adp_prompt.active = true
@@ -156,6 +181,24 @@ LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
 LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
+
+-- Voice agent joins (for voice mode)
+LEFT JOIN persona_voice_agents pva ON pva.persona_id = p.id AND pva.active = true
+LEFT JOIN agents a_voice ON a_voice.id = pva.agent_id AND a_voice.active = true
+LEFT JOIN models m_voice ON m_voice.id = a_voice.model_id
+LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
+LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.id = atl_voice.model_temperature_level_id AND mtl_voice.active = true AND mtl_voice.model_id = m_voice.id
+LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
+LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.id = arl_voice.model_reasoning_level_id AND mrl_voice.active = true AND mrl_voice.model_id = m_voice.id
+LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id 
+    AND adp_prompt_voice.department_id = (SELECT department_id FROM resolved_dept)
+    AND adp_prompt_voice.active = true
+LEFT JOIN prompts pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
+LEFT JOIN agent_prompts ap_voice_default ON ap_voice_default.agent_id = a_voice.id AND ap_voice_default.active = true
+LEFT JOIN prompts pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
+LEFT JOIN model_endpoints me_voice ON me_voice.model_id = m_voice.id AND me_voice.active = true
+LEFT JOIN model_keys mk_voice ON mk_voice.model_id = m_voice.id AND mk_voice.active = true
+LEFT JOIN keys k_voice ON k_voice.id = mk_voice.key_id AND k_voice.active = true
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents d ON d.id = sd.document_id
@@ -168,9 +211,15 @@ WHERE sc.id = $1::uuid
 GROUP BY sc.id, sc.title, sc.trace_id,
          sa.id, sa.simulation_id,
          s.id, ps.problem_statement,
-         p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
-         m.id, m.name, m.provider,
-         k.key, me.base_url,
+         first_persona.persona_id, first_persona.persona_name,
+         p.id, p.name, 
+         -- Text agent fields
+         pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
+         m.id, m.name, m.provider, k.key, me.base_url, a.id,
+         -- Voice agent fields
+         pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(mtl_voice.temperature, 0.0), mrl_voice.reasoning_level,
+         m_voice.id, m_voice.name, m_voice.provider, k_voice.key, me_voice.base_url, a_voice.id,
+         -- Other fields
          s.image_enabled, ss.copy_paste_allowed,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at

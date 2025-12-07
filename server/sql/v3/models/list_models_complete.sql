@@ -7,14 +7,21 @@ WITH user_profile AS (
     SELECT role FROM profiles WHERE id = $1
 ),
 -- Pre-aggregate persona usage counts for all models
--- Personas are linked to models via persona_agents -> agents -> model_id
+-- Personas are linked to models via persona_text_agents/persona_voice_agents -> agents -> model_id
 persona_usage AS (
     SELECT 
         a.model_id,
         COUNT(*) as usage_count
-    FROM personas p
-    JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
-    JOIN agents a ON a.id = pa.agent_id AND a.active = true
+    FROM (
+        SELECT pta.agent_id, pta.persona_id
+        FROM persona_text_agents pta
+        WHERE pta.active = true
+        UNION ALL
+        SELECT pva.agent_id, pva.persona_id
+        FROM persona_voice_agents pva
+        WHERE pva.active = true
+    ) combined_agents
+    JOIN agents a ON a.id = combined_agents.agent_id AND a.active = true
     GROUP BY a.model_id
 ),
 -- Pre-aggregate agent usage counts for all models

@@ -252,8 +252,8 @@ valid_personas_filtered AS (
         p.icon,
         COALESCE(imc.image_model, false) as image_model
     FROM personas p
-    LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
-    LEFT JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
+    LEFT JOIN agents a ON a.id = pta.agent_id
     LEFT JOIN models m ON m.id = a.model_id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
@@ -284,8 +284,8 @@ persona_data AS (
     FROM scenario_personas_agg spa
     CROSS JOIN LATERAL unnest(spa.persona_ids) as persona_id
     JOIN personas p2 ON p2.id = persona_id::uuid
-    LEFT JOIN persona_agents pa2 ON pa2.persona_id = p2.id AND pa2.active = true
-    LEFT JOIN agents a2 ON a2.id = pa2.agent_id
+    LEFT JOIN persona_text_agents pta2 ON pta2.persona_id = p2.id AND pta2.active = true
+    LEFT JOIN agents a2 ON a2.id = pta2.agent_id
     LEFT JOIN models m2 ON m2.id = a2.model_id
     LEFT JOIN image_model_check imc2 ON imc2.model_id = m2.id
     WHERE p2.active = true

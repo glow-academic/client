@@ -63,27 +63,18 @@ persona_department_access_check AS (
     CROSS JOIN user_profile up
     WHERE p.id = $1
 ),
-persona_agents_data AS (
-    SELECT 
-        pa.persona_id,
-        pa.agent_id::text as agent_id,
-        a.role
-    FROM persona_agents pa
-    JOIN agents a ON a.id = pa.agent_id
-    WHERE pa.persona_id = $1 AND pa.active = true
-),
 text_agent_data AS (
     SELECT 
-        pad.agent_id as text_agent_id
-    FROM persona_agents_data pad
-    WHERE pad.role = 'simulation-text'
+        pta.agent_id::text as text_agent_id
+    FROM persona_text_agents pta
+    WHERE pta.persona_id = $1 AND pta.active = true
     LIMIT 1
 ),
 voice_agent_data AS (
     SELECT 
-        pad.agent_id as voice_agent_id
-    FROM persona_agents_data pad
-    WHERE pad.role = 'simulation-voice'
+        pva.agent_id::text as voice_agent_id
+    FROM persona_voice_agents pva
+    WHERE pva.persona_id = $1 AND pva.active = true
     LIMIT 1
 ),
 persona_data AS (

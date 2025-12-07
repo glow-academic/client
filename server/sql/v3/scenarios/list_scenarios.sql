@@ -208,8 +208,8 @@ persona_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM personas p
-    LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
-    LEFT JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
+    LEFT JOIN agents a ON a.id = pta.agent_id
     LEFT JOIN models m ON m.id = a.model_id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id
     WHERE p.id IN (SELECT persona_id FROM all_persona_ids)

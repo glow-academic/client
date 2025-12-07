@@ -415,9 +415,7 @@
         "model": "string",
         "voice": "?string",
         "transcription_model": "?string",
-        "transcription_prompt": "?string",
-        "audio_enabled": "?boolean",
-        "text_enabled": "?boolean"
+        "transcription_prompt": "?string"
       }
     },
     "start_voice_error": {

@@ -11,8 +11,8 @@ SELECT
     mrl.reasoning_level as reasoning,
     'simulation' as agent_type
 FROM personas p
-LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
-LEFT JOIN agents a ON a.id = pa.agent_id
+LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
+LEFT JOIN agents a ON a.id = pta.agent_id
 LEFT JOIN models m ON m.id = a.model_id
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
 LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id

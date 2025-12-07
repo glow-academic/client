@@ -51,20 +51,37 @@ def build_orchestrator_agent(
         return ToolsToFinalOutputResult(is_final_output=persona_tool_called)
 
     # Build orchestrator system prompt
+    # List actual tool names (e.g., "speak_passive") not template strings
     persona_names = [tool.name.replace("speak_", "").replace("_", " ") for tool in persona_tools]
+    actual_tool_names = [tool.name for tool in persona_tools]
+    
+    # Build explicit tool usage instructions
+    tool_usage_examples = ""
+    if actual_tool_names:
+        if len(actual_tool_names) == 1:
+            tool_usage_examples = f"Use the tool: {actual_tool_names[0]}"
+        else:
+            tool_usage_examples = f"Use one of these tools: {', '.join(actual_tool_names)}"
+    
     orchestrator_prompt = f"""You are an orchestrator managing a multi-party conversation.
 
 Available personas:
 {chr(10).join(f"- {name}" for name in persona_names)}
 
+CRITICAL: You have access to these persona tools. You MUST use one of these EXACT tool names:
+{chr(10).join(f"- {tool_name}" for tool_name in actual_tool_names)}
+
 Your role:
 - Listen to the user's input
 - Decide which persona should respond based on the context
-- Call the appropriate persona tool (speak_{{persona_name}}) to make that persona respond
+- Use the exact tool name from the list above (e.g., use "{actual_tool_names[0] if actual_tool_names else "speak_persona"}" not "callAssistant" or any other name)
 - Never respond directly - always use a persona tool
+- Never make up tool names - only use the exact tool names listed above
 
-When a persona tool is called, that persona will generate and speak the response.
-You should call exactly one persona tool per user message."""
+When a persona tool is used, that persona will generate and speak the response.
+You must use exactly one persona tool per user message.
+
+Example: To make the "{persona_names[0] if persona_names else "persona"}" persona respond, use the tool: {actual_tool_names[0] if actual_tool_names else "speak_persona"}"""
 
     return GenericAgent(
         agent_name="Orchestrator",
