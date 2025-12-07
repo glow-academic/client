@@ -109,8 +109,14 @@ export type ServerToClientEvents = {
     is_attempt_finished?: boolean;
     simulation_grade_id?: string;
   }) => void;
-  end_all_started: (payload: { chat_id: string; attempt_id: string }) => void;
-  end_chat_started: (payload: { chat_id: string; attempt_id: string }) => void;
+  end_all_started: (payload: {
+    chat_id: string;
+    attempt_id: string;
+  }) => void;
+  end_chat_started: (payload: {
+    chat_id: string;
+    attempt_id: string;
+  }) => void;
   end_all_completed: (payload: {
     success: boolean;
     message: string;
@@ -126,8 +132,14 @@ export type ServerToClientEvents = {
     guest_id?: string;
     server_time: number;
   }) => void;
-  joined_chat: (payload: { chat_id: string; chat_type: string }) => void;
-  chat_stopped: (payload: { chat_id: string; chat_type: string }) => void;
+  joined_chat: (payload: {
+    chat_id: string;
+    chat_type: string;
+  }) => void;
+  chat_stopped: (payload: {
+    chat_id: string;
+    chat_type: string;
+  }) => void;
   scenario_generation_progress: (payload: {
     type: string;
     message?: string;
@@ -160,11 +172,7 @@ export type ServerToClientEvents = {
     outline: string;
     outline_id?: string;
     video_name?: string;
-    questions?: {
-      question_text: string;
-      allow_multiple: boolean;
-      options: string;
-    }[];
+    questions?: { question_text: string; allow_multiple: boolean; options: string }[];
     question_timestamps: Record<string, unknown>;
     trace_id?: string;
   }) => void;
@@ -215,10 +223,7 @@ export type ServerToClientEvents = {
     message: string;
     ephemeral_key: string;
     persona_tools: string[];
-    tool_context_map: Record<
-      string,
-      { persona_id: string; profile_id: string | null }
-    >;
+    tool_context_map: Record<string, { persona_id: string; profile_id: string | null }>;
     instructions: string;
     model: string;
     voice?: string;
@@ -226,9 +231,18 @@ export type ServerToClientEvents = {
     transcription_prompt?: string;
     history?: string[];
   }) => void;
-  start_voice_error: (payload: { success: boolean; message: string }) => void;
-  stop_voice_response: (payload: { success: boolean; message: string }) => void;
-  stop_voice_error: (payload: { success: boolean; message: string }) => void;
+  start_voice_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  stop_voice_response: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  stop_voice_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
   voice_speech_started_emit: (payload: {
     chat_id: string;
     item_id: string;
@@ -241,6 +255,7 @@ export type ServerToClientEvents = {
     chat_id: string;
     item_id: string;
     transcript: string;
+    upload_id?: string;
   }) => void;
   voice_user_message_error: (payload: {
     success: boolean;
@@ -270,7 +285,9 @@ export type ClientToServerEvents = {
     simulation_id?: string;
     profile_id?: string;
   }) => void;
-  stop_simulation: (payload: { chat_id: string }) => void;
+  stop_simulation: (payload: {
+    chat_id: string;
+  }) => void;
   continue_simulation: (payload: {
     chat_id: string;
     attempt_id: string;
@@ -278,12 +295,27 @@ export type ClientToServerEvents = {
     previous_chat_id?: string;
     previous_chat_map: Record<string, string | null>;
   }) => void;
-  join_chat: (payload: { chat_id: string; chat_type?: string }) => void;
-  leave_chat: (payload: { chat_id: string; chat_type?: string }) => void;
-  stop_chat: (payload: { chat_id: string; chat_type?: string }) => void;
-  start_voice: (payload: { chat_id: string }) => void;
-  stop_voice: (payload: { chat_id: string }) => void;
-  voice_interrupted: (payload: { chat_id: string }) => void;
+  join_chat: (payload: {
+    chat_id: string;
+    chat_type?: string;
+  }) => void;
+  leave_chat: (payload: {
+    chat_id: string;
+    chat_type?: string;
+  }) => void;
+  stop_chat: (payload: {
+    chat_id: string;
+    chat_type?: string;
+  }) => void;
+  start_voice: (payload: {
+    chat_id: string;
+  }) => void;
+  stop_voice: (payload: {
+    chat_id: string;
+  }) => void;
+  voice_interrupted: (payload: {
+    chat_id: string;
+  }) => void;
   voice_response_done: (payload: {
     chat_id: string;
     event_id: string;
@@ -291,10 +323,13 @@ export type ClientToServerEvents = {
     conversation_id: string;
     usage: Record<string, unknown>;
   }) => void;
-  voice_speech_started: (payload: { chat_id: string; item_id: string }) => void;
+  voice_speech_started: (payload: {
+    chat_id: string;
+    item_id: string;
+  }) => void;
   voice_tool_call: (payload: {
     chat_id: string;
-    persona_id: string;
+    persona: string;
     message: string;
     profile_id?: string;
   }) => void;
@@ -302,6 +337,7 @@ export type ClientToServerEvents = {
     chat_id: string;
     item_id: string;
     transcript: string;
+    upload_id?: string;
   }) => void;
   voice_user_message: (payload: {
     chat_id: string;
@@ -313,13 +349,7 @@ export type ClientToServerEvents = {
     documentIds?: string[];
     questionIds?: string[];
     parameterItemIds?: string[];
-    existingQuestions?: {
-      question_id: string | null;
-      question_text: string;
-      allow_multiple: boolean;
-      times: number | null;
-      options: string | null;
-    }[];
+    existingQuestions?: { question_id: string | null; question_text: string; allow_multiple: boolean; times: number | null; options: string | null }[];
     profileId?: string;
     videoId?: string;
     videoLengthSeconds?: number;

@@ -92,7 +92,7 @@
     "voice_tool_call": {
       "payload": {
         "chat_id": "string",
-        "persona_id": "string",
+        "persona": "string",
         "message": "string",
         "profile_id": "?string"
       }
@@ -101,7 +101,8 @@
       "payload": {
         "chat_id": "string",
         "item_id": "string",
-        "transcript": "string"
+        "transcript": "string",
+        "upload_id": "?string"
       }
     },
     "voice_user_message": {
@@ -475,7 +476,8 @@
       "payload": {
         "chat_id": "string",
         "item_id": "string",
-        "transcript": "string"
+        "transcript": "string",
+        "upload_id": "?string"
       }
     },
     "voice_user_message_error": {

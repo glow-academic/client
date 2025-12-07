@@ -16,7 +16,7 @@ class VoiceToolCallPayload(BaseModel):
     """Client-to-server payload for voice_tool_call."""
 
     chat_id: str
-    persona_id: str
+    persona: str  # Persona name (not ID)
     message: str
     profile_id: str | None
 
@@ -38,11 +38,11 @@ async def voice_tool_call_error(
 async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
     """Handle tool call from Realtime API.
 
-    When a persona tool is called, stream the message via existing WebSocket events.
+    When the speak tool is called, stream the message via existing WebSocket events.
     """
     try:
         logger.info(
-            f"Received voice_tool_call from {sid}: persona_id={data.persona_id}, chat_id={data.chat_id}"
+            f"Received voice_tool_call from {sid}: persona={data.persona}, chat_id={data.chat_id}"
         )
 
         chat_id = data.chat_id
@@ -55,14 +55,14 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
             )
             return
 
-        persona_id = data.persona_id
+        persona_name = data.persona
         message_content = data.message
         profile_id_val = data.profile_id
 
-        if not persona_id:
+        if not persona_name:
             await voice_tool_call_error(
                 VoiceToolCallErrorPayload(
-                    success=False, message="Missing persona_id"
+                    success=False, message="Missing persona"
                 ),
                 room=sid,
             )
@@ -76,10 +76,6 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
                 room=sid,
             )
             return
-
-        logger.info(
-            f"Persona tool called: persona_id={persona_id}, streaming message: {message_content[:100]}..."
-        )
 
         # Stream the message via existing WebSocket events
         # This matches the pattern used in send_message.py
@@ -96,6 +92,54 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
             return
 
         async with pool.acquire() as conn:
+            # Get personas for this chat to look up persona_id from persona name
+            sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
+            persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
+            
+            if not persona_rows or len(persona_rows) == 0:
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message="No personas found for this scenario",
+                    ),
+                    room=sid,
+                )
+                return
+            
+            personas = [dict(row) for row in persona_rows]
+            
+            # Normalize persona name input (strip whitespace)
+            persona_name_normalized = persona_name.strip() if persona_name else ""
+            
+            # Look up persona_id from persona name
+            from app.utils.agents.tools.create_persona_tools import \
+                find_persona_by_name
+            persona_match = find_persona_by_name(persona_name_normalized, personas)
+            
+            if not persona_match:
+                persona_names = [p.get("persona_name") or p.get("name", "") for p in personas if p.get("persona_name") or p.get("name")]
+                available_list = "\n".join(f"  - {name}" for name in persona_names)
+                error_msg = (
+                    f"Persona '{persona_name_normalized}' not found. "
+                    f"Available personas:\n{available_list}\n\n"
+                    f"Please use the exact persona name from the list above (case-insensitive matching is supported)."
+                )
+                await voice_tool_call_error(
+                    VoiceToolCallErrorPayload(
+                        success=False,
+                        message=error_msg,
+                    ),
+                    room=sid,
+                )
+                return
+            
+            persona_id_uuid_obj, persona_display_name = persona_match
+            persona_id = str(persona_id_uuid_obj)
+            
+            logger.info(
+                f"Matched persona '{persona_name}' to {persona_display_name} (ID: {persona_id}), streaming message: {message_content[:100]}..."
+            )
+            
             # Get context from chat_id (department_id, model_id, etc.)
             sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
             context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
@@ -141,7 +185,6 @@ async def _voice_tool_call_impl(sid: str, data: VoiceToolCallPayload) -> None:
             try:
                 department_id_uuid_obj = uuid.UUID(str(department_id_str))
                 model_id_uuid_obj = uuid.UUID(str(model_id_str))
-                persona_id_uuid_obj = uuid.UUID(str(persona_id))
             except (ValueError, TypeError) as e:
                 logger.error(f"Invalid UUID format: {e}")
                 await voice_tool_call_error(

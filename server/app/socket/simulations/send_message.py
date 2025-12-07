@@ -12,8 +12,7 @@ from app.main import get_pool, hint_progress, hint_results, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.utils.agents.tools.create_persona_tools import (create_persona_tools,
-                                                         sanitize_persona_name)
+from app.utils.agents.tools.create_persona_tools import create_persona_tools
 from app.utils.chat.format_chat_scenario import format_chat_scenario
 from app.utils.chat.get_simulation_conversation_history import \
     get_simulation_conversation_history
@@ -995,8 +994,8 @@ async def _send_simulation_message_impl(
                             else:
                                 persona_descriptions.append(f"- {persona_name}")
                         
-                        # Build list of actual tool names
-                        actual_tool_names_list = [f"speak_{sanitize_persona_name(name)}" for name in persona_names]
+                        # Build list of available persona names for tool usage
+                        persona_names_list = [f'"{name}"' for name in persona_names]
                         
                         developer_message_personas: TResponseInputItem = {
                             "role": "developer",
@@ -1004,11 +1003,13 @@ async def _send_simulation_message_impl(
 {chr(10).join(persona_descriptions)}
 
 Tool Usage Instructions:
-- You MUST use one of these EXACT tool names to respond as a persona:
-  {chr(10).join(f'  - {tool_name}' for tool_name in actual_tool_names_list)}
+- You MUST use the `speak` tool to respond as a persona
+- The `speak` tool takes two parameters:
+  * `persona`: The name of the persona that should speak (must be one of: {', '.join(persona_names_list)})
+  * `message`: The message content that the persona should say
 - Call exactly one tool per user message
-- Never respond directly - always use a persona tool
-- Never make up tool names - only use the exact tool names listed above""",
+- Never respond directly - always use the `speak` tool
+- The persona name must match exactly one of the available personas listed above""",
                         }
                         input_items.append(developer_message_personas)
                         

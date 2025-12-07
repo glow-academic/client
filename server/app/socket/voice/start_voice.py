@@ -296,43 +296,9 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 parent_message_id=None,  # No parent message during initialization
             )
 
-            # Build tool context map: tool_name -> PersonaToolContext
-            # Import sanitize function to match tool names
-            from app.utils.agents.tools.create_persona_tools import \
-                sanitize_persona_name
-            
+            # Tool context map is no longer needed since we have a single speak tool
+            # The persona is determined from the tool arguments, not the tool name
             tool_context_map: dict[str, PersonaToolContext] = {}
-            profile_id = context_row.get("profile_id")
-            
-            # Build map by iterating through personas and matching to tools
-            for persona in personas:
-                persona_id_str = persona.get("persona_id") or persona.get("id")
-                persona_name = persona.get("persona_name") or persona.get("name", "")
-                
-                if not persona_id_str:
-                    logger.warning(f"Persona missing id field: {persona}, skipping")
-                    continue
-                
-                # Generate expected tool name using same sanitization
-                expected_tool_name = f"speak_{sanitize_persona_name(persona_name)}"
-                
-                # Find matching tool
-                matching_tool = None
-                for tool in persona_tools:
-                    if tool.name == expected_tool_name:
-                        matching_tool = tool
-                        break
-                
-                if not matching_tool:
-                    logger.warning(
-                        f"Could not find tool {expected_tool_name} for persona {persona_name}, skipping context map entry"
-                    )
-                    continue
-                
-                tool_context_map[matching_tool.name] = PersonaToolContext(
-                    persona_id=str(persona_id_str),
-                    profile_id=str(profile_id) if profile_id else None,
-                )
 
             # Get base voice system prompt from context (simulation-voice prompt from agent)
             base_voice_system_prompt = context_row.get("voice_system_prompt", "")
@@ -490,17 +456,22 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                         logger.warning(f"Failed to extract schema from tool {tool.name}: {e}")
                         # Fallback: construct schema manually based on tool name
                         tool_name_str = str(tool.name)
-                        if tool_name_str.startswith("speak_"):
-                            # Persona tool fallback
+                        if tool_name_str == "speak":
+                            # Speak tool fallback
+                            persona_names_list = [f'"{p.get("persona_name") or p.get("name", "")}"' for p in personas]
                             tool_parameters = {
                                 "type": "object",
                                 "properties": {
+                                    "persona": {
+                                        "type": "string",
+                                        "description": f"The name of the persona that should speak. Must be one of: {', '.join(persona_names_list)}",
+                                    },
                                     "message": {
                                         "type": "string",
-                                        "description": f"Respond as the persona. This is the message that will be said.",
+                                        "description": "The message content that the persona should say.",
                                     }
                                 },
-                                "required": ["message"],
+                                "required": ["persona", "message"],
                             }
                         elif tool_name_str == "debug_info":
                             # Debug info tool fallback
@@ -524,17 +495,22 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 else:
                     # Fallback: construct schema manually based on tool name
                     tool_name_str = str(tool.name)
-                    if tool_name_str.startswith("speak_"):
-                        # Persona tool fallback
+                    if tool_name_str == "speak":
+                        # Speak tool fallback
+                        persona_names_list = [f'"{p.get("persona_name") or p.get("name", "")}"' for p in personas]
                         tool_parameters = {
                             "type": "object",
                             "properties": {
+                                "persona": {
+                                    "type": "string",
+                                    "description": f"The name of the persona that should speak. Must be one of: {', '.join(persona_names_list)}",
+                                },
                                 "message": {
                                     "type": "string",
-                                    "description": f"Respond as the persona. This is the message that will be said.",
+                                    "description": "The message content that the persona should say.",
                                 }
                             },
-                            "required": ["message"],
+                            "required": ["persona", "message"],
                         }
                     elif tool_name_str == "debug_info":
                         # Debug info tool fallback
@@ -556,22 +532,8 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                             "required": [],
                         }
 
-                # Only add to tool_context_map if it's a persona tool (starts with "speak_")
-                # debug_info tool doesn't need persona context
-                tool_name_str = str(tool.name)
-                if tool_name_str.startswith("speak_"):
-                    # Find matching persona for this tool to add to context map
-                    for persona in personas:
-                        persona_id_str = persona.get("persona_id") or persona.get("id")
-                        persona_name = persona.get("persona_name") or persona.get("name", "")
-                        expected_tool_name = f"speak_{sanitize_persona_name(persona_name)}"
-                        
-                        if tool_name_str == expected_tool_name and persona_id_str:
-                            tool_context_map[tool_name_str] = PersonaToolContext(
-                                persona_id=str(persona_id_str),
-                                profile_id=str(profile_id) if profile_id else None,
-                            )
-                            break
+                # Tool context map is no longer needed for the single speak tool
+                # The persona is determined from the tool arguments (persona parameter)
                 
                 persona_tools_response.append(
                     {

@@ -1052,71 +1052,72 @@ export default function AttemptInput({
         // eslint-disable-next-line no-console
         console.log("[Voice] Extracted actual arguments:", actualArguments);
 
-        // Handle debug_info tool separately (doesn't start with "speak_")
-        if (!toolDef.name.startsWith("speak_")) {
-          // This is debug_info or another non-persona tool
-          if (toolDef.name === "debug_info") {
-            const content = actualArguments["content"] as string;
-            if (!content) {
-              // eslint-disable-next-line no-console
-              console.error(
-                `[Voice] No content in arguments for debug_info tool`
-              );
-              return;
-            }
-
-            // Emit debug_info event to server
-            socket.emit("voice_debug_info", {
-              chat_id: currentChat.id,
-              content: content,
-            });
+        // Handle debug_info tool separately
+        if (toolDef.name === "debug_info") {
+          const content = actualArguments["content"] as string;
+          if (!content) {
             // eslint-disable-next-line no-console
-            console.log("[Voice] Emitted voice_debug_info to server:", {
-              chat_id: currentChat.id,
-              content: content.substring(0, 100),
-            });
-          } else {
-            // eslint-disable-next-line no-console
-            console.warn(`[Voice] Unknown non-persona tool: ${toolDef.name}`);
+            console.error(
+              `[Voice] No content in arguments for debug_info tool`
+            );
+            return;
           }
-          return;
-        }
 
-        // Handle persona tools (start with "speak_")
-        const message = actualArguments["message"] as string;
-        if (!message) {
+          // Emit debug_info event to server
+          socket.emit("voice_debug_info", {
+            chat_id: currentChat.id,
+            content: content,
+          });
           // eslint-disable-next-line no-console
-          console.error(
-            `[Voice] No message in arguments for tool ${toolDef.name}`
-          );
+          console.log("[Voice] Emitted voice_debug_info to server:", {
+            chat_id: currentChat.id,
+            content: content.substring(0, 100),
+          });
           return;
         }
 
-        // Look up persona_id for this tool
-        const toolContext = toolContextMapRef.current[toolDef.name];
-        if (!toolContext) {
+        // Handle speak tool (single tool for all personas)
+        if (toolDef.name === "speak") {
+          const persona = actualArguments["persona"] as string;
+          const message = actualArguments["message"] as string;
+
+          if (!persona) {
+            // eslint-disable-next-line no-console
+            console.error(`[Voice] No persona in arguments for speak tool`);
+            return;
+          }
+
+          if (!message) {
+            // eslint-disable-next-line no-console
+            console.error(`[Voice] No message in arguments for speak tool`);
+            return;
+          }
+
+          // Get profile_id from tool context map if available (for backward compatibility)
+          // Note: tool_context_map is now empty, but we keep this for potential future use
+          const toolContext = toolContextMapRef.current[toolDef.name];
+          const profileId = toolContext?.profile_id || null;
+
+          // Forward tool call to server with persona name (not ID)
+          socket.emit("voice_tool_call", {
+            chat_id: currentChat.id,
+            persona: persona,
+            message: message,
+            profile_id: profileId,
+          });
           // eslint-disable-next-line no-console
-          console.error(
-            `[Voice] No context found for tool ${toolDef.name}. Available tools:`,
-            Object.keys(toolContextMapRef.current)
-          );
+          console.log("[Voice] Emitted voice_tool_call to server:", {
+            chat_id: currentChat.id,
+            persona: persona,
+            message: message.substring(0, 100),
+            profile_id: profileId,
+          });
           return;
         }
 
-        // Forward simplified tool call to server
-        socket.emit("voice_tool_call", {
-          chat_id: currentChat.id,
-          persona_id: toolContext.persona_id,
-          message: message,
-          profile_id: toolContext.profile_id,
-        });
+        // Unknown tool
         // eslint-disable-next-line no-console
-        console.log("[Voice] Emitted voice_tool_call to server:", {
-          chat_id: currentChat.id,
-          persona_id: toolContext.persona_id,
-          message: message.substring(0, 100),
-          profile_id: toolContext.profile_id,
-        });
+        console.warn(`[Voice] Unknown tool: ${toolDef.name}`);
       });
 
       session.on(
