@@ -479,9 +479,11 @@ export default function AttemptMessages({
           // For user messages, check if there's a matching optimistic message to replace
           if (type === "query") {
             const normalizedContent = normalizeMessageContent(data.content);
+            let foundMatch = false;
 
-            // Find matching optimistic user message by content
+            // First, try to find matching optimistic message by content
             // Match both regular optimistic messages and voice optimistic messages
+            let matchedOptimisticId: string | null = null;
             for (const [tempId, optMsg] of newMap.entries()) {
               if (
                 optMsg.type === "query" &&
@@ -490,8 +492,108 @@ export default function AttemptMessages({
                 normalizeMessageContent(optMsg.content) === normalizedContent
               ) {
                 // Replace temp message with real one (same content, real ID)
+                matchedOptimisticId = tempId;
                 newMap.delete(tempId);
+                foundMatch = true;
                 break;
+              }
+            }
+
+            // Clean up item_id mapping if we found a match
+            if (foundMatch && matchedOptimisticId) {
+              // Find and remove the item_id mapping for this optimistic message
+              for (const [
+                itemId,
+                optId,
+              ] of itemIdToOptimisticIdRef.current.entries()) {
+                if (optId === matchedOptimisticId) {
+                  itemIdToOptimisticIdRef.current.delete(itemId);
+                  break;
+                }
+              }
+            }
+
+            // If no content match found, check for voice optimistic messages that might not have content yet
+            // This handles race conditions where simulation_new_message arrives before voice_transcript_ready
+            if (!foundMatch) {
+              // Look for any voice optimistic message that hasn't been replaced
+              // Prefer ones with empty content (speech started but transcript not ready yet)
+              // or ones with matching content (transcript ready but content normalization failed)
+              for (const [tempId, optMsg] of newMap.entries()) {
+                if (
+                  optMsg.type === "query" &&
+                  tempId.startsWith("optimistic-user-voice-")
+                ) {
+                  const optContent = normalizeMessageContent(optMsg.content);
+                  // Match if content is empty (speech started) or matches (transcript ready)
+                  if (optContent === "" || optContent === normalizedContent) {
+                    matchedOptimisticId = tempId;
+                    newMap.delete(tempId);
+                    foundMatch = true;
+                    // eslint-disable-next-line no-console
+                    console.log(
+                      "[Voice] Replaced optimistic message by fallback matching:",
+                      {
+                        optimistic_id: tempId,
+                        real_id: data.message_id,
+                        optimistic_content: optMsg.content.substring(0, 50),
+                        real_content: data.content.substring(0, 50),
+                      }
+                    );
+                    break;
+                  }
+                }
+              }
+
+              // Clean up item_id mapping if we found a fallback match
+              if (foundMatch && matchedOptimisticId) {
+                for (const [
+                  itemId,
+                  optId,
+                ] of itemIdToOptimisticIdRef.current.entries()) {
+                  if (optId === matchedOptimisticId) {
+                    itemIdToOptimisticIdRef.current.delete(itemId);
+                    break;
+                  }
+                }
+              }
+            }
+
+            // If still no match, try to find any optimistic user message as last resort
+            // This handles edge cases where content might have slight differences
+            if (!foundMatch) {
+              for (const [tempId, optMsg] of newMap.entries()) {
+                if (
+                  optMsg.type === "query" &&
+                  tempId.startsWith("optimistic-user-voice-")
+                ) {
+                  // Replace the most recent voice optimistic message if no better match found
+                  matchedOptimisticId = tempId;
+                  newMap.delete(tempId);
+                  foundMatch = true;
+                  // eslint-disable-next-line no-console
+                  console.log(
+                    "[Voice] Replaced optimistic message as fallback (no content match):",
+                    {
+                      optimistic_id: tempId,
+                      real_id: data.message_id,
+                    }
+                  );
+                  break;
+                }
+              }
+
+              // Clean up item_id mapping for last resort match
+              if (foundMatch && matchedOptimisticId) {
+                for (const [
+                  itemId,
+                  optId,
+                ] of itemIdToOptimisticIdRef.current.entries()) {
+                  if (optId === matchedOptimisticId) {
+                    itemIdToOptimisticIdRef.current.delete(itemId);
+                    break;
+                  }
+                }
               }
             }
           }
@@ -587,8 +689,8 @@ export default function AttemptMessages({
             return newMap;
           });
 
-          // Clean up the mapping
-          itemIdToOptimisticIdRef.current.delete(data.item_id);
+          // Keep the mapping until the real message arrives (for better matching)
+          // The mapping will be cleaned up when simulation_new_message replaces the optimistic message
         } else {
           // eslint-disable-next-line no-console
           console.warn(
