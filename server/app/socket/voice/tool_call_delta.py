@@ -53,11 +53,6 @@ async def _voice_tool_call_delta_impl(
     Processes deltas incrementally to stream persona messages in real-time.
     """
     try:
-        logger.info(
-            f"Received voice_tool_call_delta from {sid}: call_id={data.call_id}, "
-            f"chat_id={data.chat_id}, delta_length={len(data.delta)}"
-        )
-
         chat_id = data.chat_id
         call_id = data.call_id
         item_id = data.item_id
@@ -118,9 +113,6 @@ async def _voice_tool_call_delta_impl(
                 if chat_id_str not in tool_calls_dict:
                     # If chat_id_str doesn't exist, it means all tool calls were completed
                     # and cleaned up. This is a late-arriving delta, ignore it.
-                    logger.debug(
-                        f"Late delta received for call_id={call_id} after chat cleanup, ignoring"
-                    )
                     return
                 
                 # At this point, chat_id_str is guaranteed to exist in tool_calls_dict
@@ -223,9 +215,6 @@ async def _voice_tool_call_delta_impl(
 
                 # Check if tool call is already completed (ignore late-arriving deltas)
                 if tool_call_state.get("completed"):
-                    logger.debug(
-                        f"Late delta received for call_id={call_id} after completion, ignoring"
-                    )
                     return
 
                 # Append arguments delta
@@ -245,16 +234,6 @@ async def _voice_tool_call_delta_impl(
                 )
                 tool_call_state["last_processed_index"] = new_index
                 tool_call_state["in_message"] = in_message
-
-                logger.info(
-                    f"Delta extraction for call_id={call_id}: "
-                    f"prev_len={len(prev_raw)}, new_len={len(new_raw)}, "
-                    f"new_chars_len={len(new_message_chars) if new_message_chars else 0}, "
-                    f"in_message={in_message}, "
-                    f"message_so_far_len={len(tool_call_state['message_so_far'])}, "
-                    f"delta_preview={delta[:50] if len(delta) > 0 else ''}, "
-                    f"new_raw_preview={new_raw[-100:] if len(new_raw) > 0 else ''}"
-                )
 
                 if new_message_chars:
                     tool_call_state["message_so_far"] += new_message_chars

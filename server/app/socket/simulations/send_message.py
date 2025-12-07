@@ -1228,18 +1228,6 @@ Tool Usage Instructions:
                         event_count = 0
                         async for event in result.stream_events():
                             event_count += 1
-                            # Debug: log all event types to understand what we're receiving (first 20 events)
-                            if event_count <= 20:
-                                event_type = getattr(event, "type", None)
-                                if event_type:
-                                    logger.info(f"[Stream {event_count}] Event type: {event_type}")
-                                    # Also log event data type for raw_response_event
-                                    if event_type == "raw_response_event":
-                                        event_data = getattr(event, "data", None)
-                                        if event_data:
-                                            event_data_type = getattr(event_data, "type", None)
-                                            if event_data_type:
-                                                logger.info(f"[Stream {event_count}] Raw response event data type: {event_data_type}")
                             
                             # Check for run_item_stream_event to get tool name
                             if hasattr(event, "type") and event.type == "run_item_stream_event":
@@ -1295,22 +1283,13 @@ Tool Usage Instructions:
                                             if not fake_item_id:
                                                 fake_item_id = getattr(event_data, "item_id", None)
                                             
-                                            # Log all available attributes for debugging (first few events)
-                                            if event_count <= 5:
-                                                logger.info(f"output_item.added event_data attributes: {dir(event_data)}")
-                                                if item:
-                                                    logger.info(f"output_item.added item attributes: {dir(item)}")
-                                                    logger.info(f"output_item.added item.call_id={call_id}, item.id={fake_item_id}")
-                                            
                                             # Use call_id as the unique identifier if available, otherwise generate one
                                             if call_id:
                                                 real_item_id = call_id
-                                                logger.info(f"Using call_id as unique identifier: {call_id}")
                                             elif fake_item_id:
                                                 # Fallback: generate unique ID if call_id not available
                                                 tool_call_counter += 1
                                                 real_item_id = f"{chat_id_str}_{tool_call_counter}_{uuid.uuid4().hex[:8]}"
-                                                logger.warning(f"call_id not available, generated unique ID: {real_item_id}")
                                             else:
                                                 logger.error(f"output_item.added: missing both call_id and item_id")
                                                 continue
@@ -1322,10 +1301,7 @@ Tool Usage Instructions:
                                                 
                                                 # Check if this call_id already exists (prevent duplicates)
                                                 if real_item_id in tool_calls_dict[chat_id_str]:
-                                                    logger.warning(f"Tool call with call_id={real_item_id} already exists, skipping duplicate")
                                                     continue
-                                                
-                                                logger.info(f"Detected tool call start: call_id={real_item_id}, fake_id={fake_item_id}, tool_name={tool_name}")
                                                 
                                                 # Check if state already exists (from deltas that arrived first)
                                                 if real_item_id in tool_calls_dict[chat_id_str]:
@@ -1336,7 +1312,6 @@ Tool Usage Instructions:
                                                     
                                                     # Process accumulated arguments if any
                                                     if existing_state["arguments_raw"]:
-                                                        logger.info(f"Processing accumulated arguments for call_id={real_item_id}, length={len(existing_state['arguments_raw'])}")
                                                         accumulated_raw = existing_state["arguments_raw"]
                                                         
                                                         # Extract persona
@@ -1353,7 +1328,6 @@ Tool Usage Instructions:
                                                         existing_state["in_message"] = in_message
                                                         if new_message_chars:
                                                             existing_state["message_so_far"] = new_message_chars
-                                                            logger.info(f"Extracted initial message content: {new_message_chars[:100]}...")
                                                 else:
                                                     # Initialize tool call state with call_id as the key
                                                     tool_calls_dict[chat_id_str][real_item_id] = {
@@ -1372,10 +1346,6 @@ Tool Usage Instructions:
                                                     }
                                             else:
                                                 logger.warning(f"output_item.added: missing tool_name: call_id={call_id}, item_id={fake_item_id}")
-                                        else:
-                                            logger.debug(f"output_item.added: item_type={item_type} (not function_call)")
-                                    else:
-                                        logger.debug(f"output_item.added: no item in event_data")
                                 
                                 if event_data_type == "response.function_call_arguments.delta":
                                     # This is a ResponseFunctionCallArgumentsDeltaEvent
@@ -1387,27 +1357,19 @@ Tool Usage Instructions:
                                     # Try to get call_id from event_data (might be available)
                                     call_id = getattr(event_data, "call_id", None)
                                     
-                                    # Log all available attributes for debugging (first few events)
-                                    if event_count <= 5:
-                                        logger.info(f"function_call_arguments.delta event_data attributes: {dir(event_data)}")
-                                        logger.info(f"function_call_arguments.delta call_id={call_id}, item_id={fake_item_id}")
-                                    
                                     if not arguments_delta:
-                                        logger.debug(f"Skipping delta: no arguments_delta")
                                         continue
                                     
                                     # Determine the real_id: prefer call_id, then mapped fake_id, then wait
                                     if call_id:
                                         # Use call_id directly if available
                                         delta_real_item_id = call_id
-                                        logger.info(f"Using call_id from delta event: {call_id}")
                                     elif fake_item_id:
                                         # Map fake_id to real_id (from output_item.added)
                                         delta_real_item_id = fake_id_to_real_id.get(fake_item_id)
                                         if not delta_real_item_id:
                                             # If we haven't seen this fake_id before, wait for output_item.added
                                             # Don't generate a new ID here - wait for the added event
-                                            logger.debug(f"Received delta for unknown fake_id={fake_item_id}, waiting for output_item.added")
                                             continue
                                     else:
                                         logger.warning(f"Delta event has no call_id or item_id, skipping")
@@ -1417,15 +1379,12 @@ Tool Usage Instructions:
                                         logger.error(f"Failed to get real_id for fake_id={fake_item_id}, call_id={call_id}")
                                         continue
                                     
-                                    logger.info(f"Processing delta: fake_id={fake_item_id}, call_id={call_id}, real_id={delta_real_item_id}, delta_length={len(arguments_delta)}")
-                                    
                                     # Use delta_real_item_id as the tool_call_id for tracking
                                     tool_call_id = delta_real_item_id  # type: ignore[assignment]
                                     
                                     # Get or create tool call state
                                     if tool_call_id not in tool_calls_dict[chat_id_str]:
                                         # First delta for this tool call - create state (name will be set from output_item.added)
-                                        logger.warning(f"Received delta for unknown tool_call_id={tool_call_id}, creating state without name")
                                         tool_calls_dict[chat_id_str][tool_call_id] = {
                                             "name": None,  # Will be set when we get tool name from output_item.added
                                             "response_id": str(tool_call_id),
@@ -1445,7 +1404,6 @@ Tool Usage Instructions:
                                     if tool_call_state["name"] is None:
                                         # Just accumulate arguments for now
                                         tool_call_state["arguments_raw"] += arguments_delta
-                                        logger.debug(f"Accumulating arguments for tool_call_id={tool_call_id} (waiting for tool name)")
                                         continue
                                     
                                     # Only process "speak" tool calls
@@ -1469,12 +1427,6 @@ Tool Usage Instructions:
                                     )
                                     tool_call_state["last_processed_index"] = new_index
                                     tool_call_state["in_message"] = in_message
-                                    
-                                    # Debug: log first few deltas to see what we're extracting
-                                    if event_count <= 10:
-                                        logger.info(f"Delta extraction: prev_raw_len={len(prev_raw)}, new_raw_len={len(new_raw)}, new_chars_len={len(new_message_chars)}, new_index={new_index}, in_message={in_message}")
-                                        if new_raw:
-                                            logger.info(f"Current arguments_raw (first 200 chars): {new_raw[:200]}")
                                     
                                     if new_message_chars:
                                         tool_call_state["message_so_far"] += new_message_chars
@@ -1611,7 +1563,6 @@ Tool Usage Instructions:
                                             if tool_call_state.get("completed"):
                                                 continue
                                             
-                                            logger.info(f"Tool call completed via output_item.done: {tool_call_id}")
                                             tool_call_state["completed"] = True
                                             
                                             # Parse final JSON arguments and complete
@@ -1741,7 +1692,6 @@ Tool Usage Instructions:
                                             if tool_call_state.get("completed"):
                                                 continue
                                             
-                                            logger.info(f"Tool call completed via function_call_output: {tool_call_id}")
                                             tool_call_state["completed"] = True
                                             
                                             # Parse final JSON arguments and complete
@@ -2148,9 +2098,8 @@ Tool Usage Instructions:
                                 )
                             )
                     else:
-                        logger.debug(
-                            "Skipping hint generation for non-practice simulation"
-                        )
+                        # Skipping hint generation for non-practice simulation
+                        pass
 
             except Exception as e:
                 logger.error(f"Error processing simulation message: {str(e)}")
