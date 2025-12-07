@@ -4,16 +4,16 @@
 -- Logic: 
 --   1. If profile_id is "guest-profile-id": return default settings (no department links)
 --   2. If profile_id is a real UUID: get primary_department_id, then department-specific settings
---   3. Fall back to default settings (settings with no settings_departments records = cross-department)
+--   3. Fall back to default settings (settings with no department_settings records = cross-department)
 --   4. Final fallback: any active settings row
 WITH default_settings AS (
     -- Get settings with no department links (cross-department/default)
-    -- These are settings that have no records in settings_departments
+    -- These are settings that have no records in department_settings
     SELECT s.id as settings_id
     FROM settings s
     WHERE s.active = true
       AND NOT EXISTS (
-          SELECT 1 FROM settings_departments sd 
+          SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
       )
     LIMIT 1
@@ -44,7 +44,7 @@ dept_specific_settings AS (
     -- Get department-specific settings (if primary_department_id exists)
     SELECT s.id as settings_id
     FROM settings s
-    JOIN settings_departments sd ON sd.settings_id = s.id
+    JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE s.active = true 
       AND sd.active = true

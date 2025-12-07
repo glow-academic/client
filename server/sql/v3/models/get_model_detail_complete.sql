@@ -9,7 +9,7 @@ WITH resolve_guest_profile AS (
             -- Department-specific settings guest profile (if user has departments)
             (SELECT sdg.profile_id FROM settings_default_guest sdg
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN settings_departments sd ON sd.settings_id = s.id AND sd.active = true
+             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
              WHERE pd.profile_id = $2::uuid AND sdg.active = true
              LIMIT 1),
@@ -140,7 +140,7 @@ model_all_keys AS (
         NULL::text[] as department_ids
     FROM keys k
     CROSS JOIN resolve_profile_id rpi
-    LEFT JOIN key_departments kd ON kd.key_id = k.id AND kd.active = true
+    LEFT JOIN department_keys kd ON kd.key_id = k.id AND kd.active = true
     WHERE k.active = true
     AND NOT EXISTS (
         -- Exclude keys already included via model_keys or model_department_keys
@@ -153,11 +153,11 @@ model_all_keys AS (
     )
     AND (
         -- Include keys with no department links (general keys)
-        NOT EXISTS (SELECT 1 FROM key_departments kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+        NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
         OR
         -- Include keys with department links that match user's departments
         EXISTS (
-            SELECT 1 FROM key_departments kd3
+            SELECT 1 FROM department_keys kd3
             JOIN user_departments ud ON ud.department_id = kd3.department_id
             WHERE kd3.key_id = k.id AND kd3.active = true
         )

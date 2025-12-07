@@ -1667,7 +1667,7 @@ export interface paths {
         put?: never;
         /**
          * Get Department Detail
-         * @description Get department detail with permissions, stats, and staff list.
+         * @description Get department detail with permissions, stats, and settings.
          */
         post: operations["get_department_detail_api_v3_departments_detail_post"];
         delete?: never;
@@ -1790,26 +1790,6 @@ export interface paths {
          * @description Remove profiles from department (set active = false in junction table).
          */
         post: operations["remove_profiles_from_department_api_v3_departments_remove_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/departments/search-profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Department Search Profile
-         * @description Search profiles for adding to a department (excludes profiles already in department if departmentId provided).
-         */
-        post: operations["department_search_profile_api_v3_departments_search_profile_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5883,11 +5863,8 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
-            /**
-             * Profile Ids
-             * @default []
-             */
-            profile_ids: string[];
+            /** Settingsid */
+            settingsId?: string | null;
         };
         /**
          * CreateDepartmentResponse
@@ -7202,39 +7179,6 @@ export interface components {
             title: string;
             /** Description */
             description: string;
-        };
-        /**
-         * DepartmentSearchProfileRequest
-         * @description Request for searching profiles to add to a department.
-         */
-        DepartmentSearchProfileRequest: {
-            /** Departmentid */
-            departmentId?: string | null;
-            /** Query */
-            query?: string | null;
-            /**
-             * Limit
-             * @default 200
-             */
-            limit: number;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * DepartmentSearchProfileResponse
-         * @description Response for department search-profile endpoint.
-         */
-        DepartmentSearchProfileResponse: {
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
-            };
         };
         /**
          * DepartmentsListRequest
@@ -11662,6 +11606,8 @@ export interface components {
             created_at: string;
             /** Active */
             active: boolean;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /** SettingsListRequest */
         SettingsListRequest: {
@@ -11672,6 +11618,20 @@ export interface components {
         SettingsListResponse: {
             /** Settings */
             settings: components["schemas"]["SettingsItem"][];
+        };
+        /**
+         * SettingsMappingItem
+         * @description Settings mapping item.
+         */
+        SettingsMappingItem: {
+            /** Settings Id */
+            settings_id: string;
+            /** Created At */
+            created_at: string;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * SimulationAttemptResult
@@ -12559,11 +12519,8 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
-            /**
-             * Profile Ids
-             * @default []
-             */
-            profile_ids: string[];
+            /** Settingsid */
+            settingsId?: string | null;
         };
         /**
          * UpdateDepartmentResponse
@@ -13674,8 +13631,12 @@ export interface components {
             staff_count: number;
             /** Total Price Spent */
             total_price_spent: number;
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__departments__detail__StaffItem"][];
+            /** Settings Id */
+            settings_id: string | null;
+            /** Settings Mapping */
+            settings_mapping: {
+                [key: string]: components["schemas"]["SettingsMappingItem"];
+            };
             /** Cohort Mapping */
             cohort_mapping: {
                 [key: string]: components["schemas"]["CohortMappingItem"];
@@ -13726,62 +13687,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-        };
-        /**
-         * StaffItem
-         * @description Staff item from department detail.
-         */
-        app__api__v3__departments__detail__StaffItem: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email */
-            primary_email: string | null;
-            /** Name */
-            name: string;
-            /** Role */
-            role: string;
-            /** Initials */
-            initials: string;
-            /** Active */
-            active: boolean;
-            /** Last Active */
-            last_active?: string | null;
-            /**
-             * Cohort Ids
-             * @default []
-             */
-            cohort_ids: string[];
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /** Primary Department Id */
-            primary_department_id: string;
-            /** Requests Per Day */
-            requests_per_day?: number | null;
-            /**
-             * Total Requests
-             * @default 0
-             */
-            total_requests: number;
-            /**
-             * Requests In Last Day
-             * @default 0
-             */
-            requests_in_last_day: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Remove */
-            can_remove: boolean;
         };
         /**
          * DepartmentItem
@@ -13836,8 +13741,12 @@ export interface components {
             staff_count: number;
             /** Total Price Spent */
             total_price_spent: number;
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__departments__new__StaffItem"][];
+            /** Settings Id */
+            settings_id: string | null;
+            /** Settings Mapping */
+            settings_mapping: {
+                [key: string]: components["schemas"]["SettingsMappingItem"];
+            };
             /** Cohort Mapping */
             cohort_mapping: {
                 [key: string]: components["schemas"]["CohortMappingItem"];
@@ -13846,60 +13755,6 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
-        };
-        /**
-         * StaffItem
-         * @description Staff item from department detail.
-         */
-        app__api__v3__departments__new__StaffItem: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Email */
-            email: string;
-            /** Name */
-            name: string;
-            /** Role */
-            role: string;
-            /** Initials */
-            initials: string;
-            /** Active */
-            active: boolean;
-            /** Last Active */
-            last_active?: string | null;
-            /**
-             * Cohort Ids
-             * @default []
-             */
-            cohort_ids: string[];
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /** Primary Department Id */
-            primary_department_id: string;
-            /** Requests Per Day */
-            requests_per_day?: number | null;
-            /**
-             * Total Requests
-             * @default 0
-             */
-            total_requests: number;
-            /**
-             * Requests In Last Day
-             * @default 0
-             */
-            requests_in_last_day: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Remove */
-            can_remove: boolean;
         };
         /**
          * ModelRunItem
@@ -18380,39 +18235,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RemoveProfilesFromDepartmentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    department_search_profile_api_v3_departments_search_profile_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartmentSearchProfileRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DepartmentSearchProfileResponse"];
                 };
             };
             /** @description Validation Error */

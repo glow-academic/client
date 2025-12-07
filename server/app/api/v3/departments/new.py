@@ -9,6 +9,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
+import json
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -20,27 +21,13 @@ class DepartmentNewRequest(BaseModel):
     profileId: str
 
 
-class StaffItem(BaseModel):
-    """Staff item from department detail."""
+class SettingsMappingItem(BaseModel):
+    """Settings mapping item."""
 
-    profile_id: str
-    first_name: str
-    last_name: str
-    email: str
-    name: str
-    role: str
-    initials: str
+    settings_id: str
+    created_at: str
     active: bool
-    last_active: str | None = None
-    cohort_ids: list[str] = []
-    department_ids: list[str] = []
-    primary_department_id: str  # Primary department ID (for editing)
-    requests_per_day: int | None = None
-    total_requests: int = 0
-    requests_in_last_day: int = 0
-    can_edit: bool
-    can_delete: bool
-    can_remove: bool
+    department_ids: list[str] | None = None
 
 
 class DepartmentDetailResponse(BaseModel):
@@ -55,7 +42,8 @@ class DepartmentDetailResponse(BaseModel):
     in_use: bool
     staff_count: int
     total_price_spent: float
-    staff: list[StaffItem]
+    settings_id: str | None
+    settings_mapping: dict[str, SettingsMappingItem]
     cohort_mapping: dict[str, CohortMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
 
@@ -99,6 +87,26 @@ async def get_department_new(
 
         is_superadmin = result["profile_role"] == "superadmin"
 
+        # Parse settings mapping from JSONB
+        settings_mapping: dict[str, SettingsMappingItem] = {}
+        settings_mapping_data = result.get("settings_mapping")
+        if isinstance(settings_mapping_data, str):
+            settings_mapping_data = json.loads(settings_mapping_data)
+        if settings_mapping_data and isinstance(settings_mapping_data, dict):
+            for sid, sdata in settings_mapping_data.items():
+                if isinstance(sdata, dict):
+                    department_ids = None
+                    if sdata.get("department_ids"):
+                        department_ids = [
+                            str(did) for did in sdata["department_ids"]
+                        ]
+                    settings_mapping[sid] = SettingsMappingItem(
+                        settings_id=sdata.get("settings_id", sid),
+                        created_at=sdata.get("created_at", ""),
+                        active=sdata.get("active", True),
+                        department_ids=department_ids,
+                    )
+
         response_data = DepartmentDetailResponse(
             title="",
             description="",
@@ -109,7 +117,8 @@ async def get_department_new(
             in_use=False,
             staff_count=0,
             total_price_spent=0.0,
-            staff=[],
+            settings_id=None,
+            settings_mapping=settings_mapping,
             cohort_mapping={},
             department_mapping={},
         )

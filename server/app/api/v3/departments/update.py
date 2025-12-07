@@ -19,7 +19,7 @@ class UpdateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
-    profile_ids: list[str] = []
+    settingsId: str | None = None
 
 
 class UpdateDepartmentResponse(BaseModel):
@@ -47,14 +47,14 @@ async def update_department(
 
     try:
         async with transaction(conn):
-            # Single consolidated query: updates department and all profile relationships using arrays
+            # Single consolidated query: updates department and settings relationship
             sql_query = load_sql("sql/v3/departments/update_department_complete.sql")
             sql_params = (
                 request.departmentId,
                 request.title,
                 request.description,
                 request.active,
-                request.profile_ids if request.profile_ids else [],
+                request.settingsId,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

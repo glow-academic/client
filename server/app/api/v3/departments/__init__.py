@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter
 
-from app.api.v3.departments.search_profile import router as search_profile_router
 from app.api.v3.departments.create import router as create_router
 from app.api.v3.departments.delete import router as delete_router
 from app.api.v3.departments.detail import router as detail_router
@@ -24,5 +23,4 @@ router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
 router.include_router(remove_profiles_router)
-router.include_router(search_profile_router)
 router.include_router(login_list_router)

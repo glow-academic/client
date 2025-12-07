@@ -7,7 +7,7 @@ WITH resolve_guest_profile AS (
             -- Department-specific settings guest profile (if user has departments)
             (SELECT sdg.profile_id FROM settings_default_guest sdg
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN settings_departments sd ON sd.settings_id = s.id AND sd.active = true
+             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
              WHERE pd.profile_id = $2::uuid AND sdg.active = true
              LIMIT 1),
@@ -42,10 +42,10 @@ key_data AS (
     FROM keys k
     WHERE k.id = $1::uuid
 ),
-key_departments_data AS (
+department_keys_data AS (
     SELECT 
         ARRAY_AGG(kd.department_id::text ORDER BY kd.created_at) as department_ids
-    FROM key_departments kd
+    FROM department_keys kd
     WHERE kd.key_id = $1::uuid AND kd.active = true
 ),
 key_models_data AS (
@@ -81,7 +81,7 @@ profile_data AS (
 user_has_key_access AS (
     -- Check if user has access to key via department links
     SELECT EXISTS(
-        SELECT 1 FROM key_departments kd
+        SELECT 1 FROM department_keys kd
         JOIN resolve_profile_id rpi ON true
         JOIN profile_departments pd ON pd.department_id = kd.department_id
         WHERE kd.key_id = $1::uuid AND kd.active = true
@@ -92,7 +92,7 @@ user_has_key_access AS (
         WHERE p.role = 'superadmin'
     ) OR (
         -- Default keys (no department links) are accessible to all admins
-        SELECT COUNT(*) FROM key_departments kd
+        SELECT COUNT(*) FROM department_keys kd
         WHERE kd.key_id = $1::uuid AND kd.active = true
     ) = 0 as has_access
 ),
@@ -129,7 +129,7 @@ SELECT
         ELSE false
     END as can_edit
 FROM key_data kd
-LEFT JOIN key_departments_data kdd ON true
+LEFT JOIN department_keys_data kdd ON true
 LEFT JOIN key_models_data kmd ON true
 CROSS JOIN valid_depts vd
 CROSS JOIN profile_data pr

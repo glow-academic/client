@@ -20,15 +20,6 @@ type DepartmentNewOut = OutputOf<"/api/v3/departments/new", "post">;
 
 type CreateDepartmentIn = InputOf<"/api/v3/departments/create", "post">;
 type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
-type DepartmentSearchProfileIn = InputOf<
-  "/api/v3/departments/search-profile",
-  "post"
->;
-type DepartmentSearchProfileOut = OutputOf<
-  "/api/v3/departments/search-profile",
-  "post"
->;
-
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
   async (input: DepartmentNewIn): Promise<DepartmentNewOut> => {
@@ -44,13 +35,6 @@ async function createDepartment(
   const out = await api.post("/departments/create", input);
   // No revalidateTag needed - Redis cache handles invalidation
   return out;
-}
-
-async function searchDepartmentProfile(
-  input: DepartmentSearchProfileIn,
-): Promise<DepartmentSearchProfileOut> {
-  "use server";
-  return api.post("/departments/search-profile", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -82,14 +66,10 @@ export default async function NewDepartmentPage() {
       <Department
         departmentDetailDefault={departmentDetailDefault}
         createDepartmentAction={createDepartment}
-        searchAddStaff={searchDepartmentProfile}
       />
     </div>
   );
 }
-
-/** ---- Derived types from server responses ---- */
-type DepartmentDefaultStaffItem = DepartmentNewOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
@@ -97,5 +77,4 @@ export type {
   CreateDepartmentOut,
   DepartmentNewIn,
   DepartmentNewOut,
-  DepartmentDefaultStaffItem,
 };

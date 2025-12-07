@@ -3449,7 +3449,7 @@
           "departments"
         ],
         "summary": "Get Department Detail",
-        "description": "Get department detail with permissions, stats, and staff list.",
+        "description": "Get department detail with permissions, stats, and settings.",
         "operationId": "get_department_detail_api_v3_departments_detail_post",
         "requestBody": {
           "content": {
@@ -3750,53 +3750,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RemoveProfilesFromDepartmentResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
-      }
-    },
-    "/api/v3/departments/search-profile": {
-      "post": {
-        "tags": [
-          "v3",
-          "departments"
-        ],
-        "summary": "Department Search Profile",
-        "description": "Search profiles for adding to a department (excludes profiles already in department if departmentId provided).",
-        "operationId": "department_search_profile_api_v3_departments_search_profile_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DepartmentSearchProfileRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DepartmentSearchProfileResponse"
                 }
               }
             }
@@ -13389,13 +13342,16 @@
             "type": "boolean",
             "title": "Active"
           },
-          "profile_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Profile Ids",
-            "default": []
+          "settingsId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settingsid"
           }
         },
         "type": "object",
@@ -16755,80 +16711,6 @@
         ],
         "title": "DepartmentOption",
         "description": "Department option for login page."
-      },
-      "DepartmentSearchProfileRequest": {
-        "properties": {
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          },
-          "query": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Query"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit",
-            "default": 200
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "DepartmentSearchProfileRequest",
-        "description": "Request for searching profiles to add to a department."
-      },
-      "DepartmentSearchProfileResponse": {
-        "properties": {
-          "staff": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__profile__staff__list__StaffItem"
-            },
-            "type": "array",
-            "title": "Staff"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "staff",
-          "cohort_mapping",
-          "department_mapping"
-        ],
-        "title": "DepartmentSearchProfileResponse",
-        "description": "Response for department search-profile endpoint."
       },
       "DepartmentsListRequest": {
         "properties": {
@@ -28339,6 +28221,20 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           }
         },
         "type": "object",
@@ -28378,6 +28274,44 @@
           "settings"
         ],
         "title": "SettingsListResponse"
+      },
+      "SettingsMappingItem": {
+        "properties": {
+          "settings_id": {
+            "type": "string",
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings_id",
+          "created_at",
+          "active"
+        ],
+        "title": "SettingsMappingItem",
+        "description": "Settings mapping item."
       },
       "SimulationAttemptResult": {
         "properties": {
@@ -30531,13 +30465,16 @@
             "type": "boolean",
             "title": "Active"
           },
-          "profile_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Profile Ids",
-            "default": []
+          "settingsId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settingsid"
           }
         },
         "type": "object",
@@ -33732,12 +33669,23 @@
             "type": "number",
             "title": "Total Price Spent"
           },
-          "staff": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__departments__detail__StaffItem"
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "settings_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SettingsMappingItem"
             },
-            "type": "array",
-            "title": "Staff"
+            "type": "object",
+            "title": "Settings Mapping"
           },
           "cohort_mapping": {
             "additionalProperties": {
@@ -33807,7 +33755,8 @@
           "in_use",
           "staff_count",
           "total_price_spent",
-          "staff",
+          "settings_id",
+          "settings_mapping",
           "cohort_mapping",
           "department_mapping",
           "valid_department_ids",
@@ -33867,138 +33816,6 @@
         ],
         "title": "ModelMappingItem",
         "description": "Model mapping item."
-      },
-      "app__api__v3__departments__detail__StaffItem": {
-        "properties": {
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          },
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "primary_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "initials": {
-            "type": "string",
-            "title": "Initials"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "last_active": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Active"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids",
-            "default": []
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids",
-            "default": []
-          },
-          "primary_department_id": {
-            "type": "string",
-            "title": "Primary Department Id"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "total_requests": {
-            "type": "integer",
-            "title": "Total Requests",
-            "default": 0
-          },
-          "requests_in_last_day": {
-            "type": "integer",
-            "title": "Requests In Last Day",
-            "default": 0
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_remove": {
-            "type": "boolean",
-            "title": "Can Remove"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profile_id",
-          "first_name",
-          "last_name",
-          "emails",
-          "primary_email",
-          "name",
-          "role",
-          "initials",
-          "active",
-          "primary_department_id",
-          "can_edit",
-          "can_delete",
-          "can_remove"
-        ],
-        "title": "StaffItem",
-        "description": "Staff item from department detail."
       },
       "app__api__v3__departments__list__DepartmentItem": {
         "properties": {
@@ -34113,12 +33930,23 @@
             "type": "number",
             "title": "Total Price Spent"
           },
-          "staff": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__departments__new__StaffItem"
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "settings_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SettingsMappingItem"
             },
-            "type": "array",
-            "title": "Staff"
+            "type": "object",
+            "title": "Settings Mapping"
           },
           "cohort_mapping": {
             "additionalProperties": {
@@ -34146,129 +33974,13 @@
           "in_use",
           "staff_count",
           "total_price_spent",
-          "staff",
+          "settings_id",
+          "settings_mapping",
           "cohort_mapping",
           "department_mapping"
         ],
         "title": "DepartmentDetailResponse",
         "description": "Response for department detail."
-      },
-      "app__api__v3__departments__new__StaffItem": {
-        "properties": {
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          },
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "initials": {
-            "type": "string",
-            "title": "Initials"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "last_active": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Active"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids",
-            "default": []
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids",
-            "default": []
-          },
-          "primary_department_id": {
-            "type": "string",
-            "title": "Primary Department Id"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "total_requests": {
-            "type": "integer",
-            "title": "Total Requests",
-            "default": 0
-          },
-          "requests_in_last_day": {
-            "type": "integer",
-            "title": "Requests In Last Day",
-            "default": 0
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_remove": {
-            "type": "boolean",
-            "title": "Can Remove"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profile_id",
-          "first_name",
-          "last_name",
-          "email",
-          "name",
-          "role",
-          "initials",
-          "active",
-          "primary_department_id",
-          "can_edit",
-          "can_delete",
-          "can_remove"
-        ],
-        "title": "StaffItem",
-        "description": "Staff item from department detail."
       },
       "app__api__v3__evals__detail__ModelRunItem": {
         "properties": {

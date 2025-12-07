@@ -3,13 +3,12 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -45,7 +44,7 @@ async def delete_key(
 
     try:
         async with transaction(conn):
-            # Delete key with permission checks (cascade deletes key_departments)
+            # Delete key with permission checks (cascade deletes department_keys)
             sql_query = load_sql("sql/v3/keys/delete_key.sql")
             sql_params = (request.keyId, request.profileId)
             result = await conn.fetchrow(sql_query, *sql_params)

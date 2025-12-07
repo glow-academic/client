@@ -20,31 +20,6 @@ type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;
 type UpdateDepartmentIn = InputOf<"/api/v3/departments/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/api/v3/departments/update", "post">;
 
-/** ---- Types for search-profile endpoint ---- */
-type DepartmentSearchProfileIn = InputOf<
-  "/api/v3/departments/search-profile",
-  "post"
->;
-type DepartmentSearchProfileOut = OutputOf<
-  "/api/v3/departments/search-profile",
-  "post"
->;
-
-// Search function for department profile search (search-only, no mutation)
-async function searchDepartmentProfile(
-  input: DepartmentSearchProfileIn,
-): Promise<DepartmentSearchProfileOut> {
-  "use server";
-  return api.post("/departments/search-profile", input);
-}
-type RemoveProfilesFromDepartmentIn = InputOf<
-  "/api/v3/departments/remove-profiles",
-  "post"
->;
-type RemoveProfilesFromDepartmentOut = OutputOf<
-  "/api/v3/departments/remove-profiles",
-  "post"
->;
 type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
 type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
@@ -103,14 +78,6 @@ async function updateDepartment(
   return api.post("/departments/update", input);
 }
 
-async function removeProfilesFromDepartment(
-  input: RemoveProfilesFromDepartmentIn,
-): Promise<RemoveProfilesFromDepartmentOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/departments/remove-profiles", input);
-}
-
 export async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
   return api.post("/keys/create", input);
@@ -150,9 +117,7 @@ export default async function DepartmentEditPage({
           departmentId={departmentId}
           departmentDetail={departmentDetail}
           updateDepartmentAction={updateDepartment}
-          removeProfilesFromDepartmentAction={removeProfilesFromDepartment}
           deleteDepartmentAction={deleteDepartment}
-          searchAddStaff={searchDepartmentProfile}
           createKeyAction={createKey}
           decryptKeyAction={decryptKey}
           updateKeyAction={updateKey}
@@ -179,9 +144,6 @@ export default async function DepartmentEditPage({
   }
 }
 
-/** ---- Derived types from server responses ---- */
-type DepartmentStaffItem = DepartmentDetailOut["staff"][number];
-
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   CreateKeyIn,
@@ -189,9 +151,6 @@ export type {
   DecryptKeyIn,
   DecryptKeyOut,
   DepartmentDetailOut,
-  DepartmentStaffItem,
-  RemoveProfilesFromDepartmentIn,
-  RemoveProfilesFromDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
   UpdateKeyIn,

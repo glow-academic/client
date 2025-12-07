@@ -18,7 +18,7 @@ class CreateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
-    profile_ids: list[str] = []
+    settingsId: str | None = None
 
 
 class CreateDepartmentResponse(BaseModel):
@@ -47,13 +47,13 @@ async def create_department(
 
     try:
         async with transaction(conn):
-            # Single consolidated query: creates department and all profile relationships using arrays
+            # Single consolidated query: creates department and settings relationship
             sql_query = load_sql("sql/v3/departments/create_department_complete.sql")
             sql_params = (
                 request.title,
                 request.description,
                 request.active,
-                request.profile_ids if request.profile_ids else [],
+                request.settingsId,
             )
             dept_row = await conn.fetchrow(sql_query, *sql_params)
 

@@ -7,7 +7,7 @@ WITH resolve_guest_profile AS (
             -- Department-specific settings guest profile (if user has departments)
             (SELECT sdg.profile_id FROM settings_default_guest sdg
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN settings_departments sd ON sd.settings_id = s.id AND sd.active = true
+             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
              WHERE pd.profile_id = $7::uuid AND sdg.active = true
              LIMIT 1),
@@ -40,13 +40,13 @@ update_key AS (
 ),
 replace_departments AS (
     -- Deactivate all existing department links
-    UPDATE key_departments 
+    UPDATE department_keys 
     SET active = false, updated_at = NOW()
     WHERE key_id = $1::uuid AND active = true
 ),
 link_departments AS (
     -- Insert new department links if provided (array is never NULL, but may be empty)
-    INSERT INTO key_departments (key_id, department_id, active, created_at, updated_at)
+    INSERT INTO department_keys (key_id, department_id, active, created_at, updated_at)
     SELECT 
         $1::uuid,
         dept_id::uuid,

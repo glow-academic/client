@@ -1,4 +1,4 @@
--- Delete a key (cascade deletes key_departments)
+-- Delete a key (cascade deletes department_keys)
 -- Parameters: $1=keyId (uuid), $2=profileId (uuid or "guest-profile-id")
 -- Returns: key_id if deletion successful
 WITH resolve_guest_profile AS (
@@ -8,7 +8,7 @@ WITH resolve_guest_profile AS (
             -- Department-specific settings guest profile (if user has departments)
             (SELECT sdg.profile_id FROM settings_default_guest sdg
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN settings_departments sd ON sd.settings_id = s.id AND sd.active = true
+             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
              WHERE pd.profile_id = $2::uuid AND sdg.active = true
              LIMIT 1),
@@ -32,10 +32,10 @@ user_profile AS (
     SELECT role FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
-key_departments_data AS (
+department_keys_data AS (
     SELECT 
         ARRAY_AGG(kd.department_id::text ORDER BY kd.created_at) as department_ids
-    FROM key_departments kd
+    FROM department_keys kd
     WHERE kd.key_id = $1::uuid AND kd.active = true
 ),
 user_departments AS (
@@ -52,13 +52,13 @@ check_permissions AS (
             WHEN up.role = 'superadmin' THEN true
             WHEN up.role = 'admin' AND (
                 COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
-                OR NOT EXISTS (SELECT 1 FROM key_departments kd2 WHERE kd2.key_id = $1::uuid AND kd2.active = true)
+                OR NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = $1::uuid AND kd2.active = true)
             ) THEN true
             ELSE false
         END as can_delete
     FROM user_profile up
-    LEFT JOIN key_departments kd ON kd.key_id = $1::uuid AND kd.active = true
-    LEFT JOIN key_departments_data kdd ON true
+    LEFT JOIN department_keys kd ON kd.key_id = $1::uuid AND kd.active = true
+    LEFT JOIN department_keys_data kdd ON true
     GROUP BY up.role, kdd.department_ids
 ),
 delete_key AS (

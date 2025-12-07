@@ -149,7 +149,7 @@ CREATE UNIQUE INDEX settings_one_active
 -- Settings → Departments binary relationship table
 -- Tracks which settings are available to departments
 -- No records = available to all departments (cross-department)
-CREATE TABLE settings_departments (
+CREATE TABLE department_settings (
   settings_id   UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
   department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
@@ -158,9 +158,9 @@ CREATE TABLE settings_departments (
   PRIMARY KEY (settings_id, department_id)
 );
 
-CREATE INDEX ON settings_departments (settings_id);
-CREATE INDEX ON settings_departments (department_id);
-CREATE INDEX ON settings_departments (active);
+CREATE INDEX ON department_settings (settings_id);
+CREATE INDEX ON department_settings (department_id);
+CREATE INDEX ON department_settings (active);
 
 -- Settings → Default Guest Profile (with history support)
 -- Links settings to default guest profile

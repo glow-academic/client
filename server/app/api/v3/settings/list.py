@@ -24,6 +24,7 @@ class SettingsItem(BaseModel):
     settings_id: str
     created_at: str
     active: bool
+    department_ids: list[str] | None = None
 
 
 class SettingsListResponse(BaseModel):
@@ -64,6 +65,11 @@ async def list_settings(
 
         settings_items: list[SettingsItem] = []
         for row in rows:
+            # Convert UUID array to string array or None
+            department_ids = None
+            if row.get("department_ids"):
+                department_ids = [str(did) for did in row["department_ids"]]
+
             settings_items.append(
                 SettingsItem(
                     settings_id=row["settings_id"],
@@ -71,6 +77,7 @@ async def list_settings(
                     if row["created_at"]
                     else "",
                     active=row["active"],
+                    department_ids=department_ids,
                 )
             )
 

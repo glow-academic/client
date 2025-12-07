@@ -8,11 +8,11 @@ WITH user_departments AS (
 user_profile AS (
     SELECT role FROM profiles WHERE id = $1
 ),
-key_departments_data AS (
+department_keys_data AS (
     SELECT 
         kd.key_id,
         ARRAY_AGG(kd.department_id::text ORDER BY kd.created_at) as department_ids
-    FROM key_departments kd
+    FROM department_keys kd
     WHERE kd.active = true
     GROUP BY kd.key_id
 ),
@@ -45,7 +45,7 @@ key_data AS (
             WHEN up.role = 'superadmin' THEN true
             WHEN up.role = 'admin' AND (
                 COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
-                OR NOT EXISTS (SELECT 1 FROM key_departments kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+                OR NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
             ) THEN true
             ELSE false
         END as can_edit,
@@ -55,26 +55,26 @@ key_data AS (
             WHEN up.role = 'superadmin' THEN true
             WHEN up.role = 'admin' AND (
                 COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
-                OR NOT EXISTS (SELECT 1 FROM key_departments kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+                OR NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
             ) THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate
     FROM keys k
-    LEFT JOIN key_departments kd ON kd.key_id = k.id AND kd.active = true
-    LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
+    LEFT JOIN department_keys kd ON kd.key_id = k.id AND kd.active = true
+    LEFT JOIN department_keys_data kdd ON kdd.key_id = k.id
     LEFT JOIN key_models_data kmd ON kmd.key_id = k.id
     CROSS JOIN user_profile up
     GROUP BY k.id, k.name, k.key, k.description, k.active, k.created_at, k.updated_at, kdd.department_ids, kmd.model_ids, up.role
     HAVING 
         -- Include keys with matching department links OR default keys (no department links)
         COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM key_departments kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+        OR NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
         OR up.role = 'superadmin'
 ),
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM key_departments_data
+    FROM department_keys_data
     WHERE department_ids IS NOT NULL
 ),
 department_mapping_data AS (

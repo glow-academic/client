@@ -15,7 +15,7 @@ default_providers AS (
     FROM auth a
     WHERE a.active = true
       AND NOT EXISTS (
-          SELECT 1 FROM auth_departments ad 
+          SELECT 1 FROM department_auths ad 
           WHERE ad.auth_id = a.id AND ad.active = true
       )
 ),
@@ -23,7 +23,7 @@ default_providers AS (
 dept_providers AS (
     SELECT a.id
     FROM auth a
-    JOIN auth_departments ad ON ad.auth_id = a.id
+    JOIN department_auths ad ON ad.auth_id = a.id
     WHERE a.active = true
       AND ad.active = true
       AND ($1::uuid IS NULL OR ad.department_id = $1::uuid)

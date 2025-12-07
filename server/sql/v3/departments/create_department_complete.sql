@@ -1,5 +1,5 @@
--- Create department with profiles in single query (DHH style)
--- Parameters: $1=title, $2=description, $3=active, $4=profile_ids (text[])
+-- Create department with settings relationship in single query (DHH style)
+-- Parameters: $1=title, $2=description, $3=active, $4=settings_id (text, nullable)
 -- Returns: id
 
 WITH new_department AS (
@@ -14,21 +14,18 @@ WITH new_department AS (
     VALUES ($1, $2, $3, NOW(), NOW())
     RETURNING id
 ),
-link_profiles AS (
-    -- Link profiles if provided (array may be empty)
-    INSERT INTO profile_departments (profile_id, department_id, is_primary, active, created_at, updated_at)
+link_settings AS (
+    -- Link settings if provided
+    INSERT INTO department_settings (settings_id, department_id, active, created_at, updated_at)
     SELECT 
-        profile_id::uuid,
+        $4::uuid,
         nd.id,
-        (ROW_NUMBER() OVER (ORDER BY profile_id) = 1) as is_primary,  -- First profile gets primary
         true,
         NOW(),
         NOW()
     FROM new_department nd
-    CROSS JOIN UNNEST($4::text[]) as profile_id
-    WHERE COALESCE(array_length($4::text[], 1), 0) > 0
-    ON CONFLICT (profile_id, department_id) DO UPDATE SET
-        is_primary = EXCLUDED.is_primary,
+    WHERE $4 IS NOT NULL
+    ON CONFLICT (settings_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

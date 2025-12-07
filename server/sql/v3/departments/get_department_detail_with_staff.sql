@@ -261,83 +261,44 @@ model_key_mapping_data AS (
     ) as model_key_mapping
     FROM model_key_associations mka
 ),
-department_staff AS (
-    SELECT DISTINCT ON (p.id)
-        p.id as profile_id,
-        p.first_name,
-        p.last_name,
-        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
-        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
-        p.first_name || ' ' || p.last_name as name,
-        p.role,
-        SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1) as initials,
-        p.active,
-        pa.last_active as lastActive,
-        prl.requests_per_day as requests_per_day,
-        COALESCE(rr.run_count::int, 0) as requests_in_last_day,
-        COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
-        COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
-        COALESCE(ppd.department_id::text, '') as department_id,
-        COALESCE(ptr.total_requests, 0) as total_requests,
-        COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
-        COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
-        CASE 
-            WHEN p.id = $2 THEN true
-            WHEN up.role = 'superadmin' THEN true
-            WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
-            WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
-            WHEN up.role = 'ta' AND p.role = 'guest' THEN true
-            ELSE false
-        END as can_edit,
-        CASE 
-            WHEN p.id = $2 THEN false
-            WHEN up.role = 'superadmin' THEN true
-            WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
-            WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
-            WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
-            WHEN up.role = 'ta' AND p.role = 'guest' THEN true
-            ELSE false
-        END as can_delete,
-        CASE 
-            WHEN p.id = $2 THEN false
-            WHEN up.role = 'superadmin' THEN true
-            WHEN up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest') THEN true
-            WHEN up.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest') THEN true
-            WHEN up.role = 'ta' AND p.role IN ('ta', 'guest') THEN true
-            WHEN up.role = 'guest' AND p.role = 'guest' THEN true
-            ELSE false
-        END as can_remove
-    FROM profiles p
-    JOIN profile_departments pd ON pd.profile_id = p.id AND pd.department_id = $1 AND pd.active = true
-    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
-    LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
-    LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
-    LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
-    LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
-    LEFT JOIN profile_active_cohort_links pacl ON pacl.profile_id = p.id
-    LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
-    LEFT JOIN LATERAL (
-        SELECT last_active 
-        FROM profile_activity 
-        WHERE profile_id = p.id 
-        ORDER BY created_at DESC 
-        LIMIT 1
-    ) pa ON true
-    LEFT JOIN recent_runs rr ON rr.profile_id = p.id
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    CROSS JOIN user_profile up
-    WHERE (
-        up.role = 'superadmin' OR
-        (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR
-        (up.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest')) OR
-        (up.role = 'ta' AND p.role IN ('ta', 'guest')) OR
-        (up.role = 'guest' AND p.role = 'guest')
-    )
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active,
-             pa.last_active, prl.requests_per_day,
-             pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
-             pacl.active_cohort_count, pacl_all.total_cohort_links, rr.run_count, up.role
-    ORDER BY p.id, p.last_name, p.first_name
+department_current_settings AS (
+    -- Get current settings_id for this department (if any)
+    SELECT ds.settings_id::text as settings_id
+    FROM department_settings ds
+    WHERE ds.department_id = $1::uuid AND ds.active = true
+    LIMIT 1
+),
+all_settings_ids AS (
+    -- Get all settings IDs for mapping
+    SELECT DISTINCT s.id::text as settings_id
+    FROM settings s
+    WHERE s.active = true
+),
+settings_departments_data AS (
+    -- Get department_ids for each setting
+    SELECT 
+        ds.settings_id,
+        ARRAY_AGG(ds.department_id::text ORDER BY ds.created_at) as department_ids
+    FROM department_settings ds
+    WHERE ds.active = true
+    GROUP BY ds.settings_id
+),
+settings_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            s.id::text,
+            jsonb_build_object(
+                'settings_id', s.id::text,
+                'created_at', s.created_at::text,
+                'active', s.active,
+                'department_ids', COALESCE(sdd.department_ids, NULL)
+            )
+        ) FILTER (WHERE s.id IS NOT NULL),
+        '{}'::jsonb
+    ) as settings_mapping
+    FROM settings s
+    LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id::text
+    WHERE s.active = true
 )
 SELECT 
     d.id::text as department_id,
@@ -357,31 +318,8 @@ SELECT
         WHEN up.role = 'superadmin' AND du.total_usage = 0 THEN true
         ELSE false
     END as can_delete,
-    (SELECT COALESCE(jsonb_agg(
-        jsonb_build_object(
-            'profile_id', ds.profile_id::text,
-            'first_name', ds.first_name,
-            'last_name', ds.last_name,
-            'emails', ds.emails,
-            'primary_email', ds.primary_email,
-            'name', ds.name,
-            'role', ds.role,
-            'initials', ds.initials,
-            'active', ds.active,
-            'lastActive', ds.lastActive,
-            'cohort_ids', ds.cohort_ids,
-            'department_ids', ds.department_ids,
-            'primary_department_id', ds.department_id,
-            'requests_per_day', ds.requests_per_day,
-            'total_requests', ds.total_requests,
-            'requests_in_last_day', ds.requests_in_last_day,
-            'can_edit', ds.can_edit,
-            'can_delete', ds.can_delete,
-            'can_remove', ds.can_remove
-        ) ORDER BY ds.last_name, ds.first_name
-     ), '[]'::jsonb)
-     FROM department_staff ds
-    ) as staff,
+    dcs.settings_id,
+    COALESCE(smd.settings_mapping, '{}'::jsonb) as settings_mapping,
     cmd.cohort_mapping,
     dmd.department_mapping,
     COALESCE(mmd.model_mapping, '{}'::jsonb) as model_mapping,
@@ -400,6 +338,8 @@ CROSS JOIN department_mapping_data dmd
 CROSS JOIN model_mapping_data mmd
 CROSS JOIN key_mapping_data kmd
 CROSS JOIN model_key_mapping_data mkmd
+LEFT JOIN department_current_settings dcs ON true
+CROSS JOIN settings_mapping_data smd
 WHERE d.id = $1
 AND uda.has_access = true
 

@@ -23,28 +23,13 @@ class DepartmentDetailRequest(BaseModel):
     profileId: str
 
 
-class StaffItem(BaseModel):
-    """Staff item from department detail."""
+class SettingsMappingItem(BaseModel):
+    """Settings mapping item."""
 
-    profile_id: str
-    first_name: str
-    last_name: str
-    emails: list[str]  # List of all active emails
-    primary_email: str | None  # Primary email (first in emails array if exists)
-    name: str
-    role: str
-    initials: str
+    settings_id: str
+    created_at: str
     active: bool
-    last_active: str | None = None
-    cohort_ids: list[str] = []
-    department_ids: list[str] = []
-    primary_department_id: str  # Primary department ID (for editing)
-    requests_per_day: int | None = None
-    total_requests: int = 0
-    requests_in_last_day: int = 0
-    can_edit: bool
-    can_delete: bool
-    can_remove: bool
+    department_ids: list[str] | None = None
 
 
 class ModelMappingItem(BaseModel):
@@ -75,7 +60,8 @@ class DepartmentDetailResponse(BaseModel):
     in_use: bool
     staff_count: int
     total_price_spent: float
-    staff: list[StaffItem]
+    settings_id: str | None
+    settings_mapping: dict[str, SettingsMappingItem]
     cohort_mapping: dict[str, CohortMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
     valid_department_ids: list[str]
@@ -96,7 +82,7 @@ async def get_department_detail(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DepartmentDetailResponse:
-    """Get department detail with permissions, stats, and staff list."""
+    """Get department detail with permissions, stats, and settings."""
     tags = ["departments"]  # From router tags
 
     # Generate cache key from path and parsed body
@@ -136,60 +122,27 @@ async def get_department_detail(
                 detail=f"Department {request_body.departmentId} not found",
             )
 
-        # Parse staff list from JSONB
-        staff_list: list[StaffItem] = []
-        staff_data = dept_row.get("staff")
-        if isinstance(staff_data, str):
-            staff_data = json.loads(staff_data)
-        if staff_data and isinstance(staff_data, list):
-            for staff_row in staff_data:
-                if isinstance(staff_row, dict):
-                    cohort_ids = [
-                        str(cid) for cid in (staff_row.get("cohort_ids") or [])
-                    ]
-                    department_ids = staff_row.get("department_ids") or []
-                    # Get primary department_id - ensure it always exists (default to empty string or first department)
-                    primary_department_id = staff_row.get("primary_department_id") or ""
-                    if not primary_department_id and department_ids:
-                        # Fallback to first department if no primary department set
-                        primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
+        # Get settings_id (can be None if no settings assigned)
+        settings_id = dept_row.get("settings_id")
 
-                    last_active = None
-                    if staff_row.get("lastActive"):
-                        last_active_val = staff_row["lastActive"]
-                        if isinstance(last_active_val, str):
-                            last_active = last_active_val
-                        elif hasattr(last_active_val, "isoformat"):
-                            last_active = last_active_val.isoformat()
-                        else:
-                            last_active = str(last_active_val)
-
-                    emails = staff_row.get("emails") or []
-                    primary_email = staff_row.get("primary_email")
-                    staff_list.append(
-                        StaffItem(
-                            profile_id=str(staff_row["profile_id"]),
-                            first_name=staff_row["first_name"],
-                            last_name=staff_row["last_name"],
-                            emails=emails if isinstance(emails, list) else [],
-                            primary_email=primary_email,
-                            name=staff_row["name"],
-                            role=staff_row["role"],
-                            initials=staff_row["initials"],
-                            active=staff_row["active"],
-                            last_active=last_active,
-                            cohort_ids=cohort_ids,
-                            department_ids=department_ids,
-                            primary_department_id=primary_department_id,
-                            requests_per_day=staff_row.get("requests_per_day"),
-                            total_requests=staff_row.get("total_requests", 0),
-                            requests_in_last_day=staff_row.get(
-                                "requests_in_last_day", 0
-                            ),
-                            can_edit=staff_row["can_edit"],
-                            can_delete=staff_row["can_delete"],
-                            can_remove=staff_row.get("can_remove", False),
-                        )
+        # Parse settings mapping from JSONB
+        settings_mapping: dict[str, SettingsMappingItem] = {}
+        settings_mapping_data = dept_row.get("settings_mapping")
+        if isinstance(settings_mapping_data, str):
+            settings_mapping_data = json.loads(settings_mapping_data)
+        if settings_mapping_data and isinstance(settings_mapping_data, dict):
+            for sid, sdata in settings_mapping_data.items():
+                if isinstance(sdata, dict):
+                    department_ids = None
+                    if sdata.get("department_ids"):
+                        department_ids = [
+                            str(did) for did in sdata["department_ids"]
+                        ]
+                    settings_mapping[sid] = SettingsMappingItem(
+                        settings_id=sdata.get("settings_id", sid),
+                        created_at=sdata.get("created_at", ""),
+                        active=sdata.get("active", True),
+                        department_ids=department_ids,
                     )
 
         # Parse cohort mapping from JSONB
@@ -285,7 +238,8 @@ async def get_department_detail(
             in_use=dept_row["in_use"],
             staff_count=int(dept_row["staff_count"]),
             total_price_spent=float(dept_row["total_price_spent"]),
-            staff=staff_list,
+            settings_id=settings_id,
+            settings_mapping=settings_mapping,
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,

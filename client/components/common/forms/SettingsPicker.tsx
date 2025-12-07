@@ -1,7 +1,8 @@
 /**
  * SettingsPicker.tsx
- * Used to pick settings versions by timestamp
- * Similar to ProblemStatementPicker but for settings
+ * Used to pick settings for departments
+ * @AshokSaravanan222
+ * 01/20/2025
  */
 
 "use client";
@@ -11,6 +12,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Command,
   CommandEmpty,
@@ -26,50 +28,57 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-type SettingsInfo = {
+export interface SettingsInfo {
   settings_id: string;
   created_at: string;
   active: boolean;
+  department_ids: string[] | null;
+}
+
+type TriggerButtonProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "data-testid"
+> & {
+  "data-testid"?: string;
 };
 
 export interface SettingsPickerProps extends PopoverProps {
   settingsMapping: Record<string, SettingsInfo>;
   selectedSettingsId: string | null;
+  defaultSettingsId: string | null; // ID of the default settings
   onSelect: (settingsId: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
   buttonClassName?: string;
+  triggerProps?: TriggerButtonProps;
 }
 
 export function SettingsPicker({
   settingsMapping,
   selectedSettingsId,
+  defaultSettingsId,
   onSelect,
-  placeholder = "Select settings version...",
+  placeholder = "Select settings...",
   disabled = false,
   buttonClassName,
+  triggerProps,
   ...props
 }: SettingsPickerProps) {
   const [open, setOpen] = React.useState(false);
 
   const settings = React.useMemo(() => {
-    // Convert mapping to array
     return Object.entries(settingsMapping).map(([id, info]) => ({
       id,
       ...info,
     }));
   }, [settingsMapping]);
 
-  // Sort by created_at descending (newest first), then by id for stable sort
+  // Sort by created_at descending (newest first)
   const sortedSettings = React.useMemo(() => {
     return [...settings].sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
-      if (dateB !== dateA) {
-        return dateB - dateA;
-      }
-      // If same timestamp, sort by ID for stable ordering
-      return a.id.localeCompare(b.id);
+      return dateB - dateA;
     });
   }, [settings]);
 
@@ -86,9 +95,21 @@ export function SettingsPicker({
     if (!setting) {
       return placeholder;
     }
+    // Format date for display
     const date = new Date(setting.created_at);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    return `Settings (${date.toLocaleDateString()})`;
   };
+
+  const isSelectedDefault = selectedSettingsId === defaultSettingsId;
+
+  const { className: triggerClassName, ...restTriggerProps } =
+    triggerProps ?? {};
+
+  const buttonClasses = cn(
+    "justify-between",
+    buttonClassName,
+    triggerClassName,
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen} {...props}>
@@ -97,11 +118,22 @@ export function SettingsPicker({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          aria-label="Select settings version"
-          className={cn("justify-between", buttonClassName)}
+          aria-label="Select settings"
+          className={buttonClasses}
           disabled={disabled}
+          {...restTriggerProps}
         >
-          <span className="truncate">{getButtonText()}</span>
+          <div className="flex items-center gap-2 truncate">
+            {isSelectedDefault && (
+              <Badge
+                variant="secondary"
+                className="text-xs h-5 px-1.5 flex-shrink-0"
+              >
+                Default
+              </Badge>
+            )}
+            <span className="truncate">{getButtonText()}</span>
+          </div>
           <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2 h-4 w-4" />
         </Button>
       </PopoverTrigger>
@@ -111,39 +143,55 @@ export function SettingsPicker({
             <CommandInput placeholder="Search settings..." />
             <CommandEmpty>No settings found.</CommandEmpty>
             {sortedSettings.length > 0 && (
-              <CommandGroup heading="Settings History">
+              <CommandGroup heading="Settings">
                 {sortedSettings.map((setting) => {
-                  const date = new Date(setting.created_at);
                   const isSelected = selectedSettingsId === setting.id;
+                  const isDefault =
+                    setting.id === defaultSettingsId ||
+                    !setting.department_ids ||
+                    setting.department_ids.length === 0;
+                  const date = new Date(setting.created_at);
                   return (
                     <CommandItem
                       key={setting.id}
-                      value={setting.id}
                       onSelect={() => handleSelect(setting.id)}
-                      className="flex flex-col items-start py-3"
+                      className="group data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
+                      data-testid="settings-option"
+                      data-settings-id={setting.id}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <Check
-                            className={cn(
-                              "h-4 w-4",
-                              isSelected ? "opacity-100" : "opacity-0",
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {isDefault && (
+                              <Badge
+                                variant="secondary"
+                                className="text-xs h-5 px-1.5"
+                              >
+                                Default
+                              </Badge>
                             )}
-                          />
-                          <span className="font-medium">
-                            {date.toLocaleDateString()}{" "}
-                            {date.toLocaleTimeString()}
-                          </span>
-                          {setting.active && (
-                            <span className="text-xs text-muted-foreground">
-                              (Active)
-                            </span>
-                          )}
+                            <div className="font-medium truncate">
+                              Settings ({date.toLocaleDateString()})
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                            {setting.active ? "Active" : "Inactive"}
+                          </div>
+                          {setting.department_ids &&
+                            setting.department_ids.length > 0 && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {setting.department_ids.length} department
+                                {setting.department_ids.length !== 1 ? "s" : ""}
+                              </div>
+                            )}
                         </div>
+                        <Check
+                          className={cn(
+                            "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
+                            isSelected ? "opacity-100" : "opacity-0",
+                          )}
+                        />
                       </div>
-                      <span className="text-xs text-muted-foreground mt-1">
-                        Settings {setting.settings_id.slice(0, 8)}
-                      </span>
                     </CommandItem>
                   );
                 })}

@@ -1,5 +1,5 @@
--- Update department with profile relationships in single query (DHH style)
--- Parameters: $1=department_id (uuid), $2=title, $3=description, $4=active, $5=profile_ids (text[])
+-- Update department with settings relationship in single query (DHH style)
+-- Parameters: $1=department_id (uuid), $2=title, $3=description, $4=active, $5=settings_id (text, nullable)
 -- Returns: id, title
 
 WITH department_update AS (
@@ -12,32 +12,24 @@ WITH department_update AS (
     WHERE id = $1::uuid
     RETURNING id, title
 ),
-deactivate_profiles AS (
-    -- Deactivate existing profile relationships not in the new list
-    UPDATE profile_departments
-    SET active = false, updated_at = NOW()
+remove_existing_settings AS (
+    -- Remove existing settings link if settingsId is null or different
+    DELETE FROM department_settings
     WHERE department_id = $1::uuid
-      AND COALESCE(array_length($5::text[], 1), 0) > 0
-      AND profile_id NOT IN (
-          SELECT profile_id::uuid
-          FROM UNNEST($5::text[]) as profile_id
-      )
+      AND ($5 IS NULL OR settings_id != $5::uuid)
 ),
-link_profiles AS (
-    -- Link new profiles if provided
-    INSERT INTO profile_departments (profile_id, department_id, is_primary, active, created_at, updated_at)
+link_settings AS (
+    -- Link settings if provided
+    INSERT INTO department_settings (settings_id, department_id, active, created_at, updated_at)
     SELECT 
-        profile_id::uuid,
+        $5::uuid,
         du.id,
-        (ROW_NUMBER() OVER (ORDER BY profile_id) = 1) as is_primary,  -- First profile gets primary
         true,
         NOW(),
         NOW()
     FROM department_update du
-    CROSS JOIN UNNEST($5::text[]) as profile_id
-    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
-    ON CONFLICT (profile_id, department_id) DO UPDATE SET
-        is_primary = EXCLUDED.is_primary,
+    WHERE $5 IS NOT NULL
+    ON CONFLICT (settings_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )
