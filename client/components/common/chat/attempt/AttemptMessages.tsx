@@ -631,6 +631,31 @@ export default function AttemptMessages({
         // Generate optimistic message ID locally
         const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
 
+        // Clear old incomplete optimistic voice messages before creating new one
+        // This prevents multiple loading states from appearing and messages getting stuck
+        setOptimisticMessages((prev) => {
+          const newMap = new Map(prev);
+          // Remove all incomplete optimistic voice messages
+          for (const [id, msg] of newMap.entries()) {
+            if (
+              id.startsWith("optimistic-user-voice-") &&
+              (msg.content === "" || !msg.completed)
+            ) {
+              newMap.delete(id);
+              // Clean up stale item_id mappings
+              for (const [
+                itemId,
+                optId,
+              ] of itemIdToOptimisticIdRef.current.entries()) {
+                if (optId === id) {
+                  itemIdToOptimisticIdRef.current.delete(itemId);
+                }
+              }
+            }
+          }
+          return newMap;
+        });
+
         // Store mapping from item_id to optimistic_message_id
         itemIdToOptimisticIdRef.current.set(data.item_id, optimisticMessageId);
 
@@ -812,16 +837,18 @@ export default function AttemptMessages({
                       <div key={message.id} className="flex justify-end mb-3">
                         <div className="max-w-[80%] flex items-stretch gap-2">
                           <div
-                            className="bg-primary text-primary-foreground rounded-lg p-3 flex-1"
+                            className={`bg-primary text-primary-foreground rounded-lg p-3 flex-1 ${
+                              isOptimisticVoiceMessage
+                                ? "flex items-center justify-center"
+                                : ""
+                            }`}
                             data-testid={`message-${message.id}`}
                             data-message-id={message.id}
                             data-message-type="user"
                           >
                             {isOptimisticVoiceMessage ? (
                               // Show LoadingDots for optimistic voice messages (same as assistant)
-                              <div className="flex items-center">
-                                <LoadingDots />
-                              </div>
+                              <LoadingDots />
                             ) : (
                               <Markdown>{message.content}</Markdown>
                             )}
@@ -970,14 +997,12 @@ export default function AttemptMessages({
                             {/* Show loading state for empty/incomplete messages, otherwise show content */}
                             {!message.completed && message.content === "" ? (
                               <div
-                                className="bg-muted rounded-lg p-3"
+                                className="bg-muted rounded-lg p-3 flex items-center justify-center"
                                 data-testid={`message-${message.id}`}
                                 data-message-id={message.id}
                                 data-message-type="assistant"
                               >
-                                <div className="flex items-center">
-                                  <LoadingDots />
-                                </div>
+                                <LoadingDots />
                               </div>
                             ) : message.completed && message.content === "" ? (
                               // Show "No response" for completed messages with empty content

@@ -1666,8 +1666,8 @@ export default function AttemptInput({
           </div>
 
           <div className="flex gap-2">
-            {/* Show stop button when sending message (takes priority) */}
-            {isSendingMessage ? (
+            {/* Show stop button when sending message (but not in voice mode) */}
+            {isSendingMessage && !voiceModeEnabled ? (
               <motion.div
                 layout
                 key="stop-btn"
