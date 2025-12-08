@@ -141,7 +141,7 @@ SELECT
             ORDER BY array_position(p.parameter_item_ids, f.id)
         )
         FROM fields f
-        JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+        JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
         JOIN parameters pa ON pa.id = fp.parameter_id
         WHERE f.id = ANY(p.parameter_item_ids)
         ),

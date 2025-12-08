@@ -27,14 +27,13 @@ original_field AS (
         f.id,
         f.name,
         f.description,
-        f.value,
         f.default_field
     FROM fields f
     WHERE f.id = $1::uuid
 ),
 original_parameters AS (
     SELECT fp.parameter_id
-    FROM field_parameters fp
+    FROM parameter_fields fp
     WHERE fp.field_id = (SELECT id FROM original_field)
     AND fp.active = true
 ),
@@ -54,14 +53,13 @@ new_field AS (
     SELECT 
         of.name || ' (Copy)',
         of.description,
-        of.value,
-        of.default_field
+        o        of.default_field
     FROM original_field of
     RETURNING id::text as field_id
 ),
 link_parameters AS (
     -- Link new field to same parameters as original
-    INSERT INTO field_parameters (field_id, parameter_id, active, created_at, updated_at)
+    INSERT INTO parameter_fields (field_id, parameter_id, active, created_at, updated_at)
     SELECT 
         nf.field_id::uuid,
         op.parameter_id,

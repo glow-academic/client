@@ -39,20 +39,20 @@ user_profile AS (
 ),
 parameter_active_scenario_links AS (
     SELECT 
-        fp.parameter_id,
+        pf.parameter_id,
         COUNT(DISTINCT sf.scenario_id) as active_scenario_count
     FROM parameter_id_resolved pid
-    JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
-    JOIN scenario_fields sf ON sf.field_id = fp.field_id AND sf.active = true
-    GROUP BY fp.parameter_id
+    JOIN parameter_fields pf ON pf.parameter_id = pid.parameter_id AND pf.active = true
+    JOIN scenario_fields sf ON sf.field_id = pf.field_id AND sf.active = true
+    GROUP BY pf.parameter_id
 ),
 field_departments_data AS (
     SELECT 
         f.id as field_id,
         ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
     FROM parameter_id_resolved pid
-    JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
-    JOIN fields f ON f.id = fp.field_id
+    JOIN parameter_fields pf ON pf.parameter_id = pid.parameter_id AND pf.active = true
+    JOIN fields f ON f.id = pf.field_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     GROUP BY f.id
 ),
@@ -69,8 +69,8 @@ parameter_departments_aggregated AS (
         -- Field-level departments (for backward compatibility)
         SELECT fd.department_id as dept_id
         FROM parameter_id_resolved pid
-        JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
-        JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+        JOIN parameter_fields pf ON pf.parameter_id = pid.parameter_id AND pf.active = true
+        JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
     ) combined_depts
 ),
 user_has_parameter_access AS (
@@ -87,9 +87,9 @@ user_has_parameter_access AS (
         -- Check field-level departments
         SELECT 1 FROM field_departments fd
         JOIN profile_departments pd ON pd.department_id = fd.department_id
-        JOIN field_parameters fp ON fp.field_id = fd.field_id
-        WHERE fp.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
-        AND fp.active = true
+        JOIN parameter_fields pf ON pf.field_id = fd.field_id
+        WHERE pf.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+        AND pf.active = true
         AND fd.active = true
         AND pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
         AND pd.active = true
@@ -103,9 +103,9 @@ user_has_parameter_access AS (
          WHERE pd.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
          AND pd.active = true) = 0
         AND (SELECT COUNT(*) FROM field_departments fd
-             JOIN field_parameters fp ON fp.field_id = fd.field_id
-             WHERE fp.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
-             AND fp.active = true
+             JOIN parameter_fields pf ON pf.field_id = fd.field_id
+             WHERE pf.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+             AND pf.active = true
              AND fd.active = true) = 0
     ) as has_access
 ),
@@ -137,7 +137,6 @@ parameter_data AS (
     SELECT 
         p.name,
         p.description,
-        p.numerical,
         p.active,
         p.practice_parameter,
         COALESCE(pda.department_ids, NULL) as department_ids,
@@ -168,15 +167,15 @@ fields_with_usage AS (
         f.id,
         f.name,
         f.description,
-        f.value,
+        pf.default,
         COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
         COALESCE(fdd.department_ids, NULL) as department_ids
     FROM parameter_id_resolved pid
-    JOIN field_parameters fp ON fp.parameter_id = pid.parameter_id AND fp.active = true
-    JOIN fields f ON f.id = fp.field_id
+    JOIN parameter_fields pf ON pf.parameter_id = pid.parameter_id AND pf.active = true
+    JOIN fields f ON f.id = pf.field_id AND f.active = true
     LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
     LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
-    GROUP BY f.id, f.name, f.description, f.value, fdd.department_ids
+    GROUP BY f.id, f.name, f.description, pf.default, fdd.department_ids
 ),
 items_json AS (
     SELECT COALESCE(
@@ -185,7 +184,7 @@ items_json AS (
                 'parameter_item_id', id::text,
                 'name', name,
                 'description', description,
-                'value', value,
+                'default', default,
                 'usage_count', usage_count,
                 'department_ids', department_ids
             )

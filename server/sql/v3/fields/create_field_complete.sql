@@ -26,25 +26,41 @@ new_field AS (
     INSERT INTO fields (
         name,
         description,
-        value,
-        default_field
+        active
     )
-    VALUES ($1, $2, $3, $4)
+    VALUES ($1, $2, COALESCE($3, true))
     RETURNING id::text as field_id
 ),
 link_parameters AS (
-    -- Link field to parameters if provided
-    INSERT INTO field_parameters (field_id, parameter_id, active, created_at, updated_at)
+    -- Link field to parameters if provided (creates parameter_fields entries)
+    INSERT INTO parameter_fields (parameter_id, field_id, default, active, created_at, updated_at)
     SELECT 
-        nf.field_id::uuid,
         param_id::uuid,
+        nf.field_id::uuid,
+        false, -- default will be set when parameter is edited
         true,
         NOW(),
         NOW()
     FROM new_field nf
-    CROSS JOIN UNNEST(COALESCE($6::text[], ARRAY[]::text[])) as param_id
+    CROSS JOIN UNNEST(COALESCE($5::text[], ARRAY[]::text[])) as param_id
+    WHERE $5 IS NOT NULL AND array_length($5::text[], 1) > 0
+    ON CONFLICT (parameter_id, field_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_conditional_parameters AS (
+    -- Link field to conditional parameters if provided
+    INSERT INTO field_conditional_parameters (field_id, conditional_parameter_id, active, created_at, updated_at)
+    SELECT 
+        nf.field_id::uuid,
+        cond_param_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_field nf
+    CROSS JOIN UNNEST(COALESCE($6::text[], ARRAY[]::text[])) as cond_param_id
     WHERE $6 IS NOT NULL AND array_length($6::text[], 1) > 0
-    ON CONFLICT (field_id, parameter_id) DO UPDATE SET
+    ON CONFLICT (field_id, conditional_parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
@@ -58,8 +74,8 @@ link_departments AS (
         NOW(),
         NOW()
     FROM new_field nf
-    CROSS JOIN UNNEST(COALESCE($5::text[], ARRAY[]::text[])) as dept_id
-    WHERE $5 IS NOT NULL AND array_length($5::text[], 1) > 0
+    CROSS JOIN UNNEST(COALESCE($4::text[], ARRAY[]::text[])) as dept_id
+    WHERE $4 IS NOT NULL AND array_length($4::text[], 1) > 0
     ON CONFLICT (field_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

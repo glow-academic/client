@@ -8,12 +8,12 @@ user_profile AS (
 ),
 field_parameters_agg AS (
     SELECT 
-        fp.field_id,
-        ARRAY_AGG(fp.parameter_id::text ORDER BY p.name) as parameter_ids
-    FROM field_parameters fp
-    JOIN parameters p ON p.id = fp.parameter_id
-    WHERE fp.active = true
-    GROUP BY fp.field_id
+        pf.field_id,
+        ARRAY_AGG(pf.parameter_id::text ORDER BY p.name) as parameter_ids
+    FROM parameter_fields pf
+    JOIN parameters p ON p.id = pf.parameter_id
+    WHERE pf.active = true
+    GROUP BY pf.field_id
 ),
 field_departments_data AS (
     SELECT 
@@ -62,16 +62,25 @@ department_mapping_data AS (
     FROM all_department_ids adi
     LEFT JOIN departments d ON d.id = adi.department_id
 )
+field_conditional_parameters_agg AS (
+    SELECT 
+        fcp.field_id,
+        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY p.name) as conditional_parameter_ids
+    FROM field_conditional_parameters fcp
+    JOIN parameters p ON p.id = fcp.conditional_parameter_id
+    WHERE fcp.active = true
+    GROUP BY fcp.field_id
+)
 SELECT 
     f.id as field_id,
     f.name,
     f.description,
-    f.value,
-    f.default_field,
+    f.active,
     f.created_at,
     f.updated_at,
     COALESCE(fdd.department_ids, NULL) as department_ids,
     COALESCE(fpa.parameter_ids, ARRAY[]::text[]) as parameter_ids,
+    COALESCE(fcpa.conditional_parameter_ids, ARRAY[]::text[]) as conditional_parameter_ids,
     CASE 
         WHEN COALESCE(fdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
         WHEN up.role IN ('admin', 'superadmin') THEN true
@@ -89,10 +98,12 @@ SELECT
 FROM fields f
 LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
 LEFT JOIN field_parameters_agg fpa ON fpa.field_id = f.id
+LEFT JOIN field_conditional_parameters_agg fcpa ON fcpa.field_id = f.id
 CROSS JOIN user_profile up
 CROSS JOIN parameter_mapping_data pmd
 CROSS JOIN department_mapping_data dmd
-WHERE (
+WHERE f.active = true
+AND (
     -- Include fields with no departments (cross-department)
     NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
     OR
@@ -104,7 +115,7 @@ WHERE (
         AND fd.active = true
     )
 )
-GROUP BY f.id, f.name, f.description, f.value, f.default_field, f.created_at, f.updated_at,
-         fdd.department_ids, fpa.parameter_ids, up.role, pmd.mapping, dmd.mapping
+GROUP BY f.id, f.name, f.description, f.active, f.created_at, f.updated_at,
+         fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, up.role, pmd.mapping, dmd.mapping
 ORDER BY f.name
 

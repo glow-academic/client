@@ -405,7 +405,7 @@ parameter_data AS (
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = par.id AND pd.active = true) THEN true ELSE false END as document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = par.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters par
-    JOIN field_parameters fp ON fp.parameter_id = par.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.parameter_id = par.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE par.active = true
       AND par.practice_parameter = true
@@ -413,7 +413,7 @@ parameter_data AS (
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                  JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                  JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                   WHERE fp2.parameter_id = par.id AND fp2.active = true))
 ),
 parameter_mapping_data AS (
@@ -435,7 +435,7 @@ parameter_item_data AS (
         par.name as parameter_name,
         f.value
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters par ON par.id = fp.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE par.active = true

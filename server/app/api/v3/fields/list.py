@@ -28,10 +28,10 @@ class FieldItem(BaseModel):
     field_id: str
     name: str
     description: str
-    value: str
-    default_field: bool
+    active: bool
     department_ids: list[str] | None = None
     parameter_ids: list[str]
+    conditional_parameter_ids: list[str]
     can_edit: bool
     can_delete: bool
     can_duplicate: bool
@@ -104,15 +104,21 @@ async def get_fields_list(
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
+            # Parse conditional_parameter_ids from array
+            conditional_parameter_ids: list[str] = []
+            cond_param_ids_raw = row.get("conditional_parameter_ids")
+            if cond_param_ids_raw and isinstance(cond_param_ids_raw, (list, tuple)):
+                conditional_parameter_ids = [str(pid) for pid in cond_param_ids_raw if pid]
+
             fields.append(
                 FieldItem(
                     field_id=str(row["field_id"]),
                     name=row["name"],
                     description=row["description"],
-                    value=row["value"],
-                    default_field=row["default_field"],
+                    active=row.get("active", True),
                     department_ids=dept_ids,
                     parameter_ids=parameter_ids,
+                    conditional_parameter_ids=conditional_parameter_ids,
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],

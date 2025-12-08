@@ -336,6 +336,18 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Fields",
                 redirectTo="/management/fields",
             ),
+            RoutePermission(
+                path="/management/fields/new",
+                roles=["admin", "superadmin"],
+                title="Create Field",
+                redirectTo="/management/fields",
+            ),
+            RoutePermission(
+                path="/management/fields/[fieldId]",
+                roles=["admin", "superadmin"],
+                title="Edit Field",
+                redirectTo="/management/fields",
+            ),
         ],
     ),
     SectionPermission(

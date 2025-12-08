@@ -1204,24 +1204,31 @@
                 SELECT DISTINCT parameter_id FROM cat_map_seen
             ),
             
-            -- Scenario Stats (FULL IMPLEMENTATION with numeric parameters)
+            -- Scenario Stats (NUMERICAL PARAMETERS REMOVED - functionality disabled)
+            -- Note: Numerical parameters and value field have been removed
+            -- This section is commented out until alternative implementation is provided
+            /*
             nums AS (
                 SELECT id
                 FROM parameters
-                WHERE active = TRUE AND numerical = TRUE
+                WHERE active = TRUE
             ),
             num_map AS (
                 SELECT 
                     s.id AS scenario_id, 
-                    fp.parameter_id, 
-                    f.value::numeric AS level
+                    pf.parameter_id, 
+                    NULL::numeric AS level  -- Value field removed, level extraction from name not implemented
                 FROM scenarios s
                 JOIN scenario_fields sf ON sf.scenario_id = s.id
                 JOIN fields f ON f.id = sf.field_id
-                JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
-                JOIN nums n ON n.id = fp.parameter_id
+                JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
+                JOIN nums n ON n.id = pf.parameter_id
                 WHERE s.active = TRUE
             ),
+            */
+            -- Empty CTEs to maintain query structure
+            nums AS (SELECT id FROM parameters WHERE false),
+            num_map AS (SELECT NULL::uuid AS scenario_id, NULL::uuid AS parameter_id, NULL::numeric AS level WHERE false),
             num_map_seen AS (
                 SELECT nm.*
                 FROM num_map nm
@@ -1324,29 +1331,20 @@
                 JOIN scen_seen ss ON ss.scenario_id = sc.id
                 JOIN scenario_fields sf ON sf.scenario_id = sc.id
                 JOIN fields f ON f.id = sf.field_id
-                JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
-                JOIN parameters p ON p.id = fp.parameter_id AND p.numerical = FALSE
+                JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
+                JOIN parameters p ON p.id = pf.parameter_id
                 JOIN analytics a ON a.scenario_id = sc.id
                 WHERE s.active = TRUE AND sc.active = TRUE
                 GROUP BY s.id, p.id, f.id
             ),
+            -- Numerical parameter stats removed (value field no longer exists)
             sim_param_nums_seen AS (
                 SELECT
-                    s.id AS simulation_id,
-                    p.id AS parameter_id,
-                    f.value::numeric AS most_common_level,
-                    COUNT(a.chat_id)::int AS chat_count
-                FROM simulations s
-                JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
-                JOIN scenarios sc ON sc.id = ss_link.scenario_id
-                JOIN scen_seen ss ON ss.scenario_id = sc.id
-                JOIN scenario_fields sf ON sf.scenario_id = sc.id
-                JOIN fields f ON f.id = sf.field_id
-                JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
-                JOIN parameters p ON p.id = fp.parameter_id AND p.numerical = TRUE
-                JOIN analytics a ON a.scenario_id = sc.id
-                WHERE s.active = TRUE AND sc.active = TRUE
-                GROUP BY s.id, p.id, f.value
+                    NULL::uuid AS simulation_id,
+                    NULL::uuid AS parameter_id,
+                    NULL::numeric AS most_common_level,
+                    0::int AS chat_count
+                WHERE false
             ),
             sim_param_nums_most_common AS (
                 SELECT
@@ -1450,7 +1448,6 @@
                     jsonb_build_object(
                         'name', p.name, 
                         'description', COALESCE(p.description, ''),
-                        'numerical', p.numerical,
                         'document_parameter', CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END
                     )
                 ), '{}'::jsonb) AS mapping
@@ -1461,16 +1458,16 @@
                       OR EXISTS (
                           SELECT 1 
                           FROM fields f
-                          JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+                          JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
                           JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-                          WHERE fp.parameter_id = p.id AND fd.department_id = ANY($6::uuid[])
+                          WHERE pf.parameter_id = p.id AND fd.department_id = ANY($6::uuid[])
                       )
                       OR NOT EXISTS (
                           SELECT 1 
                           FROM fields f
-                          JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+                          JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
                           JOIN field_departments fd2 ON fd2.field_id = f.id AND fd2.active = true
-                          WHERE fp.parameter_id = p.id
+                          WHERE pf.parameter_id = p.id
                       )
                   )
             ),
@@ -1481,14 +1478,13 @@
                     jsonb_build_object(
                         'name', f.name, 
                         'description', COALESCE(f.description, ''),
-                        'parameterId', fp.parameter_id::text,
-                        'parameterName', p.name,
-                        'value', COALESCE(f.value, '')
+                        'parameterId', pf.parameter_id::text,
+                        'parameterName', p.name
                     )
                 ), '{}'::jsonb) AS mapping
                 FROM fields f
-                JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
-                JOIN parameters p ON fp.parameter_id = p.id
+                JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
+                JOIN parameters p ON pf.parameter_id = p.id
                 LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
                 WHERE p.active = true
                   AND (

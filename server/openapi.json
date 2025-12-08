@@ -14011,14 +14011,10 @@
             "type": "string",
             "title": "Description"
           },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "default_field": {
+          "active": {
             "type": "boolean",
-            "title": "Default Field",
-            "default": false
+            "title": "Active",
+            "default": true
           },
           "department_ids": {
             "anyOf": [
@@ -14048,6 +14044,20 @@
             ],
             "title": "Parameter Ids"
           },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -14057,7 +14067,6 @@
         "required": [
           "name",
           "description",
-          "value",
           "department_ids",
           "parameter_ids",
           "profileId"
@@ -14508,17 +14517,17 @@
             "type": "string",
             "title": "Description"
           },
-          "value": {
-            "type": "string",
-            "title": "Value"
+          "default": {
+            "type": "boolean",
+            "title": "Default",
+            "default": false
           }
         },
         "type": "object",
         "required": [
           "parameterId",
           "name",
-          "description",
-          "value"
+          "description"
         ],
         "title": "CreateParameterItemRequest",
         "description": "Request to create a single parameter item."
@@ -14556,10 +14565,6 @@
           "description": {
             "type": "string",
             "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
           },
           "active": {
             "type": "boolean",
@@ -14656,7 +14661,6 @@
         "required": [
           "name",
           "description",
-          "numerical",
           "active",
           "department_ids",
           "parameter_items",
@@ -19124,13 +19128,9 @@
             "type": "string",
             "title": "Description"
           },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "default_field": {
+          "active": {
             "type": "boolean",
-            "title": "Default Field"
+            "title": "Active"
           },
           "department_ids": {
             "anyOf": [
@@ -19152,6 +19152,13 @@
             },
             "type": "array",
             "title": "Parameter Ids"
+          },
+          "conditional_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Conditional Parameter Ids"
           },
           "department_mapping": {
             "additionalProperties": {
@@ -19194,10 +19201,10 @@
         "required": [
           "name",
           "description",
-          "value",
-          "default_field",
+          "active",
           "department_ids",
           "parameter_ids",
+          "conditional_parameter_ids",
           "department_mapping",
           "valid_department_ids",
           "parameter_mapping",
@@ -19220,13 +19227,9 @@
             "type": "string",
             "title": "Description"
           },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "default_field": {
+          "active": {
             "type": "boolean",
-            "title": "Default Field"
+            "title": "Active"
           },
           "department_ids": {
             "anyOf": [
@@ -19249,6 +19252,13 @@
             "type": "array",
             "title": "Parameter Ids"
           },
+          "conditional_parameter_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Conditional Parameter Ids"
+          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -19267,9 +19277,9 @@
           "field_id",
           "name",
           "description",
-          "value",
-          "default_field",
+          "active",
           "parameter_ids",
+          "conditional_parameter_ids",
           "can_edit",
           "can_delete",
           "can_duplicate"
@@ -22679,10 +22689,6 @@
             "type": "string",
             "title": "Description"
           },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -22740,7 +22746,6 @@
         "required": [
           "name",
           "description",
-          "numerical",
           "active",
           "document_parameter",
           "practice_parameter",
@@ -22762,9 +22767,10 @@
             "type": "string",
             "title": "Description"
           },
-          "value": {
-            "type": "string",
-            "title": "Value"
+          "default": {
+            "type": "boolean",
+            "title": "Default",
+            "default": false
           },
           "department_ids": {
             "anyOf": [
@@ -22784,8 +22790,7 @@
         "type": "object",
         "required": [
           "name",
-          "description",
-          "value"
+          "description"
         ],
         "title": "ParameterItemCreate",
         "description": "Parameter item creation schema."
@@ -22850,18 +22855,13 @@
           "description": {
             "type": "string",
             "title": "Description"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
           }
         },
         "type": "object",
         "required": [
           "parameter_item_id",
           "name",
-          "description",
-          "value"
+          "description"
         ],
         "title": "ParameterSampleItem"
       },
@@ -31650,13 +31650,10 @@
             "type": "string",
             "title": "Description"
           },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "default_field": {
+          "active": {
             "type": "boolean",
-            "title": "Default Field"
+            "title": "Active",
+            "default": true
           },
           "department_ids": {
             "anyOf": [
@@ -31686,6 +31683,20 @@
             ],
             "title": "Parameter Ids"
           },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -31696,8 +31707,6 @@
           "fieldId",
           "name",
           "description",
-          "value",
-          "default_field",
           "department_ids",
           "parameter_ids",
           "profileId"
@@ -31993,10 +32002,6 @@
             "type": "string",
             "title": "Description"
           },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -32092,7 +32097,6 @@
           "parameterId",
           "name",
           "description",
-          "numerical",
           "active",
           "practice_parameter",
           "department_ids",
@@ -35964,9 +35968,9 @@
             "type": "string",
             "title": "Description"
           },
-          "value": {
-            "type": "string",
-            "title": "Value"
+          "default": {
+            "type": "boolean",
+            "title": "Default"
           },
           "usage_count": {
             "type": "integer",
@@ -35992,7 +35996,7 @@
           "parameter_item_id",
           "name",
           "description",
-          "value",
+          "default",
           "usage_count",
           "department_ids"
         ],
@@ -36011,10 +36015,6 @@
           "description": {
             "type": "string",
             "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
           },
           "active": {
             "type": "boolean",
@@ -36077,7 +36077,6 @@
           "parameter_id",
           "name",
           "description",
-          "numerical",
           "active",
           "department_ids",
           "scenario_ids",

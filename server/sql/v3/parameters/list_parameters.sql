@@ -35,7 +35,7 @@ parameter_active_scenario_links AS (
     SELECT 
         fp.parameter_id,
         COUNT(DISTINCT sf.scenario_id) as active_scenario_count
-    FROM field_parameters fp
+    FROM parameter_fields fp
     JOIN scenario_fields sf ON sf.field_id = fp.field_id
     WHERE fp.active = true AND sf.active = true
     GROUP BY fp.parameter_id
@@ -44,7 +44,7 @@ parameter_all_scenario_links AS (
     SELECT 
         fp.parameter_id,
         COUNT(DISTINCT sf.scenario_id) as total_scenario_links
-    FROM field_parameters fp
+    FROM parameter_fields fp
     JOIN scenario_fields sf ON sf.field_id = fp.field_id
     WHERE fp.active = true
     GROUP BY fp.parameter_id
@@ -68,7 +68,7 @@ parameter_item_counts AS (
     SELECT 
         fp.parameter_id,
         COUNT(*) as num_items
-    FROM field_parameters fp
+    FROM parameter_fields fp
     WHERE fp.active = true
     GROUP BY fp.parameter_id
 ),
@@ -80,13 +80,12 @@ parameter_sample_items AS (
                 'parameter_item_id', fp_sub.field_id::text,
                 'name', fp_sub.name,
                 'description', fp_sub.description,
-                'value', fp_sub.value
             ) ORDER BY fp_sub.name
         ) as sample_items
     FROM (
-        SELECT f.id as field_id, fp.parameter_id, f.name, f.description, f.value,
+        SELECT f.id as field_id, pf.parameter_id, f.name, f.description,
                ROW_NUMBER() OVER (PARTITION BY fp.parameter_id ORDER BY f.name) as rn
-        FROM field_parameters fp
+        FROM parameter_fields fp
         JOIN fields f ON f.id = fp.field_id
         WHERE fp.active = true
     ) fp_sub
@@ -106,7 +105,7 @@ parameter_item_departments_data AS (
         UNION
         -- Field-level departments (for backward compatibility)
         SELECT fp.parameter_id, fd.department_id
-        FROM field_parameters fp
+        FROM parameter_fields fp
         JOIN field_departments fd ON fd.field_id = fp.field_id
         WHERE fp.active = true AND fd.active = true
     ) combined
@@ -124,7 +123,7 @@ parameter_item_departments_for_filter AS (
         UNION
         -- Field-level departments (for backward compatibility)
         SELECT fp.parameter_id, fd.department_id
-        FROM field_parameters fp
+        FROM parameter_fields fp
         JOIN field_departments fd ON fd.field_id = fp.field_id
         WHERE fp.active = true AND fd.active = true
     ) combined
@@ -133,7 +132,7 @@ parameter_documents AS (
     SELECT 
         fp.parameter_id,
         ARRAY_AGG(DISTINCT df.document_id::text ORDER BY df.document_id::text) as document_ids
-    FROM field_parameters fp
+    FROM parameter_fields fp
     JOIN document_fields df ON df.field_id = fp.field_id
     WHERE fp.active = true AND df.active = true
     GROUP BY fp.parameter_id
@@ -215,7 +214,6 @@ SELECT
     p.id as parameter_id,
     p.name,
     p.description,
-    p.numerical,
     p.active,
     p.updated_at,
     COALESCE(pidd.department_ids, NULL) as department_ids,
@@ -256,7 +254,7 @@ CROSS JOIN user_profile up
 CROSS JOIN scenario_mapping_data sm
 CROSS JOIN department_mapping_data dmd
 CROSS JOIN document_mapping_data docmd
-GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pidd.department_ids, pic.num_items, 
+GROUP BY p.id, p.name, p.description,  p.active, p.updated_at, pidd.department_ids, pic.num_items, 
          ps.scenario_ids, spd.scenario_ids, pd.document_ids, pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, sm.mapping, dmd.mapping, docmd.mapping
 HAVING 
     -- Include if has matching department link via parameter_departments or field_departments OR has no department links at all (cross-dept)
@@ -266,7 +264,7 @@ HAVING
     )
     AND NOT EXISTS (
         SELECT 1 FROM field_departments fd2 
-        JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+        JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
         WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true
     )
 ORDER BY p.updated_at DESC NULLS LAST

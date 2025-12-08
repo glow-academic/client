@@ -33,7 +33,6 @@ CREATE TABLE parameters (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  numerical BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT FALSE,
   practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
@@ -44,24 +43,42 @@ CREATE TABLE fields (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  value TEXT        NOT NULL,
-  default_field BOOLEAN     NOT NULL DEFAULT FALSE
+  active BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
--- Fields → Parameters junction table (BCNF normalization)
--- Many-to-many relationship: fields can be associated with multiple parameters
--- No records = field not associated with any parameter
-CREATE TABLE field_parameters (
-  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
+-- Parameters → Fields junction table (BCNF normalization)
+-- Many-to-many relationship: parameters can have multiple fields
+-- Exactly one field must be marked as default per parameter
+CREATE TABLE parameter_fields (
   parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
+  default            BOOLEAN NOT NULL DEFAULT FALSE,
   active            BOOLEAN NOT NULL DEFAULT TRUE,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (field_id, parameter_id)
+  PRIMARY KEY (parameter_id, field_id)
 );
 
-CREATE INDEX ON field_parameters (field_id);
-CREATE INDEX ON field_parameters (parameter_id);
+CREATE INDEX ON parameter_fields (parameter_id);
+CREATE INDEX ON parameter_fields (field_id);
+
+-- Constraint: exactly one default field per parameter
+CREATE UNIQUE INDEX parameter_fields_one_default_per_parameter ON parameter_fields(parameter_id) WHERE default = true;
+
+-- Fields → Conditional Parameters junction table (BCNF normalization)
+-- Allows fields to conditionally show other parameters when selected
+-- Enables parameter chaining: if field A is selected, show parameter B
+CREATE TABLE field_conditional_parameters (
+  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
+  conditional_parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  active            BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (field_id, conditional_parameter_id)
+);
+
+CREATE INDEX ON field_conditional_parameters (field_id);
+CREATE INDEX ON field_conditional_parameters (conditional_parameter_id);
 
 -- Fields → Departments junction table (BCNF normalization)
 -- Links fields to departments (moved from parameter_item_departments)

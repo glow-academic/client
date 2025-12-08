@@ -26,10 +26,10 @@ department_parameter_ids AS (
         COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
     FROM user_departments ud
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE (fd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                                                     JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                                                     JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                                                      WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
     GROUP BY ud.id
 ),
@@ -69,7 +69,7 @@ valid_param_items AS (
         ) as param_item_mapping,
         array_agg(f.id::text ORDER BY f.name) as param_item_ids
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     CROSS JOIN aggregated_data ad
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true

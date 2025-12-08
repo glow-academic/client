@@ -84,10 +84,10 @@ department_parameter_ids AS (
         COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
     FROM user_departments ud
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    LEFT JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
     WHERE (fd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                                                     JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                                                     JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
                                                      WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
     GROUP BY ud.id
 ),
@@ -114,7 +114,6 @@ linked_parameters AS (
         p.id as parameter_id,
         p.name as parameter_name,
         p.description as parameter_description,
-        p.numerical,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
@@ -132,8 +131,7 @@ parameter_mapping_data AS (
             jsonb_build_object(
                 'name', lp.parameter_name,
                 'description', lp.parameter_description,
-                'numerical', lp.numerical,
-                'document_parameter', true,
+                'numerical', l                'document_parameter', true,
                 'persona_parameter', lp.persona_parameter,
                 'scenario_parameter', lp.scenario_parameter,
                 'video_parameter', lp.video_parameter
@@ -152,18 +150,17 @@ valid_param_items AS (
                 jsonb_build_object(
                     'name', f.name,
                     'description', COALESCE(f.description, ''),
-                    'parameter_id', fp.parameter_id::text,
+                    'parameter_id', pf.parameter_id::text,
                     'parameter_name', p.name,
-                    'value', f.value
                 )
             ),
             '{}'::jsonb
         ) as param_item_mapping,
         array_agg(f.id::text ORDER BY f.name) as param_item_ids
     FROM linked_parameters lp
-    JOIN field_parameters fp ON fp.parameter_id = lp.parameter_id AND fp.active = true
-    JOIN fields f ON f.id = fp.field_id
-    JOIN parameters p ON p.id = fp.parameter_id
+    JOIN parameter_fields pf ON pf.parameter_id = lp.parameter_id AND pf.active = true
+    JOIN fields f ON f.id = pf.field_id AND f.active = true
+    JOIN parameters p ON p.id = pf.parameter_id
     CROSS JOIN document_data dd
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true

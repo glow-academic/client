@@ -13,7 +13,7 @@ SELECT
             ORDER BY array_position($1::uuid[], f.id)
         )
         FROM fields f
-        JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+        JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
         JOIN parameters pa ON pa.id = fp.parameter_id
         WHERE f.id = ANY($1::uuid[])
           AND pa.active = true

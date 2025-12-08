@@ -179,20 +179,19 @@ WITH user_departments AS (
                 p.id,
                 p.name,
                 COALESCE(p.description, '') as description,
-                p.numerical,
                 p.document_parameter,
                 p.persona_parameter
             FROM parameters p
-            JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+            JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
             LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
             CROSS JOIN user_department_ids udi
             WHERE p.active = true
-            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
+            GROUP BY p.id, p.name, p.description,  p.document_parameter, p.persona_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
                 COUNT(fd.field_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
                 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                              JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                              JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                               WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
         ),
         parameter_mapping_data AS (
@@ -220,7 +219,7 @@ WITH user_departments AS (
                 p.name as parameter_name,
                 f.value
             FROM fields f
-            JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+            JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
             JOIN parameters p ON p.id = fp.parameter_id
             WHERE p.id IN (SELECT id FROM parameters_data)
         ),

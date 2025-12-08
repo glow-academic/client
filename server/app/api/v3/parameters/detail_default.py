@@ -125,7 +125,6 @@ async def get_parameter_new(
         response_data = ParameterDetailResponse(
             name=result["name"],
             description=result["description"],
-            numerical=result["numerical"],
             active=result["active"],
             document_parameter=result["document_parameter"],
             practice_parameter=result["practice_parameter"],

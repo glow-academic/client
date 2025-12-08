@@ -25,16 +25,15 @@ import { useRouter } from "next/navigation";
 interface FormErrors {
   name?: string;
   description?: string;
-  value?: string;
 }
 
 interface FormData {
   name?: string;
   description?: string;
-  value?: string;
-  default_field?: boolean;
+  active?: boolean;
   departmentIds?: string[] | null;
   parameterIds?: string[] | null;
+  conditionalParameterIds?: string[] | null;
 }
 
 // Type-only imports from server pages
@@ -87,10 +86,10 @@ export default function Field({
     () => ({
       name: "",
       description: "",
-      value: "",
-      default_field: false,
+      active: true,
       departmentIds: defaultDepartmentIds,
       parameterIds: [],
+      conditionalParameterIds: [],
     }),
     [defaultDepartmentIds],
   );
@@ -151,10 +150,10 @@ export default function Field({
       setFormData({
         name: fieldDetail.name || "",
         description: fieldDetail.description || "",
-        value: fieldDetail.value || "",
-        default_field: fieldDetail.default_field || false,
+        active: fieldDetail.active ?? true,
         departmentIds: fieldDetail.department_ids || null,
         parameterIds: fieldDetail.parameter_ids || [],
+        conditionalParameterIds: fieldDetail.conditional_parameter_ids || [],
       });
     } else if (!isEditMode && fieldDetailDefault) {
       // We are in CREATE mode, use defaults from fieldDetailDefault
@@ -162,6 +161,7 @@ export default function Field({
         ...initialFormData,
         departmentIds: defaultDepartmentIds,
         parameterIds: [],
+        conditionalParameterIds: [],
       });
     } else if (!isEditMode && !fieldDetailDefault) {
       // No default data available, use initial form data
@@ -225,11 +225,6 @@ export default function Field({
       return;
     }
 
-    if (!formData.value) {
-      setErrors((prev) => ({ ...prev, value: "Value is required" }));
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -239,10 +234,10 @@ export default function Field({
             fieldId: fieldId,
             name: formData.name!,
             description: formData.description!,
-            value: formData.value!,
-            default_field: formData.default_field ?? false,
+            active: formData.active ?? true,
             department_ids: formData.departmentIds || null,
             parameter_ids: formData.parameterIds || null,
+            conditional_parameter_ids: formData.conditionalParameterIds || null,
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
         });
@@ -254,10 +249,10 @@ export default function Field({
           body: {
             name: formData.name!,
             description: formData.description!,
-            value: formData.value!,
-            default_field: formData.default_field ?? false,
+            active: formData.active ?? true,
             department_ids: formData.departmentIds || null,
             parameter_ids: formData.parameterIds || null,
+            conditional_parameter_ids: formData.conditionalParameterIds || null,
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
         });
@@ -312,21 +307,30 @@ export default function Field({
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="value">Value</Label>
-          {formData.value !== undefined ? (
-            <Input
-              id="value"
-              data-testid="input-field-value"
-              value={formData.value}
-              onChange={(e) => handleInputChange("value", e.target.value)}
-              placeholder="Enter field value"
-              className={errors.value ? "border-destructive" : ""}
-            />
-          ) : null}
-          {errors.value && (
-            <p className="text-sm text-destructive">{errors.value}</p>
-          )}
+        {/* Active Switch */}
+        <div className="space-y-1 pt-2">
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="active"
+              className="text-sm flex items-center gap-1.5"
+            >
+              <Power className="h-3.5 w-3.5 text-muted-foreground" />
+              Active
+            </Label>
+            {formData.active !== undefined ? (
+              <Switch
+                id="active"
+                data-testid="switch-field-active"
+                checked={formData.active}
+                onCheckedChange={(checked) =>
+                  handleInputChange("active", checked)
+                }
+              />
+            ) : null}
+          </div>
+          <p className="text-xs text-muted-foreground pl-5">
+            Inactive fields will not be available for selection
+          </p>
         </div>
 
         {/* Department Selection */}
@@ -372,34 +376,37 @@ export default function Field({
                 triggerProps={{ "data-testid": "picker-parameter" }}
               />
             ) : null}
+            <p className="text-xs text-muted-foreground">
+              Select which parameters this field belongs to
+            </p>
           </div>
         ) : null}
 
-        {/* Default Field Switch */}
-        <div className="space-y-1 pt-2">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="default_field"
-              className="text-sm flex items-center gap-1.5"
-            >
-              <Power className="h-3.5 w-3.5 text-muted-foreground" />
-              Default Field
-            </Label>
-            {formData.default_field !== undefined ? (
-              <Switch
-                id="default_field"
-                data-testid="switch-field-default"
-                checked={formData.default_field}
-                onCheckedChange={(checked) =>
-                  handleInputChange("default_field", checked)
+        {/* Conditional Parameters Selection */}
+        {validParameterIds && validParameterIds.length > 0 ? (
+          <div className="space-y-2">
+            <Label htmlFor="conditionalParameters">Conditional Parameters</Label>
+            {formData?.conditionalParameterIds !== undefined ? (
+              <ParameterPicker
+                mapping={parameterMapping}
+                validIds={validParameterIds}
+                selectedIds={formData.conditionalParameterIds || []}
+                onSelect={(ids) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    conditionalParameterIds: ids,
+                  }))
                 }
+                placeholder="Select conditional parameters..."
+                multiSelect={true}
+                triggerProps={{ "data-testid": "picker-conditional-parameter" }}
               />
             ) : null}
+            <p className="text-xs text-muted-foreground">
+              Parameters to show when this field is selected (enables parameter chaining)
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground pl-5">
-            Mark this field as a default option
-          </p>
-        </div>
+        ) : null}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-2">

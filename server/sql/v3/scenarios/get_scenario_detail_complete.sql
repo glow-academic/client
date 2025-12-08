@@ -189,7 +189,7 @@ all_parameters_data AS (
         COALESCE((
             SELECT jsonb_agg(sf2.field_id::text ORDER BY sf2.field_id)
             FROM scenario_fields sf2
-            JOIN field_parameters fp2 ON fp2.field_id = sf2.field_id AND fp2.active = true
+            JOIN parameter_fields fp2 ON fp2.field_id = sf2.field_id AND fp2.active = true
             WHERE sf2.scenario_id = $1 AND fp2.parameter_id = p.id AND sf2.active = true
         ), '[]'::jsonb) as selected_items,
         COALESCE((
@@ -197,7 +197,7 @@ all_parameters_data AS (
             FROM (
                 SELECT f3.id
                 FROM fields f3
-                JOIN field_parameters fp3 ON fp3.field_id = f3.id AND fp3.active = true
+                JOIN parameter_fields fp3 ON fp3.field_id = f3.id AND fp3.active = true
                 LEFT JOIN field_departments fd3 ON fd3.field_id = f3.id AND fd3.active = true
                 CROSS JOIN user_departments ud3
                 WHERE fp3.parameter_id = p.id
@@ -208,12 +208,12 @@ all_parameters_data AS (
                 UNION
                 SELECT sf2.field_id as id
                 FROM scenario_fields sf2
-                JOIN field_parameters fp2 ON fp2.field_id = sf2.field_id AND fp2.active = true
+                JOIN parameter_fields fp2 ON fp2.field_id = sf2.field_id AND fp2.active = true
                 WHERE sf2.scenario_id = $1 AND fp2.parameter_id = p.id AND sf2.active = true
             ) combined_items
         ), '[]'::jsonb) as valid_items
     FROM parameters p
-    JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
@@ -221,7 +221,7 @@ all_parameters_data AS (
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                      JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                       WHERE fp2.parameter_id = p.id AND fd2.active = true)
 ),
 merged_parameters_data AS (
@@ -463,7 +463,6 @@ linked_scenario_parameters AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        p.numerical,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM scenario_parameters sp
@@ -477,19 +476,18 @@ parameter_data_for_mapping AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        p.numerical,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters p
-    JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.numerical
+    GROUP BY p.id, p.name, p.description
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                      JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                       WHERE fp2.parameter_id = p.id AND fp2.active = true)
     ORDER BY p.name
 ),
@@ -500,8 +498,7 @@ parameter_mapping_data AS (
             jsonb_build_object(
                 'name', p.name, 
                 'description', p.description, 
-                'numerical', p.numerical,
-                'document_parameter', p.document_parameter,
+                'numerical',                 'document_parameter', p.document_parameter,
                 'persona_parameter', p.persona_parameter
             )
         ), '{}'::jsonb) as parameter_mapping
@@ -514,8 +511,7 @@ scenario_parameters_mapping_data AS (
             jsonb_build_object(
                 'name', p.name, 
                 'description', COALESCE(p.description, ''), 
-                'numerical', p.numerical,
-                'document_parameter', p.document_parameter,
+                'numerical',                 'document_parameter', p.document_parameter,
                 'persona_parameter', p.persona_parameter
             )
         ),
@@ -548,14 +544,13 @@ parameter_item_data AS (
         COALESCE(f.description, '') as description,
         fp.parameter_id,
         p.name as parameter_name,
-        f.value
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
-    JOIN parameters p ON p.id = fp.parameter_id
+    JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
+    JOIN parameters p ON p.id = pf.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_departments ud
-    WHERE p.active = true
-    GROUP BY f.id, f.name, f.description, fp.parameter_id, p.id, p.name, f.value
+    WHERE p.active = true AND f.active = true
+    GROUP BY f.id, f.name, f.description, pf.parameter_id, p.id, p.name
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
@@ -584,14 +579,13 @@ scenario_parameter_items_mapping_data AS (
                 'description', COALESCE(f.description, ''),
                 'parameter_id', fp.parameter_id::text,
                 'parameter_name', p.name,
-                'value', f.value
             )
         ),
         '{}'::jsonb
     ) as parameter_item_mapping
     FROM scenario_fields sf
     JOIN fields f ON f.id = sf.field_id
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE sf.scenario_id = $1 AND sf.active = true AND p.active = true
 ),
@@ -651,11 +645,11 @@ department_parameter_ids AS (
     FROM departments d
     CROSS JOIN user_departments ud
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE d.id = ANY(ud.dept_ids)
     AND (fd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                                                 JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                                                 JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                                                  WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
     GROUP BY d.id
 ),
@@ -666,7 +660,7 @@ department_parameter_item_ids AS (
     FROM departments d
     CROSS JOIN user_departments ud
     LEFT JOIN fields f ON true
-    LEFT JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    LEFT JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     LEFT JOIN parameters p ON p.id = fp.parameter_id AND p.active = true
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE d.id = ANY(ud.dept_ids)

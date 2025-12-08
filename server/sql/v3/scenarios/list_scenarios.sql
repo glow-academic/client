@@ -157,7 +157,7 @@ parameter_item_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE f.id IN (SELECT parameter_item_id FROM all_parameter_item_ids)
 ),

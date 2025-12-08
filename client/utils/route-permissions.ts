@@ -325,6 +325,18 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         title: "Fields",
         redirectTo: "/management/fields",
       },
+      {
+        path: "/management/fields/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Field",
+        redirectTo: "/management/fields",
+      },
+      {
+        path: "/management/fields/[fieldId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Field",
+        redirectTo: "/management/fields",
+      },
     ],
   },
   {

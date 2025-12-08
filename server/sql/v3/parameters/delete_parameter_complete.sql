@@ -29,7 +29,7 @@ resolve_profile_id AS (
 ),
 usage_check AS (
     SELECT COUNT(DISTINCT sf.scenario_id) as usage_count
-    FROM field_parameters fp
+    FROM parameter_fields fp
     JOIN scenario_fields sf ON sf.field_id = fp.field_id
     WHERE fp.parameter_id = $1::uuid AND fp.active = true AND sf.active = true
 ),

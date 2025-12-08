@@ -62,7 +62,7 @@ problem_statement_mapping_data AS (
 policy_param_item AS (
     SELECT f.id
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' 
     AND EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true)
@@ -174,7 +174,6 @@ available_video_parameters AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        p.numerical,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
     FROM parameters p
@@ -191,7 +190,6 @@ document_parameters_for_video AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        p.numerical,
         true as document_parameter,
         false as video_parameter
     FROM parameter_documents pd
@@ -211,8 +209,7 @@ video_parameter_mapping_data AS (
             jsonb_build_object(
                 'name', p.name, 
                 'description', p.description, 
-                'numerical', p.numerical,
-                'document_parameter', p.document_parameter,
+                'numerical',                 'document_parameter', p.document_parameter,
                 'video_parameter', p.video_parameter
             )
         ), '{}'::jsonb) as parameter_mapping
@@ -223,11 +220,10 @@ video_parameter_items_data AS (
         pi.id,
         pi.name,
         COALESCE(pi.description, '') as description,
-        pi.value,
         fp.parameter_id,
         p.name as parameter_name
     FROM video_parameter_data vpd
-    JOIN field_parameters fp ON fp.parameter_id = vpd.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.parameter_id = vpd.id AND fp.active = true
     JOIN fields pi ON pi.id = fp.field_id
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.active = true
@@ -241,7 +237,6 @@ video_parameter_item_mapping_data AS (
                 'description', pi.description,
                 'parameter_id', pi.parameter_id::text,
                 'parameter_name', pi.parameter_name,
-                'value', pi.value
             )
         ), '{}'::jsonb) as parameter_item_mapping
     FROM video_parameter_items_data pi

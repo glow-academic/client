@@ -132,31 +132,23 @@ link_parameters AS (
         updated_at = NOW()
 ),
 backfill_document_fields AS (
-    -- Backfill document_fields for linked parameters (pick first field if none exists)
+    -- Backfill document_fields for linked parameters (use default field)
     INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
     SELECT DISTINCT
         pd.document_id,
-        fp.field_id,
+        pf.field_id,
         TRUE,
         NOW(),
         NOW()
     FROM parameter_documents pd
-    JOIN field_parameters fp ON fp.parameter_id = pd.parameter_id AND fp.active = TRUE
+    JOIN parameter_fields pf ON pf.parameter_id = pd.parameter_id AND pf.active = TRUE AND pf.default = TRUE
     WHERE pd.document_id = $1::uuid
     AND pd.active = TRUE
     AND NOT EXISTS (
         SELECT 1 FROM document_fields df
         WHERE df.document_id = pd.document_id
-        AND df.field_id = fp.field_id
+        AND df.field_id = pf.field_id
         AND df.active = TRUE
-    )
-    AND fp.field_id = (
-        SELECT fp2.field_id
-        FROM field_parameters fp2
-        WHERE fp2.parameter_id = pd.parameter_id
-        AND fp2.active = TRUE
-        ORDER BY fp2.created_at ASC
-        LIMIT 1
     )
     ON CONFLICT (document_id, field_id) DO UPDATE SET
         active = TRUE,

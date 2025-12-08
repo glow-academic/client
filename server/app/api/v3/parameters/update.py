@@ -18,7 +18,7 @@ class ParameterItemCreate(BaseModel):
 
     name: str
     description: str
-    value: str
+    default: bool = False  # Exactly one item per parameter must be default
     department_ids: list[str] | None = None  # Optional for backward compatibility
 
 
@@ -28,7 +28,6 @@ class UpdateParameterRequest(BaseModel):
     parameterId: str
     name: str
     description: str
-    numerical: bool
     active: bool
     practice_parameter: bool
     department_ids: list[str] | None  # None = cross-department (superadmin only)
@@ -80,7 +79,7 @@ async def update_parameter(
                 item_dict = {
                     "name": item.name,
                     "description": item.description,
-                    "value": item.value,
+                    "default": item.default,
                 }
                 # Only include department_ids if it's not None
                 if item.department_ids is not None:
@@ -95,7 +94,6 @@ async def update_parameter(
                 request.parameterId,
                 request.name,
                 request.description,
-                request.numerical,
                 request.active,
                 request.practice_parameter,
                 request.department_ids,  # Parameter-level department_ids (fallback)

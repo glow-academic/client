@@ -26,29 +26,51 @@ update_field AS (
     UPDATE fields SET
         name = $2,
         description = $3,
-        value = $4,
-        default_field = $5,
+        active = COALESCE($4, active),
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as field_id
 ),
 delete_existing_parameters AS (
-    -- Delete all existing parameter links
-    DELETE FROM field_parameters 
+    -- Delete all existing parameter links (soft delete by setting active = false)
+    UPDATE parameter_fields 
+    SET active = false, updated_at = NOW()
     WHERE field_id = $1::uuid
 ),
 link_parameters AS (
-    -- Link field to parameters if provided
-    INSERT INTO field_parameters (field_id, parameter_id, active, created_at, updated_at)
+    -- Link field to parameters if provided (creates/updates parameter_fields entries)
+    INSERT INTO parameter_fields (parameter_id, field_id, default, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
         param_id::uuid,
+        $1::uuid,
+        false, -- default will be set when parameter is edited
         true,
         NOW(),
         NOW()
-    FROM UNNEST(COALESCE($7::text[], ARRAY[]::text[])) as param_id
+    FROM UNNEST(COALESCE($6::text[], ARRAY[]::text[])) as param_id
+    WHERE $6 IS NOT NULL AND array_length($6::text[], 1) > 0
+    ON CONFLICT (parameter_id, field_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+delete_existing_conditional_parameters AS (
+    -- Delete all existing conditional parameter links (soft delete)
+    UPDATE field_conditional_parameters 
+    SET active = false, updated_at = NOW()
+    WHERE field_id = $1::uuid
+),
+link_conditional_parameters AS (
+    -- Link field to conditional parameters if provided
+    INSERT INTO field_conditional_parameters (field_id, conditional_parameter_id, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        cond_param_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST(COALESCE($7::text[], ARRAY[]::text[])) as cond_param_id
     WHERE $7 IS NOT NULL AND array_length($7::text[], 1) > 0
-    ON CONFLICT (field_id, parameter_id) DO UPDATE SET
+    ON CONFLICT (field_id, conditional_parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
@@ -66,8 +88,8 @@ link_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST(COALESCE($6::text[], ARRAY[]::text[])) as dept_id
-    WHERE $6 IS NOT NULL AND array_length($6::text[], 1) > 0
+    FROM UNNEST(COALESCE($5::text[], ARRAY[]::text[])) as dept_id
+    WHERE $5 IS NOT NULL AND array_length($5::text[], 1) > 0
     ON CONFLICT (field_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

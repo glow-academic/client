@@ -9,7 +9,7 @@ WITH params AS (
 policy_param_item AS (
     SELECT f.id
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' AND p.document_parameter = true
     AND f.value = 'policy'
@@ -199,7 +199,7 @@ SELECT
             ORDER BY array_position(p.parameter_item_ids, pi.id)
         )
         FROM fields f
-        JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+        JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
         JOIN parameters pa ON pa.id = fp.parameter_id
         WHERE f.id = ANY(p.parameter_item_ids)
         ),

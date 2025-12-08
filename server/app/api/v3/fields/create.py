@@ -17,10 +17,10 @@ class CreateFieldRequest(BaseModel):
 
     name: str
     description: str
-    value: str
-    default_field: bool = False
+    active: bool = True
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_ids: list[str] | None  # None = no parameters
+    conditional_parameter_ids: list[str] | None = None  # Parameters to show when this field is selected
     profileId: str  # Required for auditing/access control
 
 
@@ -54,10 +54,10 @@ async def create_field(
             sql_params = (
                 request.name,
                 request.description,
-                request.value,
-                request.default_field,
+                request.active,
                 request.department_ids,
                 request.parameter_ids,
+                request.conditional_parameter_ids,
                 request.profileId,
             )
             field_result = await conn.fetchrow(sql_query, *sql_params)

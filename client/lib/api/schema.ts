@@ -6123,17 +6123,17 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Value */
-            value: string;
             /**
-             * Default Field
-             * @default false
+             * Active
+             * @default true
              */
-            default_field: boolean;
+            active: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Parameter Ids */
             parameter_ids: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -6313,8 +6313,11 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Value */
-            value: string;
+            /**
+             * Default
+             * @default false
+             */
+            default: boolean;
         };
         /**
          * CreateParameterItemResponse
@@ -6337,8 +6340,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Numerical */
-            numerical: boolean;
             /** Active */
             active: boolean;
             /**
@@ -8152,14 +8153,14 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Value */
-            value: string;
-            /** Default Field */
-            default_field: boolean;
+            /** Active */
+            active: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Parameter Ids */
             parameter_ids: string[];
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids: string[];
             /** Department Mapping */
             department_mapping: {
                 [key: string]: {
@@ -8190,14 +8191,14 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Value */
-            value: string;
-            /** Default Field */
-            default_field: boolean;
+            /** Active */
+            active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Parameter Ids */
             parameter_ids: string[];
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids: string[];
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
@@ -9494,8 +9495,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Numerical */
-            numerical: boolean;
             /** Active */
             active: boolean;
             /** Document Parameter */
@@ -9526,8 +9525,11 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Value */
-            value: string;
+            /**
+             * Default
+             * @default false
+             */
+            default: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
         };
@@ -9560,8 +9562,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Value */
-            value: string;
         };
         /** ParametersFilters */
         ParametersFilters: {
@@ -12973,14 +12973,17 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Value */
-            value: string;
-            /** Default Field */
-            default_field: boolean;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Parameter Ids */
             parameter_ids: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -13089,8 +13092,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Numerical */
-            numerical: boolean;
             /** Active */
             active: boolean;
             /** Practice Parameter */
@@ -14447,8 +14448,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Value */
-            value: string;
+            /** Default */
+            default: boolean;
             /** Usage Count */
             usage_count: number;
             /** Department Ids */
@@ -14462,8 +14463,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Numerical */
-            numerical: boolean;
             /** Active */
             active: boolean;
             /** Department Ids */

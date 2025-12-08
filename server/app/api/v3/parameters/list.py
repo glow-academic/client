@@ -31,14 +31,12 @@ class ParameterSampleItem(BaseModel):
     parameter_item_id: str
     name: str
     description: str
-    value: str
 
 
 class ParameterItem(BaseModel):
     parameter_id: str
     name: str
     description: str
-    numerical: bool
     active: bool
     department_ids: list[str] | None
     scenario_ids: list[str]  # Array of scenario IDs
@@ -183,7 +181,6 @@ async def get_parameters_list(
                                     ),
                                     name=item_data.get("name", ""),
                                     description=item_data.get("description", ""),
-                                    value=item_data.get("value", ""),
                                 )
                             )
 
@@ -204,7 +201,6 @@ async def get_parameters_list(
                     parameter_id=str(row["parameter_id"]),
                     name=row["name"],
                     description=row["description"],
-                    numerical=row["numerical"],
                     active=row["active"],
                     department_ids=dept_ids,
                     scenario_ids=scenario_ids,

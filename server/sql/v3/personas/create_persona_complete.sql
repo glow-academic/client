@@ -97,33 +97,25 @@ link_parameters AS (
         updated_at = NOW()
 ),
 backfill_persona_fields AS (
-    -- Backfill persona_fields for linked parameters (pick first field if none exists)
+    -- Backfill persona_fields for linked parameters (use default field)
     -- Only runs if persona_fields table exists
     INSERT INTO persona_fields (persona_id, field_id, active, created_at, updated_at)
     SELECT DISTINCT
         pp.persona_id,
-        fp.field_id,
+        pf.field_id,
         TRUE,
         NOW(),
         NOW()
     FROM parameter_personas pp
-    JOIN field_parameters fp ON fp.parameter_id = pp.parameter_id AND fp.active = TRUE
+    JOIN parameter_fields pf ON pf.parameter_id = pp.parameter_id AND pf.active = TRUE AND pf.default = TRUE
     CROSS JOIN new_persona np
     WHERE pp.persona_id = np.persona_id::uuid
     AND pp.active = TRUE
     AND NOT EXISTS (
-        SELECT 1 FROM persona_fields pf
-        WHERE pf.persona_id = pp.persona_id
-        AND pf.field_id = fp.field_id
-        AND pf.active = TRUE
-    )
-    AND fp.field_id = (
-        SELECT fp2.field_id
-        FROM field_parameters fp2
-        WHERE fp2.parameter_id = pp.parameter_id
-        AND fp2.active = TRUE
-        ORDER BY fp2.created_at ASC
-        LIMIT 1
+        SELECT 1 FROM persona_fields pf2
+        WHERE pf2.persona_id = pp.persona_id
+        AND pf2.field_id = pf.field_id
+        AND pf2.active = TRUE
     )
     AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'persona_fields')
     ON CONFLICT (persona_id, field_id) DO UPDATE SET

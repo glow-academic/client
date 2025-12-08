@@ -33,7 +33,7 @@ filtered_objectives AS (
 policy_param_item AS (
     SELECT f.id
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' AND p.document_parameter = true
     AND f.value = 'policy'

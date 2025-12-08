@@ -19,7 +19,7 @@ class CreateParameterItemRequest(BaseModel):
     parameterId: str
     name: str
     description: str
-    value: str
+    default: bool = False  # Whether this item should be the default for the parameter
 
 
 class CreateParameterItemResponse(BaseModel):
@@ -61,7 +61,7 @@ async def create_parameter_item(
                 request.parameterId,
                 request.name,
                 request.description,
-                request.value,
+                request.default,
             )
             item_result = await conn.fetchrow(sql_query, *sql_params)
 

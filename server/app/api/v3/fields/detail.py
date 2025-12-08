@@ -25,10 +25,10 @@ class FieldDetailRequest(BaseModel):
 class FieldDetailResponse(BaseModel):
     name: str
     description: str
-    value: str
-    default_field: bool
+    active: bool
     department_ids: list[str] | None
     parameter_ids: list[str]
+    conditional_parameter_ids: list[str]
     department_mapping: dict[str, dict[str, Any]]
     valid_department_ids: list[str]
     parameter_mapping: dict[str, dict[str, str]]
@@ -131,13 +131,19 @@ async def get_field_detail(
         # Get can_edit from SQL
         can_edit = result.get("can_edit", False)
 
+        # Parse conditional_parameter_ids from array
+        conditional_parameter_ids: list[str] = []
+        cond_param_ids_raw = result.get("conditional_parameter_ids")
+        if cond_param_ids_raw and isinstance(cond_param_ids_raw, (list, tuple)):
+            conditional_parameter_ids = [str(pid) for pid in cond_param_ids_raw if pid]
+
         response_data = FieldDetailResponse(
             name=result["name"],
             description=result["description"],
-            value=result["value"],
-            default_field=result["default_field"],
+            active=result.get("active", True),
             department_ids=department_ids,
             parameter_ids=parameter_ids,
+            conditional_parameter_ids=conditional_parameter_ids,
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,
             parameter_mapping=parameter_mapping,

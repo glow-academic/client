@@ -1,7 +1,8 @@
 -- Update parameter with items and department links in a single transaction
--- Parameters: $1=parameterId, $2=name, $3=description, $4=numerical, $5=active, $6=practice_parameter, $7=parameter_level_department_ids (text array, nullable), $8=items_json (jsonb array), $9=persona_ids (text array, nullable), $10=document_ids (text array, nullable), $11=scenario_ids (text array, nullable), $12=video_ids (text array, nullable), $13=profile_id (uuid or "guest-profile-id")
--- items_json format: [{"name": "Item 1", "description": "Desc 1", "value": "val1", "department_ids": ["dept1", "dept2"]}, ...]
+-- Parameters: $1=parameterId, $2=name, $3=description, $4=active, $5=practice_parameter, $6=parameter_level_department_ids (text array, nullable), $7=items_json (jsonb array), $8=persona_ids (text array, nullable), $9=document_ids (text array, nullable), $10=scenario_ids (text array, nullable), $11=video_ids (text array, nullable), $12=profile_id (uuid or "guest-profile-id")
+-- items_json format: [{"name": "Item 1", "description": "Desc 1", "default": true/false, "department_ids": ["dept1", "dept2"]}, ...]
 -- If item.department_ids is null, use parameter_level_department_ids
+-- Exactly one item must have default=true
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -11,7 +12,7 @@ WITH resolve_guest_profile AS (
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
              JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $13::uuid AND sdg.active = true
+             WHERE pd.profile_id = $12::uuid AND sdg.active = true
              LIMIT 1),
             -- Fallback to default (active) settings guest profile
             (SELECT sdg.profile_id FROM settings_default_guest sdg
@@ -23,26 +24,26 @@ WITH resolve_guest_profile AS (
 resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $13::text = 'guest-profile-id' THEN
+            WHEN $12::text = 'guest-profile-id' THEN
                 (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $13::text IS NULL OR $13::text = '' THEN NULL::uuid
-            ELSE $13::uuid
+            WHEN $12::text IS NULL OR $12::text = '' THEN NULL::uuid
+            ELSE $12::uuid
         END as resolved_profile_id
 ),
 update_parameter AS (
     UPDATE parameters SET
         name = $2,
         description = $3,
-        numerical = $4,
-        active = $5,
-        practice_parameter = $6,
+        active = $4,
+        practice_parameter = $5,
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as parameter_id
 ),
 delete_existing_field_links AS (
-    -- Delete all existing field_parameters links (fields themselves are not deleted)
-    DELETE FROM field_parameters 
+    -- Soft delete all existing parameter_fields links (set active = false)
+    UPDATE parameter_fields 
+    SET active = false, updated_at = NOW()
     WHERE parameter_id = $1::uuid
 ),
 items_expanded AS (
@@ -50,7 +51,7 @@ items_expanded AS (
     SELECT 
         (item->>'name')::text as item_name,
         (item->>'description')::text as item_description,
-        (item->>'value')::text as item_value,
+        COALESCE((item->>'default')::boolean, false) as item_default,
         CASE 
             WHEN item ? 'department_ids' 
                  AND item->'department_ids' IS NOT NULL 
@@ -58,26 +59,54 @@ items_expanded AS (
                  AND jsonb_typeof(item->'department_ids') = 'array'
                  AND jsonb_array_length(item->'department_ids') > 0
             THEN ARRAY(SELECT jsonb_array_elements_text(item->'department_ids'))
-            WHEN $7::text[] IS NOT NULL AND array_length($7::text[], 1) > 0
-            THEN $7::text[]
+            WHEN $6::text[] IS NOT NULL AND array_length($6::text[], 1) > 0
+            THEN $6::text[]
             ELSE NULL::text[]
         END as department_ids,
         ordinality as item_order
-    FROM jsonb_array_elements(COALESCE($8::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
-    WHERE COALESCE(jsonb_array_length(COALESCE($8::jsonb, '[]'::jsonb)), 0) > 0
+    FROM jsonb_array_elements(COALESCE($7::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
+    WHERE COALESCE(jsonb_array_length(COALESCE($7::jsonb, '[]'::jsonb)), 0) > 0
+),
+ensure_one_default AS (
+    -- Ensure exactly one default: if none specified, set first one; if multiple, keep first
+    SELECT 
+        item_order,
+        CASE 
+            WHEN item_order = (
+                SELECT MIN(item_order) 
+                FROM items_expanded 
+                WHERE item_default = true
+                LIMIT 1
+            ) THEN true
+            WHEN (SELECT COUNT(*) FROM items_expanded WHERE item_default = true) = 0 
+                 AND item_order = (SELECT MIN(item_order) FROM items_expanded)
+            THEN true
+            ELSE false
+        END as item_default_fixed
+    FROM items_expanded
+),
+items_expanded_fixed AS (
+    SELECT 
+        ie.item_name,
+        ie.item_description,
+        COALESCE(eod.item_default_fixed, false) as item_default,
+        ie.department_ids,
+        ie.item_order
+    FROM items_expanded ie
+    LEFT JOIN ensure_one_default eod ON eod.item_order = ie.item_order
 ),
 new_fields AS (
     -- Create all fields (formerly parameter items)
     INSERT INTO fields (
         name,
         description,
-        value
+        active
     )
     SELECT 
-        ie.item_name,
-        ie.item_description,
-        ie.item_value
-    FROM items_expanded ie
+        ief.item_name,
+        ief.item_description,
+        true
+    FROM items_expanded_fixed ief
     RETURNING id::text as field_id, name as field_name
 ),
 new_fields_with_order AS (
@@ -89,25 +118,28 @@ new_fields_with_order AS (
     FROM new_fields
 ),
 fields_with_order AS (
-    -- Match fields with items_expanded using row number
+    -- Match fields with items_expanded_fixed using row number
     SELECT 
         nf.field_id,
-        ie.department_ids
+        ief.department_ids,
+        ief.item_default
     FROM new_fields_with_order nf
-    JOIN items_expanded ie ON ie.item_order = nf.field_row_num
+    JOIN items_expanded_fixed ief ON ief.item_order = nf.field_row_num
 ),
 link_fields_to_parameter AS (
-    -- Link fields to parameter via field_parameters junction
-    INSERT INTO field_parameters (field_id, parameter_id, active, created_at, updated_at)
+    -- Link fields to parameter via parameter_fields junction with default flag
+    INSERT INTO parameter_fields (parameter_id, field_id, default, active, created_at, updated_at)
     SELECT 
-        fwo.field_id::uuid,
         $1::uuid,
+        fwo.field_id::uuid,
+        fwo.item_default,
         true,
         NOW(),
         NOW()
     FROM fields_with_order fwo
-    ON CONFLICT (field_id, parameter_id) DO UPDATE SET
+    ON CONFLICT (parameter_id, field_id) DO UPDATE SET
         active = true,
+        default = EXCLUDED.default,
         updated_at = NOW()
 ),
 link_departments AS (
@@ -140,8 +172,8 @@ link_parameter_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($7::text[]) as dept_id
-    WHERE $7::text[] IS NOT NULL AND array_length($7::text[], 1) > 0
+    FROM UNNEST($6::text[]) as dept_id
+    WHERE $6::text[] IS NOT NULL AND array_length($6::text[], 1) > 0
     ON CONFLICT (parameter_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -161,8 +193,8 @@ link_parameter_personas AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($9::text[]) as persona_id
-    WHERE $9::text[] IS NOT NULL AND array_length($9::text[], 1) > 0
+    FROM UNNEST($8::text[]) as persona_id
+    WHERE $8::text[] IS NOT NULL AND array_length($8::text[], 1) > 0
     ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -182,8 +214,8 @@ link_parameter_documents AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($10::text[]) as document_id
-    WHERE $10::text[] IS NOT NULL AND array_length($10::text[], 1) > 0
+    FROM UNNEST($9::text[]) as document_id
+    WHERE $9::text[] IS NOT NULL AND array_length($9::text[], 1) > 0
     ON CONFLICT (parameter_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -203,8 +235,8 @@ link_scenario_parameters AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($11::text[]) as scenario_id
-    WHERE $11::text[] IS NOT NULL AND array_length($11::text[], 1) > 0
+    FROM UNNEST($10::text[]) as scenario_id
+    WHERE $10::text[] IS NOT NULL AND array_length($10::text[], 1) > 0
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -224,8 +256,8 @@ link_video_parameters AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($12::text[]) as video_id
-    WHERE $12::text[] IS NOT NULL AND array_length($12::text[], 1) > 0
+    FROM UNNEST($11::text[]) as video_id
+    WHERE $11::text[] IS NOT NULL AND array_length($11::text[], 1) > 0
     ON CONFLICT (video_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

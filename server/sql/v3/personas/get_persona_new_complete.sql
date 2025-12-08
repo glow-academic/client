@@ -136,7 +136,6 @@ available_parameters AS (
         p.id as parameter_id,
         p.name as parameter_name,
         p.description as parameter_description,
-        p.numerical
     FROM parameters p
     WHERE p.active = true
     AND EXISTS (
@@ -152,7 +151,7 @@ parameter_mapping_data AS (
             jsonb_build_object(
                 'name', ap.parameter_name,
                 'description', ap.parameter_description,
-                'numerical', ap.numerical,
+                'numerical', a,
                 'document_parameter', false,
                 'persona_parameter', true
             )
@@ -169,18 +168,17 @@ parameter_item_mapping_data AS (
             jsonb_build_object(
                 'name', f.name,
                 'description', COALESCE(f.description, ''),
-                'parameter_id', fp.parameter_id::text,
+                'parameter_id', pf.parameter_id::text,
                 'parameter_name', p.name,
-                'value', f.value
             )
         ),
         '{}'::jsonb
     ) as parameter_item_mapping,
     array_agg(f.id::text ORDER BY f.name) as parameter_item_ids
     FROM available_parameters ap
-    JOIN field_parameters fp ON fp.parameter_id = ap.parameter_id AND fp.active = true
-    JOIN fields f ON f.id = fp.field_id
-    JOIN parameters p ON p.id = fp.parameter_id
+    JOIN parameter_fields pf ON pf.parameter_id = ap.parameter_id AND pf.active = true
+    JOIN fields f ON f.id = pf.field_id AND f.active = true
+    JOIN parameters p ON p.id = pf.parameter_id
     WHERE p.active = true
 )
 SELECT 

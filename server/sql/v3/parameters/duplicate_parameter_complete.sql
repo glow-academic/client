@@ -49,8 +49,7 @@ new_parameter AS (
     SELECT 
         op.name || ' Copy',
         op.description,
-        op.numerical,
-        false,  -- Duplicated parameters are inactive by default
+        o        false,  -- Duplicated parameters are inactive by default
         op.document_parameter,
         op.practice_parameter
     FROM original_parameter op
@@ -62,7 +61,7 @@ original_fields AS (
         f.name,
         f.description,
         f.value
-    FROM field_parameters fp
+    FROM parameter_fields fp
     JOIN fields f ON f.id = fp.field_id
     WHERE fp.parameter_id = $1::uuid AND fp.active = true
 ),
@@ -114,8 +113,8 @@ fields_with_depts AS (
     WHERE ofd.department_ids IS NOT NULL AND array_length(ofd.department_ids, 1) > 0
 ),
 link_fields_to_parameter AS (
-    -- Link new fields to new parameter via field_parameters junction
-    INSERT INTO field_parameters (field_id, parameter_id, active, created_at, updated_at)
+    -- Link new fields to new parameter via parameter_fields junction
+    INSERT INTO parameter_fields (field_id, parameter_id, active, created_at, updated_at)
     SELECT 
         fwd.field_id::uuid,
         np.parameter_id::uuid,

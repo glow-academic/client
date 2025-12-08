@@ -40,7 +40,6 @@ import {
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import {
-  Calculator,
   GraduationCap,
   Plus,
   Power,
@@ -67,7 +66,6 @@ type MappingItem = {
 interface FormData {
   name?: string;
   description?: string;
-  numerical?: boolean;
   active?: boolean;
   practice_parameter?: boolean;
   departmentIds?: string[] | null;
@@ -81,7 +79,7 @@ interface ParameterItemFormData {
   id?: string;
   name: string;
   description: string;
-  value: string;
+  default: boolean;
   isNew?: boolean;
   isDeleted?: boolean;
   canDelete?: boolean;
@@ -128,7 +126,6 @@ export default function Parameter({
     () => ({
       name: "",
       description: "",
-      numerical: false,
       active: false,
       practice_parameter: false,
       departmentIds:
@@ -219,7 +216,6 @@ export default function Parameter({
       setFormData({
         name: parameterData.name,
         description: parameterData.description,
-        numerical: parameterData.numerical,
         active: parameterData.active,
         practice_parameter: parameterData.practice_parameter ?? false,
         departmentIds: parameterData.department_ids || null,
@@ -248,7 +244,7 @@ export default function Parameter({
         id: item.parameter_item_id,
         name: item.name,
         description: item.description,
-        value: item.value,
+        default: item.default ?? false,
         // V3 response has usage_count, derive canDelete from it
         canDelete: (item.usage_count ?? 0) === 0,
         departmentIds: item.department_ids ?? null,
@@ -268,19 +264,19 @@ export default function Parameter({
     if (!parameterItems) return;
     if (!initiallySorted) return; // wait until initial sort hook runs
 
-    const mapped = parameterItems
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((item) => ({
-        id: item.parameter_item_id,
-        name: item.name,
-        description: item.description,
-        value: item.value,
-        // V3 response has usage_count, derive canDelete from it
-        canDelete: (item.usage_count ?? 0) === 0,
-        departmentIds: item.department_ids ?? null,
-        isNew: false,
-        isDeleted: false,
-      }));
+      const mapped = parameterItems
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((item) => ({
+          id: item.parameter_item_id,
+          name: item.name,
+          description: item.description,
+          default: item.default ?? false,
+          // V3 response has usage_count, derive canDelete from it
+          canDelete: (item.usage_count ?? 0) === 0,
+          departmentIds: item.department_ids ?? null,
+          isNew: false,
+          isDeleted: false,
+        }));
     setParameterItemsFormData(mapped);
   }, [parameterItems, mode, initiallySorted]);
 
@@ -303,22 +299,42 @@ export default function Parameter({
     try {
       // Prepare parameter items for submission (only non-deleted items)
       // Transform department_ids for each item (non-superadmin: empty -> all valid departments)
-      const parameter_items = parameterItemsFormData
-        .filter((item) => !item.isDeleted)
-        .map((item) => {
-          const itemDepartmentIds = item.departmentIds || [];
-          const transformedDepartmentIds = transformDepartmentIdsForSubmit(
-            itemDepartmentIds,
-            isSuperadmin,
-            validDepartmentIds,
-          );
-          return {
-            name: item.name,
-            description: item.description,
-            value: formData.numerical ? item.value : item.name,
-            department_ids: transformedDepartmentIds,
-          };
+      // Ensure exactly one default item
+      const activeItems = parameterItemsFormData.filter((item) => !item.isDeleted);
+      const defaultCount = activeItems.filter((item) => item.default).length;
+      
+      // If no default or multiple defaults, set first item as default
+      let itemsToSubmit = activeItems.map((item, index) => {
+        const itemDepartmentIds = item.departmentIds || [];
+        const transformedDepartmentIds = transformDepartmentIdsForSubmit(
+          itemDepartmentIds,
+          isSuperadmin,
+          validDepartmentIds,
+        );
+        return {
+          name: item.name,
+          description: item.description,
+          default: defaultCount === 0 ? index === 0 : item.default,
+          department_ids: transformedDepartmentIds,
+        };
+      });
+      
+      // Ensure exactly one default
+      if (defaultCount === 0 && itemsToSubmit.length > 0) {
+        itemsToSubmit[0].default = true;
+      } else if (defaultCount > 1) {
+        // Keep only the first default, set others to false
+        let foundFirst = false;
+        itemsToSubmit = itemsToSubmit.map((item) => {
+          if (item.default && !foundFirst) {
+            foundFirst = true;
+            return { ...item, default: true };
+          }
+          return { ...item, default: false };
         });
+      }
+      
+      const parameter_items = itemsToSubmit;
 
       if (isEditMode) {
         // V3 API: Single atomic update with nested items
@@ -326,7 +342,6 @@ export default function Parameter({
           parameterId: parameterId!,
           name: formData.name!,
           description: formData.description!,
-          numerical: formData.numerical || false,
           active: formData.active || false,
           practice_parameter: formData.practice_parameter || false,
           department_ids: formData.departmentIds ?? null,
@@ -343,7 +358,6 @@ export default function Parameter({
         await handleCreateParameter({
           name: formData.name!,
           description: formData.description!,
-          numerical: formData.numerical || false,
           active: formData.active || false,
           practice_parameter: formData.practice_parameter || false,
           department_ids: formData.departmentIds ?? null,
@@ -374,22 +388,49 @@ export default function Parameter({
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
+      const activeItems = updated.filter((item) => !item.isDeleted);
+      
+      // If setting default to true, ensure only one default
+      if (field === "default" && value === true) {
+        // Set all other items' default to false
+        activeItems.forEach((item, idx) => {
+          if (idx !== itemIndex) {
+            item.default = false;
+          }
+        });
+      }
+      
       updated[itemIndex] = { ...updated[itemIndex]!, [field]: value };
       return updated;
     });
   };
 
   const handleAddParameterItem = () => {
+    const activeItems = parameterItemsFormData.filter((item) => !item.isDeleted);
+    const hasDefault = activeItems.some((item) => item.default);
+    
     const newItem: ParameterItemFormData = {
       name: "",
       description: "",
-      value: "",
+      default: !hasDefault, // Set as default if no other item is default
       isNew: true,
       isDeleted: false,
       departmentIds:
         defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
     };
-    setParameterItemsFormData((prev) => [...prev, newItem]);
+    
+    // If setting this as default, unset others
+    if (newItem.default) {
+      setParameterItemsFormData((prev) => {
+        const updated = prev.map((item) => ({
+          ...item,
+          default: false,
+        }));
+        return [...updated, newItem];
+      });
+    } else {
+      setParameterItemsFormData((prev) => [...prev, newItem]);
+    }
   };
 
   const handleDeleteParameterItem = (itemIndex: number) => {
@@ -431,19 +472,13 @@ export default function Parameter({
       if (!item.description.trim()) {
         errors.push(`Parameter item ${index + 1}: Description is required`);
       }
-      // For numerical parameters, require numeric value
-      if (formData?.numerical) {
-        if (!item.value.trim()) {
-          errors.push(`Parameter item ${index + 1}: Value is required`);
-        }
-        const numValue = parseFloat(item.value);
-        if (isNaN(numValue)) {
-          errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`,
-          );
-        }
-      }
     });
+    
+    // Ensure exactly one default item
+    const defaultCount = activeItems.filter((item) => item.default).length;
+    if (defaultCount !== 1) {
+      errors.push("Exactly one parameter item must be marked as default");
+    }
 
     return errors;
   };
@@ -597,38 +632,6 @@ export default function Parameter({
               </div>
             </div>
 
-            {/* Numerical Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="numerical"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Calculator className="h-3.5 w-3.5 text-muted-foreground" />
-                    Numerical
-                  </Label>
-                  {formData?.numerical !== undefined ? (
-                    <Switch
-                      id="numerical"
-                      data-testid="switch-parameter-numerical"
-                      checked={formData.numerical}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({ ...prev, numerical: checked }))
-                      }
-                      disabled={
-                        isEditMode &&
-                        parameterDetail &&
-                        !parameterDetail.can_edit
-                      }
-                    />
-                  ) : null}
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Parameter values must be numeric
-                </p>
-              </div>
-            </div>
 
             {/* Persona Links */}
             {parameterData?.persona_mapping && (
@@ -860,27 +863,29 @@ export default function Parameter({
                             disabled={isReadonly}
                           />
                         </div>
-                        {formData?.numerical && (
-                          <div>
-                            <Label className="text-xs text-muted-foreground mb-1 block">
-                              Value (Number)
-                            </Label>
-                            <Input
-                              type="number"
-                              value={item.value}
-                              onChange={(e) =>
-                                handleParameterItemInputChange(
-                                  itemIndex,
-                                  "value",
-                                  e.target.value,
-                                )
-                              }
-                              className="text-sm w-full"
-                              placeholder="0"
-                              disabled={isReadonly}
-                            />
-                          </div>
-                        )}
+                        {/* Default Switch */}
+                        <div className="flex items-center gap-2 pt-2">
+                          <Label
+                            htmlFor={`default-${itemIndex}`}
+                            className="text-xs text-muted-foreground flex items-center gap-1.5"
+                          >
+                            <Power className="h-3 w-3 text-muted-foreground" />
+                            Default
+                          </Label>
+                          <Switch
+                            id={`default-${itemIndex}`}
+                            checked={item.default}
+                            onCheckedChange={(checked) =>
+                              handleParameterItemInputChange(
+                                itemIndex,
+                                "default",
+                                checked,
+                              )
+                            }
+                            disabled={isReadonly}
+                            data-testid={`switch-item-default-${itemIndex}`}
+                          />
+                        </div>
                         {validDepartmentIds.length > 1 && (
                           <div>
                             <Label className="text-xs text-muted-foreground mb-1 block">
@@ -918,9 +923,7 @@ export default function Parameter({
                       <TableRow>
                         <TableHead className="w-48">Name</TableHead>
                         <TableHead className="w-80">Description</TableHead>
-                        {formData?.numerical && (
-                          <TableHead className="w-32">Value (Number)</TableHead>
-                        )}
+                        <TableHead className="w-24">Default</TableHead>
                         <TableHead className="w-64">Departments</TableHead>
                         <TableHead className="w-20">Actions</TableHead>
                       </TableRow>
@@ -960,24 +963,22 @@ export default function Parameter({
                                 disabled={isReadonly}
                               />
                             </TableCell>
-                            {formData?.numerical && (
-                              <TableCell className="w-32">
-                                <Input
-                                  type="number"
-                                  value={item.value}
-                                  onChange={(e) =>
+                            <TableCell className="w-24">
+                              <div className="flex items-center justify-center">
+                                <Switch
+                                  checked={item.default}
+                                  onCheckedChange={(checked) =>
                                     handleParameterItemInputChange(
                                       itemIndex,
-                                      "value",
-                                      e.target.value,
+                                      "default",
+                                      checked,
                                     )
                                   }
-                                  className="text-sm"
-                                  placeholder="0"
                                   disabled={isReadonly}
+                                  data-testid={`switch-item-default-${itemIndex}`}
                                 />
-                              </TableCell>
-                            )}
+                              </div>
+                            </TableCell>
                             <TableCell className="w-64">
                               {validDepartmentIds.length > 1 ? (
                                 <DepartmentPicker
@@ -1064,7 +1065,6 @@ export default function Parameter({
                     JSON.stringify({
                       name: parameterData?.name,
                       description: parameterData?.description,
-                      numerical: parameterData?.numerical,
                       active: parameterData?.active,
                       departmentIds: null,
                     }) &&
@@ -1074,7 +1074,7 @@ export default function Parameter({
                         id: item.parameter_item_id,
                         name: item.name,
                         description: item.description,
-                        value: item.value,
+                        default: item.default ?? false,
                         canDelete: (item.usage_count ?? 0) === 0,
                         departmentIds: item.department_ids ?? null,
                         isNew: false,

@@ -26,7 +26,7 @@ class ParameterItemDetail(BaseModel):
     parameter_item_id: str
     name: str
     description: str
-    value: str
+    default: bool
     usage_count: int
     department_ids: list[str] | None
 
@@ -34,7 +34,6 @@ class ParameterItemDetail(BaseModel):
 class ParameterDetailResponse(BaseModel):
     name: str
     description: str
-    numerical: bool
     active: bool
     document_parameter: bool
     practice_parameter: bool
@@ -116,7 +115,7 @@ async def get_parameter_detail(
                             parameter_item_id=item_data.get("parameter_item_id", ""),
                             name=item_data.get("name", ""),
                             description=item_data.get("description", ""),
-                            value=item_data.get("value", ""),
+                            default=item_data.get("default", False),
                             usage_count=item_data.get("usage_count", 0),
                             department_ids=dept_ids,
                         )
@@ -148,7 +147,6 @@ async def get_parameter_detail(
         response_data = ParameterDetailResponse(
             name=result["name"],
             description=result["description"],
-            numerical=result["numerical"],
             active=result["active"],
             document_parameter=result["document_parameter"],
             practice_parameter=result["practice_parameter"],

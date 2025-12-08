@@ -38,7 +38,7 @@ field_departments_for_filter AS (
     SELECT DISTINCT
         fp.parameter_id,
         fd.department_id
-    FROM field_parameters fp
+    FROM parameter_fields fp
     JOIN field_departments fd ON fd.field_id = fp.field_id
     WHERE fp.active = true AND fd.active = true
 ),
@@ -56,7 +56,7 @@ default_parameter AS (
         )
         AND NOT EXISTS (
             SELECT 1 FROM field_departments fd2 
-            JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+            JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
             WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true
         )
     ORDER BY p.created_at DESC
@@ -75,7 +75,7 @@ parameter_departments_aggregated AS (
         UNION
         -- Field-level departments (for backward compatibility)
         SELECT fd.department_id as dept_id
-        FROM field_parameters fp
+        FROM parameter_fields fp
         JOIN default_parameter dp ON fp.parameter_id = dp.id
         JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
         WHERE fp.active = true
@@ -143,7 +143,7 @@ parameter_data AS (
     SELECT 
         p.name,
         p.description,
-        p.numerical,
+,
         p.active,
         p.practice_parameter,
         COALESCE(pda.department_ids, NULL) as department_ids
@@ -156,7 +156,7 @@ field_departments_data AS (
         f.id as parameter_item_id,
         ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN default_parameter dp ON fp.parameter_id = dp.id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     GROUP BY f.id
@@ -166,15 +166,14 @@ parameter_items_with_usage AS (
         f.id,
         f.name,
         f.description,
-        f.value,
         COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
         COALESCE(fdd.department_ids, NULL) as department_ids
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN default_parameter dp ON fp.parameter_id = dp.id
     LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
     LEFT JOIN field_departments_data fdd ON fdd.parameter_item_id = f.id
-    GROUP BY f.id, f.name, f.description, f.value, fdd.department_ids
+    GROUP BY f.id, f.name, f.description, fdd.department_ids
 ),
 items_json AS (
     SELECT COALESCE(

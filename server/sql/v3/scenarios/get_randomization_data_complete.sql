@@ -37,7 +37,7 @@ filtered_parameters AS (
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters p
-    JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description
@@ -46,16 +46,17 @@ filtered_parameters AS (
         (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
          COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($1::uuid[])) > 0
          OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                      JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                       WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
 ),
 parameter_items_data AS (
-    SELECT DISTINCT f.id, f.name, f.description, f.value, fp.parameter_id
+    SELECT DISTINCT f.id, f.name, f.description, pf.parameter_id
     FROM fields f
-    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
-    JOIN filtered_parameters fp2 ON fp2.id = fp.parameter_id
+    JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
+    JOIN filtered_parameters fp2 ON fp2.id = pf.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    GROUP BY f.id, f.name, f.description, f.value, fp.parameter_id
+    WHERE f.active = true
+    GROUP BY f.id, f.name, f.description, pf.parameter_id
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
@@ -117,7 +118,6 @@ SELECT
             'id', pid.id,
             'name', pid.name,
             'description', pid.description,
-            'value', pid.value,
             'parameter_id', pid.parameter_id
         )),
         '[]'::json
