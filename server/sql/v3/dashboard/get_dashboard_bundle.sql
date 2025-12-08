@@ -1346,7 +1346,7 @@
                 JOIN parameters p ON p.id = fp.parameter_id AND p.numerical = TRUE
                 JOIN analytics a ON a.scenario_id = sc.id
                 WHERE s.active = TRUE AND sc.active = TRUE
-                GROUP BY s.id, p.id, pi.value
+                GROUP BY s.id, p.id, f.value
             ),
             sim_param_nums_most_common AS (
                 SELECT
@@ -1451,7 +1451,7 @@
                         'name', p.name, 
                         'description', COALESCE(p.description, ''),
                         'numerical', p.numerical,
-                        'document_parameter', p.document_parameter
+                        'document_parameter', CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END
                     )
                 ), '{}'::jsonb) AS mapping
                 FROM parameters p

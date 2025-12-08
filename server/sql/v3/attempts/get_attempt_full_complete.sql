@@ -648,7 +648,7 @@
                             'icon', p.icon,
                             'color', p.color
                         ) ORDER BY p.name
-                    ),
+                    ) FILTER (WHERE p.id IS NOT NULL),
                     '[]'::jsonb
                 ) as personas
             FROM chats_base cb

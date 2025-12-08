@@ -15236,6 +15236,16 @@ export interface components {
             scenario_parameter_ids: string[];
             /** Valid Parameter Ids */
             valid_parameter_ids: string[];
+            /** Scenario Agent Id */
+            scenario_agent_id: string;
+            /** Image Agent Id */
+            image_agent_id: string;
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["AgentMappingItem"];
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
         };
         /**
          * ContentItemInRequest
@@ -16036,9 +16046,15 @@ export interface components {
             document_parameter: boolean;
             /** Persona Parameter */
             persona_parameter: boolean;
-            /** Scenario Parameter */
+            /**
+             * Scenario Parameter
+             * @default false
+             */
             scenario_parameter: boolean;
-            /** Video Parameter */
+            /**
+             * Video Parameter
+             * @default false
+             */
             video_parameter: boolean;
         };
         /**

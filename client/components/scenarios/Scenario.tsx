@@ -438,6 +438,7 @@ export default function Scenario({
       departmentIds: defaultDepartmentIds,
       active: true,
       scenarioAgentId: null as string | null,
+      imageAgentId: null as string | null,
       parameterIds: [] as string[],
     }),
     [defaultDepartmentIds]
@@ -1313,6 +1314,7 @@ export default function Scenario({
         departmentIds: deptIds,
         active: scenarioData.active ?? true,
         scenarioAgentId: scenarioData.scenario_agent_id || null,
+        imageAgentId: scenarioData.image_agent_id || null,
       });
       // Initialize previousDepartmentIds when loading scenario data
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
@@ -1412,7 +1414,11 @@ export default function Scenario({
     } else if (!isEditMode && scenarioData && !formDataInitializedRef.current) {
       // Create mode: use initialFormData (which already has primaryDepartmentId set correctly)
       // Only set on initial load to prevent overwriting user selections when scenarioData updates
-      setFormData(initialFormData);
+      setFormData({
+        ...initialFormData,
+        scenarioAgentId: scenarioData.scenario_agent_id || null,
+        imageAgentId: scenarioData.image_agent_id || null,
+      });
       formDataInitializedRef.current = true;
     }
   }, [
@@ -1440,6 +1446,44 @@ export default function Scenario({
   useEffect(() => {
     formDataInitializedRef.current = false;
   }, [scenarioId, isEditMode]);
+
+  // Auto-select agents when there's only one option (similar to Document.tsx)
+  useEffect(() => {
+    if (!scenarioData || !agentMapping) return;
+
+    const scenarioAgentIds =
+      scenarioData.valid_agent_ids?.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("scenario");
+      }) || [];
+
+    const imageAgentIds =
+      scenarioData.valid_agent_ids?.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("image");
+      }) || [];
+
+    // Auto-select first scenario agent if only one option and not already set
+    if (scenarioAgentIds.length === 1 && !formData.scenarioAgentId) {
+      setFormData((prev) => ({
+        ...prev,
+        scenarioAgentId: scenarioAgentIds[0] || null,
+      }));
+    }
+
+    // Auto-select first image agent if only one option and not already set
+    if (imageAgentIds.length === 1 && !formData.imageAgentId) {
+      setFormData((prev) => ({
+        ...prev,
+        imageAgentId: imageAgentIds[0] || null,
+      }));
+    }
+  }, [
+    scenarioData,
+    agentMapping,
+    formData.scenarioAgentId,
+    formData.imageAgentId,
+  ]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -2124,6 +2168,7 @@ export default function Scenario({
               objectives_enabled: useObjectives,
               image_enabled: useImage,
               scenario_agent_id: formData.scenarioAgentId || null,
+              image_agent_id: formData.imageAgentId || null,
             });
             // Query will refetch automatically via mutation's onSuccess invalidation
             // The useEffect watching problem_statement_id will update selectedProblemStatementId
@@ -2188,6 +2233,7 @@ export default function Scenario({
         parameters: Record<string, string[]>;
         parameter_ids?: string[] | null;
         scenario_agent_id?: string | null;
+        image_agent_id?: string | null;
       } = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
@@ -2205,6 +2251,7 @@ export default function Scenario({
             ? formData.parameterIds
             : null,
         scenario_agent_id: formData.scenarioAgentId || null,
+        image_agent_id: formData.imageAgentId || null,
       };
 
       // Include problem_statement_versions if in create mode and we have local versions
@@ -2423,33 +2470,86 @@ export default function Scenario({
               </div>
             ) : null}
 
-            {/* Scenario Agent Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="scenarioAgentId">Scenario Agent</Label>
-              {formData?.scenarioAgentId !== undefined ? (
-                <AgentPicker
-                  mapping={agentMapping}
-                  validIds={
-                    scenarioData?.valid_agent_ids?.filter((id) => {
-                      const agent = agentMapping[id];
-                      return agent?.roles?.includes("scenario");
-                    }) || []
-                  }
-                  selectedIds={
-                    formData?.scenarioAgentId ? [formData.scenarioAgentId] : []
-                  }
-                  onSelect={(ids) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      scenarioAgentId: ids[0] || null,
-                    }))
-                  }
-                  placeholder="Select scenario agent"
-                  disabled={isReadonly}
-                  multiSelect={false}
-                />
-              ) : null}
-            </div>
+            {/* Agent Selection */}
+            {(() => {
+              const scenarioAgentIds =
+                scenarioData?.valid_agent_ids?.filter((id) => {
+                  const agent = agentMapping[id];
+                  return agent?.roles?.includes("scenario");
+                }) || [];
+
+              const imageAgentIds =
+                scenarioData?.valid_agent_ids?.filter((id) => {
+                  const agent = agentMapping[id];
+                  return agent?.roles?.includes("image");
+                }) || [];
+
+              // Only show agent pickers if there's more than one option
+              const showScenarioPicker = scenarioAgentIds.length > 1;
+              const showImagePicker = imageAgentIds.length > 1;
+
+              if (!showScenarioPicker && !showImagePicker) {
+                return null;
+              }
+
+              return (
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                  {/* Scenario Agent Selection */}
+                  {showScenarioPicker && (
+                    <div className="space-y-2">
+                      <Label htmlFor="scenarioAgentId">Scenario Agent</Label>
+                      {formData?.scenarioAgentId !== undefined ? (
+                        <AgentPicker
+                          mapping={agentMapping}
+                          validIds={scenarioAgentIds}
+                          selectedIds={
+                            formData?.scenarioAgentId
+                              ? [formData.scenarioAgentId]
+                              : []
+                          }
+                          onSelect={(ids) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              scenarioAgentId: ids[0] || null,
+                            }))
+                          }
+                          placeholder="Select scenario agent"
+                          disabled={isReadonly}
+                          multiSelect={false}
+                        />
+                      ) : null}
+                    </div>
+                  )}
+
+                  {/* Image Agent Selection */}
+                  {showImagePicker && (
+                    <div className="space-y-2">
+                      <Label htmlFor="imageAgentId">Image Agent</Label>
+                      {formData?.imageAgentId !== undefined ? (
+                        <AgentPicker
+                          mapping={agentMapping}
+                          validIds={imageAgentIds}
+                          selectedIds={
+                            formData?.imageAgentId
+                              ? [formData.imageAgentId]
+                              : []
+                          }
+                          onSelect={(ids) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              imageAgentId: ids[0] || null,
+                            }))
+                          }
+                          placeholder="Select image agent"
+                          disabled={isReadonly}
+                          multiSelect={false}
+                        />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Active Switch */}
             <div className="space-y-2 pt-2">
@@ -2606,7 +2706,8 @@ export default function Scenario({
               </div>
             </div>
             <div className="ml-auto flex items-center gap-3">
-              <div className="flex items-center gap-2">
+              {/* Temporarily removed document vision switch */}
+              {/* <div className="flex items-center gap-2">
                 <Label
                   htmlFor="document-vision"
                   className="text-sm flex items-center gap-1.5"
@@ -2622,7 +2723,7 @@ export default function Scenario({
                   }}
                   disabled={isReadonly || !useDocuments}
                 />
-              </div>
+              </div> */}
               <div className="flex items-center gap-2">
                 <Switch
                   id="use-documents"

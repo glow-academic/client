@@ -133,6 +133,47 @@ resolved_dept AS (
         (SELECT department_id FROM any_active_dept)
     ) as department_id
 ),
+-- Get active settings for profile (for key lookup via setting_provider_keys)
+default_settings AS (
+    -- Get settings with no department links (cross-department/default)
+    SELECT s.id as settings_id
+    FROM settings s
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
+profile_primary_department AS (
+    -- Get profile's primary department ID (only if profile_id is provided)
+    SELECT pd.department_id
+    FROM profile_departments pd
+    WHERE pd.profile_id = $3::uuid 
+      AND pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
+),
+dept_specific_settings AS (
+    -- Get department-specific settings (if primary_department_id exists)
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    WHERE s.active = true 
+      AND sd.active = true
+    LIMIT 1
+),
+active_settings AS (
+    -- For authenticated users: prefer department-specific, then default, then any active
+    -- For NULL profile_id: use default settings
+    SELECT 
+        COALESCE(
+            (SELECT settings_id FROM dept_specific_settings),
+            (SELECT settings_id FROM default_settings),
+            (SELECT id FROM settings WHERE active = true LIMIT 1)
+        ) as settings_id
+),
 -- Get full scenario data with all metadata
 -- CRITICAL FIX: Use DISTINCT ON to ensure only ONE row per scenario
 -- Multiple agents/models for the same persona can cause multiple rows, leading to duplicate chats
@@ -157,8 +198,8 @@ scenario_full_data_raw AS (
         p.icon as persona_icon,
         -- Model data
         m.id as model_id,
-        m.name as model_name,
-        m.provider::text as provider,
+        m.value as model_name,
+        COALESCE(p_prov.value::text, '') as provider,
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
         -- Documents (aggregated)
@@ -215,8 +256,13 @@ scenario_full_data_raw AS (
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
-    LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
+    -- Get keys via settings system: provider -> active settings -> setting_provider_keys
+    LEFT JOIN providers p_prov ON p_prov.id = m.provider_id
+    CROSS JOIN active_settings act_s
+    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
+        AND spk.settings_id = act_s.settings_id 
+        AND spk.active = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
     LEFT JOIN documents d ON d.id = sd.document_id
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
@@ -228,8 +274,8 @@ scenario_full_data_raw AS (
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, s.name, ps.problem_statement, s.active, 
              s.generated, p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 
-             COALESCE(mtl.temperature, 0.0), mrl.reasoning_level, p.color, p.icon, m.id, m.name, m.provider,
-             k.key, me.base_url
+             COALESCE(mtl.temperature, 0.0), mrl.reasoning_level, p.color, p.icon, m.id, m.value, p_prov.value,
+             k.key, me.base_url, act_s.settings_id
 ),
 -- Select only ONE row per scenario (deterministic: pick first model by ID)
 scenario_full_data AS (

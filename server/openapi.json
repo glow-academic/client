@@ -38260,6 +38260,28 @@
             },
             "type": "array",
             "title": "Valid Parameter Ids"
+          },
+          "scenario_agent_id": {
+            "type": "string",
+            "title": "Scenario Agent Id"
+          },
+          "image_agent_id": {
+            "type": "string",
+            "title": "Image Agent Id"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentMappingItem"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
           }
         },
         "type": "object",
@@ -38297,7 +38319,11 @@
           "department_mapping",
           "problem_statement_mapping",
           "scenario_parameter_ids",
-          "valid_parameter_ids"
+          "valid_parameter_ids",
+          "scenario_agent_id",
+          "image_agent_id",
+          "agent_mapping",
+          "valid_agent_ids"
         ],
         "title": "ScenarioDetailResponse",
         "description": "Response for scenario detail."
@@ -40645,11 +40671,13 @@
           },
           "scenario_parameter": {
             "type": "boolean",
-            "title": "Scenario Parameter"
+            "title": "Scenario Parameter",
+            "default": false
           },
           "video_parameter": {
             "type": "boolean",
-            "title": "Video Parameter"
+            "title": "Video Parameter",
+            "default": false
           }
         },
         "type": "object",
@@ -40658,9 +40686,7 @@
           "description",
           "numerical",
           "document_parameter",
-          "persona_parameter",
-          "scenario_parameter",
-          "video_parameter"
+          "persona_parameter"
         ],
         "title": "ParameterMappingItem",
         "description": "Parameter mapping item - extends MappingItem"

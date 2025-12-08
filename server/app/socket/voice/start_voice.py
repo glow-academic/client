@@ -213,16 +213,95 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 )
                 return
             
-            # Get key_id from model_keys table (use voice model)
-            key_id_row = await conn.fetchrow(
-                """
-                SELECT mk.key_id::text as key_id
-                FROM model_keys mk
-                WHERE mk.model_id = $1::uuid AND mk.active = true
-                LIMIT 1
-                """,
-                model_id_uuid,
-            )
+            # Get key_id via settings system: provider -> active settings -> setting_provider_keys
+            # Get active settings for profile (or default if no profile)
+            if profile_id_uuid:
+                # Get active settings for profile
+                key_id_row = await conn.fetchrow(
+                    """
+                    WITH default_settings AS (
+                        SELECT s.id as settings_id
+                        FROM settings s
+                        WHERE s.active = true
+                          AND NOT EXISTS (
+                              SELECT 1 FROM department_settings sd 
+                              WHERE sd.settings_id = s.id AND sd.active = true
+                          )
+                        LIMIT 1
+                    ),
+                    profile_primary_department AS (
+                        SELECT pd.department_id
+                        FROM profile_departments pd
+                        WHERE pd.profile_id = $2::uuid 
+                          AND pd.is_primary = TRUE 
+                          AND pd.active = true
+                        LIMIT 1
+                    ),
+                    dept_specific_settings AS (
+                        SELECT s.id as settings_id
+                        FROM settings s
+                        JOIN department_settings sd ON sd.settings_id = s.id
+                        JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+                        WHERE s.active = true 
+                          AND sd.active = true
+                        LIMIT 1
+                    ),
+                    active_settings AS (
+                        SELECT 
+                            COALESCE(
+                                (SELECT settings_id FROM dept_specific_settings),
+                                (SELECT settings_id FROM default_settings),
+                                (SELECT id FROM settings WHERE active = true LIMIT 1)
+                            ) as settings_id
+                    )
+                    SELECT spk.key_id::text as key_id
+                    FROM models m
+                    JOIN providers p ON p.id = m.provider_id
+                    CROSS JOIN active_settings act_s
+                    JOIN setting_provider_keys spk ON spk.provider_id = p.id 
+                        AND spk.settings_id = act_s.settings_id 
+                        AND spk.active = true
+                    JOIN keys k ON k.id = spk.key_id AND k.active = true
+                    WHERE m.id = $1::uuid
+                    LIMIT 1
+                    """,
+                    model_id_uuid,
+                    profile_id_uuid,
+                )
+            else:
+                # Use default settings if no profile_id
+                key_id_row = await conn.fetchrow(
+                    """
+                    WITH default_settings AS (
+                        SELECT s.id as settings_id
+                        FROM settings s
+                        WHERE s.active = true
+                          AND NOT EXISTS (
+                              SELECT 1 FROM department_settings sd 
+                              WHERE sd.settings_id = s.id AND sd.active = true
+                          )
+                        LIMIT 1
+                    ),
+                    active_settings AS (
+                        SELECT 
+                            COALESCE(
+                                (SELECT settings_id FROM default_settings),
+                                (SELECT id FROM settings WHERE active = true LIMIT 1)
+                            ) as settings_id
+                    )
+                    SELECT spk.key_id::text as key_id
+                    FROM models m
+                    JOIN providers p ON p.id = m.provider_id
+                    CROSS JOIN active_settings act_s
+                    JOIN setting_provider_keys spk ON spk.provider_id = p.id 
+                        AND spk.settings_id = act_s.settings_id 
+                        AND spk.active = true
+                    JOIN keys k ON k.id = spk.key_id AND k.active = true
+                    WHERE m.id = $1::uuid
+                    LIMIT 1
+                    """,
+                    model_id_uuid,
+                )
             key_id_uuid = None
             if key_id_row and key_id_row["key_id"]:
                 try:

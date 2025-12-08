@@ -1,15 +1,16 @@
 -- Insert scenario variant (for child scenarios)
--- Parameters: $1=name, $2=generated, $3=active, $4=hints_enabled, $5=objectives_enabled,
---            $6=image_input_enabled
--- Returns: id, name, generated, active, hints_enabled, objectives_enabled, image_input_enabled
+-- Parameters: $1=name, $2=generated, $3=active, $4=objectives_enabled, $5=image_enabled,
+--            $6=scenario_agent_id, $7=image_agent_id
+-- Returns: id, name, generated, active, objectives_enabled, image_enabled, scenario_agent_id, image_agent_id
 INSERT INTO scenarios (
     name,
     generated,
     active,
-    hints_enabled,
     objectives_enabled,
-    image_input_enabled
+    image_enabled,
+    scenario_agent_id,
+    image_agent_id
 )
-VALUES ($1, $2, $3, $4, $5, $6)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *
 

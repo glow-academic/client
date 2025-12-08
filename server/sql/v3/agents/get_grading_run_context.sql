@@ -77,6 +77,50 @@ runs_today AS (
                             WHERE ac.chat_id = $1::uuid AND ap.active = true LIMIT 1)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+),
+profile_from_attempt AS (
+    -- Get profile_id from attempt_profiles for settings resolution
+    SELECT ap.profile_id
+    FROM attempt_profiles ap 
+    JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
+    WHERE ac.chat_id = $1::uuid AND ap.active = true
+    LIMIT 1
+),
+-- Get active settings for profile (for key lookup via setting_provider_keys)
+default_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
+profile_primary_department AS (
+    SELECT pd.department_id
+    FROM profile_from_attempt pfa
+    JOIN profile_departments pd ON pd.profile_id = pfa.profile_id
+    WHERE pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
+),
+dept_specific_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    WHERE s.active = true 
+      AND sd.active = true
+    LIMIT 1
+),
+active_settings AS (
+    SELECT 
+        COALESCE(
+            (SELECT settings_id FROM dept_specific_settings),
+            (SELECT settings_id FROM default_settings),
+            (SELECT id FROM settings WHERE active = true LIMIT 1)
+        ) as settings_id
 )
 SELECT 
     -- Chat data
@@ -164,8 +208,8 @@ SELECT
     
     -- Model data
     m.id::text as model_id,
-    m.name as model_name,
-    m.provider::text as provider,
+    m.value as model_name,
+    COALESCE(p.value::text, '') as provider,
     COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
     
@@ -204,8 +248,13 @@ LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_i
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
 LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
-LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
+-- Get keys via settings system: provider -> active settings -> setting_provider_keys
+LEFT JOIN providers p ON p.id = m.provider_id
+CROSS JOIN active_settings act_s
+LEFT JOIN setting_provider_keys spk ON spk.provider_id = p.id 
+    AND spk.settings_id = act_s.settings_id 
+    AND spk.active = true
+LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = ai.id AND ap.active = true
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
@@ -215,7 +264,7 @@ GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created
          si.id, si.rubric_id, si.department_id, si.time_limit,
          r.id, r.name, r.description, r.points, r.pass_points,
          a.id, a.name, pr_prompt.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
-         m.id, m.name, m.provider, me.base_url, k.key,
+         m.id, m.value, p.value, me.base_url, k.key, act_s.settings_id,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 

@@ -18,8 +18,8 @@ WITH filtered_personas AS (
 filtered_documents AS (
     SELECT DISTINCT d.id, d.name, NULL::text as type, u.file_path
     FROM documents d
-    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    LEFT JOIN uploads u ON u.id = du.upload_id
+    INNER JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    INNER JOIN uploads u ON u.id = du.upload_id AND u.file_path IS NOT NULL
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     WHERE d.active = true
     GROUP BY d.id, d.name, u.file_path
@@ -30,16 +30,21 @@ filtered_documents AS (
          OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true))
 ),
 filtered_parameters AS (
-    SELECT DISTINCT p.id, p.name, p.description, p.document_parameter, p.persona_parameter
+    SELECT DISTINCT 
+        p.id, 
+        p.name, 
+        p.description, 
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters p
     JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter
+    GROUP BY p.id, p.name, p.description
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
-         COUNT(fd.field_id) FILTER (WHERE pid.department_id = ANY($1::uuid[])) > 0
+         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($1::uuid[])) > 0
          OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
                       WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))

@@ -80,6 +80,48 @@ runs_today AS (
     )
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+),
+-- Get active settings for profile (for key lookup via setting_provider_keys)
+resolved_profile_for_settings AS (
+    SELECT COALESCE(
+        (SELECT profile_id FROM params WHERE profile_id IS NOT NULL),
+        (SELECT guest_profile_id::uuid FROM default_guest)
+    ) as profile_id
+),
+default_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
+profile_primary_department AS (
+    SELECT pd.department_id
+    FROM resolved_profile_for_settings rpfs
+    JOIN profile_departments pd ON pd.profile_id = rpfs.profile_id
+    WHERE pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
+),
+dept_specific_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    WHERE s.active = true 
+      AND sd.active = true
+    LIMIT 1
+),
+active_settings AS (
+    SELECT 
+        COALESCE(
+            (SELECT settings_id FROM dept_specific_settings),
+            (SELECT settings_id FROM default_settings),
+            (SELECT id FROM settings WHERE active = true LIMIT 1)
+        ) as settings_id
 )
 SELECT 
     -- Agent data
@@ -91,17 +133,17 @@ SELECT
     
     -- Model data
     m.id::text as model_id,
-    m.name as model_name,
-    m.provider::text as provider,
+    m.value as model_name,
+    COALESCE(p_prov.value::text, '') as provider,
     COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
     
     -- Custom model (if any) - indicated by presence of base_url in model_endpoints
-    CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.name ELSE NULL END as custom_model,
+    CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
     
     -- Provider data (provider enum is now on models table, no separate providers table)
     NULL::text as provider_id,
-    m.provider::text as provider_name,
+    COALESCE(p_prov.value::text, '') as provider_name,
     
     -- Documents (policies) data (aggregated as JSON array)
     -- Include file_path and mime_type so format_policy_info can read actual PDF content
@@ -219,8 +261,13 @@ LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_i
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
 LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
-LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
+-- Get keys via settings system: provider -> active settings -> setting_provider_keys
+LEFT JOIN providers p_prov ON p_prov.id = m.provider_id
+CROSS JOIN active_settings act_s
+LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
+    AND spk.settings_id = act_s.settings_id 
+    AND spk.active = true
+LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
 CROSS JOIN default_guest dg
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt

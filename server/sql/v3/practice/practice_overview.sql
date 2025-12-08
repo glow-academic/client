@@ -402,19 +402,19 @@ parameter_data AS (
         par.name,
         COALESCE(par.description, '') as description,
         par.numerical,
-        par.document_parameter,
-        par.persona_parameter
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = par.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = par.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters par
     JOIN field_parameters fp ON fp.parameter_id = par.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE par.active = true
       AND par.practice_parameter = true
-    GROUP BY par.id, par.name, par.description, par.numerical, par.document_parameter, par.persona_parameter
+    GROUP BY par.id, par.name, par.description, par.numerical
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                   JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
-                  WHERE pi2.parameter_id = par.id AND pid2.active = true))
+                  WHERE fp2.parameter_id = par.id AND fp2.active = true))
 ),
 parameter_mapping_data AS (
     SELECT COALESCE(

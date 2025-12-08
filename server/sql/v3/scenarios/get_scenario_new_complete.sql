@@ -358,6 +358,80 @@ primary_department_id AS (
     FROM profile_departments
     WHERE profile_id = $1 AND is_primary = TRUE
     LIMIT 1
+),
+resolved_department_for_agents AS (
+    -- Use primary department if available, otherwise first accessible department
+    SELECT COALESCE(
+        (SELECT pd.department_id FROM profile_departments pd WHERE pd.profile_id = $1 AND pd.is_primary = TRUE LIMIT 1),
+        (SELECT id FROM user_departments LIMIT 1)
+    ) as department_id
+),
+default_scenario_agent AS (
+    -- Get best scenario agent for the resolved department
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    WHERE a.role = 'scenario'
+    AND a.active = true
+    AND (
+        -- Include if agent is linked to the resolved department
+        ad.department_id = rdfa.department_id
+        -- OR agent has no department links (cross-department)
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        -- Prioritize department-specific agents over cross-department agents
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
+default_image_agent AS (
+    -- Get best image agent for the resolved department
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    WHERE a.role = 'image'
+    AND a.active = true
+    AND (
+        -- Include if agent is linked to the resolved department
+        ad.department_id = rdfa.department_id
+        -- OR agent has no department links (cross-department)
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        -- Prioritize department-specific agents over cross-department agents
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
+agent_filtered AS (
+    -- Filter agents by department access
+    SELECT a.id, a.name, a.description, a.role
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role IN ('scenario', 'image')
+    GROUP BY a.id, a.name, a.description, a.role
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+valid_agents AS (
+    -- Aggregate all filtered agents into a single row
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                af.id::text,
+                jsonb_build_object(
+                    'name', af.name,
+                    'description', COALESCE(af.description, ''),
+                    'roles', ARRAY[af.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        COALESCE(array_agg(af.id::text ORDER BY af.name), ARRAY[]::text[]) as agent_ids
+    FROM agent_filtered af
 )
 SELECT 
     COALESCE(
@@ -383,5 +457,9 @@ SELECT
     (SELECT problem_statement_mapping FROM problem_statement_mapping_data_default) as problem_statement_mapping,
     (SELECT objectives_history FROM objectives_history_data_default) as objectives_history,
     (SELECT user_role FROM user_profile) as user_role,
-    (SELECT department_id FROM primary_department_id) as primary_department_id
+    (SELECT department_id FROM primary_department_id) as primary_department_id,
+    COALESCE((SELECT agent_id FROM default_scenario_agent), '') as scenario_agent_id,
+    COALESCE((SELECT agent_id FROM default_image_agent), '') as image_agent_id,
+    COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
+    COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids
 

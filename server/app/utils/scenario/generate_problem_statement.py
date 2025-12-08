@@ -273,9 +273,9 @@ async def generate_scenario_problem_statement(
         usage.output_tokens,
     )
 
-    # Get result values
-    title = scenario_result.get("title", "")
-    description = scenario_result.get("description", "")
+    # Get result values (ensure non-None values)
+    title = scenario_result.get("title") or ""
+    description = scenario_result.get("description") or ""
 
     logger.info(
         f"Scenario generation completed: title={title}, "

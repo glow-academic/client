@@ -397,9 +397,9 @@ async def randomize_scenario_attributes(
                 profile_id=profile_id,
                 objectives_enabled=parent_scenario_dict.get("objectives_enabled", True),
             )
-            scenario_problem_statement = generated["description"]
-            scenario_title = generated["title"]
-            scenario_objectives = generated["objectives"]
+            scenario_problem_statement = generated.get("description") or ""
+            scenario_title = generated.get("title") or ""
+            scenario_objectives = generated.get("objectives") or []
         else:
             scenario_title = parent_scenario_dict.get("name", "")
             # Get objectives from parent
@@ -414,9 +414,10 @@ async def randomize_scenario_attributes(
             scenario_title or parent_scenario_dict.get("name", ""),
             True,  # generated = True
             True,  # active = True
-            parent_scenario_dict.get("hints_enabled", False),
             parent_scenario_dict.get("objectives_enabled", True),
-            parent_scenario_dict.get("image_input_enabled", False),
+            parent_scenario_dict.get("image_enabled", True),  # Use image_enabled, not image_input_enabled
+            parent_scenario_dict.get("scenario_agent_id"),  # Required field
+            parent_scenario_dict.get("image_agent_id"),  # Required field
         )
         child_scenario_id = new_scenario_row["id"]
         logger.info(
@@ -426,10 +427,17 @@ async def randomize_scenario_attributes(
         # Insert problem statement
         if scenario_problem_statement:
             sql = load_sql("sql/v3/scenarios/insert_scenario_problem_statement.sql")
+            # Ensure we have a valid name - use scenario title if available, otherwise fallback
+            problem_statement_name = (
+                scenario_title.strip() 
+                if scenario_title and scenario_title.strip() 
+                else "Generated Problem Statement"
+            )
             await conn.fetchrow(
                 sql,
                 child_scenario_id,
                 scenario_problem_statement,
+                problem_statement_name,
                 True,  # active = True
             )
             logger.info(f"Created problem statement for child scenario {child_scenario_id}")

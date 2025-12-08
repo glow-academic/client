@@ -48,16 +48,21 @@ def format_document_info(
         if not document:
             # Skip missing docs quietly to keep order for others
             continue
+        
+        # Skip documents without a file_path (no upload or upload has no file)
+        file_path = document.get("file_path")
+        if not file_path:
+            continue
 
-        full_path = os.path.join(UPLOAD_FOLDER, document["file_path"])
+        full_path = os.path.join(UPLOAD_FOLDER, file_path)
         # Note: document.tags removed in BCNF migration (now via simulation_tags)
         tags_display = ""  # document.tags removed
         mime_lower = (document.get("mime_type") or "").lower()
 
-        is_pdf = document["file_path"].lower().endswith(".pdf") or "pdf" in mime_lower
-        is_image = mime_lower.startswith("image/") or document[
-            "file_path"
-        ].lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))
+        is_pdf = file_path.lower().endswith(".pdf") or "pdf" in mime_lower
+        is_image = mime_lower.startswith("image/") or file_path.lower().endswith(
+            (".png", ".jpg", ".jpeg", ".webp", ".gif")
+        )
 
         if is_pdf:
             # Per-page text via pypdf
@@ -109,13 +114,13 @@ def format_document_info(
                         else None
                     )
                     if not mime:
-                        if document["file_path"].lower().endswith(".png"):
+                        if file_path.lower().endswith(".png"):
                             mime = "image/png"
-                        elif document["file_path"].lower().endswith((".jpg", ".jpeg")):
+                        elif file_path.lower().endswith((".jpg", ".jpeg")):
                             mime = "image/jpeg"
-                        elif document["file_path"].lower().endswith(".webp"):
+                        elif file_path.lower().endswith(".webp"):
                             mime = "image/webp"
-                        elif document["file_path"].lower().endswith(".gif"):
+                        elif file_path.lower().endswith(".gif"):
                             mime = "image/gif"
                         else:
                             mime = "image/png"
