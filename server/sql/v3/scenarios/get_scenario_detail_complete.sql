@@ -290,6 +290,41 @@ persona_data AS (
     LEFT JOIN image_model_check imc2 ON imc2.model_id = m2.id
     WHERE p2.active = true
 ),
+-- Persona parameter relationships: direct (parameter_personas) and via fields (persona_fields → parameter_fields)
+persona_parameter_relationships AS (
+    SELECT DISTINCT
+        p.id as persona_id,
+        param.id as parameter_id
+    FROM persona_data p
+    CROSS JOIN parameters param
+    WHERE param.active = true
+    AND (
+        -- Direct relationship via parameter_personas
+        EXISTS (
+            SELECT 1 FROM parameter_personas pp
+            WHERE pp.persona_id = p.id
+            AND pp.parameter_id = param.id
+            AND pp.active = true
+        )
+        OR
+        -- Indirect relationship via persona_fields → parameter_fields
+        EXISTS (
+            SELECT 1 FROM persona_fields pf
+            JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+            WHERE pf.persona_id = p.id
+            AND pfield.parameter_id = param.id
+            AND pf.active = true
+            AND pfield.active = true
+        )
+        OR
+        -- No restrictions: if parameter has no persona restrictions, it's valid for all personas
+        NOT EXISTS (
+            SELECT 1 FROM parameter_personas pp2
+            WHERE pp2.parameter_id = param.id
+            AND pp2.active = true
+        )
+    )
+),
 valid_personas_data AS (
     SELECT 
         COALESCE(ARRAY_AGG(p.id::text ORDER BY p.name), ARRAY[]::text[]) as valid_persona_ids,
@@ -300,7 +335,19 @@ valid_personas_data AS (
                 'description', p.description,
                 'color', p.color,
                 'icon', p.icon,
-                'image_model', COALESCE(p.image_model, false)
+                'image_model', COALESCE(p.image_model, false),
+                'parameter_ids', COALESCE(
+                    (SELECT jsonb_agg(ppr.parameter_id::text ORDER BY ppr.parameter_id)
+                     FROM persona_parameter_relationships ppr
+                     WHERE ppr.persona_id = p.id),
+                    '[]'::jsonb
+                ),
+                'field_ids', COALESCE(
+                    (SELECT jsonb_agg(pf.field_id::text ORDER BY pf.field_id)
+                     FROM persona_fields pf
+                     WHERE pf.persona_id = p.id AND pf.active = true),
+                    '[]'::jsonb
+                )
             )
         ), '{}'::jsonb) as persona_mapping
     FROM persona_data p
@@ -345,6 +392,41 @@ document_data AS (
     LEFT JOIN uploads u2 ON u2.id = du2.upload_id
     WHERE d2.active = true
 ),
+-- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
+document_parameter_relationships AS (
+    SELECT DISTINCT
+        d.id as document_id,
+        param.id as parameter_id
+    FROM document_data d
+    CROSS JOIN parameters param
+    WHERE param.active = true
+    AND (
+        -- Direct relationship via parameter_documents
+        EXISTS (
+            SELECT 1 FROM parameter_documents pd
+            WHERE pd.document_id = d.id
+            AND pd.parameter_id = param.id
+            AND pd.active = true
+        )
+        OR
+        -- Indirect relationship via document_fields → parameter_fields
+        EXISTS (
+            SELECT 1 FROM document_fields df
+            JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+            WHERE df.document_id = d.id
+            AND pfield.parameter_id = param.id
+            AND df.active = true
+            AND pfield.active = true
+        )
+        OR
+        -- No restrictions: if parameter has no document restrictions, it's valid for all documents
+        NOT EXISTS (
+            SELECT 1 FROM parameter_documents pd2
+            WHERE pd2.parameter_id = param.id
+            AND pd2.active = true
+        )
+    )
+),
 valid_documents_data AS (
     SELECT 
         COALESCE(ARRAY_AGG(d.id::text ORDER BY d.name), ARRAY[]::text[]) as valid_document_ids,
@@ -354,7 +436,19 @@ valid_documents_data AS (
                 'name', d.name,
                 'description', d.description,
                 'filePath', d.file_path,
-                'mimeType', d.mime_type
+                'mimeType', d.mime_type,
+                'parameter_ids', COALESCE(
+                    (SELECT jsonb_agg(dpr.parameter_id::text ORDER BY dpr.parameter_id)
+                     FROM document_parameter_relationships dpr
+                     WHERE dpr.document_id = d.id),
+                    '[]'::jsonb
+                ),
+                'field_ids', COALESCE(
+                    (SELECT jsonb_agg(df.field_id::text ORDER BY df.field_id)
+                     FROM document_fields df
+                     WHERE df.document_id = d.id AND df.active = true),
+                    '[]'::jsonb
+                )
             )
         ), '{}'::jsonb) as document_mapping
     FROM document_data d
@@ -537,6 +631,15 @@ enhanced_parameter_mapping_data AS (
     FROM parameter_mapping_data pmd
     CROSS JOIN scenario_parameters_mapping_data spmd
 ),
+-- Conditional parameter relationships (field → conditional_parameter)
+field_conditional_parameters_data AS (
+    SELECT 
+        fcp.field_id,
+        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY fcp.conditional_parameter_id) as conditional_parameter_ids
+    FROM field_conditional_parameters fcp
+    WHERE fcp.active = true
+    GROUP BY fcp.field_id
+),
 parameter_item_data AS (
     SELECT 
         f.id,
@@ -564,10 +667,27 @@ parameter_item_mapping_data AS (
                 'name', pi.name,
                 'description', pi.description,
                 'parameter_id', pi.parameter_id::text,
-                'parameter_name', pi.parameter_name
+                'parameter_name', pi.parameter_name,
+                'conditional_parameter_ids', COALESCE(
+                    (SELECT to_jsonb(fcpd.conditional_parameter_ids)
+                     FROM field_conditional_parameters_data fcpd
+                     WHERE fcpd.field_id::text = pi.id::text),
+                    '[]'::jsonb
+                )
             )
         ), '{}'::jsonb) as parameter_item_mapping
     FROM parameter_item_data pi
+),
+-- Conditional parameters mapping (for easy lookup)
+conditional_parameters_mapping AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            fcpd.field_id::text,
+            to_jsonb(fcpd.conditional_parameter_ids)
+        ),
+        '{}'::jsonb
+    ) as mapping
+    FROM field_conditional_parameters_data fcpd
 ),
 scenario_parameter_items_mapping_data AS (
     SELECT COALESCE(

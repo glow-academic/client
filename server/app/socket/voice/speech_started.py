@@ -47,9 +47,7 @@ async def _voice_speech_started_impl(sid: str, data: VoiceSpeechStartedPayload) 
         timestamps_dict = get_voice_speech_timestamps()
         if chat_id not in timestamps_dict:
             timestamps_dict[chat_id] = {}
-        timestamps_dict[chat_id][data.item_id] = datetime.datetime.now(
-            datetime.UTC
-        )
+        timestamps_dict[chat_id][data.item_id] = datetime.datetime.now(datetime.UTC)
         logger.info(
             f"Stored speech_started timestamp for chat_id={chat_id}, item_id={data.item_id}"
         )

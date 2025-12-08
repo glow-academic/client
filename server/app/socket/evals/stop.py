@@ -1,6 +1,5 @@
 """Handler for eval stop WebSocket events."""
 
-
 from pydantic import BaseModel
 
 from app.main import sio

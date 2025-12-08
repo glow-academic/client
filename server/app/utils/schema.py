@@ -48,6 +48,8 @@ class PersonaMappingItem(MappingItem):
     image_model: bool | None = (
         None  # Optional: indicates if persona's model supports images
     )
+    parameter_ids: list[str] | None = None  # Parameters this persona is valid for
+    field_ids: list[str] | None = None  # Fields linked to this persona
 
 
 class RubricMappingItem(MappingItem):
@@ -78,6 +80,9 @@ class FieldMappingItem(MappingItem):
 
     parameter_id: str
     parameter_name: str
+    conditional_parameter_ids: list[str] | None = (
+        None  # Conditional parameters shown when this field is selected
+    )
 
 
 class CohortMappingItem(MappingItem):
@@ -91,6 +96,8 @@ class DocumentMappingItem(MappingItem):
 
     filePath: str | None = None
     mimeType: str | None = None
+    parameter_ids: list[str] | None = None  # Parameters this document is valid for
+    field_ids: list[str] | None = None  # Fields linked to this document
 
 
 class StaffMappingItem(MappingItem):

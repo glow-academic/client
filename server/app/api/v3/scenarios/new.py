@@ -185,12 +185,20 @@ async def get_scenario_new(
         if isinstance(persona_mapping_data, dict):
             for pid, pdata in persona_mapping_data.items():
                 if isinstance(pdata, dict):
+                    parameter_ids = pdata.get("parameter_ids")
+                    field_ids = pdata.get("field_ids")
                     persona_mapping[pid] = PersonaMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
                         color=pdata.get("color", ""),
                         icon=pdata.get("icon", ""),
                         image_model=pdata.get("image_model", False),
+                        parameter_ids=[str(p) for p in parameter_ids]
+                        if isinstance(parameter_ids, list)
+                        else None,
+                        field_ids=[str(f) for f in field_ids]
+                        if isinstance(field_ids, list)
+                        else None,
                     )
 
         document_mapping_data = parse_jsonb(result.get("document_mapping"))
@@ -198,9 +206,17 @@ async def get_scenario_new(
         if isinstance(document_mapping_data, dict):
             for did, ddata in document_mapping_data.items():
                 if isinstance(ddata, dict):
+                    parameter_ids = ddata.get("parameter_ids")
+                    field_ids = ddata.get("field_ids")
                     document_mapping[did] = DocumentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
+                        parameter_ids=[str(p) for p in parameter_ids]
+                        if isinstance(parameter_ids, list)
+                        else None,
+                        field_ids=[str(f) for f in field_ids]
+                        if isinstance(field_ids, list)
+                        else None,
                     )
 
         parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
@@ -223,11 +239,17 @@ async def get_scenario_new(
         if isinstance(parameter_item_mapping_data, dict):
             for piid, pidata in parameter_item_mapping_data.items():
                 if isinstance(pidata, dict):
+                    conditional_parameter_ids = pidata.get("conditional_parameter_ids")
                     parameter_item_mapping[piid] = ParameterItemMappingItem(
                         name=pidata.get("name", ""),
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
+                        conditional_parameter_ids=[
+                            str(cp) for cp in conditional_parameter_ids
+                        ]
+                        if isinstance(conditional_parameter_ids, list)
+                        else None,
                     )
 
         department_mapping_data = parse_jsonb(result.get("department_mapping"))

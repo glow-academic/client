@@ -7619,6 +7619,10 @@ export interface components {
             filePath?: string | null;
             /** Mimetype */
             mimeType?: string | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
         };
         /**
          * DocumentsListRequest
@@ -8240,6 +8244,8 @@ export interface components {
             parameter_id: string;
             /** Parameter Name */
             parameter_name: string;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
         };
         /** FieldNewRequest */
         FieldNewRequest: {
@@ -9650,6 +9656,10 @@ export interface components {
             icon: string;
             /** Image Model */
             image_model?: boolean | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
         };
         /**
          * PersonaNewRequest

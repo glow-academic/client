@@ -75,3 +75,17 @@ CREATE INDEX ON persona_voice_agents (persona_id, active);
 -- Only one active voice agent per persona (enforced by unique partial index)
 CREATE UNIQUE INDEX persona_voice_agents_one_active
   ON persona_voice_agents(persona_id) WHERE active = true;
+
+-- Persona → Fields junction table (BCNF normalization)
+-- Allows personas to be filtered by field values
+CREATE TABLE persona_fields (
+  persona_id UUID NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+  field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (persona_id, field_id)
+);
+
+CREATE INDEX ON persona_fields (persona_id);
+CREATE INDEX ON persona_fields (field_id);

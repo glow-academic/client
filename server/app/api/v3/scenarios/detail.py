@@ -258,12 +258,20 @@ async def get_scenario_detail(
         if isinstance(persona_mapping_data, dict):
             for pid, pdata in persona_mapping_data.items():
                 if isinstance(pdata, dict):
+                    parameter_ids = pdata.get("parameter_ids")
+                    field_ids = pdata.get("field_ids")
                     persona_mapping[pid] = PersonaMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
                         color=pdata.get("color", ""),
                         icon=pdata.get("icon", ""),
                         image_model=pdata.get("image_model", False),
+                        parameter_ids=[str(p) for p in parameter_ids]
+                        if isinstance(parameter_ids, list)
+                        else None,
+                        field_ids=[str(f) for f in field_ids]
+                        if isinstance(field_ids, list)
+                        else None,
                     )
 
         document_mapping: DocumentMapping = {}
@@ -271,11 +279,19 @@ async def get_scenario_detail(
         if isinstance(doc_mapping_data, dict):
             for did, ddata in doc_mapping_data.items():
                 if isinstance(ddata, dict):
+                    parameter_ids = ddata.get("parameter_ids")
+                    field_ids = ddata.get("field_ids")
                     document_mapping[did] = DocumentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
                         filePath=ddata.get("filePath"),
                         mimeType=ddata.get("mimeType"),
+                        parameter_ids=[str(p) for p in parameter_ids]
+                        if isinstance(parameter_ids, list)
+                        else None,
+                        field_ids=[str(f) for f in field_ids]
+                        if isinstance(field_ids, list)
+                        else None,
                     )
 
         simulation_mapping: SimulationMapping = {}
@@ -321,11 +337,17 @@ async def get_scenario_detail(
         if isinstance(param_item_mapping_data, dict):
             for piid, pidata in param_item_mapping_data.items():
                 if isinstance(pidata, dict):
+                    conditional_parameter_ids = pidata.get("conditional_parameter_ids")
                     param_item_full_mapping[piid] = ParameterItemMappingItem(
                         name=pidata.get("name", ""),
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
+                        conditional_parameter_ids=[
+                            str(cp) for cp in conditional_parameter_ids
+                        ]
+                        if isinstance(conditional_parameter_ids, list)
+                        else None,
                     )
 
         department_mapping: DepartmentMapping = {}
