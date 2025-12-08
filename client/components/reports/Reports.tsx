@@ -10,7 +10,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { ReportsOut } from "@/app/(main)/analytics/reports/page";
-import { ExportPicker } from "@/components/common/forms/ExportPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { EXPORT_METRICS } from "@/components/common/forms/export-metrics";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -1365,19 +1366,97 @@ export default function Reports({
           <PopoverContent className="w-96 p-4" align="end">
             <div className="space-y-4">
               <div className="space-y-3">
-                <ExportPicker
-                  selectedMetrics={selectedMetrics}
-                  onSelect={setSelectedMetrics}
-                  label="Metrics"
-                  placeholder={
-                    brightspaceFormat
-                      ? "Choose at least one metric..."
-                      : selectedMetrics.length === 0
-                        ? "All metrics selected"
-                        : "Select metrics to export..."
-                  }
-                  description="Choose one or more metrics to include in the export."
-                />
+                <div className="grid gap-2">
+                  <GenericPicker
+                    items={EXPORT_METRICS}
+                    selectedIds={selectedMetrics}
+                    onSelect={setSelectedMetrics}
+                    getId={(item) => item.value}
+                    getLabel={(item) => item.label}
+                    getSearchText={(item) => `${item.label} ${item.description || ""}`}
+                    renderPreview={(item) => (
+                      <div className="grid gap-2">
+                        <h4 className="font-medium leading-none">{item.label || "No metric selected"}</h4>
+                        <div className="text-sm text-muted-foreground">
+                          {item.description || "No description available"}
+                        </div>
+                      </div>
+                    )}
+                    renderItem={(item, isSelected) => {
+                      const IconComponent = item.icon;
+                      return (
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="p-2 rounded-lg shadow-sm flex-shrink-0 bg-primary/10 border border-transparent group-data-[selected=true]:bg-primary/20 group-data-[selected=true]:border-primary-foreground">
+                            <IconComponent className="h-4 w-4 text-primary group-data-[selected=true]:text-primary-foreground stroke-current" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{item.label}</div>
+                            {item.description && (
+                              <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                {item.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }}
+                    renderButton={(selectedItems) => {
+                      const firstMetric = selectedItems[0];
+                      const IconComponent = firstMetric?.icon;
+                      return (
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {firstMetric && IconComponent && (
+                            <div className="p-1 rounded-md shadow-sm flex-shrink-0 bg-primary/10">
+                              <IconComponent className="h-3.5 w-3.5 text-primary" />
+                            </div>
+                          )}
+                          <span className="truncate">
+                            {selectedMetrics.length === 0
+                              ? brightspaceFormat
+                                ? "Choose at least one metric..."
+                                : "All metrics selected"
+                              : selectedMetrics.length === 1
+                                ? firstMetric?.label || "Select metrics to export..."
+                                : `${selectedMetrics.length} selected`}
+                          </span>
+                        </div>
+                      );
+                    }}
+                    renderChip={(item, onRemove) => {
+                      const IconComponent = item.icon;
+                      return (
+                        <div className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm">
+                          <IconComponent className="h-3 w-3" />
+                          <span>{item.label}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemove();
+                            }}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    }}
+                    placeholder={
+                      brightspaceFormat
+                        ? "Choose at least one metric..."
+                        : selectedMetrics.length === 0
+                          ? "All metrics selected"
+                          : "Select metrics to export..."
+                    }
+                    multiSelect={true}
+                    hideSelectedChips={false}
+                    buttonClassName="w-full"
+                    groupHeading="Metrics"
+                    showLabel={true}
+                    label="Metrics"
+                    description="Choose one or more metrics to include in the export."
+                  />
+                </div>
 
                 <div className="flex items-center space-x-2">
                   <Checkbox

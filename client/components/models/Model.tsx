@@ -16,19 +16,19 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { ModalityPicker } from "@/components/common/forms/ModalityPicker";
+import { MODALITIES } from "@/components/common/forms/modalities";
 import {
   PricingPicker,
   type PricingEntry,
 } from "@/components/common/forms/PricingPicker";
 import { ProviderPicker } from "@/components/common/forms/ProviderPicker";
-import { QualityPicker } from "@/components/common/forms/QualityPicker";
-import { ReasoningLevelPicker } from "@/components/common/forms/ReasoningLevelPicker";
+import { QUALITIES } from "@/components/common/forms/qualities";
+import { REASONING_LEVELS } from "@/components/common/forms/reasoning-levels";
 import {
   TemperatureBoundsPicker,
   type TemperatureBounds,
 } from "@/components/common/forms/TemperatureBoundsPicker";
-import { VoiceMultiPicker } from "@/components/common/forms/VoiceMultiPicker";
+import { VOICES } from "@/components/common/forms/voices";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -788,29 +788,56 @@ export default function Model({
             <CollapsibleContent>
               {formData.enableModalities !== false && (
                 <div className="pl-6 pt-1">
-                  <ModalityPicker
-                    inputModalities={formData.modalities?.input || ["text"]}
-                    outputModalities={formData.modalities?.output || ["text"]}
-                    onInputChange={(modalities) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        modalities: {
-                          input: modalities.length > 0 ? modalities : ["text"],
-                          output: prev.modalities?.output || ["text"],
-                        },
-                      }))
-                    }
-                    onOutputChange={(modalities) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        modalities: {
-                          input: prev.modalities?.input || ["text"],
-                          output: modalities.length > 0 ? modalities : ["text"],
-                        },
-                      }))
-                    }
-                    disabled={isSubmitting || isReadonly}
-                  />
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Input</label>
+                      <GenericPicker
+                        items={MODALITIES}
+                        selectedIds={formData.modalities?.input || ["text"]}
+                        onSelect={(modalities) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            modalities: {
+                              input: modalities.length > 0 ? modalities : ["text"],
+                              output: prev.modalities?.output || ["text"],
+                            },
+                          }))
+                        }
+                        getId={(item) => item.id}
+                        getLabel={(item) => item.name}
+                        getSearchText={(item) => item.name}
+                        disabled={isSubmitting || isReadonly}
+                        multiSelect={true}
+                        hideSelectedChips={true}
+                        buttonClassName="w-full"
+                        groupHeading="Input Modalities"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Output</label>
+                      <GenericPicker
+                        items={MODALITIES}
+                        selectedIds={formData.modalities?.output || ["text"]}
+                        onSelect={(modalities) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            modalities: {
+                              input: prev.modalities?.input || ["text"],
+                              output: modalities.length > 0 ? modalities : ["text"],
+                            },
+                          }))
+                        }
+                        getId={(item) => item.id}
+                        getLabel={(item) => item.name}
+                        getSearchText={(item) => item.name}
+                        disabled={isSubmitting || isReadonly}
+                        multiSelect={true}
+                        hideSelectedChips={true}
+                        buttonClassName="w-full"
+                        groupHeading="Output Modalities"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </CollapsibleContent>
@@ -1031,7 +1058,8 @@ export default function Model({
                 <CollapsibleContent>
                   {formData.enableReasoningLevels && (
                     <div className="pl-6 pt-1">
-                      <ReasoningLevelPicker
+                      <GenericPicker
+                        items={REASONING_LEVELS}
                         selectedIds={formData.reasoning_levels || []}
                         onSelect={(ids) =>
                           setFormData((prev) => ({
@@ -1039,6 +1067,35 @@ export default function Model({
                             reasoning_levels: ids,
                           }))
                         }
+                        getId={(item) => item.id}
+                        getLabel={(item) => item.name}
+                        getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                        renderPreview={(item) => (
+                          <div className="grid gap-2">
+                            <h4 className="font-medium leading-none">{item.name || "No level selected"}</h4>
+                            <div className="text-sm text-muted-foreground">
+                              {item.description || "No description available"}
+                            </div>
+                          </div>
+                        )}
+                        renderItem={(item, isSelected) => (
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate">{item.name}</div>
+                                {item.description && (
+                                  <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                    {item.description}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        multiSelect={true}
+                        hideSelectedChips={true}
+                        buttonClassName="w-full"
+                        groupHeading="Reasoning Levels"
                         disabled={isSubmitting || isReadonly}
                       />
                     </div>
@@ -1116,7 +1173,8 @@ export default function Model({
                   <CollapsibleContent>
                     {formData.enableVoices && (
                       <div className="pl-6 pt-1">
-                        <VoiceMultiPicker
+                        <GenericPicker
+                          items={VOICES}
                           selectedIds={formData.voices || []}
                           onSelect={(ids) =>
                             setFormData((prev) => ({
@@ -1124,7 +1182,14 @@ export default function Model({
                               voices: ids.length > 0 ? ids : [],
                             }))
                           }
+                          getId={(item) => item.id}
+                          getLabel={(item) => item.name}
+                          getSearchText={(item) => item.name}
                           disabled={isSubmitting || isReadonly}
+                          multiSelect={true}
+                          hideSelectedChips={true}
+                          buttonClassName="w-full"
+                          groupHeading="Voices"
                         />
                       </div>
                     )}
@@ -1202,12 +1267,42 @@ export default function Model({
               <CollapsibleContent>
                 {formData.enableQualities && (
                   <div className="pl-6 pt-1">
-                    <QualityPicker
+                    <GenericPicker
+                      items={QUALITIES}
                       selectedIds={formData.qualities || []}
                       onSelect={(ids) =>
                         setFormData((prev) => ({ ...prev, qualities: ids }))
                       }
+                      getId={(item) => item.id}
+                      getLabel={(item) => item.name}
+                      getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">{item.name || "No quality selected"}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       disabled={isSubmitting || isReadonly}
+                      multiSelect={true}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Qualities"
                     />
                   </div>
                 )}

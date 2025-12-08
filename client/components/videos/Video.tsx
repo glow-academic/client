@@ -74,14 +74,13 @@ import {
 import { cn } from "@/lib/utils";
 
 // Custom Components
-import { AgentPicker } from "@/components/common/forms/AgentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   DocumentMappingItem,
   DocumentPicker,
 } from "@/components/common/forms/DocumentPicker";
 import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
-import { ParameterPicker } from "@/components/common/forms/ParameterPicker";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Brain, Check, X } from "lucide-react";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
@@ -2027,14 +2026,20 @@ export default function Video({
               <div className="space-y-2">
                 <Label htmlFor="parameters">Parameters</Label>
                 {formData?.parameterIds !== undefined ? (
-                  <ParameterPicker
-                    mapping={parameterMapping}
-                    validIds={videoData.valid_parameter_ids || []}
+                  <GenericPicker
+                    items={parameterMapping}
+                    itemIds={videoData.valid_parameter_ids || []}
                     selectedIds={formData.parameterIds || []}
                     onSelect={(ids) => handleInputChange("parameterIds", ids)}
+                    getId={(item) => (item as unknown as { id: string }).id}
+                    getLabel={(item) => item.name || ""}
+                    getSearchText={(item) => `${item.name} ${item.description || ""}`}
                     placeholder="Select parameters..."
                     disabled={isReadonly}
                     multiSelect={true}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
+                    groupHeading="Parameters"
                   />
                 ) : null}
               </div>
@@ -2175,9 +2180,9 @@ export default function Video({
               <div className="space-y-2">
                 <Label htmlFor="outlineAgentId">Outline Agent</Label>
                 {formData?.outlineAgentId !== undefined ? (
-                  <AgentPicker
-                    mapping={agentMapping as Record<string, AgentMappingItem>}
-                    validIds={outlineAgentIds}
+                  <GenericPicker
+                    items={agentMapping as Record<string, AgentMappingItem>}
+                    itemIds={outlineAgentIds}
                     selectedIds={
                       formData?.outlineAgentId ? [formData.outlineAgentId] : []
                     }
@@ -2187,9 +2192,37 @@ export default function Video({
                         outlineAgentId: ids[0] || null,
                       }))
                     }
+                    getId={(item) => (item as unknown as { id: string }).id}
+                    getLabel={(item) => item.name || ""}
+                    getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                    renderPreview={(item) => (
+                      <div className="grid gap-2">
+                        <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                        <div className="text-sm text-muted-foreground">
+                          {item.description || "No description available"}
+                        </div>
+                      </div>
+                    )}
+                    renderItem={(item, isSelected) => (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate">{item.name}</div>
+                            {item.description && (
+                              <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                {item.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     placeholder="Select outline agent"
                     disabled={isReadonly}
                     multiSelect={false}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
+                    groupHeading="Agents"
                   />
                 ) : null}
               </div>

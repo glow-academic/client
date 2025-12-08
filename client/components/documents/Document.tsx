@@ -23,7 +23,6 @@ import type {
   GenerateTemplateOut,
 } from "@/app/(main)/management/documents/new/page";
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
-import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { TemplatePicker } from "@/components/common/forms/TemplatePicker";
@@ -1764,9 +1763,9 @@ export default function Document({
                     <div className="space-y-2">
                       <Label htmlFor="classifyAgentId">Classify Agent</Label>
                       {formData?.classifyAgentId !== undefined ? (
-                        <AgentPicker
-                          mapping={agentMapping}
-                          validIds={classifyAgentIds}
+                        <GenericPicker
+                          items={agentMapping}
+                          itemIds={classifyAgentIds}
                           selectedIds={
                             formData?.classifyAgentId
                               ? [formData.classifyAgentId]
@@ -1778,9 +1777,37 @@ export default function Document({
                               classifyAgentId: ids[0] || null,
                             }))
                           }
+                          getId={(item) => (item as unknown as { id: string }).id}
+                          getLabel={(item) => item.name || ""}
+                          getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                          renderPreview={(item) => (
+                            <div className="grid gap-2">
+                              <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                              <div className="text-sm text-muted-foreground">
+                                {item.description || "No description available"}
+                              </div>
+                            </div>
+                          )}
+                          renderItem={(item, isSelected) => (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate">{item.name}</div>
+                                  {item.description && (
+                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                      {item.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           placeholder="Select classify agent"
                           disabled={isSubmitting}
                           multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="w-full"
+                          groupHeading="Agents"
                         />
                       ) : null}
                     </div>

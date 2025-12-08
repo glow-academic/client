@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { AgentPicker } from "@/components/common/forms/AgentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
 import { Badge } from "@/components/ui/badge";
@@ -275,9 +275,9 @@ export function SimulationScenariosTable({
                 const item = row.original;
                 return (
                   <div className="flex items-center justify-center min-w-[150px]">
-                    <AgentPicker
-                      mapping={agentMapping}
-                      validIds={hintAgentIds}
+                    <GenericPicker
+                      items={agentMapping}
+                      itemIds={hintAgentIds}
                       selectedIds={
                         item.hint_agent_id ? [item.hint_agent_id] : []
                       }
@@ -287,10 +287,37 @@ export function SimulationScenariosTable({
                           ids[0] || null
                         )
                       }
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       placeholder="Select agent"
                       disabled={readonly || !onHintAgentChange}
                       multiSelect={false}
+                      hideSelectedChips={true}
                       buttonClassName="h-8 text-xs"
+                      groupHeading="Agents"
                     />
                   </div>
                 );

@@ -11,7 +11,8 @@ import type {
   RefreshAnalyticsIn,
   RefreshAnalyticsOut,
 } from "@/app/(main)/layout-server";
-import { ProfileRolePicker } from "@/components/common/forms/ProfileRolePicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { PROFILE_ROLES, ROLE_LABEL, type ProfileRole } from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
@@ -338,17 +339,24 @@ export function AnalyticsFilters({
 
             {/* Role Picker - hide on home, report, and practice pages */}
             {!homePage && !reportPage && !practicePage && (
-              <ProfileRolePicker
-                roles={
+              <GenericPicker
+                items={
                   selectedCohortIds.length > 0
-                    ? (scopedRoles.filter(
+                    ? PROFILE_ROLES.filter(
                         (role) => role === "instructional" || role === "ta",
-                      ) as ProfileRole[]) // Intersection of scoped roles and cohort-allowed roles
-                    : (scopedRoles as ProfileRole[]) // Show scoped roles when no cohorts selected
+                      )
+                    : PROFILE_ROLES.filter((role) => scopedRoles.includes(role))
                 }
-                selectedRoles={selectedRoles}
-                onChange={handleRoleSelect}
+                selectedIds={selectedRoles}
+                onSelect={(ids) => handleRoleSelect(ids as ProfileRole[])}
+                getId={(item) => item}
+                getLabel={(item) => ROLE_LABEL[item as ProfileRole]}
+                getSearchText={(item) => ROLE_LABEL[item as ProfileRole]}
                 placeholder="Roles"
+                multiSelect={true}
+                hideSelectedChips={true}
+                buttonClassName="min-w-[75px] justify-between"
+                groupHeading="Roles"
               />
             )}
 

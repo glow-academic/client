@@ -9,7 +9,6 @@ import type {
   CreateEvalOut,
 } from "@/app/(main)/engine/evals/new/page";
 import type { RubricsListOut } from "@/app/(main)/engine/rubrics/page";
-import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -257,14 +256,42 @@ export function EvalForm({
               Loading agents...
             </div>
           ) : (
-            <AgentPicker
-              mapping={agentMappingForPicker}
-              validIds={validAgentIds}
+            <GenericPicker
+              items={agentMappingForPicker}
+              itemIds={validAgentIds}
               selectedIds={selectedAgentId}
               onSelect={setSelectedAgentId}
+              getId={(item) => (item as unknown as { id: string }).id}
+              getLabel={(item) => item.name || ""}
+              getSearchText={(item) => `${item.name} ${item.description || ""}`}
+              renderPreview={(item) => (
+                <div className="grid gap-2">
+                  <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                  <div className="text-sm text-muted-foreground">
+                    {item.description || "No description available"}
+                  </div>
+                </div>
+              )}
+              renderItem={(item, isSelected) => (
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate">{item.name}</div>
+                      {item.description && (
+                        <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                          {item.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               multiSelect={false}
               placeholder="Select an agent..."
               disabled={isSubmitting}
+              hideSelectedChips={true}
+              buttonClassName="w-full"
+              groupHeading="Agents"
             />
           )}
         </div>

@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { FieldPicker } from "@/components/common/forms/FieldPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -306,14 +306,19 @@ export function ParameterFieldsTable({
           </div>
           {!readonly && onFieldSelect && (
             <div className="w-[200px]">
-              <FieldPicker
-                mapping={fieldMapping}
-                validIds={validFieldIds}
+              <GenericPicker
+                items={fieldMapping}
+                itemIds={validFieldIds}
                 selectedIds={selectedFieldIds}
                 onSelect={onFieldSelect}
+                getId={(item) => (item as unknown as { id: string }).id}
+                getLabel={(item) => item.name || ""}
+                getSearchText={(item) => `${item.name} ${item.description || ""}`}
                 placeholder="Add fields..."
                 multiSelect={true}
-                buttonClassName="h-9"
+                hideSelectedChips={true}
+                buttonClassName="h-9 w-full"
+                groupHeading="Fields"
               />
             </div>
           )}

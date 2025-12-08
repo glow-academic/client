@@ -21,7 +21,6 @@ import type {
   UpdatePersonaIn,
   UpdatePersonaOut,
 } from "@/app/(main)/create/personas/p/[personaId]/page";
-import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
@@ -876,9 +875,9 @@ export default function Persona({
                 <div className="space-y-2">
                   <Label htmlFor="textAgentId">Text Agent *</Label>
                   {formData?.textAgentId !== undefined ? (
-                    <AgentPicker
-                      mapping={personaData?.agent_mapping || {}}
-                      validIds={
+                    <GenericPicker
+                      items={personaData?.agent_mapping || {}}
+                      itemIds={
                         personaData?.valid_agent_ids?.filter((id) => {
                           const agent = personaData?.agent_mapping?.[id];
                           return agent?.roles?.includes("simulation-text");
@@ -893,9 +892,37 @@ export default function Persona({
                           textAgentId: ids[0] || null,
                         }))
                       }
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       placeholder="Select text agent"
                       disabled={isReadonly}
                       multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Agents"
                     />
                   ) : null}
                 </div>
@@ -907,9 +934,9 @@ export default function Persona({
                 <div className="space-y-2">
                   <Label htmlFor="voiceAgentId">Voice Agent *</Label>
                   {formData?.voiceAgentId !== undefined ? (
-                    <AgentPicker
-                      mapping={personaData?.agent_mapping || {}}
-                      validIds={
+                    <GenericPicker
+                      items={personaData?.agent_mapping || {}}
+                      itemIds={
                         personaData?.valid_agent_ids?.filter((id) => {
                           const agent = personaData?.agent_mapping?.[id];
                           return agent?.roles?.includes("simulation-voice");
@@ -924,9 +951,37 @@ export default function Persona({
                           voiceAgentId: ids[0] || null,
                         }))
                       }
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       placeholder="Select voice agent"
                       disabled={isReadonly}
                       multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Agents"
                     />
                   ) : null}
                 </div>

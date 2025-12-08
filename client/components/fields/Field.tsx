@@ -15,7 +15,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { ParameterPicker } from "@/components/common/forms/ParameterPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
@@ -359,9 +358,9 @@ export default function Field({
           <div className="space-y-2">
             <Label htmlFor="conditionalParameters">Conditional Parameters</Label>
             {formData?.conditionalParameterIds !== undefined ? (
-              <ParameterPicker
-                mapping={parameterMapping}
-                validIds={validParameterIds}
+              <GenericPicker
+                items={parameterMapping}
+                itemIds={validParameterIds}
                 selectedIds={formData.conditionalParameterIds || []}
                 onSelect={(ids) =>
                   setFormData((prev) => ({
@@ -369,9 +368,14 @@ export default function Field({
                     conditionalParameterIds: ids,
                   }))
                 }
+                getId={(item) => (item as unknown as { id: string }).id}
+                getLabel={(item) => item.name || ""}
+                getSearchText={(item) => `${item.name} ${item.description || ""}`}
                 placeholder="Select conditional parameters..."
                 multiSelect={true}
-                triggerProps={{ "data-testid": "picker-conditional-parameter" }}
+                hideSelectedChips={true}
+                buttonClassName="w-full"
+                groupHeading="Parameters"
               />
             ) : null}
             <p className="text-xs text-muted-foreground">

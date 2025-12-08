@@ -13,13 +13,11 @@ import { toast } from "sonner";
 import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
 import { AGENT_ROLES } from "@/components/common/forms/AgentRolePicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { ModelPicker } from "@/components/common/forms/ModelPicker";
 import {
   PromptInfo,
   PromptPicker,
 } from "@/components/common/forms/PromptPicker";
-import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
-import { VoiceMultiPicker } from "@/components/common/forms/VoiceMultiPicker";
+import { VOICES } from "@/components/common/forms/voices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1079,9 +1077,9 @@ export default function SystemAgent({
                 </Label>
                 {formData?.modelId !== undefined ? (
                   <>
-                    <ModelPicker
-                      mapping={modelMapping}
-                      validIds={filteredValidModelIds}
+                    <GenericPicker
+                      items={modelMapping}
+                      itemIds={filteredValidModelIds}
                       selectedIds={formData?.modelId ? [formData.modelId] : []}
                       onSelect={(ids) => {
                         const newModelId = ids[0] || "";
@@ -1089,12 +1087,42 @@ export default function SystemAgent({
                         // If selected model doesn't support current reasoning level, reset to "none"
                         // This will be handled by conditional rendering below
                       }}
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) =>
+                        `${item.name} ${item.description || ""}`
+                      }
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">
+                            {item.name || "No model selected"}
+                          </h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       placeholder="Select a model"
                       multiSelect={false}
+                      hideSelectedChips={true}
                       buttonClassName={
-                        errors.modelId ? "border-destructive" : ""
+                        errors.modelId ? "border-destructive w-full" : "w-full"
                       }
-                      triggerProps={{ "data-testid": "picker-model" }}
+                      groupHeading="Models"
                     />
                     {filteredValidModelIds.length === 0 && formData?.role && (
                       <p className="text-xs text-muted-foreground">
@@ -1117,9 +1145,9 @@ export default function SystemAgent({
                 <div className="space-y-2">
                   <Label htmlFor="reasoning">Reasoning Effort</Label>
                   {formData?.model_reasoning_level_id !== undefined ? (
-                    <ReasoningPicker
-                      mapping={agentDetail?.reasoning_mapping || {}}
-                      validIds={
+                    <GenericPicker
+                      items={agentDetail?.reasoning_mapping || {}}
+                      itemIds={
                         agentDetail?.reasoning_options &&
                         Array.isArray(agentDetail.reasoning_options) &&
                         agentDetail.reasoning_options.length > 0
@@ -1156,9 +1184,40 @@ export default function SystemAgent({
                             | "high"
                         );
                       }}
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) =>
+                        `${item.name} ${item.description || ""}`
+                      }
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">
+                            {item.name || "No level selected"}
+                          </h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       placeholder="Select reasoning effort"
                       multiSelect={false}
-                      triggerProps={{ "data-testid": "picker-reasoning" }}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Reasoning Effort"
                     />
                   ) : null}
                 </div>
@@ -1169,7 +1228,8 @@ export default function SystemAgent({
                 <div className="space-y-2">
                   <Label htmlFor="voices">Voices</Label>
                   {formData?.model_voice_ids !== undefined ? (
-                    <VoiceMultiPicker
+                    <GenericPicker
+                      items={VOICES}
                       selectedIds={
                         formData.model_voice_ids &&
                         formData.model_voice_ids.length > 0
@@ -1180,15 +1240,22 @@ export default function SystemAgent({
                               .map((v) => v.voice)
                           : formData.voices || []
                       }
-                      onSelect={(voiceNames) => {
-                        // Map voice names back to option IDs
+                      onSelect={(voiceIds) => {
+                        // Map voice IDs back to option IDs
                         const selectedIds = availableVoices
-                          .filter((v) => voiceNames.includes(v.voice))
+                          .filter((v) => voiceIds.includes(v.voice))
                           .map((v) => v.id);
                         handleInputChange("model_voice_ids", selectedIds);
-                        handleInputChange("voices", voiceNames);
+                        handleInputChange("voices", voiceIds);
                       }}
+                      getId={(item) => item.id}
+                      getLabel={(item) => item.name}
+                      getSearchText={(item) => item.name}
                       disabled={isSubmitting || isReadonly}
+                      multiSelect={true}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Voices"
                     />
                   ) : null}
                 </div>
