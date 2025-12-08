@@ -7,51 +7,32 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { DocumentPicker } from "@/components/common/forms/DocumentPicker";
 import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
-import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
-import { VideoPicker } from "@/components/common/forms/VideoPicker";
+import {
+  ParameterFieldsTable,
+  type FieldConnectionItem,
+} from "@/components/common/parameters/ParameterFieldsTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  getDefaultDepartmentIds,
-  transformDepartmentIdsForSubmit,
-} from "@/utils/department-picker-helpers";
-import {
-  GraduationCap,
-  Plus,
-  Power,
-  Trash2,
-} from "lucide-react";
+import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
+import { GraduationCap, Power } from "lucide-react";
 
 // Type-only import from server page
 import type {
   CreateParameterIn,
   CreateParameterOut,
-  ParameterNewOut,
   ParameterDetailOut,
+  ParameterNewOut,
   UpdateParameterIn,
   UpdateParameterOut,
 } from "@/app/(main)/management/parameters/p/[parameterId]/page";
@@ -71,8 +52,11 @@ interface FormData {
   departmentIds?: string[] | null;
   personaIds?: string[];
   documentIds?: string[];
-  scenarioIds?: string[];
-  videoIds?: string[];
+}
+
+interface FieldConnectionState {
+  default: boolean;
+  active: boolean;
 }
 
 interface ParameterItemFormData {
@@ -93,10 +77,10 @@ export interface ParameterProps {
   parameterDetail?: ParameterDetailOut;
   parameterDetailDefault?: ParameterNewOut;
   createParameterAction?: (
-    input: CreateParameterIn,
+    input: CreateParameterIn
   ) => Promise<CreateParameterOut>;
   updateParameterAction?: (
-    input: UpdateParameterIn,
+    input: UpdateParameterIn
   ) => Promise<UpdateParameterOut>;
 }
 
@@ -117,9 +101,9 @@ export default function Parameter({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null,
+        effectiveProfile?.primaryDepartmentId || null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = useMemo(
@@ -132,10 +116,8 @@ export default function Parameter({
         defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
       personaIds: [],
       documentIds: [],
-      scenarioIds: [],
-      videoIds: [],
     }),
-    [defaultDepartmentIds],
+    [defaultDepartmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,6 +125,13 @@ export default function Parameter({
   const [parameterItemsFormData, setParameterItemsFormData] = useState<
     ParameterItemFormData[]
   >([]);
+  // Field connections state: field_id -> { default, active }
+  const [fieldConnections, setFieldConnections] = useState<
+    Record<string, FieldConnectionState>
+  >({});
+  const [originalFieldConnections, setOriginalFieldConnections] = useState<
+    Record<string, FieldConnectionState>
+  >({});
 
   // Use server-provided data (no React Query needed when server data is provided)
   const parameterDetail = serverParameterDetail;
@@ -194,19 +183,90 @@ export default function Parameter({
   const departmentMapping = useMemo(
     () =>
       (parameterData?.department_mapping || {}) as Record<string, MappingItem>,
-    [parameterData],
+    [parameterData]
   );
 
   const validDepartmentIds = useMemo(
     () => parameterData?.valid_department_ids || [],
-    [parameterData],
+    [parameterData]
   );
 
-  // Parameter items come nested in response
+  // Parameter items come nested in response (for backward compatibility)
   const parameterItems = useMemo(
     () => parameterData?.parameter_items || [],
-    [parameterData],
+    [parameterData]
   );
+
+  // Build field connection items for table
+  const fieldConnectionItems = useMemo((): FieldConnectionItem[] => {
+    const allFieldIds = parameterData?.valid_field_ids || [];
+    const fieldMapping = parameterData?.field_mapping || {};
+    const connections = fieldConnections;
+
+    return allFieldIds.map((fieldId) => {
+      const field = fieldMapping[fieldId];
+      const connection = connections[fieldId];
+      const isConnected = !!connection;
+
+      return {
+        field_id: fieldId,
+        name:
+          field && typeof field === "object" && "name" in field
+            ? String(field["name"])
+            : fieldId,
+        description:
+          field && typeof field === "object" && "description" in field
+            ? String(field["description"] || "")
+            : "",
+        default: connection?.default || false,
+        active: connection?.active ?? true,
+        usage_count:
+          field && typeof field === "object" && "usage_count" in field
+            ? Number(field["usage_count"] || 0)
+            : 0,
+        isConnected,
+      };
+    });
+  }, [
+    parameterData?.valid_field_ids,
+    parameterData?.field_mapping,
+    fieldConnections,
+  ]);
+
+  // Filter personas and documents by selected departments
+  const filteredPersonaIds = useMemo(() => {
+    const allPersonaIds = parameterData?.valid_persona_ids || [];
+    // Server already filters by parameter departments, so we can use all valid IDs
+    return allPersonaIds;
+  }, [parameterData?.valid_persona_ids]);
+
+  const filteredDocumentIds = useMemo(() => {
+    const allDocumentIds = parameterData?.valid_document_ids || [];
+    // Server already filters by parameter departments
+    return allDocumentIds;
+  }, [parameterData?.valid_document_ids]);
+
+  const filteredPersonaMapping = useMemo(() => {
+    const mapping = parameterData?.persona_mapping || {};
+    const filtered: Record<string, Record<string, unknown>> = {};
+    filteredPersonaIds.forEach((id) => {
+      if (mapping[id]) {
+        filtered[id] = mapping[id] as Record<string, unknown>;
+      }
+    });
+    return filtered;
+  }, [parameterData?.persona_mapping, filteredPersonaIds]);
+
+  const filteredDocumentMapping = useMemo(() => {
+    const mapping = parameterData?.document_mapping || {};
+    const filtered: Record<string, Record<string, unknown>> = {};
+    filteredDocumentIds.forEach((id) => {
+      if (mapping[id]) {
+        filtered[id] = mapping[id] as Record<string, unknown>;
+      }
+    });
+    return filtered;
+  }, [parameterData?.document_mapping, filteredDocumentIds]);
 
   const [initiallySorted, setInitiallySorted] = useState(false);
 
@@ -221,8 +281,6 @@ export default function Parameter({
         departmentIds: parameterData.department_ids || null,
         personaIds: parameterData.persona_ids || [],
         documentIds: parameterData.document_ids || [],
-        scenarioIds: parameterData.scenario_ids || [],
-        videoIds: parameterData.video_ids || [],
       });
     } else if (!isEditMode && parameterData) {
       // For create mode, use data from default detail endpoint
@@ -234,7 +292,7 @@ export default function Parameter({
     }
   }, [parameterData, isEditMode, initialFormData, defaultDepartmentIds]);
 
-  // Initialize parameter items from v3 nested data
+  // Initialize parameter items from v3 nested data (for backward compatibility)
   useEffect(() => {
     if (!initiallySorted && parameterItems && parameterItems.length > 0) {
       const sorted = parameterItems
@@ -256,6 +314,30 @@ export default function Parameter({
     }
   }, [initiallySorted, parameterItems]);
 
+  // Initialize field connections from server data
+  useEffect(() => {
+    if (isEditMode && parameterData?.field_connections) {
+      const connections: Record<string, FieldConnectionState> = {};
+      const originalConnections: Record<string, FieldConnectionState> = {};
+      parameterData.field_connections.forEach((conn) => {
+        connections[conn.field_id] = {
+          default: conn.default,
+          active: conn.active,
+        };
+        originalConnections[conn.field_id] = {
+          default: conn.default,
+          active: conn.active,
+        };
+      });
+      setFieldConnections(connections);
+      setOriginalFieldConnections(originalConnections);
+    } else if (!isEditMode) {
+      // Reset for create mode
+      setFieldConnections({});
+      setOriginalFieldConnections({});
+    }
+  }, [isEditMode, parameterData?.field_connections]);
+
   // Update parameter items when data changes (for edit mode)
   useEffect(() => {
     if (mode === "create") {
@@ -264,21 +346,79 @@ export default function Parameter({
     if (!parameterItems) return;
     if (!initiallySorted) return; // wait until initial sort hook runs
 
-      const mapped = parameterItems
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map((item) => ({
-          id: item.parameter_item_id,
-          name: item.name,
-          description: item.description,
-          default: item.default ?? false,
-          // V3 response has usage_count, derive canDelete from it
-          canDelete: (item.usage_count ?? 0) === 0,
-          departmentIds: item.department_ids ?? null,
-          isNew: false,
-          isDeleted: false,
-        }));
+    const mapped = parameterItems
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((item) => ({
+        id: item.parameter_item_id,
+        name: item.name,
+        description: item.description,
+        default: item.default ?? false,
+        // V3 response has usage_count, derive canDelete from it
+        canDelete: (item.usage_count ?? 0) === 0,
+        departmentIds: item.department_ids ?? null,
+        isNew: false,
+        isDeleted: false,
+      }));
     setParameterItemsFormData(mapped);
   }, [parameterItems, mode, initiallySorted]);
+
+  // Handlers for field connections
+  const handleFieldSelect = useCallback((fieldIds: string[]) => {
+    setFieldConnections((prev) => {
+      const updated = { ...prev };
+      // Add new connections with default active=true, default=false
+      fieldIds.forEach((fieldId) => {
+        if (!updated[fieldId]) {
+          updated[fieldId] = { default: false, active: true };
+        }
+      });
+      // Remove connections that are no longer selected
+      Object.keys(updated).forEach((fieldId) => {
+        if (!fieldIds.includes(fieldId)) {
+          delete updated[fieldId];
+        }
+      });
+      return updated;
+    });
+  }, []);
+
+  const handleDefaultToggle = useCallback(
+    (fieldId: string, isDefault: boolean) => {
+      setFieldConnections((prev) => {
+        const updated = { ...prev };
+        if (isDefault) {
+          // Unset all other defaults
+          Object.keys(updated).forEach((id) => {
+            if (id !== fieldId) {
+              updated[id] = { ...updated[id]!, default: false };
+            }
+          });
+        }
+        updated[fieldId] = { ...updated[fieldId]!, default: isDefault };
+        return updated;
+      });
+    },
+    []
+  );
+
+  const handleActiveToggle = useCallback(
+    (fieldId: string, isActive: boolean) => {
+      setFieldConnections((prev) => {
+        const updated = { ...prev };
+        updated[fieldId] = { ...updated[fieldId]!, active: isActive };
+        return updated;
+      });
+    },
+    []
+  );
+
+  const handleRemoveConnection = useCallback((fieldId: string) => {
+    setFieldConnections((prev) => {
+      const updated = { ...prev };
+      delete updated[fieldId];
+      return updated;
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,47 +437,39 @@ export default function Parameter({
     setIsSubmitting(true);
 
     try {
-      // Prepare parameter items for submission (only non-deleted items)
-      // Transform department_ids for each item (non-superadmin: empty -> all valid departments)
-      // Ensure exactly one default item
-      const activeItems = parameterItemsFormData.filter((item) => !item.isDeleted);
-      const defaultCount = activeItems.filter((item) => item.default).length;
-      
-      // If no default or multiple defaults, set first item as default
-      let itemsToSubmit = activeItems.map((item, index) => {
-        const itemDepartmentIds = item.departmentIds || [];
-        const transformedDepartmentIds = transformDepartmentIdsForSubmit(
-          itemDepartmentIds,
-          isSuperadmin,
-          validDepartmentIds,
-        );
-        return {
-          name: item.name,
-          description: item.description,
-          default: defaultCount === 0 ? index === 0 : item.default,
-          department_ids: transformedDepartmentIds,
-        };
-      });
-      
+      // Prepare field connections for submission
+      const connectionEntries = Object.entries(fieldConnections);
+      const defaultCount = connectionEntries.filter(
+        ([_, conn]) => conn.default
+      ).length;
+
       // Ensure exactly one default
-      if (defaultCount === 0 && itemsToSubmit.length > 0) {
-        itemsToSubmit[0].default = true;
+      let fieldConnectionsToSubmit = connectionEntries.map(
+        ([fieldId, conn], index) => ({
+          field_id: fieldId,
+          default: defaultCount === 0 ? index === 0 : conn.default,
+          active: conn.active,
+        })
+      );
+
+      if (defaultCount === 0 && fieldConnectionsToSubmit.length > 0) {
+        fieldConnectionsToSubmit[0]!.default = true;
       } else if (defaultCount > 1) {
-        // Keep only the first default, set others to false
+        // Keep only the first default
         let foundFirst = false;
-        itemsToSubmit = itemsToSubmit.map((item) => {
-          if (item.default && !foundFirst) {
+        fieldConnectionsToSubmit = fieldConnectionsToSubmit.map((conn) => {
+          if (conn.default && !foundFirst) {
             foundFirst = true;
-            return { ...item, default: true };
+            return { ...conn, default: true };
           }
-          return { ...item, default: false };
+          return { ...conn, default: false };
         });
       }
-      
-      const parameter_items = itemsToSubmit;
+
+      const profileId = effectiveProfile?.id || "guest-profile-id";
 
       if (isEditMode) {
-        // V3 API: Single atomic update with nested items
+        // V3 API: Single atomic update with field connections
         await handleUpdateParameter({
           parameterId: parameterId!,
           name: formData.name!,
@@ -345,27 +477,37 @@ export default function Parameter({
           active: formData.active || false,
           practice_parameter: formData.practice_parameter || false,
           department_ids: formData.departmentIds ?? null,
-          parameter_items,
-          persona_ids: formData.personaIds && formData.personaIds.length > 0 ? formData.personaIds : null,
-          document_ids: formData.documentIds && formData.documentIds.length > 0 ? formData.documentIds : null,
-          scenario_ids: formData.scenarioIds && formData.scenarioIds.length > 0 ? formData.scenarioIds : null,
-          video_ids: formData.videoIds && formData.videoIds.length > 0 ? formData.videoIds : null,
+          field_connections: fieldConnectionsToSubmit,
+          persona_ids:
+            formData.personaIds && formData.personaIds.length > 0
+              ? formData.personaIds
+              : null,
+          document_ids:
+            formData.documentIds && formData.documentIds.length > 0
+              ? formData.documentIds
+              : null,
+          profileId,
         });
 
         toast.success("Parameter updated successfully!");
       } else {
-        // V3 API: Single atomic create with nested items
+        // V3 API: Single atomic create with field connections
         await handleCreateParameter({
           name: formData.name!,
           description: formData.description!,
           active: formData.active || false,
           practice_parameter: formData.practice_parameter || false,
           department_ids: formData.departmentIds ?? null,
-          parameter_items,
-          persona_ids: formData.personaIds && formData.personaIds.length > 0 ? formData.personaIds : null,
-          document_ids: formData.documentIds && formData.documentIds.length > 0 ? formData.documentIds : null,
-          scenario_ids: formData.scenarioIds && formData.scenarioIds.length > 0 ? formData.scenarioIds : null,
-          video_ids: formData.videoIds && formData.videoIds.length > 0 ? formData.videoIds : null,
+          field_connections: fieldConnectionsToSubmit,
+          persona_ids:
+            formData.personaIds && formData.personaIds.length > 0
+              ? formData.personaIds
+              : null,
+          document_ids:
+            formData.documentIds && formData.documentIds.length > 0
+              ? formData.documentIds
+              : null,
+          profileId,
         });
 
         toast.success("Parameter created successfully!");
@@ -374,22 +516,22 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleParameterItemInputChange = (
+  const _handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string | boolean | string[] | null,
+    value: string | boolean | string[] | null
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
       const activeItems = updated.filter((item) => !item.isDeleted);
-      
+
       // If setting default to true, ensure only one default
       if (field === "default" && value === true) {
         // Set all other items' default to false
@@ -399,16 +541,18 @@ export default function Parameter({
           }
         });
       }
-      
+
       updated[itemIndex] = { ...updated[itemIndex]!, [field]: value };
       return updated;
     });
   };
 
-  const handleAddParameterItem = () => {
-    const activeItems = parameterItemsFormData.filter((item) => !item.isDeleted);
+  const _handleAddParameterItem = () => {
+    const activeItems = parameterItemsFormData.filter(
+      (item) => !item.isDeleted
+    );
     const hasDefault = activeItems.some((item) => item.default);
-    
+
     const newItem: ParameterItemFormData = {
       name: "",
       description: "",
@@ -418,7 +562,7 @@ export default function Parameter({
       departmentIds:
         defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
     };
-    
+
     // If setting this as default, unset others
     if (newItem.default) {
       setParameterItemsFormData((prev) => {
@@ -433,7 +577,7 @@ export default function Parameter({
     }
   };
 
-  const handleDeleteParameterItem = (itemIndex: number) => {
+  const _handleDeleteParameterItem = (itemIndex: number) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
       const item = updated[itemIndex]!;
@@ -460,24 +604,18 @@ export default function Parameter({
       errors.push("Parameter description is required");
     }
 
-    // Validate parameter items
-    const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted,
+    // Validate field connections
+    const connectionEntries = Object.entries(fieldConnections);
+    const activeConnections = connectionEntries.filter(
+      ([_, conn]) => conn.active
     );
 
-    activeItems.forEach((item, index) => {
-      if (!item.name.trim()) {
-        errors.push(`Parameter item ${index + 1}: Name is required`);
-      }
-      if (!item.description.trim()) {
-        errors.push(`Parameter item ${index + 1}: Description is required`);
-      }
-    });
-    
-    // Ensure exactly one default item
-    const defaultCount = activeItems.filter((item) => item.default).length;
-    if (defaultCount !== 1) {
-      errors.push("Exactly one parameter item must be marked as default");
+    // Ensure exactly one default field connection
+    const defaultCount = activeConnections.filter(
+      ([_, conn]) => conn.default
+    ).length;
+    if (activeConnections.length > 0 && defaultCount !== 1) {
+      errors.push("Exactly one field connection must be marked as default");
     }
 
     return errors;
@@ -541,7 +679,11 @@ export default function Parameter({
                   placeholder="e.g., Difficulty Level"
                   required
                   disabled={
-                    isEditMode && parameterDetail && !parameterDetail.can_edit
+                    !!(
+                      isEditMode &&
+                      parameterDetail &&
+                      !parameterDetail.can_edit
+                    )
                   }
                 />
               ) : null}
@@ -564,7 +706,11 @@ export default function Parameter({
                   rows={4}
                   required
                   disabled={
-                    isEditMode && parameterDetail && !parameterDetail.can_edit
+                    !!(
+                      isEditMode &&
+                      parameterDetail &&
+                      !parameterDetail.can_edit
+                    )
                   }
                 />
               ) : null}
@@ -588,7 +734,11 @@ export default function Parameter({
                     placeholder="All Departments"
                     multiSelect={true}
                     disabled={
-                      isEditMode && parameterDetail && !parameterDetail.can_edit
+                      !!(
+                        isEditMode &&
+                        parameterDetail &&
+                        !parameterDetail.can_edit
+                      )
                     }
                   />
                 ) : null}
@@ -632,15 +782,25 @@ export default function Parameter({
               </div>
             </div>
 
-
-            {/* Persona Links */}
+            {/* Persona Links - Department Scoped */}
             {parameterData?.persona_mapping && (
               <div className="space-y-2">
                 <Label>Link to Personas</Label>
                 {formData?.personaIds !== undefined ? (
                   <PersonaPicker
-                    mapping={parameterData.persona_mapping}
-                    validIds={parameterData.valid_persona_ids || []}
+                    mapping={
+                      filteredPersonaMapping as Record<
+                        string,
+                        {
+                          name: string;
+                          description: string;
+                          color: string;
+                          icon: string;
+                          image_model?: boolean | null;
+                        }
+                      >
+                    }
+                    validIds={filteredPersonaIds}
                     selectedIds={formData.personaIds}
                     onSelect={(ids) =>
                       setFormData((prev) => ({
@@ -651,26 +811,40 @@ export default function Parameter({
                     placeholder="Select personas..."
                     multiSelect={true}
                     disabled={
-                      isEditMode &&
-                      parameterDetail &&
-                      !parameterDetail.can_edit
+                      !!(
+                        isEditMode &&
+                        parameterDetail &&
+                        !parameterDetail.can_edit
+                      )
                     }
                   />
                 ) : null}
                 <p className="text-xs text-muted-foreground">
-                  Select which personas this parameter applies to
+                  Select which personas this parameter applies to (filtered by
+                  selected departments)
                 </p>
               </div>
             )}
 
-            {/* Document Links */}
+            {/* Document Links - Department Scoped */}
             {parameterData?.document_mapping && (
               <div className="space-y-2">
                 <Label>Link to Documents</Label>
                 {formData?.documentIds !== undefined ? (
                   <DocumentPicker
-                    mapping={parameterData.document_mapping}
-                    validIds={parameterData.valid_document_ids || []}
+                    mapping={
+                      filteredDocumentMapping as Record<
+                        string,
+                        {
+                          name: string;
+                          description: string;
+                          tags?: string[];
+                          filePath?: string;
+                          mimeType?: string;
+                        }
+                      >
+                    }
+                    validIds={filteredDocumentIds}
                     selectedIds={formData.documentIds}
                     onSelect={(ids) =>
                       setFormData((prev) => ({
@@ -681,72 +855,17 @@ export default function Parameter({
                     placeholder="Select documents..."
                     multiSelect={true}
                     disabled={
-                      isEditMode &&
-                      parameterDetail &&
-                      !parameterDetail.can_edit
+                      !!(
+                        isEditMode &&
+                        parameterDetail &&
+                        !parameterDetail.can_edit
+                      )
                     }
                   />
                 ) : null}
                 <p className="text-xs text-muted-foreground">
-                  Select which documents this parameter applies to
-                </p>
-              </div>
-            )}
-
-            {/* Scenario Links */}
-            {parameterData?.scenario_mapping && (
-              <div className="space-y-2">
-                <Label>Link to Scenarios</Label>
-                {formData?.scenarioIds !== undefined ? (
-                  <ScenarioPicker
-                    scenarioMapping={parameterData.scenario_mapping}
-                    validScenarioIds={parameterData.valid_scenario_ids || []}
-                    selectedScenarioIds={formData.scenarioIds}
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        scenarioIds: ids,
-                      }))
-                    }
-                    placeholder="Select scenarios..."
-                    disabled={
-                      isEditMode &&
-                      parameterDetail &&
-                      !parameterDetail.can_edit
-                    }
-                  />
-                ) : null}
-                <p className="text-xs text-muted-foreground">
-                  Select which scenarios this parameter applies to
-                </p>
-              </div>
-            )}
-
-            {/* Video Links */}
-            {parameterData?.video_mapping && (
-              <div className="space-y-2">
-                <Label>Link to Videos</Label>
-                {formData?.videoIds !== undefined ? (
-                  <VideoPicker
-                    videoMapping={parameterData.video_mapping}
-                    validVideoIds={parameterData.valid_video_ids || []}
-                    selectedVideoIds={formData.videoIds}
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoIds: ids,
-                      }))
-                    }
-                    placeholder="Select videos..."
-                    disabled={
-                      isEditMode &&
-                      parameterDetail &&
-                      !parameterDetail.can_edit
-                    }
-                  />
-                ) : null}
-                <p className="text-xs text-muted-foreground">
-                  Select which videos this parameter applies to
+                  Select which documents this parameter applies to (filtered by
+                  selected departments)
                 </p>
               </div>
             )}
@@ -788,261 +907,32 @@ export default function Parameter({
             </div>
           </div>
 
-          {/* Parameter Items Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-end">
-              <Button
-                type="button"
-                onClick={handleAddParameterItem}
-                size="sm"
-                variant="default"
-                data-testid="btn-add-parameter-item"
-                className="w-full sm:w-auto"
-                disabled={isReadonly}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Add Item
-              </Button>
+          {/* Field Connections Section */}
+          {parameterData?.field_mapping && (
+            <div className="space-y-4">
+              <ParameterFieldsTable
+                data={fieldConnectionItems}
+                fieldMapping={
+                  parameterData.field_mapping as Record<
+                    string,
+                    {
+                      name: string;
+                      description?: string;
+                      usage_count?: number;
+                      department_ids?: string[] | null;
+                    }
+                  >
+                }
+                validFieldIds={parameterData.valid_field_ids || []}
+                selectedFieldIds={Object.keys(fieldConnections)}
+                onFieldSelect={handleFieldSelect}
+                onDefaultToggle={handleDefaultToggle}
+                onActiveToggle={handleActiveToggle}
+                onRemoveConnection={handleRemoveConnection}
+                readonly={isReadonly}
+              />
             </div>
-
-            {parameterItemsFormData.some((i) => !i.isDeleted) ? (
-              <>
-                {/* Mobile: Stacked card view */}
-                <div className="md:hidden space-y-4">
-                  {parameterItemsFormData.map((item, itemIndex) =>
-                    item.isDeleted ? null : (
-                      <div
-                        key={item.id || `new-${itemIndex}`}
-                        className="border rounded-lg p-4 space-y-3"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <Input
-                              value={item.name}
-                              onChange={(e) =>
-                                handleParameterItemInputChange(
-                                  itemIndex,
-                                  "name",
-                                  e.target.value,
-                                )
-                              }
-                              className="text-sm font-medium w-full"
-                              placeholder="Item name"
-                              disabled={isReadonly}
-                            />
-                          </div>
-                          {item.canDelete !== false && !isReadonly && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleDeleteParameterItem(itemIndex)
-                              }
-                              aria-label="Delete parameter item"
-                              className="h-8 w-8 p-0 flex-shrink-0"
-                              data-testid="btn-delete-parameter-item"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <div>
-                          <Textarea
-                            value={item.description}
-                            onChange={(e) =>
-                              handleParameterItemInputChange(
-                                itemIndex,
-                                "description",
-                                e.target.value,
-                              )
-                            }
-                            className="text-sm min-h-[80px] w-full"
-                            rows={3}
-                            placeholder="Item description"
-                            disabled={isReadonly}
-                          />
-                        </div>
-                        {/* Default Switch */}
-                        <div className="flex items-center gap-2 pt-2">
-                          <Label
-                            htmlFor={`default-${itemIndex}`}
-                            className="text-xs text-muted-foreground flex items-center gap-1.5"
-                          >
-                            <Power className="h-3 w-3 text-muted-foreground" />
-                            Default
-                          </Label>
-                          <Switch
-                            id={`default-${itemIndex}`}
-                            checked={item.default}
-                            onCheckedChange={(checked) =>
-                              handleParameterItemInputChange(
-                                itemIndex,
-                                "default",
-                                checked,
-                              )
-                            }
-                            disabled={isReadonly}
-                            data-testid={`switch-item-default-${itemIndex}`}
-                          />
-                        </div>
-                        {validDepartmentIds.length > 1 && (
-                          <div>
-                            <Label className="text-xs text-muted-foreground mb-1 block">
-                              Departments
-                            </Label>
-                            <DepartmentPicker
-                              mapping={departmentMapping}
-                              validIds={validDepartmentIds}
-                              selectedIds={item.departmentIds || []}
-                              onSelect={(ids) =>
-                                handleParameterItemInputChange(
-                                  itemIndex,
-                                  "departmentIds",
-                                  ids.length > 0 ? ids : null,
-                                )
-                              }
-                              placeholder="All Departments"
-                              multiSelect={true}
-                              disabled={isReadonly}
-                              triggerProps={{
-                                "data-testid": "picker-department",
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ),
-                  )}
-                </div>
-
-                {/* Desktop: Table view */}
-                <div className="hidden md:block overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-48">Name</TableHead>
-                        <TableHead className="w-80">Description</TableHead>
-                        <TableHead className="w-24">Default</TableHead>
-                        <TableHead className="w-64">Departments</TableHead>
-                        <TableHead className="w-20">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {parameterItemsFormData.map((item, itemIndex) =>
-                        item.isDeleted ? null : (
-                          <TableRow key={item.id || `new-${itemIndex}`}>
-                            <TableCell className="w-48">
-                              <Input
-                                value={item.name}
-                                onChange={(e) =>
-                                  handleParameterItemInputChange(
-                                    itemIndex,
-                                    "name",
-                                    e.target.value,
-                                  )
-                                }
-                                className="text-sm"
-                                placeholder="Item name"
-                                disabled={isReadonly}
-                              />
-                            </TableCell>
-                            <TableCell className="w-80">
-                              <Textarea
-                                value={item.description}
-                                onChange={(e) =>
-                                  handleParameterItemInputChange(
-                                    itemIndex,
-                                    "description",
-                                    e.target.value,
-                                  )
-                                }
-                                className="text-sm min-h-[96px]"
-                                rows={4}
-                                placeholder="Item description"
-                                disabled={isReadonly}
-                              />
-                            </TableCell>
-                            <TableCell className="w-24">
-                              <div className="flex items-center justify-center">
-                                <Switch
-                                  checked={item.default}
-                                  onCheckedChange={(checked) =>
-                                    handleParameterItemInputChange(
-                                      itemIndex,
-                                      "default",
-                                      checked,
-                                    )
-                                  }
-                                  disabled={isReadonly}
-                                  data-testid={`switch-item-default-${itemIndex}`}
-                                />
-                              </div>
-                            </TableCell>
-                            <TableCell className="w-64">
-                              {validDepartmentIds.length > 1 ? (
-                                <DepartmentPicker
-                                  mapping={departmentMapping}
-                                  validIds={validDepartmentIds}
-                                  selectedIds={item.departmentIds || []}
-                                  onSelect={(ids) =>
-                                    handleParameterItemInputChange(
-                                      itemIndex,
-                                      "departmentIds",
-                                      ids.length > 0 ? ids : null,
-                                    )
-                                  }
-                                  placeholder="All Departments"
-                                  multiSelect={true}
-                                  disabled={isReadonly}
-                                  triggerProps={{
-                                    "data-testid": "picker-department",
-                                  }}
-                                />
-                              ) : null}
-                            </TableCell>
-                            <TableCell className="w-20">
-                              <div className="flex items-center gap-1">
-                                {item.canDelete !== false && !isReadonly && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
-                                          handleDeleteParameterItem(itemIndex)
-                                        }
-                                        aria-label="Delete parameter item"
-                                        className="pb-1"
-                                        data-testid="btn-delete-parameter-item"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Delete parameter item
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ),
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No parameter items added yet.</p>
-                <p className="text-sm">
-                  Click "Add Item" to create your first parameter item.
-                </p>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Form Actions */}
           <div className="flex flex-col sm:flex-row gap-2 justify-end pt-4 border-t">
@@ -1066,21 +956,13 @@ export default function Parameter({
                       name: parameterData?.name,
                       description: parameterData?.description,
                       active: parameterData?.active,
-                      departmentIds: null,
+                      practice_parameter: parameterData?.practice_parameter,
+                      departmentIds: parameterData?.department_ids,
+                      personaIds: parameterData?.persona_ids || [],
+                      documentIds: parameterData?.document_ids || [],
                     }) &&
-                  JSON.stringify(parameterItemsFormData) ===
-                    JSON.stringify(
-                      (parameterItems || []).map((item) => ({
-                        id: item.parameter_item_id,
-                        name: item.name,
-                        description: item.description,
-                        default: item.default ?? false,
-                        canDelete: (item.usage_count ?? 0) === 0,
-                        departmentIds: item.department_ids ?? null,
-                        isNew: false,
-                        isDeleted: false,
-                      })),
-                    ))
+                  JSON.stringify(fieldConnections) ===
+                    JSON.stringify(originalFieldConnections))
               }
               className="w-full sm:w-auto"
             >

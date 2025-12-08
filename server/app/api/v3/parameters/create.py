@@ -13,28 +13,25 @@ from app.utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
-class ParameterItemCreate(BaseModel):
-    """Parameter item creation schema."""
+class FieldConnectionCreate(BaseModel):
+    """Field connection creation schema."""
 
-    name: str
-    description: str
-    default: bool = False  # Exactly one item per parameter must be default
-    department_ids: list[str] | None = None  # Optional for backward compatibility
+    field_id: str
+    default: bool = False  # Exactly one field connection per parameter must be default
+    active: bool = True
 
 
 class CreateParameterRequest(BaseModel):
-    """Request to create parameter with nested items."""
+    """Request to create parameter with field connections."""
 
     name: str
     description: str
     active: bool
     practice_parameter: bool = False
     department_ids: list[str] | None  # None = cross-department (superadmin only)
-    parameter_items: list[ParameterItemCreate]
+    field_connections: list[FieldConnectionCreate]
     persona_ids: list[str] | None = None  # Optional: link to specific personas
     document_ids: list[str] | None = None  # Optional: link to specific documents
-    scenario_ids: list[str] | None = None  # Optional: link to specific scenarios
-    video_ids: list[str] | None = None  # Optional: link to specific videos
     profileId: str  # Required for auditing/access control
 
 
@@ -64,36 +61,31 @@ async def create_parameter(
 
     try:
         async with transaction(conn):
-            # Prepare items as JSONB array
+            # Prepare field connections as JSONB array
             import json
 
-            items_data = []
-            for item in request.parameter_items:
-                item_dict = {
-                    "name": item.name,
-                    "description": item.description,
-                    "default": item.default,
+            field_connections_data = []
+            for conn in request.field_connections:
+                conn_dict = {
+                    "field_id": conn.field_id,
+                    "default": conn.default,
+                    "active": conn.active,
                 }
-                # Only include department_ids if it's not None
-                if item.department_ids is not None:
-                    item_dict["department_ids"] = item.department_ids  # type: ignore
-                items_data.append(item_dict)
+                field_connections_data.append(conn_dict)
 
-            items_json = json.dumps(items_data)
+            field_connections_json = json.dumps(field_connections_data)
 
-            # Create parameter with items and department links in single SQL (DHH style)
+            # Create parameter with field connections and department links in single SQL (DHH style)
             sql_query = load_sql("sql/v3/parameters/create_parameter_complete.sql")
             sql_params = (
                 request.name,
                 request.description,
                 request.active,
                 request.practice_parameter,
-                request.department_ids,  # Parameter-level department_ids (fallback)
-                items_json,  # JSONB array of items
+                request.department_ids,  # Parameter-level department_ids
+                field_connections_json,  # JSONB array of field connections
                 request.persona_ids,  # Persona IDs for junction table
                 request.document_ids,  # Document IDs for junction table
-                request.scenario_ids,  # Scenario IDs for junction table
-                request.video_ids,  # Video IDs for junction table
                 request.profileId,
             )
             parameter_result = await conn.fetchrow(sql_query, *sql_params)

@@ -1,8 +1,7 @@
--- Update parameter with items and department links in a single transaction
--- Parameters: $1=parameterId, $2=name, $3=description, $4=active, $5=practice_parameter, $6=parameter_level_department_ids (text array, nullable), $7=items_json (jsonb array), $8=persona_ids (text array, nullable), $9=document_ids (text array, nullable), $10=scenario_ids (text array, nullable), $11=video_ids (text array, nullable), $12=profile_id (uuid or "guest-profile-id")
--- items_json format: [{"name": "Item 1", "description": "Desc 1", "default": true/false, "department_ids": ["dept1", "dept2"]}, ...]
--- If item.department_ids is null, use parameter_level_department_ids
--- Exactly one item must have default=true
+-- Update parameter with field connections and department links in a single transaction
+-- Parameters: $1=parameterId, $2=name, $3=description, $4=active, $5=practice_parameter, $6=parameter_level_department_ids (text array, nullable), $7=field_connections_json (jsonb array), $8=persona_ids (text array, nullable), $9=document_ids (text array, nullable), $10=profile_id (uuid or "guest-profile-id")
+-- field_connections_json format: [{"field_id": "uuid", "default": true/false, "active": true/false}, ...]
+-- Exactly one field connection must have default=true
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -46,116 +45,58 @@ delete_existing_field_links AS (
     SET active = false, updated_at = NOW()
     WHERE parameter_id = $1::uuid
 ),
-items_expanded AS (
-    -- Expand JSONB items array
+field_connections_expanded AS (
+    -- Expand JSONB field_connections array
     SELECT 
-        (item->>'name')::text as item_name,
-        (item->>'description')::text as item_description,
-        COALESCE((item->>'default')::boolean, false) as item_default,
-        CASE 
-            WHEN item ? 'department_ids' 
-                 AND item->'department_ids' IS NOT NULL 
-                 AND item->'department_ids' != 'null'::jsonb
-                 AND jsonb_typeof(item->'department_ids') = 'array'
-                 AND jsonb_array_length(item->'department_ids') > 0
-            THEN ARRAY(SELECT jsonb_array_elements_text(item->'department_ids'))
-            WHEN $6::text[] IS NOT NULL AND array_length($6::text[], 1) > 0
-            THEN $6::text[]
-            ELSE NULL::text[]
-        END as department_ids,
-        ordinality as item_order
-    FROM jsonb_array_elements(COALESCE($7::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
+        (conn->>'field_id')::uuid as field_id,
+        COALESCE((conn->>'default')::boolean, false) as conn_default,
+        COALESCE((conn->>'active')::boolean, true) as conn_active,
+        ordinality as conn_order
+    FROM jsonb_array_elements(COALESCE($7::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(conn, ordinality)
     WHERE COALESCE(jsonb_array_length(COALESCE($7::jsonb, '[]'::jsonb)), 0) > 0
+    AND (conn->>'field_id')::uuid IS NOT NULL
 ),
 ensure_one_default AS (
     -- Ensure exactly one default: if none specified, set first one; if multiple, keep first
     SELECT 
-        item_order,
+        conn_order,
         CASE 
-            WHEN item_order = (
-                SELECT MIN(item_order) 
-                FROM items_expanded 
-                WHERE item_default = true
+            WHEN conn_order = (
+                SELECT MIN(conn_order) 
+                FROM field_connections_expanded 
+                WHERE conn_default = true
                 LIMIT 1
             ) THEN true
-            WHEN (SELECT COUNT(*) FROM items_expanded WHERE item_default = true) = 0 
-                 AND item_order = (SELECT MIN(item_order) FROM items_expanded)
+            WHEN (SELECT COUNT(*) FROM field_connections_expanded WHERE conn_default = true) = 0 
+                 AND conn_order = (SELECT MIN(conn_order) FROM field_connections_expanded)
             THEN true
             ELSE false
-        END as item_default_fixed
-    FROM items_expanded
+        END as conn_default_fixed
+    FROM field_connections_expanded
 ),
-items_expanded_fixed AS (
+field_connections_fixed AS (
     SELECT 
-        ie.item_name,
-        ie.item_description,
-        COALESCE(eod.item_default_fixed, false) as item_default,
-        ie.department_ids,
-        ie.item_order
-    FROM items_expanded ie
-    LEFT JOIN ensure_one_default eod ON eod.item_order = ie.item_order
-),
-new_fields AS (
-    -- Create all fields (formerly parameter items)
-    INSERT INTO fields (
-        name,
-        description,
-        active
-    )
-    SELECT 
-        ief.item_name,
-        ief.item_description,
-        true
-    FROM items_expanded_fixed ief
-    RETURNING id::text as field_id, name as field_name
-),
-new_fields_with_order AS (
-    -- Add row numbers to new fields for matching
-    SELECT 
-        field_id,
-        field_name,
-        ROW_NUMBER() OVER (ORDER BY field_name) as field_row_num
-    FROM new_fields
-),
-fields_with_order AS (
-    -- Match fields with items_expanded_fixed using row number
-    SELECT 
-        nf.field_id,
-        ief.department_ids,
-        ief.item_default
-    FROM new_fields_with_order nf
-    JOIN items_expanded_fixed ief ON ief.item_order = nf.field_row_num
+        fce.field_id,
+        COALESCE(eod.conn_default_fixed, false) as conn_default,
+        fce.conn_active
+    FROM field_connections_expanded fce
+    LEFT JOIN ensure_one_default eod ON eod.conn_order = fce.conn_order
 ),
 link_fields_to_parameter AS (
-    -- Link fields to parameter via parameter_fields junction with default flag
+    -- Link existing fields to parameter via parameter_fields junction with default and active flags
     INSERT INTO parameter_fields (parameter_id, field_id, default, active, created_at, updated_at)
     SELECT 
         $1::uuid,
-        fwo.field_id::uuid,
-        fwo.item_default,
-        true,
+        fcf.field_id,
+        fcf.conn_default,
+        fcf.conn_active,
         NOW(),
         NOW()
-    FROM fields_with_order fwo
+    FROM field_connections_fixed fcf
+    WHERE EXISTS (SELECT 1 FROM fields f WHERE f.id = fcf.field_id AND f.active = true)
     ON CONFLICT (parameter_id, field_id) DO UPDATE SET
-        active = true,
+        active = EXCLUDED.active,
         default = EXCLUDED.default,
-        updated_at = NOW()
-),
-link_departments AS (
-    -- Link departments to fields if provided
-    INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
-    SELECT 
-        fwo.field_id::uuid,
-        dept_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM fields_with_order fwo
-    CROSS JOIN UNNEST(fwo.department_ids) as dept_id
-    WHERE fwo.department_ids IS NOT NULL AND array_length(fwo.department_ids, 1) > 0
-    ON CONFLICT (field_id, department_id) DO UPDATE SET
-        active = true,
         updated_at = NOW()
 ),
 delete_existing_parameter_departments AS (
@@ -220,47 +161,5 @@ link_parameter_documents AS (
         active = true,
         updated_at = NOW()
 ),
-delete_existing_scenario_parameters AS (
-    -- Soft delete all existing scenario_parameters links
-    UPDATE scenario_parameters 
-    SET active = false, updated_at = NOW()
-    WHERE parameter_id = $1::uuid
-),
-link_scenario_parameters AS (
-    -- Link scenarios to parameter if provided
-    INSERT INTO scenario_parameters (scenario_id, parameter_id, active, created_at, updated_at)
-    SELECT 
-        scenario_id::uuid,
-        $1::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM UNNEST($10::text[]) as scenario_id
-    WHERE $10::text[] IS NOT NULL AND array_length($10::text[], 1) > 0
-    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-),
-delete_existing_video_parameters AS (
-    -- Soft delete all existing video_parameters links
-    UPDATE video_parameters 
-    SET active = false, updated_at = NOW()
-    WHERE parameter_id = $1::uuid
-),
-link_video_parameters AS (
-    -- Link videos to parameter if provided
-    INSERT INTO video_parameters (video_id, parameter_id, active, created_at, updated_at)
-    SELECT 
-        video_id::uuid,
-        $1::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM UNNEST($11::text[]) as video_id
-    WHERE $11::text[] IS NOT NULL AND array_length($11::text[], 1) > 0
-    ON CONFLICT (video_id, parameter_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-)
 SELECT parameter_id FROM update_parameter
 

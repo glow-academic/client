@@ -24,6 +24,7 @@ class ParameterNewRequest(BaseModel):
 from app.api.v3.parameters.detail import (  # noqa: E402
     ParameterDetailResponse,
     ParameterItemDetail,
+    FieldConnection,
 )
 
 router = APIRouter()
@@ -105,6 +106,64 @@ async def get_parameter_new(
         if valid_dept_ids_raw and isinstance(valid_dept_ids_raw, (list, tuple)):
             valid_department_ids = [str(did) for did in valid_dept_ids_raw if did]
 
+        # Parse field_mapping from JSONB
+        field_mapping: dict[str, dict[str, Any]] = {}
+        field_mapping_data = result.get("field_mapping")
+        if isinstance(field_mapping_data, str):
+            field_mapping_data = json.loads(field_mapping_data)
+        if field_mapping_data and isinstance(field_mapping_data, dict):
+            field_mapping = field_mapping_data
+
+        # Parse valid_field_ids from array
+        valid_field_ids: list[str] = []
+        valid_field_ids_raw = result.get("valid_field_ids")
+        if valid_field_ids_raw and isinstance(valid_field_ids_raw, (list, tuple)):
+            valid_field_ids = [str(fid) for fid in valid_field_ids_raw if fid]
+
+        # Parse field_connections from JSONB (empty for new)
+        field_connections: list[FieldConnection] = []
+        field_connections_data = result.get("field_connections_json")
+        if isinstance(field_connections_data, str):
+            field_connections_data = json.loads(field_connections_data)
+        if field_connections_data and isinstance(field_connections_data, list):
+            for conn_data in field_connections_data:
+                if isinstance(conn_data, dict):
+                    field_connections.append(
+                        FieldConnection(
+                            field_id=str(conn_data.get("field_id", "")),
+                            default=conn_data.get("default", False),
+                            active=conn_data.get("active", True),
+                        )
+                    )
+
+        # Parse persona_mapping from JSONB
+        persona_mapping: dict[str, dict[str, Any]] = {}
+        persona_mapping_data = result.get("persona_mapping")
+        if isinstance(persona_mapping_data, str):
+            persona_mapping_data = json.loads(persona_mapping_data)
+        if persona_mapping_data and isinstance(persona_mapping_data, dict):
+            persona_mapping = persona_mapping_data
+
+        # Parse valid_persona_ids from array
+        valid_persona_ids: list[str] = []
+        valid_persona_ids_raw = result.get("valid_persona_ids")
+        if valid_persona_ids_raw and isinstance(valid_persona_ids_raw, (list, tuple)):
+            valid_persona_ids = [str(pid) for pid in valid_persona_ids_raw if pid]
+
+        # Parse document_mapping from JSONB
+        document_mapping: dict[str, dict[str, Any]] = {}
+        document_mapping_data = result.get("document_mapping")
+        if isinstance(document_mapping_data, str):
+            document_mapping_data = json.loads(document_mapping_data)
+        if document_mapping_data and isinstance(document_mapping_data, dict):
+            document_mapping = document_mapping_data
+
+        # Parse valid_document_ids from array
+        valid_document_ids: list[str] = []
+        valid_document_ids_raw = result.get("valid_document_ids")
+        if valid_document_ids_raw and isinstance(valid_document_ids_raw, (list, tuple)):
+            valid_document_ids = [str(did) for did in valid_document_ids_raw if did]
+
         # Get user role and primary department for default behavior
         user_role = result.get("user_role", "trainee")
         is_superadmin = user_role == "superadmin"
@@ -122,16 +181,36 @@ async def get_parameter_new(
         # Default parameters (no department_ids) are read-only for non-superadmin
         can_edit = not (is_default and not is_superadmin) and user_role in ("admin", "superadmin")
 
+        # Parse persona_ids from array (empty for new)
+        persona_ids: list[str] = []
+        persona_ids_raw = result.get("persona_ids")
+        if persona_ids_raw and isinstance(persona_ids_raw, (list, tuple)):
+            persona_ids = [str(pid) for pid in persona_ids_raw if pid]
+
+        # Parse document_ids from array (empty for new)
+        document_ids: list[str] = []
+        document_ids_raw = result.get("document_ids")
+        if document_ids_raw and isinstance(document_ids_raw, (list, tuple)):
+            document_ids = [str(did) for did in document_ids_raw if did]
+
         response_data = ParameterDetailResponse(
             name=result["name"],
             description=result["description"],
             active=result["active"],
-            document_parameter=result["document_parameter"],
             practice_parameter=result["practice_parameter"],
             department_ids=department_ids,
             parameter_items=parameter_items,
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,
+            field_mapping=field_mapping,
+            valid_field_ids=valid_field_ids,
+            field_connections=field_connections,
+            persona_ids=persona_ids,
+            persona_mapping=persona_mapping,
+            valid_persona_ids=valid_persona_ids,
+            document_ids=document_ids,
+            document_mapping=document_mapping,
+            valid_document_ids=valid_document_ids,
             can_edit=can_edit,
         )
 

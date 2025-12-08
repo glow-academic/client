@@ -81,6 +81,67 @@ parameter_departments_aggregated AS (
         WHERE fp.active = true
     ) combined_depts
 ),
+-- All available fields (not just connected ones)
+all_fields_data AS (
+    SELECT 
+        f.id as field_id,
+        ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
+    FROM fields f
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    WHERE f.active = true
+    GROUP BY f.id
+),
+all_fields_with_usage AS (
+    SELECT 
+        f.id,
+        f.name,
+        f.description,
+        COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
+        COALESCE(afd.department_ids, NULL) as department_ids
+    FROM fields f
+    LEFT JOIN all_fields_data afd ON afd.field_id = f.id
+    LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
+    WHERE f.active = true
+    GROUP BY f.id, f.name, f.description, afd.department_ids
+),
+-- Field mapping (all available fields)
+field_mapping_json AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            id::text,
+            jsonb_build_object(
+                'name', name,
+                'description', description,
+                'usage_count', usage_count,
+                'department_ids', department_ids
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping,
+    array_agg(id::text ORDER BY name) as ids
+    FROM all_fields_with_usage
+),
+-- Field connections JSON (empty for new parameter)
+field_connections_json AS (
+    SELECT '[]'::jsonb as connections
+),
+-- Personas filtered by user's available departments
+filtered_personas AS (
+    SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description
+    FROM personas p
+    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+    CROSS JOIN user_departments ud
+    WHERE p.active = true
+    AND (
+        -- Include if persona is in user's departments
+        pd.department_id = ud.department_id
+        -- Or if persona has no department restrictions (cross-department persona)
+        OR NOT EXISTS (
+            SELECT 1 FROM persona_departments pd2 
+            WHERE pd2.persona_id = p.id AND pd2.active = true
+        )
+    )
+),
 available_personas_mapping AS (
     SELECT COALESCE(
         jsonb_object_agg(
@@ -93,8 +154,24 @@ available_personas_mapping AS (
         '{}'::jsonb
     ) as mapping,
     array_agg(per.id::text ORDER BY per.name) as ids
-    FROM personas per
-    WHERE per.active = true
+    FROM filtered_personas per
+),
+-- Documents filtered by user's available departments
+filtered_documents AS (
+    SELECT DISTINCT d.id, d.name, COALESCE(d.description, '') as description
+    FROM documents d
+    LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+    CROSS JOIN user_departments ud
+    WHERE d.active = true
+    AND (
+        -- Include if document is in user's departments
+        dd.department_id = ud.department_id
+        -- Or if document has no department restrictions (cross-department document)
+        OR NOT EXISTS (
+            SELECT 1 FROM document_departments dd2 
+            WHERE dd2.document_id = d.id AND dd2.active = true
+        )
+    )
 ),
 available_documents_mapping AS (
     SELECT COALESCE(
@@ -108,42 +185,12 @@ available_documents_mapping AS (
         '{}'::jsonb
     ) as mapping,
     array_agg(d.id::text ORDER BY d.name) as ids
-    FROM documents d
-    WHERE d.active = true
-),
-available_scenarios_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            s.id::text,
-            jsonb_build_object(
-                'name', s.name
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping,
-    array_agg(s.id::text ORDER BY s.name) as ids
-    FROM scenarios s
-    WHERE s.active = true
-),
-available_videos_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            v.id::text,
-            jsonb_build_object(
-                'name', v.name
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping,
-    array_agg(v.id::text ORDER BY v.name) as ids
-    FROM videos v
-    WHERE v.active = true
+    FROM filtered_documents d
 ),
 parameter_data AS (
     SELECT 
         p.name,
         p.description,
-,
         p.active,
         p.practice_parameter,
         COALESCE(pda.department_ids, NULL) as department_ids
@@ -182,7 +229,6 @@ items_json AS (
                 'parameter_item_id', id::text,
                 'name', name,
                 'description', description,
-                'value', value,
                 'usage_count', usage_count,
                 'department_ids', department_ids
             )
@@ -223,20 +269,19 @@ SELECT
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
     pdi.department_id as primary_department_id,
+    fmj.mapping as field_mapping,
+    fmj.ids as valid_field_ids,
+    fcj.connections as field_connections_json,
     apm.mapping as persona_mapping,
     apm.ids as valid_persona_ids,
     adm.mapping as document_mapping,
-    adm.ids as valid_document_ids,
-    asm.mapping as scenario_mapping,
-    asm.ids as valid_scenario_ids,
-    avm.mapping as video_mapping,
-    avm.ids as valid_video_ids
+    adm.ids as valid_document_ids
 FROM parameter_data p
 CROSS JOIN items_json ij
 CROSS JOIN valid_depts vd
 LEFT JOIN primary_department_id pdi ON true
+CROSS JOIN field_mapping_json fmj
+CROSS JOIN field_connections_json fcj
 CROSS JOIN available_personas_mapping apm
 CROSS JOIN available_documents_mapping adm
-CROSS JOIN available_scenarios_mapping asm
-CROSS JOIN available_videos_mapping avm
 

@@ -6130,8 +6130,6 @@ export interface components {
             active: boolean;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
             /** Conditional Parameter Ids */
             conditional_parameter_ids?: string[] | null;
             /** Profileid */
@@ -6333,7 +6331,7 @@ export interface components {
         };
         /**
          * CreateParameterRequest
-         * @description Request to create parameter with nested items.
+         * @description Request to create parameter with field connections.
          */
         CreateParameterRequest: {
             /** Name */
@@ -6349,16 +6347,12 @@ export interface components {
             practice_parameter: boolean;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Parameter Items */
-            parameter_items: components["schemas"]["ParameterItemCreate"][];
+            /** Field Connections */
+            field_connections: components["schemas"]["FieldConnectionCreate"][];
             /** Persona Ids */
             persona_ids?: string[] | null;
             /** Document Ids */
             document_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -6809,7 +6803,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
         };
         /**
@@ -7453,7 +7447,7 @@ export interface components {
             valid_parameter_item_ids: string[];
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
         };
         /**
@@ -7539,7 +7533,7 @@ export interface components {
             valid_parameter_item_ids: string[];
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Parameter Mapping */
             parameter_mapping: {
@@ -7647,7 +7641,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -8140,6 +8134,33 @@ export interface components {
             /** Feedback */
             feedback: components["schemas"]["app__api__v3__feedback__list__FeedbackItem"][];
         };
+        /** FieldConnection */
+        FieldConnection: {
+            /** Field Id */
+            field_id: string;
+            /** Default */
+            default: boolean;
+            /** Active */
+            active: boolean;
+        };
+        /**
+         * FieldConnectionCreate
+         * @description Field connection creation schema.
+         */
+        FieldConnectionCreate: {
+            /** Field Id */
+            field_id: string;
+            /**
+             * Default
+             * @default false
+             */
+            default: boolean;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
         /** FieldDetailRequest */
         FieldDetailRequest: {
             /** Fieldid */
@@ -8205,6 +8226,20 @@ export interface components {
             can_delete: boolean;
             /** Can Duplicate */
             can_duplicate: boolean;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item - extends MappingItem with parameter context
+         */
+        FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
         };
         /** FieldNewRequest */
         FieldNewRequest: {
@@ -9497,8 +9532,6 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
             /** Practice Parameter */
             practice_parameter: boolean;
             /** Department Ids */
@@ -9513,41 +9546,38 @@ export interface components {
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
+            /** Field Mapping */
+            field_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Field Ids */
+            valid_field_ids: string[];
+            /** Field Connections */
+            field_connections: components["schemas"]["FieldConnection"][];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Persona Ids */
+            valid_persona_ids: string[];
+            /** Document Ids */
+            document_ids: string[];
+            /** Document Mapping */
+            document_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Document Ids */
+            valid_document_ids: string[];
             /** Can Edit */
             can_edit: boolean;
-        };
-        /**
-         * ParameterItemCreate
-         * @description Parameter item creation schema.
-         */
-        ParameterItemCreate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Default
-             * @default false
-             */
-            default: boolean;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
-         * ParameterItemMappingItem
-         * @description Parameter item mapping item - extends MappingItem with parameter context
-         */
-        ParameterItemMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-            /** Value */
-            value: string;
         };
         /** ParameterNewRequest */
         ParameterNewRequest: {
@@ -9912,7 +9942,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -11583,7 +11613,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
@@ -11695,7 +11725,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -12980,8 +13010,6 @@ export interface components {
             active: boolean;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
             /** Conditional Parameter Ids */
             conditional_parameter_ids?: string[] | null;
             /** Profileid */
@@ -13083,7 +13111,7 @@ export interface components {
         };
         /**
          * UpdateParameterRequest
-         * @description Request to update parameter with nested items.
+         * @description Request to update parameter with field connections.
          */
         UpdateParameterRequest: {
             /** Parameterid */
@@ -13098,16 +13126,12 @@ export interface components {
             practice_parameter: boolean;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Parameter Items */
-            parameter_items: components["schemas"]["ParameterItemCreate"][];
+            /** Field Connections */
+            field_connections: components["schemas"]["FieldConnectionCreate"][];
             /** Persona Ids */
             persona_ids?: string[] | null;
             /** Document Ids */
             document_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -14549,7 +14573,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Linked Parameter Ids */
             linked_parameter_ids: string[];
@@ -14673,7 +14697,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Valid Parameter Ids */
             valid_parameter_ids: string[];
@@ -15041,7 +15065,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -15108,7 +15132,7 @@ export interface components {
             /** Parameter Item Ids */
             parameter_item_ids: string[];
             /** Parameter Items */
-            parameter_items: components["schemas"]["ParameterItemMappingItem"][];
+            parameter_items: components["schemas"]["FieldMappingItem"][];
             /** Simulation Ids */
             simulation_ids: string[];
             /** Num Simulations */
@@ -15205,7 +15229,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -15426,7 +15450,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Agent Mapping */
             agent_mapping: {
@@ -15610,7 +15634,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
         };
         /**
@@ -15762,7 +15786,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
@@ -15902,7 +15926,7 @@ export interface components {
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+                [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];

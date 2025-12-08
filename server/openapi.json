@@ -14030,20 +14030,6 @@
             ],
             "title": "Department Ids"
           },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
           "conditional_parameter_ids": {
             "anyOf": [
               {
@@ -14068,7 +14054,6 @@
           "name",
           "description",
           "department_ids",
-          "parameter_ids",
           "profileId"
         ],
         "title": "CreateFieldRequest",
@@ -14589,12 +14574,12 @@
             ],
             "title": "Department Ids"
           },
-          "parameter_items": {
+          "field_connections": {
             "items": {
-              "$ref": "#/components/schemas/ParameterItemCreate"
+              "$ref": "#/components/schemas/FieldConnectionCreate"
             },
             "type": "array",
-            "title": "Parameter Items"
+            "title": "Field Connections"
           },
           "persona_ids": {
             "anyOf": [
@@ -14624,34 +14609,6 @@
             ],
             "title": "Document Ids"
           },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
-          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -14663,11 +14620,11 @@
           "description",
           "active",
           "department_ids",
-          "parameter_items",
+          "field_connections",
           "profileId"
         ],
         "title": "CreateParameterRequest",
-        "description": "Request to create parameter with nested items."
+        "description": "Request to create parameter with field connections."
       },
       "CreateParameterResponse": {
         "properties": {
@@ -15887,7 +15844,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -17415,7 +17372,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -17667,7 +17624,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -17996,7 +17953,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -19100,6 +19057,53 @@
         ],
         "title": "FeedbackListResponse"
       },
+      "FieldConnection": {
+        "properties": {
+          "field_id": {
+            "type": "string",
+            "title": "Field Id"
+          },
+          "default": {
+            "type": "boolean",
+            "title": "Default"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "default",
+          "active"
+        ],
+        "title": "FieldConnection"
+      },
+      "FieldConnectionCreate": {
+        "properties": {
+          "field_id": {
+            "type": "string",
+            "title": "Field Id"
+          },
+          "default": {
+            "type": "boolean",
+            "title": "Default",
+            "default": false
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id"
+        ],
+        "title": "FieldConnectionCreate",
+        "description": "Field connection creation schema."
+      },
       "FieldDetailRequest": {
         "properties": {
           "fieldId": {
@@ -19286,6 +19290,35 @@
         ],
         "title": "FieldItem",
         "description": "Field item for list view."
+      },
+      "FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item - extends MappingItem with parameter context"
       },
       "FieldNewRequest": {
         "properties": {
@@ -22693,10 +22726,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
           "practice_parameter": {
             "type": "boolean",
             "title": "Practice Parameter"
@@ -22737,6 +22766,72 @@
             "type": "array",
             "title": "Valid Department Ids"
           },
+          "field_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Field Mapping"
+          },
+          "valid_field_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Field Ids"
+          },
+          "field_connections": {
+            "items": {
+              "$ref": "#/components/schemas/FieldConnection"
+            },
+            "type": "array",
+            "title": "Field Connections"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          },
+          "valid_persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Persona Ids"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "document_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Document Mapping"
+          },
+          "valid_document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Document Ids"
+          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -22747,87 +22842,23 @@
           "name",
           "description",
           "active",
-          "document_parameter",
           "practice_parameter",
           "department_ids",
           "parameter_items",
           "department_mapping",
           "valid_department_ids",
+          "field_mapping",
+          "valid_field_ids",
+          "field_connections",
+          "persona_ids",
+          "persona_mapping",
+          "valid_persona_ids",
+          "document_ids",
+          "document_mapping",
+          "valid_document_ids",
           "can_edit"
         ],
         "title": "ParameterDetailResponse"
-      },
-      "ParameterItemCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "default": {
-            "type": "boolean",
-            "title": "Default",
-            "default": false
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ParameterItemCreate",
-        "description": "Parameter item creation schema."
-      },
-      "ParameterItemMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "parameter_id": {
-            "type": "string",
-            "title": "Parameter Id"
-          },
-          "parameter_name": {
-            "type": "string",
-            "title": "Parameter Name"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "parameter_id",
-          "parameter_name",
-          "value"
-        ],
-        "title": "ParameterItemMappingItem",
-        "description": "Parameter item mapping item - extends MappingItem with parameter context"
       },
       "ParameterNewRequest": {
         "properties": {
@@ -23665,7 +23696,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -28239,7 +28270,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -28524,7 +28555,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -31669,20 +31700,6 @@
             ],
             "title": "Department Ids"
           },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
           "conditional_parameter_ids": {
             "anyOf": [
               {
@@ -31708,7 +31725,6 @@
           "name",
           "description",
           "department_ids",
-          "parameter_ids",
           "profileId"
         ],
         "title": "UpdateFieldRequest",
@@ -32024,12 +32040,12 @@
             ],
             "title": "Department Ids"
           },
-          "parameter_items": {
+          "field_connections": {
             "items": {
-              "$ref": "#/components/schemas/ParameterItemCreate"
+              "$ref": "#/components/schemas/FieldConnectionCreate"
             },
             "type": "array",
-            "title": "Parameter Items"
+            "title": "Field Connections"
           },
           "persona_ids": {
             "anyOf": [
@@ -32059,34 +32075,6 @@
             ],
             "title": "Document Ids"
           },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
-          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -32100,11 +32088,11 @@
           "active",
           "practice_parameter",
           "department_ids",
-          "parameter_items",
+          "field_connections",
           "profileId"
         ],
         "title": "UpdateParameterRequest",
-        "description": "Request to update parameter with nested items."
+        "description": "Request to update parameter with field connections."
       },
       "UpdateParameterResponse": {
         "properties": {
@@ -36255,7 +36243,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -36652,7 +36640,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -37734,7 +37722,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -37934,7 +37922,7 @@
           },
           "parameter_items": {
             "items": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "array",
             "title": "Parameter Items"
@@ -38203,7 +38191,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -38827,7 +38815,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -39342,7 +39330,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -39779,7 +39767,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
@@ -40154,7 +40142,7 @@
           },
           "parameter_item_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
+              "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
             "title": "Parameter Item Mapping"
