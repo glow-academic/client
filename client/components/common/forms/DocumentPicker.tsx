@@ -9,19 +9,11 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown, Eye, X } from "lucide-react";
+import { Check, Eye, X } from "lucide-react";
 import * as React from "react";
 
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -36,13 +28,8 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { cn } from "@/lib/utils";
+import { GenericPicker } from "./GenericPicker";
 
 type MappingItem = {
   name: string;
@@ -62,6 +49,7 @@ type DocumentItem = {
   file_path: string | null;
   mime_type: string | null;
   parameter_item_ids: string[];
+  upload_id: string;
 };
 
 // Extended mapping item for documents with tags
@@ -105,79 +93,19 @@ export function DocumentPicker<
   readonly = false,
   ...props
 }: DocumentPickerProps<T>) {
-  const [open, setOpen] = React.useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = React.useState(false);
   const [previewDocumentId, setPreviewDocumentId] = React.useState<
     string | undefined
   >(undefined);
 
-  // Build documents from mapping (before filtering)
-  const allDocuments = React.useMemo(() => {
-    return validIds.map((id) => ({
-      id,
-      ...mapping[id],
-    }));
-  }, [validIds, mapping]);
-
-  // Filter documents (no tag filtering, just validIds)
-  const documents = allDocuments;
-
-  const [peekedDocument, setPeekedDocument] = React.useState<
-    ({ id: string } & T) | undefined
-  >(documents[0] as ({ id: string } & T) | undefined);
-
-  const handleSelect = (documentId: string) => {
-    if (multiSelect) {
-      const isSelected = selectedIds.includes(documentId);
-      const newIds = isSelected
-        ? selectedIds.filter((id) => id !== documentId)
-        : [...selectedIds, documentId];
-      onSelect(newIds);
-      // Don't close popover in multi-select mode
-    } else {
-      onSelect([documentId]);
-      setOpen(false);
-    }
-  };
-
-  // Allow clearing selection
-  const handleClear = () => {
-    onSelect([]);
-    setOpen(false);
-  };
-
   // Handle document preview
-  const handlePreview = (documentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePreview = (documentId: string) => {
     setPreviewDocumentId(documentId);
     setShowPreviewDialog(true);
   };
 
-  // Remove individual item in multi-select mode
-  const handleRemoveItem = (documentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newIds = selectedIds.filter((id) => id !== documentId);
-    onSelect(newIds);
-  };
-
-  const getButtonText = () => {
-    if (selectedIds.length === 0) {
-      return placeholder;
-    }
-    if (selectedIds.length === 1) {
-      const doc = mapping[selectedIds[0]!];
-      return doc?.name || placeholder;
-    }
-    return `${selectedIds.length} selected`;
-  };
-
   const getSearchNotFoundMessage = () => {
     return `No ${label} found.`;
-  };
-
-  // Get document icon (generic, since we no longer have document types)
-  const getDocumentIcon = () => {
-    return "📄";
   };
 
   const previewDocument = previewDocumentId
@@ -214,7 +142,10 @@ export function DocumentPicker<
                 <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     type="button"
-                    onClick={(e) => handlePreview(id, e)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePreview(id);
+                    }}
                     className="h-5 w-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs"
                   >
                     <Eye className="h-3 w-3" />
@@ -222,7 +153,12 @@ export function DocumentPicker<
                   {!readonly && (
                     <button
                       type="button"
-                      onClick={(e) => handleRemoveItem(id, e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(
+                          selectedIds.filter((selectedId) => selectedId !== id)
+                        );
+                      }}
                       className="h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
                     >
                       <X className="h-3 w-3" />
@@ -234,7 +170,7 @@ export function DocumentPicker<
                 <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
                   {(() => {
                     const fullDoc = documentDetails.find(
-                      (d) => d.document_id === id,
+                      (d) => d.document_id === id
                     );
                     if (fullDoc) {
                       return (
@@ -263,6 +199,7 @@ export function DocumentPicker<
                         file_path: document.filePath || "",
                         mime_type: document.mimeType || "",
                         parameter_item_ids: [],
+                        upload_id: id,
                       };
                       return (
                         <div className="w-full h-full">
@@ -276,6 +213,7 @@ export function DocumentPicker<
                       );
                     }
                     // Final fallback to icon if no ID
+                    const getDocumentIcon = () => "📄";
                     return (
                       <div className="flex items-center justify-center h-full">
                         <span className="text-4xl">{getDocumentIcon()}</span>
@@ -294,78 +232,158 @@ export function DocumentPicker<
         </div>
       )}
 
-      <Popover
-        open={disabled || readonly ? false : open}
-        onOpenChange={disabled || readonly ? () => {} : setOpen}
-        {...props}
-      >
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            aria-label="Select a document"
-            className="w-full justify-between"
-            disabled={disabled || readonly}
-          >
-            {getButtonText()}
-            <ChevronsUpDown className="opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="w-[400px] p-0">
-          <HoverCard>
-            <HoverCardContent
-              side="left"
-              align="start"
-              forceMount
-              className="min-h-[400px] w-[350px]"
-            >
-              <div className="grid gap-2">
-                <h4 className="font-medium leading-none">
-                  {peekedDocument?.name || "No document selected"}
-                </h4>
-                {peekedDocument && (
-                  <div className="mt-4 text-center">
-                    <div className="text-6xl mb-2">{getDocumentIcon()}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {peekedDocument.filePath || "No file path"}
-                    </div>
+      <GenericPicker
+        items={mapping}
+        itemIds={validIds}
+        selectedIds={selectedIds}
+        onSelect={onSelect}
+        getId={(item) => (item as unknown as { id: string }).id}
+        getLabel={(item) => item.name || ""}
+        getSearchText={(item) => `${item.name} ${item.description || ""}`}
+        renderButton={(selectedItems) => {
+          if (selectedItems.length === 0) {
+            return placeholder;
+          }
+          if (selectedItems.length === 1) {
+            return selectedItems[0]?.name || placeholder;
+          }
+          return `${selectedItems.length} selected`;
+        }}
+        renderPreview={(item) => {
+          const getDocumentIcon = () => "📄";
+          return (
+            <div className="grid gap-2">
+              <h4 className="font-medium leading-none">
+                {item.name || "No document selected"}
+              </h4>
+              {item.filePath && (
+                <div className="mt-4 text-center">
+                  <div className="text-6xl mb-2">{getDocumentIcon()}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {item.filePath}
                   </div>
+                </div>
+              )}
+            </div>
+          );
+        }}
+        renderItem={(item, isSelected) => {
+          const getDocumentIcon = () => "📄";
+          return (
+            <div className="flex items-center gap-2 w-full">
+              <span className="text-lg">{getDocumentIcon()}</span>
+              <span className="flex-1 truncate">{item.name}</span>
+              <Check
+                className={cn(
+                  "ml-auto",
+                  isSelected ? "opacity-100" : "opacity-0"
+                )}
+              />
+            </div>
+          );
+        }}
+        renderChip={(item, onRemove) => {
+          const id = (item as unknown as { id: string }).id;
+          const fullDoc = documentDetails.find((d) => d.document_id === id);
+          const getDocumentIcon = () => "📄";
+
+          return (
+            <div
+              key={id}
+              className="relative group border rounded-lg hover:shadow-md transition-all bg-white"
+            >
+              {/* Action buttons */}
+              <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewDocumentId(id);
+                    setShowPreviewDialog(true);
+                  }}
+                  className="h-5 w-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs"
+                >
+                  <Eye className="h-3 w-3" />
+                </button>
+                {!readonly && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove();
+                    }}
+                    className="h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 )}
               </div>
-            </HoverCardContent>
-            <Command loop>
-              <CommandList className="h-[var(--cmdk-list-height)] max-h-[400px]">
-                <CommandInput placeholder="Search documents..." />
-                <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
-                <HoverCardTrigger />
-                {selectedIds.length > 0 && (
-                  <CommandGroup heading="Actions">
-                    <CommandItem
-                      onSelect={handleClear}
-                      className="text-muted-foreground"
-                    >
-                      Clear {multiSelect ? "All" : "Selection"}
-                    </CommandItem>
-                  </CommandGroup>
-                )}
-                <CommandGroup heading="Documents">
-                  {documents.map((document) => (
-                    <DocumentItem
-                      key={document.id}
-                      document={document as { id: string } & T}
-                      isSelected={selectedIds.includes(document.id)}
-                      onPeek={(doc) => setPeekedDocument(doc)}
-                      onSelect={() => handleSelect(document.id)}
-                      getDocumentIcon={getDocumentIcon}
+
+              {/* Document preview */}
+              <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
+                {fullDoc ? (
+                  <div className="w-full h-full">
+                    <DocumentViewer
+                      document={fullDoc}
+                      bare={true}
+                      isFormDocument={false}
+                      compact={true}
                     />
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </HoverCard>
-        </PopoverContent>
-      </Popover>
+                  </div>
+                ) : id ? (
+                  (() => {
+                    const minimalDoc: DocumentItem = {
+                      document_id: id,
+                      name: item.name || "Document",
+                      updatedAt: new Date().toISOString(),
+                      extension: "",
+                      scenario_ids: [],
+                      can_edit: false,
+                      can_delete: false,
+                      active: true,
+                      department_ids: [],
+                      file_path: item.filePath || "",
+                      mime_type: item.mimeType || "",
+                      parameter_item_ids: [],
+                      upload_id: id,
+                    };
+                    return (
+                      <div className="w-full h-full">
+                        <DocumentViewer
+                          document={minimalDoc}
+                          bare={true}
+                          isFormDocument={false}
+                          compact={true}
+                        />
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <span className="text-4xl">{getDocumentIcon()}</span>
+                  </div>
+                )}
+
+                {/* Document name */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1">
+                  <span className="truncate block">{item.name}</span>
+                </div>
+              </div>
+            </div>
+          );
+        }}
+        placeholder={placeholder}
+        disabled={disabled || readonly}
+        multiSelect={multiSelect}
+        hideSelectedChips={true}
+        buttonClassName="w-full"
+        groupHeading="Documents"
+        emptyMessage={getSearchNotFoundMessage()}
+        showLabel={!!label}
+        label={label}
+        description={description}
+        {...props}
+      />
 
       {/* Preview Dialog */}
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
@@ -382,7 +400,7 @@ export function DocumentPicker<
           {previewDocumentId &&
             (() => {
               const fullDoc = documentDetails.find(
-                (d) => d.document_id === previewDocumentId,
+                (d) => d.document_id === previewDocumentId
               );
               if (fullDoc) {
                 return (
@@ -413,6 +431,7 @@ export function DocumentPicker<
                   file_path: mappedDoc.filePath || "",
                   mime_type: mappedDoc.mimeType || "",
                   parameter_item_ids: [],
+                  upload_id: previewDocumentId,
                 };
                 return (
                   <div className="flex-1 min-h-0">
@@ -437,52 +456,5 @@ export function DocumentPicker<
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-interface DocumentItemProps<T extends DocumentMappingItem> {
-  document: { id: string } & T;
-  isSelected: boolean;
-  onSelect: () => void;
-  onPeek: (document: { id: string } & T) => void;
-  getDocumentIcon: () => string;
-}
-
-function DocumentItem<T extends DocumentMappingItem>({
-  document,
-  isSelected,
-  onSelect,
-  onPeek,
-  getDocumentIcon,
-}: DocumentItemProps<T>) {
-  const ref = React.useRef<HTMLDivElement>(null);
-
-  useMutationObserver(ref, (mutations) => {
-    mutations.forEach((mutation) => {
-      if (
-        mutation.type === "attributes" &&
-        mutation.attributeName === "aria-selected" &&
-        ref.current?.getAttribute("aria-selected") === "true"
-      ) {
-        onPeek(document);
-      }
-    });
-  });
-
-  return (
-    <CommandItem
-      key={document.id}
-      onSelect={onSelect}
-      ref={ref}
-      className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
-    >
-      <div className="flex items-center gap-2 w-full">
-        <span className="text-lg">{getDocumentIcon()}</span>
-        <span className="flex-1 truncate">{document.name}</span>
-        <Check
-          className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
-        />
-      </div>
-    </CommandItem>
   );
 }

@@ -70,6 +70,10 @@ export interface GenericPickerProps<T> extends PopoverProps {
   showClearAction?: boolean;
   popoverContentClassName?: string;
   maxHeight?: string;
+  /** Where to render the selected badges relative to the button */
+  badgesPosition?: "above" | "below";
+  /** Show a Clear All button when items are selected (only for multi-select) */
+  showClearAll?: boolean;
 }
 
 export function GenericPicker<T>({
@@ -99,6 +103,8 @@ export function GenericPicker<T>({
   showClearAction = true,
   popoverContentClassName,
   maxHeight = "max-h-[250px]",
+  badgesPosition = "below",
+  showClearAll = false,
   ...props
 }: GenericPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
@@ -249,22 +255,25 @@ export function GenericPicker<T>({
         </HoverCard>
       )}
 
-      {/* Show selected chips */}
-      {selectedIds.length > 0 && !hideSelectedChips && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {selectedItems.map((item) => {
-            const itemId = getId(item);
-            const chipRenderer = renderChip || defaultRenderChip;
-            return (
-              <React.Fragment key={itemId}>
-                {chipRenderer(item, () =>
-                  handleRemoveItem(itemId, {} as React.MouseEvent)
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      )}
+      {/* Show selected chips above button if configured */}
+      {multiSelect &&
+        selectedIds.length > 0 &&
+        !hideSelectedChips &&
+        badgesPosition === "above" && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {selectedItems.map((item) => {
+              const itemId = getId(item);
+              const chipRenderer = renderChip || defaultRenderChip;
+              return (
+                <React.Fragment key={itemId}>
+                  {chipRenderer(item, () =>
+                    handleRemoveItem(itemId, {} as React.MouseEvent)
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
 
       <Popover
         open={disabled ? false : open}
@@ -355,6 +364,45 @@ export function GenericPicker<T>({
           </HoverCard>
         </PopoverContent>
       </Popover>
+
+      {/* Show selected chips below button if configured */}
+      {multiSelect &&
+        selectedIds.length > 0 &&
+        !hideSelectedChips &&
+        !compact &&
+        badgesPosition === "below" && (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex-1 flex flex-wrap gap-1">
+              {selectedItems.map((item) => {
+                const itemId = getId(item);
+                const chipRenderer = renderChip || defaultRenderChip;
+                return (
+                  <React.Fragment key={itemId}>
+                    {chipRenderer(item, () =>
+                      handleRemoveItem(itemId, {} as React.MouseEvent)
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            {showClearAll && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onSelect([]);
+                  if (!multiSelect) {
+                    setOpen(false);
+                  }
+                }}
+                disabled={disabled}
+              >
+                Clear All
+              </Button>
+            )}
+          </div>
+        )}
     </div>
   );
 }
