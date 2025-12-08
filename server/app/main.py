@@ -116,29 +116,15 @@ DEFAULT_CATEGORIES = [
     "syllabi",
 ]
 
-# Global storage for scenario generation results
-scenario_results: dict[str, Any] = {}
-scenario_progress: dict[str, bool] = {}
-
-# Global storage for question generation results
-question_results: dict[str, Any] = {}
-question_progress: dict[str, bool] = {}
-
-# Global storage for outline generation results
-outline_results: dict[str, Any] = {}
-outline_progress: dict[str, bool] = {}
-
-# Global storage for grading results
-grading_results: dict[str, Any] = {}
-grading_progress: dict[str, bool] = {}
-
-# Global storage for hint results
-hint_results: dict[str, Any] = {}
-hint_progress: dict[str, bool] = {}
-
-# Global storage for guardrail results
-guardrail_results: dict[str, Any] = {}
-guardrail_progress: dict[str, bool] = {}
+# Request-scoped storage instances (initialized in lifespan)
+# These replace the old global dictionaries for multi-tenant safety
+scenario_storage: Any | None = None
+question_storage: Any | None = None
+outline_storage: Any | None = None
+grading_storage: Any | None = None
+hint_storage: Any | None = None
+image_generation_storage: Any | None = None
+dynamic_document_storage: Any | None = None
 
 # Global storage for voice sessions (chat_id -> session data)
 _voice_sessions: dict[str, dict[str, Any]] = {}
@@ -239,6 +225,58 @@ def get_voice_speech_timestamps() -> dict[str, dict[str, datetime.datetime]]:
 def get_sio_instance() -> socketio.AsyncServer:
     """Get the Socket.IO server instance."""
     return sio
+
+
+# Storage getter functions (backward compatibility)
+def get_scenario_storage() -> Any:
+    """Get the scenario generation storage instance."""
+    if scenario_storage is None:
+        raise RuntimeError("Scenario storage not initialized. Call initialize_storage() at startup.")
+    return scenario_storage
+
+
+def get_question_storage() -> Any:
+    """Get the question generation storage instance."""
+    if question_storage is None:
+        raise RuntimeError("Question storage not initialized. Call initialize_storage() at startup.")
+    return question_storage
+
+
+def get_outline_storage() -> Any:
+    """Get the outline generation storage instance."""
+    if outline_storage is None:
+        raise RuntimeError("Outline storage not initialized. Call initialize_storage() at startup.")
+    return outline_storage
+
+
+def get_grading_storage() -> Any:
+    """Get the grading storage instance."""
+    if grading_storage is None:
+        raise RuntimeError("Grading storage not initialized. Call initialize_storage() at startup.")
+    return grading_storage
+
+
+def get_hint_storage() -> Any:
+    """Get the hint storage instance."""
+    if hint_storage is None:
+        raise RuntimeError("Hint storage not initialized. Call initialize_storage() at startup.")
+    return hint_storage
+
+
+
+
+def get_image_generation_storage() -> Any:
+    """Get the image generation storage instance."""
+    if image_generation_storage is None:
+        raise RuntimeError("Image generation storage not initialized. Call initialize_storage() at startup.")
+    return image_generation_storage
+
+
+def get_dynamic_document_storage() -> Any:
+    """Get the dynamic document storage instance."""
+    if dynamic_document_storage is None:
+        raise RuntimeError("Dynamic document storage not initialized. Call initialize_storage() at startup.")
+    return dynamic_document_storage
 
 
 def get_pool() -> asyncpg.Pool | None:
@@ -495,6 +533,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             except Exception as e:
                 logger.error(f"Failed to initialize Redis client: {e}", exc_info=True)
                 redis_client = None
+
+        # Initialize request-scoped storage instances
+        global scenario_storage, question_storage, outline_storage
+        global grading_storage, hint_storage, image_generation_storage, dynamic_document_storage
+        from app.utils.storage.request_storage import create_request_storage
+        storage = create_request_storage(redis_client, ttl_seconds=3600)
+        scenario_storage = storage
+        question_storage = storage
+        outline_storage = storage
+        grading_storage = storage
+        hint_storage = storage
+        image_generation_storage = storage
+        dynamic_document_storage = storage
+        logger.info("Request-scoped storage initialized (Redis-backed if available)")
 
         # Initialize asyncpg database pool
         await init_db_pool()

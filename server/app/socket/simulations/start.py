@@ -7,7 +7,7 @@ from typing import Any
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from app.main import get_pool, scenario_progress, scenario_results, sio
+from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.cache.invalidate_tags import invalidate_tags

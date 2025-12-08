@@ -8,8 +8,8 @@ from typing import Any, cast
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.main import (get_pool, get_simulation_tool_calls_dict, hint_progress,
-                      hint_results, sio)
+from app.main import get_pool, get_simulation_tool_calls_dict, get_hint_storage, sio
+from app.utils.storage.request_storage import build_storage_key
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
@@ -275,9 +275,7 @@ async def _generate_hints_background_inline(
         try:
             logger.info(f"Background hint generation started for message {message_id}")
 
-            # Clear previous results
-            hint_results.clear()
-            hint_progress.clear()
+            # Clear previous results (now handled by storage with keys)
 
             # Get all hint context data using SQL file
             sql = load_sql("sql/v3/agents/get_hint_run_context.sql")
@@ -430,7 +428,11 @@ async def _generate_hints_background_inline(
                 raise ValueError(error_message)
 
             # Build hint agent from context
-            hint_tools = create_hint_tools()
+            profile_id_str = context.get("profile_id")
+            hint_tools = create_hint_tools(
+                profile_id=str(profile_id_str) if profile_id_str else None,
+                primary_id=str(chat_id),
+            )
             hint_agent = build_hint_agent(context, hint_tools)
 
             # Create model run with all junction records using SQL file
@@ -493,10 +495,23 @@ async def _generate_hints_background_inline(
 
             logger.info("Hint agent completed successfully")
 
-            # Extract hints from global storage
-            hint_1 = hint_results.get("hint_1", "")
-            hint_2 = hint_results.get("hint_2", "")
-            hint_3 = hint_results.get("hint_3", "")
+            # Extract hints from request-scoped storage
+            profile_id_str = context.get("profile_id")
+            if profile_id_str:
+                storage = get_hint_storage()
+                storage_key = build_storage_key(
+                    operation_type="hint_generation",
+                    profile_id=str(profile_id_str),
+                    primary_id=str(chat_id),
+                )
+                hint_result = await storage.get_all(storage_key)
+                hint_1 = hint_result.get("hint_1", "")
+                hint_2 = hint_result.get("hint_2", "")
+                hint_3 = hint_result.get("hint_3", "")
+            else:
+                hint_1 = ""
+                hint_2 = ""
+                hint_3 = ""
 
             # Log what was generated
             hints_generated = sum([bool(hint_1), bool(hint_2), bool(hint_3)])

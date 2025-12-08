@@ -10,7 +10,8 @@ import asyncpg  # type: ignore
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, trace)
 from agents.items import TResponseInputItem
-from app.main import get_pool, grading_progress, grading_results, sio
+from app.main import get_pool, get_grading_storage, sio
+from app.utils.storage.request_storage import build_storage_key
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
 from app.utils.agents.tools.create_safe_field_name import \
@@ -437,11 +438,13 @@ async def _run_grade_agent_inline(
             )
 
         # Create grading tools for each standard group
+        profile_id_str = context.get("profile_id")
         grading_tools = create_grading_tools(
             list(standard_groups),
             list(standards),
             simulation_chat_id,
             emit_progress_wrapper,
+            profile_id=str(profile_id_str) if profile_id_str else None,
         )
         grading_tools.append(debug_info_tool)
         logger.info(
@@ -575,8 +578,18 @@ async def _run_grade_agent_inline(
             usage.output_tokens,
         )
 
-        # Extract results from the global storage
-        grading_result = grading_results
+        # Extract results from request-scoped storage
+        profile_id_str = context.get("profile_id")
+        if not profile_id_str:
+            raise ValueError("Profile ID not found in context")
+        
+        storage = get_grading_storage()
+        storage_key = build_storage_key(
+            operation_type="grading",
+            profile_id=str(profile_id_str),
+            primary_id=str(simulation_chat_id),
+        )
+        grading_result = await storage.get_all(storage_key)
 
         logger.info("Grading agent completed successfully")
         logger.info(f"Grading result keys: {list(grading_result.keys())}")

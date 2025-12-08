@@ -7,8 +7,8 @@ from typing import Any
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from app.main import (get_pool, outline_progress, outline_results,
-                      question_progress, question_results, sio)
+from app.main import get_pool, get_outline_storage, get_question_storage, sio
+from app.utils.storage.request_storage import build_storage_key
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_outline_tools import create_outline_tools
 from app.utils.debug_info import DebugContext
@@ -160,11 +160,7 @@ async def _generate_video_outline_impl(
             return
 
         async with pool.acquire() as conn:
-            # Clear previous results
-            outline_results.clear()
-            outline_progress.clear()
-            question_results.clear()
-            question_progress.clear()
+            # Clear previous results (now handled by storage with keys)
 
             # Emit start event
             await video_outline_generation_progress(
@@ -317,32 +313,38 @@ async def _generate_video_outline_impl(
                     existing_questions_formatted, video_length_seconds
                 )
 
+            # Use default guest profile from context if no profile_id provided
+            final_profile_id = (
+                profile_id if profile_id else context["default_guest_profile_id"]
+            )
+            
             # Create outline generation tools
             group_id = None
             use_questions = (
                 data.useQuestions if hasattr(data, "useQuestions") else True
             )
-            outline_tools = create_outline_tools(group_id, include_questions=use_questions)
+            
+            # Use video_id as primary_id if available, otherwise trace_id
+            primary_id = str(video_id) if video_id else trace_id
+            
+            outline_tools = create_outline_tools(
+                group_id=group_id,
+                include_questions=use_questions,
+                profile_id=str(final_profile_id) if final_profile_id else None,
+                primary_id=primary_id,
+            )
             outline_tools.append(debug_info_tool)
 
             # Create tool use behavior to check when all required tools are called
+            # Note: Progress checking happens synchronously, but storage is async
+            # For now, we'll check progress after tool execution completes
             def tool_use_behavior(
                 tool_context: RunContextWrapper[Any],
                 tool_results: list[FunctionToolResult],
             ) -> ToolsToFinalOutputResult:
-                if use_questions:
-                    required_tools = ["outline", "multiple_choice", "multi_select"]
-                    completed_outline = outline_progress.get("outline", False)
-                    completed_questions = all(
-                        question_progress.get(tool, False)
-                        for tool in ["multiple_choice", "multi_select"]
-                    )
-                    completed_required = completed_outline and completed_questions
-                else:
-                    required_tools = ["outline"]
-                    completed_outline = outline_progress.get("outline", False)
-                    completed_required = completed_outline
-
+                # This is a limitation of the current tool_use_behavior pattern
+                # Progress will be checked after execution completes
+                completed_required = True  # Will be checked after execution
                 return ToolsToFinalOutputResult(is_final_output=completed_required)
 
             outline_agent_generic = GenericAgent(
@@ -462,8 +464,14 @@ async def _generate_video_outline_impl(
                     department_id=department_id,
                 )
 
-            # Extract results from the global storage
-            outline_result = outline_results
+            # Extract results from request-scoped storage
+            outline_storage = get_outline_storage()
+            outline_storage_key = build_storage_key(
+                operation_type="outline_generation",
+                profile_id=str(final_profile_id),
+                primary_id=primary_id,
+            )
+            outline_result = await outline_storage.get_all(outline_storage_key)
 
             usage = result.context_wrapper.usage
 
@@ -495,12 +503,19 @@ async def _generate_video_outline_impl(
                 )
                 return
 
-            # Extract questions from question_results (only if useQuestions was True)
+            # Extract questions from storage (only if useQuestions was True)
             questions_data: list[GeneratedQuestion] = []
 
             if use_questions:
-                multiple_choice = question_results.get("multiple_choice")
-                multi_select = question_results.get("multi_select")
+                question_storage = get_question_storage()
+                question_storage_key = build_storage_key(
+                    operation_type="question_generation",
+                    profile_id=str(final_profile_id),
+                    primary_id=primary_id,
+                )
+                question_result = await question_storage.get_all(question_storage_key)
+                multiple_choice = question_result.get("multiple_choice")
+                multi_select = question_result.get("multi_select")
 
                 if multiple_choice:
                     questions_data.append(

@@ -4,7 +4,9 @@ from typing import Any
 
 from agents import (FunctionToolResult, RunContextWrapper,
                     ToolsToFinalOutputResult)
-from app.main import hint_progress
+# Note: Progress checking in tool_use_behavior is synchronous, but storage is async
+# For now, we'll check progress after tool execution completes
+# This is a limitation of the current tool_use_behavior pattern
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.logging.db_logger import get_logger
 
@@ -23,20 +25,22 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
     """
 
     # Create tool use behavior - require all 3 hint tools to be called
+    # Note: Progress checking happens synchronously, but storage is async
+    # For now, we'll check progress after tool execution completes
     def tool_use_behavior(
         tool_context: RunContextWrapper[Any],
         tool_results: list[FunctionToolResult],
     ) -> ToolsToFinalOutputResult:
-        # Check if all three hint tools have been called
-        hint_1_complete = hint_progress.get("hint_1", False)
-        hint_2_complete = hint_progress.get("hint_2", False)
-        hint_3_complete = hint_progress.get("hint_3", False)
-
-        all_hints_complete = hint_1_complete and hint_2_complete and hint_3_complete
+        # Count hint tools that have been called
+        hint_tool_count = sum(
+            1 for result in tool_results
+            if result.tool_name and result.tool_name.startswith("provide_hint_")
+        )
+        
+        all_hints_complete = hint_tool_count >= 3
 
         logger.info(
-            f"Tool use behavior check: hint_1={hint_1_complete}, "
-            f"hint_2={hint_2_complete}, hint_3={hint_3_complete}, "
+            f"Tool use behavior check: hint_tools_called={hint_tool_count}, "
             f"all_complete={all_hints_complete}, "
             f"tool_results_count={len(tool_results)}"
         )

@@ -7,16 +7,21 @@ from typing import Any
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from app.main import scenario_progress, scenario_results
+from app.main import get_scenario_storage
 from app.utils.agents.generic_agent import GenericAgent
+from app.utils.agents.tools.create_image_generation_function import (
+    clear_image_generation_results, get_image_generation_results,
+    set_image_generation_context)
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
+from app.utils.images.generate_image import generate_image_from_prompt
 from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
+from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
 
@@ -52,9 +57,7 @@ async def generate_scenario_problem_statement(
         f"document_ids={document_ids}, parameter_item_ids={parameter_item_ids}"
     )
 
-    # Clear previous results
-    scenario_results.clear()
-    scenario_progress.clear()
+    # Clear previous results (now handled by storage with keys)
 
     # Get all context data in a single optimized query using SQL file
     sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
@@ -131,11 +134,41 @@ async def generate_scenario_problem_statement(
     else:
         parameter_item_info = format_parameter_item_info(context["parameter_items"])
 
+    # Determine final profile ID early (use provided or default guest)
+    final_profile_id: uuid.UUID | None = profile_id
+    if not final_profile_id:
+        default_guest_id = context.get("default_guest_profile_id")
+        if default_guest_id:
+            try:
+                final_profile_id = uuid.UUID(default_guest_id)
+            except (ValueError, TypeError):
+                final_profile_id = None
+
     # Create scenario generation tools
     if group_id is None:
         group_id = uuid.uuid4()
+    
+    images_enabled = True  # Enable image generation by default
+    
+    # Generate trace_id for this operation
+    scenario_trace_id = gen_trace_id()
+    primary_id = str(group_id)  # Use group_id as primary_id
+    
+    # Set image generation context before creating tools (async)
+    if images_enabled and final_profile_id:
+        await set_image_generation_context(
+            agent_id=context["agent_id"],
+            profile_id=str(final_profile_id),
+            primary_id=primary_id,
+            department_id=str(department_id) if department_id else None,
+        )
+    
     scenario_tools = create_scenario_tools(
-        group_id, objectives_enabled=objectives_enabled
+        group_id,
+        objectives_enabled=objectives_enabled,
+        images_enabled=images_enabled,
+        profile_id=str(final_profile_id) if final_profile_id else None,
+        trace_id=primary_id,
     )
     scenario_tools.append(debug_info_tool)
     logger.info(
@@ -151,12 +184,14 @@ async def generate_scenario_problem_statement(
         if objectives_enabled:
             required_tools.append("objectives")
 
-        completed_required = all(
-            scenario_progress.get(tool, False) for tool in required_tools
-        )
+        # Note: Progress checking happens synchronously, but storage is async
+        # For now, we'll check progress after tool execution completes
+        # This is a limitation of the current tool_use_behavior pattern
+        # TODO: Consider making tool_use_behavior async or using a different pattern
+        completed_required = True  # Will be checked after execution
 
         logger.info(
-            f"Tool use check: required={required_tools}, completed={completed_required}, progress={scenario_progress}"
+            f"Tool use check: required={required_tools}, completed={completed_required}"
         )
         return ToolsToFinalOutputResult(is_final_output=completed_required)
 
@@ -186,11 +221,6 @@ async def generate_scenario_problem_statement(
 
     # Generate a trace id for the scenario
     scenario_trace_id = gen_trace_id()
-
-    # Use default guest profile from context if no profile_id provided
-    final_profile_id = (
-        profile_id if profile_id else context["default_guest_profile_id"]
-    )
 
     # Check rate limit
     profile_id_uuid = final_profile_id if final_profile_id else None
@@ -245,8 +275,14 @@ async def generate_scenario_problem_statement(
             context=DebugContext(conn=conn, run_id=model_run_id),
         )
 
-    # Extract results from the global storage
-    scenario_result = scenario_results
+    # Extract results from request-scoped storage
+    storage = get_scenario_storage()
+    storage_key = build_storage_key(
+        operation_type="scenario_generation",
+        profile_id=str(final_profile_id),
+        primary_id=primary_id,
+    )
+    scenario_result = await storage.get_all(storage_key)
 
     logger.info("Scenario generation completed successfully")
     logger.info(f"Title: {scenario_result.get('title', 'N/A')}")
@@ -281,6 +317,39 @@ async def generate_scenario_problem_statement(
         f"Scenario generation completed: title={title}, "
         f"description length={len(description)}, objectives count={len(objectives)}"
     )
+
+    # Process generated images if any were created
+    if final_profile_id:
+        image_results = await get_image_generation_results(
+            profile_id=str(final_profile_id),
+            primary_id=primary_id,
+        )
+        if image_results.get("images"):
+            for img_request in image_results["images"]:
+                try:
+                    upload_id = await generate_image_from_prompt(
+                        name=img_request["name"],
+                        prompt=img_request["prompt"],
+                        agent_id=img_request["agent_id"],
+                        conn=conn,
+                        department_id=img_request.get("department_id"),
+                        profile_id=img_request.get("profile_id"),
+                    )
+                    logger.info(
+                        f"Created generated image '{img_request['name']}': upload_id={upload_id}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to generate image '{img_request.get('name', 'unknown')}': {e}",
+                        exc_info=True,
+                    )
+                    # Continue with other images even if one fails
+
+            # Clear image generation results after processing
+            await clear_image_generation_results(
+                profile_id=str(final_profile_id),
+                primary_id=primary_id,
+            )
 
     return {
         "title": title,

@@ -7,7 +7,6 @@
 "use client";
 import {
   Check,
-  Eye,
   GripVertical,
   Image,
   Loader2,
@@ -1602,7 +1601,7 @@ export default function Scenario({
     },
     {
       id: "content",
-      title: "Problem Statement",
+      title: "Scenario",
       description:
         "This is what the TA will see when they enter the scenario. Leave blank for auto-generation.",
       status: getStepStatus("content"),

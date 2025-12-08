@@ -4,21 +4,34 @@ import uuid
 from typing import Any
 
 from agents import Tool, function_tool
-from app.main import question_progress, question_results
+from app.main import get_question_storage
 from app.utils.logging.db_logger import get_logger
+from app.utils.storage.request_storage import build_storage_key
 from pydantic import Field
 
 logger = get_logger(__name__)
 
 
-def create_question_tools(group_id: uuid.UUID | None) -> list[Tool]:
+def create_question_tools(
+    group_id: uuid.UUID | None,
+    profile_id: str | None = None,
+    primary_id: str | None = None,
+) -> list[Tool]:
     """Create all question generation function tools.
+    
+    Args:
+        group_id: Optional group ID
+        profile_id: Profile ID for tenant isolation
+        primary_id: Primary ID for storage key (video_id, trace_id, etc.)
     
     Returns exactly 3 tools for:
     1. Multiple choice question
     2. Free response question
     3. Multi-select question
     """
+    if not profile_id or not primary_id:
+        logger.warning("profile_id and primary_id required for question storage")
+    
     tools = []
 
     async def set_multiple_choice_question(
@@ -47,7 +60,17 @@ def create_question_tools(group_id: uuid.UUID | None) -> list[Tool]:
                 f"correct_option_index {correct_option_index} is out of range for {len(options)} options"
             )
         
-        question_results["multiple_choice"] = {
+        if not profile_id or not primary_id:
+            return "Error: Storage configuration missing"
+        
+        storage = get_question_storage()
+        storage_key = build_storage_key(
+            operation_type="question_generation",
+            profile_id=profile_id,
+            primary_id=primary_id,
+        )
+        
+        await storage.set(storage_key, "multiple_choice", {
             "question_text": question_text,
             "type": "choice",
             "allow_multiple": False,
@@ -59,8 +82,8 @@ def create_question_tools(group_id: uuid.UUID | None) -> list[Tool]:
                 }
                 for i, opt in enumerate(options)
             ],
-        }
-        question_progress["multiple_choice"] = True
+        })
+        await storage.set(storage_key, "multiple_choice_progress", True)
         
         logger.info(f"✓ Set multiple choice question: {question_text[:50]}...")
         return "Set multiple choice question successfully"
@@ -78,13 +101,23 @@ def create_question_tools(group_id: uuid.UUID | None) -> list[Tool]:
         Returns:
             Confirmation message
         """
-        question_results["free_response"] = {
+        if not profile_id or not primary_id:
+            return "Error: Storage configuration missing"
+        
+        storage = get_question_storage()
+        storage_key = build_storage_key(
+            operation_type="question_generation",
+            profile_id=profile_id,
+            primary_id=primary_id,
+        )
+        
+        await storage.set(storage_key, "free_response", {
             "question_text": question_text,
             "type": "frq",
             "allow_multiple": False,
             "options": [],
-        }
-        question_progress["free_response"] = True
+        })
+        await storage.set(storage_key, "free_response_progress", True)
         
         logger.info(f"✓ Set free response question: {question_text[:50]}...")
         return "Set free response question successfully"
@@ -119,7 +152,17 @@ def create_question_tools(group_id: uuid.UUID | None) -> list[Tool]:
                     f"correct_option_indices contains invalid index {idx} for {len(options)} options"
                 )
         
-        question_results["multi_select"] = {
+        if not profile_id or not primary_id:
+            return "Error: Storage configuration missing"
+        
+        storage = get_question_storage()
+        storage_key = build_storage_key(
+            operation_type="question_generation",
+            profile_id=profile_id,
+            primary_id=primary_id,
+        )
+        
+        await storage.set(storage_key, "multi_select", {
             "question_text": question_text,
             "type": "choice",
             "allow_multiple": True,
@@ -131,8 +174,8 @@ def create_question_tools(group_id: uuid.UUID | None) -> list[Tool]:
                 }
                 for i, opt in enumerate(options)
             ],
-        }
-        question_progress["multi_select"] = True
+        })
+        await storage.set(storage_key, "multi_select_progress", True)
         
         logger.info(f"✓ Set multi-select question: {question_text[:50]}...")
         return "Set multi-select question successfully"

@@ -5,13 +5,14 @@ from typing import Any
 
 from agents.items import TResponseInputItem
 from app.utils.logging.db_logger import get_logger
-from app.utils.agents.tools.create_dynamic_document_function import available_templates
 
 logger = get_logger(__name__)
 
 
-def format_document_template_info(
+async def format_document_template_info(
     document_templates: list[dict[str, Any]],
+    profile_id: str | None = None,
+    primary_id: str | None = None,
 ) -> TResponseInputItem | None:
     """
     Format document template information as TResponseInputItem.
@@ -19,12 +20,45 @@ def format_document_template_info(
     Args:
         document_templates: List of dicts with keys: document_id, document_name,
                            template_args (schema JSON), template_upload_id
+        profile_id: Profile ID for tenant isolation
+        primary_id: Primary ID for storage key (trace_id, scenario_id, etc.)
 
     Returns:
         Dict with role="developer" and content formatted for agent input, or None if no templates
     """
     if not document_templates:
         return None
+    
+    # Store available templates in request-scoped storage if profile_id/primary_id provided
+    if profile_id and primary_id:
+        from app.main import get_dynamic_document_storage
+        from app.utils.storage.request_storage import build_storage_key
+        
+        storage = get_dynamic_document_storage()
+        storage_key = build_storage_key(
+            operation_type="dynamic_document",
+            profile_id=profile_id,
+            primary_id=primary_id,
+        )
+        
+        # Store templates and schemas
+        template_schemas = {}
+        for template in document_templates:
+            document_id = template.get("document_id", "")
+            template_args = template.get("template_args", {})
+            
+            # Parse template_args if it's a string
+            if isinstance(template_args, str):
+                try:
+                    import json
+                    template_args = json.loads(template_args)
+                except json.JSONDecodeError:
+                    template_args = {}
+            
+            template_schemas[document_id] = template_args
+        
+        await storage.set(storage_key, "templates", document_templates)
+        await storage.set(storage_key, "template_schemas", template_schemas)
 
     formatted_templates = []
     for template in document_templates:
@@ -72,26 +106,7 @@ def format_document_template_info(
 """
         formatted_templates.append(template_info)
 
-    # Store available templates for tool to access
-    available_templates.clear()
-    available_templates.update({
-        "templates": document_templates,
-        "template_schemas": {}
-    })
-    
-    # Store schema info for each template
-    for template in document_templates:
-        document_id = template.get("document_id", "")
-        template_args = template.get("template_args", {})
-        
-        # Parse template_args if it's a string
-        if isinstance(template_args, str):
-            try:
-                template_args = json.loads(template_args)
-            except json.JSONDecodeError:
-                template_args = {}
-        
-        available_templates["template_schemas"][document_id] = template_args
+    # Templates are now stored in request-scoped storage above (if profile_id/primary_id provided)
 
     # Build field list for easier reference
     field_names = []
