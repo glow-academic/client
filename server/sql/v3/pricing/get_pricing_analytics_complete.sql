@@ -88,19 +88,33 @@ runs_with_debug AS (
         ) as debug_info
     FROM runs_base mrb
 ),
+model_pricing_aggregated AS (
+    -- Aggregate pricing per model: sum all input/output prices normalized to per-million tokens
+    SELECT 
+        mrb.model_id,
+        COALESCE(SUM(CASE WHEN mp.pricing_type = 'input' THEN mp.price * (1000000.0 / u.value) ELSE 0 END), 0.0) as input_ppm,
+        COALESCE(SUM(CASE WHEN mp.pricing_type = 'output' THEN mp.price * (1000000.0 / u.value) ELSE 0 END), 0.0) as output_ppm
+    FROM (SELECT DISTINCT model_id FROM runs_base WHERE model_id IS NOT NULL) mrb
+    LEFT JOIN model_pricing mp ON mp.model_id = mrb.model_id AND mp.active = true AND mp.pricing_type IN ('input', 'output')
+    LEFT JOIN units u ON u.id = mp.unit_id
+    GROUP BY mrb.model_id
+),
 model_mapping AS (
     SELECT COALESCE(
         jsonb_object_agg(
             m.id::text,
             jsonb_build_object(
                 'name', m.name,
-                'description', m.description
+                'description', m.description,
+                'input_ppm', COALESCE(mpa.input_ppm, 0.0),
+                'output_ppm', COALESCE(mpa.output_ppm, 0.0)
             )
         ),
         '{}'::jsonb
     ) as mapping
     FROM (SELECT DISTINCT model_id FROM runs_base WHERE model_id IS NOT NULL) mrb
     JOIN models m ON m.id = mrb.model_id
+    LEFT JOIN model_pricing_aggregated mpa ON mpa.model_id = m.id
 ),
 profile_mapping AS (
     SELECT COALESCE(

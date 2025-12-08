@@ -1170,7 +1170,7 @@
                     fp.parameter_id,
                     s.id AS scenario_id
                 FROM fields f
-                JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+                JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
                 JOIN param_ids_categorical p ON p.id = fp.parameter_id
                 JOIN scenario_fields sf ON sf.field_id = f.id
                 JOIN scenarios s ON s.id = sf.scenario_id

@@ -181,8 +181,8 @@ async def get_pricing(
                     model_mapping[model_id] = ModelMappingWithPricing(
                         name=model_data["name"],
                         description=model_data["description"],
-                        input_ppm=model_data["input_ppm"],
-                        output_ppm=model_data["output_ppm"],
+                        input_ppm=model_data.get("input_ppm", 0.0),
+                        output_ppm=model_data.get("output_ppm", 0.0),
                     )
 
         # Build profile mapping
