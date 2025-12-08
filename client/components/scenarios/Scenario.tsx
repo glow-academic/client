@@ -11,6 +11,7 @@ import {
   GripVertical,
   Image,
   Loader2,
+  Plus,
   PlusCircle,
   Power,
   RotateCcw,
@@ -59,12 +60,11 @@ import {
   DocumentPicker,
   type DocumentMappingItem,
 } from "@/components/common/forms/DocumentPicker";
-import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { cn } from "@/lib/utils";
-import { ProblemStatementPicker } from "@/components/common/forms/ProblemStatementPicker";
+import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
+import { cn } from "@/lib/utils";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
 
 // Types and API functions
 import type {
@@ -664,26 +664,30 @@ export default function Scenario({
       return inSelectedDepts || isCrossDept;
     });
 
-    const deptFiltered = Array.from(new Set([...filtered, ...selectedPersonaIdSet]));
-    
+    const deptFiltered = Array.from(
+      new Set([...filtered, ...selectedPersonaIdSet])
+    );
+
     // Apply parameter-based filtering
     const selectedParamIds = formData.parameterIds || [];
     if (selectedParamIds.length === 0) {
       return deptFiltered;
     }
-    
+
     return deptFiltered.filter((personaId) => {
       const persona = personaMapping[personaId];
       if (!persona) return true; // Keep if persona not found in mapping
-      
+
       const personaParamIds = persona.parameter_ids || [];
       // If persona has no parameter restrictions, it's valid for all
       if (personaParamIds.length === 0) {
         return true;
       }
-      
+
       // Check if any selected parameter matches persona's parameters
-      return selectedParamIds.some((paramId) => personaParamIds.includes(paramId));
+      return selectedParamIds.some((paramId) =>
+        personaParamIds.includes(paramId)
+      );
     });
   }, [
     scenarioData?.valid_persona_ids,
@@ -837,23 +841,23 @@ export default function Scenario({
     }
 
     const deptFiltered = deptFilteredIds;
-    
+
     // Apply parameter-based filtering
     const selectedParamIds = formData.parameterIds || [];
     if (selectedParamIds.length === 0) {
       return deptFiltered;
     }
-    
+
     return deptFiltered.filter((docId) => {
       const doc = documentMapping[docId];
       if (!doc) return true; // Keep if document not found in mapping
-      
+
       const docParamIds = doc.parameter_ids || [];
       // If document has no parameter restrictions, it's valid for all
       if (docParamIds.length === 0) {
         return true;
       }
-      
+
       // Check if any selected parameter matches document's parameters
       return selectedParamIds.some((paramId) => docParamIds.includes(paramId));
     });
@@ -936,12 +940,12 @@ export default function Scenario({
   const validPersonaIdsFiltered = useMemo(() => {
     const selectedParamIds = formData.parameterIds || [];
     const baseIds = scenarioData?.valid_persona_ids || [];
-    
+
     // If no parameters selected, show all personas
     if (selectedParamIds.length === 0) {
       return baseIds;
     }
-    
+
     // Filter personas that are valid for at least one selected parameter
     // A persona is valid if:
     // 1. It has parameter_ids that include any selected parameter, OR
@@ -949,15 +953,17 @@ export default function Scenario({
     return baseIds.filter((personaId) => {
       const persona = personaMapping[personaId];
       if (!persona) return false;
-      
+
       const personaParamIds = persona.parameter_ids || [];
       // If persona has no parameter restrictions, it's valid for all
       if (personaParamIds.length === 0) {
         return true;
       }
-      
+
       // Check if any selected parameter matches persona's parameters
-      return selectedParamIds.some((paramId) => personaParamIds.includes(paramId));
+      return selectedParamIds.some((paramId) =>
+        personaParamIds.includes(paramId)
+      );
     });
   }, [scenarioData?.valid_persona_ids, formData.parameterIds, personaMapping]);
 
@@ -965,27 +971,31 @@ export default function Scenario({
   const validDocumentIdsFiltered = useMemo(() => {
     const selectedParamIds = formData.parameterIds || [];
     const baseIds = scenarioData?.valid_document_ids || [];
-    
+
     // If no parameters selected, show all documents
     if (selectedParamIds.length === 0) {
       return baseIds;
     }
-    
+
     // Filter documents that are valid for at least one selected parameter
     return baseIds.filter((docId) => {
       const doc = documentMapping[docId];
       if (!doc) return false;
-      
+
       const docParamIds = doc.parameter_ids || [];
       // If document has no parameter restrictions, it's valid for all
       if (docParamIds.length === 0) {
         return true;
       }
-      
+
       // Check if any selected parameter matches document's parameters
       return selectedParamIds.some((paramId) => docParamIds.includes(paramId));
     });
-  }, [scenarioData?.valid_document_ids, formData.parameterIds, documentMapping]);
+  }, [
+    scenarioData?.valid_document_ids,
+    formData.parameterIds,
+    documentMapping,
+  ]);
 
   // Filter fields based on selected personas, documents, and parameters
   // Also include conditional parameters when fields are selected
@@ -993,7 +1003,7 @@ export default function Scenario({
     const selectedParamIds = formData.parameterIds || [];
     const selectedPersonaIdsSet = new Set(selectedPersonaIds);
     const selectedDocIdsSet = new Set(currentDocumentIds);
-    
+
     // Get all fields linked to selected personas
     const personaFields = new Set<string>();
     selectedPersonaIds.forEach((personaId) => {
@@ -1002,7 +1012,7 @@ export default function Scenario({
         persona.field_ids.forEach((fieldId) => personaFields.add(fieldId));
       }
     });
-    
+
     // Get all fields linked to selected documents
     const documentFields = new Set<string>();
     currentDocumentIds.forEach((docId) => {
@@ -1011,21 +1021,27 @@ export default function Scenario({
         doc.field_ids.forEach((fieldId) => documentFields.add(fieldId));
       }
       // Also check document_details for field_ids
-      const docDetails = scenarioData?.document_details?.find((d) => d.document_id === docId);
+      const docDetails = scenarioData?.document_details?.find(
+        (d) => d.document_id === docId
+      );
       if (docDetails?.parameter_item_ids) {
-        docDetails.parameter_item_ids.forEach((fieldId) => documentFields.add(fieldId));
+        docDetails.parameter_item_ids.forEach((fieldId) =>
+          documentFields.add(fieldId)
+        );
       }
     });
-    
+
     // Get conditional parameters from selected fields
     const conditionalParamIds = new Set<string>();
     currentParameterItemIds.forEach((fieldId) => {
       const field = parameterItemMapping[fieldId];
       if (field?.conditional_parameter_ids) {
-        field.conditional_parameter_ids.forEach((paramId) => conditionalParamIds.add(paramId));
+        field.conditional_parameter_ids.forEach((paramId) =>
+          conditionalParamIds.add(paramId)
+        );
       }
     });
-    
+
     // Filter fields:
     // 1. Fields linked to selected personas
     // 2. Fields linked to selected documents
@@ -1035,43 +1051,45 @@ export default function Scenario({
     return validParameterItemIds.filter((fieldId) => {
       const field = parameterItemMapping[fieldId];
       if (!field) return false;
-      
+
       const fieldParamId = field.parameter_id;
-      
+
       // Check if field is linked to selected personas
       if (personaFields.has(fieldId)) {
         return true;
       }
-      
+
       // Check if field is linked to selected documents
       if (documentFields.has(fieldId)) {
         return true;
       }
-      
+
       // Check if field's parameter is in selected parameters from Step 1
       if (selectedParamIds.includes(fieldParamId)) {
         return true;
       }
-      
+
       // Check if field's parameter is a conditional parameter
       if (conditionalParamIds.has(fieldParamId)) {
         return true;
       }
-      
+
       // Check if field is not linked to any persona/document (always available)
-      const isLinkedToPersona = Object.values(personaMapping).some((p) => 
+      const isLinkedToPersona = Object.values(personaMapping).some((p) =>
         p.field_ids?.includes(fieldId)
       );
-      const isLinkedToDocument = Object.values(documentMapping).some((d) => 
-        d.field_ids?.includes(fieldId)
-      ) || scenarioData?.document_details?.some((d) => 
-        d.parameter_item_ids?.includes(fieldId)
-      );
-      
+      const isLinkedToDocument =
+        Object.values(documentMapping).some((d) =>
+          d.field_ids?.includes(fieldId)
+        ) ||
+        scenarioData?.document_details?.some((d) =>
+          d.parameter_item_ids?.includes(fieldId)
+        );
+
       if (!isLinkedToPersona && !isLinkedToDocument) {
         return true;
       }
-      
+
       return false;
     });
   }, [
@@ -1090,22 +1108,32 @@ export default function Scenario({
     // Include all parameters that are in selectedParamIds OR are conditional parameters
     const selectedParamIds = formData.parameterIds || [];
     const conditionalParamIds = new Set<string>();
-    
+
     currentParameterItemIds.forEach((fieldId) => {
       const field = parameterItemMapping[fieldId];
       if (field?.conditional_parameter_ids) {
-        field.conditional_parameter_ids.forEach((paramId) => conditionalParamIds.add(paramId));
+        field.conditional_parameter_ids.forEach((paramId) =>
+          conditionalParamIds.add(paramId)
+        );
       }
     });
-    
+
     const filtered: typeof parameterMapping = {};
     Object.keys(parameterMapping).forEach((paramId) => {
-      if (selectedParamIds.includes(paramId) || conditionalParamIds.has(paramId)) {
+      if (
+        selectedParamIds.includes(paramId) ||
+        conditionalParamIds.has(paramId)
+      ) {
         filtered[paramId] = parameterMapping[paramId];
       }
     });
     return filtered;
-  }, [parameterMapping, formData.parameterIds, currentParameterItemIds, parameterItemMapping]);
+  }, [
+    parameterMapping,
+    formData.parameterIds,
+    currentParameterItemIds,
+    parameterItemMapping,
+  ]);
 
   // Track department changes and manage staged selections
   useEffect(() => {
@@ -1625,9 +1653,7 @@ export default function Scenario({
   // With bidirectional filtering, we just update state - the UI prevents invalid selections
 
   // Handler for parameter items (now unified - no separate persona/document parameters)
-  const handleGeneralParameterItemIdsChange = (
-    newParamItemIds: string[]
-  ) => {
+  const handleGeneralParameterItemIdsChange = (newParamItemIds: string[]) => {
     setCurrentParameterItemIds(newParamItemIds);
   };
 
@@ -1675,21 +1701,11 @@ export default function Scenario({
         toast("Documents disabled by choice");
         return;
       }
-      // Only send non-document parameters to backend (like persona randomization does)
-      // This prevents old document parameters from being included in the request
-      const nonDocumentParamItemIds = currentParameterItemIds.filter(
-        (itemId) => {
-          const item = parameterItemMapping[itemId];
-          if (!item) return true;
-          const paramId = item.parameter_id;
-          return !documentParameterIds.includes(paramId);
-        }
-      );
       const resp = await handleRandomizeScenario({
         name: formData.name || "",
         personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: null, // Send null to force randomization
-        parameterItemIds: nonDocumentParamItemIds,
+        parameterItemIds: currentParameterItemIds,
         departmentIds: formData.departmentIds || null,
         targets: ["documents"],
       });
@@ -2283,7 +2299,9 @@ export default function Scenario({
                     onSelect={(ids) => handleInputChange("departmentIds", ids)}
                     getId={(dept) => (dept as unknown as { id: string }).id}
                     getLabel={(dept) => dept.name || ""}
-                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                    getSearchText={(dept) =>
+                      `${dept.name} ${dept.description || ""}`
+                    }
                     placeholder="All Departments"
                     disabled={isReadonly}
                     multiSelect={true}
@@ -2307,7 +2325,9 @@ export default function Scenario({
                     onSelect={(ids) => handleInputChange("parameterIds", ids)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
-                    getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                    getSearchText={(item) =>
+                      `${item.name} ${item.description || ""}`
+                    }
                     placeholder="Select parameters..."
                     disabled={isReadonly}
                     multiSelect={true}
@@ -2362,12 +2382,18 @@ export default function Scenario({
                               scenarioAgentId: ids[0] || null,
                             }))
                           }
-                          getId={(item) => (item as unknown as { id: string }).id}
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
                           getLabel={(item) => item.name || ""}
-                          getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                          getSearchText={(item) =>
+                            `${item.name} ${item.description || ""}`
+                          }
                           renderPreview={(item) => (
                             <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                              <h4 className="font-medium leading-none">
+                                {item.name || "No agent selected"}
+                              </h4>
                               <div className="text-sm text-muted-foreground">
                                 {item.description || "No description available"}
                               </div>
@@ -2417,12 +2443,18 @@ export default function Scenario({
                               imageAgentId: ids[0] || null,
                             }))
                           }
-                          getId={(item) => (item as unknown as { id: string }).id}
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
                           getLabel={(item) => item.name || ""}
-                          getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                          getSearchText={(item) =>
+                            `${item.name} ${item.description || ""}`
+                          }
                           renderPreview={(item) => (
                             <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                              <h4 className="font-medium leading-none">
+                                {item.name || "No agent selected"}
+                              </h4>
                               <div className="text-sm text-muted-foreground">
                                 {item.description || "No description available"}
                               </div>
@@ -2557,9 +2589,12 @@ export default function Scenario({
               onSelect={handlePersonaSelect}
               getId={(persona) => (persona as unknown as { id: string }).id}
               getLabel={(persona) => persona.name || ""}
-              getSearchText={(persona) => `${persona.name} ${persona.description || ""}`}
+              getSearchText={(persona) =>
+                `${persona.name} ${persona.description || ""}`
+              }
               renderItem={(persona, isSelected) => {
-                const IconComponent = getPersonaIconComponent(persona.icon) || Brain;
+                const IconComponent =
+                  getPersonaIconComponent(persona.icon) || Brain;
                 const hexColor = persona.color || "#64748b";
                 const generateGradient = (hex: string) => {
                   const cleanHex = hex.replace("#", "");
@@ -2593,7 +2628,7 @@ export default function Scenario({
                     <Check
                       className={cn(
                         "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-                        isSelected ? "opacity-100" : "opacity-0",
+                        isSelected ? "opacity-100" : "opacity-0"
                       )}
                     />
                   </div>
@@ -2603,7 +2638,8 @@ export default function Scenario({
                 if (selectedItems.length === 0) return placeholder;
                 if (selectedItems.length === 1) {
                   const persona = selectedItems[0];
-                  const IconComponent = getPersonaIconComponent(persona?.icon) || Brain;
+                  const IconComponent =
+                    getPersonaIconComponent(persona?.icon) || Brain;
                   const hexColor = persona?.color || "#64748b";
                   const generateGradient = (hex: string) => {
                     const cleanHex = hex.replace("#", "");
@@ -2626,7 +2662,9 @@ export default function Scenario({
                       >
                         <IconComponent className="h-3.5 w-3.5 text-white" />
                       </div>
-                      <span className="truncate">{persona?.name || placeholder}</span>
+                      <span className="truncate">
+                        {persona?.name || placeholder}
+                      </span>
                     </div>
                   );
                 }
@@ -2907,25 +2945,91 @@ export default function Scenario({
             </div>
             <div className="flex items-center gap-2">
               {Object.keys(problemStatementMapping).length > 0 && (
-                <ProblemStatementPicker
-                  problemStatementMapping={problemStatementMapping}
-                  selectedProblemStatementId={selectedProblemStatementId}
-                  onSelect={(id) => {
-                    setSelectedProblemStatementId(id);
-                    if (id && problemStatementMapping[id]) {
-                      handleInputChange(
-                        "problemStatement",
-                        problemStatementMapping[id].problem_statement
-                      );
+                <div className="flex items-center gap-2">
+                  <GenericPicker
+                    items={problemStatementMapping}
+                    itemIds={Object.keys(problemStatementMapping)}
+                    selectedIds={
+                      selectedProblemStatementId
+                        ? [selectedProblemStatementId]
+                        : []
                     }
-                  }}
-                  onCreateNew={() => {
-                    setSelectedProblemStatementId(null);
-                    handleInputChange("problemStatement", "");
-                  }}
-                  disabled={isReadonly}
-                  buttonClassName="h-9"
-                />
+                    onSelect={(ids) => {
+                      const id = ids[0] || null;
+                      setSelectedProblemStatementId(id);
+                      if (id && problemStatementMapping[id]) {
+                        handleInputChange(
+                          "problemStatement",
+                          problemStatementMapping[id].problem_statement
+                        );
+                      }
+                    }}
+                    getId={(item) => (item as unknown as { id: string }).id}
+                    getLabel={(item) => {
+                      const date = new Date(item.updated_at);
+                      return `Version ${date.toLocaleDateString()}`;
+                    }}
+                    getSearchText={(item) => {
+                      const date = new Date(item.updated_at);
+                      const preview = item.problem_statement.substring(0, 100);
+                      return `${date.toLocaleDateString()} ${preview}`;
+                    }}
+                    renderButton={(selectedItems) => {
+                      if (selectedItems.length === 0) {
+                        return "New Problem Statement";
+                      }
+                      const problemStatement = selectedItems[0];
+                      const date = new Date(problemStatement.updated_at);
+                      return `Version ${date.toLocaleDateString()}`;
+                    }}
+                    renderItem={(item, isSelected) => {
+                      const date = new Date(item.updated_at);
+                      const preview = item.problem_statement.substring(0, 100);
+                      return (
+                        <div className="flex flex-col items-start py-3 w-full">
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2">
+                              <Check
+                                className={cn(
+                                  "h-4 w-4",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="font-medium">
+                                {date.toLocaleDateString()}{" "}
+                                {date.toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {preview}
+                            {item.problem_statement.length > 100 ? "..." : ""}
+                          </span>
+                        </div>
+                      );
+                    }}
+                    disabled={isReadonly}
+                    multiSelect={false}
+                    hideSelectedChips={true}
+                    buttonClassName="h-9 justify-between"
+                    groupHeading="Version History"
+                    placeholder="Select problem statement version..."
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedProblemStatementId(null);
+                      handleInputChange("problemStatement", "");
+                    }}
+                    disabled={isReadonly}
+                    className="h-9"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New
+                  </Button>
+                </div>
               )}
               <input
                 ref={imageInputRef}

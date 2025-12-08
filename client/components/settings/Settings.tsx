@@ -10,8 +10,8 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { SettingsPicker } from "@/components/common/forms/SettingsPicker";
-import { KeyPicker } from "@/components/common/forms/KeyPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,11 +24,12 @@ import { Switch } from "@/components/ui/switch";
 
 // Type-only import from server pages
 import type {
+  KeysListOut,
   SettingsDetailOut,
   UpdateSettingsIn,
   UpdateSettingsOut,
-  KeysListOut,
 } from "@/app/(main)/system/settings/page";
+import { AuthsTable } from "../common/settings/AuthsTable";
 
 export interface SettingsProps {
   settingsList: SettingsDetailOut[];
@@ -67,7 +68,7 @@ export default function Settings({
   const [settingsDetail, setSettingsDetail] =
     useState<SettingsDetailOut | null>(initialSettingsDetail);
   const [keysList, setKeysList] = useState<KeysListOut>(initialKeysList);
-  
+
   // Key mappings state
   const [providerKeyMapping, setProviderKeyMapping] = useState<
     Record<string, string>
@@ -132,7 +133,13 @@ export default function Settings({
   const keyMapping = useMemo(() => {
     const mapping: Record<
       string,
-      { name: string; description: string; key_masked: string; active: boolean; department_ids: string[] | null }
+      {
+        name: string;
+        description: string;
+        key_masked: string;
+        active: boolean;
+        department_ids: string[] | null;
+      }
     > = {};
     keysList.keys.forEach((key) => {
       mapping[key.key_id] = {
@@ -173,7 +180,7 @@ export default function Settings({
         warning_threshold: settingsDetail.warning_threshold ?? 80,
         danger_threshold: settingsDetail.danger_threshold ?? 70,
       });
-      
+
       // Initialize key mappings from settings detail
       setProviderKeyMapping(settingsDetail.provider_key_mapping || {});
       setAuthKeyMapping(settingsDetail.auth_key_mapping || {});
@@ -232,8 +239,12 @@ export default function Settings({
           warning_threshold: formData.warning_threshold,
           danger_threshold: formData.danger_threshold,
           profileId,
-          provider_key_mapping: Object.keys(providerKeyMapping).length > 0 ? providerKeyMapping : undefined,
-          auth_key_mapping: Object.keys(authKeyMapping).length > 0 ? authKeyMapping : undefined,
+          provider_key_mapping:
+            Object.keys(providerKeyMapping).length > 0
+              ? providerKeyMapping
+              : undefined,
+          auth_key_mapping:
+            Object.keys(authKeyMapping).length > 0 ? authKeyMapping : undefined,
         },
       });
 
@@ -358,11 +369,82 @@ export default function Settings({
         {/* Settings Picker */}
         <div className="space-y-2">
           <Label htmlFor="settings-picker">Settings Version</Label>
-          <SettingsPicker
-            settingsMapping={settingsMapping}
-            selectedSettingsId={selectedSettingsId}
-            onSelect={handleSelectSettings}
+          <GenericPicker
+            items={settingsMapping}
+            itemIds={Object.keys(settingsMapping)}
+            selectedIds={selectedSettingsId ? [selectedSettingsId] : []}
+            onSelect={(ids) => handleSelectSettings(ids[0] || null)}
+            getId={(item) => (item as unknown as { id: string }).id}
+            getLabel={(item) => {
+              const date = new Date(item.created_at);
+              return `Settings (${date.toLocaleDateString()})`;
+            }}
+            getSearchText={(item) => {
+              const date = new Date(item.created_at);
+              return `Settings ${date.toLocaleDateString()} ${item.active ? "Active" : "Inactive"}`;
+            }}
+            renderButton={(selectedItems) => {
+              if (selectedItems.length === 0) {
+                return "Select settings version...";
+              }
+              const setting = selectedItems[0];
+              const date = new Date(setting.created_at);
+              const isDefault =
+                !setting.department_ids || setting.department_ids.length === 0;
+              return (
+                <div className="flex items-center gap-2 truncate">
+                  {isDefault && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs h-5 px-1.5 flex-shrink-0"
+                    >
+                      Default
+                    </Badge>
+                  )}
+                  <span className="truncate">
+                    Settings ({date.toLocaleDateString()})
+                  </span>
+                </div>
+              );
+            }}
+            renderItem={(item, isSelected) => {
+              const date = new Date(item.created_at);
+              const isDefault =
+                !item.department_ids || item.department_ids.length === 0;
+              return (
+                <div className="flex items-center gap-3 w-full">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      {isDefault && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs h-5 px-1.5"
+                        >
+                          Default
+                        </Badge>
+                      )}
+                      <div className="font-medium truncate">
+                        Settings ({date.toLocaleDateString()})
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                      {item.active ? "Active" : "Inactive"}
+                    </div>
+                    {item.department_ids && item.department_ids.length > 0 && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {item.department_ids.length} department
+                        {item.department_ids.length !== 1 ? "s" : ""}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }}
             placeholder="Select settings version..."
+            multiSelect={false}
+            hideSelectedChips={true}
+            buttonClassName="w-full"
+            groupHeading="Settings"
           />
         </div>
 
@@ -473,143 +555,42 @@ export default function Settings({
 
         {/* Linked Auths & Providers */}
         {settingsDetail && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Linked Auths & Providers</h3>
-
-            {/* Linked Auths */}
+          <div className="space-y-6">
+            {/* Authentication Methods Table */}
             <div className="space-y-2">
-              <Label>Authentication Methods</Label>
-              {settingsDetail.auth_ids && settingsDetail.auth_ids.length > 0 ? (
-                <div className="space-y-4">
-                  {settingsDetail.auth_ids.map((authId) => {
-                    const auth = settingsDetail.auth_mapping?.[authId];
-                    const authItems = settingsDetail.auth_items_mapping?.[authId] || [];
-                    const encryptedItems = authItems.filter(
-                      (item: { encrypted?: boolean }) => item.encrypted === true
-                    );
-                    return auth ? (
-                      <div
-                        key={authId}
-                        className="p-3 border rounded-lg bg-muted/50 space-y-3"
-                      >
-                        <div>
-                          <div className="font-medium">{auth.name}</div>
-                          {auth.description && (
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {auth.description}
-                            </div>
-                          )}
-                          {auth.slug && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Slug: {auth.slug}
-                            </div>
-                          )}
-                        </div>
-                        {encryptedItems.length > 0 && (
-                          <div className="space-y-2">
-                            <Label className="text-xs">Encrypted Items</Label>
-                            {encryptedItems.map((item: { auth_item_id: string; name: string; description?: string }) => {
-                              const itemKeyMapping = authKeyMapping[authId] || {};
-                              const selectedKeyId = itemKeyMapping[item.auth_item_id] || null;
-                              return (
-                                <div key={item.auth_item_id} className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">
-                                    {item.name}
-                                    {item.description && (
-                                      <span className="ml-1 text-xs text-muted-foreground">
-                                        - {item.description}
-                                      </span>
-                                    )}
-                                  </Label>
-                                  <KeyPicker
-                                    mapping={keyMapping}
-                                    validIds={validKeyIds}
-                                    selectedIds={selectedKeyId ? [selectedKeyId] : []}
-                                    defaultKeyId={null}
-                                    onSelect={(ids) => {
-                                      setAuthKeyMapping((prev) => ({
-                                        ...prev,
-                                        [authId]: {
-                                          ...(prev[authId] || {}),
-                                          [item.auth_item_id]: ids[0] || "",
-                                        },
-                                      }));
-                                    }}
-                                    multiSelect={false}
-                                    placeholder="Select key..."
-                                    disabled={isSubmitting}
-                                    compact={true}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No authentication methods linked to this settings version.
-                </p>
-              )}
+              <h3 className="text-lg font-semibold">Authentication Methods</h3>
+              <AuthsTable
+                data={authTableData}
+                keyMapping={keyMapping}
+                validKeyIds={validKeyIds}
+                onKeyChange={(authId, authItemId, keyId) => {
+                  setAuthKeyMapping((prev) => ({
+                    ...prev,
+                    [authId]: {
+                      ...(prev[authId] || {}),
+                      [authItemId]: keyId ?? "",
+                    },
+                  }));
+                }}
+                readonly={isSubmitting}
+              />
             </div>
 
-            {/* Linked Providers */}
+            {/* AI Providers Table */}
             <div className="space-y-2">
-              <Label>AI Providers</Label>
-              {settingsDetail.provider_ids &&
-              settingsDetail.provider_ids.length > 0 ? (
-                <div className="space-y-4">
-                  {settingsDetail.provider_ids.map((providerId) => {
-                    const provider =
-                      settingsDetail.provider_mapping?.[providerId];
-                    const selectedKeyId = providerKeyMapping[providerId] || null;
-                    return provider ? (
-                      <div
-                        key={providerId}
-                        className="p-3 border rounded-lg bg-muted/50 space-y-2"
-                      >
-                        <div className="font-medium">{provider.name}</div>
-                        {provider.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {provider.description}
-                          </div>
-                        )}
-                        {provider.value && (
-                          <div className="text-xs text-muted-foreground">
-                            Value: {provider.value}
-                          </div>
-                        )}
-                        <div className="space-y-1">
-                          <Label className="text-xs">API Key</Label>
-                          <KeyPicker
-                            mapping={keyMapping}
-                            validIds={validKeyIds}
-                            selectedIds={selectedKeyId ? [selectedKeyId] : []}
-                            defaultKeyId={null}
-                            onSelect={(ids) => {
-                              setProviderKeyMapping((prev) => ({
-                                ...prev,
-                                [providerId]: ids[0] || "",
-                              }));
-                            }}
-                            multiSelect={false}
-                            placeholder="Select key..."
-                            disabled={isSubmitting}
-                            compact={true}
-                          />
-                        </div>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No AI providers linked to this settings version.
-                </p>
-              )}
+              <h3 className="text-lg font-semibold">AI Providers</h3>
+              <ProvidersTable
+                data={providerTableData}
+                keyMapping={keyMapping}
+                validKeyIds={validKeyIds}
+                onKeyChange={(providerId, keyId) => {
+                  setProviderKeyMapping((prev) => ({
+                    ...prev,
+                    [providerId]: keyId ?? "",
+                  }));
+                }}
+                readonly={isSubmitting}
+              />
             </div>
           </div>
         )}

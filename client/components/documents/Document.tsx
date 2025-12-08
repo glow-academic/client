@@ -25,7 +25,6 @@ import type {
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
-import { TemplatePicker } from "@/components/common/forms/TemplatePicker";
 import TemplateForm, {
   type TemplateSchema,
   isTemplateSchema,
@@ -60,7 +59,8 @@ import {
 } from "@/utils/department-picker-helpers";
 import { inferMimeFromName } from "@/utils/mime-map";
 import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
-import { Building2, FileCode, Power, Tag, UploadCloud, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Building2, Check, FileCode, Plus, Power, Tag, UploadCloud, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -1933,14 +1933,85 @@ export default function Document({
                     {isEditMode &&
                       documentDetail &&
                       Object.keys(templateMapping).length > 0 && (
-                        <TemplatePicker
-                          templateMapping={templateMapping}
-                          selectedTemplateId={selectedTemplateId}
-                          onSelect={handleTemplateSelect}
-                          onCreateNew={() => handleTemplateSelect(null)}
-                          disabled={isSubmitting || isGeneratingTemplate}
-                          buttonClassName="h-8"
-                        />
+                        <div className="flex items-center gap-2">
+                          <GenericPicker
+                            items={templateMapping}
+                            itemIds={Object.keys(templateMapping)}
+                            selectedIds={selectedTemplateId ? [selectedTemplateId] : []}
+                            onSelect={(ids) => handleTemplateSelect(ids[0] || null)}
+                            getId={(item) => (item as unknown as { id: string }).id}
+                            getLabel={(item) => {
+                              const date = new Date(item.updated_at);
+                              return `Version ${date.toLocaleDateString()}`;
+                            }}
+                            getSearchText={(item) => {
+                              const date = new Date(item.updated_at);
+                              const schema = item.template_args;
+                              const preview = schema && typeof schema === "object" && "name" in schema
+                                ? String(schema.name)
+                                : "Template";
+                              return `${date.toLocaleDateString()} ${preview}`;
+                            }}
+                            renderButton={(selectedItems) => {
+                              if (selectedItems.length === 0) {
+                                return "New Template";
+                              }
+                              const template = selectedItems[0];
+                              const date = new Date(template.updated_at);
+                              return `Version ${date.toLocaleDateString()}`;
+                            }}
+                            renderItem={(item, isSelected) => {
+                              const date = new Date(item.updated_at);
+                              const schema = item.template_args;
+                              const preview = schema && typeof schema === "object" && "name" in schema
+                                ? String(schema.name)
+                                : "Template";
+                              return (
+                                <div className="flex flex-col items-start py-3 w-full">
+                                  <div className="flex items-center justify-between w-full">
+                                    <div className="flex items-center gap-2">
+                                      <Check
+                                        className={cn(
+                                          "h-4 w-4",
+                                          isSelected ? "opacity-100" : "opacity-0",
+                                        )}
+                                      />
+                                      <span className="font-medium">
+                                        {date.toLocaleDateString()}{" "}
+                                        {date.toLocaleTimeString()}
+                                      </span>
+                                      {item.active && (
+                                        <span className="text-xs text-muted-foreground">
+                                          (Active)
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground mt-1">
+                                    {preview}
+                                  </span>
+                                </div>
+                              );
+                            }}
+                            disabled={isSubmitting || isGeneratingTemplate}
+                            multiSelect={false}
+                            hideSelectedChips={true}
+                            buttonClassName="h-8 justify-between"
+                            groupHeading="Version History"
+                            placeholder="Select template version..."
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleTemplateSelect(null)}
+                            disabled={isSubmitting || isGeneratingTemplate}
+                            className="h-8"
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            New
+                          </Button>
+                        </div>
                       )}
                     <Button
                       type="button"

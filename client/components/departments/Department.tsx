@@ -25,8 +25,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
-import { SettingsPicker } from "@/components/common/forms/SettingsPicker";
-import { KeyPicker } from "@/components/common/forms/KeyPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Badge } from "@/components/ui/badge";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { Loader2, Power, Trash2 } from "lucide-react";
@@ -44,12 +44,12 @@ import type {
   DecryptKeyIn,
   DecryptKeyOut,
   DepartmentDetailOut,
+  KeysListOut,
+  SettingsDetailOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
   UpdateKeyIn,
   UpdateKeyOut,
-  KeysListOut,
-  SettingsDetailOut,
 } from "@/app/(main)/departments/d/[departmentId]/page";
 // Import types from list page (delete/duplicate actions)
 import type {
@@ -140,7 +140,7 @@ export default function Department({
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
+
   // Keys and settings state
   const [keysList, setKeysList] = useState<KeysListOut | undefined>(
     initialKeysList
@@ -148,7 +148,7 @@ export default function Department({
   const [settingsDetail, setSettingsDetail] = useState<
     SettingsDetailOut | null | undefined
   >(initialSettingsDetail);
-  
+
   // Key mappings state
   const [providerKeyMapping, setProviderKeyMapping] = useState<
     Record<string, string>
@@ -340,7 +340,13 @@ export default function Department({
     if (!keysList) return {};
     const mapping: Record<
       string,
-      { name: string; description: string; key_masked: string; active: boolean; department_ids: string[] | null }
+      {
+        name: string;
+        description: string;
+        key_masked: string;
+        active: boolean;
+        department_ids: string[] | null;
+      }
     > = {};
     keysList.keys.forEach((key) => {
       mapping[key.key_id] = {
@@ -372,7 +378,7 @@ export default function Department({
       ...prev,
       settingsId: settingsId,
     }));
-    
+
     // Fetch settings detail when settings changes
     if (settingsId && getSettingsDetailAction && effectiveProfile?.id) {
       try {
@@ -531,8 +537,8 @@ export default function Department({
           <div className="space-y-2">
             <Label htmlFor="settings">Settings</Label>
             {formData?.settingsId !== undefined && (
-              <SettingsPicker
-                settingsMapping={
+              <GenericPicker
+                items={
                   departmentData.settings_mapping as Record<
                     string,
                     {
@@ -543,180 +549,332 @@ export default function Department({
                     }
                   >
                 }
-                selectedSettingsId={formData.settingsId || null}
-                defaultSettingsId={
-                  Object.values(departmentData.settings_mapping).find(
-                    (s) => !s.department_ids || s.department_ids.length === 0
-                  )?.settings_id || null
-                }
-                onSelect={handleSettingsSelect}
+                itemIds={Object.keys(departmentData.settings_mapping)}
+                selectedIds={formData.settingsId ? [formData.settingsId] : []}
+                onSelect={(ids) => handleSettingsSelect(ids[0] || null)}
+                getId={(item) => (item as unknown as { id: string }).id}
+                getLabel={(item) => {
+                  const date = new Date(item.created_at);
+                  return `Settings (${date.toLocaleDateString()})`;
+                }}
+                getSearchText={(item) => {
+                  const date = new Date(item.created_at);
+                  return `Settings ${date.toLocaleDateString()} ${item.active ? "Active" : "Inactive"}`;
+                }}
+                renderButton={(selectedItems) => {
+                  if (selectedItems.length === 0) {
+                    return "Select settings...";
+                  }
+                  const setting = selectedItems[0];
+                  if (!setting) return "Select settings...";
+                  const date = new Date(setting.created_at);
+                  const defaultSettingsId =
+                    Object.values(departmentData.settings_mapping).find(
+                      (s) => !s.department_ids || s.department_ids.length === 0
+                    )?.settings_id || null;
+                  const isDefault = setting.settings_id === defaultSettingsId;
+                  return (
+                    <div className="flex items-center gap-2 truncate">
+                      {isDefault && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs h-5 px-1.5 flex-shrink-0"
+                        >
+                          Default
+                        </Badge>
+                      )}
+                      <span className="truncate">
+                        Settings ({date.toLocaleDateString()})
+                      </span>
+                    </div>
+                  );
+                }}
+                renderItem={(item, _isSelected) => {
+                  const date = new Date(item.created_at);
+                  const defaultSettingsId =
+                    Object.values(departmentData.settings_mapping).find(
+                      (s) => !s.department_ids || s.department_ids.length === 0
+                    )?.settings_id || null;
+                  const isDefault = item.settings_id === defaultSettingsId;
+                  return (
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {isDefault && (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs h-5 px-1.5"
+                            >
+                              Default
+                            </Badge>
+                          )}
+                          <div className="font-medium truncate">
+                            Settings ({date.toLocaleDateString()})
+                          </div>
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                          {item.active ? "Active" : "Inactive"}
+                        </div>
+                        {item.department_ids &&
+                          item.department_ids.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {item.department_ids.length} department
+                              {item.department_ids.length !== 1 ? "s" : ""}
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  );
+                }}
                 placeholder="Select settings..."
                 disabled={isReadonly}
-                buttonClassName="h-10"
+                multiSelect={false}
+                hideSelectedChips={true}
+                buttonClassName="h-10 w-full"
+                groupHeading="Settings"
               />
             )}
           </div>
         )}
 
         {/* Key Pickers for Linked Settings */}
-        {isEditMode &&
-          settingsDetail &&
-          keysList &&
-          formData?.settingsId && (
-            <div className="space-y-4 border-t pt-4">
-              <h3 className="text-lg font-semibold">
-                Settings Key Configuration
-              </h3>
+        {isEditMode && settingsDetail && keysList && formData?.settingsId && (
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="text-lg font-semibold">
+              Settings Key Configuration
+            </h3>
 
-              {/* Provider Keys */}
-              {settingsDetail.provider_ids &&
-                settingsDetail.provider_ids.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>AI Provider Keys</Label>
-                    <div className="space-y-4">
-                      {settingsDetail.provider_ids.map((providerId) => {
-                        const provider =
-                          settingsDetail.provider_mapping?.[providerId];
-                        const selectedKeyId =
-                          providerKeyMapping[providerId] || null;
-                        return provider ? (
-                          <div
-                            key={providerId}
-                            className="p-3 border rounded-lg bg-muted/50 space-y-2"
-                          >
-                            <div className="font-medium">{provider.name}</div>
-                            {provider.description && (
-                              <div className="text-sm text-muted-foreground">
-                                {provider.description}
-                              </div>
-                            )}
-                            <div className="space-y-1">
-                              <Label className="text-xs">API Key</Label>
-                              <KeyPicker
-                                mapping={keyMapping}
-                                validIds={validKeyIds}
-                                selectedIds={
-                                  selectedKeyId ? [selectedKeyId] : []
-                                }
-                                defaultKeyId={null}
-                                onSelect={(ids) => {
-                                  setProviderKeyMapping((prev) => ({
-                                    ...prev,
-                                    [providerId]: ids[0] || "",
-                                  }));
-                                }}
-                                multiSelect={false}
-                                placeholder="Select key..."
-                                disabled={isReadonly || isSubmitting}
-                                compact={true}
-                              />
+            {/* Provider Keys */}
+            {settingsDetail.provider_ids &&
+              settingsDetail.provider_ids.length > 0 && (
+                <div className="space-y-2">
+                  <Label>AI Provider Keys</Label>
+                  <div className="space-y-4">
+                    {settingsDetail.provider_ids.map((providerId) => {
+                      const provider =
+                        settingsDetail.provider_mapping?.[providerId];
+                      const selectedKeyId =
+                        providerKeyMapping[providerId] || null;
+                      return provider ? (
+                        <div
+                          key={providerId}
+                          className="p-3 border rounded-lg bg-muted/50 space-y-2"
+                        >
+                          <div className="font-medium">{provider["name"]}</div>
+                          {provider["description"] && (
+                            <div className="text-sm text-muted-foreground">
+                              {provider["description"]}
                             </div>
-                          </div>
-                        ) : null;
-                      })}
-                    </div>
-                  </div>
-                )}
-
-              {/* Auth Keys */}
-              {settingsDetail.auth_ids &&
-                settingsDetail.auth_ids.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Authentication Method Keys</Label>
-                    <div className="space-y-4">
-                      {settingsDetail.auth_ids.map((authId) => {
-                        const auth = settingsDetail.auth_mapping?.[authId];
-                        const authItems =
-                          settingsDetail.auth_items_mapping?.[authId] || [];
-                        const encryptedItems = authItems.filter(
-                          (item: { encrypted?: boolean }) =>
-                            item.encrypted === true
-                        );
-                        return auth ? (
-                          <div
-                            key={authId}
-                            className="p-3 border rounded-lg bg-muted/50 space-y-3"
-                          >
-                            <div>
-                              <div className="font-medium">{auth.name}</div>
-                              {auth.description && (
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  {auth.description}
+                          )}
+                          <div className="space-y-1">
+                            <Label className="text-xs">API Key</Label>
+                            <GenericPicker
+                              items={keyMapping}
+                              itemIds={validKeyIds}
+                              selectedIds={selectedKeyId ? [selectedKeyId] : []}
+                              onSelect={(ids: string[]) => {
+                                setProviderKeyMapping((prev) => ({
+                                  ...prev,
+                                  [providerId]: ids[0] || "",
+                                }));
+                              }}
+                              getId={(item) =>
+                                (item as unknown as { id: string }).id
+                              }
+                              getLabel={(item) => item["name"] || ""}
+                              getSearchText={(item) =>
+                                `${item["name"]} ${item["description"] || ""}`
+                              }
+                              renderButton={(selectedItems) => {
+                                if (selectedItems.length === 0) {
+                                  return "Select key...";
+                                }
+                                return (
+                                  selectedItems[0]?.["name"] || "Select key..."
+                                );
+                              }}
+                              renderItem={(item, _isSelected) => (
+                                <div className="flex items-center gap-3 w-full">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium truncate">
+                                      {item["name"] || "Unnamed Key"}
+                                    </div>
+                                    {item["description"] && (
+                                      <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                        {item["description"]}
+                                      </div>
+                                    )}
+                                    {item["department_ids"] &&
+                                      Array.isArray(item["department_ids"]) &&
+                                      item["department_ids"].length > 0 && (
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                          {item["department_ids"].length}{" "}
+                                          department
+                                          {item["department_ids"].length !== 1
+                                            ? "s"
+                                            : ""}
+                                        </div>
+                                      )}
+                                    {!item["active"] && (
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        Inactive
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               )}
-                            </div>
-                            {encryptedItems.length > 0 && (
-                              <div className="space-y-2">
-                                <Label className="text-xs">
-                                  Encrypted Items
-                                </Label>
-                                {encryptedItems.map(
-                                  (item: {
-                                    auth_item_id: string;
-                                    name: string;
-                                    description?: string;
-                                  }) => {
-                                    const itemKeyMapping =
-                                      authKeyMapping[authId] || {};
-                                    const selectedKeyId =
-                                      itemKeyMapping[item.auth_item_id] || null;
-                                    return (
-                                      <div
-                                        key={item.auth_item_id}
-                                        className="space-y-1"
-                                      >
-                                        <Label className="text-xs text-muted-foreground">
-                                          {item.name}
-                                          {item.description && (
-                                            <span className="ml-1 text-xs text-muted-foreground">
-                                              - {item.description}
-                                            </span>
-                                          )}
-                                        </Label>
-                                        <KeyPicker
-                                          mapping={keyMapping}
-                                          validIds={validKeyIds}
-                                          selectedIds={
-                                            selectedKeyId
-                                              ? [selectedKeyId]
-                                              : []
-                                          }
-                                          defaultKeyId={null}
-                                          onSelect={(ids) => {
-                                            setAuthKeyMapping((prev) => ({
-                                              ...prev,
-                                              [authId]: {
-                                                ...(prev[authId] || {}),
-                                                [item.auth_item_id]:
-                                                  ids[0] || "",
-                                              },
-                                            }));
-                                          }}
-                                          multiSelect={false}
-                                          placeholder="Select key..."
-                                          disabled={
-                                            isReadonly || isSubmitting
-                                          }
-                                          compact={true}
-                                        />
-                                      </div>
-                                    );
-                                  }
-                                )}
-                              </div>
-                            )}
+                              placeholder="Select key..."
+                              disabled={isReadonly || isSubmitting}
+                              multiSelect={false}
+                              hideSelectedChips={true}
+                              compact={true}
+                              buttonClassName="h-7 px-2 text-xs justify-between w-full"
+                            />
                           </div>
-                        ) : null;
-                      })}
-                    </div>
+                        </div>
+                      ) : null;
+                    })}
                   </div>
-                )}
+                </div>
+              )}
 
-              <p className="text-xs text-muted-foreground">
-                Note: Key changes will update the linked settings version.
-              </p>
-            </div>
-          )}
+            {/* Auth Keys */}
+            {settingsDetail.auth_ids && settingsDetail.auth_ids.length > 0 && (
+              <div className="space-y-2">
+                <Label>Authentication Method Keys</Label>
+                <div className="space-y-4">
+                  {settingsDetail.auth_ids.map((authId) => {
+                    const auth = settingsDetail.auth_mapping?.[authId];
+                    const authItems =
+                      settingsDetail.auth_items_mapping?.[authId] || [];
+                    const encryptedItems = authItems.filter(
+                      (item: { encrypted?: boolean }) => item.encrypted === true
+                    );
+                    return auth ? (
+                      <div
+                        key={authId}
+                        className="p-3 border rounded-lg bg-muted/50 space-y-3"
+                      >
+                        <div>
+                          <div className="font-medium">{auth["name"]}</div>
+                          {auth["description"] && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {auth["description"]}
+                            </div>
+                          )}
+                        </div>
+                        {encryptedItems.length > 0 && (
+                          <div className="space-y-2">
+                            <Label className="text-xs">Encrypted Items</Label>
+                            {encryptedItems.map((item, _index: number) => {
+                              const typedItem = item as {
+                                auth_item_id: string;
+                                name: string;
+                                description?: string;
+                              };
+                              const itemKeyMapping =
+                                authKeyMapping[authId] || {};
+                              const selectedKeyId =
+                                itemKeyMapping[typedItem.auth_item_id] || null;
+                              return (
+                                <div
+                                  key={typedItem.auth_item_id}
+                                  className="space-y-1"
+                                >
+                                  <Label className="text-xs text-muted-foreground">
+                                    {typedItem.name}
+                                    {typedItem.description && (
+                                      <span className="ml-1 text-xs text-muted-foreground">
+                                        - {typedItem.description}
+                                      </span>
+                                    )}
+                                  </Label>
+                                  <GenericPicker
+                                    items={keyMapping}
+                                    itemIds={validKeyIds}
+                                    selectedIds={
+                                      selectedKeyId ? [selectedKeyId] : []
+                                    }
+                                    onSelect={(ids) => {
+                                      setAuthKeyMapping((prev) => ({
+                                        ...prev,
+                                        [authId]: {
+                                          ...(prev[authId] || {}),
+                                          [typedItem.auth_item_id]:
+                                            ids[0] || "",
+                                        },
+                                      }));
+                                    }}
+                                    getId={(item) =>
+                                      (item as unknown as { id: string }).id
+                                    }
+                                    getLabel={(item) => item["name"] || ""}
+                                    getSearchText={(item) =>
+                                      `${item["name"]} ${item["description"] || ""}`
+                                    }
+                                    renderButton={(selectedItems) => {
+                                      if (selectedItems.length === 0) {
+                                        return "Select key...";
+                                      }
+                                      return (
+                                        selectedItems[0]?.["name"] ||
+                                        "Select key..."
+                                      );
+                                    }}
+                                    renderItem={(item, _isSelected) => (
+                                      <div className="flex items-center gap-3 w-full">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium truncate">
+                                            {item.name || "Unnamed Key"}
+                                          </div>
+                                          {item.description && (
+                                            <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                              {item.description}
+                                            </div>
+                                          )}
+                                          {item.department_ids &&
+                                            item.department_ids.length > 0 && (
+                                              <div className="text-xs text-muted-foreground mt-1">
+                                                {item.department_ids.length}{" "}
+                                                department
+                                                {item.department_ids.length !==
+                                                1
+                                                  ? "s"
+                                                  : ""}
+                                              </div>
+                                            )}
+                                          {!item.active && (
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                              Inactive
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    placeholder="Select key..."
+                                    disabled={isReadonly || isSubmitting}
+                                    multiSelect={false}
+                                    hideSelectedChips={true}
+                                    compact={true}
+                                    buttonClassName="h-7 px-2 text-xs justify-between w-full"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              Note: Key changes will update the linked settings version.
+            </p>
+          </div>
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">

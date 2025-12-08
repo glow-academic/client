@@ -14,7 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ProblemStatementPicker } from "./ProblemStatementPicker";
+import { cn } from "@/lib/utils";
+import { Check, Plus } from "lucide-react";
+import { GenericPicker } from "./GenericPicker";
 
 type ProblemStatementInfo = {
   problem_statement: string;
@@ -241,24 +243,88 @@ export function ProblemStatementAndObjectivesPicker({
       <div className="space-y-2">
         <Label>Problem Statement</Label>
         {Object.keys(problemStatementMapping).length > 0 && (
-          <ProblemStatementPicker
-            problemStatementMapping={problemStatementMapping}
-            selectedProblemStatementId={selectedProblemStatementId}
-            onSelect={(id) => {
-              onProblemStatementSelect(id);
-              if (id && problemStatementMapping[id]) {
-                onProblemStatementChange(
-                  problemStatementMapping[id].problem_statement,
-                );
+          <div className="flex items-center gap-2">
+            <GenericPicker
+              items={problemStatementMapping}
+              itemIds={Object.keys(problemStatementMapping)}
+              selectedIds={
+                selectedProblemStatementId ? [selectedProblemStatementId] : []
               }
-            }}
-            onCreateNew={() => {
-              onProblemStatementCreateNew();
-              onProblemStatementChange("");
-            }}
-            disabled={disabled || readonly}
-            buttonClassName="h-9"
-          />
+              onSelect={(ids) => {
+                const id = ids[0] || null;
+                onProblemStatementSelect(id);
+                if (id && problemStatementMapping[id]) {
+                  onProblemStatementChange(
+                    problemStatementMapping[id].problem_statement
+                  );
+                }
+              }}
+              getId={(item) => (item as unknown as { id: string }).id}
+              getLabel={(item) => {
+                const date = new Date(item.updated_at);
+                return `Version ${date.toLocaleDateString()}`;
+              }}
+              getSearchText={(item) => {
+                const date = new Date(item.updated_at);
+                const preview = item.problem_statement.substring(0, 100);
+                return `${date.toLocaleDateString()} ${preview}`;
+              }}
+              renderButton={(selectedItems) => {
+                if (selectedItems.length === 0) {
+                  return "New Problem Statement";
+                }
+                const problemStatement = selectedItems[0];
+                const date = new Date(problemStatement.updated_at);
+                return `Version ${date.toLocaleDateString()}`;
+              }}
+              renderItem={(item, isSelected) => {
+                const date = new Date(item.updated_at);
+                const preview = item.problem_statement.substring(0, 100);
+                return (
+                  <div className="flex flex-col items-start py-3 w-full">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            isSelected ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <span className="font-medium">
+                          {date.toLocaleDateString()}{" "}
+                          {date.toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {preview}
+                      {item.problem_statement.length > 100 ? "..." : ""}
+                    </span>
+                  </div>
+                );
+              }}
+              disabled={disabled || readonly}
+              multiSelect={false}
+              hideSelectedChips={true}
+              buttonClassName="h-9 w-full justify-between"
+              groupHeading="Version History"
+              placeholder="Select problem statement version..."
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                onProblemStatementCreateNew();
+                onProblemStatementChange("");
+              }}
+              disabled={disabled || readonly}
+              className="h-9"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New
+            </Button>
+          </div>
         )}
         <Textarea
           value={problemStatement || ""}

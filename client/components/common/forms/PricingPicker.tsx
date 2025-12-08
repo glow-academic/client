@@ -13,8 +13,9 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UnitPicker, type UnitItem } from "./UnitPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { PricingTypePicker, type PricingType } from "./PricingTypePicker";
+import type { UnitItem } from "./unit-types";
 
 export interface PricingEntry {
   type: PricingType;
@@ -131,14 +132,38 @@ export function PricingPicker({
                       Unit
                     </Label>
                   )}
-                  <UnitPicker
-                    units={filteredUnits}
-                    selectedId={entry.unit_id || null}
-                    onSelect={(unitId) =>
-                      handleEntryChange(index, "unit_id", unitId || "")
+                  <GenericPicker
+                    items={filteredUnits}
+                    selectedIds={entry.unit_id ? [entry.unit_id] : []}
+                    onSelect={(ids) =>
+                      handleEntryChange(index, "unit_id", ids[0] || "")
                     }
+                    getId={(item) => item.id}
+                    getLabel={(item) => `${item.name} (${item.value.toLocaleString()})`}
+                    getSearchText={(item) => `${item.name} ${item.unit_category} ${item.value.toLocaleString()}`}
+                    renderItem={(item, isSelected) => (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate">
+                              <span className="font-medium">{item.name}</span>
+                              <span className="text-xs text-muted-foreground ml-2">
+                                ({item.unit_category.toUpperCase()})
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                              Value: {item.value.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     placeholder="Select unit..."
                     disabled={disabled}
+                    multiSelect={false}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
+                    groupHeading="Units"
                   />
                 </div>
 

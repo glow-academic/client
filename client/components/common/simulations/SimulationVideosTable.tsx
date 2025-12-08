@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { VideoPicker } from "@/components/common/forms/VideoPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -192,15 +192,66 @@ export function SimulationVideosTable({
           </div>
           {!readonly && onVideoSelect && (
             <div className="w-[200px]">
-              <VideoPicker
-                videoMapping={videoMapping}
-                validVideoIds={validVideoIds}
-                selectedVideoIds={selectedVideoIds}
+              <GenericPicker
+                items={videoMapping}
+                itemIds={validVideoIds}
+                selectedIds={selectedVideoIds}
                 onSelect={onVideoSelect}
+                getId={(item) => (item as unknown as { id: string }).id}
+                getLabel={(item) => item.name || ""}
+                getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                renderPreview={(item) => {
+                  const formatLength = (seconds: number) => {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return `${mins}:${secs.toString().padStart(2, "0")}`;
+                  };
+                  return (
+                    <div className="grid gap-2">
+                      <h4 className="font-medium leading-none">{item.name || "No video selected"}</h4>
+                      <div className="text-sm text-muted-foreground">
+                        {item.description || "No description available"}
+                      </div>
+                      {item.length_seconds && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Length: {formatLength(item.length_seconds)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
+                renderItem={(item, isSelected) => {
+                  const formatLength = (seconds: number) => {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return `${mins}:${secs.toString().padStart(2, "0")}`;
+                  };
+                  return (
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Video className="h-4 w-4 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">{item.name}</div>
+                          {item.description && (
+                            <div className="mt-1 text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                              {item.description}
+                            </div>
+                          )}
+                          {item.length_seconds && (
+                            <div className="mt-1 text-xs text-muted-foreground group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                              {formatLength(item.length_seconds)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }}
                 placeholder="Add videos..."
+                multiSelect={true}
                 hideSelectedChips={true}
-                showLabel={false}
-                buttonClassName="h-9"
+                buttonClassName="h-9 w-full"
+                groupHeading="Videos"
               />
             </div>
           )}
