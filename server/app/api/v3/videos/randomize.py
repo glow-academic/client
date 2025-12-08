@@ -6,11 +6,12 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -151,14 +152,10 @@ async def randomize_video_attributes(
             ]
         elif existing_objective_ids:
             # Keep existing if no options available
-            final_objective_ids = [
-                uuid.UUID(oid) for oid in existing_objective_ids
-            ]
+            final_objective_ids = [uuid.UUID(oid) for oid in existing_objective_ids]
     else:
         # Keep existing
-        final_objective_ids = [
-            uuid.UUID(oid) for oid in existing_objective_ids
-        ]
+        final_objective_ids = [uuid.UUID(oid) for oid in existing_objective_ids]
 
     # Randomize documents (pick 1-2)
     if "documents" in targets or len(targets) == 0:
@@ -171,9 +168,7 @@ async def randomize_video_attributes(
             ]
         elif existing_document_ids:
             # Keep existing if no options available
-            final_document_ids = [
-                uuid.UUID(did) for did in existing_document_ids
-            ]
+            final_document_ids = [uuid.UUID(did) for did in existing_document_ids]
     else:
         # Keep existing
         final_document_ids = [uuid.UUID(did) for did in existing_document_ids]
@@ -203,7 +198,9 @@ async def randomize_video_sections(
             else None
         )
         objective_ids = (
-            [uuid.UUID(o) for o in request.objectiveIds] if request.objectiveIds else None
+            [uuid.UUID(o) for o in request.objectiveIds]
+            if request.objectiveIds
+            else None
         )
         document_ids = (
             [uuid.UUID(p) for p in request.documentIds] if request.documentIds else None
@@ -260,4 +257,3 @@ async def randomize_video_sections(
             sql_params=sql_params,
             request=http_request,
         )
-

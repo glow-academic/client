@@ -61,4 +61,3 @@ async def test_list_settings_ordered_by_created_at(
         first_created = data["settings"][0]["created_at"]
         second_created = data["settings"][1]["created_at"]
         assert first_created >= second_created
-

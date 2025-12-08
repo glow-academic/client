@@ -50,10 +50,11 @@ type GrowthDataResponse = {
   windowAverages: GrowthWindowAverages;
 };
 
-import { RubricPicker } from "@/components/common/forms/RubricPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useChartColors } from "@/lib/utils/chartColors";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 import {
   CartesianGrid,
   Legend,
@@ -64,7 +65,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { TooltipProps } from "recharts";
 
 // Custom tooltip component with liquid glass styling
 function CustomLineTooltip({
@@ -217,7 +217,7 @@ export default function Growth({
   // Get selected metric objects
   const selectedMetricObjects = useMemo(() => {
     return metricsWithFormatters.filter((metric) =>
-      selectedMetrics.includes(metric.id),
+      selectedMetrics.includes(metric.id)
     );
   }, [metricsWithFormatters, selectedMetrics]);
 
@@ -227,7 +227,7 @@ export default function Growth({
   // Normalize to a string once
   const normalizedInsight = useMemo(
     () => (actionableInsight ?? "").trim(),
-    [actionableInsight],
+    [actionableInsight]
   );
 
   if (!hasDataAvailable) {
@@ -279,11 +279,16 @@ export default function Growth({
               Platform-wide performance metrics over time
             </CardDescription>
           </div>
-          <RubricPicker
-            mapping={metricMapping}
-            validIds={validMetricIds}
+          <GenericPicker
+            items={metricMapping}
+            itemIds={validMetricIds}
             selectedIds={selectedMetrics}
             onSelect={handleMetricsSelect}
+            getId={(metric) => (metric as unknown as { id: string }).id}
+            getLabel={(metric) => metric.name || ""}
+            getSearchText={(metric) =>
+              `${metric.name} ${metric.description || ""}`
+            }
             multiSelect={true}
             placeholder="Select metrics..."
             hideSelectedChips={true}

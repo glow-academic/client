@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -514,14 +514,18 @@ export function UploadClassificationDialog({
               </span>
               {validDepartmentIds.length > 1 && (
                 <div data-testid="document-department-selector">
-                  <DepartmentPicker
-                    mapping={departmentMapping}
-                    validIds={validDepartmentIds}
+                  <GenericPicker
+                    items={departmentMapping}
+                    itemIds={validDepartmentIds}
                     selectedIds={selectedDepartmentIds}
                     onSelect={setSelectedDepartmentIds}
+                    getId={(dept) => (dept as unknown as { id: string }).id}
+                    getLabel={(dept) => dept.name || ""}
+                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                     placeholder="Dept"
                     multiSelect={true}
                     compact={true}
+                    hideSelectedChips={true}
                     buttonClassName="h-7 px-2 text-xs"
                   />
                 </div>
@@ -636,9 +640,9 @@ export function UploadClassificationDialog({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <DepartmentPicker
-                          mapping={departmentMapping}
-                          validIds={validDepartmentIds}
+                        <GenericPicker
+                          items={departmentMapping}
+                          itemIds={validDepartmentIds}
                           selectedIds={
                             useDefaultDepartment
                               ? selectedDepartmentIds
@@ -665,9 +669,13 @@ export function UploadClassificationDialog({
                               });
                             }
                           }}
+                          getId={(dept) => (dept as unknown as { id: string }).id}
+                          getLabel={(dept) => dept.name || ""}
+                          getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                           placeholder="Dept"
                           multiSelect={true}
                           compact={true}
+                          hideSelectedChips={true}
                           buttonClassName="h-7 px-2 text-xs"
                           disabled={useDefaultDepartment}
                         />

@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -11,8 +14,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import DepartmentMapping, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -114,9 +115,7 @@ async def get_video_new(
 
     try:
         # Load SQL query
-        sql_query = load_sql(
-            "sql/v3/videos/get_video_new_complete.sql"
-        )
+        sql_query = load_sql("sql/v3/videos/get_video_new_complete.sql")
         sql_params = (request_data.profileId,)
 
         # Execute query
@@ -142,7 +141,9 @@ async def get_video_new(
                     )
 
         # Parse problem_statement_mapping from JSONB
-        problem_statement_mapping_data = parse_jsonb(result.get("problem_statement_mapping"))
+        problem_statement_mapping_data = parse_jsonb(
+            result.get("problem_statement_mapping")
+        )
         problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
         if isinstance(problem_statement_mapping_data, dict):
             for k, v in problem_statement_mapping_data.items():
@@ -254,4 +255,3 @@ async def get_video_new(
             sql_params=sql_params,
             request=request,
         )
-

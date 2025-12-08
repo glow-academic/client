@@ -2,10 +2,9 @@
 
 import math
 import re
-from typing import Tuple
 
 
-def parse_oklch(oklch_str: str) -> Tuple[float, float, float]:
+def parse_oklch(oklch_str: str) -> tuple[float, float, float]:
     """Parse oklch color string into (L, C, H) components."""
     match = re.match(
         r"oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*/\s*[\d.]+%?)?\)", oklch_str
@@ -19,7 +18,7 @@ def parse_oklch(oklch_str: str) -> Tuple[float, float, float]:
 def oklch_to_hex(oklch_str: str) -> str:
     """
     Convert oklch color to hex format.
-    
+
     Algorithm:
     1. oklch -> oklab (convert polar to rectangular)
     2. oklab -> linear RGB (matrix transformation)
@@ -90,7 +89,7 @@ def hex_to_oklch(hex_str: str) -> str:
         if val <= 0.04045:
             return val / 12.92
         ratio: float = (val + 0.055) / 1.055
-        power: float = ratio ** 2.4
+        power: float = ratio**2.4
         return power
 
     r_lin = inv_gamma_correct(r)
@@ -119,4 +118,3 @@ def hex_to_oklch(hex_str: str) -> str:
         H += 360
 
     return f"oklch({L:.3f} {C:.3f} {H:.1f})"
-

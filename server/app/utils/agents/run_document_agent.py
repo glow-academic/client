@@ -9,13 +9,13 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 
 from app.utils.agents.build_document_agent import build_document_agent
-from app.utils.logging.db_logger import get_logger
 from app.utils.agents.tools.create_document_tools import (
     create_document_tools,
     document_progress,
     document_results,
 )
 from app.utils.debug_info import DebugContext
+from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
 
@@ -161,9 +161,7 @@ async def run_document_agent_with_ai(
                 f"{next_allowed_et.strftime('%B %d, %Y')}."
             )
         else:
-            error_message = (
-                f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-            )
+            error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
         raise ValueError(error_message)
 
     # Create model run using SQL file
@@ -200,7 +198,7 @@ async def run_document_agent_with_ai(
             input_items,
             context=DebugContext(conn=conn, run_id=model_run_id),
         )
-    
+
     # Log assistant message (model output)
     assistant_output = getattr(result, "final_output", None) or ""
     if assistant_output:
@@ -233,11 +231,12 @@ async def run_document_agent_with_ai(
         logger.warning("Failed to parse template_schema JSON, using empty dict")
         template_schema = {}
 
-    logger.info(f"Document generation completed: template_html={len(template_html)} chars")
+    logger.info(
+        f"Document generation completed: template_html={len(template_html)} chars"
+    )
     logger.info(f"Template schema: {template_schema.get('name', 'Unknown')}")
 
     return {
         "template_html": template_html,
         "template_schema": template_schema,
     }
-

@@ -3,7 +3,6 @@ Tests for app.utils.websocket.cleanup_profile_connection
 """
 
 
-
 class TestCleanup_Profile_Connection:
     """Tests for cleanup_profile_connection function."""
 

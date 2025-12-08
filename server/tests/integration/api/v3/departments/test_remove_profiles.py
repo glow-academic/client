@@ -32,7 +32,7 @@ async def test_remove_profiles_from_department(
         await db.execute(
             "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
             "VALUES($1, 'redacted@purdue.edu', true, true)",
-            profile_id1
+            profile_id1,
         )
 
     profile_id2 = await db.fetchval(
@@ -48,7 +48,7 @@ async def test_remove_profiles_from_department(
         await db.execute(
             "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
             "VALUES($1, 'redacted@purdue.edu', true, true)",
-            profile_id2
+            profile_id2,
         )
 
     # Add profiles to department

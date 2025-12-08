@@ -32,4 +32,3 @@ async def tus_head(upload_id: str, request: Request) -> Response:
     }
 
     return Response(headers=headers)
-

@@ -3,12 +3,13 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -47,7 +48,9 @@ async def delete_persona(
             # Delete persona with usage check and name fetch (single query)
             sql_query = load_sql("sql/v3/personas/delete_persona_complete.sql")
             sql_params = (request.personaId, request.profileId)
-            result = await conn.fetchrow(sql_query, request.personaId, request.profileId)
+            result = await conn.fetchrow(
+                sql_query, request.personaId, request.profileId
+            )
 
             if not result:
                 raise ValueError("Failed to check persona usage")

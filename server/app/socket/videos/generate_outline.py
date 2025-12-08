@@ -4,11 +4,18 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, gen_trace_id, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.main import get_pool, get_outline_storage, get_question_storage, sio
-from app.utils.storage.request_storage import build_storage_key
+from pydantic import BaseModel, ValidationError
+
+from app.main import get_outline_storage, get_pool, get_question_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_outline_tools import create_outline_tools
 from app.utils.debug_info import DebugContext
@@ -17,9 +24,9 @@ from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
+from app.utils.storage.request_storage import build_storage_key
 from app.utils.video.format_policy_info import format_policy_info
 from app.utils.video.format_question_info import format_question_info
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -317,16 +324,14 @@ async def _generate_video_outline_impl(
             final_profile_id = (
                 profile_id if profile_id else context["default_guest_profile_id"]
             )
-            
+
             # Create outline generation tools
             group_id = None
-            use_questions = (
-                data.useQuestions if hasattr(data, "useQuestions") else True
-            )
-            
+            use_questions = data.useQuestions if hasattr(data, "useQuestions") else True
+
             # Use video_id as primary_id if available, otherwise trace_id
             primary_id = str(video_id) if video_id else trace_id
-            
+
             outline_tools = create_outline_tools(
                 group_id=group_id,
                 include_questions=use_questions,
@@ -408,9 +413,7 @@ async def _generate_video_outline_impl(
                         f"{next_allowed_et.strftime('%B %d, %Y')}."
                     )
                 else:
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                    )
+                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                 await video_outline_generation_error(
                     VideoOutlineGenerationErrorPayload(
                         success=False, message=error_message, trace_id=trace_id
@@ -452,7 +455,7 @@ async def _generate_video_outline_impl(
                     input=clean_input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
-            
+
             # Log assistant message (model output)
             assistant_output = getattr(result, "final_output", None) or ""
             if assistant_output:
@@ -675,4 +678,3 @@ async def generate_video_outline(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

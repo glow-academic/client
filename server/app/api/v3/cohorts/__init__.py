@@ -7,13 +7,13 @@ from app.api.v3.cohorts.add_staff import router as add_staff_router
 from app.api.v3.cohorts.create import router as create_router
 from app.api.v3.cohorts.delete import router as delete_router
 from app.api.v3.cohorts.detail import router as detail_router
-from app.api.v3.cohorts.new import router as new_router
 from app.api.v3.cohorts.detail_with_profiles import (
     router as detail_with_profiles_router,
 )
 from app.api.v3.cohorts.duplicate import router as duplicate_router
 from app.api.v3.cohorts.leave import router as leave_router
 from app.api.v3.cohorts.list import router as list_router
+from app.api.v3.cohorts.new import router as new_router
 from app.api.v3.cohorts.overview import router as overview_router
 from app.api.v3.cohorts.pass_matrix import router as pass_matrix_router
 from app.api.v3.cohorts.remove_profiles import router as remove_profiles_router

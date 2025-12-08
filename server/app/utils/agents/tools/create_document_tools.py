@@ -3,8 +3,9 @@
 from typing import Any
 
 from agents import Tool, function_tool
-from app.utils.logging.db_logger import get_logger
 from pydantic import Field
+
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -89,4 +90,3 @@ def create_document_tools() -> list[Any]:
 
     logger.info(f"Created {len(tools)} document tools")
     return tools
-

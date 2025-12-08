@@ -109,8 +109,12 @@ async def get_prompts_list(
                     active=row.get("active", False),
                     system_prompt_preview=row["system_prompt_preview"] or "",
                     system_prompt=row["system_prompt"] or "",
-                    created_at=row["created_at"].isoformat() if row.get("created_at") else "",
-                    updated_at=row["updated_at"].isoformat() if row.get("updated_at") else "",
+                    created_at=row["created_at"].isoformat()
+                    if row.get("created_at")
+                    else "",
+                    updated_at=row["updated_at"].isoformat()
+                    if row.get("updated_at")
+                    else "",
                     department_ids=department_ids,
                     agent_ids=agent_ids,
                     persona_ids=persona_ids,
@@ -200,4 +204,3 @@ async def get_prompts_list(
             sql_params=sql_params,
             request=request,
         )
-

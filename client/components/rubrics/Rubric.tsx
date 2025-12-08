@@ -5,8 +5,6 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -14,26 +12,20 @@ import {
   VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
+  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -42,20 +34,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
+import { Edit, Plus, Power, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { Plus, Power, Sparkles, Trash2, Edit, X } from "lucide-react";
-import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
-import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 
 // Type-only import from server page
 import type {
@@ -63,8 +61,8 @@ import type {
   CreateRubricOut,
 } from "@/app/(main)/engine/rubrics/page";
 import type {
-  RubricNewOut,
   RubricDetailOut,
+  RubricNewOut,
   UpdateRubricIn,
   UpdateRubricOut,
 } from "@/app/(main)/engine/rubrics/r/[rubricId]/page";
@@ -134,7 +132,7 @@ export default function Rubric({
   const [showAddStandardModal, setShowAddStandardModal] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingStandardId, setEditingStandardId] = useState<string | null>(
-    null,
+    null
   );
 
   // Form states for modals
@@ -256,9 +254,9 @@ export default function Rubric({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primaryDepartmentId ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   // Unified update helper
@@ -281,7 +279,7 @@ export default function Rubric({
       const allGroups = updates.standardGroups.map((group) => {
         // Find standards that belong to this group
         const groupStandards = updates.standards.filter(
-          (s) => s.standardGroupId === group.id,
+          (s) => s.standardGroupId === group.id
         );
         return {
           name: group.name,
@@ -293,7 +291,7 @@ export default function Rubric({
             // Get description from grid cell for this group-standard pair
             // If not found, use empty string (will be set from standard's description on first save)
             const cell = updates.gridCells.find(
-              (c) => c.standardGroupId === group.id && c.standardId === s.id,
+              (c) => c.standardGroupId === group.id && c.standardId === s.id
             );
             return {
               name: s.name,
@@ -308,7 +306,7 @@ export default function Rubric({
       const totalPoints = allGroups.reduce((sum, g) => sum + g.points, 0);
       const totalPassPoints = allGroups.reduce(
         (sum, g) => sum + g.passPoints,
-        0,
+        0
       );
 
       return updateRubricAction({
@@ -325,7 +323,7 @@ export default function Rubric({
         },
       });
     },
-    [updateRubricAction, rubricId, effectiveProfile?.id],
+    [updateRubricAction, rubricId, effectiveProfile?.id]
   );
 
   // Handle save
@@ -334,7 +332,7 @@ export default function Rubric({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        rubricData?.valid_department_ids || [],
+        rubricData?.valid_department_ids || []
       );
 
       if (isEditMode) {
@@ -380,7 +378,7 @@ export default function Rubric({
         isEditMode ? "Failed to update rubric" : "Failed to create rubric",
         {
           description: error instanceof Error ? error.message : "Unknown error",
-        },
+        }
       );
     } finally {
       setIsSaving(false);
@@ -452,8 +450,8 @@ export default function Rubric({
                 points,
                 passPoints,
               }
-            : g,
-        ),
+            : g
+        )
       );
     } else {
       // Add new group
@@ -475,7 +473,7 @@ export default function Rubric({
   const handleDeleteGroup = async (groupId: string) => {
     if (
       !confirm(
-        "Are you sure you want to delete this standard group? This will also delete all associated standards.",
+        "Are you sure you want to delete this standard group? This will also delete all associated standards."
       )
     ) {
       return;
@@ -492,7 +490,7 @@ export default function Rubric({
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           formData.departmentIds || [],
           isSuperadmin,
-          rubricData?.valid_department_ids || [],
+          rubricData?.valid_department_ids || []
         );
         await updateRubricUnified({
           name: formData.name,
@@ -561,8 +559,8 @@ export default function Rubric({
         prev.map((s) =>
           s.id === editingStandardId
             ? { ...s, name: standardFormData.name, points }
-            : s,
-        ),
+            : s
+        )
       );
     } else {
       // Add new standard - assign to first group for now
@@ -582,7 +580,7 @@ export default function Rubric({
       standardGroups.forEach((group) => {
         const existingCell = gridCells.find(
           (c) =>
-            c.standardGroupId === group.id && c.standardId === newStandard.id,
+            c.standardGroupId === group.id && c.standardId === newStandard.id
         );
         if (!existingCell) {
           setGridCells((prev) => [
@@ -616,7 +614,7 @@ export default function Rubric({
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           formData.departmentIds || [],
           isSuperadmin,
-          rubricData?.valid_department_ids || [],
+          rubricData?.valid_department_ids || []
         );
         await updateRubricUnified({
           name: formData.name,
@@ -641,17 +639,17 @@ export default function Rubric({
   const handleCellChange = (
     groupId: string,
     standardId: string,
-    description: string,
+    description: string
   ) => {
     setGridCells((prev) => {
       const existing = prev.find(
-        (c) => c.standardGroupId === groupId && c.standardId === standardId,
+        (c) => c.standardGroupId === groupId && c.standardId === standardId
       );
       if (existing) {
         return prev.map((c) =>
           c.standardGroupId === groupId && c.standardId === standardId
             ? { ...c, description }
-            : c,
+            : c
         );
       } else {
         return [...prev, { standardGroupId: groupId, standardId, description }];
@@ -672,7 +670,7 @@ export default function Rubric({
     });
     // Convert to array and sort by points descending
     return Array.from(standardsByName.values()).sort(
-      (a, b) => b.points - a.points,
+      (a, b) => b.points - a.points
     );
   }, [standards]);
 
@@ -680,11 +678,11 @@ export default function Rubric({
   const findStandardIdForGroup = useCallback(
     (groupId: string, standardName: string): string | null => {
       const standard = standards.find(
-        (s) => s.standardGroupId === groupId && s.name === standardName,
+        (s) => s.standardGroupId === groupId && s.name === standardName
       );
       return standard?.id || null;
     },
-    [standards],
+    [standards]
   );
 
   // Table columns definition
@@ -778,7 +776,7 @@ export default function Rubric({
           // Find the actual standard ID for this group and standard name
           const actualStandardId = findStandardIdForGroup(
             group.id,
-            standard.name,
+            standard.name
           );
           if (!actualStandardId) {
             return (
@@ -790,7 +788,7 @@ export default function Rubric({
           const cell = gridCells.find(
             (c) =>
               c.standardGroupId === group.id &&
-              c.standardId === actualStandardId,
+              c.standardId === actualStandardId
           );
           return (
             <Textarea
@@ -929,17 +927,23 @@ export default function Rubric({
           rubricData.valid_department_ids.length > 1 && (
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <DepartmentPicker
-                mapping={rubricData.department_mapping || {}}
-                validIds={rubricData.valid_department_ids}
+              <GenericPicker
+                items={rubricData.department_mapping || {}}
+                itemIds={rubricData.valid_department_ids}
                 selectedIds={formData.departmentIds || []}
                 onSelect={(ids) =>
                   setFormData((prev) => ({ ...prev, departmentIds: ids }))
                 }
+                getId={(dept) => (dept as unknown as { id: string }).id}
+                getLabel={(dept) => dept.name || ""}
+                getSearchText={(dept) =>
+                  `${dept.name} ${dept.description || ""}`
+                }
                 placeholder="All Departments"
                 disabled={isReadonly}
                 multiSelect={true}
-                triggerProps={{ "data-testid": "picker-department" }}
+                hideSelectedChips={true}
+                buttonClassName="w-full"
               />
             </div>
           )}
@@ -1074,7 +1078,7 @@ export default function Rubric({
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext(),
+                                header.getContext()
                               )}
                         </TableHead>
                       );
@@ -1100,7 +1104,7 @@ export default function Rubric({
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext(),
+                            cell.getContext()
                           )}
                         </TableCell>
                       ))}

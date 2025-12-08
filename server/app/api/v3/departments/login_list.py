@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.main import get_db
-from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
+from app.main import get_db
+from app.utils.sql_helper import load_sql
 
 
 class DepartmentOption(BaseModel):
@@ -35,11 +36,8 @@ async def get_departments_for_login(
     rows = await conn.fetch(sql_query)
     departments = [
         DepartmentOption(
-            id=str(row["id"]),
-            title=row["title"],
-            description=row["description"]
+            id=str(row["id"]), title=row["title"], description=row["description"]
         )
         for row in rows
     ]
     return DepartmentsLoginResponse(departments=departments)
-

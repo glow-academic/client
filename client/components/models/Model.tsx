@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ModalityPicker } from "@/components/common/forms/ModalityPicker";
 import {
   PricingPicker,
@@ -133,9 +133,9 @@ export default function Model({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null,
+        effectiveProfile?.primaryDepartmentId || null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = useMemo(
@@ -150,7 +150,7 @@ export default function Model({
       customModel: false,
       baseUrl: "",
     }),
-    [defaultDepartmentIds],
+    [defaultDepartmentIds]
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -213,7 +213,6 @@ export default function Model({
       value: "", // Will be populated from provider detail if needed
     }));
   }, [providerMapping]);
-
 
   // Get current department_ids and key_id for edit mode
   const currentDepartmentIds = useMemo(() => {
@@ -298,7 +297,7 @@ export default function Model({
             type: (p.type || p.pricing_type) as "input" | "output" | "cached",
             unit_id: p.unit_id,
             price: p.price,
-          }),
+          })
         ) || [];
 
       // Parse modalities
@@ -351,7 +350,7 @@ export default function Model({
         voices: modelDetail.voices
           ? (modelDetail.voices as Array<string | { voice: string }>)
               .map((v: string | { voice: string }) =>
-                typeof v === "string" ? v : v.voice,
+                typeof v === "string" ? v : v.voice
               )
               .filter(Boolean)
           : [],
@@ -386,7 +385,7 @@ export default function Model({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined,
+    value: string | boolean | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -432,7 +431,10 @@ export default function Model({
     }
 
     // Validate base_url if custom model
-    if (formData.customModel && (!formData.baseUrl || formData.baseUrl.trim() === "")) {
+    if (
+      formData.customModel &&
+      (!formData.baseUrl || formData.baseUrl.trim() === "")
+    ) {
       setErrors((prev) => ({
         ...prev,
         baseUrl: "Base URL is required for custom models",
@@ -547,7 +549,7 @@ export default function Model({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       setIsSubmitting(false);
     }
@@ -619,9 +621,9 @@ export default function Model({
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             {formData?.departmentIds !== undefined ? (
-              <DepartmentPicker
-                mapping={departmentMapping}
-                validIds={validDepartmentIds}
+              <GenericPicker
+                items={departmentMapping}
+                itemIds={validDepartmentIds}
                 selectedIds={formData.departmentIds || []}
                 onSelect={(ids) =>
                   setFormData((prev) => ({
@@ -629,9 +631,15 @@ export default function Model({
                     departmentIds: ids,
                   }))
                 }
+                getId={(dept) => (dept as unknown as { id: string }).id}
+                getLabel={(dept) => dept.name || ""}
+                getSearchText={(dept) =>
+                  `${dept.name} ${dept.description || ""}`
+                }
                 placeholder="All Departments"
                 multiSelect={true}
-                triggerProps={{ "data-testid": "picker-department" }}
+                hideSelectedChips={true}
+                buttonClassName="w-full"
               />
             ) : null}
           </div>

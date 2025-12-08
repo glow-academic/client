@@ -489,10 +489,6 @@ export default function Fields({
                 )}
               </div>
             </div>
-            <Button onClick={handleCreateNew} className="w-full md:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              New Field
-            </Button>
           </div>
 
           {/* Cards Grid */}

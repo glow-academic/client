@@ -89,8 +89,12 @@ async def get_providers_list(
                     description=row.get("description", ""),
                     value=row["value"],
                     active=row["active"],
-                    created_at=row["created_at"].isoformat() if row.get("created_at") else "",
-                    updated_at=row["updated_at"].isoformat() if row.get("updated_at") else "",
+                    created_at=row["created_at"].isoformat()
+                    if row.get("created_at")
+                    else "",
+                    updated_at=row["updated_at"].isoformat()
+                    if row.get("updated_at")
+                    else "",
                     base_url=row.get("base_url", ""),
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
@@ -141,4 +145,3 @@ async def get_providers_list(
             sql_params=sql_params,
             request=request,
         )
-

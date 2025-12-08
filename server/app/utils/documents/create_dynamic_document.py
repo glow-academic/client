@@ -1,18 +1,21 @@
 """Helper functions for creating dynamic child documents from template parents."""
 
-import json
 import os
 import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
+from fastapi import Request, Response
 
+from app.api.v3.settings.active import (
+    SettingsActiveRequest,
+    ThemeTokens,
+    get_active_settings,
+)
 from app.main import UPLOAD_FOLDER
 from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.api.v3.settings.active import get_active_settings, SettingsActiveRequest, ThemeTokens
-from fastapi import Request, Response
 
 logger = get_logger(__name__)
 
@@ -85,6 +88,7 @@ async def create_dynamic_document(
     else:
         # Use default theme tokens if no request/profile provided
         from app.api.v3.settings.active import ThemeTokens as ThemeTokensType
+
         theme_tokens = ThemeTokensType(
             primary="#000000",
             primaryForeground="#ffffff",
@@ -207,4 +211,3 @@ async def create_dynamic_document(
     )
 
     return child_document_id
-

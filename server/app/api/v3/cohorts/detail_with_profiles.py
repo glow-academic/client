@@ -1,7 +1,6 @@
 """Cohort detail with profiles endpoint - v3 API."""
 
 import json
-import os
 import uuid
 from datetime import datetime
 from typing import Annotated, Any

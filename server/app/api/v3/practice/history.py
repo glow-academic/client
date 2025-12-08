@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -11,8 +14,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import AttemptHistoryRow
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -42,9 +43,15 @@ class PracticeHistoryResponse(BaseModel):
     pageSize: int
     totalPages: int
     # UI-ready facet options (precomputed on server)
-    profileOptions: list[dict[str, str | int]]  # Array of {value: profileId, label: profileName, count: int}
-    simulationOptions: list[dict[str, str | int]]  # Array of {value: simulationId, label: simulationName, count: int}
-    scenarioOptions: list[dict[str, str | int]]  # Array of {value: scenarioId, label: scenarioTitle, count: int}
+    profileOptions: list[
+        dict[str, str | int]
+    ]  # Array of {value: profileId, label: profileName, count: int}
+    simulationOptions: list[
+        dict[str, str | int]
+    ]  # Array of {value: simulationId, label: simulationName, count: int}
+    scenarioOptions: list[
+        dict[str, str | int]
+    ]  # Array of {value: scenarioId, label: scenarioTitle, count: int}
 
 
 @router.post("/history", response_model=PracticeHistoryResponse)
@@ -56,14 +63,14 @@ async def get_practice_history(
 ) -> PracticeHistoryResponse:
     """Get paginated practice history with search, filters, sorting, and pagination."""
     tags = ["practice", "history"]
-    
+
     # Check for cache bypass header (for hard refresh)
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
@@ -71,7 +78,7 @@ async def get_practice_history(
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
             return PracticeHistoryResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
@@ -115,7 +122,11 @@ async def get_practice_history(
             result = await conn.fetchrow(sql_query, *params)
 
         # Parse JSON result
-        parsed_result = json.loads(result["result"]) if isinstance(result["result"], str) else result["result"]
+        parsed_result = (
+            json.loads(result["result"])
+            if isinstance(result["result"], str)
+            else result["result"]
+        )
 
         # Parse history data
         history = []
@@ -124,9 +135,15 @@ async def get_practice_history(
                 if isinstance(row, dict):
                     # Filter out None values from scenario_ids and scenario_titles arrays
                     if "scenario_ids" in row and isinstance(row["scenario_ids"], list):
-                        row["scenario_ids"] = [s for s in row["scenario_ids"] if s is not None]
-                    if "scenario_titles" in row and isinstance(row["scenario_titles"], list):
-                        row["scenario_titles"] = [s for s in row["scenario_titles"] if s is not None]
+                        row["scenario_ids"] = [
+                            s for s in row["scenario_ids"] if s is not None
+                        ]
+                    if "scenario_titles" in row and isinstance(
+                        row["scenario_titles"], list
+                    ):
+                        row["scenario_titles"] = [
+                            s for s in row["scenario_titles"] if s is not None
+                        ]
                     history.append(AttemptHistoryRow.model_validate(row))
 
         # Parse options from result
@@ -143,7 +160,11 @@ async def get_practice_history(
             scenario_options = []
 
         total_count = parsed_result.get("totalCount", 0)
-        total_pages = (total_count + filters.pageSize - 1) // filters.pageSize if total_count > 0 else 0
+        total_pages = (
+            (total_count + filters.pageSize - 1) // filters.pageSize
+            if total_count > 0
+            else 0
+        )
 
         response_data = PracticeHistoryResponse(
             data=history,
@@ -155,10 +176,13 @@ async def get_practice_history(
             simulationOptions=simulation_options,
             scenarioOptions=scenario_options,
         )
-        
+
         # Cache response with profile-specific tags
         # Add profile-specific tags for granular invalidation
-        profile_specific_tags = tags + [f"practice:profile:{profile_id}", f"history:profile:{profile_id}"]
+        profile_specific_tags = tags + [
+            f"practice:profile:{profile_id}",
+            f"history:profile:{profile_id}",
+        ]
         await set_cached(
             cache_key_val,
             {"data": response_data.model_dump()},
@@ -167,7 +191,7 @@ async def get_practice_history(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -182,4 +206,3 @@ async def get_practice_history(
             sql_params=sql_params,
             request=request,
         )
-

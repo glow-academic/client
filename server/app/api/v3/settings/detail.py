@@ -3,14 +3,15 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -48,10 +49,16 @@ class SettingsDetailResponse(BaseModel):
     auth_ids: list[str]  # Linked auth IDs
     auth_mapping: dict[str, dict[str, str]]  # Auth mapping with name, description, slug
     provider_ids: list[str]  # Linked provider IDs
-    provider_mapping: dict[str, dict[str, str]]  # Provider mapping with name, description, value
+    provider_mapping: dict[
+        str, dict[str, str]
+    ]  # Provider mapping with name, description, value
     provider_key_mapping: dict[str, str]  # Provider key mapping (provider_id -> key_id)
-    auth_key_mapping: dict[str, dict[str, str]]  # Auth key mapping (auth_id -> auth_item_id -> key_id)
-    auth_items_mapping: dict[str, list[dict[str, Any]]]  # Auth items mapping (auth_id -> list of auth_items)
+    auth_key_mapping: dict[
+        str, dict[str, str]
+    ]  # Auth key mapping (auth_id -> auth_item_id -> key_id)
+    auth_items_mapping: dict[
+        str, list[dict[str, Any]]
+    ]  # Auth items mapping (auth_id -> list of auth_items)
 
 
 router = APIRouter()
@@ -93,6 +100,7 @@ async def get_settings_detail(
 
         # Parse auth_ids and provider_ids from arrays
         import json
+
         auth_ids: list[str] = []
         auth_ids_raw = settings.get("auth_ids")
         if auth_ids_raw and isinstance(auth_ids_raw, (list, tuple)):
@@ -210,4 +218,3 @@ async def get_settings_detail(
             sql_params=sql_params,
             request=http_request,
         )
-

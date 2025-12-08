@@ -9,12 +9,13 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.main import get_db
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
+
+from app.main import get_db
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -59,17 +60,20 @@ async def generate_certificate(
             # Drawing and Rect not used, removed to fix F401
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import ParagraphStyle  # type: ignore
-            from reportlab.lib.styles import \
-                getSampleStyleSheet  # type: ignore
+            from reportlab.lib.styles import (
+                ParagraphStyle,  # type: ignore
+                getSampleStyleSheet,  # type: ignore
+            )
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import Frame  # type: ignore
-            from reportlab.platypus import PageTemplate  # type: ignore
-            from reportlab.platypus import Paragraph  # type: ignore
-            from reportlab.platypus import SimpleDocTemplate  # type: ignore
-            from reportlab.platypus import Spacer  # type: ignore
-            from reportlab.platypus import Table  # type: ignore
-            from reportlab.platypus import TableStyle  # type: ignore
+            from reportlab.platypus import (
+                Frame,  # type: ignore
+                PageTemplate,  # type: ignore
+                Paragraph,  # type: ignore
+                SimpleDocTemplate,  # type: ignore
+                Spacer,  # type: ignore
+                Table,  # type: ignore
+                TableStyle,  # type: ignore
+            )
 
             # Create PDF in memory
             buffer = io.BytesIO()
@@ -178,7 +182,7 @@ async def generate_certificate(
                     """Truncate text to max_length and add ellipsis if needed."""
                     if len(text) <= max_length:
                         return text
-                    return text[:max_length - 3] + "..."
+                    return text[: max_length - 3] + "..."
 
                 # Create table data
                 table_data = [["Cohort", "Simulation", "Score", "Status"]]
@@ -421,7 +425,11 @@ async def generate_certificate(
                     score_int = int(round(float(score))) if score > 0 else 0
                     score_text = f"{score_int}%" if score_int > 0 else "No attempts"
                     status_text = (
-                        "PASS" if passed else "FAIL" if score_int > 0 else "Not attempted"
+                        "PASS"
+                        if passed
+                        else "FAIL"
+                        if score_int > 0
+                        else "Not attempted"
                     )
 
                     text_content.append(f"  - {sim_name}: {score_text} ({status_text})")

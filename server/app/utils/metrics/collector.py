@@ -3,6 +3,7 @@
 import os
 import time
 from collections import deque
+from datetime import UTC
 from typing import Any
 
 import asyncpg  # type: ignore
@@ -17,9 +18,11 @@ _redis_client: Any | None = None
 _instance_id: str = os.urandom(8).hex()  # Unique instance ID for leader election
 
 
-async def initialize_metrics(db_pool: asyncpg.Pool, redis_client: Any | None = None) -> None:
+async def initialize_metrics(
+    db_pool: asyncpg.Pool, redis_client: Any | None = None
+) -> None:
     """Initialize metrics collector with database pool and Redis client.
-    
+
     Args:
         db_pool: Database connection pool for writing snapshots
         redis_client: Redis client for shared metrics (optional, falls back to in-memory)
@@ -27,10 +30,11 @@ async def initialize_metrics(db_pool: asyncpg.Pool, redis_client: Any | None = N
     global _db_pool, _redis_client
     _db_pool = db_pool
     _redis_client = redis_client
-    
+
     # Initialize Redis counters if Redis available
     if _redis_client:
         from app.utils.logging.db_logger import get_logger
+
         logger = get_logger("app.utils.metrics.collector")
         try:
             # Initialize counters to 0 if they don't exist (async Redis client)
@@ -38,32 +42,37 @@ async def initialize_metrics(db_pool: asyncpg.Pool, redis_client: Any | None = N
             await _redis_client.set("metrics:errors_total", 0, nx=True)
             logger.info("Metrics collector initialized with Redis backend")
         except Exception as e:
-            logger.warning(f"Failed to initialize Redis metrics: {e}, using in-memory fallback")
+            logger.warning(
+                f"Failed to initialize Redis metrics: {e}, using in-memory fallback"
+            )
             _redis_client = None
     else:
         from app.utils.logging.db_logger import get_logger
+
         logger = get_logger("app.utils.metrics.collector")
-        logger.info("Metrics collector initialized with in-memory backend (Redis unavailable)")
+        logger.info(
+            "Metrics collector initialized with in-memory backend (Redis unavailable)"
+        )
 
 
 async def record_request(latency_ms: float) -> None:
     """Record a successful request with its latency.
-    
+
     Args:
         latency_ms: Request latency in milliseconds
     """
     global _requests_count
-    
+
     if _redis_client:
         try:
             # Atomic increment in Redis
             await _redis_client.incr("metrics:requests_total")
-            
+
             # Store latency sample in Redis list (per-minute bucket)
             now = time.time()
             minute_timestamp = int(now // 60) * 60
             latency_key = f"metrics:latency:{minute_timestamp}"
-            
+
             await _redis_client.lpush(latency_key, str(latency_ms))
             # Set TTL to 2 minutes (expires after snapshot)
             await _redis_client.expire(latency_key, 120)
@@ -80,7 +89,7 @@ async def record_request(latency_ms: float) -> None:
 async def record_error() -> None:
     """Record an error."""
     global _errors_count
-    
+
     if _redis_client:
         try:
             # Atomic increment in Redis
@@ -95,13 +104,13 @@ async def record_error() -> None:
 
 async def snapshot_metrics() -> None:
     """Take a snapshot of current metrics and write to database.
-    
+
     Uses leader election via Redis SET NX to ensure only one instance writes snapshots.
     This function should be called periodically (e.g., every 60 seconds).
     """
     if _db_pool is None:
         return
-    
+
     # Leader election: only one instance should write snapshots
     lock_acquired = False
     if _redis_client:
@@ -116,48 +125,56 @@ async def snapshot_metrics() -> None:
         except Exception:
             # If Redis fails, proceed anyway (fallback mode)
             lock_acquired = True
-    
+
     # If Redis unavailable, proceed (single instance or fallback mode)
     if not _redis_client:
         lock_acquired = True
-    
+
     if not lock_acquired:
         # Another instance is handling snapshots, skip
         return
-    
+
     try:
         # Read metrics from Redis or in-memory
         requests_total = 0
         errors_total = 0
         avg_latency_ms = 0.0
-        
+
         if _redis_client:
             try:
                 # Read counters from Redis
                 requests_str = await _redis_client.get("metrics:requests_total")
                 errors_str = await _redis_client.get("metrics:errors_total")
-                
+
                 requests_total = int(requests_str) if requests_str else 0
                 errors_total = int(errors_str) if errors_str else 0
-                
+
                 # Read latency samples from Redis
                 now = time.time()
                 minute_timestamp = int(now // 60) * 60
                 latency_key = f"metrics:latency:{minute_timestamp}"
-                
+
                 latency_samples = await _redis_client.lrange(latency_key, 0, -1)
                 if latency_samples:
-                    latencies = [float(s.decode() if isinstance(s, bytes) else s) for s in latency_samples]
-                    avg_latency_ms = sum(latencies) / len(latencies) if latencies else 0.0
-                
+                    latencies = [
+                        float(s.decode() if isinstance(s, bytes) else s)
+                        for s in latency_samples
+                    ]
+                    avg_latency_ms = (
+                        sum(latencies) / len(latencies) if latencies else 0.0
+                    )
+
                 # Reset counters after snapshot (or keep accumulating - depends on requirement)
                 # For cumulative: don't reset
                 # For per-minute: reset counters
                 # We'll keep cumulative for now, but could reset if needed
             except Exception as e:
                 from app.utils.logging.db_logger import get_logger
+
                 logger = get_logger("app.utils.metrics.collector")
-                logger.warning(f"Error reading from Redis, using in-memory fallback: {e}")
+                logger.warning(
+                    f"Error reading from Redis, using in-memory fallback: {e}"
+                )
                 # Fallback to in-memory
                 requests_total = _requests_count
                 errors_total = _errors_count
@@ -169,19 +186,19 @@ async def snapshot_metrics() -> None:
             errors_total = _errors_count
             if _latency_samples:
                 avg_latency_ms = sum(_latency_samples) / len(_latency_samples)
-        
+
         # Get system metrics
         cpu_percent = psutil.cpu_percent(interval=0.1)
         memory_info = psutil.Process().memory_info()
         memory_bytes = memory_info.rss
-        
+
         # Round timestamp to minute
         now = time.time()
         rounded_minute = int(now // 60) * 60
-        from datetime import datetime, timezone
-        
-        ts = datetime.fromtimestamp(rounded_minute, tz=timezone.utc)
-        
+        from datetime import datetime
+
+        ts = datetime.fromtimestamp(rounded_minute, tz=UTC)
+
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
@@ -248,7 +265,7 @@ async def snapshot_metrics() -> None:
 
 async def get_current_metrics() -> dict[str, Any]:
     """Get current metrics snapshot (for debugging/monitoring).
-    
+
     Returns:
         Dictionary with current metrics values
     """
@@ -256,23 +273,26 @@ async def get_current_metrics() -> dict[str, Any]:
         try:
             requests_str = await _redis_client.get("metrics:requests_total")
             errors_str = await _redis_client.get("metrics:errors_total")
-            
+
             requests_total = int(requests_str) if requests_str else 0
             errors_total = int(errors_str) if errors_str else 0
-            
+
             # Get latency samples from current minute
             now = time.time()
             minute_timestamp = int(now // 60) * 60
             latency_key = f"metrics:latency:{minute_timestamp}"
             latency_samples = await _redis_client.lrange(latency_key, 0, -1)
-            
+
             avg_latency_ms = 0.0
             sample_count = 0
             if latency_samples:
-                latencies = [float(s.decode() if isinstance(s, bytes) else s) for s in latency_samples]
+                latencies = [
+                    float(s.decode() if isinstance(s, bytes) else s)
+                    for s in latency_samples
+                ]
                 avg_latency_ms = sum(latencies) / len(latencies) if latencies else 0.0
                 sample_count = len(latencies)
-            
+
             return {
                 "requests_total": requests_total,
                 "errors_total": errors_total,
@@ -283,12 +303,12 @@ async def get_current_metrics() -> dict[str, Any]:
         except Exception:
             # Fallback to in-memory
             pass
-    
+
     # In-memory fallback
     avg_latency_ms = 0.0
     if _latency_samples:
         avg_latency_ms = sum(_latency_samples) / len(_latency_samples)
-    
+
     return {
         "requests_total": _requests_count,
         "errors_total": _errors_count,
@@ -296,4 +316,3 @@ async def get_current_metrics() -> dict[str, Any]:
         "sample_count": len(_latency_samples),
         "backend": "memory",
     }
-

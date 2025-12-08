@@ -5,19 +5,27 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              ScenarioMapping, ScenarioMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    RubricMapping,
+    RubricMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline schemas
@@ -41,7 +49,7 @@ class ScenarioInSimulation(BaseModel):
     show_image: bool
     rubric_id: str | None
     time_limit_seconds: int | None  # Per-scenario time limit in seconds
-    
+
     # Agent IDs
     hint_agent_id: str
     grade_agent_ids: list[str]  # Array of grade agent IDs from junction table
@@ -141,7 +149,9 @@ class SimulationDetailResponse(BaseModel):
 
     # Top-level mappings
     scenario_mapping: ScenarioMapping
-    video_mapping: dict[str, dict[str, Any]]  # Video mapping similar to scenario mapping
+    video_mapping: dict[
+        str, dict[str, Any]
+    ]  # Video mapping similar to scenario mapping
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
     parameter_item_mapping: ParameterItemMapping
@@ -233,7 +243,12 @@ async def get_simulation_detail(
         can_duplicate = is_admin
         # Can't delete if can't edit (stricter than can_edit)
         # Also can't delete if practice OR has any cohort links OR not admin
-        can_delete = can_edit and is_admin and not practice_simulation and total_cohort_links == 0
+        can_delete = (
+            can_edit
+            and is_admin
+            and not practice_simulation
+            and total_cohort_links == 0
+        )
 
         # Parse scenarios list from JSONB
         scenarios_list: list[ScenarioInSimulation] = []
@@ -255,7 +270,9 @@ async def get_simulation_detail(
                             copy_paste_allowed=s_data.get("copy_paste_allowed", False),
                             audio_enabled=s_data.get("audio_enabled", False),
                             text_enabled=s_data.get("text_enabled", True),
-                            show_problem_statement=s_data.get("show_problem_statement", True),
+                            show_problem_statement=s_data.get(
+                                "show_problem_statement", True
+                            ),
                             show_objectives=s_data.get("show_objectives", True),
                             show_image=s_data.get("show_image", True),
                             rubric_id=s_data.get("rubric_id"),
@@ -285,7 +302,9 @@ async def get_simulation_detail(
                             active=v_data.get("active", False),
                             position=v_data.get("position", 0),
                             length_seconds=v_data.get("length_seconds", 0),
-                            show_problem_statement=v_data.get("show_problem_statement", True),
+                            show_problem_statement=v_data.get(
+                                "show_problem_statement", True
+                            ),
                             show_objectives=v_data.get("show_objectives", True),
                             show_image=v_data.get("show_image", True),
                             usage_count=v_data.get("usage_count", 0),
@@ -486,9 +505,7 @@ async def get_simulation_detail(
                         "roles": [str(r) for r in roles],
                     }
 
-        valid_agent_ids = [
-            str(aid) for aid in (result.get("valid_agent_ids") or [])
-        ]
+        valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
 
         # Parse department_ids
         department_ids = result.get("department_ids")

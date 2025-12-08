@@ -367,7 +367,7 @@ video_parameter_mapping_data AS (
             jsonb_build_object(
                 'name', p.name, 
                 'description', p.description, 
-                'numerical',                 'document_parameter', p.document_parameter,
+                'document_parameter', p.document_parameter,
                 'video_parameter', p.video_parameter
             )
         ), '{}'::jsonb) as parameter_mapping

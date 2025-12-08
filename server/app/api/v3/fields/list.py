@@ -5,6 +5,9 @@ from collections import Counter
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -12,8 +15,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import DepartmentMappingItem
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 class FieldsListRequest(BaseModel):
@@ -108,7 +109,9 @@ async def get_fields_list(
             conditional_parameter_ids: list[str] = []
             cond_param_ids_raw = row.get("conditional_parameter_ids")
             if cond_param_ids_raw and isinstance(cond_param_ids_raw, (list, tuple)):
-                conditional_parameter_ids = [str(pid) for pid in cond_param_ids_raw if pid]
+                conditional_parameter_ids = [
+                    str(pid) for pid in cond_param_ids_raw if pid
+                ]
 
             fields.append(
                 FieldItem(
@@ -150,7 +153,9 @@ async def get_fields_list(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
             filters.profileId,
         )
-        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+        user_department_ids = {
+            str(row["department_id"]) for row in user_department_rows
+        }
 
         # Build facet options
         # Filter parameter_options to only include parameters associated with fields
@@ -204,4 +209,3 @@ async def get_fields_list(
             sql_params=sql_params,
             request=request,
         )
-

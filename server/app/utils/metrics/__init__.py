@@ -18,4 +18,3 @@ __all__ = [
 
 # Note: record_request and record_error are now async functions
 # Use await or asyncio.create_task() when calling them
-

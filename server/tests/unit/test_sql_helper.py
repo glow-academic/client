@@ -2,7 +2,6 @@
 Tests for app.utils.sql_helper
 """
 
-
 import pytest
 
 from app.utils.sql_helper import load_sql

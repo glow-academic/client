@@ -88,7 +88,9 @@ async def get_key_new(
         # Get user role and primary department for default behavior
         user_role = row.get("user_role", "guest")
         is_superadmin = user_role == "superadmin"
-        primary_department_id = row.get("department_id")  # From primary_department_id CTE
+        primary_department_id = row.get(
+            "department_id"
+        )  # From primary_department_id CTE
 
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
@@ -119,8 +121,12 @@ async def get_key_new(
             key_masked=row.get("key_masked", "****"),
             type=row.get("type", "api"),
             active=row.get("active", True),
-            created_at=row.get("created_at").isoformat() if row.get("created_at") else "",
-            updated_at=row.get("updated_at").isoformat() if row.get("updated_at") else "",
+            created_at=row.get("created_at").isoformat()
+            if row.get("created_at")
+            else "",
+            updated_at=row.get("updated_at").isoformat()
+            if row.get("updated_at")
+            else "",
             department_ids=dept_ids or [],
             model_ids=model_ids,
             valid_department_ids=valid_department_ids,
@@ -151,4 +157,3 @@ async def get_key_new(
             sql_params=sql_params,
             request=request,
         )
-

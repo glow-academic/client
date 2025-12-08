@@ -83,9 +83,8 @@ import type {
   UpdateCohortOut,
 } from "@/app/(main)/cohorts/e/[cohortId]/page";
 import type { ProfileListItem } from "@/app/(main)/management/staff/page";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
-import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -155,7 +154,7 @@ const formatLastActive = (timestamp: string | null): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60),
+    (now.getTime() - date.getTime()) / (1000 * 60)
   );
 
   if (diffInMinutes < 1) return "Just now";
@@ -178,7 +177,7 @@ type ProfileListItemWithRemove = ProfileListItem & {
 };
 
 const normalizeCohortStaffItem = (
-  item: CohortDetailOut["staff"][number] | CohortNewOut["staff"][number],
+  item: CohortDetailOut["staff"][number] | CohortNewOut["staff"][number]
 ): ProfileListItemWithRemove => {
   return {
     profile_id: item.profile_id,
@@ -253,7 +252,7 @@ export default function Cohort({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
   const [draggedSimulation, setDraggedSimulation] = useState<string | null>(
-    null,
+    null
   );
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
@@ -263,9 +262,9 @@ export default function Cohort({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primaryDepartmentId ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = {
@@ -286,7 +285,7 @@ export default function Cohort({
   const [showBulkRemoveDialog, setShowBulkRemoveDialog] = useState(false);
   // Simplified staging - just track profile IDs
   const [stagedProfileIdsToAdd, setStagedProfileIdsToAdd] = useState<string[]>(
-    [],
+    []
   );
   const [stagedProfileIdsToRemove, setStagedProfileIdsToRemove] = useState<
     string[]
@@ -358,7 +357,7 @@ export default function Cohort({
 
   // State for junction data
   const [currentSimulationIds, setCurrentSimulationIds] = useState<string[]>(
-    [],
+    []
   );
 
   // Readonly logic using server-provided can_edit flag
@@ -370,7 +369,7 @@ export default function Cohort({
   // Filter valid IDs based on selected departments
   const departmentMapping = useMemo(
     () => cohortData?.department_mapping || {},
-    [cohortData?.department_mapping],
+    [cohortData?.department_mapping]
   );
 
   const validSimulationIds = useMemo(() => {
@@ -510,7 +509,7 @@ export default function Cohort({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | null,
+    value: string | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -525,7 +524,7 @@ export default function Cohort({
 
   const handleDragStartSimulation = (
     e: React.DragEvent,
-    simulationId: string,
+    simulationId: string
   ) => {
     setDraggedSimulation(simulationId);
     e.dataTransfer.effectAllowed = "move";
@@ -570,10 +569,10 @@ export default function Cohort({
         cohortData?.staff?.map((s) => s.profile_id) || [];
       const finalProfileIds = [
         ...existingProfileIds.filter(
-          (id) => !stagedProfileIdsToRemove.includes(id),
+          (id) => !stagedProfileIdsToRemove.includes(id)
         ),
         ...stagedProfileIdsToAdd.filter(
-          (id) => !existingProfileIds.includes(id),
+          (id) => !existingProfileIds.includes(id)
         ),
       ];
       const isUserInCohort = finalProfileIds.includes(effectiveProfile.id);
@@ -612,10 +611,10 @@ export default function Cohort({
           : [];
       const finalProfileIds = [
         ...existingProfileIds.filter(
-          (id) => !stagedProfileIdsToRemove.includes(id),
+          (id) => !stagedProfileIdsToRemove.includes(id)
         ),
         ...stagedProfileIdsToAdd.filter(
-          (id) => !existingProfileIds.includes(id),
+          (id) => !existingProfileIds.includes(id)
         ),
       ];
 
@@ -623,7 +622,7 @@ export default function Cohort({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds,
+        validDepartmentIds
       );
 
       const targetCohortId = cohortId || editingCohortId;
@@ -667,7 +666,7 @@ export default function Cohort({
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;
       toast.error(
-        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -719,7 +718,7 @@ export default function Cohort({
         setIsSearchingStaff(false);
       }
     },
-    [effectiveProfile?.id, searchAddStaff, cohortId, formData.departmentIds],
+    [effectiveProfile?.id, searchAddStaff, cohortId, formData.departmentIds]
   );
 
   const handleStaffSearchQueryChange = useCallback(
@@ -738,7 +737,7 @@ export default function Cohort({
         handleStaffSearch(value);
       }, 500);
     },
-    [handleStaffSearch],
+    [handleStaffSearch]
   );
 
   // Track previous department IDs to detect actual changes
@@ -895,7 +894,7 @@ export default function Cohort({
     }
 
     const selectedProfilesArray = Array.from(
-      staffSearchSelectedProfiles.values(),
+      staffSearchSelectedProfiles.values()
     );
     if (selectedProfilesArray.length === 0) {
       toast.error("No profiles selected.");
@@ -913,7 +912,7 @@ export default function Cohort({
     setStaffSearchSelectedProfiles(new Map());
     setStaffSearchResults([]);
     toast.success(
-      `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`,
+      `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`
     );
   };
 
@@ -926,7 +925,7 @@ export default function Cohort({
 
     // Filter out staged removals
     const filteredExistingStaff = existingStaff.filter(
-      (s) => !stagedProfileIdsToRemove.includes(s.profile_id),
+      (s) => !stagedProfileIdsToRemove.includes(s.profile_id)
     );
 
     // Get staged profiles from search results (if available) or create minimal entries
@@ -969,7 +968,7 @@ export default function Cohort({
 
     // Normalize existing staff
     const normalizedExistingStaff = filteredExistingStaff.map(
-      normalizeCohortStaffItem,
+      normalizeCohortStaffItem
     );
 
     return [...stagedProfiles, ...normalizedExistingStaff];
@@ -1006,7 +1005,7 @@ export default function Cohort({
                   });
                 } else {
                   setSelectedStaffIds((prev) =>
-                    prev.filter((id) => !visibleRowIds.includes(id)),
+                    prev.filter((id) => !visibleRowIds.includes(id))
                   );
                 }
               }}
@@ -1023,7 +1022,7 @@ export default function Cohort({
               onCheckedChange={(value) => {
                 const id = row.original.profile_id;
                 setSelectedStaffIds((prev) =>
-                  value ? [...prev, id] : prev.filter((x) => x !== id),
+                  value ? [...prev, id] : prev.filter((x) => x !== id)
                 );
               }}
               aria-label="Select row"
@@ -1091,7 +1090,7 @@ export default function Cohort({
           return Boolean(
             staff.first_name.toLowerCase().includes(valueLower) ||
               staff.last_name.toLowerCase().includes(valueLower) ||
-              emailMatch,
+              emailMatch
           );
         },
       },
@@ -1165,7 +1164,7 @@ export default function Cohort({
           const date = new Date(lastActive);
           const now = new Date();
           const diffInDays = Math.floor(
-            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
           );
 
           if (diffInDays < 7) return "recent";
@@ -1224,7 +1223,7 @@ export default function Cohort({
                     onClick={() =>
                       window.open(
                         `/analytics/reports/p/${staff.profile_id}`,
-                        "_blank",
+                        "_blank"
                       )
                     }
                   >
@@ -1246,13 +1245,13 @@ export default function Cohort({
                       onClick={() => {
                         if (staff.isStaged) {
                           setStagedProfileIdsToAdd((prev) =>
-                            prev.filter((id) => id !== staff.profile_id),
+                            prev.filter((id) => id !== staff.profile_id)
                           );
                           toast.success("Removed staged profile");
                         } else {
                           if (!staff.can_remove) {
                             toast.error(
-                              "You cannot remove this staff member from the cohort.",
+                              "You cannot remove this staff member from the cohort."
                             );
                             return;
                           }
@@ -1263,7 +1262,7 @@ export default function Cohort({
                             return prev;
                           });
                           toast.success(
-                            "Staff member staged for removal. Changes will be applied when you save.",
+                            "Staff member staged for removal. Changes will be applied when you save."
                           );
                         }
                       }}
@@ -1283,7 +1282,7 @@ export default function Cohort({
         enableHiding: false,
       },
     ],
-    [selectedStaffIds, isReadonly, cohortId],
+    [selectedStaffIds, isReadonly, cohortId]
   );
 
   // Staff table state
@@ -1435,15 +1434,21 @@ export default function Cohort({
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
               {formData?.departmentIds !== undefined ? (
-                <DepartmentPicker
-                  mapping={cohortData?.department_mapping || {}}
-                  validIds={cohortData?.valid_department_ids || []}
+                <GenericPicker
+                  items={cohortData?.department_mapping || {}}
+                  itemIds={cohortData?.valid_department_ids || []}
                   selectedIds={formData.departmentIds || []}
                   onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                  getId={(dept) => (dept as unknown as { id: string }).id}
+                  getLabel={(dept) => dept.name || ""}
+                  getSearchText={(dept) =>
+                    `${dept.name} ${dept.description || ""}`
+                  }
                   placeholder="All Departments"
                   disabled={isReadonly}
                   multiSelect={true}
-                  triggerProps={{ "data-testid": "picker-department" }}
+                  hideSelectedChips={true}
+                  buttonClassName="w-full"
                 />
               ) : null}
             </div>
@@ -1485,15 +1490,47 @@ export default function Cohort({
               <Label htmlFor="simulations">Simulations</Label>
             </div>
             <div className="flex gap-2">
-              <SimulationPicker
-                simulationMapping={cohortData?.simulation_mapping || {}}
-                validSimulationIds={validSimulationIds}
-                selectedSimulationIds={currentSimulationIds}
+              <GenericPicker
+                items={cohortData?.simulation_mapping || {}}
+                itemIds={validSimulationIds}
+                selectedIds={currentSimulationIds}
                 onSelect={handleSimulationSelection}
+                getId={(sim) => (sim as unknown as { id: string }).id}
+                getLabel={(sim) => sim.name || ""}
+                getSearchText={(sim) => `${sim.name} ${sim.description || ""}`}
+                renderPreview={(sim) => {
+                  const formatTimeLimit = (timeLimit?: number | null) => {
+                    if (!timeLimit || timeLimit === 0) return "No time limit";
+                    if (timeLimit < 60) return `${timeLimit} minutes`;
+                    const hours = Math.floor(timeLimit / 60);
+                    const minutes = timeLimit % 60;
+                    if (minutes === 0)
+                      return `${hours} hour${hours !== 1 ? "s" : ""}`;
+                    return `${hours}h ${minutes}m`;
+                  };
+                  return (
+                    <div className="grid gap-2">
+                      <h4 className="font-medium leading-none">{sim.name}</h4>
+                      <div className="text-sm text-muted-foreground">
+                        {sim.description || "No description available"}
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        <Badge variant="outline" className="text-xs">
+                          {formatTimeLimit(
+                            (sim as { time_limit?: number | null }).time_limit
+                          )}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                }}
                 placeholder="Add simulation"
                 showLabel={false}
+                multiSelect={true}
+                hideSelectedChips={true}
                 buttonClassName="w-48"
                 disabled={isReadonly}
+                groupHeading="Simulations"
               />
             </div>
           </div>
@@ -1514,7 +1551,7 @@ export default function Cohort({
                 if (!simulation) return null;
 
                 const simulationData = cohortData?.simulations?.find(
-                  (s) => s.simulation_id === simulationId,
+                  (s) => s.simulation_id === simulationId
                 );
 
                 const isExistingSimulation =
@@ -1778,7 +1815,7 @@ export default function Cohort({
                                   ? null
                                   : flexRender(
                                       header.column.columnDef.header,
-                                      header.getContext(),
+                                      header.getContext()
                                     )}
                               </TableHead>
                             );
@@ -1803,7 +1840,7 @@ export default function Cohort({
                               >
                                 {flexRender(
                                   cell.column.columnDef.cell,
-                                  cell.getContext(),
+                                  cell.getContext()
                                 )}
                               </TableCell>
                             ))}
@@ -1859,12 +1896,12 @@ export default function Cohort({
                     if (selectedStaffIds.length === 0 || !cohortId) return;
 
                     const existingStaffIds = new Set(
-                      cohortData?.staff?.map((s) => s.profile_id) || [],
+                      cohortData?.staff?.map((s) => s.profile_id) || []
                     );
 
                     const removableIds = selectedStaffIds.filter((id) => {
                       const staff = staffDataForTable.find(
-                        (s) => s.profile_id === id,
+                        (s) => s.profile_id === id
                       );
                       if (!staff) return false;
                       if (staff.isStaged) return true;
@@ -1872,29 +1909,29 @@ export default function Cohort({
                     });
 
                     const stagedIds = removableIds.filter(
-                      (id) => !existingStaffIds.has(id),
+                      (id) => !existingStaffIds.has(id)
                     );
                     const existingIds = removableIds.filter((id) =>
-                      existingStaffIds.has(id),
+                      existingStaffIds.has(id)
                     );
 
                     if (stagedIds.length > 0) {
                       setStagedProfileIdsToAdd((prev) =>
-                        prev.filter((p) => !stagedIds.includes(p)),
+                        prev.filter((p) => !stagedIds.includes(p))
                       );
                     }
 
                     if (existingIds.length > 0) {
                       setStagedProfileIdsToRemove((prev) => {
                         const newRemovals = existingIds.filter(
-                          (id) => !prev.includes(id),
+                          (id) => !prev.includes(id)
                         );
                         return [...prev, ...newRemovals];
                       });
                     }
 
                     toast.success(
-                      `${removableIds.length} staff member(s) staged for removal. Changes will be applied when you save the cohort.`,
+                      `${removableIds.length} staff member(s) staged for removal. Changes will be applied when you save the cohort.`
                     );
                     setSelectedStaffIds([]);
                     setShowBulkRemoveDialog(false);
@@ -1997,7 +2034,7 @@ export default function Cohort({
                     <TableBody>
                       {staffSearchResults.map((profile) => {
                         const isSelected = staffSearchSelectedIds.has(
-                          profile.profile_id,
+                          profile.profile_id
                         );
                         return (
                           <TableRow
@@ -2027,7 +2064,7 @@ export default function Cohort({
                             <TableCell>
                               {(() => {
                                 const roleData = STAFF_ROLES.find(
-                                  (r) => r.id === profile.role,
+                                  (r) => r.id === profile.role
                                 );
                                 if (!roleData) {
                                   return (
@@ -2095,7 +2132,7 @@ export default function Cohort({
                           <X className="h-3 w-3" />
                         </button>
                       </Badge>
-                    ),
+                    )
                   )}
                 </div>
                 <div className="flex items-center gap-2">

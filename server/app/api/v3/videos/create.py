@@ -97,10 +97,16 @@ async def create_video(
         questions_json = json.dumps([q.model_dump() for q in questions])
 
         # Prepare upload images JSON (array of objects with upload_id and name)
-        upload_images_json = json.dumps([
-            {"upload_id": upload_id, "name": name}
-            for upload_id, name in zip(upload_ids, image_names)
-        ]) if upload_ids and image_names else "[]"
+        upload_images_json = (
+            json.dumps(
+                [
+                    {"upload_id": upload_id, "name": name}
+                    for upload_id, name in zip(upload_ids, image_names)
+                ]
+            )
+            if upload_ids and image_names
+            else "[]"
+        )
 
         # Create video with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/videos/create_video_complete.sql")
@@ -148,4 +154,3 @@ async def create_video(
             sql_params=sql_params,
             request=http_request,
         )
-

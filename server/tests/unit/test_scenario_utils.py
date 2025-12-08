@@ -3,7 +3,6 @@ Tests for app.utils.scenario
 """
 
 
-
 class TestFormat_Parameter_Item_Info:
     """Tests for format_parameter_item_info function."""
 

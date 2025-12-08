@@ -1,15 +1,15 @@
 /**
  * GenericPicker.tsx
- * Generic picker component that matches SimulationPicker/RubricPicker style
- * Used for picking items with name and description
- * @AshokSaravanan222 & @siladiea
- * 01/26/2025
+ * Truly generic picker component that works with ANY data type
+ * Uses function-based extraction to support any data structure
+ * @AshokSaravanan222
+ * 12/2025
  */
 
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -34,73 +34,238 @@ import {
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { cn } from "@/lib/utils";
 
-type MappingItem = {
-  name: string;
-  description: string;
-};
+export interface GenericPickerProps<T> extends PopoverProps {
+  // Data: can be array or record
+  items: T[] | Record<string, T>;
+  itemIds?: string[]; // Required if items is Record<string, T>
 
-export interface GenericPickerProps<T extends MappingItem = MappingItem>
-  extends PopoverProps {
-  mapping: Record<string, T>;
-  validIds: string[];
-  selectedId: string;
-  onSelect: (id: string) => void;
+  // Selection
+  selectedIds: string[];
+  onSelect: (ids: string[]) => void;
+  multiSelect?: boolean;
+
+  // Extractors: functions to get what we need from ANY data type
+  getId: (item: T) => string;
+  getLabel: (item: T) => string;
+  getSearchText?: (item: T) => string; // Defaults to getLabel
+
+  // Optional render functions for customization
+  renderItem?: (item: T, isSelected: boolean) => React.ReactNode;
+  renderPreview?: (item: T) => React.ReactNode; // Hover card content
+  renderButton?: (selectedItems: T[]) => React.ReactNode; // Button content
+  renderChip?: (item: T, onRemove: () => void) => React.ReactNode; // Multi-select chips
+
+  // UI props
   placeholder?: string;
-  buttonClassName?: string;
   disabled?: boolean;
+  hideSelectedChips?: boolean;
+  buttonClassName?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
   groupHeading?: string;
+  showLabel?: boolean;
+  label?: string;
+  description?: string;
+  compact?: boolean;
+  showClearAction?: boolean;
+  popoverContentClassName?: string;
+  maxHeight?: string;
 }
 
-export function GenericPicker<T extends MappingItem = MappingItem>({
-  mapping,
-  validIds,
-  selectedId,
+export function GenericPicker<T>({
+  items,
+  itemIds,
+  selectedIds,
   onSelect,
+  multiSelect = false,
+  getId,
+  getLabel,
+  getSearchText,
+  renderItem,
+  renderPreview,
+  renderButton,
+  renderChip,
   placeholder = "Select item...",
-  buttonClassName,
   disabled = false,
+  hideSelectedChips = true,
+  buttonClassName,
   searchPlaceholder = "Search...",
   emptyMessage = "No items found.",
   groupHeading = "Items",
+  showLabel = false,
+  label,
+  description,
+  compact = false,
+  showClearAction = true,
+  popoverContentClassName,
+  maxHeight = "max-h-[250px]",
   ...props
 }: GenericPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
 
-  // Build items from mapping
-  const items = React.useMemo(() => {
-    return validIds
-      .map((id) => {
-        const item = mapping[id];
-        if (!item) return null;
-        return {
-          id,
-          ...item,
-        } as { id: string } & T;
-      })
-      .filter((r): r is { id: string } & T => r !== null);
-  }, [validIds, mapping]);
+  // Normalize items to array format with id attached
+  // When items is Record<string, T>, we add id property from the key
+  type ItemWithId = T & { id: string };
 
-  const [peekedItem, setPeekedItem] = React.useState<
-    ({ id: string } & T) | undefined
-  >(items[0]);
+  const itemsArray = React.useMemo(() => {
+    if (Array.isArray(items)) {
+      // For arrays, items should already have id extractable via getId
+      return items;
+    }
+    // For Record types, add id from the key
+    if (itemIds) {
+      return itemIds
+        .map((id) => {
+          const item = items[id];
+          if (!item) return null;
+          // Add id property for Record types
+          return { ...item, id } as ItemWithId;
+        })
+        .filter((item): item is ItemWithId => item !== null);
+    }
+    return Object.entries(items).map(([id, item]) => ({
+      ...item,
+      id,
+    })) as ItemWithId[];
+  }, [items, itemIds]);
+
+  // Get selected items
+  const selectedItems = React.useMemo(() => {
+    return selectedIds
+      .map((id) => {
+        if (Array.isArray(items)) {
+          return items.find((item) => getId(item) === id);
+        }
+        return items[id];
+      })
+      .filter((item): item is T => item !== undefined);
+  }, [selectedIds, items, getId]);
+
+  const [peekedItem, setPeekedItem] = React.useState<T | undefined>(
+    itemsArray[0]
+  );
 
   const handleSelect = (itemId: string) => {
-    onSelect(itemId);
+    if (multiSelect) {
+      const isSelected = selectedIds.includes(itemId);
+      const newIds = isSelected
+        ? selectedIds.filter((id) => id !== itemId)
+        : [...selectedIds, itemId];
+      onSelect(newIds);
+      // Don't close popover in multi-select mode
+    } else {
+      onSelect([itemId]);
+      setOpen(false);
+    }
+  };
+
+  const handleClear = () => {
+    onSelect([]);
     setOpen(false);
   };
 
-  const getButtonText = () => {
-    if (!selectedId) {
+  const handleRemoveItem = (itemId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newIds = selectedIds.filter((id) => id !== itemId);
+    onSelect(newIds);
+  };
+
+  // Default button text
+  const getDefaultButtonText = () => {
+    if (selectedIds.length === 0) {
       return placeholder;
     }
-    const item = mapping[selectedId];
-    return item?.name || placeholder;
+    if (selectedIds.length === 1 && selectedItems[0]) {
+      return getLabel(selectedItems[0]);
+    }
+    return `${selectedIds.length} selected`;
   };
+
+  // Default chip renderer
+  const defaultRenderChip = (item: T, onRemove: () => void) => (
+    <div className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full">
+      <span className="truncate">{getLabel(item)}</span>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="text-muted-foreground hover:text-destructive flex-shrink-0"
+        disabled={disabled}
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+
+  // Default item renderer
+  const defaultRenderItem = (item: T, isSelected: boolean) => {
+    return (
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex-1 min-w-0">
+            <div className="truncate">{getLabel(item)}</div>
+          </div>
+        </div>
+        <Check
+          className={cn(
+            "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
+            isSelected ? "opacity-100" : "opacity-0"
+          )}
+        />
+      </div>
+    );
+  };
+
+  // Default preview renderer
+  const defaultRenderPreview = (item: T) => (
+    <div className="grid gap-2">
+      <h4 className="font-medium leading-none">{getLabel(item)}</h4>
+    </div>
+  );
+
+  const buttonClasses = cn(
+    compact ? "h-8 justify-between" : "w-full justify-between",
+    buttonClassName
+  );
 
   return (
     <div>
+      {showLabel && label && (
+        <HoverCard openDelay={200}>
+          <HoverCardTrigger asChild>
+            <label className="text-sm font-medium">{label}</label>
+          </HoverCardTrigger>
+          {description && (
+            <HoverCardContent
+              align="start"
+              className="w-[260px] text-sm"
+              side="left"
+            >
+              {description}
+            </HoverCardContent>
+          )}
+        </HoverCard>
+      )}
+
+      {/* Show selected chips */}
+      {selectedIds.length > 0 && !hideSelectedChips && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {selectedItems.map((item) => {
+            const itemId = getId(item);
+            const chipRenderer = renderChip || defaultRenderChip;
+            return (
+              <React.Fragment key={itemId}>
+                {chipRenderer(item, () =>
+                  handleRemoveItem(itemId, {} as React.MouseEvent)
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
+
       <Popover
         open={disabled ? false : open}
         onOpenChange={disabled ? () => {} : setOpen}
@@ -112,14 +277,23 @@ export function GenericPicker<T extends MappingItem = MappingItem>({
             role="combobox"
             aria-expanded={open}
             aria-label="Select item"
-            className={cn("w-48 justify-between", buttonClassName)}
+            className={buttonClasses}
             disabled={disabled}
           >
-            <span className="truncate text-left">{getButtonText()}</span>
-            <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />
+            {renderButton ? (
+              renderButton(selectedItems)
+            ) : (
+              <span className="truncate text-left">
+                {getDefaultButtonText()}
+              </span>
+            )}
+            <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2 h-4 w-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[300px] p-0">
+        <PopoverContent
+          align="end"
+          className={cn("w-[300px] p-0", popoverContentClassName)}
+        >
           <HoverCard>
             <HoverCardContent
               side="left"
@@ -127,30 +301,54 @@ export function GenericPicker<T extends MappingItem = MappingItem>({
               forceMount
               className="min-h-[200px]"
             >
-              <div className="grid gap-2">
-                <h4 className="font-medium leading-none">
-                  {peekedItem?.name || "No item selected"}
-                </h4>
-                <div className="text-sm text-muted-foreground">
-                  {peekedItem?.description || "No description available"}
-                </div>
-              </div>
+              {peekedItem
+                ? renderPreview
+                  ? renderPreview(peekedItem)
+                  : defaultRenderPreview(peekedItem)
+                : "No item selected"}
             </HoverCardContent>
             <Command loop>
-              <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
+              <CommandList
+                className={cn("h-[var(--cmdk-list-height)]", maxHeight)}
+              >
                 <CommandInput placeholder={searchPlaceholder} />
                 <CommandEmpty>{emptyMessage}</CommandEmpty>
                 <HoverCardTrigger />
+                {selectedIds.length > 0 && showClearAction && (
+                  <CommandGroup heading="Actions">
+                    <CommandItem
+                      onSelect={handleClear}
+                      className="text-muted-foreground"
+                    >
+                      Clear {multiSelect ? "All" : "Selection"}
+                    </CommandItem>
+                  </CommandGroup>
+                )}
                 <CommandGroup heading={groupHeading}>
-                  {items.map((item) => (
-                    <GenericItem
-                      key={item.id}
-                      item={item}
-                      isSelected={selectedId === item.id}
-                      onPeek={(item) => setPeekedItem(item)}
-                      onSelect={() => handleSelect(item.id)}
-                    />
-                  ))}
+                  {itemsArray.map((item) => {
+                    // For Record types, item has id property added during normalization
+                    // For array types, getId extracts id from item structure
+                    const itemId = Array.isArray(items)
+                      ? getId(item)
+                      : (item as ItemWithId).id;
+                    const isSelected = selectedIds.includes(itemId);
+                    const itemRenderer = renderItem || defaultRenderItem;
+                    const searchText = getSearchText
+                      ? getSearchText(item)
+                      : getLabel(item);
+                    return (
+                      <PickerItem
+                        key={itemId}
+                        item={item}
+                        isSelected={isSelected}
+                        onSelect={() => handleSelect(itemId)}
+                        onPeek={() => setPeekedItem(item)}
+                        searchText={searchText}
+                      >
+                        {itemRenderer(item, isSelected)}
+                      </PickerItem>
+                    );
+                  })}
                 </CommandGroup>
               </CommandList>
             </Command>
@@ -161,19 +359,23 @@ export function GenericPicker<T extends MappingItem = MappingItem>({
   );
 }
 
-interface GenericItemProps<T extends MappingItem> {
-  item: { id: string } & T;
+interface PickerItemProps<T> {
+  item: T;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (item: { id: string } & T) => void;
+  onPeek: () => void;
+  searchText: string;
+  children: React.ReactNode;
 }
 
-function GenericItem<T extends MappingItem>({
-  item,
-  isSelected,
+function PickerItem<T>({
+  item: _item,
+  isSelected: _isSelected,
   onSelect,
   onPeek,
-}: GenericItemProps<T>) {
+  searchText,
+  children,
+}: PickerItemProps<T>) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -183,36 +385,19 @@ function GenericItem<T extends MappingItem>({
         mutation.attributeName === "aria-selected" &&
         ref.current?.getAttribute("aria-selected") === "true"
       ) {
-        onPeek(item);
+        onPeek();
       }
     });
   });
 
   return (
     <CommandItem
-      key={item.id}
+      value={searchText}
       onSelect={onSelect}
       ref={ref}
       className="group data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="flex-1 min-w-0">
-            <div className="truncate">{item.name}</div>
-            {item.description && (
-              <div className="text-xs mt-1 truncate text-muted-foreground group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                {item.description}
-              </div>
-            )}
-          </div>
-        </div>
-        <Check
-          className={cn(
-            "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-            isSelected ? "opacity-100" : "opacity-0",
-          )}
-        />
-      </div>
+      {children}
     </CommandItem>
   );
 }

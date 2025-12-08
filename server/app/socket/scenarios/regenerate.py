@@ -4,24 +4,30 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, gen_trace_id, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, get_scenario_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.scenario.image_generation import (
-    clear_image_generation_results, get_image_generation_results,
-    set_image_generation_context)
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.images.generate_image import generate_image_from_prompt
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_regeneration_messages import \
-    log_regeneration_messages
+from app.utils.messages.log_regeneration_messages import log_regeneration_messages
+from app.utils.scenario.image_generation import (
+    get_image_generation_results,
+    set_image_generation_context,
+)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -82,12 +88,10 @@ async def scenario_regeneration_error(
     await sio.emit("scenario_regeneration_error", payload.model_dump(), room=room)
 
 
-async def _regenerate_scenario_impl(
-    sid: str, data: RegenerateScenarioPayload
-) -> None:
+async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -> None:
     """Handle scenario regeneration requests via WebSocket."""
     trace_id = gen_trace_id()
-    
+
     try:
         logger.info(
             f"Received regenerate_scenario request from {sid} with scenarioId: {data.scenarioId}"
@@ -126,7 +130,9 @@ async def _regenerate_scenario_impl(
             )
 
             # Get previous run for this scenario
-            sql_get_previous_run = load_sql("sql/v3/messages/get_previous_run_for_entity.sql")
+            sql_get_previous_run = load_sql(
+                "sql/v3/messages/get_previous_run_for_entity.sql"
+            )
             previous_run_row = await conn.fetchrow(
                 sql_get_previous_run,
                 str(scenario_id),
@@ -164,8 +170,10 @@ async def _regenerate_scenario_impl(
                 WHERE s.id = $1::uuid
                 GROUP BY s.id
             """
-            scenario_ids_row = await conn.fetchrow(sql_get_scenario_ids, str(scenario_id))
-            
+            scenario_ids_row = await conn.fetchrow(
+                sql_get_scenario_ids, str(scenario_id)
+            )
+
             if not scenario_ids_row:
                 await scenario_regeneration_error(
                     ScenarioRegenerationErrorPayload(
@@ -177,13 +185,27 @@ async def _regenerate_scenario_impl(
                 )
                 return
 
-            persona_id = uuid.UUID(scenario_ids_row["persona_id"]) if scenario_ids_row["persona_id"] else None
-            document_ids = [uuid.UUID(d) for d in scenario_ids_row["document_ids"]] if scenario_ids_row["document_ids"] else []
-            parameter_item_ids = [uuid.UUID(p) for p in scenario_ids_row["parameter_item_ids"]] if scenario_ids_row["parameter_item_ids"] else []
+            persona_id = (
+                uuid.UUID(scenario_ids_row["persona_id"])
+                if scenario_ids_row["persona_id"]
+                else None
+            )
+            document_ids = (
+                [uuid.UUID(d) for d in scenario_ids_row["document_ids"]]
+                if scenario_ids_row["document_ids"]
+                else []
+            )
+            parameter_item_ids = (
+                [uuid.UUID(p) for p in scenario_ids_row["parameter_item_ids"]]
+                if scenario_ids_row["parameter_item_ids"]
+                else []
+            )
 
             # Get context using same SQL as generate_ai
             doc_ids_str = [str(d) for d in document_ids] if document_ids else []
-            param_ids_str = [str(p) for p in parameter_item_ids] if parameter_item_ids else []
+            param_ids_str = (
+                [str(p) for p in parameter_item_ids] if parameter_item_ids else []
+            )
 
             sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
             context_row = await conn.fetchrow(
@@ -259,12 +281,12 @@ async def _regenerate_scenario_impl(
             }
 
             # Format input items (same as generation)
-            from app.utils.document.format_document_info import \
-                format_document_info
+            from app.utils.document.format_document_info import format_document_info
             from app.utils.personas import format_persona_info
             from app.utils.scenario import format_parameter_item_info
-            from app.utils.scenario.format_document_template_info import \
-                format_document_template_info
+            from app.utils.scenario.format_document_template_info import (
+                format_document_template_info,
+            )
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:
@@ -302,25 +324,25 @@ async def _regenerate_scenario_impl(
             group_id = None
             documents_enabled = bool(document_ids and len(document_ids) > 0)
             images_enabled = True  # Enable image generation by default
-            
+
             # Use default guest profile from context if no profile_id provided
             final_profile_id = (
                 profile_id if profile_id else context.get("default_guest_profile_id")
             )
-            
+
             # For regeneration, use scenario_id as primary_id (same scenario = same key)
             primary_id = str(scenario_id)
-            
+
             # Format document template info if templates are available
             document_template_info = await format_document_template_info(
                 context["document_templates"],
                 profile_id=str(final_profile_id) if final_profile_id else None,
                 primary_id=primary_id,
             )
-            
+
             input_items.append(document_template_info)
             clean_input_items = [item for item in input_items if item is not None]
-            
+
             # Set image generation context before creating tools (async)
             if images_enabled and final_profile_id:
                 await set_image_generation_context(
@@ -330,7 +352,7 @@ async def _regenerate_scenario_impl(
                     department_id=str(department_id) if department_id else None,
                     room=sid,  # WebSocket room for emitting events
                 )
-            
+
             scenario_tools = create_scenario_tools(
                 group_id,
                 objectives_enabled=objectives_enabled,
@@ -375,7 +397,9 @@ async def _regenerate_scenario_impl(
 
             # Use default guest profile from context if no profile_id provided
             final_profile_id = (
-                profile_id if profile_id else uuid.UUID(context["default_guest_profile_id"])
+                profile_id
+                if profile_id
+                else uuid.UUID(context["default_guest_profile_id"])
             )
             if not final_profile_id:
                 await scenario_regeneration_error(
@@ -413,7 +437,7 @@ async def _regenerate_scenario_impl(
                     input=clean_input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
-            
+
             # Log regeneration messages (reuse existing system/developer, add user + assistant)
             assistant_output = getattr(result, "final_output", None) or ""
             await log_regeneration_messages(
@@ -489,9 +513,7 @@ async def _regenerate_scenario_impl(
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in regenerate_scenario for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in regenerate_scenario for {sid}: {str(e)}", exc_info=True)
         await scenario_regeneration_error(
             ScenarioRegenerationErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
@@ -514,4 +536,3 @@ async def regenerate_scenario(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

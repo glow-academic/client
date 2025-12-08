@@ -59,7 +59,7 @@ async def test_get_profile_context_guest_profile_id(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
         "VALUES($1, 'redacted@purdue.edu', true, true) "
         "ON CONFLICT DO NOTHING",
-        guest_id
+        guest_id,
     )
 
     response = await client.post(
@@ -93,7 +93,7 @@ async def test_get_profile_context_emulation_authorized(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
         "VALUES($1, 'redacted@purdue.edu', true, true) "
         "ON CONFLICT DO NOTHING",
-        target_id
+        target_id,
     )
 
     response = await client.post(
@@ -125,7 +125,7 @@ async def test_get_profile_context_emulation_unauthorized(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
         "VALUES($1, 'redacted@purdue.edu', true, true) "
         "ON CONFLICT DO NOTHING",
-        ta_id
+        ta_id,
     )
 
     # Try to emulate superadmin (not allowed)

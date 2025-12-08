@@ -6,8 +6,9 @@ from typing import Any
 
 import asyncpg  # type: ignore
 from agents import Tool, function_tool
-from app.utils.logging.db_logger import get_logger
 from pydantic import Field
+
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -24,32 +25,32 @@ def find_persona_by_name(
     persona_name: str, personas: list[dict[str, Any]]
 ) -> tuple[uuid.UUID, str] | None:
     """Find persona by name (robust case-insensitive matching with whitespace handling).
-    
+
     Args:
         persona_name: Name to search for (will be normalized)
         personas: List of persona dicts with 'persona_id'/'id' and 'persona_name'/'name' keys
-        
+
     Returns:
         Tuple of (persona_id, persona_name) if found, None otherwise
     """
     # Normalize input: strip whitespace and handle empty strings
     if not persona_name or not persona_name.strip():
         return None
-    
+
     persona_name_normalized = persona_name.strip()
     sanitized_search = sanitize_persona_name(persona_name_normalized)
-    
+
     # Try exact matches first (case-insensitive)
     for persona in personas:
         # Handle both 'id'/'name' and 'persona_id'/'persona_name' field names
         persona_id_str = persona.get("persona_id") or persona.get("id")
         if not persona_id_str:
             continue
-        
+
         persona_display_name = persona.get("persona_name") or persona.get("name", "")
         if not persona_display_name:
             continue
-        
+
         # Try multiple matching strategies:
         # 1. Exact case-insensitive match (normalized)
         if persona_name_normalized.lower() == persona_display_name.lower():
@@ -59,7 +60,7 @@ def find_persona_by_name(
             except (ValueError, TypeError):
                 logger.warning(f"Invalid persona_id format: {persona_id_str}")
                 continue
-        
+
         # 2. Sanitized match (handles special characters)
         sanitized_persona = sanitize_persona_name(persona_display_name)
         if sanitized_search == sanitized_persona:
@@ -69,18 +70,18 @@ def find_persona_by_name(
             except (ValueError, TypeError):
                 logger.warning(f"Invalid persona_id format: {persona_id_str}")
                 continue
-    
+
     # If no exact match found, try fuzzy matching (contains check)
     # This helps if the model provides a partial name or slightly different wording
     for persona in personas:
         persona_id_str = persona.get("persona_id") or persona.get("id")
         if not persona_id_str:
             continue
-        
+
         persona_display_name = persona.get("persona_name") or persona.get("name", "")
         if not persona_display_name:
             continue
-        
+
         # Check if the search term is contained in the persona name (case-insensitive)
         if persona_name_normalized.lower() in persona_display_name.lower():
             try:
@@ -92,7 +93,7 @@ def find_persona_by_name(
             except (ValueError, TypeError):
                 logger.warning(f"Invalid persona_id format: {persona_id_str}")
                 continue
-    
+
     return None
 
 
@@ -122,14 +123,14 @@ def create_persona_tools(
         List containing a single speak tool
     """
     chat_id_str = str(chat_id)
-    
+
     # Build list of available persona names for tool description
     persona_names = []
     for persona in personas:
         persona_name = persona.get("persona_name") or persona.get("name", "")
         if persona_name:
             persona_names.append(persona_name)
-    
+
     # Build formatted list of available personas for tool description
     if persona_names:
         persona_names_str = ", ".join(f'"{name}"' for name in persona_names)
@@ -141,10 +142,10 @@ def create_persona_tools(
     else:
         persona_names_str = "available personas"
         persona_description = (
-            f"The name of the persona that should speak. "
-            f"Available personas will be listed in the system instructions."
+            "The name of the persona that should speak. "
+            "Available personas will be listed in the system instructions."
         )
-    
+
     async def speak(
         persona: str = Field(
             description=persona_description,
@@ -165,10 +166,10 @@ def create_persona_tools(
         logger.info(
             f"Speak tool called: persona={persona}, message_length={len(message)}"
         )
-        
+
         # Normalize persona name input (strip whitespace)
         persona_normalized = persona.strip() if persona else ""
-        
+
         # Find persona by name
         persona_match = find_persona_by_name(persona_normalized, personas)
         if not persona_match:
@@ -181,10 +182,10 @@ def create_persona_tools(
             )
             logger.error(error_msg)
             return f"Error: {error_msg}"
-        
+
         persona_id, persona_display_name = persona_match
         persona_id_str = str(persona_id)
-        
+
         logger.info(
             f"Matched persona '{persona}' to {persona_display_name} (ID: {persona_id_str})"
         )
@@ -200,4 +201,3 @@ def create_persona_tools(
     speak_tool = function_tool(speak)
     logger.info(f"Created speak tool for {len(personas)} persona(s)")
     return [speak_tool]
-

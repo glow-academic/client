@@ -3,10 +3,11 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -46,9 +47,7 @@ async def _voice_debug_info_impl(sid: str, data: VoiceDebugInfoPayload) -> None:
         chat_id = data.chat_id
         if not chat_id:
             await voice_debug_info_error(
-                VoiceDebugInfoErrorPayload(
-                    success=False, message="Missing chat_id"
-                ),
+                VoiceDebugInfoErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
             )
             return
@@ -56,9 +55,7 @@ async def _voice_debug_info_impl(sid: str, data: VoiceDebugInfoPayload) -> None:
         content = data.content
         if not content:
             await voice_debug_info_error(
-                VoiceDebugInfoErrorPayload(
-                    success=False, message="Missing content"
-                ),
+                VoiceDebugInfoErrorPayload(success=False, message="Missing content"),
                 room=sid,
             )
             return
@@ -93,9 +90,7 @@ async def _voice_debug_info_impl(sid: str, data: VoiceDebugInfoPayload) -> None:
             run_id = uuid.UUID(run_row["run_id"])
 
             # Insert debug info
-            sql_insert_debug_info = load_sql(
-                "sql/v3/model_runs/insert_debug_info.sql"
-            )
+            sql_insert_debug_info = load_sql("sql/v3/model_runs/insert_debug_info.sql")
             await conn.execute(sql_insert_debug_info, run_id, content)
 
             logger.info(
@@ -103,9 +98,7 @@ async def _voice_debug_info_impl(sid: str, data: VoiceDebugInfoPayload) -> None:
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in voice_debug_info for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in voice_debug_info for {sid}: {str(e)}", exc_info=True)
         await voice_debug_info_error(
             VoiceDebugInfoErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -125,4 +118,3 @@ async def voice_debug_info(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

@@ -24,7 +24,7 @@ import type {
 } from "@/app/(main)/management/documents/new/page";
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { TemplatePicker } from "@/components/common/forms/TemplatePicker";
 import TemplateForm, {
@@ -1336,14 +1336,18 @@ export default function Document({
               </span>
               {validDepartmentIds.length > 1 && (
                 <div data-testid="document-department-selector">
-                  <DepartmentPicker
-                    mapping={departmentMapping}
-                    validIds={validDepartmentIds}
+                  <GenericPicker
+                    items={departmentMapping}
+                    itemIds={validDepartmentIds}
                     selectedIds={selectedDepartmentIds}
                     onSelect={setSelectedDepartmentIds}
+                    getId={(dept) => (dept as unknown as { id: string }).id}
+                    getLabel={(dept) => dept.name || ""}
+                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                     placeholder="Dept"
                     multiSelect={true}
                     compact={true}
+                    hideSelectedChips={true}
                     buttonClassName="h-7 px-2 text-xs"
                   />
                 </div>
@@ -1456,9 +1460,9 @@ export default function Document({
                       </TableCell>
                       {validDepartmentIds.length > 1 && (
                         <TableCell>
-                          <DepartmentPicker
-                            mapping={departmentMapping}
-                            validIds={validDepartmentIds}
+                          <GenericPicker
+                            items={departmentMapping}
+                            itemIds={validDepartmentIds}
                             selectedIds={
                               useDefaultDepartment
                                 ? selectedDepartmentIds
@@ -1485,9 +1489,13 @@ export default function Document({
                                 });
                               }
                             }}
+                            getId={(dept) => (dept as unknown as { id: string }).id}
+                            getLabel={(dept) => dept.name || ""}
+                            getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                             placeholder="Dept"
                             multiSelect={true}
                             compact={true}
+                            hideSelectedChips={true}
                             buttonClassName="h-7 px-2 text-xs"
                             disabled={useDefaultDepartment}
                           />
@@ -1673,9 +1681,9 @@ export default function Document({
           {validDepartmentIds && validDepartmentIds.length > 1 && (
             <div className="flex flex-col gap-2">
               <Label>Department</Label>
-              <DepartmentPicker
-                mapping={departmentMapping}
-                validIds={validDepartmentIds}
+              <GenericPicker
+                items={departmentMapping}
+                itemIds={validDepartmentIds}
                 selectedIds={
                   isEditMode ? formData.departmentIds : selectedDepartmentIds
                 }
@@ -1686,8 +1694,13 @@ export default function Document({
                     setSelectedDepartmentIds(ids);
                   }
                 }}
+                getId={(dept) => (dept as unknown as { id: string }).id}
+                getLabel={(dept) => dept.name || ""}
+                getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                 multiSelect={true}
+                hideSelectedChips={true}
                 disabled={isSubmitting}
+                buttonClassName="w-full"
               />
             </div>
           )}

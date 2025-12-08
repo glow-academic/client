@@ -1,10 +1,9 @@
 """Color utility functions for theme derivation."""
 
 import re
-from typing import Tuple
 
 
-def parse_oklch(oklch_str: str) -> Tuple[float, float, float, float | None]:
+def parse_oklch(oklch_str: str) -> tuple[float, float, float, float | None]:
     """
     Parse oklch color string into components.
     Handles both 'oklch(L C H)' and 'oklch(L C H / alpha)' formats.
@@ -31,7 +30,9 @@ def parse_oklch(oklch_str: str) -> Tuple[float, float, float, float | None]:
     return (lightness, chroma, hue, alpha)
 
 
-def format_oklch(lightness: float, chroma: float, hue: float, alpha: float | None = None) -> str:
+def format_oklch(
+    lightness: float, chroma: float, hue: float, alpha: float | None = None
+) -> str:
     """Format oklch components into string."""
     if alpha is not None:
         return f"oklch({lightness} {chroma} {hue} / {alpha})"
@@ -88,4 +89,3 @@ def ensure_contrast(background: str, candidate: str) -> str:
             cand_h = 0  # No hue for pure light
 
     return format_oklch(cand_l, cand_c, cand_h, cand_alpha)
-

@@ -3,7 +3,6 @@ Tests for app.utils.text.tokenize
 """
 
 
-
 class TestTokenize:
     """Tests for tokenize function."""
 

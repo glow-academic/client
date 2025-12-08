@@ -4,18 +4,25 @@ import asyncio
 import uuid
 from typing import Any
 
-from app.main import (get_pool, get_simulation_tool_calls_dict,
-                      get_simulation_tool_calls_locks, sio)
-from app.socket.simulations.send_message import (SimulationMessageTokenPayload,
-                                                 SimulationNewMessagePayload,
-                                                 extract_new_message_chars,
-                                                 extract_persona_from_json,
-                                                 simulation_message_token,
-                                                 simulation_new_message)
+from pydantic import BaseModel, ValidationError
+
+from app.main import (
+    get_pool,
+    get_simulation_tool_calls_dict,
+    get_simulation_tool_calls_locks,
+    sio,
+)
+from app.socket.simulations.send_message import (
+    SimulationMessageTokenPayload,
+    SimulationNewMessagePayload,
+    extract_new_message_chars,
+    extract_persona_from_json,
+    simulation_message_token,
+    simulation_new_message,
+)
 from app.utils.agents.tools.create_persona_tools import find_persona_by_name
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -39,9 +46,7 @@ class VoiceToolCallErrorPayload(BaseModel):
 
 
 # Emit helper functions
-async def voice_tool_call_error(
-    payload: VoiceToolCallErrorPayload, room: str
-) -> None:
+async def voice_tool_call_error(payload: VoiceToolCallErrorPayload, room: str) -> None:
     await sio.emit("voice_tool_call_error", payload.model_dump(), room=room)
 
 
@@ -60,24 +65,20 @@ async def _voice_tool_call_delta_impl(
 
         if not chat_id:
             await voice_tool_call_error(
-                VoiceToolCallErrorPayload(
-                    success=False, message="Missing chat_id"
-                ),
+                VoiceToolCallErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
             )
             return
 
         if not call_id:
             await voice_tool_call_error(
-                VoiceToolCallErrorPayload(
-                    success=False, message="Missing call_id"
-                ),
+                VoiceToolCallErrorPayload(success=False, message="Missing call_id"),
                 room=sid,
             )
             return
 
         chat_id_uuid = uuid.UUID(chat_id)
-        
+
         # Get tool calls tracking dict and locks for this chat (before acquiring lock)
         tool_calls_dict = get_simulation_tool_calls_dict()
         tool_calls_locks = get_simulation_tool_calls_locks()
@@ -114,15 +115,17 @@ async def _voice_tool_call_delta_impl(
                     # If chat_id_str doesn't exist, it means all tool calls were completed
                     # and cleaned up. This is a late-arriving delta, ignore it.
                     return
-                
+
                 # At this point, chat_id_str is guaranteed to exist in tool_calls_dict
                 assert chat_id_str in tool_calls_dict
-                
+
                 # Check if tool call state exists
                 if call_id not in tool_calls_dict[chat_id_str]:
                     # First delta for this tool call - initialize state
                     # Validate chat exists and get context
-                    sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+                    sql_context = load_sql(
+                        "sql/v3/agents/get_simulation_run_context.sql"
+                    )
                     context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
 
                     if not context_row:
@@ -267,7 +270,7 @@ async def _voice_tool_call_delta_impl(
                             chat_id_uuid,
                             db_message_id,
                         )
-                        
+
                         if latest_user_message_row:
                             user_created_at = latest_user_message_row["created_at"]
                             # If user message was created after or very close to assistant message,
@@ -301,13 +304,16 @@ async def _voice_tool_call_delta_impl(
                                 "sql/v3/simulations/link_message_to_run.sql"
                             )
                             await conn.execute(
-                                sql_link, str(db_message_id), str(tool_call_state["run_id"])
+                                sql_link,
+                                str(db_message_id),
+                                str(tool_call_state["run_id"]),
                             )
 
                         # Link to persona if we have it
                         if tool_call_state["persona_so_far"]:
                             persona_match = find_persona_by_name(
-                                tool_call_state["persona_so_far"], tool_call_state["personas"]
+                                tool_call_state["persona_so_far"],
+                                tool_call_state["personas"],
                             )
                             if persona_match:
                                 persona_id, _ = persona_match
@@ -346,7 +352,7 @@ async def _voice_tool_call_delta_impl(
                             chat_id_uuid,
                             db_message_id,
                         )
-                        
+
                         # Use latest message as parent (ensures sequential branching),
                         # fallback to original parent_message_id
                         parent_id_str = None
@@ -354,7 +360,7 @@ async def _voice_tool_call_delta_impl(
                             parent_id_str = str(latest_message_row["id"])
                         elif tool_call_state["parent_message_id"]:
                             parent_id_str = str(tool_call_state["parent_message_id"])
-                        
+
                         if parent_id_str:
                             assistant_id_str = str(db_message_id)
                             if parent_id_str != assistant_id_str:
@@ -372,7 +378,8 @@ async def _voice_tool_call_delta_impl(
                         persona_id_str = None
                         if tool_call_state["persona_so_far"]:
                             persona_match = find_persona_by_name(
-                                tool_call_state["persona_so_far"], tool_call_state["personas"]
+                                tool_call_state["persona_so_far"],
+                                tool_call_state["personas"],
                             )
                             if persona_match:
                                 persona_id_str = str(persona_match[0])
@@ -439,4 +446,3 @@ async def voice_tool_call_delta(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

@@ -6,9 +6,9 @@ from app.api.v3.simulations.attempts import router as attempts_router
 from app.api.v3.simulations.create import router as create_router
 from app.api.v3.simulations.delete import router as delete_router
 from app.api.v3.simulations.detail import router as detail_router
-from app.api.v3.simulations.new import router as new_router
 from app.api.v3.simulations.duplicate import router as duplicate_router
 from app.api.v3.simulations.list import router as list_router
+from app.api.v3.simulations.new import router as new_router
 from app.api.v3.simulations.overview import router as overview_router
 from app.api.v3.simulations.search import router as search_router
 from app.api.v3.simulations.update import router as update_router

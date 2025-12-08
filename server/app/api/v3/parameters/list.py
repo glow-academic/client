@@ -218,7 +218,9 @@ async def get_parameters_list(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
             filters.profileId,
         )
-        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+        user_department_ids = {
+            str(row["department_id"]) for row in user_department_rows
+        }
 
         # Collect scenario IDs, document IDs, and department IDs actually assigned to parameters
         assigned_scenario_ids = set()
@@ -254,7 +256,9 @@ async def get_parameters_list(
                 list(assigned_scenario_ids),
                 list(user_department_ids),
             )
-            scenario_ids_in_user_depts = {row["scenario_id"] for row in scenario_dept_rows}
+            scenario_ids_in_user_depts = {
+                row["scenario_id"] for row in scenario_dept_rows
+            }
 
         scenario_options = [
             opt
@@ -284,7 +288,9 @@ async def get_parameters_list(
                 list(assigned_document_ids),
                 list(user_department_ids),
             )
-            document_ids_in_user_depts = {row["document_id"] for row in document_dept_rows}
+            document_ids_in_user_depts = {
+                row["document_id"] for row in document_dept_rows
+            }
 
         document_options = [
             opt
@@ -294,7 +300,8 @@ async def get_parameters_list(
 
         # Filter department_mapping to only include departments assigned to parameters AND in user's departments
         filtered_department_mapping = {
-            did: d for (did, d) in department_mapping.items()
+            did: d
+            for (did, d) in department_mapping.items()
             if did in assigned_department_ids and did in user_department_ids
         }
 

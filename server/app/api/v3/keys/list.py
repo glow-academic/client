@@ -101,8 +101,12 @@ async def get_keys_list(
                     key_masked=row["key_masked"],
                     description=row.get("description", ""),
                     active=row["active"],
-                    created_at=row["created_at"].isoformat() if row.get("created_at") else "",
-                    updated_at=row["updated_at"].isoformat() if row.get("updated_at") else "",
+                    created_at=row["created_at"].isoformat()
+                    if row.get("created_at")
+                    else "",
+                    updated_at=row["updated_at"].isoformat()
+                    if row.get("updated_at")
+                    else "",
                     department_ids=department_ids,
                     model_ids=model_ids,
                     can_edit=row["can_edit"],
@@ -171,4 +175,3 @@ async def get_keys_list(
             sql_params=sql_params,
             request=request,
         )
-

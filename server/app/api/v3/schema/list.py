@@ -1,6 +1,5 @@
 """Schema list endpoint - v3 API."""
 
-
 from fastapi import APIRouter, HTTPException
 
 from app.main import get_pool, server

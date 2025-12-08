@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -11,8 +14,6 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -33,7 +34,9 @@ class SearchSimulatableProfilesResponse(BaseModel):
     profiles: list[ProfileItem]  # Filtered profiles list (max limit items)
 
 
-@router.post("/search-simulatable-profiles", response_model=SearchSimulatableProfilesResponse)
+@router.post(
+    "/search-simulatable-profiles", response_model=SearchSimulatableProfilesResponse
+)
 async def search_simulatable_profiles(
     request: SearchSimulatableProfilesRequest,
     http_request: Request,
@@ -67,9 +70,7 @@ async def search_simulatable_profiles(
             search_term = f"%{request.query.strip()}%"
             # Cast role enum to text for ILIKE comparison
             # Also check concatenated full name for queries like "default admin"
-            search_where_clause = (
-                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE $3) OR p.role::text ILIKE $3 OR (p.first_name || ' ' || p.last_name) ILIKE $3)"
-            )
+            search_where_clause = "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE $3) OR p.role::text ILIKE $3 OR (p.first_name || ' ' || p.last_name) ILIKE $3)"
             params.append(search_term)
 
         # Replace placeholder in SQL
@@ -151,4 +152,3 @@ async def search_simulatable_profiles(
             sql_params=params,
             request=http_request,
         )
-

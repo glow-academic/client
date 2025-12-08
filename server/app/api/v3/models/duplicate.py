@@ -3,12 +3,13 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -63,7 +64,9 @@ async def duplicate_model(
             # Duplicate model (SQL adds ' Copy' to description) - track primary operation
             sql_query = load_sql("sql/v3/models/duplicate.sql")
             sql_params = (request.modelId, request.profileId)
-            new_model = await conn.fetchrow(sql_query, request.modelId, request.profileId)
+            new_model = await conn.fetchrow(
+                sql_query, request.modelId, request.profileId
+            )
 
             if not new_model:
                 raise ValueError("Failed to create duplicate model")
@@ -94,4 +97,3 @@ async def duplicate_model(
             sql_params=sql_params,
             request=http_request,
         )
-

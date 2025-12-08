@@ -5,14 +5,15 @@ import re
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -273,10 +274,13 @@ class AllSimulationScenarioItem(BaseModel):
 
 class ContinuationOption(BaseModel):
     """A single continuation option for a scenario."""
+
     scenarioId: str
     position: int
     scenarioName: str
-    previousChatId: str | None  # null means "continue normally" (but we won't include these)
+    previousChatId: (
+        str | None
+    )  # null means "continue normally" (but we won't include these)
     title: str
     score: float | None
     percentage: float | None
@@ -285,6 +289,7 @@ class ContinuationOption(BaseModel):
 
 class PermutationOption(BaseModel):
     """A single option within a permutation."""
+
     scenarioId: str
     scenarioName: str
     previousChatId: str | None
@@ -296,6 +301,7 @@ class PermutationOption(BaseModel):
 
 class Permutation(BaseModel):
     """A permutation of continuation options for sequential scenarios."""
+
     id: str
     options: list[PermutationOption]
     totalScore: float
@@ -305,6 +311,7 @@ class Permutation(BaseModel):
 
 class AvailableContinuationOptions(BaseModel):
     """Available continuation options with order constraint enforcement."""
+
     # Options for continuing to next sequential scenario(s)
     # Only includes scenarios that can be advanced to in order (no gaps)
     # Frontend will generate permutations from these
@@ -389,7 +396,7 @@ async def get_attempt_full(
         # Get current user's profileId from request body
         # If not provided, skip role check for backward compatibility
         current_profile_id = request.profileId
-        
+
         sql_query = load_sql("sql/v3/attempts/get_attempt_full_complete.sql")
         sql_params = (request.attemptId,)
         result = await conn.fetchrow(sql_query, request.attemptId)
@@ -411,14 +418,16 @@ async def get_attempt_full(
             # Resolve "guest-profile-id" to actual guest profile UUID
             resolved_current_profile_id: str | None = current_profile_id
             if current_profile_id == "guest-profile-id":
-                guest_profile_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+                guest_profile_sql = load_sql(
+                    "sql/v3/profile/get_default_guest_profile.sql"
+                )
                 guest_row = await conn.fetchrow(guest_profile_sql)
                 if guest_row:
                     resolved_current_profile_id = str(guest_row["id"])
                 else:
                     # If no guest profile found, skip role check
                     resolved_current_profile_id = None
-            
+
             # Get attempt's profile role from attempt_profiles
             attempt_profiles_data = parse_jsonb(result.get("attemptProfiles", []))
             attempt_profile_id = None
@@ -427,7 +436,7 @@ async def get_attempt_full(
                     if isinstance(ap, dict) and ap.get("active"):
                         attempt_profile_id = ap.get("profileId")
                         break
-            
+
             if attempt_profile_id and resolved_current_profile_id:
                 # Get roles for comparison
                 attempt_profile_role_row = await conn.fetchrow(
@@ -438,11 +447,11 @@ async def get_attempt_full(
                     "SELECT role FROM profiles WHERE id = $1",
                     resolved_current_profile_id,
                 )
-                
+
                 if attempt_profile_role_row and current_user_role_row:
                     attempt_role = attempt_profile_role_row["role"]
                     current_role = current_user_role_row["role"]
-                    
+
                     # Role hierarchy: superadmin > admin > instructional > ta > guest
                     role_hierarchy = {
                         "superadmin": 5,
@@ -451,10 +460,10 @@ async def get_attempt_full(
                         "ta": 2,
                         "guest": 1,
                     }
-                    
+
                     attempt_role_level = role_hierarchy.get(attempt_role.lower(), 1)
                     current_role_level = role_hierarchy.get(current_role.lower(), 1)
-                    
+
                     # Return 403 if viewing profile's role is higher than current user's role
                     if attempt_role_level > current_role_level:
                         raise HTTPException(
@@ -500,11 +509,7 @@ async def get_attempt_full(
             )
             messages = [MessageItem(**m) for m in chat_data.get("messages", [])]
             hints = [HintsByMessage(**h) for h in chat_data.get("hints", [])]
-            grade = (
-                GradeItem(**chat_data["grade"])
-                if chat_data.get("grade")
-                else None
-            )
+            grade = GradeItem(**chat_data["grade"]) if chat_data.get("grade") else None
             grading_state = (
                 GradingState(**chat_data["gradingState"])
                 if chat_data.get("gradingState")
@@ -518,15 +523,13 @@ async def get_attempt_full(
             previous_chats = [
                 PreviousChat(**pc) for pc in chat_data.get("previousChats", [])
             ]
-            personas = [
-                PersonaItem(**p) for p in chat_data.get("personas", [])
-            ]
-            
+            personas = [PersonaItem(**p) for p in chat_data.get("personas", [])]
+
             # Handle contentType, video, and quiz fields
             content_type = chat_data.get("contentType")
             video = None
             quiz = None
-            
+
             if content_type == "video" and chat_data.get("video"):
                 video_data = chat_data["video"]
                 # Parse video documents
@@ -536,9 +539,7 @@ async def get_attempt_full(
                 # Parse questions with options
                 questions = []
                 for q_data in video_data.get("questions", []):
-                    options = [
-                        OptionItem(**opt) for opt in q_data.get("options", [])
-                    ]
+                    options = [OptionItem(**opt) for opt in q_data.get("options", [])]
                     questions.append(
                         QuestionItem(
                             id=q_data["id"],
@@ -560,7 +561,7 @@ async def get_attempt_full(
                     showObjectives=video_data.get("showObjectives", True),
                     showImage=video_data.get("showImage", True),
                 )
-            
+
             if chat_data.get("quiz"):
                 quiz_data = chat_data["quiz"]
                 responses = [
@@ -664,7 +665,9 @@ async def get_attempt_full(
             shouldShowControls=get_result_field("shouldShowControls", True),
             remainingScenariosCount=get_result_field("remainingScenariosCount", 0),
             isLastRemainingScenario=get_result_field("isLastRemainingScenario", False),
-            canPickMultipleAlternatives=get_result_field("canPickMultipleAlternatives", True),
+            canPickMultipleAlternatives=get_result_field(
+                "canPickMultipleAlternatives", True
+            ),
             isActive=get_result_field("isActive", True),
             rubricStructure=rubric_structure,
             allSimulationScenarios=all_simulation_scenarios,

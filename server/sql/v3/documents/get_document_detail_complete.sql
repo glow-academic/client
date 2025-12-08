@@ -88,7 +88,7 @@ department_parameter_ids AS (
     LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
     WHERE (fd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                                                      JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
-                                                     WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
+                                                     WHERE pf2.parameter_id = p.id AND pf2.active = true AND fd2.active = true))
     GROUP BY ud.id
 ),
 valid_depts AS (
@@ -131,7 +131,7 @@ parameter_mapping_data AS (
             jsonb_build_object(
                 'name', lp.parameter_name,
                 'description', lp.parameter_description,
-                'numerical', l                'document_parameter', true,
+                'document_parameter', true,
                 'persona_parameter', lp.persona_parameter,
                 'scenario_parameter', lp.scenario_parameter,
                 'video_parameter', lp.video_parameter
@@ -151,7 +151,7 @@ valid_param_items AS (
                     'name', f.name,
                     'description', COALESCE(f.description, ''),
                     'parameter_id', pf.parameter_id::text,
-                    'parameter_name', p.name,
+                    'parameter_name', p.name
                 )
             ),
             '{}'::jsonb

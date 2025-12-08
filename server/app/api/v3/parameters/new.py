@@ -22,9 +22,9 @@ class ParameterNewRequest(BaseModel):
 
 # Reuse models from detail.py (import after defining request to avoid circular import)
 from app.api.v3.parameters.detail import (  # noqa: E402
+    FieldConnection,
     ParameterDetailResponse,
     ParameterItemDetail,
-    FieldConnection,
 )
 
 router = APIRouter()
@@ -59,9 +59,7 @@ async def get_parameter_new(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        sql_query = load_sql(
-            "sql/v3/parameters/get_parameter_new_complete.sql"
-        )
+        sql_query = load_sql("sql/v3/parameters/get_parameter_new_complete.sql")
         sql_params = (request.profileId,)
         result = await conn.fetchrow(sql_query, request.profileId)
 
@@ -168,7 +166,7 @@ async def get_parameter_new(
         user_role = result.get("user_role", "trainee")
         is_superadmin = user_role == "superadmin"
         primary_department_id = result.get("primary_department_id")
-        
+
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
         # Non-superadmin: [primaryDepartmentId] if available
@@ -176,10 +174,13 @@ async def get_parameter_new(
             department_ids = None
         else:
             department_ids = [primary_department_id] if primary_department_id else []
-        
+
         is_default = department_ids is None or len(department_ids) == 0
         # Default parameters (no department_ids) are read-only for non-superadmin
-        can_edit = not (is_default and not is_superadmin) and user_role in ("admin", "superadmin")
+        can_edit = not (is_default and not is_superadmin) and user_role in (
+            "admin",
+            "superadmin",
+        )
 
         # Parse persona_ids from array (empty for new)
         persona_ids: list[str] = []

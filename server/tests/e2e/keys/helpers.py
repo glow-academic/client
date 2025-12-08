@@ -57,4 +57,3 @@ def fetch_keys_list(
         effective_profile_id=effective,
         bypass_cache=bypass_cache,
     )
-

@@ -18,9 +18,7 @@ ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 
-def _create_test_csv(
-    rows: list[dict[str, str]], filename: str | None = None
-) -> str:
+def _create_test_csv(rows: list[dict[str, str]], filename: str | None = None) -> str:
     """Create a temporary CSV file for testing."""
     if not rows:
         rows = [
@@ -332,4 +330,3 @@ def test_staff_csv_upload_with_validation_errors(page: Page, base_url: str) -> N
         # Clean up
         if os.path.exists(csv_file_path):
             os.remove(csv_file_path)
-

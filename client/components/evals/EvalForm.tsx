@@ -4,23 +4,23 @@
  */
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RubricPicker } from "@/components/common/forms/RubricPicker";
-import { AgentPicker } from "@/components/common/forms/AgentPicker";
-import { ModelRunsSelector } from "./ModelRunsSelector";
-import type { RubricsListOut } from "@/app/(main)/engine/rubrics/page";
 import type {
   CreateEvalIn,
   CreateEvalOut,
 } from "@/app/(main)/engine/evals/new/page";
-import type { OutputOf } from "@/lib/api/types";
-import { toast } from "sonner";
+import type { RubricsListOut } from "@/app/(main)/engine/rubrics/page";
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api/client";
+import type { OutputOf } from "@/lib/api/types";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ModelRunsSelector } from "./ModelRunsSelector";
 
 type AgentsListOut = OutputOf<"/api/v3/agents/list", "post">;
 
@@ -79,7 +79,7 @@ export function EvalForm({
       {} as Record<
         string,
         { name: string; description: string; roles: string[] }
-      >,
+      >
     );
   }, [agentsList]);
 
@@ -91,7 +91,7 @@ export function EvalForm({
         acc[agent.agent_id] = agent.name;
         return acc;
       },
-      {} as Record<string, string>,
+      {} as Record<string, string>
     );
   }, [agentsList]);
 
@@ -104,7 +104,7 @@ export function EvalForm({
   const selectedAgentRole = useMemo(() => {
     if (selectedAgentId.length === 0 || !agentsList) return null;
     const agent = agentsList.agents.find(
-      (a) => a.agent_id === selectedAgentId[0],
+      (a) => a.agent_id === selectedAgentId[0]
     );
     return agent?.role || null;
   }, [selectedAgentId, agentsList]);
@@ -127,7 +127,7 @@ export function EvalForm({
         };
         return acc;
       },
-      {} as Record<string, { name: string; description: string }>,
+      {} as Record<string, { name: string; description: string }>
     );
   }, [filteredRubrics]);
 
@@ -278,14 +278,21 @@ export function EvalForm({
                 No rubrics available for the selected agent role.
               </div>
             ) : (
-              <RubricPicker
-                mapping={rubricMapping}
-                validIds={validRubricIds}
+              <GenericPicker
+                items={rubricMapping}
+                itemIds={validRubricIds}
                 selectedIds={selectedRubricId}
                 onSelect={setSelectedRubricId}
+                getId={(rubric) => (rubric as unknown as { id: string }).id}
+                getLabel={(rubric) => rubric.name || ""}
+                getSearchText={(rubric) =>
+                  `${rubric.name} ${rubric.description || ""}`
+                }
                 multiSelect={false}
                 placeholder="Select a rubric..."
+                hideSelectedChips={true}
                 disabled={isSubmitting}
+                buttonClassName="w-full"
               />
             )}
           </div>

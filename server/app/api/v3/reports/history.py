@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.api.v3.dashboard.history import DashboardHistoryResponse
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -12,8 +15,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import AttemptHistoryRow
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -94,7 +95,9 @@ async def get_reports_history(
 
         # Roles parameter - cast in SQL CTE to help PostgreSQL determine type
         roles = filters.roles if filters.roles else []
-        simulation_filters = filters.simulationFilters if filters.simulationFilters else ["general"]
+        simulation_filters = (
+            filters.simulationFilters if filters.simulationFilters else ["general"]
+        )
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
@@ -120,7 +123,11 @@ async def get_reports_history(
             await conn.execute("SET LOCAL jit = off;")
             result = await conn.fetchrow(sql_query, *params)
         # Parse JSON result
-        parsed_result = json.loads(result["result"]) if isinstance(result["result"], str) else result["result"]
+        parsed_result = (
+            json.loads(result["result"])
+            if isinstance(result["result"], str)
+            else result["result"]
+        )
 
         # Parse history data
         history = []
@@ -129,9 +136,15 @@ async def get_reports_history(
                 if isinstance(row, dict):
                     # Filter out None values from scenario_ids and scenario_titles arrays
                     if "scenario_ids" in row and isinstance(row["scenario_ids"], list):
-                        row["scenario_ids"] = [s for s in row["scenario_ids"] if s is not None]
-                    if "scenario_titles" in row and isinstance(row["scenario_titles"], list):
-                        row["scenario_titles"] = [s for s in row["scenario_titles"] if s is not None]
+                        row["scenario_ids"] = [
+                            s for s in row["scenario_ids"] if s is not None
+                        ]
+                    if "scenario_titles" in row and isinstance(
+                        row["scenario_titles"], list
+                    ):
+                        row["scenario_titles"] = [
+                            s for s in row["scenario_titles"] if s is not None
+                        ]
                     history.append(AttemptHistoryRow.model_validate(row))
 
         # Parse options from result
@@ -150,7 +163,11 @@ async def get_reports_history(
         total_count = parsed_result.get("totalCount", 0)
         archived_count = parsed_result.get("archivedCount", 0)
         unarchived_count = parsed_result.get("unarchivedCount", 0)
-        total_pages = (total_count + filters.pageSize - 1) // filters.pageSize if total_count > 0 else 0
+        total_pages = (
+            (total_count + filters.pageSize - 1) // filters.pageSize
+            if total_count > 0
+            else 0
+        )
 
         response_data = DashboardHistoryResponse(
             data=history,
@@ -167,7 +184,10 @@ async def get_reports_history(
 
         # Cache response with profile-specific tags
         # Add profile-specific tags for granular invalidation
-        profile_specific_tags = tags + [f"reports:profile:{profile_id}", f"history:profile:{profile_id}"]
+        profile_specific_tags = tags + [
+            f"reports:profile:{profile_id}",
+            f"history:profile:{profile_id}",
+        ]
         await set_cached(
             cache_key_val,
             {"data": response_data.model_dump()},
@@ -191,4 +211,3 @@ async def get_reports_history(
             sql_params=sql_params,
             request=request,
         )
-

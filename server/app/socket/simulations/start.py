@@ -4,21 +4,15 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, gen_trace_id, trace)
-from agents.items import TResponseInputItem
-from app.main import get_pool, sio
-from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.debug_info import DebugContext
-from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.document.format_document_info import format_document_info
-from app.utils.logging.db_logger import get_logger
-from app.utils.personas import format_persona_info
-from app.utils.scenario import format_parameter_item_info
-from app.utils.sql_helper import load_sql
+from agents import (
+    gen_trace_id,
+)
 from pydantic import BaseModel, ValidationError
+
+from app.main import get_pool, sio
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -205,9 +199,7 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                 sql = load_sql("sql/v3/attempts/get_attempt_with_profile.sql")
                 attempt_with_profile = await conn.fetchrow(sql, row["attempt_id"])
                 attempt_profile_id_raw = (
-                    attempt_with_profile["profile_id"]
-                    if attempt_with_profile
-                    else None
+                    attempt_with_profile["profile_id"] if attempt_with_profile else None
                 )
                 # Convert asyncpg UUID to Python UUID if needed
                 attempt_profile_id = (
@@ -223,9 +215,7 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                     # Use first department from scenario
                     dept_id_raw = scenario_dept_rows[0]["department_id"]
                     department_id = uuid.UUID(str(dept_id_raw))
-                    logger.info(
-                        f"Using department_id from scenario: {department_id}"
-                    )
+                    logger.info(f"Using department_id from scenario: {department_id}")
                 elif attempt_profile_id:
                     # Fallback to profile's departments
                     sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
@@ -239,16 +229,12 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
 
                 if not department_id:
                     # Last resort: get any active department
-                    sql = load_sql(
-                        "sql/v3/departments/get_all_active_departments.sql"
-                    )
+                    sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
                     all_dept_rows = await conn.fetch(sql)
                     if all_dept_rows and len(all_dept_rows) > 0:
                         dept_id_raw = all_dept_rows[0]["id"]
                         department_id = uuid.UUID(str(dept_id_raw))
-                        logger.info(
-                            f"Using first active department: {department_id}"
-                        )
+                        logger.info(f"Using first active department: {department_id}")
 
                 if not department_id:
                     logger.warning(
@@ -256,8 +242,9 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                     )
                 else:
                     # Use randomization function to select attributes and create child scenario
-                    from app.api.v3.scenarios.randomize import \
-                        randomize_scenario_attributes
+                    from app.api.v3.scenarios.randomize import (
+                        randomize_scenario_attributes,
+                    )
 
                     attempt_profile_uuid = (
                         uuid.UUID(attempt_profile_id) if attempt_profile_id else None
@@ -270,7 +257,9 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                             persona_ids=None,
                             document_ids=None,
                             parameter_item_ids=None,
-                            department_ids=[department_id],  # Use the department we already selected
+                            department_ids=[
+                                department_id
+                            ],  # Use the department we already selected
                             scenario_id=scenario_id,
                             profile_id=attempt_profile_uuid,
                             targets=None,  # Randomize all
@@ -358,17 +347,19 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                     "dashboard",  # Invalidates dashboard history endpoint (no profileId filter)
                     "attempts",  # Invalidates attempt-level cache
                 ]
-                
+
                 # Add profile-specific tags for home/reports/practice when profile_id is available
                 # These endpoints require profileId, so we only need profile-specific invalidation
                 if profile_id:
-                    invalidation_tags.extend([
-                        f"home:profile:{profile_id}",
-                        f"reports:profile:{profile_id}",
-                        f"practice:profile:{profile_id}",
-                        f"history:profile:{profile_id}",
-                    ])
-                
+                    invalidation_tags.extend(
+                        [
+                            f"home:profile:{profile_id}",
+                            f"reports:profile:{profile_id}",
+                            f"practice:profile:{profile_id}",
+                            f"history:profile:{profile_id}",
+                        ]
+                    )
+
                 await invalidate_tags(invalidation_tags)
                 logger.info(
                     f"Invalidated cache for tags: {invalidation_tags} after creating attempt {start_payload['attempt_id']}"

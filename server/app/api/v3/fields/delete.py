@@ -78,4 +78,3 @@ async def delete_field(
             sql_params=sql_params,
             request=http_request,
         )
-

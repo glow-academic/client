@@ -12,4 +12,3 @@ router = APIRouter(prefix="/quizzes", tags=["attempts", "quizzes"])
 router.include_router(create_router)
 router.include_router(submit_response_router)
 router.include_router(complete_router)
-

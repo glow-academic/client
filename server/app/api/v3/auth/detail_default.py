@@ -117,4 +117,3 @@ async def get_auth_new(
             sql_params=sql_params,
             request=http_request,
         )
-

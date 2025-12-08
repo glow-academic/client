@@ -4,18 +4,25 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              ParameterItemMapping, ParameterMapping,
-                              PersonaMapping, PersonaMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ParameterItemMapping,
+    ParameterMapping,
+    PersonaMapping,
+    PersonaMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -187,9 +194,13 @@ async def get_video_detail(
                                 options.append(
                                     QuestionOptionResponse(
                                         option_id=str(opt_data.get("option_id", "")),
-                                        option_text=str(opt_data.get("option_text", "")),
+                                        option_text=str(
+                                            opt_data.get("option_text", "")
+                                        ),
                                         type=str(opt_data.get("type", "discrete")),
-                                        is_correct=bool(opt_data.get("is_correct", False)),
+                                        is_correct=bool(
+                                            opt_data.get("is_correct", False)
+                                        ),
                                     )
                                 )
                     times = q_data.get("times", [])
@@ -200,7 +211,11 @@ async def get_video_detail(
                             question_id=str(q_data.get("question_id", "")),
                             question_text=str(q_data.get("question_text", "")),
                             allow_multiple=bool(q_data.get("allow_multiple", False)),
-                            times=[int(t) for t in times if isinstance(t, (int, str)) and str(t).isdigit()],
+                            times=[
+                                int(t)
+                                for t in times
+                                if isinstance(t, (int, str)) and str(t).isdigit()
+                            ],
                             options=options,
                         )
                     )
@@ -216,7 +231,9 @@ async def get_video_detail(
             valid_dept_ids = []
 
         # Parse problem_statement_mapping from JSONB
-        problem_statement_mapping_data = parse_jsonb(video.get("problem_statement_mapping"))
+        problem_statement_mapping_data = parse_jsonb(
+            video.get("problem_statement_mapping")
+        )
         problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
         if isinstance(problem_statement_mapping_data, dict):
             for k, v in problem_statement_mapping_data.items():
@@ -289,11 +306,11 @@ async def get_video_detail(
         problem_statement_ids = video.get("problem_statement_ids") or []
         if not isinstance(problem_statement_ids, list):
             problem_statement_ids = []
-        
+
         objective_ids = video.get("objective_ids") or []
         if not isinstance(objective_ids, list):
             objective_ids = []
-        
+
         document_ids = video.get("document_ids") or []
         if not isinstance(document_ids, list):
             document_ids = []
@@ -327,12 +344,11 @@ async def get_video_detail(
                         roles=[str(r) for r in roles],
                     )
 
-        valid_agent_ids = [
-            str(aid) for aid in (video.get("valid_agent_ids") or [])
-        ]
+        valid_agent_ids = [str(aid) for aid in (video.get("valid_agent_ids") or [])]
 
         # Parse parameter_mapping from JSONB
         from app.utils.schema import ParameterMapping, ParameterMappingItem
+
         parameter_mapping_data = parse_jsonb(video.get("parameter_mapping"))
         parameter_mapping: ParameterMapping = {}
         if isinstance(parameter_mapping_data, dict):
@@ -350,6 +366,7 @@ async def get_video_detail(
 
         # Parse parameter_item_mapping from JSONB
         from app.utils.schema import ParameterItemMappingItem
+
         parameter_item_mapping_data = parse_jsonb(video.get("parameter_item_mapping"))
         parameter_item_mapping: ParameterItemMapping = {}
         if isinstance(parameter_item_mapping_data, dict):
@@ -406,7 +423,7 @@ async def get_video_detail(
         # Extract upload_id and convert to string if present
         upload_id_raw = video.get("upload_id")
         upload_id = str(upload_id_raw) if upload_id_raw is not None else None
-        
+
         # Construct video_url if upload_id exists
         video_url = None
         if upload_id:
@@ -472,4 +489,3 @@ async def get_video_detail(
             sql_params=sql_params,
             request=request,
         )
-

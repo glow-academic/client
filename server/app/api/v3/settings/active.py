@@ -3,6 +3,9 @@
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -11,8 +14,6 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
 from app.utils.theme.oklch_to_hex import hex_to_oklch
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -127,19 +128,21 @@ def normalize_color_to_oklch(color: str) -> str:
     Always returns oklch format.
     """
     color_trimmed = color.strip()
-    
+
     # Check if it's already oklch format
     if color_trimmed.startswith("oklch("):
         return color_trimmed
-    
+
     # Otherwise, assume it's hex and convert
     # Remove # if present
     hex_clean = color_trimmed.lstrip("#")
-    
+
     # Validate hex format (must be 6 characters)
     if len(hex_clean) != 6 or not all(c in "0123456789ABCDEFabcdef" for c in hex_clean):
-        raise ValueError(f"Invalid color format: {color}. Expected hex (e.g., '#ffffff') or oklch (e.g., 'oklch(1 0 0)')")
-    
+        raise ValueError(
+            f"Invalid color format: {color}. Expected hex (e.g., '#ffffff') or oklch (e.g., 'oklch(1 0 0)')"
+        )
+
     return hex_to_oklch(f"#{hex_clean}")
 
 
@@ -147,7 +150,7 @@ def derive_theme_tokens(primitives: ThemePrimitives) -> ThemeTokens:
     """
     Derive full ThemeTokens from user-editable ThemePrimitives.
     This function computes all internal design tokens from the small set of primitives.
-    
+
     Accepts hex or oklch format in primitives, normalizes all to oklch.
     """
     # Normalize all color inputs to oklch format (handles hex from color picker)
@@ -158,7 +161,7 @@ def derive_theme_tokens(primitives: ThemePrimitives) -> ThemeTokens:
     accent = normalize_color_to_oklch(primitives.accent)
     sidebar_bg = normalize_color_to_oklch(primitives.sidebarBackground)
     sidebar_primary = normalize_color_to_oklch(primitives.sidebarPrimary)
-    
+
     success = normalize_color_to_oklch(primitives.success)
     warning = normalize_color_to_oklch(primitives.warning)
     error = normalize_color_to_oklch(primitives.error)
@@ -270,9 +273,7 @@ async def get_active_settings(
         settings = await conn.fetchrow(sql_query, request.profileId)
 
         if not settings:
-            raise HTTPException(
-                status_code=404, detail="No active settings found"
-            )
+            raise HTTPException(status_code=404, detail="No active settings found")
 
         # Read ThemePrimitives from database
         # NOTE: ThemePrimitives accepts BOTH hex and oklch formats:
@@ -335,4 +336,3 @@ async def get_active_settings(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -2,9 +2,10 @@
 
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import sio
 from app.utils.logging.db_logger import get_logger
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -67,4 +68,3 @@ async def voice_transcript_delta(sid: str, data: dict[str, Any]) -> None:
         await _voice_transcript_delta_impl(sid, validated)
     except ValidationError as e:
         logger.error(f"Validation error in voice_transcript_delta for {sid}: {e}")
-

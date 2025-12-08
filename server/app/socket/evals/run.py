@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from app.main import sio
 from app.utils.logging.db_logger import get_logger
@@ -54,4 +54,3 @@ async def eval_completed(payload: EvalCompletedPayload, room: str) -> None:
 async def eval_error(payload: EvalErrorPayload, room: str) -> None:
     """Emit eval error event."""
     await sio.emit("eval_error", payload.model_dump(), room=room)
-

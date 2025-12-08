@@ -90,4 +90,3 @@ async def delete_model(
             sql_params=sql_params,
             request=http_request,
         )
-

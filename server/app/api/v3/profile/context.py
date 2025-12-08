@@ -1,7 +1,6 @@
 """Profile context endpoint - get consolidated profile context."""
 
 import json
-from datetime import datetime
 from typing import Annotated, Any, cast
 
 import asyncpg
@@ -109,17 +108,21 @@ async def get_profile_context(
 
         logger = get_logger(__name__)
         logger.info(f"Request: {request}")
-        
+
         # Normalize empty strings to "guest-profile-id" for SQL compatibility
-        actual_profile_id = request.actualProfileId if request.actualProfileId else "guest-profile-id"
-        effective_profile_id = request.effectiveProfileId if request.effectiveProfileId else "guest-profile-id"
-        
+        actual_profile_id = (
+            request.actualProfileId if request.actualProfileId else "guest-profile-id"
+        )
+        effective_profile_id = (
+            request.effectiveProfileId
+            if request.effectiveProfileId
+            else "guest-profile-id"
+        )
+
         # Get all context data with guest-profile-id resolution and emulation validation in single query
         sql_query = load_sql("sql/v3/profile/get_profile_context_complete.sql")
         sql_params = (actual_profile_id, effective_profile_id)
-        result = await conn.fetchrow(
-            sql_query, actual_profile_id, effective_profile_id
-        )
+        result = await conn.fetchrow(sql_query, actual_profile_id, effective_profile_id)
 
         if not result:
             # Check if it's an authorization failure (profiles differ) or not found
@@ -165,7 +168,9 @@ async def get_profile_context(
 
         # Parse effective profile from result (unprefixed for backward compatibility)
         effective_emails = result.get("emails") or []
-        effective_emails_list = effective_emails if isinstance(effective_emails, list) else []
+        effective_emails_list = (
+            effective_emails if isinstance(effective_emails, list) else []
+        )
         effective_profile = ProfileItem(
             id=str(result["id"]),
             firstName=result["first_name"],
@@ -270,7 +275,9 @@ async def get_profile_context(
                 scoped_roles_list = [str(role) for role in scoped_roles_raw]
             elif isinstance(scoped_roles_raw, str):
                 # Handle string representation if needed
-                scoped_roles_list = [role.strip() for role in scoped_roles_raw.strip("{}").split(",")]
+                scoped_roles_list = [
+                    role.strip() for role in scoped_roles_raw.strip("{}").split(",")
+                ]
 
         return ProfileContextResponse(
             actualProfile=actual_profile,

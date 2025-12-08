@@ -314,6 +314,18 @@ function MainLayoutContent({
       );
     }
 
+    if (pathname === "/management/fields") {
+      return (
+        <Button
+          onClick={() => router.push("/management/fields/new")}
+          size="sm"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Field
+        </Button>
+      );
+    }
+
     if (pathname === "/engine/agents") {
       return (
         <Button onClick={() => router.push("/engine/agents/new")} size="sm">

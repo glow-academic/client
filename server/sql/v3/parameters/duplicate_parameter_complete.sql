@@ -31,7 +31,6 @@ original_parameter AS (
     SELECT 
         name,
         description,
-        numerical,
         COALESCE(document_parameter, false) as document_parameter,
         COALESCE(practice_parameter, false) as practice_parameter
     FROM parameters
@@ -41,7 +40,6 @@ new_parameter AS (
     INSERT INTO parameters (
         name,
         description,
-        numerical,
         active,
         document_parameter,
         practice_parameter
@@ -49,7 +47,7 @@ new_parameter AS (
     SELECT 
         op.name || ' Copy',
         op.description,
-        o        false,  -- Duplicated parameters are inactive by default
+        false,  -- Duplicated parameters are inactive by default
         op.document_parameter,
         op.practice_parameter
     FROM original_parameter op

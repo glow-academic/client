@@ -5,20 +5,29 @@ from collections.abc import Sequence
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              DocumentMapping, DocumentMappingItem,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              PersonaMapping, PersonaMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    DocumentMapping,
+    DocumentMappingItem,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -149,9 +158,7 @@ async def get_scenario_new(
 
     try:
         # Load SQL query
-        sql_query = load_sql(
-            "sql/v3/scenarios/get_scenario_new_complete.sql"
-        )
+        sql_query = load_sql("sql/v3/scenarios/get_scenario_new_complete.sql")
         sql_params = (request_data.profileId,)
 
         # Execute query
@@ -330,17 +337,19 @@ async def get_scenario_new(
         user_role = str(result.get("user_role", "")).lower()
         is_superadmin = user_role == "superadmin"
         primary_department_id = result.get("primary_department_id")
-        
+
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
         # Non-superadmin: [primaryDepartmentId] if available
         if is_superadmin:
             default_department_ids = None
         else:
-            default_department_ids = [primary_department_id] if primary_department_id else []
-        
+            default_department_ids = (
+                [primary_department_id] if primary_department_id else []
+            )
+
         is_default = default_department_ids is None or len(default_department_ids) == 0
-        
+
         # For default scenarios, only superadmin can edit
         can_edit_default = not (is_default and not is_superadmin)
 
@@ -368,9 +377,7 @@ async def get_scenario_new(
                         roles=[str(r) for r in roles],
                     )
 
-        valid_agent_ids = [
-            str(aid) for aid in (result.get("valid_agent_ids") or [])
-        ]
+        valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
 
         # Extract agent IDs
         scenario_agent_id = str(result.get("scenario_agent_id", "")) or ""
@@ -450,4 +457,3 @@ async def get_scenario_new(
             sql_params=sql_params,
             request=request,
         )
-

@@ -49,7 +49,9 @@ async def duplicate_persona(
             # Duplicate persona (fetch and duplicate in single query)
             sql_query = load_sql("sql/v3/personas/duplicate_persona_complete_v2.sql")
             sql_params = (request.personaId, request.profileId)
-            result = await conn.fetchrow(sql_query, request.personaId, request.profileId)
+            result = await conn.fetchrow(
+                sql_query, request.personaId, request.profileId
+            )
 
             if not result or not result.get("new_persona_id"):
                 raise ValueError(f"Persona not found: {request.personaId}")

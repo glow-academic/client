@@ -8,7 +8,7 @@ import type {
   ProfileListItem,
   SearchStaffOut,
 } from "@/app/(main)/management/staff/page";
-import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
+import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
 import type { SearchStaffAction } from "@/components/staff/Staff";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -1,6 +1,7 @@
 "use client";
 
-import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -136,7 +137,7 @@ export default function CohortPerformance({
         w: 0,
         totalAttempts: 0,
         passedAttempts: c.passedAttempts, // not recomputed (per-student), keep original
-      }),
+      })
     );
 
     cohortFacts.forEach((f) => {
@@ -174,7 +175,7 @@ export default function CohortPerformance({
 
   // Helper function to calculate status for a cohort based on pass rate
   const getCohortStatus = (
-    passRate: number,
+    passRate: number
   ): "success" | "warning" | "danger" | "neutral" => {
     if (passRate === 0) return "neutral";
     if (passRate >= 85) return "success";
@@ -184,7 +185,7 @@ export default function CohortPerformance({
 
   // Helper function to get color for a cohort status
   const getCohortColor = (
-    cohortStatus: "success" | "warning" | "danger" | "neutral",
+    cohortStatus: "success" | "warning" | "danger" | "neutral"
   ): string => {
     switch (cohortStatus) {
       case "success":
@@ -222,14 +223,45 @@ export default function CohortPerformance({
               Pass rates by cohort
             </CardDescription>
           </div>
-          <SimulationPicker
-            simulationMapping={simulationMapping}
-            validSimulationIds={validSimulationIds}
-            selectedSimulationIds={selected}
+          <GenericPicker
+            items={simulationMapping}
+            itemIds={validSimulationIds}
+            selectedIds={selected}
             onSelect={setSelected}
+            getId={(sim) => (sim as unknown as { id: string }).id}
+            getLabel={(sim) => sim.name || ""}
+            getSearchText={(sim) => `${sim.name} ${sim.description || ""}`}
+            renderPreview={(sim) => {
+              const formatTimeLimit = (timeLimit?: number | null) => {
+                if (!timeLimit || timeLimit === 0) return "No time limit";
+                if (timeLimit < 60) return `${timeLimit} minutes`;
+                const hours = Math.floor(timeLimit / 60);
+                const minutes = timeLimit % 60;
+                if (minutes === 0)
+                  return `${hours} hour${hours !== 1 ? "s" : ""}`;
+                return `${hours}h ${minutes}m`;
+              };
+              return (
+                <div className="grid gap-2">
+                  <h4 className="font-medium leading-none">{sim.name}</h4>
+                  <div className="text-sm text-muted-foreground">
+                    {sim.description || "No description available"}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-xs">
+                      {formatTimeLimit(
+                        (sim as { time_limit?: number | null }).time_limit
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            }}
             placeholder="Filter by simulation..."
             hideSelectedChips={true}
             showLabel={false}
+            multiSelect={true}
+            groupHeading="Simulations"
           />
         </div>
       </CardHeader>
@@ -314,7 +346,7 @@ export default function CohortPerformance({
                     {(() => {
                       // Filter daily data for this specific cohort
                       const cohortDailyData = dailyData.filter(
-                        (d: DailyRow) => d.cohortId === cohort.id,
+                        (d: DailyRow) => d.cohortId === cohort.id
                       );
                       if (cohortDailyData.length === 0) return null;
 

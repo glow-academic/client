@@ -1,8 +1,7 @@
 """Handler for eval stop WebSocket events."""
 
-from typing import Any
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from app.main import sio
 from app.utils.logging.db_logger import get_logger
@@ -32,4 +31,3 @@ async def eval_stopped(payload: EvalStoppedPayload, room: str) -> None:
 async def stop_eval_error(payload: StopEvalErrorPayload, room: str) -> None:
     """Emit eval stop error event."""
     await sio.emit("stop_eval_error", payload.model_dump(), room=room)
-

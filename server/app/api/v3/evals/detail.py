@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -14,8 +17,6 @@ from app.utils.schema import (
     DepartmentMappingItem,
 )
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -186,9 +187,7 @@ async def get_eval_detail(
                         "roles": [str(r) for r in roles],
                     }
 
-        valid_agent_ids = [
-            str(aid) for aid in (result.get("valid_agent_ids") or [])
-        ]
+        valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
 
         # Parse model_runs list
         model_runs: list[ModelRunItem] = []
@@ -204,12 +203,12 @@ async def get_eval_detail(
                                 grade_score = int(grade_score_val)
                         except (ValueError, TypeError):
                             grade_score = None
-                    
+
                     grade_passed_val = mr_data.get("grade_passed")
                     grade_passed: bool | None = None
                     if grade_passed_val is not None:
                         grade_passed = bool(grade_passed_val)
-                    
+
                     model_runs.append(
                         ModelRunItem(
                             model_run_id=str(mr_data.get("run_id", "")),
@@ -293,4 +292,3 @@ async def get_eval_detail(
             sql_params=sql_params,
             request=http_request,
         )
-

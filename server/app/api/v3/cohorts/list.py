@@ -1,23 +1,28 @@
 """Cohort list endpoint - v3 API."""
 
 import json
-import os
 from collections import Counter
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DepartmentMappingItem, PersonaMapping,
-                              PersonaMappingItem, ProfileMappingItem,
-                              ScenarioMapping, ScenarioMappingItem,
-                              SimulationMappingItem)
+from app.utils.schema import (
+    DepartmentMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+    ProfileMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 class CohortsListRequest(BaseModel):
@@ -51,7 +56,9 @@ class CohortsListResponse(BaseModel):
     profile_mapping: dict[str, ProfileMappingItem]
     simulation_mapping: dict[str, SimulationMappingItem]
     scenario_mapping: ScenarioMapping
-    simulation_scenario_mapping: dict[str, list[str]]  # Maps simulation_id to scenario_ids
+    simulation_scenario_mapping: dict[
+        str, list[str]
+    ]  # Maps simulation_id to scenario_ids
     department_mapping: dict[str, DepartmentMappingItem]
     # UI-ready facet options (precomputed on server)
     profile_options: list[dict[str, str]]  # Array of {value, label}
@@ -178,7 +185,9 @@ async def get_cohorts_list(
                             # Store scenario_ids separately (not in SimulationMappingItem schema)
                             scenario_ids = sdata.get("scenario_ids", [])
                             simulation_scenario_mapping[sid] = {
-                                "scenario_ids": [str(sid_val) for sid_val in scenario_ids]
+                                "scenario_ids": [
+                                    str(sid_val) for sid_val in scenario_ids
+                                ]
                             }
                             simulation_mapping[sid] = SimulationMappingItem(
                                 name=sdata.get("name", ""),
@@ -201,7 +210,6 @@ async def get_cohorts_list(
                                 description=ddata.get("description", ""),
                             )
 
-
             # Parse scenario_mapping from JSONB
             if not scenario_mapping and row.get("scenario_mapping"):
                 scenario_mapping_data = row["scenario_mapping"]
@@ -215,15 +223,23 @@ async def get_cohorts_list(
                             persona_mapping_raw = sdata.get("persona_mapping", {})
                             if isinstance(persona_mapping_raw, str):
                                 persona_mapping_raw = json.loads(persona_mapping_raw)
-                            if persona_mapping_raw and isinstance(persona_mapping_raw, dict):
+                            if persona_mapping_raw and isinstance(
+                                persona_mapping_raw, dict
+                            ):
                                 for pid, pdata in persona_mapping_raw.items():
                                     if isinstance(pdata, dict):
-                                        persona_mapping_parsed[pid] = PersonaMappingItem(
-                                            name=pdata.get("name", ""),
-                                            description=pdata.get("description", ""),
-                                            color=pdata.get("color", ""),
-                                            icon=pdata.get("icon", ""),
-                                            image_model=pdata.get("image_model", False),
+                                        persona_mapping_parsed[pid] = (
+                                            PersonaMappingItem(
+                                                name=pdata.get("name", ""),
+                                                description=pdata.get(
+                                                    "description", ""
+                                                ),
+                                                color=pdata.get("color", ""),
+                                                icon=pdata.get("icon", ""),
+                                                image_model=pdata.get(
+                                                    "image_model", False
+                                                ),
+                                            )
                                         )
 
                             scenario_mapping[sid] = ScenarioMappingItem(
@@ -242,7 +258,9 @@ async def get_cohorts_list(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
             filters.profileId,
         )
-        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+        user_department_ids = {
+            str(row["department_id"]) for row in user_department_rows
+        }
 
         # Get current user's role for role-based filtering
         user_role_row = await conn.fetchrow(
@@ -292,7 +310,9 @@ async def get_cohorts_list(
             """,
             filters.profileId,
         )
-        user_accessible_profile_ids = {str(row["profile_id"]) for row in user_profile_department_rows}
+        user_accessible_profile_ids = {
+            str(row["profile_id"]) for row in user_profile_department_rows
+        }
 
         # Build facet options
         # Filter profile_options to only include profiles from user's departments AND role hierarchy
@@ -304,23 +324,21 @@ async def get_cohorts_list(
                 current_user_role, profile_roles_map.get(opt["value"], "guest")
             )
         ]
-        
+
         # Filter simulation_options to only include simulations from user's departments
         simulation_options = [
             opt
             for opt in disambiguate_simulations(simulation_mapping)
             if any(
                 dept_id in user_department_ids
-                for dept_id in (
-                    simulation_mapping[opt["value"]].department_ids or []
-                )
+                for dept_id in (simulation_mapping[opt["value"]].department_ids or [])
             )
             or (
                 # Include simulations with no departments (cross-department)
                 not simulation_mapping[opt["value"]].department_ids
             )
         ]
-        
+
         # Filter department_options to only include user departments (like documents list)
         department_options = [
             {"value": did, "label": d.name or did}

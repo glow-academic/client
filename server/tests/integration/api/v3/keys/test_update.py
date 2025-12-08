@@ -4,6 +4,7 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias  # type: ignore
+
 from app.utils.auth.encrypt_api_key import encrypt_api_key
 
 pytestmark = pytest.mark.asyncio
@@ -21,7 +22,7 @@ async def test_update_key(
     key_id = await db.fetchval(
         "INSERT INTO keys(name, key, type, active) "
         "VALUES ('Original Key', $1, 'api', true) RETURNING id",
-        encrypted_key
+        encrypted_key,
     )
 
     response = await client.post(
@@ -44,9 +45,7 @@ async def test_update_key(
     assert data["message"] == "Key updated successfully"
 
     # Verify key was updated
-    key = await db.fetchrow(
-        "SELECT * FROM keys WHERE id = $1", key_id
-    )
+    key = await db.fetchrow("SELECT * FROM keys WHERE id = $1", key_id)
     assert key is not None
     assert key["name"] == "Updated Key"
     assert key["active"] is False
@@ -81,4 +80,3 @@ async def test_update_key_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

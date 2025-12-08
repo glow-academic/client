@@ -3,12 +3,13 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -66,9 +67,7 @@ async def create_quiz(
         result = await conn.fetchrow(sql_query, request.attemptId, request.videoId)
 
         if not result:
-            raise HTTPException(
-                status_code=500, detail="Failed to create quiz"
-            )
+            raise HTTPException(status_code=500, detail="Failed to create quiz")
 
         quiz_id = result.get("quiz_id")
         if not quiz_id:
@@ -98,4 +97,3 @@ async def create_quiz(
             sql_params=sql_params,
             request=http_request,
         )
-

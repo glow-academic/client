@@ -27,7 +27,7 @@ async def test_add_profiles_to_cohort(
         await db.execute(
             "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
             "VALUES($1, 'redacted@purdue.edu', true, true)",
-            profile_id1
+            profile_id1,
         )
 
     profile_id2 = await db.fetchval(
@@ -41,7 +41,7 @@ async def test_add_profiles_to_cohort(
         await db.execute(
             "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
             "VALUES($1, 'redacted@purdue.edu', true, true)",
-            profile_id2
+            profile_id2,
         )
 
     response = await client.post(

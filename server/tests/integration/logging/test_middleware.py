@@ -23,34 +23,34 @@ async def test_middleware_logs_request(
         RETURNING id
         """
     )
-    
+
     # Set up database logger with mock pool
     class ConnectionContext:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         async def __aenter__(self) -> asyncpg.Connection:
             return self.conn
-        
+
         async def __aexit__(self, *args: Any) -> None:
             pass
-    
+
     class MockPool:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         def acquire(self) -> ConnectionContext:
             return ConnectionContext(self.conn)
-    
+
     pool = MockPool(db)
     setup_db_logger(pool)  # type: ignore[arg-type]
-    
+
     # Make a request (to a non-existent endpoint to get 404)
     response = await client.get("/api/v3/nonexistent")
-    
+
     # Wait for async log write
     await asyncio.sleep(0.1)
-    
+
     # Verify log was written
     log_count = await db.fetchval(
         """
@@ -60,7 +60,7 @@ async def test_middleware_logs_request(
         """
     )
     assert log_count >= 1
-    
+
     # Verify log has correct structure
     log_row = await db.fetchrow(
         """
@@ -99,37 +99,37 @@ async def test_middleware_logs_with_profile_id(
         RETURNING id
         """
     )
-    
+
     # Set up database logger
     class ConnectionContext:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         async def __aenter__(self) -> asyncpg.Connection:
             return self.conn
-        
+
         async def __aexit__(self, *args: Any) -> None:
             pass
-    
+
     class MockPool:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         def acquire(self) -> ConnectionContext:
             return ConnectionContext(self.conn)
-    
+
     pool = MockPool(db)
     setup_db_logger(pool)  # type: ignore[arg-type]
-    
+
     # Make a request with profile_id in header
     response = await client.get(
         "/api/v3/nonexistent",
         headers={"X-Profile-Id": str(profile_id)},
     )
-    
+
     # Wait for async log write
     await asyncio.sleep(0.1)
-    
+
     # Verify log was written with correct profile_id
     log_row = await db.fetchrow(
         """
@@ -159,37 +159,37 @@ async def test_middleware_logs_post_with_body_profile_id(
         RETURNING id
         """
     )
-    
+
     # Set up database logger
     class ConnectionContext:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         async def __aenter__(self) -> asyncpg.Connection:
             return self.conn
-        
+
         async def __aexit__(self, *args: Any) -> None:
             pass
-    
+
     class MockPool:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         def acquire(self) -> ConnectionContext:
             return ConnectionContext(self.conn)
-    
+
     pool = MockPool(db)
     setup_db_logger(pool)  # type: ignore[arg-type]
-    
+
     # Make a POST request with profileId in body
     response = await client.post(
         "/api/v3/nonexistent",
         json={"profileId": str(profile_id), "data": "test"},
     )
-    
+
     # Wait for async log write
     await asyncio.sleep(0.1)
-    
+
     # Verify log was written with correct profile_id
     log_row = await db.fetchrow(
         """
@@ -219,35 +219,35 @@ async def test_middleware_logs_error_status(
         RETURNING id
         """
     )
-    
+
     # Set up database logger
     class ConnectionContext:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         async def __aenter__(self) -> asyncpg.Connection:
             return self.conn
-        
+
         async def __aexit__(self, *args: Any) -> None:
             pass
-    
+
     class MockPool:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         def acquire(self) -> ConnectionContext:
             return ConnectionContext(self.conn)
-    
+
     pool = MockPool(db)
     setup_db_logger(pool)  # type: ignore[arg-type]
-    
+
     # Make a request that will result in 500 error (if we can trigger one)
     # For now, just check that 404 is logged as info
     response = await client.get("/api/v3/nonexistent")
-    
+
     # Wait for async log write
     await asyncio.sleep(0.1)
-    
+
     # Verify log level is appropriate
     log_row = await db.fetchrow(
         """
@@ -265,4 +265,3 @@ async def test_middleware_logs_error_status(
     extra = log_row["extra"]
     assert "status_code" in extra
     assert "duration_ms" in extra
-

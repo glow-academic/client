@@ -200,7 +200,9 @@ async def select_scenario_attributes(
     # Get single persona_id for backward compatibility (agent calls may still need single persona)
     # persona_ids contains all selected personas (supports multiple agents)
     persona_id = scenario_persona_ids[0] if scenario_persona_ids else None
-    logger.info(f"Using persona_id for scenario generation: {persona_id} (all personas: {scenario_persona_ids})")
+    logger.info(
+        f"Using persona_id for scenario generation: {persona_id} (all personas: {scenario_persona_ids})"
+    )
 
     # Step 3: Select parameter_items (priority: existing links, then random selection)
     # Priority 1: Check for existing parameter item links

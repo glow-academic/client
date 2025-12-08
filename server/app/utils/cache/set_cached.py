@@ -32,6 +32,8 @@ async def set_cached(
             pipe.sadd(tag_set_name(tag), key)
             pipe.expire(tag_set_name(tag), ttl)  # Expire tag set with cache
         await pipe.execute()
-        logger.info(f"Cache written successfully: key={key[:50]}..., ttl={ttl}, tags={list(tags)}")
+        logger.info(
+            f"Cache written successfully: key={key[:50]}..., ttl={ttl}, tags={list(tags)}"
+        )
     except Exception as e:
         logger.error(f"Error writing cache: {e}", exc_info=True)

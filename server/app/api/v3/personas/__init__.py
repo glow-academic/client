@@ -5,9 +5,9 @@ from fastapi import APIRouter
 from app.api.v3.personas.create import router as create_router
 from app.api.v3.personas.delete import router as delete_router
 from app.api.v3.personas.detail import router as detail_router
-from app.api.v3.personas.new import router as new_router
 from app.api.v3.personas.duplicate import router as duplicate_router
 from app.api.v3.personas.list import router as list_router
+from app.api.v3.personas.new import router as new_router
 from app.api.v3.personas.overview import router as overview_router
 from app.api.v3.personas.response_times import router as response_times_router
 from app.api.v3.personas.search import router as search_router

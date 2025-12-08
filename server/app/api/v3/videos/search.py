@@ -1,10 +1,9 @@
 """Video search endpoint - v3 API."""
 
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.main import get_pool, server
+from app.main import get_pool
 from app.utils.sql_helper import load_sql
 
 router = APIRouter()
@@ -90,4 +89,3 @@ async def find_videos(
             return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") from e
-

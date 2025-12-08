@@ -28,9 +28,9 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 // UI Components
-import { CohortPicker } from "@/components/common/forms/CohortPicker";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
+import { Check, User } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -2180,18 +2180,97 @@ export default function Staff({
                                       hasRoleError ? "bg-destructive/10" : ""
                                     }
                                   >
-                                    <StaffRolePicker
-                                      selectedRole={editableRow.role || ""}
-                                      onSelect={(value) =>
+                                    <GenericPicker
+                                      items={STAFF_ROLES.filter((r) =>
+                                        validRoles.includes(r.id)
+                                      )}
+                                      selectedIds={editableRow.role ? [editableRow.role] : []}
+                                      onSelect={(ids) =>
                                         updateEditableRow(
                                           index,
                                           "role",
-                                          value || null,
+                                          ids[0] || null,
                                         )
                                       }
-                                      roleOptions={validRoles}
+                                      getId={(role) => role.id}
+                                      getLabel={(role) => role.name}
+                                      getSearchText={(role) => `${role.name} ${role.description || ""}`}
+                                      renderItem={(role, isSelected) => {
+                                        const IconComponent = role.icon || User;
+                                        const hexColor = role.color || "#64748b";
+                                        const generateGradient = (hex: string) => {
+                                          const cleanHex = hex.replace("#", "");
+                                          const r = parseInt(cleanHex.substr(0, 2), 16);
+                                          const g = parseInt(cleanHex.substr(2, 2), 16);
+                                          const b = parseInt(cleanHex.substr(4, 2), 16);
+                                          const lighterR = Math.min(255, r + 60);
+                                          const lighterG = Math.min(255, g + 60);
+                                          const lighterB = Math.min(255, b + 60);
+                                          const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                                          return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                                        };
+                                        return (
+                                          <div className="flex items-center gap-3 w-full">
+                                            <div
+                                              className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                                              style={{
+                                                background: generateGradient(hexColor),
+                                              }}
+                                            >
+                                              <IconComponent className="h-4 w-4 text-white" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="font-medium truncate">{role.name}</div>
+                                              {role.description && (
+                                                <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                                  {role.description}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <Check
+                                              className={cn(
+                                                "ml-auto",
+                                                isSelected ? "opacity-100" : "opacity-0",
+                                              )}
+                                            />
+                                          </div>
+                                        );
+                                      }}
+                                      renderButton={(selectedItems, placeholder) => {
+                                        if (selectedItems.length === 0) return placeholder;
+                                        const role = selectedItems[0];
+                                        const IconComponent = role?.icon || User;
+                                        const hexColor = role?.color || "#64748b";
+                                        const generateGradient = (hex: string) => {
+                                          const cleanHex = hex.replace("#", "");
+                                          const r = parseInt(cleanHex.substr(0, 2), 16);
+                                          const g = parseInt(cleanHex.substr(2, 2), 16);
+                                          const b = parseInt(cleanHex.substr(4, 2), 16);
+                                          const lighterR = Math.min(255, r + 60);
+                                          const lighterG = Math.min(255, g + 60);
+                                          const lighterB = Math.min(255, b + 60);
+                                          const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                                          return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                                        };
+                                        return (
+                                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <div
+                                              className="p-1 rounded-md shadow-sm flex-shrink-0"
+                                              style={{
+                                                background: generateGradient(hexColor),
+                                              }}
+                                            >
+                                              <IconComponent className="h-3.5 w-3.5 text-white" />
+                                            </div>
+                                            <span className="truncate">{role?.name || placeholder}</span>
+                                          </div>
+                                        );
+                                      }}
                                       placeholder="Select role"
+                                      multiSelect={false}
+                                      hideSelectedChips={true}
                                       buttonClassName="h-8"
+                                      groupHeading="Staff Roles"
                                     />
                                   </TableCell>
                                   {validDepartmentIdsForCSV.length > 1 && (
@@ -2202,9 +2281,9 @@ export default function Staff({
                                           : ""
                                       }
                                     >
-                                      <DepartmentPicker
-                                        mapping={departmentMappingForCSV}
-                                        validIds={validDepartmentIdsForCSV}
+                                      <GenericPicker
+                                        items={departmentMappingForCSV}
+                                        itemIds={validDepartmentIdsForCSV}
                                         selectedIds={
                                           (editableRow.department_ids ||
                                             row.department_ids ||
@@ -2217,9 +2296,13 @@ export default function Staff({
                                             ids,
                                           )
                                         }
+                                        getId={(dept) => (dept as unknown as { id: string }).id}
+                                        getLabel={(dept) => dept.name || ""}
+                                        getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                                         placeholder="Select departments"
                                         multiSelect={true}
                                         compact={true}
+                                        hideSelectedChips={true}
                                       />
                                     </TableCell>
                                   )}
@@ -2228,9 +2311,9 @@ export default function Staff({
                                       hasCohortError ? "bg-destructive/10" : ""
                                     }
                                   >
-                                    <CohortPicker
-                                      mapping={cohortMappingForCSV}
-                                      validIds={validCohortIdsForCSV}
+                                    <GenericPicker
+                                      items={cohortMappingForCSV}
+                                      itemIds={validCohortIdsForCSV}
                                       selectedIds={
                                         (editableRow.cohort_ids ||
                                           row.cohort_ids ||
@@ -2243,8 +2326,13 @@ export default function Staff({
                                           ids,
                                         )
                                       }
+                                      getId={(cohort) => (cohort as unknown as { id: string }).id}
+                                      getLabel={(cohort) => cohort.name || ""}
+                                      getSearchText={(cohort) => `${cohort.name} ${cohort.description || ""}`}
                                       placeholder="Select cohorts"
                                       multiSelect={true}
+                                      hideSelectedChips={true}
+                                      compact={true}
                                     />
                                   </TableCell>
                                 </TableRow>

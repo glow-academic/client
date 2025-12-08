@@ -5,8 +5,8 @@ import uuid
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.utils.logging.db_logger import get_logger
 from app.main import get_scenario_storage
+from app.utils.logging.db_logger import get_logger
 from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
@@ -18,7 +18,7 @@ def create_objectives_function(
     primary_id: str | None = None,
 ) -> Tool:
     """Create a function tool for setting scenario learning objectives.
-    
+
     Args:
         group_id: Optional group ID
         profile_id: Profile ID for tenant isolation
@@ -52,7 +52,7 @@ def create_objectives_function(
         if not profile_id or not primary_id:
             logger.error("profile_id and primary_id required for storage")
             return "Error: Storage configuration missing"
-        
+
         # Limit to maximum 3 objectives
         objectives = objectives[:3]
 
@@ -67,7 +67,7 @@ def create_objectives_function(
             profile_id=profile_id,
             primary_id=primary_id,
         )
-        
+
         await storage.set(storage_key, "objectives", objectives)
         await storage.set(storage_key, "objectives_progress", True)
 

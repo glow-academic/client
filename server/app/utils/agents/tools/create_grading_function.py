@@ -8,9 +8,9 @@ from agents import Tool, function_tool
 from pydantic import Field
 
 from app.main import get_grading_storage
-from app.utils.storage.request_storage import build_storage_key
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.utils.logging.db_logger import get_logger
+from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
 
@@ -59,24 +59,30 @@ def create_grading_function(
 
         Returns:
             Confirmation message
-        """.format(standard_group_name=standard_group["name"], full_description=full_description)
+        """.format(
+            standard_group_name=standard_group["name"],
+            full_description=full_description,
+        )
         if not profile_id:
             return "Error: Storage configuration missing"
-        
+
         storage = get_grading_storage()
         storage_key = build_storage_key(
             operation_type="grading",
             profile_id=profile_id,
             primary_id=str(chat_id),
         )
-        
-        await storage.set(storage_key, safe_name, {"score": score, "feedback": feedback})
+
+        await storage.set(
+            storage_key, safe_name, {"score": score, "feedback": feedback}
+        )
         await storage.set(storage_key, f"{safe_name}_progress", True)
 
         # Count completed standard groups (exclude "summary" from count)
         all_data = await storage.get_all(storage_key)
         completed_count = sum(
-            1 for k, v in all_data.items() 
+            1
+            for k, v in all_data.items()
             if k.endswith("_progress") and v and k != "summary_progress"
         )
 

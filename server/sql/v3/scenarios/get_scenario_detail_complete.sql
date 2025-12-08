@@ -498,7 +498,7 @@ parameter_mapping_data AS (
             jsonb_build_object(
                 'name', p.name, 
                 'description', p.description, 
-                'numerical',                 'document_parameter', p.document_parameter,
+                'document_parameter', p.document_parameter,
                 'persona_parameter', p.persona_parameter
             )
         ), '{}'::jsonb) as parameter_mapping
@@ -511,7 +511,7 @@ scenario_parameters_mapping_data AS (
             jsonb_build_object(
                 'name', p.name, 
                 'description', COALESCE(p.description, ''), 
-                'numerical',                 'document_parameter', p.document_parameter,
+                'document_parameter', p.document_parameter,
                 'persona_parameter', p.persona_parameter
             )
         ),

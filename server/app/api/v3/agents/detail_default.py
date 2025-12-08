@@ -158,15 +158,17 @@ async def get_agent_new(
         user_role = result.get("user_role", "trainee") if result else "trainee"
         is_superadmin = user_role == "superadmin"
         primary_department_id = result.get("primary_department_id") if result else None
-        
+
         # Set default department_ids based on role
         # Superadmin: [] (empty = all departments = default object)
         # Non-superadmin: [primaryDepartmentId] if available
         if is_superadmin:
             default_department_ids: list[str] = []
         else:
-            default_department_ids = [primary_department_id] if primary_department_id else []
-        
+            default_department_ids = (
+                [primary_department_id] if primary_department_id else []
+            )
+
         # Default agents (no department_ids) are read-only for non-superadmin
         can_edit = is_superadmin
 

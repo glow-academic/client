@@ -5,11 +5,10 @@ These tests are database-agnostic since TUS endpoints operate purely on the file
 
 import base64
 import json
-import os
-from pathlib import Path
 
 import httpx
 import pytest
+
 from app.main import TUS_UPLOADS_DIR, fastapi_app
 
 
@@ -353,4 +352,3 @@ async def test_tus_options_upload_id(client: httpx.AsyncClient) -> None:
     assert response.headers["Tus-Resumable"] == "1.0.0"
     assert response.headers["Tus-Version"] == "1.0.0"
     assert response.headers["Access-Control-Allow-Origin"] == "*"
-

@@ -4,12 +4,13 @@ import asyncio
 import uuid
 from typing import Any, Literal
 
+from openai import OpenAI
+from pydantic import BaseModel, ValidationError
+
 from app.main import UPLOAD_FOLDER, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from openai import OpenAI
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -175,7 +176,9 @@ async def _generate_video_impl(sid: str, data: GenerateVideoPayload) -> None:
             video_job = client.videos.create(**create_params)
 
             video_job_id = video_job.id
-            logger.info(f"Created video job: {video_job_id}, status: {video_job.status}")
+            logger.info(
+                f"Created video job: {video_job_id}, status: {video_job.status}"
+            )
 
             # Poll for completion with progress updates
             max_polls = 60  # 5 minutes max (5 second intervals)
@@ -244,7 +247,9 @@ async def _generate_video_impl(sid: str, data: GenerateVideoPayload) -> None:
                     )
 
                     # Create generation and link to video (no run_id since video generation doesn't create a run)
-                    sql_create_generation = load_sql("sql/v3/videos/create_generation_and_link.sql")
+                    sql_create_generation = load_sql(
+                        "sql/v3/videos/create_generation_and_link.sql"
+                    )
                     generation_result = await conn.fetchrow(
                         sql_create_generation,
                         str(video_id),
@@ -261,7 +266,9 @@ async def _generate_video_impl(sid: str, data: GenerateVideoPayload) -> None:
                             f"Created generation {generation_id} and linked to video {video_id}"
                         )
                     else:
-                        logger.warning(f"Failed to create generation for video {video_id}")
+                        logger.warning(
+                            f"Failed to create generation for video {video_id}"
+                        )
 
                     # Emit completion event
                     await video_generation_complete(
@@ -325,4 +332,3 @@ async def generate_video(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

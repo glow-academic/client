@@ -1,6 +1,5 @@
 """Simulation attempts endpoint - v3 API."""
 
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -67,7 +66,11 @@ async def simulation_attempts(
                 last = row["last_name"] or ""
                 emails = row.get("emails") or []
                 primary_email = row.get("primary_email") or ""
-                email = primary_email if primary_email else (emails[0] if emails and len(emails) > 0 else "")
+                email = (
+                    primary_email
+                    if primary_email
+                    else (emails[0] if emails and len(emails) > 0 else "")
+                )
                 student_name = (
                     " ".join(x for x in (first, last) if x).strip()
                     or email

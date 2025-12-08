@@ -119,7 +119,9 @@ async def process_csv(
                 elif field == "email":
                     # Support comma-separated emails
                     if value:
-                        email_values = [e.strip().lower() for e in value.split(",") if e.strip()]
+                        email_values = [
+                            e.strip().lower() for e in value.split(",") if e.strip()
+                        ]
                         emails.extend(email_values)
                     # If no emails found, emails stays empty
                 elif field == "role":
@@ -157,7 +159,9 @@ async def process_csv(
             if len(emails) == 0:
                 errors.append(
                     CSVRowError(
-                        row_index=row_index, field="emails", message="At least one email is required"
+                        row_index=row_index,
+                        field="emails",
+                        message="At least one email is required",
                     )
                 )
 

@@ -1,24 +1,31 @@
 """Cohort new endpoint - v3 API."""
 
 import json
-import os
 from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 # Reuse models from detail.py
-from app.api.v3.cohorts.detail import (CohortDetailResponse,
-                                       SimulationInCohort, StaffItem)
+from app.api.v3.cohorts.detail import (
+    CohortDetailResponse,
+    SimulationInCohort,
+    StaffItem,
+)
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (CohortMappingItem, DepartmentMappingItem,
-                              ProfileMappingItem, SimulationMappingItem)
+from app.utils.schema import (
+    CohortMappingItem,
+    DepartmentMappingItem,
+    ProfileMappingItem,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 class CohortNewRequest(BaseModel):
@@ -113,8 +120,13 @@ async def get_cohort_new(
                         primary_department_id = s.get("primary_department_id") or ""
                         if not primary_department_id and department_ids:
                             # Fallback to first department if no primary department set
-                            primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
-                        
+                            primary_department_id = (
+                                department_ids[0]
+                                if isinstance(department_ids, list)
+                                and len(department_ids) > 0
+                                else ""
+                            )
+
                         emails = s.get("emails") or []
                         primary_email = s.get("primaryEmail") or s.get("primary_email")
                         staff.append(
@@ -223,16 +235,18 @@ async def get_cohort_new(
         valid_department_ids = [
             str(did) for did in (row.get("valid_department_ids") or [])
         ]
-        
+
         # Get user role and primary department for default behavior
-        user_role = row.get("can_edit", False)  # This is a permission check, need to get role differently
+        user_role = row.get(
+            "can_edit", False
+        )  # This is a permission check, need to get role differently
         # Check if can_edit is False due to default object restriction
         dept_ids_from_row = row.get("department_ids")
         is_default_cohort = dept_ids_from_row is None or len(dept_ids_from_row) == 0
-        
+
         # Get primary department from SQL result
         primary_department_id = row.get("primary_department_id")
-        
+
         # For default cohorts, check role from can_edit logic
         # If can_edit is False and it's a default cohort, user is not superadmin
         # We need to infer role - check if it's a default object that can't be edited
@@ -240,7 +254,7 @@ async def get_cohort_new(
         # If superadmin, they would have can_edit=True even for default objects
         # So if can_edit=False and is_default, user is not superadmin
         is_superadmin = not (is_default_cohort and not row.get("can_edit", False))
-        
+
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
         # Non-superadmin: [primaryDepartmentId] if available

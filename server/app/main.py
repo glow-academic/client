@@ -1,6 +1,5 @@
 # server/app/main.py
 import asyncio
-import base64
 import contextlib
 import datetime
 import json
@@ -9,7 +8,6 @@ import os
 import platform
 import sys
 import time
-import uuid
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -28,8 +26,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 if TYPE_CHECKING:  # pragma: no cover - runtime import happens lazily
     from redis.asyncio import Redis as RedisClientType
 else:  # pragma: no cover - runtime alias for optional dependency
+
     class RedisClientType(Any):  # type: ignore[misc]
         ...
+
 
 # Redis is nice in production, but optional in dev
 try:
@@ -231,51 +231,63 @@ def get_sio_instance() -> socketio.AsyncServer:
 def get_scenario_storage() -> Any:
     """Get the scenario generation storage instance."""
     if scenario_storage is None:
-        raise RuntimeError("Scenario storage not initialized. Call initialize_storage() at startup.")
+        raise RuntimeError(
+            "Scenario storage not initialized. Call initialize_storage() at startup."
+        )
     return scenario_storage
 
 
 def get_question_storage() -> Any:
     """Get the question generation storage instance."""
     if question_storage is None:
-        raise RuntimeError("Question storage not initialized. Call initialize_storage() at startup.")
+        raise RuntimeError(
+            "Question storage not initialized. Call initialize_storage() at startup."
+        )
     return question_storage
 
 
 def get_outline_storage() -> Any:
     """Get the outline generation storage instance."""
     if outline_storage is None:
-        raise RuntimeError("Outline storage not initialized. Call initialize_storage() at startup.")
+        raise RuntimeError(
+            "Outline storage not initialized. Call initialize_storage() at startup."
+        )
     return outline_storage
 
 
 def get_grading_storage() -> Any:
     """Get the grading storage instance."""
     if grading_storage is None:
-        raise RuntimeError("Grading storage not initialized. Call initialize_storage() at startup.")
+        raise RuntimeError(
+            "Grading storage not initialized. Call initialize_storage() at startup."
+        )
     return grading_storage
 
 
 def get_hint_storage() -> Any:
     """Get the hint storage instance."""
     if hint_storage is None:
-        raise RuntimeError("Hint storage not initialized. Call initialize_storage() at startup.")
+        raise RuntimeError(
+            "Hint storage not initialized. Call initialize_storage() at startup."
+        )
     return hint_storage
-
-
 
 
 def get_image_generation_storage() -> Any:
     """Get the image generation storage instance."""
     if image_generation_storage is None:
-        raise RuntimeError("Image generation storage not initialized. Call initialize_storage() at startup.")
+        raise RuntimeError(
+            "Image generation storage not initialized. Call initialize_storage() at startup."
+        )
     return image_generation_storage
 
 
 def get_dynamic_document_storage() -> Any:
     """Get the dynamic document storage instance."""
     if dynamic_document_storage is None:
-        raise RuntimeError("Dynamic document storage not initialized. Call initialize_storage() at startup.")
+        raise RuntimeError(
+            "Dynamic document storage not initialized. Call initialize_storage() at startup."
+        )
     return dynamic_document_storage
 
 
@@ -286,10 +298,10 @@ def get_pool() -> asyncpg.Pool | None:
 
 def get_guest_profile_id() -> str:
     """Get the cached guest profile UUID.
-    
+
     Returns:
         Guest profile UUID string (never null, may be placeholder if not initialized)
-        
+
     Raises:
         RuntimeError: If guest profile has not been initialized
     """
@@ -302,19 +314,19 @@ def get_guest_profile_id() -> str:
 
 def resolve_profile_id(profile_id: str | None) -> str:
     """Resolve 'guest-profile-id' to actual guest UUID using cached value.
-    
+
     Args:
         profile_id: Profile ID string, may be "guest-profile-id", None, or actual UUID
-        
+
     Returns:
         Resolved UUID string (never null)
-        
+
     Raises:
         RuntimeError: If guest profile has not been initialized
     """
     if not profile_id or profile_id == "guest-profile-id":
         return get_guest_profile_id()
-    
+
     return profile_id
 
 
@@ -327,8 +339,7 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import \
-            PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:16")
         _test_container.start()
@@ -400,12 +411,12 @@ async def init_db_pool() -> None:
     if using_pgbouncer and pgbouncer_pool_mode == "transaction":
         pool_config["statement_cache_size"] = 0
         print(
-            f"   ⚙️  PgBouncer detected (transaction mode): Disabling prepared statements for compatibility"
+            "   ⚙️  PgBouncer detected (transaction mode): Disabling prepared statements for compatibility"
         )
     elif using_pgbouncer and pgbouncer_pool_mode == "session":
         # Session mode allows prepared statements - use default cache size
         print(
-            f"   ⚙️  PgBouncer detected (session mode): Using prepared statements for better performance"
+            "   ⚙️  PgBouncer detected (session mode): Using prepared statements for better performance"
         )
     else:
         print(
@@ -469,32 +480,38 @@ from app.socket.connections import leave_chat  # type: ignore
 from app.socket.connections.connect import connect  # type: ignore
 from app.socket.connections.disconnect import disconnect  # type: ignore
 from app.socket.connections.join_chat import join_chat  # type: ignore
-from app.socket.connections.stop_chat import \
-    stop_chat  # noqa: E402; type: ignore
-from app.socket.documents.generate_template import \
-    generate_document_template  # noqa: E402; type: ignore
-from app.socket.scenarios.generate_ai import \
-    generate_scenario_ai  # noqa: E402; type: ignore
-from app.socket.images.generate import \
-    generate_image  # noqa: E402; type: ignore
-from app.socket.simulations import send_simulation_message  # type: ignore
-from app.socket.simulations import start_simulation  # type: ignore
-from app.socket.simulations.continue_chat import \
-    continue_simulation  # noqa: E402; type: ignore
-from app.socket.simulations.create_practice_scenario import \
-    create_practice_scenario  # noqa: E402; type: ignore
-from app.socket.simulations.stop import \
-    stop_simulation  # noqa: E402; type: ignore
-from app.socket.videos.generate_outline import \
-    generate_video_outline  # noqa: E402; type: ignore
-from app.socket.videos.generate_video import \
-    generate_video  # noqa: E402; type: ignore
-from app.socket.voice import start_voice  # noqa: E402; type: ignore
-from app.socket.voice import (stop_voice, voice_debug_info, voice_interrupted,
-                              voice_response_done, voice_speech_started,
-                              voice_tool_call_delta, voice_tool_call_done,
-                              voice_transcript_delta, voice_transcript_ready,
-                              voice_user_message)
+from app.socket.connections.stop_chat import stop_chat  # noqa: E402; type: ignore
+from app.socket.documents.generate_template import (
+    generate_document_template,  # noqa: E402; type: ignore
+)
+from app.socket.scenarios.generate_ai import (
+    generate_scenario_ai,  # noqa: E402; type: ignore
+)
+from app.socket.simulations import (
+    send_simulation_message,  # type: ignore
+    start_simulation,  # type: ignore
+)
+from app.socket.simulations.continue_chat import (
+    continue_simulation,  # noqa: E402; type: ignore
+)
+from app.socket.simulations.create_practice_scenario import (
+    create_practice_scenario,  # noqa: E402; type: ignore
+)
+from app.socket.simulations.stop import stop_simulation  # noqa: E402; type: ignore
+from app.socket.videos.generate_outline import (
+    generate_video_outline,  # noqa: E402; type: ignore
+)
+from app.socket.videos.generate_video import generate_video  # noqa: E402; type: ignore
+from app.socket.voice import (
+    start_voice,  # noqa: E402; type: ignore
+    stop_voice,
+    voice_interrupted,
+    voice_response_done,
+    voice_speech_started,
+    voice_transcript_delta,
+    voice_transcript_ready,
+    voice_user_message,
+)
 
 
 # Create a combined lifespan to manage both session managers
@@ -520,7 +537,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         # Initialize Redis client for HTTP caching and socket ownership management
         global redis_client
         redis_url = os.getenv("REDIS_URL")
-        logger.info(f"Initializing HTTP cache Redis client: redis={redis is not None}, redis_url={redis_url}")
+        logger.info(
+            f"Initializing HTTP cache Redis client: redis={redis is not None}, redis_url={redis_url}"
+        )
         if not redis or not redis_url:
             logger.warning(
                 "Redis disabled (no lib or no REDIS_URL); using in-memory fallbacks"
@@ -538,8 +557,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Initialize request-scoped storage instances
         global scenario_storage, question_storage, outline_storage
-        global grading_storage, hint_storage, image_generation_storage, dynamic_document_storage
+        global \
+            grading_storage, \
+            hint_storage, \
+            image_generation_storage, \
+            dynamic_document_storage
         from app.utils.storage.request_storage import create_request_storage
+
         storage = create_request_storage(redis_client, ttl_seconds=3600)
         scenario_storage = storage
         question_storage = storage
@@ -571,10 +595,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                         LIMIT 1
                         """
                     )
-                    
+
                     if result:
                         _guest_profile_id = str(result)
-                        logger.info(f"✅ Cached guest profile UUID: {_guest_profile_id}")
+                        logger.info(
+                            f"✅ Cached guest profile UUID: {_guest_profile_id}"
+                        )
                     else:
                         # Fallback to placeholder if no guest profile found
                         _guest_profile_id = "00000000-0000-0000-0000-000000000000"
@@ -613,11 +639,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                     try:
                         from keycloak import KeycloakAdmin  # type: ignore
                     except ImportError:
-                        logger.warning("keycloak package not installed, skipping Keycloak sync")
+                        logger.warning(
+                            "keycloak package not installed, skipping Keycloak sync"
+                        )
                         return None
 
                     retry_delay = INITIAL_RETRY_DELAY
-                    
+
                     for attempt in range(1, max_retries + 1):
                         try:
                             logger.info(
@@ -648,7 +676,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                     f"Failed to connect to Keycloak after {max_retries} attempts: {e}"
                                 )
                                 return None
-                    
+
                     return None
 
                 # Connect to Keycloak Admin API with retry logic
@@ -678,7 +706,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                         else:
                             logger.info(f"✅ Realm '{keycloak_realm}' already exists")
                     except Exception as e:
-                        logger.error(f"Failed to ensure realm exists: {e}", exc_info=True)
+                        logger.error(
+                            f"Failed to ensure realm exists: {e}", exc_info=True
+                        )
                         kc_admin = None
 
                     if kc_admin:
@@ -690,9 +720,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                             realm_details = kc_admin.get_realm(keycloak_realm)
                             attributes = realm_details.get("attributes", {})
                             current_frontend_url = attributes.get("frontendUrl", "")
-                            
-                            if current_frontend_url and "/realms/" in current_frontend_url:
-                                logger.info(f"Fixing realm frontend URL (was: {current_frontend_url})")
+
+                            if (
+                                current_frontend_url
+                                and "/realms/" in current_frontend_url
+                            ):
+                                logger.info(
+                                    f"Fixing realm frontend URL (was: {current_frontend_url})"
+                                )
                                 kc_admin.update_realm(
                                     realm_name=keycloak_realm,
                                     payload={
@@ -702,11 +737,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                         }
                                     },
                                 )
-                                logger.info("✅ Realm frontend URL fixed (set to empty)")
+                                logger.info(
+                                    "✅ Realm frontend URL fixed (set to empty)"
+                                )
                             elif not current_frontend_url:
-                                logger.info("✅ Realm frontend URL is already correct (empty)")
+                                logger.info(
+                                    "✅ Realm frontend URL is already correct (empty)"
+                                )
                         except Exception as e:
-                            logger.warning(f"Could not update realm frontend URL: {e}. Continuing...")
+                            logger.warning(
+                                f"Could not update realm frontend URL: {e}. Continuing..."
+                            )
 
                         # Setup Next.js client with pre-shared secret
                         target_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
@@ -722,7 +763,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                             try:
                                 # Build redirect URIs
                                 base_url = f"http://localhost:{client_port}"
-                                redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
+                                redirect_uri = (
+                                    f"{base_url}{app_prefix}/api/auth/callback/keycloak"
+                                )
                                 redirect_uris = [
                                     redirect_uri,
                                     f"{base_url}{app_prefix}/*",
@@ -731,7 +774,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                 # Check if client exists
                                 clients = kc_admin.get_clients()
                                 existing_client = next(
-                                    (c for c in clients if c.get("clientId") == target_client_id), None
+                                    (
+                                        c
+                                        for c in clients
+                                        if c.get("clientId") == target_client_id
+                                    ),
+                                    None,
                                 )
 
                                 # Client payload with pre-shared secret
@@ -756,9 +804,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                     client_uuid = existing_client.get("id")
                                     if client_uuid:
                                         kc_admin.update_client(
-                                            client_id=client_uuid, payload=client_payload
+                                            client_id=client_uuid,
+                                            payload=client_payload,
                                         )
-                                        logger.info(f"✅ Client '{target_client_id}' updated")
+                                        logger.info(
+                                            f"✅ Client '{target_client_id}' updated"
+                                        )
                                     else:
                                         logger.warning(
                                             f"⚠️  Client '{target_client_id}' exists but has no ID"
@@ -767,23 +818,27 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                     new_client_uuid = kc_admin.create_client(
                                         payload=client_payload, skip_exists=True
                                     )
-                                    logger.info(f"✅ Client '{target_client_id}' created")
+                                    logger.info(
+                                        f"✅ Client '{target_client_id}' created"
+                                    )
 
                                     if new_client_uuid:
                                         kc_admin.update_client(
-                                            client_id=new_client_uuid, payload={"secret": target_secret}
+                                            client_id=new_client_uuid,
+                                            payload={"secret": target_secret},
                                         )
                                         logger.info(
                                             f"✅ Client Secret enforced for '{target_client_id}'"
                                         )
 
                             except Exception as e:
-                                logger.error(f"❌ Client sync failed: {e}", exc_info=True)
+                                logger.error(
+                                    f"❌ Client sync failed: {e}", exc_info=True
+                                )
 
                         # Sync all active identity providers from database
                         async with pool.acquire() as conn:
-                            from app.utils.auth.decrypt_api_key import \
-                                decrypt_api_key
+                            from app.utils.auth.decrypt_api_key import decrypt_api_key
 
                             providers_query = """
                                 SELECT id, slug, provider_id, name 
@@ -793,7 +848,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                             providers = await conn.fetch(providers_query)
 
                             if not providers:
-                                logger.info("No active providers found in database, skipping sync")
+                                logger.info(
+                                    "No active providers found in database, skipping sync"
+                                )
                             else:
                                 # Loop through each active provider
                                 for p in providers:
@@ -815,10 +872,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                         item_name = item["name"]
                                         raw_value = item["value"]
                                         is_encrypted = item.get("encrypted", True)
-                                        
+
                                         if is_encrypted:
                                             try:
-                                                decrypted_value = decrypt_api_key(raw_value)
+                                                decrypted_value = decrypt_api_key(
+                                                    raw_value
+                                                )
                                                 config_map[item_name] = decrypted_value
                                             except Exception as e:
                                                 logger.warning(
@@ -836,21 +895,34 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                         "displayName": display_name,
                                         "enabled": True,
                                         "trustEmail": True,
-                                        "config": {}
+                                        "config": {},
                                     }
 
                                     # SAML Provider Configuration
                                     if provider_id == "saml":
                                         if "ssoUrl" in config_map:
-                                            payload["config"]["singleSignOnServiceUrl"] = config_map["ssoUrl"]
+                                            payload["config"][
+                                                "singleSignOnServiceUrl"
+                                            ] = config_map["ssoUrl"]
                                         if "entityId" in config_map:
-                                            payload["config"]["entityId"] = config_map["entityId"]
+                                            payload["config"]["entityId"] = config_map[
+                                                "entityId"
+                                            ]
                                         if "metadataUrl" in config_map:
-                                            payload["config"]["importFromIdpUrl"] = config_map["metadataUrl"]
+                                            payload["config"]["importFromIdpUrl"] = (
+                                                config_map["metadataUrl"]
+                                            )
                                         if "certificate" in config_map:
-                                            payload["config"]["signingCertificate"] = config_map["certificate"]
-                                        if "nameIDPolicyFormat" not in payload["config"]:
-                                            payload["config"]["nameIDPolicyFormat"] = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+                                            payload["config"]["signingCertificate"] = (
+                                                config_map["certificate"]
+                                            )
+                                        if (
+                                            "nameIDPolicyFormat"
+                                            not in payload["config"]
+                                        ):
+                                            payload["config"]["nameIDPolicyFormat"] = (
+                                                "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+                                            )
                                         if "syncMode" not in payload["config"]:
                                             payload["config"]["syncMode"] = "FORCE"
                                         if "allowCreate" not in payload["config"]:
@@ -863,16 +935,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                         if "useJwksUrl" not in payload["config"]:
                                             payload["config"]["useJwksUrl"] = "true"
 
-                                    logger.info(f"🔍 Payload for {slug}: {payload['config']}")
+                                    logger.info(
+                                        f"🔍 Payload for {slug}: {payload['config']}"
+                                    )
 
                                     # Upsert the provider in Keycloak
                                     try:
                                         kc_admin.get_idp(idp_alias=slug)
-                                        kc_admin.update_idp(idp_alias=slug, payload=payload)
-                                        logger.info(f"✅ Synced Keycloak provider: {slug}")
+                                        kc_admin.update_idp(
+                                            idp_alias=slug, payload=payload
+                                        )
+                                        logger.info(
+                                            f"✅ Synced Keycloak provider: {slug}"
+                                        )
                                     except Exception:
                                         kc_admin.create_idp(payload=payload)
-                                        logger.info(f"✅ Created Keycloak provider: {slug}")
+                                        logger.info(
+                                            f"✅ Created Keycloak provider: {slug}"
+                                        )
 
                 logger.info("Keycloak sync completed")
             except Exception as e:
@@ -880,7 +960,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Initialize metrics collector
         from app.utils.metrics.collector import (  # noqa: E402
-            initialize_metrics, snapshot_metrics)
+            initialize_metrics,
+            snapshot_metrics,
+        )
 
         if pool:
             await initialize_metrics(pool, redis_client)
@@ -899,7 +981,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                         logger.error(f"Error in metrics task: {e}")
 
             metrics_task_handle = asyncio.create_task(metrics_task())
-            
+
             # Register cleanup callback
             async def cleanup_metrics_task() -> None:
                 metrics_task_handle.cancel()
@@ -907,7 +989,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                     await metrics_task_handle
                 except asyncio.CancelledError:
                     pass
-            
+
             stack.push_async_callback(cleanup_metrics_task)
             logger.info("Metrics snapshot task started (60s interval)")
 
@@ -970,43 +1052,58 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.documents.generate_template import (
             document_template_generation_complete,
             document_template_generation_error,
-            document_template_generation_progress)
+            document_template_generation_progress,
+        )
         from app.socket.scenarios.generate_ai import (
-            scenario_generation_complete, scenario_generation_error,
-            scenario_generation_progress)
+            scenario_generation_complete,
+            scenario_generation_error,
+            scenario_generation_progress,
+        )
         from app.socket.simulations.continue_chat import (
-            continue_simulation_error, end_all_completed, end_all_started,
-            end_chat_started, simulation_continued,
-            simulation_grading_progress)
-        from app.socket.simulations.create_practice_scenario import \
-            create_practice_scenario_error
+            continue_simulation_error,
+            end_all_completed,
+            end_all_started,
+            end_chat_started,
+            simulation_continued,
+            simulation_grading_progress,
+        )
+        from app.socket.simulations.create_practice_scenario import (
+            create_practice_scenario_error,
+        )
         from app.socket.simulations.send_message import (
-            hint_generation_progress, message_sent,
-            send_simulation_message_error, simulation_message_complete,
-            simulation_message_error, simulation_message_token,
-            simulation_new_message)
+            hint_generation_progress,
+            message_sent,
+            send_simulation_message_error,
+            simulation_message_complete,
+            simulation_message_error,
+            simulation_message_token,
+            simulation_new_message,
+        )
         from app.socket.simulations.start import simulation_started
-        from app.socket.simulations.start import \
-            start_simulation_error as simulation_error_start
-        from app.socket.simulations.stop import (simulation_message_cancelled,
-                                                 simulation_stopped,
-                                                 stop_simulation_error)
+        from app.socket.simulations.start import (
+            start_simulation_error as simulation_error_start,
+        )
+        from app.socket.simulations.stop import (
+            simulation_message_cancelled,
+            simulation_stopped,
+            stop_simulation_error,
+        )
         from app.socket.videos.generate_outline import (
-            video_outline_generation_complete, video_outline_generation_error,
-            video_outline_generation_progress)
+            video_outline_generation_complete,
+            video_outline_generation_error,
+            video_outline_generation_progress,
+        )
         from app.socket.videos.generate_video import (
-            video_generation_complete, video_generation_error,
-            video_generation_progress)
+            video_generation_complete,
+            video_generation_error,
+            video_generation_progress,
+        )
         from app.socket.voice.speech_started import voice_speech_started_emit
-        from app.socket.voice.start_voice import (start_voice_error,
-                                                  start_voice_response)
-        from app.socket.voice.stop_voice import (stop_voice_error,
-                                                 stop_voice_response)
+        from app.socket.voice.start_voice import start_voice_error, start_voice_response
+        from app.socket.voice.stop_voice import stop_voice_error, stop_voice_response
         from app.socket.voice.tool_call_delta import voice_tool_call_error
-        from app.socket.voice.transcript_delta import \
-            voice_transcript_delta_emit
-        from app.socket.voice.transcript_ready import \
-            voice_transcript_ready_emit
+        from app.socket.voice.transcript_delta import voice_transcript_delta_emit
+        from app.socket.voice.transcript_ready import voice_transcript_ready_emit
         from app.socket.voice.user_message import voice_user_message_error
 
         # Collect all unique emit functions (use one instance of each event name)
@@ -1095,6 +1192,7 @@ fastapi_app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Database logging middleware (after CORS)
 # Inlined from middleware/db_logging.py to follow DHH principles - minimal abstractions
 class DBLoggingMiddleware(BaseHTTPMiddleware):
@@ -1102,17 +1200,19 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
-        from app.utils.logging.db_logger import (get_logger,
-                                                 resolve_profile_id,
-                                                 set_profile_id)
+        from app.utils.logging.db_logger import (
+            get_logger,
+            resolve_profile_id,
+            set_profile_id,
+        )
         from app.utils.metrics.collector import record_error, record_request
 
         logger = get_logger(__name__)
         start_time = time.perf_counter()
-        
+
         # Extract profile_id from request
         profile_id: str | None = None
-        
+
         # Try to get from request body if JSON
         # Skip JSON parsing for TUS uploads and other binary content types
         content_type = request.headers.get("Content-Type", "")
@@ -1123,7 +1223,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
             or content_type.startswith("video/")  # Direct video uploads
             or content_type.startswith("audio/")  # Direct audio uploads
         )
-        
+
         if request.method in ("POST", "PUT", "PATCH") and not is_binary_content:
             try:
                 body = await request.body()
@@ -1138,11 +1238,11 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
                     )
             except (json.JSONDecodeError, UnicodeDecodeError, KeyError, AttributeError):
                 pass
-        
+
         # Try to get from headers
         if not profile_id:
             profile_id = request.headers.get("X-Profile-Id")
-        
+
         # Resolve guest profile if needed
         if profile_id:
             try:
@@ -1158,7 +1258,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
                 set_profile_id(resolved_id)
             except Exception:
                 set_profile_id(None)
-        
+
         # Process request
         status_code = 500
         error_msg: str | None = None
@@ -1173,16 +1273,17 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
         finally:
             # Calculate duration
             duration_ms = (time.perf_counter() - start_time) * 1000
-            
+
             # Record metrics (async, fire and forget)
             try:
                 import asyncio
+
                 if status_code >= 500:
                     asyncio.create_task(record_error())
                 asyncio.create_task(record_request(duration_ms))
             except Exception:
                 pass  # Don't break request if metrics fail
-            
+
             # Log to database (fire and forget - don't block response)
             try:
                 extra_data: dict[str, Any] = {
@@ -1194,12 +1295,13 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
                 }
                 if error_msg:
                     extra_data["error"] = error_msg
-                
+
                 # Use logger with extra data
                 import logging
+
                 log_level = logging.INFO if status_code < 500 else logging.ERROR
                 log_message = f"{request.method} {request.url.path} -> {status_code} ({duration_ms:.2f}ms)"
-                
+
                 # Log directly with extra data
                 logger.log(log_level, log_message, extra={"extra_data": extra_data})
             except Exception:
@@ -1208,6 +1310,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
             finally:
                 # Clear profile_id from context
                 set_profile_id(None)
+
 
 fastapi_app.add_middleware(DBLoggingMiddleware)
 

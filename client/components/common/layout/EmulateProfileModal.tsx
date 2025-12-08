@@ -10,7 +10,7 @@ import type {
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
-import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
+import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

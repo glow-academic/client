@@ -22,7 +22,7 @@ def test_key_crud_flow(page: Page, base_url: str) -> None:
     else:
         # If keys exist, navigate directly to new page
         page.goto(f"{base_url}/system/keys/new")
-    
+
     page.wait_for_load_state("networkidle")
 
     # Fill in form
@@ -52,9 +52,9 @@ def test_key_crud_flow(page: Page, base_url: str) -> None:
     expect(page.get_by_text("Test E2E Key")).to_be_visible()
 
     # Test edit flow
-    key_card = page.locator("[data-testid='key-card']").filter(
-        has_text="Test E2E Key"
-    ).first
+    key_card = (
+        page.locator("[data-testid='key-card']").filter(has_text="Test E2E Key").first
+    )
     expect(key_card).to_be_visible()
 
     edit_button = key_card.get_by_test_id("edit-*")
@@ -77,4 +77,3 @@ def test_key_crud_flow(page: Page, base_url: str) -> None:
 
         # Verify updated name appears
         expect(page.get_by_text("Updated E2E Key")).to_be_visible()
-

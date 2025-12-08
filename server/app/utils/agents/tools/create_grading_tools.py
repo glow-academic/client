@@ -7,8 +7,8 @@ from typing import Any
 from agents import Tool
 
 from app.utils.agents.tools.create_grading_function import create_grading_function
-from app.utils.logging.db_logger import get_logger
 from app.utils.agents.tools.create_summary_function import create_summary_function
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -21,7 +21,7 @@ def create_grading_tools(
     profile_id: str | None = None,
 ) -> list[Tool]:
     """Create all grading function tools for the standard groups.
-    
+
     Args:
         standard_groups: List of standard groups to grade
         standards: List of all standards
@@ -34,7 +34,12 @@ def create_grading_tools(
 
     for group in standard_groups:
         tool = create_grading_function(
-            group, standards, chat_id, total_standard_groups, emit_progress_func, profile_id
+            group,
+            standards,
+            chat_id,
+            total_standard_groups,
+            emit_progress_func,
+            profile_id,
         )
         tools.append(tool)
         logger.info(f"Created grading tool for: {group['name']}")

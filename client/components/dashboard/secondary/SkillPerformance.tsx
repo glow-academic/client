@@ -1,6 +1,6 @@
 "use client";
 
-import { RubricPicker } from "@/components/common/forms/RubricPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   Card,
   CardContent,
@@ -11,6 +11,7 @@ import {
 import { useChartColors } from "@/lib/utils/chartColors";
 import { GraduationCap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -20,7 +21,6 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import type { TooltipProps } from "recharts";
 import { TruncatedInsight } from "../TruncatedInsight";
 
 // Custom tooltip component with liquid glass styling
@@ -116,7 +116,7 @@ export default function SkillPerformance({
 
   const activePackage = useMemo(
     () => packages.find((p) => p.rubricId === activeRubricId),
-    [packages, activeRubricId],
+    [packages, activeRubricId]
   );
 
   // Use status from server
@@ -147,12 +147,18 @@ export default function SkillPerformance({
             </CardDescription>
           </div>
           {validRubricIds.length > 0 && (
-            <RubricPicker
-              mapping={rubricMapping}
-              validIds={validRubricIds}
+            <GenericPicker
+              items={rubricMapping}
+              itemIds={validRubricIds}
               selectedIds={selectedRubrics}
               onSelect={setSelectedRubrics}
+              getId={(rubric) => (rubric as unknown as { id: string }).id}
+              getLabel={(rubric) => rubric.name || ""}
+              getSearchText={(rubric) =>
+                `${rubric.name} ${rubric.description || ""}`
+              }
               placeholder="Filter by rubric..."
+              hideSelectedChips={true}
               buttonClassName="w-48"
             />
           )}
@@ -170,7 +176,7 @@ export default function SkillPerformance({
                 tick={({ payload, x, y }) => {
                   const dataIndex =
                     activePackage?.radarData?.findIndex(
-                      (item) => item.metric === payload.value,
+                      (item) => item.metric === payload.value
                     ) ?? 0;
                   const totalItems = activePackage?.radarData?.length ?? 1;
                   const angle = (dataIndex * 360) / totalItems;

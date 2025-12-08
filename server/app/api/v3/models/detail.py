@@ -4,14 +4,15 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -146,7 +147,9 @@ async def get_model_detail(
         # Parse valid_department_ids from array
         valid_department_ids: list[str] = []
         valid_department_ids_raw = model.get("valid_department_ids")
-        if valid_department_ids_raw and isinstance(valid_department_ids_raw, (list, tuple)):
+        if valid_department_ids_raw and isinstance(
+            valid_department_ids_raw, (list, tuple)
+        ):
             valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
 
         # Parse department_mapping from JSONB
@@ -168,7 +171,9 @@ async def get_model_detail(
             department_ids: list[str] = []
         elif isinstance(department_ids_raw, (list, tuple)):
             department_ids = [str(did) for did in department_ids_raw if did]
-        elif hasattr(department_ids_raw, '__iter__') and not isinstance(department_ids_raw, str):
+        elif hasattr(department_ids_raw, "__iter__") and not isinstance(
+            department_ids_raw, str
+        ):
             # Handle asyncpg array types
             department_ids = [str(did) for did in department_ids_raw if did]
         else:
@@ -197,7 +202,7 @@ async def get_model_detail(
                             dept_ids_list = [str(did) for did in dept_ids_raw if did]
                             key_dept_ids = dept_ids_list if dept_ids_list else None
                         # If it's an empty array or None, keep as None
-                    
+
                     key_mapping[key_id] = KeyMappingItem(
                         name=kdata.get("name", ""),
                         description=kdata.get("description", ""),
@@ -206,10 +211,14 @@ async def get_model_detail(
                         department_ids=key_dept_ids,
                     )
 
-        default_key_id = str(model.get("default_key_id")) if model.get("default_key_id") else None
+        default_key_id = (
+            str(model.get("default_key_id")) if model.get("default_key_id") else None
+        )
 
         # Ensure department_ids is always a list, never None
-        final_department_ids = department_ids if isinstance(department_ids, list) else []
+        final_department_ids = (
+            department_ids if isinstance(department_ids, list) else []
+        )
 
         # Parse temperature bounds
         temperature_lower = float(model.get("temperature_lower", 0.0))
@@ -229,13 +238,15 @@ async def get_model_detail(
         if pricing_raw and isinstance(pricing_raw, list):
             for p in pricing_raw:
                 if isinstance(p, dict):
-                    pricing.append(PricingItem(
-                        type=str(p.get("type", "")),
-                        unit_id=str(p.get("unit_id", "")),
-                        unit_name=str(p.get("unit_name", "")),
-                        unit_category=str(p.get("unit_category", "")),
-                        price=float(p.get("price", 0.0)),
-                    ))
+                    pricing.append(
+                        PricingItem(
+                            type=str(p.get("type", "")),
+                            unit_id=str(p.get("unit_id", "")),
+                            unit_name=str(p.get("unit_name", "")),
+                            unit_category=str(p.get("unit_category", "")),
+                            price=float(p.get("price", 0.0)),
+                        )
+                    )
 
         # Parse modalities
         modalities = ModalitiesItem(input=[], output=[])
@@ -250,8 +261,12 @@ async def get_model_detail(
             if isinstance(output_mods, str):
                 output_mods = json.loads(output_mods)
             modalities = ModalitiesItem(
-                input=[str(m) for m in input_mods] if isinstance(input_mods, list) else [],
-                output=[str(m) for m in output_mods] if isinstance(output_mods, list) else [],
+                input=[str(m) for m in input_mods]
+                if isinstance(input_mods, list)
+                else [],
+                output=[str(m) for m in output_mods]
+                if isinstance(output_mods, list)
+                else [],
             )
 
         # Parse reasoning levels
@@ -270,7 +285,8 @@ async def get_model_detail(
         if voices_raw and isinstance(voices_raw, list):
             voices = [
                 voice if isinstance(voice, dict) else {"id": "", "voice": str(voice)}
-                for voice in voices_raw if voice
+                for voice in voices_raw
+                if voice
             ]
 
         # Parse qualities
@@ -289,12 +305,14 @@ async def get_model_detail(
         if units_raw and isinstance(units_raw, list):
             for u in units_raw:
                 if isinstance(u, dict):
-                    units.append(UnitItem(
-                        id=str(u.get("id", "")),
-                        name=str(u.get("name", "")),
-                        unit_category=str(u.get("unit_category", "")),
-                        value=int(u.get("value", 0)),
-                    ))
+                    units.append(
+                        UnitItem(
+                            id=str(u.get("id", "")),
+                            name=str(u.get("name", "")),
+                            unit_category=str(u.get("unit_category", "")),
+                            value=int(u.get("value", 0)),
+                        )
+                    )
 
         response_data = ModelDetailResponse(
             name=model["name"],
@@ -347,4 +365,3 @@ async def get_model_detail(
             sql_params=sql_params,
             request=http_request,
         )
-

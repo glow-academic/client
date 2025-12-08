@@ -72,4 +72,3 @@ async def test_list_keys_empty(
     assert isinstance(data["department_options"], list)
     assert isinstance(data["type_options"], list)
     assert isinstance(data["model_options"], list)
-

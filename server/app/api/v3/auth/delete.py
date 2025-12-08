@@ -79,4 +79,3 @@ async def delete_auth(
             sql_params=sql_params,
             request=http_request,
         )
-

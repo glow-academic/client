@@ -36,9 +36,7 @@ def test_key_readonly_permissions(page: Page, base_url: str) -> None:
     search_input.fill(key_name)
     page.wait_for_timeout(250)
 
-    key_card = page.locator(
-        f"[data-testid='key-card'][data-key-id='{key_id}']"
-    )
+    key_card = page.locator(f"[data-testid='key-card'][data-key-id='{key_id}']")
     expect(key_card).to_be_visible()
 
     # Verify edit button is not visible, view button is
@@ -84,4 +82,3 @@ def test_key_readonly_permissions(page: Page, base_url: str) -> None:
     # Verify submit button is not visible
     submit_button = page.get_by_test_id("btn-submit-key")
     expect(submit_button).to_have_count(0)
-

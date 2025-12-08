@@ -401,7 +401,6 @@ parameter_data AS (
         par.id,
         par.name,
         COALESCE(par.description, '') as description,
-        par.numerical,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = par.id AND pd.active = true) THEN true ELSE false END as document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = par.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters par
@@ -409,7 +408,7 @@ parameter_data AS (
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE par.active = true
       AND par.practice_parameter = true
-    GROUP BY par.id, par.name, par.description, par.numerical
+    GROUP BY par.id, par.name, par.description
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
@@ -420,7 +419,7 @@ parameter_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             par.id::text,
-            jsonb_build_object('name', par.name, 'description', par.description, 'numerical', par.numerical, 'document_parameter', par.document_parameter, 'persona_parameter', par.persona_parameter)
+            jsonb_build_object('name', par.name, 'description', par.description, 'document_parameter', par.document_parameter, 'persona_parameter', par.persona_parameter)
         ),
         '{}'::jsonb
     ) as mapping

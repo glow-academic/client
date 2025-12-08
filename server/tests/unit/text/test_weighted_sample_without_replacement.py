@@ -3,7 +3,6 @@ Tests for app.utils.text.weighted_sample_without_replacement
 """
 
 
-
 class TestWeighted_Sample_Without_Replacement:
     """Tests for weighted_sample_without_replacement function."""
 

@@ -3,12 +3,12 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, sio
-from app.socket.simulations.start import (StartSimulationPayload,
-                                          _start_simulation_impl)
+from app.socket.simulations.start import StartSimulationPayload, _start_simulation_impl
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -92,15 +92,9 @@ async def _create_practice_scenario_impl(
                 return
 
             # Find practice simulation with persona
-            department_ids = (
-                [data.department_id] if data.department_id else []
-            )
-            sql = load_sql(
-                "sql/v3/practice/find_practice_simulation_with_persona.sql"
-            )
-            result = await conn.fetchrow(
-                sql, data.persona_id, department_ids
-            )
+            department_ids = [data.department_id] if data.department_id else []
+            sql = load_sql("sql/v3/practice/find_practice_simulation_with_persona.sql")
+            result = await conn.fetchrow(sql, data.persona_id, department_ids)
 
             if not result:
                 await create_practice_scenario_error(
@@ -168,8 +162,8 @@ async def _create_practice_scenario_impl(
 
             # Determine if we need to create a customized scenario variant
             # Only create variant if customization is needed (persona/parameters selected)
-            needs_customization = (
-                data.persona_id or (data.parameter_item_ids and len(data.parameter_item_ids) > 0)
+            needs_customization = data.persona_id or (
+                data.parameter_item_ids and len(data.parameter_item_ids) > 0
             )
 
             scenario_id_override: str | None = None
@@ -209,11 +203,15 @@ async def _create_practice_scenario_impl(
                     persona_id_to_link = uuid.UUID(data.persona_id)
                     sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
                     await conn.execute(sql, new_scenario_id, persona_id_to_link, True)
-                    logger.info(f"Linked persona {persona_id_to_link} to child scenario")
+                    logger.info(
+                        f"Linked persona {persona_id_to_link} to child scenario"
+                    )
 
                 # Link parameter items (use selected ones)
                 if data.parameter_item_ids:
-                    sql = load_sql("sql/v3/scenarios/insert_scenario_parameter_link.sql")
+                    sql = load_sql(
+                        "sql/v3/scenarios/insert_scenario_parameter_link.sql"
+                    )
                     for param_id_str in data.parameter_item_ids:
                         param_id = uuid.UUID(param_id_str)
                         await conn.execute(sql, new_scenario_id, param_id, True)
@@ -248,7 +246,9 @@ async def _create_practice_scenario_impl(
             await _start_simulation_impl(sid, start_payload)
 
     except Exception as e:
-        logger.error(f"Error creating practice scenario for {sid}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error creating practice scenario for {sid}: {str(e)}", exc_info=True
+        )
         await create_practice_scenario_error(
             CreatePracticeScenarioErrorPayload(
                 success=False, message=f"Failed to create practice scenario: {str(e)}"
@@ -274,4 +274,3 @@ async def create_practice_scenario(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

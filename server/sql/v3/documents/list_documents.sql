@@ -113,7 +113,7 @@ parameter_item_mapping_data AS (
                 'name', f_data.name,
                 'description', COALESCE(f_data.description, ''),
                 'parameter_id', f_data.parameter_id::text,
-                'parameter_name', f_data.parameter_name,
+                'parameter_name', f_data.parameter_name
             )
         ) FILTER (WHERE f_data.id IS NOT NULL),
         '{}'::jsonb
@@ -231,7 +231,7 @@ parameter_mapping_data AS (
             jsonb_build_object(
                 'name', p.name,
                 'description', p.description,
-                'numerical',                 'document_parameter', p.document_parameter,
+                'document_parameter', p.document_parameter,
                 'persona_parameter', p.persona_parameter,
                 'scenario_parameter', p.scenario_parameter,
                 'video_parameter', p.video_parameter

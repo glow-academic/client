@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
@@ -26,7 +25,7 @@ async def run_single_eval(
     emit_progress_func: Any | None = None,
 ) -> None:
     """Evaluate a single model_run against a rubric.
-    
+
     Args:
         eval_id: The eval ID
         model_run_id: The model_run ID to evaluate
@@ -48,12 +47,14 @@ async def run_single_eval(
 
         # Emit progress event
         if emit_progress_func:
-            await emit_progress_func({
-                "eval_id": eval_id,
-                "model_run_id": model_run_id,
-                "status": "running",
-                "message": f"Evaluating model_run {model_run_id[:8]}...",
-            })
+            await emit_progress_func(
+                {
+                    "eval_id": eval_id,
+                    "model_run_id": model_run_id,
+                    "status": "running",
+                    "message": f"Evaluating model_run {model_run_id[:8]}...",
+                }
+            )
 
         # TODO: Implement actual grading logic here
         # For now, create a placeholder grade
@@ -100,17 +101,21 @@ async def run_single_eval(
 
         # Emit completion event
         if emit_progress_func:
-            await emit_progress_func({
-                "eval_id": eval_id,
-                "model_run_id": model_run_id,
-                "status": "completed",
-                "message": f"Completed evaluation for model_run {model_run_id[:8]}",
-                "grade_id": grade_result["grade_id"],
-            })
+            await emit_progress_func(
+                {
+                    "eval_id": eval_id,
+                    "model_run_id": model_run_id,
+                    "status": "completed",
+                    "message": f"Completed evaluation for model_run {model_run_id[:8]}",
+                    "grade_id": grade_result["grade_id"],
+                }
+            )
 
         logger.info(f"Completed eval {eval_id} for model_run {model_run_id}")
     except Exception as e:
-        logger.error(f"Error evaluating model_run {model_run_id} for eval {eval_id}: {e}")
+        logger.error(
+            f"Error evaluating model_run {model_run_id} for eval {eval_id}: {e}"
+        )
         # Mark as completed with error
         await conn.execute(
             """
@@ -123,12 +128,14 @@ async def run_single_eval(
         )
         # Emit error event
         if emit_progress_func:
-            await emit_progress_func({
-                "eval_id": eval_id,
-                "model_run_id": model_run_id,
-                "status": "error",
-                "message": f"Error: {str(e)}",
-            })
+            await emit_progress_func(
+                {
+                    "eval_id": eval_id,
+                    "model_run_id": model_run_id,
+                    "status": "error",
+                    "message": f"Error: {str(e)}",
+                }
+            )
         raise
 
 
@@ -140,7 +147,7 @@ async def run_eval_parallel(
     emit_progress_func: Any | None = None,
 ) -> None:
     """Run eval on multiple model_runs in parallel (max 4 concurrent).
-    
+
     Args:
         eval_id: The eval ID
         model_run_ids: List of model_run IDs to evaluate
@@ -148,13 +155,16 @@ async def run_eval_parallel(
         conn: Database connection
         emit_progress_func: Optional function to emit WebSocket progress events
     """
+
     async def run_with_semaphore(model_run_id: str) -> None:
         async with _eval_semaphore:
-            await run_single_eval(eval_id, model_run_id, rubric_id, conn, emit_progress_func)
+            await run_single_eval(
+                eval_id, model_run_id, rubric_id, conn, emit_progress_func
+            )
 
     # Create tasks for all model_runs
     tasks = [run_with_semaphore(mr_id) for mr_id in model_run_ids]
-    
+
     # Store tasks for cancellation
     task_key = f"{eval_id}"
     for i, task in enumerate(tasks):
@@ -174,14 +184,16 @@ async def run_eval_parallel(
 def cancel_eval_tasks(eval_id: str) -> None:
     """Cancel all active tasks for an eval."""
     tasks_to_cancel = [
-        task for key, task in _active_eval_tasks.items()
+        task
+        for key, task in _active_eval_tasks.items()
         if key.startswith(f"{eval_id}_")
     ]
     for task in tasks_to_cancel:
         if not task.done():
             task.cancel()
     # Clean up
-    keys_to_remove = [key for key in _active_eval_tasks.keys() if key.startswith(f"{eval_id}_")]
+    keys_to_remove = [
+        key for key in _active_eval_tasks.keys() if key.startswith(f"{eval_id}_")
+    ]
     for key in keys_to_remove:
         _active_eval_tasks.pop(key, None)
-

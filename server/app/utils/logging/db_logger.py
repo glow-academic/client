@@ -30,10 +30,10 @@ def setup_db_logger(db_pool: asyncpg.Pool) -> None:
 
 async def resolve_profile_id(profile_id: str | None) -> str:
     """Resolve 'guest-profile-id' to actual guest UUID using cached value (Chris Date: No Nulls).
-    
+
     Args:
         profile_id: Profile ID string, may be "guest-profile-id" or None
-        
+
     Returns:
         Resolved UUID string (never null)
     """
@@ -41,7 +41,7 @@ async def resolve_profile_id(profile_id: str | None) -> str:
         # Use cached guest profile UUID (no DB call needed)
         try:
             from app.main import get_guest_profile_id
-            
+
             return get_guest_profile_id()
         except RuntimeError:
             # Fallback: return a placeholder if not initialized
@@ -49,7 +49,7 @@ async def resolve_profile_id(profile_id: str | None) -> str:
             logger = logging.getLogger("app.utils.logging.db_logger")
             logger.warning("Guest profile UUID not initialized; using placeholder")
             return "00000000-0000-0000-0000-000000000000"
-    
+
     return profile_id
 
 
@@ -60,28 +60,26 @@ class DBLogHandler(logging.Handler):
         """Emit a log record to the database (non-blocking)."""
         if _db_pool is None:
             return  # DB not initialized, skip
-        
+
         try:
             # Get profile_id from context or record
             profile_id = profile_id_context.get(None)
             if not profile_id:
                 # Try to get from record if set
                 profile_id = getattr(record, "profile_id", None)
-            
+
             # If no profile_id, resolve to guest
             if not profile_id:
                 profile_id = "guest-profile-id"
-            
+
             # Schedule async write (fire and forget)
             import asyncio
-            
+
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     # If loop is running, schedule as task
-                    asyncio.create_task(
-                        self._write_to_db(record, profile_id)
-                    )
+                    asyncio.create_task(self._write_to_db(record, profile_id))
                 else:
                     # If no loop running, create new one
                     asyncio.run(self._write_to_db(record, profile_id))
@@ -98,7 +96,7 @@ class DBLogHandler(logging.Handler):
         """Write log record to database."""
         if _db_pool is None:
             return
-        
+
         try:
             # Prepare extra data
             extra_data: dict[str, Any] = {}
@@ -106,8 +104,9 @@ class DBLogHandler(logging.Handler):
                 extra_data = record.extra_data
             elif record.exc_info:
                 import traceback
+
                 extra_data["exception"] = traceback.format_exception(*record.exc_info)
-            
+
             # Write to database (SQL will resolve guest-profile-id)
             # Inserts into both app_logs and app_logs_profiles junction table
             async with _db_pool.acquire() as conn:
@@ -162,32 +161,31 @@ class DBLogHandler(logging.Handler):
 
 def get_logger(name: str) -> logging.Logger:
     """Get a configured logger for the given module name.
-    
+
     Args:
         name: Module name (typically __name__)
-        
+
     Returns:
         Configured logger instance that writes to both console and DB
     """
     logger = logging.getLogger(name)
-    
+
     # Only add handler once per logger
     if not any(isinstance(h, DBLogHandler) for h in logger.handlers):
         handler = DBLogHandler()
         handler.setLevel(logging.DEBUG)
         logger.addHandler(handler)
-    
+
     # Ensure logger propagates to root logger (for console output)
     logger.propagate = True
-    
+
     return logger
 
 
 def set_profile_id(profile_id: str | None) -> None:
     """Set the profile_id in context for logger access.
-    
+
     Args:
         profile_id: Profile ID to set in context
     """
     profile_id_context.set(profile_id)
-

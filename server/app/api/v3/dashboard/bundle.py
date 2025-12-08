@@ -5,21 +5,31 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AttemptHistoryRow, DataPoint, Method,
-                              MetricResponse, ParameterItemMapping,
-                              ParameterItemMappingItem, ParameterMapping,
-                              ParameterMappingItem, RubricMapping,
-                              RubricMappingItem, SimulationFilter,
-                              SimulationMapping, SimulationMappingItem,
-                              TrendData)
+from app.utils.schema import (
+    AttemptHistoryRow,
+    DataPoint,
+    Method,
+    MetricResponse,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    RubricMapping,
+    RubricMappingItem,
+    SimulationFilter,
+    SimulationMapping,
+    SimulationMappingItem,
+    TrendData,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 router = APIRouter()
 
@@ -696,8 +706,12 @@ def _compute_persona_insight(
         earlier_scores = trend_data[:3]
 
         if len(recent_scores) > 0 and len(earlier_scores) > 0:
-            recent_avg = sum(item.score or 0 for item in recent_scores) / len(recent_scores)
-            earlier_avg = sum(item.score or 0 for item in earlier_scores) / len(earlier_scores)
+            recent_avg = sum(item.score or 0 for item in recent_scores) / len(
+                recent_scores
+            )
+            earlier_avg = sum(item.score or 0 for item in earlier_scores) / len(
+                earlier_scores
+            )
             improvement = recent_avg - earlier_avg
 
             if improvement > 5:
@@ -865,9 +879,7 @@ def _compute_skill_performance_insight(radar_data: list[SkillRadarData]) -> str 
     weak_skills = [skill for skill in radar_data if skill.value < 0.5]
     strong_skills = [skill for skill in radar_data if skill.value >= 0.8]
     moderate_skills = [
-        skill
-        for skill in radar_data
-        if skill.value >= 0.5 and skill.value < 0.8
+        skill for skill in radar_data if skill.value >= 0.5 and skill.value < 0.8
     ]
 
     # Large skill gap - prioritize weakest area
@@ -991,9 +1003,7 @@ def _compute_scenario_stats_insight(
             total_correlation += correlation
             correlation_count += 1
 
-    overall_avg_score = (
-        total_score / total_attempts if total_attempts > 0 else 0.0
-    )
+    overall_avg_score = total_score / total_attempts if total_attempts > 0 else 0.0
 
     if correlation_count > 0:
         avg_correlation = total_correlation / correlation_count
@@ -1496,9 +1506,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
         attempt_improvement=_compute_attempt_improvement_insight(
             attempt_improvement.chartData
         ),
-        cohort=dict(_compute_cohort_insights(
-                cohort_performance.cohortData
-            ).items()),
+        cohort=dict(_compute_cohort_insights(cohort_performance.cohortData).items()),
         skill_performance=_compute_skill_performance_insight(
             skill_performance.packages[0].radarData
             if skill_performance.packages

@@ -3,7 +3,6 @@ Tests for app.utils.text.normalize_text
 """
 
 
-
 class TestNormalize_Text:
     """Tests for normalize_text function."""
 

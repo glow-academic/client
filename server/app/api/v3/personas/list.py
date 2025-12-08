@@ -18,8 +18,6 @@ from app.utils.schema import (
     AgentMappingItem,
     DepartmentMapping,
     DepartmentMappingItem,
-    ModelMapping,
-    ModelMappingItem,
     ScenarioMapping,
     ScenarioMappingItem,
 )
@@ -221,7 +219,9 @@ async def get_personas_list(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
             filters.profileId,
         )
-        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+        user_department_ids = {
+            str(row["department_id"]) for row in user_department_rows
+        }
 
         # Collect all scenario IDs from personas
         all_persona_scenario_ids = set()

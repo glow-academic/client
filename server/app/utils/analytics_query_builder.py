@@ -10,22 +10,22 @@ def build_simulation_ids_cte(
 ) -> tuple[str, list[Any]]:
     """
     Build CTE to get simulation IDs based on cohorts.
-    
+
     Filtering order: cohorts → simulations
     - Gets simulations linked to cohorts via cohort_simulations junction table
     - Adds practice simulations without cohorts
-    
+
     Args:
         cohort_ids: List of cohort IDs to filter by
         param_offset: Starting parameter number for the CTE (default 1)
-    
+
     Returns:
         Tuple of (cte_clause, params_list)
     """
     if not cohort_ids:
         # If no cohorts specified, return empty CTE (no filtering)
         return "", []
-    
+
     # Build CTE that:
     # 1. Gets simulations linked to selected cohorts
     # 2. Adds practice simulations without cohorts
@@ -149,7 +149,7 @@ def build_base_filter(
         )
         params.append(cohort_ids)
         param_counter += 1
-    
+
     # Department filter - removed from analytics MV, now filters via profile join
     # Departments are filtered at the profile level via profile_departments join
     # No condition needed here since department_id is no longer used from analytics MV
@@ -305,8 +305,10 @@ def build_profile_and_analytics_filters(
         param_counter += 1
 
     profile_where = " AND ".join(profile_conditions) if profile_conditions else "TRUE"
-    analytics_where = " AND ".join(analytics_conditions) if analytics_conditions else "TRUE"
-    
+    analytics_where = (
+        " AND ".join(analytics_conditions) if analytics_conditions else "TRUE"
+    )
+
     return profile_where, analytics_where, params
 
 

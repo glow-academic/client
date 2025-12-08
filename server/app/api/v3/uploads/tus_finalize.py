@@ -75,7 +75,7 @@ async def tus_finalize(
 
         # Check if subfolder is specified in metadata
         subfolder = metadata.get("subfolder")
-        
+
         # Generate final file path with UUID
         upload_uuid = uuid.uuid4()
         _, ext = os.path.splitext(filename)
@@ -139,4 +139,3 @@ async def tus_finalize(
             message=f"Failed to finalize upload: {str(e)}",
             status="error",
         )
-

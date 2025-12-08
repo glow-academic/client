@@ -31,9 +31,13 @@ class UpdateModelRequest(BaseModel):
     department_ids: list[str] | None = None
     base_url: str | None = None  # Optional custom base URL for the model
     # Configuration fields
-    temperature_bounds: dict[str, Any] | None = None  # { type: 'range', lower: float, upper: float } | { type: 'values', values: list[float] }
+    temperature_bounds: dict[str, Any] | None = (
+        None  # { type: 'range', lower: float, upper: float } | { type: 'values', values: list[float] }
+    )
     pricing: list[PricingEntry] | None = None
-    modalities: dict[str, list[str]] | None = None  # { input: list[str], output: list[str] }
+    modalities: dict[str, list[str]] | None = (
+        None  # { input: list[str], output: list[str] }
+    )
     reasoning_levels: list[str] | None = None
     voices: list[str] | None = None
     qualities: list[str] | None = None
@@ -152,14 +156,18 @@ async def update_model(
                 request.modelId,
             )
             # Insert new modalities (default to text/text if not provided)
-            input_mods = request.modalities.get("input", []) if request.modalities else []
-            output_mods = request.modalities.get("output", []) if request.modalities else []
-            
+            input_mods = (
+                request.modalities.get("input", []) if request.modalities else []
+            )
+            output_mods = (
+                request.modalities.get("output", []) if request.modalities else []
+            )
+
             # Default to text/text if no modalities specified
             if not input_mods and not output_mods:
                 input_mods = ["text"]
                 output_mods = ["text"]
-            
+
             for mod in input_mods:
                 await conn.execute(
                     "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, true, true) ON CONFLICT (model_id, modality, is_input) DO UPDATE SET active = true, updated_at = NOW()",
@@ -194,11 +202,25 @@ async def update_model(
                 "UPDATE model_voices SET active = false, updated_at = NOW() WHERE model_id = $1",
                 request.modelId,
             )
-            
+
             # If voices is None or empty list, create all available voices
-            if request.voices is None or (isinstance(request.voices, list) and len(request.voices) == 0):
+            if request.voices is None or (
+                isinstance(request.voices, list) and len(request.voices) == 0
+            ):
                 # Create all available voices
-                all_voices = ["alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse"]
+                all_voices = [
+                    "alloy",
+                    "ash",
+                    "ballad",
+                    "coral",
+                    "echo",
+                    "fable",
+                    "onyx",
+                    "nova",
+                    "sage",
+                    "shimmer",
+                    "verse",
+                ]
                 for voice in all_voices:
                     await conn.execute(
                         "INSERT INTO model_voices (model_id, voice, active) VALUES ($1, $2::voice, true) ON CONFLICT (model_id, voice) DO UPDATE SET active = true, updated_at = NOW()",
@@ -252,4 +274,3 @@ async def update_model(
             sql_params=sql_params,
             request=http_request,
         )
-

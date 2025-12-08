@@ -20,4 +20,3 @@ router.include_router(tus_patch_router)
 router.include_router(tus_finalize_router)
 router.include_router(classify_router)
 router.include_router(download_router)
-

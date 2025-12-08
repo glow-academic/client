@@ -6,6 +6,7 @@
  */
 "use client";
 import {
+  Brain,
   Check,
   GripVertical,
   Image,
@@ -17,6 +18,7 @@ import {
   Target,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -58,7 +60,9 @@ import {
   type DocumentMappingItem,
 } from "@/components/common/forms/DocumentPicker";
 import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
-import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { cn } from "@/lib/utils";
 import { ProblemStatementPicker } from "@/components/common/forms/ProblemStatementPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 
@@ -76,7 +80,6 @@ import type {
   UpdateScenarioOut,
 } from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterPicker } from "@/components/common/forms/ParameterPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -2432,9 +2435,9 @@ export default function Scenario({
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 {formData?.departmentIds !== undefined ? (
-                  <DepartmentPicker
-                    mapping={departmentMapping}
-                    validIds={Array.from(
+                  <GenericPicker
+                    items={departmentMapping}
+                    itemIds={Array.from(
                       new Set([
                         ...(scenarioData?.valid_department_ids || []),
                         ...(formData.departmentIds || []),
@@ -2442,9 +2445,14 @@ export default function Scenario({
                     )}
                     selectedIds={formData.departmentIds || []}
                     onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                    getId={(dept) => (dept as unknown as { id: string }).id}
+                    getLabel={(dept) => dept.name || ""}
+                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                     placeholder="All Departments"
                     disabled={isReadonly}
                     multiSelect={true}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
                   />
                 ) : null}
               </div>
@@ -2644,16 +2652,116 @@ export default function Scenario({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <PersonaPicker
-              mapping={personaMapping}
-              validIds={validPersonaIds}
+            <GenericPicker
+              items={personaMapping}
+              itemIds={validPersonaIds}
               selectedIds={selectedPersonaIds}
               onSelect={handlePersonaSelect}
+              getId={(persona) => (persona as unknown as { id: string }).id}
+              getLabel={(persona) => persona.name || ""}
+              getSearchText={(persona) => `${persona.name} ${persona.description || ""}`}
+              renderItem={(persona, isSelected) => {
+                const IconComponent = getPersonaIconComponent(persona.icon) || Brain;
+                const hexColor = persona.color || "#64748b";
+                const generateGradient = (hex: string) => {
+                  const cleanHex = hex.replace("#", "");
+                  const r = parseInt(cleanHex.substr(0, 2), 16);
+                  const g = parseInt(cleanHex.substr(2, 2), 16);
+                  const b = parseInt(cleanHex.substr(4, 2), 16);
+                  const lighterR = Math.min(255, r + 60);
+                  const lighterG = Math.min(255, g + 60);
+                  const lighterB = Math.min(255, b + 60);
+                  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                  return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                };
+                return (
+                  <div className="flex items-center gap-3 w-full">
+                    <div
+                      className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                      style={{
+                        background: generateGradient(hexColor),
+                      }}
+                    >
+                      <IconComponent className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{persona.name}</div>
+                      {persona.description && (
+                        <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                          {persona.description}
+                        </div>
+                      )}
+                    </div>
+                    <Check
+                      className={cn(
+                        "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
+                        isSelected ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                  </div>
+                );
+              }}
+              renderButton={(selectedItems, placeholder) => {
+                if (selectedItems.length === 0) return placeholder;
+                if (selectedItems.length === 1) {
+                  const persona = selectedItems[0];
+                  const IconComponent = getPersonaIconComponent(persona?.icon) || Brain;
+                  const hexColor = persona?.color || "#64748b";
+                  const generateGradient = (hex: string) => {
+                    const cleanHex = hex.replace("#", "");
+                    const r = parseInt(cleanHex.substr(0, 2), 16);
+                    const g = parseInt(cleanHex.substr(2, 2), 16);
+                    const b = parseInt(cleanHex.substr(4, 2), 16);
+                    const lighterR = Math.min(255, r + 60);
+                    const lighterG = Math.min(255, g + 60);
+                    const lighterB = Math.min(255, b + 60);
+                    const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                    return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                  };
+                  return (
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div
+                        className="p-1 rounded-md shadow-sm flex-shrink-0"
+                        style={{
+                          background: generateGradient(hexColor),
+                        }}
+                      >
+                        <IconComponent className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <span className="truncate">{persona?.name || placeholder}</span>
+                    </div>
+                  );
+                }
+                return `${selectedItems.length} selected`;
+              }}
+              renderChip={(persona, onRemove) => (
+                <div
+                  key={(persona as unknown as { id: string }).id}
+                  className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
+                >
+                  <span className="truncate">{persona.name}</span>
+                  {!isReadonly && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove((persona as unknown as { id: string }).id);
+                      }}
+                      className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              )}
               multiSelect={true}
-              label=""
+              hideSelectedChips={false}
               placeholder="Select a persona..."
+              showLabel={false}
               description="Choose the persona that will interact with students in this scenario."
-              readonly={isReadonly}
+              disabled={isReadonly}
+              buttonClassName="w-full"
+              groupHeading="Personas"
             />
             {Object.keys(personaParameterMapping).length > 0 && (
               <div className="pt-2">

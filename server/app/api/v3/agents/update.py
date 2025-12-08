@@ -74,7 +74,11 @@ async def update_agent(
             dept_ids = request.department_ids if request.department_ids else []
 
             # Update agent with prompt and departments in single SQL (DHH style)
-            dept_ids_for_prompt = request.department_ids_for_prompt if request.department_ids_for_prompt else []
+            dept_ids_for_prompt = (
+                request.department_ids_for_prompt
+                if request.department_ids_for_prompt
+                else []
+            )
             sql_query = load_sql("sql/v3/agents/update_agent_complete.sql")
             sql_params = (
                 request.agentId,

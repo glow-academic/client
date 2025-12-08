@@ -1,6 +1,5 @@
 """Profile search endpoint - v3 API."""
 
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -84,7 +83,9 @@ async def find_profiles(
                 # Use primary email or first email for full_name fallback
                 email_display = primary_email or (emails[0] if emails else None)
                 full_name = (
-                    " ".join(x for x in (first, last) if x) or email_display or "Unknown"
+                    " ".join(x for x in (first, last) if x)
+                    or email_display
+                    or "Unknown"
                 )
 
                 results.append(

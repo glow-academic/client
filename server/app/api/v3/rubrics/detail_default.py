@@ -119,7 +119,7 @@ async def get_rubric_new(
         user_role = row.get("user_role", "trainee")
         is_superadmin = user_role == "superadmin"
         primary_department_id = row.get("primary_department_id")
-        
+
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
         # Non-superadmin: [primaryDepartmentId] if available
@@ -127,10 +127,13 @@ async def get_rubric_new(
             dept_ids = None
         else:
             dept_ids = [primary_department_id] if primary_department_id else []
-        
+
         is_default = dept_ids is None or len(dept_ids) == 0
         # Default rubrics (no department_ids) are read-only for non-superadmin
-        can_edit = not (is_default and not is_superadmin) and user_role in ("admin", "superadmin")
+        can_edit = not (is_default and not is_superadmin) and user_role in (
+            "admin",
+            "superadmin",
+        )
 
         # Convert arrays
         valid_department_ids = [

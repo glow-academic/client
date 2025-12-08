@@ -3,7 +3,6 @@ Tests for app.utils.mime.get_content_type
 """
 
 
-
 class TestGet_Content_Type:
     """Tests for get_content_type function."""
 

@@ -92,10 +92,16 @@ async def update_scenario(
             raise ValueError("upload_ids and image_names must have the same length")
 
         # Prepare upload images JSON (array of objects with upload_id and name)
-        upload_images_json = json.dumps([
-            {"upload_id": upload_id, "name": name}
-            for upload_id, name in zip(upload_ids, image_names)
-        ]) if upload_ids and image_names else "[]"
+        upload_images_json = (
+            json.dumps(
+                [
+                    {"upload_id": upload_id, "name": name}
+                    for upload_id, name in zip(upload_ids, image_names)
+                ]
+            )
+            if upload_ids and image_names
+            else "[]"
+        )
 
         # Update scenario with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/update_scenario_complete.sql")

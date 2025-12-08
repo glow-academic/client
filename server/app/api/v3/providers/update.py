@@ -89,4 +89,3 @@ async def update_provider(
             sql_params=sql_params,
             request=http_request,
         )
-

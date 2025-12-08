@@ -3,6 +3,7 @@
 from typing import Any
 
 from agents.items import TResponseInputItem
+
 from app.utils.scenario import format_parameter_item_info
 
 
@@ -29,13 +30,13 @@ def format_document_template_context(
 
     # Build document context message
     context_parts: list[str] = []
-    
+
     if document_name:
         context_parts.append(f"Document Name: {document_name}")
-    
+
     if document_description:
         context_parts.append(f"Document Description: {document_description}")
-    
+
     if department_name:
         context_parts.append(f"Department: {department_name}")
 
@@ -52,4 +53,3 @@ def format_document_template_context(
         input_items.append(fields_info)
 
     return input_items
-

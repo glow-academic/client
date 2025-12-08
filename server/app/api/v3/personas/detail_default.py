@@ -4,17 +4,23 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem, ReasoningMapping,
-                              ReasoningMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ModelMapping,
+    ModelMappingItem,
+    ReasoningMapping,
+    ReasoningMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -146,22 +152,24 @@ async def get_persona_new(
         valid_department_ids = result.get("valid_department_ids", [])
         valid_text_model_ids = result.get("valid_text_model_ids", [])
         valid_audio_model_ids = result.get("valid_audio_model_ids", [])
-        
+
         # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
         is_superadmin = user_role == "superadmin"
         primary_department_id = result.get("primary_department_id")
-        
+
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
         # Non-superadmin: [primaryDepartmentId] if available
         if is_superadmin:
             default_department_ids = None
         else:
-            default_department_ids = [primary_department_id] if primary_department_id else []
-        
+            default_department_ids = (
+                [primary_department_id] if primary_department_id else []
+            )
+
         is_default = default_department_ids is None or len(default_department_ids) == 0
-        
+
         # For default personas, only superadmin can edit
         can_edit_default = not (is_default and not is_superadmin)
 
@@ -269,7 +277,9 @@ async def get_persona_new(
         }
 
         # Get default text model ID (first valid text model)
-        default_text_model_id = valid_text_model_ids[0] if valid_text_model_ids else None
+        default_text_model_id = (
+            valid_text_model_ids[0] if valid_text_model_ids else None
+        )
         if not default_text_model_id:
             raise HTTPException(status_code=400, detail="No valid text models found")
 

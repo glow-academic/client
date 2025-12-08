@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.api.v3.profile.staff.list import StaffItem
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -11,8 +14,6 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -76,7 +77,7 @@ async def cohort_add_staff(
             param_idx += 1
 
         # Cohort exclusion filter - exclude profiles already in this cohort
-        cohort_exclusion = f"AND NOT EXISTS (SELECT 1 FROM cohort_profiles cp WHERE cp.profile_id = p.id AND cp.cohort_id = $2 AND cp.active = true)"
+        cohort_exclusion = "AND NOT EXISTS (SELECT 1 FROM cohort_profiles cp WHERE cp.profile_id = p.id AND cp.cohort_id = $2 AND cp.active = true)"
 
         # Build WHERE clause
         where_clause = ""
@@ -283,7 +284,9 @@ async def cohort_add_staff(
                     # Get primary department_id - ensure it always exists
                     primary_department_id = item.get("primary_department_id") or ""
                     if not primary_department_id and department_ids:
-                        primary_department_id = department_ids[0] if len(department_ids) > 0 else ""
+                        primary_department_id = (
+                            department_ids[0] if len(department_ids) > 0 else ""
+                        )
 
                     emails = item.get("emails") or []
                     primary_email = item.get("primary_email")
@@ -364,4 +367,3 @@ async def cohort_add_staff(
             sql_params=None,  # Dynamic params
             request=http_request,
         )
-

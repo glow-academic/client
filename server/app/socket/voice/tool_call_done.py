@@ -5,16 +5,24 @@ import json
 import uuid
 from typing import Any
 
-from app.main import (_voice_message_ids, get_pool,
-                      get_simulation_tool_calls_dict,
-                      get_simulation_tool_calls_locks, sio)
+from pydantic import BaseModel, ValidationError
+
+from app.main import (
+    _voice_message_ids,
+    get_pool,
+    get_simulation_tool_calls_dict,
+    get_simulation_tool_calls_locks,
+    sio,
+)
 from app.socket.simulations.send_message import (
-    SimulationMessageCompletePayload, SimulationNewMessagePayload,
-    simulation_message_complete, simulation_new_message)
+    SimulationMessageCompletePayload,
+    SimulationNewMessagePayload,
+    simulation_message_complete,
+    simulation_new_message,
+)
 from app.utils.agents.tools.create_persona_tools import find_persona_by_name
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -38,15 +46,11 @@ class VoiceToolCallErrorPayload(BaseModel):
 
 
 # Emit helper functions
-async def voice_tool_call_error(
-    payload: VoiceToolCallErrorPayload, room: str
-) -> None:
+async def voice_tool_call_error(payload: VoiceToolCallErrorPayload, room: str) -> None:
     await sio.emit("voice_tool_call_error", payload.model_dump(), room=room)
 
 
-async def _voice_tool_call_done_impl(
-    sid: str, data: VoiceToolCallDonePayload
-) -> None:
+async def _voice_tool_call_done_impl(sid: str, data: VoiceToolCallDonePayload) -> None:
     """Handle tool call completion from Realtime API.
 
     Finalizes the message and marks it as completed.
@@ -57,24 +61,20 @@ async def _voice_tool_call_done_impl(
 
         if not chat_id:
             await voice_tool_call_error(
-                VoiceToolCallErrorPayload(
-                    success=False, message="Missing chat_id"
-                ),
+                VoiceToolCallErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
             )
             return
 
         if not call_id:
             await voice_tool_call_error(
-                VoiceToolCallErrorPayload(
-                    success=False, message="Missing call_id"
-                ),
+                VoiceToolCallErrorPayload(success=False, message="Missing call_id"),
                 room=sid,
             )
             return
 
         chat_id_uuid = uuid.UUID(chat_id)
-        
+
         # Get tool calls tracking dict and locks for this chat (before acquiring lock)
         tool_calls_dict = get_simulation_tool_calls_dict()
         tool_calls_locks = get_simulation_tool_calls_locks()
@@ -306,7 +306,7 @@ async def _voice_tool_call_done_impl(
                         chat_id_uuid,
                         db_message_id,
                     )
-                    
+
                     # Use latest message as parent (ensures sequential branching),
                     # fallback to original parent_message_id
                     parent_id_str = None
@@ -314,7 +314,7 @@ async def _voice_tool_call_done_impl(
                         parent_id_str = str(latest_message_row["id"])
                     elif tool_call_state["parent_message_id"]:
                         parent_id_str = str(tool_call_state["parent_message_id"])
-                    
+
                     if parent_id_str:
                         assistant_id_str = str(db_message_id)
                         if parent_id_str != assistant_id_str:
@@ -432,4 +432,3 @@ async def voice_tool_call_done(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

@@ -132,4 +132,3 @@ async def get_auth_list(
             sql_params=sql_params,
             request=http_request,
         )
-

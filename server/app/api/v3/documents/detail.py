@@ -6,17 +6,23 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import UPLOAD_FOLDER, get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMappingItem, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMappingItem,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
@@ -177,7 +183,7 @@ async def get_document_detail(
         dept_ids = None
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]
-        
+
         # Parse parameter_item_ids (fields) from document_fields
         parameter_item_ids: list[str] = []
         if row.get("parameter_item_ids"):
@@ -222,9 +228,7 @@ async def get_document_detail(
                             roles=adata.get("roles", []),
                         )
 
-        valid_agent_ids = [
-            str(aid) for aid in (row.get("valid_agent_ids") or [])
-        ]
+        valid_agent_ids = [str(aid) for aid in (row.get("valid_agent_ids") or [])]
 
         # Document type options (from v2 - typically ["homework", "exam", "lab", "project"])
         document_type_options = ["homework", "exam", "lab", "project"]
@@ -233,7 +237,7 @@ async def get_document_detail(
         template = row.get("template", False)
         template_id = row.get("template_id")
         template_upload_id = row.get("template_upload_id")
-        
+
         # Parse template_mapping (all template versions)
         template_mapping: dict[str, TemplateInfo] = {}
         template_mapping_data = parse_jsonb(row.get("template_mapping"))
@@ -251,13 +255,13 @@ async def get_document_detail(
                         created_at=tdata.get("created_at", ""),
                         updated_at=tdata.get("updated_at", ""),
                     )
-        
+
         # Parse template_args JSONB from active template (this contains the schema, not the args values)
         template_args_raw = row.get("template_args")
         template_schema: dict[str, Any] | None = None
         template_args: dict[str, Any] | None = None
         template_html: str | None = None
-        
+
         if template_args_raw:
             if isinstance(template_args_raw, str):
                 template_schema = json.loads(template_args_raw)
@@ -300,7 +304,11 @@ async def get_document_detail(
             if isinstance(updated_at, str):
                 updated_at_str = updated_at
             else:
-                updated_at_str = updated_at.isoformat() if hasattr(updated_at, "isoformat") else str(updated_at)
+                updated_at_str = (
+                    updated_at.isoformat()
+                    if hasattr(updated_at, "isoformat")
+                    else str(updated_at)
+                )
         else:
             updated_at_str = ""
 

@@ -7,8 +7,10 @@
 "use client";
 
 import type { ProfileListItem } from "@/app/(main)/management/staff/page";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
+import { Check, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { BulkUpdateStaffAction } from "@/components/staff/Staff";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -270,19 +272,100 @@ export default function StaffBulkEditModal({
                     </TableCell>
                     <TableCell>
                       <div data-testid="input-bulk-staff-role">
-                        <StaffRolePicker
-                          selectedRole={bulkRole === "__keep__" ? "" : bulkRole}
-                          onSelect={(value) => {
-                            setBulkRole(value);
+                        <GenericPicker
+                          items={STAFF_ROLES.filter((r) =>
+                            (scopedRoles || []).includes(r.id)
+                          )}
+                          selectedIds={
+                            bulkRole === "__keep__" || !bulkRole ? [] : [bulkRole]
+                          }
+                          onSelect={(ids) => {
+                            setBulkRole(ids[0] || "");
                             setKeepCurrent((prev) => ({
                               ...prev,
                               role: false,
                             }));
                           }}
+                          getId={(role) => role.id}
+                          getLabel={(role) => role.name}
+                          getSearchText={(role) => `${role.name} ${role.description || ""}`}
+                          renderItem={(role, isSelected) => {
+                            const IconComponent = role.icon || User;
+                            const hexColor = role.color || "#64748b";
+                            const generateGradient = (hex: string) => {
+                              const cleanHex = hex.replace("#", "");
+                              const r = parseInt(cleanHex.substr(0, 2), 16);
+                              const g = parseInt(cleanHex.substr(2, 2), 16);
+                              const b = parseInt(cleanHex.substr(4, 2), 16);
+                              const lighterR = Math.min(255, r + 60);
+                              const lighterG = Math.min(255, g + 60);
+                              const lighterB = Math.min(255, b + 60);
+                              const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                              return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                            };
+                            return (
+                              <div className="flex items-center gap-3 w-full">
+                                <div
+                                  className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                                  style={{
+                                    background: generateGradient(hexColor),
+                                  }}
+                                >
+                                  <IconComponent className="h-4 w-4 text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{role.name}</div>
+                                  {role.description && (
+                                    <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                      {role.description}
+                                    </div>
+                                  )}
+                                </div>
+                                <Check
+                                  className={cn(
+                                    "ml-auto",
+                                    isSelected ? "opacity-100" : "opacity-0",
+                                  )}
+                                />
+                              </div>
+                            );
+                          }}
+                          renderButton={(selectedItems, placeholder) => {
+                            if (selectedItems.length === 0) return placeholder;
+                            const role = selectedItems[0];
+                            const IconComponent = role?.icon || User;
+                            const hexColor = role?.color || "#64748b";
+                            const generateGradient = (hex: string) => {
+                              const cleanHex = hex.replace("#", "");
+                              const r = parseInt(cleanHex.substr(0, 2), 16);
+                              const g = parseInt(cleanHex.substr(2, 2), 16);
+                              const b = parseInt(cleanHex.substr(4, 2), 16);
+                              const lighterR = Math.min(255, r + 60);
+                              const lighterG = Math.min(255, g + 60);
+                              const lighterB = Math.min(255, b + 60);
+                              const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                              return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                            };
+                            return (
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div
+                                  className="p-1 rounded-md shadow-sm flex-shrink-0"
+                                  style={{
+                                    background: generateGradient(hexColor),
+                                  }}
+                                >
+                                  <IconComponent className="h-3.5 w-3.5 text-white" />
+                                </div>
+                                <span className="truncate">{role?.name || placeholder}</span>
+                              </div>
+                            );
+                          }}
                           placeholder="Select role"
+                          multiSelect={false}
+                          hideSelectedChips={true}
                           disabled={isSubmitting || keepCurrent.role}
                           buttonClassName="h-10"
-                          roleOptions={scopedRoles || []}
+                          groupHeading="Staff Roles"
                         />
                       </div>
                     </TableCell>
@@ -389,9 +472,9 @@ export default function StaffBulkEditModal({
                       </TableCell>
                       {validDepartmentIds.length > 1 && (
                         <TableCell>
-                          <DepartmentPicker
-                            mapping={departmentMapping}
-                            validIds={validDepartmentIds}
+                          <GenericPicker
+                            items={departmentMapping}
+                            itemIds={validDepartmentIds}
                             selectedIds={
                               bulkPrimaryDepartmentId
                                 ? [bulkPrimaryDepartmentId]
@@ -406,12 +489,17 @@ export default function StaffBulkEditModal({
                                 primaryDepartment: false,
                               }));
                             }}
+                            getId={(dept) => (dept as unknown as { id: string }).id}
+                            getLabel={(dept) => dept.name || ""}
+                            getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                             multiSelect={false}
                             placeholder="Select primary department"
+                            hideSelectedChips={true}
                             disabled={
                               isSubmitting || keepCurrent.primaryDepartment
                             }
                             buttonClassName="h-10"
+                          />
                           />
                         </TableCell>
                       )}

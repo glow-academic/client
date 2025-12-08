@@ -5,10 +5,11 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from app.main import get_db
-from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
+from app.main import get_db
+from app.utils.sql_helper import load_sql
 
 
 class ProviderOption(BaseModel):
@@ -41,7 +42,9 @@ class LoginProvidersResponse(BaseModel):
     departments: list[DepartmentOption]
     guest_login_enabled: bool
     show_default_account: bool  # Whether to show "continue as default account" button
-    default_department_id: str | None  # Default department ID from settings_default_department table
+    default_department_id: (
+        str | None
+    )  # Default department ID from settings_default_department table
 
 
 router = APIRouter()
@@ -56,7 +59,7 @@ async def get_login_providers(
     department_id = UUID(request.departmentId) if request.departmentId else None
     sql_query = load_sql("sql/v3/auth/get_login_data_complete.sql")
     row = await conn.fetchrow(sql_query, department_id)
-    
+
     if not row:
         # Return empty response if no data found
         return LoginProvidersResponse(
@@ -65,7 +68,7 @@ async def get_login_providers(
             guest_login_enabled=True,
             show_default_account=False,
         )
-    
+
     # Parse JSON fields - asyncpg may return JSON as strings
     def parse_jsonb(data: Any) -> Any:  # noqa: ANN401
         if isinstance(data, str):
@@ -74,13 +77,13 @@ async def get_login_providers(
             except json.JSONDecodeError:
                 return []
         return data
-    
+
     # Parse providers JSON - handle empty arrays and null values
     providers_json_raw = row.get("providers_json")
     providers_json = parse_jsonb(providers_json_raw) if providers_json_raw else []
     if not isinstance(providers_json, list):
         providers_json = []
-    
+
     providers = [
         ProviderOption(
             id=str(p.get("id", "")),
@@ -91,13 +94,13 @@ async def get_login_providers(
         for p in providers_json
         if isinstance(p, dict) and p.get("id") and p.get("name")
     ]
-    
+
     # Parse departments JSON - handle empty arrays and null values
     departments_json_raw = row.get("departments_json")
     departments_json = parse_jsonb(departments_json_raw) if departments_json_raw else []
     if not isinstance(departments_json, list):
         departments_json = []
-    
+
     departments = [
         DepartmentOption(
             id=str(d.get("id", "")),
@@ -107,21 +110,21 @@ async def get_login_providers(
         for d in departments_json
         if isinstance(d, dict) and d.get("id") and d.get("title")
     ]
-    
+
     # Get guest_login_enabled with fallback
     guest_login_enabled = bool(row.get("guest_login_enabled", True))
-    
+
     # Get default department ID from settings
     default_department_id = row.get("default_department_id")
     if default_department_id and isinstance(default_department_id, str):
         default_department_id = default_department_id.strip() or None
     else:
         default_department_id = None
-    
+
     # Show "continue as default account" if no default providers exist
     has_default_providers = any(p.is_default for p in providers)
     show_default_account = not has_default_providers
-    
+
     return LoginProvidersResponse(
         providers=providers,
         departments=departments,
@@ -129,4 +132,3 @@ async def get_login_providers(
         show_default_account=show_default_account,
         default_department_id=default_department_id,
     )
-

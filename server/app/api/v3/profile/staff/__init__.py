@@ -3,8 +3,7 @@
 from fastapi import APIRouter
 
 from .bulk_create import router as bulk_create_router
-from .bulk_create_or_update_staff import \
-    router as bulk_create_or_update_staff_router
+from .bulk_create_or_update_staff import router as bulk_create_or_update_staff_router
 from .bulk_delete import router as bulk_delete_router
 from .bulk_update import router as bulk_update_router
 from .create import router as create_router

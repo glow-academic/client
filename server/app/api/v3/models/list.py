@@ -1,17 +1,17 @@
 """Models list endpoint."""
 
-import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -98,11 +98,12 @@ async def get_models_list(
             models.append(model_item)
 
         # Build facet options server-side from providers table
-        provider_options_query = "SELECT value, name FROM providers WHERE active = true ORDER BY name"
+        provider_options_query = (
+            "SELECT value, name FROM providers WHERE active = true ORDER BY name"
+        )
         provider_rows = await conn.fetch(provider_options_query)
         provider_options = [
-            {"value": str(row["value"]), "label": row["name"]}
-            for row in provider_rows
+            {"value": str(row["value"]), "label": row["name"]} for row in provider_rows
         ]
 
         status_options = [
@@ -138,4 +139,3 @@ async def get_models_list(
             sql_params=sql_params,
             request=http_request,
         )
-

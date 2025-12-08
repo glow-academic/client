@@ -6,7 +6,8 @@
  */
 "use client";
 
-import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -190,7 +191,7 @@ export default function SimulationPerformance({
       scenarioFacts
         .filter((f) => f.simulationId === selectedSimulationId)
         .sort((a, b) => a.scenarioName.localeCompare(b.scenarioName)),
-    [scenarioFacts, selectedSimulationId],
+    [scenarioFacts, selectedSimulationId]
   );
 
   // Use status from server
@@ -199,7 +200,7 @@ export default function SimulationPerformance({
   // Create lookup for custom tooltip
   const dataByName = useMemo(
     () => Object.fromEntries(data.map((d) => [d.scenarioName, d] as const)),
-    [data],
+    [data]
   );
 
   return (
@@ -219,7 +220,7 @@ export default function SimulationPerformance({
         <div
           className={cn(
             "flex",
-            isMobile ? "flex-col gap-2" : "items-start justify-between",
+            isMobile ? "flex-col gap-2" : "items-start justify-between"
           )}
         >
           <div className="flex flex-col items-start">
@@ -232,18 +233,46 @@ export default function SimulationPerformance({
             </CardDescription>
           </div>
 
-          <SimulationPicker
-            simulationMapping={simulationMapping}
-            validSimulationIds={validSimulationIds}
-            selectedSimulationIds={
-              selectedSimulationId ? [selectedSimulationId] : []
-            }
+          <GenericPicker
+            items={simulationMapping}
+            itemIds={validSimulationIds}
+            selectedIds={selectedSimulationId ? [selectedSimulationId] : []}
             onSelect={(ids) => setSelectedSimulationId(ids[0] || "")}
+            getId={(sim) => (sim as unknown as { id: string }).id}
+            getLabel={(sim) => sim.name || ""}
+            getSearchText={(sim) => `${sim.name} ${sim.description || ""}`}
+            renderPreview={(sim) => {
+              const formatTimeLimit = (timeLimit?: number | null) => {
+                if (!timeLimit || timeLimit === 0) return "No time limit";
+                if (timeLimit < 60) return `${timeLimit} minutes`;
+                const hours = Math.floor(timeLimit / 60);
+                const minutes = timeLimit % 60;
+                if (minutes === 0)
+                  return `${hours} hour${hours !== 1 ? "s" : ""}`;
+                return `${hours}h ${minutes}m`;
+              };
+              return (
+                <div className="grid gap-2">
+                  <h4 className="font-medium leading-none">{sim.name}</h4>
+                  <div className="text-sm text-muted-foreground">
+                    {sim.description || "No description available"}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-xs">
+                      {formatTimeLimit(
+                        (sim as { time_limit?: number | null }).time_limit
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            }}
             multiSelect={false}
             placeholder="Select simulation..."
             hideSelectedChips={true}
             showLabel={false}
             buttonClassName={cn(isMobile ? "w-full" : "w-64")}
+            groupHeading="Simulations"
           />
         </div>
       </CardHeader>
@@ -253,7 +282,7 @@ export default function SimulationPerformance({
         <div
           className={cn(
             "flex-1 min-h-0",
-            isMobile ? "min-h-[250px]" : "min-h-[300px]",
+            isMobile ? "min-h-[250px]" : "min-h-[300px]"
           )}
         >
           <ResponsiveContainer width="100%" height="100%">
@@ -294,13 +323,13 @@ export default function SimulationPerformance({
                   if (!payload) return null;
                   // Only show the two series we care about (order stable)
                   const items = payload.filter((p) =>
-                    ["Average Score", "Success Rate"].includes(String(p.value)),
+                    ["Average Score", "Success Rate"].includes(String(p.value))
                   );
                   return (
                     <div
                       className={cn(
                         "flex flex-col rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm",
-                        isMobile ? "gap-0.5 p-1" : "gap-1 p-2",
+                        isMobile ? "gap-0.5 p-1" : "gap-1 p-2"
                       )}
                     >
                       {items.map((p) => (
@@ -308,13 +337,13 @@ export default function SimulationPerformance({
                           key={String(p.value)}
                           className={cn(
                             "flex items-center gap-1 leading-none",
-                            isMobile ? "text-[9px]" : "text-[10px]",
+                            isMobile ? "text-[9px]" : "text-[10px]"
                           )}
                         >
                           <span
                             className={cn(
                               "inline-block rounded",
-                              isMobile ? "w-1.5 h-1.5" : "w-2 h-2",
+                              isMobile ? "w-1.5 h-1.5" : "w-2 h-2"
                             )}
                             style={{ background: p.color }}
                           />

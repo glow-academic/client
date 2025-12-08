@@ -8,15 +8,15 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
-from app.utils.analytics_query_builder import \
-    build_profile_and_analytics_filters
+from app.utils.analytics_query_builder import build_profile_and_analytics_filters
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.schema import SimulationFilter
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
@@ -176,7 +176,7 @@ async def _get_per_simulation_metrics(
     """
 
     result = await conn.fetchval(sim_metrics_query, *params)
-    
+
     # Parse and restructure result
     per_sim_metrics: dict[str, dict[str, dict[str, float]]] = {}
     if result:
@@ -239,7 +239,7 @@ async def export_reports(
         # Extract data and mappings from bundle result
         bundle_data = parsed_result.get("data", []) or []
         simulation_mapping_data = parsed_result.get("simulation_mapping", {}) or {}
-        
+
         # Parse simulation mapping
         simulation_mapping: dict[str, dict[str, str]] = {}
         if isinstance(simulation_mapping_data, str):
@@ -251,7 +251,7 @@ async def export_reports(
                         "name": sim_data.get("name", ""),
                         "description": sim_data.get("description", ""),
                     }
-        
+
         # Filter simulation mapping to only include selected simulations (if provided)
         if request.simulationIds and len(request.simulationIds) > 0:
             simulation_mapping = {
@@ -264,17 +264,20 @@ async def export_reports(
         filtered_data = bundle_data
         if request.profileIds and len(request.profileIds) > 0:
             filtered_data = [
-                p for p in filtered_data
-                if p.get("profileId") in request.profileIds
+                p for p in filtered_data if p.get("profileId") in request.profileIds
             ]
         if request.simulationIds and len(request.simulationIds) > 0:
             filtered_data = [
-                p for p in filtered_data
-                if any(sid in request.simulationIds for sid in p.get("simulationIds", []))
+                p
+                for p in filtered_data
+                if any(
+                    sid in request.simulationIds for sid in p.get("simulationIds", [])
+                )
             ]
         if request.scenarioIds and len(request.scenarioIds) > 0:
             filtered_data = [
-                p for p in filtered_data
+                p
+                for p in filtered_data
                 if any(sid in request.scenarioIds for sid in p.get("scenarioIds", []))
             ]
 
@@ -315,8 +318,14 @@ async def export_reports(
                 if isinstance(metric_response, dict):
                     current_value = metric_response.get("currentValue", 0)
                     # Format value based on metric type
-                    if metric_key in ["averageScore", "highestScore", "completionPercentage", 
-                                     "firstAttemptPassRate", "sessionEfficiency", "stagnationRate"]:
+                    if metric_key in [
+                        "averageScore",
+                        "highestScore",
+                        "completionPercentage",
+                        "firstAttemptPassRate",
+                        "sessionEfficiency",
+                        "stagnationRate",
+                    ]:
                         formatted_value = f"{int(round(current_value))}%"
                     elif metric_key == "personaResponseTimes":
                         formatted_value = f"{int(round(current_value))}s"
@@ -324,7 +333,7 @@ async def export_reports(
                         formatted_value = f"{int(round(current_value))}m"
                     else:
                         formatted_value = str(int(round(current_value)))
-                    
+
                     export_metrics[metric_key] = {
                         "value": current_value,
                         "formattedValue": formatted_value,
@@ -337,7 +346,9 @@ async def export_reports(
                 "email": profile.get("email") or "",
                 "role": profile.get("role", ""),
                 "metrics": export_metrics,
-                "simulationMetrics": per_simulation_metrics.get(profile.get("profileId", ""), {}),
+                "simulationMetrics": per_simulation_metrics.get(
+                    profile.get("profileId", ""), {}
+                ),
             }
             export_data.append(export_profile)
 
@@ -357,7 +368,9 @@ async def export_reports(
                 csv_data = generate_brightspace_csv(
                     export_data, metric, simulation_mapping
                 )
-                csv_filename = f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
+                csv_filename = (
+                    f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
+                )
 
                 return Response(
                     content=csv_data.encode("utf-8"),
@@ -377,11 +390,15 @@ async def export_reports(
                         csv_data = generate_brightspace_csv(
                             export_data, metric, simulation_mapping
                         )
-                        filename = f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
+                        filename = (
+                            f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
+                        )
                         zip_file.writestr(filename, csv_data)
 
                 zip_buffer.seek(0)
-                zip_filename = f"reports_export_{datetime.now().strftime('%Y-%m-%d')}.zip"
+                zip_filename = (
+                    f"reports_export_{datetime.now().strftime('%Y-%m-%d')}.zip"
+                )
 
                 return Response(
                     content=zip_buffer.read(),
@@ -423,7 +440,9 @@ async def export_reports(
 
 
 def generate_brightspace_csv(
-    data: list[dict[str, Any]], metric: str, simulation_mapping: dict[str, dict[str, str]]
+    data: list[dict[str, Any]],
+    metric: str,
+    simulation_mapping: dict[str, dict[str, str]],
 ) -> str:
     """Generate Brightspace format CSV for a specific metric."""
     output = io.StringIO()
@@ -459,9 +478,16 @@ def generate_brightspace_csv(
                 sim_data = sim_metrics.get(sim_id, {})
                 # Get the metric value directly from sim_data
                 value = sim_data.get(metric, 0)
-                
+
                 # Format based on metric type
-                if metric in ["averageScore", "highestScore", "completionPercentage", "firstAttemptPassRate", "sessionEfficiency", "stagnationRate"]:
+                if metric in [
+                    "averageScore",
+                    "highestScore",
+                    "completionPercentage",
+                    "firstAttemptPassRate",
+                    "sessionEfficiency",
+                    "stagnationRate",
+                ]:
                     formatted_value = f"{int(round(value))}%"
                 elif metric == "personaResponseTimes":
                     formatted_value = f"{int(round(value))}s"
@@ -478,9 +504,7 @@ def generate_brightspace_csv(
     return output.getvalue()
 
 
-def generate_regular_csv(
-    data: list[dict[str, Any]], metrics: list[str]
-) -> str:
+def generate_regular_csv(data: list[dict[str, Any]], metrics: list[str]) -> str:
     """Generate regular CSV with selected metrics."""
     output = io.StringIO()
     writer = csv.writer(output)
@@ -523,4 +547,3 @@ def generate_regular_csv(
         writer.writerow(row)
 
     return output.getvalue()
-

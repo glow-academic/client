@@ -44,7 +44,7 @@ def get_realtime_history(
         # Handle both "role" field (from database) and "type" field (query/response)
         # Database messages have "role" field, but we also check "type" for compatibility
         msg_role = item.get("role", "")
-        
+
         # Determine if this is a user message (query type or user role)
         is_user_message = (msg_type == "query") or (msg_role == "user")
         # Determine if this is an assistant message (response type or assistant role)
@@ -102,4 +102,3 @@ def get_realtime_history(
         realtime_history.append(final_assistant_item)
 
     return realtime_history
-

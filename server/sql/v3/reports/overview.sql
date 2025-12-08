@@ -1174,7 +1174,7 @@ skill_valid_rubrics AS (
 param_ids_categorical AS (
     SELECT id
     FROM parameters
-    WHERE active = TRUE AND numerical = FALSE
+    WHERE active = TRUE
 ),
 cat_map AS (
     SELECT 

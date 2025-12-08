@@ -14,4 +14,3 @@ router.include_router(list_router)
 router.include_router(detail_router)
 router.include_router(update_router)
 router.include_router(active_router)
-

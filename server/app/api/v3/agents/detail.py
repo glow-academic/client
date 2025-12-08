@@ -5,17 +5,23 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem, ReasoningMapping,
-                              ReasoningMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ModelMapping,
+    ModelMappingItem,
+    ReasoningMapping,
+    ReasoningMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -62,7 +68,9 @@ class AgentDetailResponse(BaseModel):
     reasoning_options: list[dict[str, str]]  # List of {id, reasoning_level} objects
     temperature_lower: float
     temperature_upper: float
-    temperature_levels: list[dict[str, str | bool]]  # List of {id, temperature, is_upper} objects
+    temperature_levels: list[
+        dict[str, str | bool]
+    ]  # List of {id, temperature, is_upper} objects
     valid_voices: list[str]  # Selected voice names (for backward compatibility)
     available_voices: list[dict[str, str]]  # List of {id, voice} objects
     department_ids: list[str]
@@ -173,8 +181,12 @@ async def get_agent_detail(
                             if isinstance(output_mods, str):
                                 output_mods = json.loads(output_mods)
                             modalities_dict = {
-                                "input": [str(m) for m in input_mods] if isinstance(input_mods, list) else [],
-                                "output": [str(m) for m in output_mods] if isinstance(output_mods, list) else [],
+                                "input": [str(m) for m in input_mods]
+                                if isinstance(input_mods, list)
+                                else [],
+                                "output": [str(m) for m in output_mods]
+                                if isinstance(output_mods, list)
+                                else [],
                             }
                     # Create ModelMappingItem for typed response
                     model_mapping[model_id] = ModelMappingItem(
@@ -292,8 +304,11 @@ async def get_agent_detail(
             reasoning_options_data = json.loads(reasoning_options_data)
         if reasoning_options_data and isinstance(reasoning_options_data, list):
             reasoning_options = [
-                opt if isinstance(opt, dict) else {"id": "", "reasoning_level": str(opt)}
-                for opt in reasoning_options_data if opt
+                opt
+                if isinstance(opt, dict)
+                else {"id": "", "reasoning_level": str(opt)}
+                for opt in reasoning_options_data
+                if opt
             ]
 
         # Parse temperature_levels from JSONB (list of {id, temperature, is_upper} objects)
@@ -303,8 +318,11 @@ async def get_agent_detail(
             temperature_levels_data = json.loads(temperature_levels_data)
         if temperature_levels_data and isinstance(temperature_levels_data, list):
             temperature_levels = [
-                level if isinstance(level, dict) else {"id": "", "temperature": str(level), "is_upper": False}
-                for level in temperature_levels_data if level
+                level
+                if isinstance(level, dict)
+                else {"id": "", "temperature": str(level), "is_upper": False}
+                for level in temperature_levels_data
+                if level
             ]
 
         # Parse selected_voice_ids from JSONB
@@ -313,7 +331,9 @@ async def get_agent_detail(
         if isinstance(selected_voice_ids_data, str):
             selected_voice_ids_data = json.loads(selected_voice_ids_data)
         if selected_voice_ids_data and isinstance(selected_voice_ids_data, list):
-            selected_voice_ids = [str(voice_id) for voice_id in selected_voice_ids_data if voice_id]
+            selected_voice_ids = [
+                str(voice_id) for voice_id in selected_voice_ids_data if voice_id
+            ]
 
         # Parse valid_voices from JSONB (selected voice names for backward compatibility)
         valid_voices: list[str] = []
@@ -331,7 +351,8 @@ async def get_agent_detail(
         if available_voices_data and isinstance(available_voices_data, list):
             available_voices = [
                 voice if isinstance(voice, dict) else {"id": "", "voice": str(voice)}
-                for voice in available_voices_data if voice
+                for voice in available_voices_data
+                if voice
             ]
 
         # Get can_edit from SQL result

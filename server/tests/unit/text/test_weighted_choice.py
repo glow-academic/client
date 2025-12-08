@@ -3,7 +3,6 @@ Tests for app.utils.text.weighted_choice
 """
 
 
-
 class TestWeighted_Choice:
     """Tests for weighted_choice function."""
 

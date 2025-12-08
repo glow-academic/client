@@ -217,7 +217,9 @@ async def get_logs_runs(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (level_options_data if isinstance(level_options_data, list) else [])
+            for opt in (
+                level_options_data if isinstance(level_options_data, list) else []
+            )
         ]
 
         logger_options_data = parsed_result.get("loggerOptions", [])
@@ -229,7 +231,9 @@ async def get_logs_runs(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (logger_options_data if isinstance(logger_options_data, list) else [])
+            for opt in (
+                logger_options_data if isinstance(logger_options_data, list) else []
+            )
         ]
 
         actor_options_data = parsed_result.get("actorOptions", [])
@@ -241,7 +245,9 @@ async def get_logs_runs(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (actor_options_data if isinstance(actor_options_data, list) else [])
+            for opt in (
+                actor_options_data if isinstance(actor_options_data, list) else []
+            )
         ]
 
         # Build response
@@ -278,4 +284,3 @@ async def get_logs_runs(
             sql_params=sql_params,
             request=request,
         )
-

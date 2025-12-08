@@ -1,8 +1,7 @@
 """Clean up all connections for a profile."""
 
-
-from app.utils.logging.db_logger import get_logger
 from app.main import get_pool
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.websocket.remove_socket_owner import remove_socket_owner
 

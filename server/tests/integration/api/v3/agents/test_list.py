@@ -95,7 +95,7 @@ async def test_list_agents_permissions_non_superadmin(
     await db.execute(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
         "VALUES($1, 'redacted@purdue.edu', true, true)",
-        ta_id
+        ta_id,
     )
 
     response = await client.post(

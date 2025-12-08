@@ -4,17 +4,23 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              ParameterMapping, ParameterItemMapping)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ParameterItemMapping,
+    ParameterMapping,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -179,6 +185,7 @@ async def get_persona_detail(
             for param_id, pdata in param_mapping_data.items():
                 if isinstance(pdata, dict):
                     from app.utils.schema import ParameterMappingItem
+
                     parameter_mapping[param_id] = ParameterMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
@@ -196,6 +203,7 @@ async def get_persona_detail(
             for item_id, idata in param_item_mapping_data.items():
                 if isinstance(idata, dict):
                     from app.utils.schema import ParameterItemMappingItem
+
                     parameter_item_mapping[item_id] = ParameterItemMappingItem(
                         name=idata.get("name", ""),
                         description=idata.get("description", ""),
@@ -329,8 +337,12 @@ async def get_persona_detail(
             color=result.get("color", ""),
             icon=result.get("icon", ""),
             instructions=result.get("instructions", ""),
-            text_agent_id=str(result.get("text_agent_id", "")) if result.get("text_agent_id") else None,
-            voice_agent_id=str(result.get("voice_agent_id", "")) if result.get("voice_agent_id") else None,
+            text_agent_id=str(result.get("text_agent_id", ""))
+            if result.get("text_agent_id")
+            else None,
+            voice_agent_id=str(result.get("voice_agent_id", ""))
+            if result.get("voice_agent_id")
+            else None,
             in_use=in_use,
             scenario_count=scenario_count,
             can_edit=can_edit,

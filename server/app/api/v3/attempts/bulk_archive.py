@@ -3,13 +3,14 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
@@ -75,7 +76,7 @@ async def bulk_archive_attempts(
             from datetime import datetime
 
             sql_query = load_sql("sql/v3/attempts/bulk_archive_attempts_by_filters.sql")
-            
+
             # Build parameters matching SQL file expectations:
             # $1: archived (bool)
             # $2, $3: start_date, end_date (datetime)
@@ -89,23 +90,37 @@ async def bulk_archive_attempts(
             # $11: simulationIds filter (uuid[], optional)
             # $12: scenarioIds filter (uuid[], optional)
             # $13: infiniteMode filter (bool, optional)
-            
+
             roles = request.filters.roles if request.filters.roles else []
-            simulation_filters = request.filters.simulationFilters if request.filters.simulationFilters else ["general"]
-            
+            simulation_filters = (
+                request.filters.simulationFilters
+                if request.filters.simulationFilters
+                else ["general"]
+            )
+
             sql_params = (
                 request.archived,  # $1
-                datetime.fromisoformat(request.filters.startDate.replace("Z", "+00:00")),  # $2
-                datetime.fromisoformat(request.filters.endDate.replace("Z", "+00:00")),  # $3
+                datetime.fromisoformat(
+                    request.filters.startDate.replace("Z", "+00:00")
+                ),  # $2
+                datetime.fromisoformat(
+                    request.filters.endDate.replace("Z", "+00:00")
+                ),  # $3
                 request.filters.profileId if request.filters.profileId else None,  # $4
                 request.filters.cohortIds if request.filters.cohortIds else [],  # $5
-                request.filters.departmentIds if request.filters.departmentIds else [],  # $6
+                request.filters.departmentIds
+                if request.filters.departmentIds
+                else [],  # $6
                 roles,  # $7
                 simulation_filters,  # $8
                 request.filters.search if request.filters.search else None,  # $9
                 request.filters.profileIds if request.filters.profileIds else [],  # $10
-                request.filters.simulationIds if request.filters.simulationIds else [],  # $11
-                request.filters.scenarioIds if request.filters.scenarioIds else [],  # $12
+                request.filters.simulationIds
+                if request.filters.simulationIds
+                else [],  # $11
+                request.filters.scenarioIds
+                if request.filters.scenarioIds
+                else [],  # $12
                 request.filters.infiniteMode,  # $13 (can be None)
             )
             result = await conn.fetchrow(sql_query, *sql_params)
@@ -113,7 +128,9 @@ async def bulk_archive_attempts(
             # AttemptIds-based bulk archive: archive specific attempts (backward compatible)
             sql_query = load_sql("sql/v3/attempts/bulk_archive_attempts_complete.sql")
             sql_params = (request.archived, request.attemptIds)
-            result = await conn.fetchrow(sql_query, request.archived, request.attemptIds)
+            result = await conn.fetchrow(
+                sql_query, request.archived, request.attemptIds
+            )
         else:
             raise HTTPException(
                 status_code=400,
@@ -150,17 +167,17 @@ async def bulk_archive_attempts(
         # Invalidate cache after mutation - only invalidate history sections
         # Overview sections are based on materialized views and don't need invalidation
         # History sections need invalidation since archive status affects what's shown
-        
+
         # Build base invalidation tags
         # Dashboard uses general tags (no profileId filter), so always invalidate it
         # Home, reports, and practice use profile-specific tags (require profileId)
         invalidation_tags = tags + [
             "dashboard",  # Invalidates dashboard history endpoint (no profileId filter)
         ]
-        
+
         # Determine which profileIds to invalidate
         profile_ids_to_invalidate: set[str] = set()
-        
+
         if request.archiveAll and request.filters and request.filters.profileId:
             # Filter-based archive with specific profileId
             profile_ids_to_invalidate.add(request.filters.profileId)
@@ -174,25 +191,33 @@ async def bulk_archive_attempts(
                     AND ap.active = true
                     AND ap.profile_id IS NOT NULL
                 """
-                profile_id_rows = await conn.fetch(profile_ids_query, request.attemptIds)
-                profile_ids_to_invalidate = {str(row["profile_id"]) for row in profile_id_rows if row["profile_id"]}
+                profile_id_rows = await conn.fetch(
+                    profile_ids_query, request.attemptIds
+                )
+                profile_ids_to_invalidate = {
+                    str(row["profile_id"])
+                    for row in profile_id_rows
+                    if row["profile_id"]
+                }
             except Exception as profile_query_error:
                 # Log error but continue with general invalidation
                 logger.warning(
                     f"Failed to query profileIds from attemptIds: {profile_query_error}",
                     exc_info=True,
                 )
-        
+
         # Add profile-specific tags for each affected profileId
         # These endpoints require profileId, so we only need profile-specific invalidation
         for profile_id in profile_ids_to_invalidate:
-            invalidation_tags.extend([
-                f"home:profile:{profile_id}",
-                f"reports:profile:{profile_id}",
-                f"practice:profile:{profile_id}",
-                f"history:profile:{profile_id}",
-            ])
-        
+            invalidation_tags.extend(
+                [
+                    f"home:profile:{profile_id}",
+                    f"reports:profile:{profile_id}",
+                    f"practice:profile:{profile_id}",
+                    f"history:profile:{profile_id}",
+                ]
+            )
+
         await invalidate_tags(invalidation_tags)
         response.headers["X-Invalidate-Tags"] = ",".join(invalidation_tags)
 

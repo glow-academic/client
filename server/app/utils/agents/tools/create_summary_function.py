@@ -7,8 +7,8 @@ from typing import Any
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.utils.logging.db_logger import get_logger
 from app.main import get_grading_storage
+from app.utils.logging.db_logger import get_logger
 from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
@@ -39,14 +39,14 @@ def create_summary_function(
         """
         if not profile_id:
             return "Error: Storage configuration missing"
-        
+
         storage = get_grading_storage()
         storage_key = build_storage_key(
             operation_type="grading",
             profile_id=profile_id,
             primary_id=str(chat_id),
         )
-        
+
         await storage.set(storage_key, "summary", summary)
         await storage.set(storage_key, "summary_progress", True)
 

@@ -4,32 +4,37 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, gen_trace_id, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.main import (get_dynamic_document_storage, get_pool,
-                      get_scenario_storage, sio)
+from pydantic import BaseModel, ValidationError
+
+from app.main import get_dynamic_document_storage, get_pool, get_scenario_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
 from app.utils.documents.create_dynamic_document import create_dynamic_document
-from app.utils.images.generate_image import generate_image_from_prompt
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_regeneration_messages import \
-    log_regeneration_messages
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
-from app.utils.scenario.format_document_template_info import \
-    format_document_template_info
+from app.utils.scenario.format_document_template_info import (
+    format_document_template_info,
+)
 from app.utils.scenario.image_generation import (
-    clear_image_generation_results, get_image_generation_results,
-    set_image_generation_context)
+    get_image_generation_results,
+    set_image_generation_context,
+)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -127,7 +132,9 @@ async def scenario_image_generation_progress(
 async def scenario_image_generation_complete(
     payload: ScenarioImageGenerationCompletePayload, room: str
 ) -> None:
-    await sio.emit("scenario_image_generation_complete", payload.model_dump(), room=room)
+    await sio.emit(
+        "scenario_image_generation_complete", payload.model_dump(), room=room
+    )
 
 
 async def scenario_image_generation_error(
@@ -136,12 +143,10 @@ async def scenario_image_generation_error(
     await sio.emit("scenario_image_generation_error", payload.model_dump(), room=room)
 
 
-async def _generate_scenario_ai_impl(
-    sid: str, data: GenerateScenarioAIPayload
-) -> None:
+async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) -> None:
     """Handle scenario AI generation requests via WebSocket."""
     trace_id = gen_trace_id()
-    
+
     try:
         logger.info(
             f"Received generate_scenario_ai request from {sid} with data: {data}"
@@ -294,19 +299,19 @@ async def _generate_scenario_ai_impl(
             objectives_enabled = data.objectivesEnabled
             documents_enabled = bool(document_ids and len(document_ids) > 0)
             images_enabled = True  # Enable image generation by default
-            
+
             # Use default guest profile from context if no profile_id provided
             final_profile_id = (
                 profile_id if profile_id else context["default_guest_profile_id"]
             )
-            
+
             # Format document template info if templates are available
             document_template_info = await format_document_template_info(
                 context["document_templates"],
                 profile_id=str(final_profile_id) if final_profile_id else None,
                 primary_id=trace_id,
             )
-            
+
             # Set image generation context before creating tools (async)
             if images_enabled and final_profile_id:
                 await set_image_generation_context(
@@ -315,7 +320,7 @@ async def _generate_scenario_ai_impl(
                     primary_id=trace_id,
                     department_id=str(department_id) if department_id else None,
                 )
-            
+
             scenario_tools = create_scenario_tools(
                 group_id,
                 objectives_enabled=objectives_enabled,
@@ -398,9 +403,7 @@ async def _generate_scenario_ai_impl(
                         f"{next_allowed_et.strftime('%B %d, %Y')}."
                     )
                 else:
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                    )
+                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                 await scenario_generation_error(
                     ScenarioGenerationErrorPayload(
                         success=False, message=error_message, trace_id=trace_id
@@ -442,7 +445,7 @@ async def _generate_scenario_ai_impl(
                     input=clean_input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
-            
+
             # Log assistant message (model output)
             assistant_output = getattr(result, "final_output", None) or ""
             if assistant_output:
@@ -525,7 +528,7 @@ async def _generate_scenario_ai_impl(
                                 exc_info=True,
                             )
                             # Continue with other documents even if one fails
-                    
+
                     # Clear dynamic document results after processing
                     await storage.delete(storage_key, "dynamic_documents")
 
@@ -555,7 +558,9 @@ async def _generate_scenario_ai_impl(
                     description=description,
                     objectives=limited_objectives,
                     dynamic_document_mapping=dynamic_document_mapping,
-                    generated_image_ids=generated_image_ids if generated_image_ids else None,
+                    generated_image_ids=generated_image_ids
+                    if generated_image_ids
+                    else None,
                     trace_id=trace_id,
                 ),
                 room=sid,
@@ -587,4 +592,3 @@ async def generate_scenario_ai(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

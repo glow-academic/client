@@ -1,6 +1,7 @@
 "use client";
 
-import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -11,6 +12,7 @@ import {
 import { useChartColors } from "@/lib/utils/chartColors";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 import {
   Bar,
   CartesianGrid,
@@ -22,7 +24,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { TooltipProps } from "recharts";
 import { TruncatedInsight } from "../TruncatedInsight";
 
 // Custom tooltip component with liquid glass styling
@@ -166,15 +167,46 @@ export default function AttemptImprovement({
               Performance improvement across multiple attempts
             </CardDescription>
           </div>
-          <SimulationPicker
-            simulationMapping={simulationMapping}
-            validSimulationIds={validSimulationIds}
-            selectedSimulationIds={selected}
+          <GenericPicker
+            items={simulationMapping}
+            itemIds={validSimulationIds}
+            selectedIds={selected}
             onSelect={setSelected}
+            getId={(sim) => (sim as unknown as { id: string }).id}
+            getLabel={(sim) => sim.name || ""}
+            getSearchText={(sim) => `${sim.name} ${sim.description || ""}`}
+            renderPreview={(sim) => {
+              const formatTimeLimit = (timeLimit?: number | null) => {
+                if (!timeLimit || timeLimit === 0) return "No time limit";
+                if (timeLimit < 60) return `${timeLimit} minutes`;
+                const hours = Math.floor(timeLimit / 60);
+                const minutes = timeLimit % 60;
+                if (minutes === 0)
+                  return `${hours} hour${hours !== 1 ? "s" : ""}`;
+                return `${hours}h ${minutes}m`;
+              };
+              return (
+                <div className="grid gap-2">
+                  <h4 className="font-medium leading-none">{sim.name}</h4>
+                  <div className="text-sm text-muted-foreground">
+                    {sim.description || "No description available"}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-xs">
+                      {formatTimeLimit(
+                        (sim as { time_limit?: number | null }).time_limit
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            }}
             placeholder="Filter by simulation..."
             hideSelectedChips={true}
             showLabel={false}
+            multiSelect={true}
             buttonClassName="w-48"
+            groupHeading="Simulations"
           />
         </div>
       </CardHeader>

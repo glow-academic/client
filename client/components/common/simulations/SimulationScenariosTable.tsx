@@ -24,10 +24,9 @@ import {
 } from "@/components/ui/table";
 
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
-import { RubricPicker } from "@/components/common/forms/RubricPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -44,8 +43,6 @@ import {
   Layers,
   Lightbulb,
   Mic,
-  Shield,
-  ShieldCheck,
   Target,
   Text,
 } from "lucide-react";
@@ -61,7 +58,7 @@ export interface SimulationScenariosTableProps {
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
   onTimeLimitChange?: (
     contentId: string,
-    timeLimitMinutes: number | null,
+    timeLimitMinutes: number | null
   ) => void;
   // Agent change handlers
   onHintAgentChange?: (contentId: string, agentId: string | null) => void;
@@ -103,7 +100,7 @@ export function SimulationScenariosTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "position", desc: false },
@@ -112,7 +109,7 @@ export function SimulationScenariosTable({
   // Filter to only scenarios
   const scenarioItems = React.useMemo(
     () => data.filter((item) => item.type === "scenario"),
-    [data],
+    [data]
   );
 
   // Compute available agents per role (for conditional column visibility)
@@ -287,7 +284,7 @@ export function SimulationScenariosTable({
                       onSelect={(ids) =>
                         onHintAgentChange?.(
                           `${item.type}:${item.id}`,
-                          ids[0] || null,
+                          ids[0] || null
                         )
                       }
                       placeholder="Select agent"
@@ -445,15 +442,21 @@ export function SimulationScenariosTable({
                     : "None"}
                 </span>
               ) : (
-                <RubricPicker
-                  mapping={rubricMapping}
-                  validIds={validRubricIds}
+                <GenericPicker
+                  items={rubricMapping}
+                  itemIds={validRubricIds}
                   selectedIds={item.rubric_id ? [item.rubric_id] : []}
                   onSelect={(ids) =>
                     onRubricChange?.(contentId, ids[0] || null)
                   }
+                  getId={(rubric) => (rubric as unknown as { id: string }).id}
+                  getLabel={(rubric) => rubric.name || ""}
+                  getSearchText={(rubric) =>
+                    `${rubric.name} ${rubric.description || ""}`
+                  }
                   placeholder="Select rubric..."
                   hideSelectedChips={true}
+                  buttonClassName="w-full"
                 />
               )}
             </div>
@@ -529,7 +532,7 @@ export function SimulationScenariosTable({
       agentMapping,
       hintAgentIds,
       gradeAgentIds,
-    ],
+    ]
   );
 
   const table = useReactTable({
@@ -600,7 +603,7 @@ export function SimulationScenariosTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   ))}
@@ -621,7 +624,7 @@ export function SimulationScenariosTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext(),
+                          cell.getContext()
                         )}
                       </TableCell>
                     ))}

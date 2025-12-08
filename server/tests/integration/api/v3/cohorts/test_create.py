@@ -49,7 +49,7 @@ async def test_create_cohort(
         await db.execute(
             "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
             "VALUES($1, 'redacted@purdue.edu', true, true)",
-            other_profile_id
+            other_profile_id,
         )
 
     response = await client.post(

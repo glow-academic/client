@@ -70,7 +70,7 @@ async def test_get_cohort_new_not_found(
     await db.execute(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
         "VALUES($1, 'redacted@purdue.edu', true, true)",
-        profile_id
+        profile_id,
     )
 
     response = await client.post(

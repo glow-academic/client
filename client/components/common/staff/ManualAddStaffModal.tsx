@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
+import { Check, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { BulkCreateOrUpdateStaffAction } from "@/components/staff/Staff";
 import { Button } from "@/components/ui/button";
 import {
@@ -395,13 +398,90 @@ export default function ManualAddStaffModal({
           </div>
           <div className="space-y-2">
             <Label htmlFor="role-input">Role</Label>
-            <StaffRolePicker
-              selectedRole={selectedRole}
-              onSelect={(value) => setSelectedRole(value as RoleValue)}
+            <GenericPicker
+              items={STAFF_ROLES.filter((r) => validRoles.includes(r.id))}
+              selectedIds={selectedRole ? [selectedRole] : []}
+              onSelect={(ids) => setSelectedRole((ids[0] || "") as RoleValue)}
+              getId={(role) => role.id}
+              getLabel={(role) => role.name}
+              getSearchText={(role) => `${role.name} ${role.description || ""}`}
+              renderItem={(role, isSelected) => {
+                const IconComponent = role.icon || User;
+                const hexColor = role.color || "#64748b";
+                const generateGradient = (hex: string) => {
+                  const cleanHex = hex.replace("#", "");
+                  const r = parseInt(cleanHex.substr(0, 2), 16);
+                  const g = parseInt(cleanHex.substr(2, 2), 16);
+                  const b = parseInt(cleanHex.substr(4, 2), 16);
+                  const lighterR = Math.min(255, r + 60);
+                  const lighterG = Math.min(255, g + 60);
+                  const lighterB = Math.min(255, b + 60);
+                  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                  return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                };
+                return (
+                  <div className="flex items-center gap-3 w-full">
+                    <div
+                      className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                      style={{
+                        background: generateGradient(hexColor),
+                      }}
+                    >
+                      <IconComponent className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{role.name}</div>
+                      {role.description && (
+                        <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                          {role.description}
+                        </div>
+                      )}
+                    </div>
+                    <Check
+                      className={cn(
+                        "ml-auto",
+                        isSelected ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                  </div>
+                );
+              }}
+              renderButton={(selectedItems, placeholder) => {
+                if (selectedItems.length === 0) return placeholder;
+                const role = selectedItems[0];
+                const IconComponent = role?.icon || User;
+                const hexColor = role?.color || "#64748b";
+                const generateGradient = (hex: string) => {
+                  const cleanHex = hex.replace("#", "");
+                  const r = parseInt(cleanHex.substr(0, 2), 16);
+                  const g = parseInt(cleanHex.substr(2, 2), 16);
+                  const b = parseInt(cleanHex.substr(4, 2), 16);
+                  const lighterR = Math.min(255, r + 60);
+                  const lighterG = Math.min(255, g + 60);
+                  const lighterB = Math.min(255, b + 60);
+                  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                  return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                };
+                return (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div
+                      className="p-1 rounded-md shadow-sm flex-shrink-0"
+                      style={{
+                        background: generateGradient(hexColor),
+                      }}
+                    >
+                      <IconComponent className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="truncate">{role?.name || placeholder}</span>
+                  </div>
+                );
+              }}
               placeholder="Select role"
-              roleOptions={validRoles}
-              buttonClassName="h-10"
+              multiSelect={false}
+              hideSelectedChips={true}
               disabled={isSubmitting}
+              buttonClassName="h-10"
+              groupHeading="Staff Roles"
             />
           </div>
 

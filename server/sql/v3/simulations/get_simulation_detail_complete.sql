@@ -470,7 +470,6 @@ user_context AS (
                     jsonb_build_object(
                         'name', pd.name,
                         'description', pd.description,
-                        'numerical', pd.numerical,
                         'document_parameter', pd.document_parameter,
                         'persona_parameter', pd.persona_parameter
                     )

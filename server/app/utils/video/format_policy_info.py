@@ -4,15 +4,18 @@ import os
 from typing import Any
 
 from agents.items import TResponseInputItem
+
 from app.main import UPLOAD_FOLDER
 from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 from app.utils.document.read_text_file import read_text_file
 
 
-def format_policy_info(policies: list[dict[str, Any]], video_length_seconds: int | None = None) -> TResponseInputItem:
+def format_policy_info(
+    policies: list[dict[str, Any]], video_length_seconds: int | None = None
+) -> TResponseInputItem:
     """
     Format policy information as TResponseInputItem.
-    
+
     Reads actual PDF/text file content from file_path if available,
     falling back to description field if file reading fails.
 
@@ -35,7 +38,7 @@ def format_policy_info(policies: list[dict[str, Any]], video_length_seconds: int
         policy_name = policy.get("name", "Unnamed Policy")
         file_path = policy.get("file_path")
         mime_type = policy.get("mime_type", "")
-        
+
         # Try to read file content if file_path is available
         policy_content = None
         if file_path:
@@ -43,7 +46,7 @@ def format_policy_info(policies: list[dict[str, Any]], video_length_seconds: int
                 full_path = os.path.join(UPLOAD_FOLDER, file_path)
                 mime_lower = mime_type.lower() if mime_type else ""
                 is_pdf = file_path.lower().endswith(".pdf") or "pdf" in mime_lower
-                
+
                 if is_pdf:
                     # Read PDF per-page text
                     text_pages = read_pdf_text_pages(full_path)
@@ -61,22 +64,19 @@ def format_policy_info(policies: list[dict[str, Any]], video_length_seconds: int
             except Exception:
                 # Fallback to description if file reading fails
                 policy_content = None
-        
+
         # Use file content if available, otherwise fall back to description
         if policy_content is None:
             policy_content = policy.get("content", "No content available")
-        
-        policy_text = (
-            f"Policy: {policy_name}\n"
-            f"Content:\n{policy_content}\n"
-        )
+
+        policy_text = f"Policy: {policy_name}\nContent:\n{policy_content}\n"
         formatted_policies.append(policy_text)
 
     content = (
         "The following are the policies that should inform the video content:\n\n"
         + "\n---\n\n".join(formatted_policies)
     )
-    
+
     # Add video length information if provided
     if video_length_seconds is not None:
         content += (
@@ -90,4 +90,3 @@ def format_policy_info(policies: list[dict[str, Any]], video_length_seconds: int
         "role": "user",
         "content": content,
     }
-

@@ -3,7 +3,6 @@ Tests for app.utils.agents.generic_agent
 """
 
 
-
 class TestGeneric_Agent:
     """Tests for GenericAgent class."""
 

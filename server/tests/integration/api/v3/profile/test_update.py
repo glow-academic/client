@@ -106,7 +106,7 @@ async def test_update_profile_guest_profile_id(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
         "VALUES($1, 'redacted@purdue.edu', true, true) "
         "ON CONFLICT DO NOTHING",
-        guest_id
+        guest_id,
     )
 
     response = await client.post(

@@ -1,21 +1,25 @@
 """Cohort detail endpoint - v3 API."""
 
 import json
-import os
 from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (CohortMappingItem, DepartmentMappingItem,
-                              ProfileMappingItem, SimulationMappingItem)
+from app.utils.schema import (
+    CohortMappingItem,
+    DepartmentMappingItem,
+    ProfileMappingItem,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 class CohortDetailRequest(BaseModel):
@@ -184,8 +188,13 @@ async def get_cohort_detail(
                         primary_department_id = s.get("primary_department_id") or ""
                         if not primary_department_id and department_ids:
                             # Fallback to first department if no primary department set
-                            primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
-                        
+                            primary_department_id = (
+                                department_ids[0]
+                                if isinstance(department_ids, list)
+                                and len(department_ids) > 0
+                                else ""
+                            )
+
                         emails = s.get("emails") or []
                         primary_email = s.get("primaryEmail") or s.get("primary_email")
                         staff.append(

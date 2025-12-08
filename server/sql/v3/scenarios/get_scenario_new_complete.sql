@@ -195,7 +195,7 @@ parameter_mapping_data AS (
             jsonb_build_object(
                 'name', p.name,
                 'description', p.description,
-                'numerical',                 'document_parameter', p.document_parameter,
+                'document_parameter', p.document_parameter,
                 'persona_parameter', p.persona_parameter
             )
         ),
@@ -209,8 +209,8 @@ parameter_item_data AS (
         f.id,
         f.name,
         COALESCE(f.description, '') as description,
-        fp.parameter_id,
-        p.name as parameter_name,
+        pf.parameter_id,
+        p.name as parameter_name
     FROM fields f
     JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
     JOIN parameters p ON p.id = pf.parameter_id
@@ -230,7 +230,7 @@ parameter_item_mapping_data AS (
                 'name', pi.name,
                 'description', pi.description,
                 'parameter_id', pi.parameter_id::text,
-                'parameter_name', pi.parameter_name,
+                'parameter_name', pi.parameter_name
             )
         ),
         '{}'::jsonb
@@ -354,11 +354,17 @@ primary_department_id AS (
     WHERE profile_id = $1 AND is_primary = TRUE
     LIMIT 1
 ),
+first_user_department AS (
+    SELECT ud.id
+    FROM user_departments ud
+    ORDER BY ud.id
+    LIMIT 1
+),
 resolved_department_for_agents AS (
     -- Use primary department if available, otherwise first accessible department
     SELECT COALESCE(
         (SELECT pd.department_id FROM profile_departments pd WHERE pd.profile_id = $1 AND pd.is_primary = TRUE LIMIT 1),
-        (SELECT id FROM user_departments LIMIT 1)
+        (SELECT id FROM first_user_department)
     ) as department_id
 ),
 default_scenario_agent AS (

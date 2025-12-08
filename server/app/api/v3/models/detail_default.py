@@ -65,7 +65,7 @@ async def get_model_new(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    ) -> ModelNewResponse:
+) -> ModelNewResponse:
     """Get default model detail for creation mode (provider mapping)."""
     tags = ["models"]  # From router tags
 
@@ -115,7 +115,9 @@ async def get_model_new(
         # Parse valid_department_ids from array
         valid_department_ids: list[str] = []
         valid_department_ids_raw = result.get("valid_department_ids")
-        if valid_department_ids_raw and isinstance(valid_department_ids_raw, (list, tuple)):
+        if valid_department_ids_raw and isinstance(
+            valid_department_ids_raw, (list, tuple)
+        ):
             valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
 
         # Parse department_mapping from JSONB
@@ -169,7 +171,7 @@ async def get_model_new(
                     dept_ids_raw = kdata.get("department_ids")
                     if dept_ids_raw and isinstance(dept_ids_raw, (list, tuple)):
                         department_ids = [str(did) for did in dept_ids_raw if did]
-                    
+
                     key_mapping[key_id] = KeyMappingItem(
                         name=kdata.get("name", ""),
                         description=kdata.get("description", ""),
@@ -188,7 +190,9 @@ async def get_model_new(
             valid_key_ids=valid_key_ids,
             key_mapping=key_mapping,
             user_role=str(result.get("user_role", "")),
-            primary_department_id=str(result.get("primary_department_id")) if result.get("primary_department_id") else None,
+            primary_department_id=str(result.get("primary_department_id"))
+            if result.get("primary_department_id")
+            else None,
         )
 
         # Cache response
@@ -213,4 +217,3 @@ async def get_model_new(
             sql_params=sql_params,
             request=http_request,
         )
-

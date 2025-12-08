@@ -199,7 +199,7 @@ async def get_rubrics_list(
             agent_role = None
             if row.get("agent_role"):
                 agent_role = str(row["agent_role"])
-            
+
             rubrics.append(
                 RubricItem(
                     rubric_id=str(row["rubric_id"]),
@@ -225,7 +225,9 @@ async def get_rubrics_list(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
             filters.profileId,
         )
-        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+        user_department_ids = {
+            str(row["department_id"]) for row in user_department_rows
+        }
 
         # Collect department IDs actually assigned to rubrics
         assigned_department_ids = set()
@@ -248,7 +250,8 @@ async def get_rubrics_list(
 
         # Filter department_mapping to only include departments assigned to rubrics
         filtered_department_mapping = {
-            did: d for (did, d) in department_mapping.items()
+            did: d
+            for (did, d) in department_mapping.items()
             if did in assigned_department_ids
         }
 

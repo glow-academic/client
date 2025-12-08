@@ -5,9 +5,7 @@ from collections.abc import AsyncIterator
 from app.main import get_active_results_dict
 
 
-async def store_active_events(
-    chat_id: str, events_iter: AsyncIterator[object]
-) -> None:
+async def store_active_events(chat_id: str, events_iter: AsyncIterator[object]) -> None:
     """Store the events iterator (async generator) to allow aclose() on cancel."""
     active_results = get_active_results_dict()
     if chat_id not in active_results:

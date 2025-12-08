@@ -47,7 +47,9 @@ async def duplicate_field(
         async with transaction(conn):
             sql_query = load_sql("sql/v3/fields/duplicate_field_complete.sql")
             sql_params = (request.fieldId, request.profileId)
-            new_field = await conn.fetchrow(sql_query, request.fieldId, request.profileId)
+            new_field = await conn.fetchrow(
+                sql_query, request.fieldId, request.profileId
+            )
 
             if not new_field:
                 raise ValueError(f"Field not found: {request.fieldId}")
@@ -83,4 +85,3 @@ async def duplicate_field(
             sql_params=sql_params,
             request=http_request,
         )
-

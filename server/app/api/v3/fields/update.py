@@ -20,7 +20,9 @@ class UpdateFieldRequest(BaseModel):
     description: str
     active: bool = True
     department_ids: list[str] | None  # None = cross-department (superadmin only)
-    conditional_parameter_ids: list[str] | None = None  # Parameters to show when this field is selected
+    conditional_parameter_ids: list[str] | None = (
+        None  # Parameters to show when this field is selected
+    )
     profileId: str  # Required for auditing/access control
 
 
@@ -89,4 +91,3 @@ async def update_field(
             sql_params=sql_params,
             request=http_request,
         )
-

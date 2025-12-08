@@ -5,6 +5,8 @@ import json
 import uuid
 from typing import Any, get_type_hints
 
+from pydantic import BaseModel, ValidationError
+
 from app.api.v3.realtime.ephemeral_key import _generate_ephemeral_key_internal
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.agents.build_voice_agent import build_voice_agent
@@ -12,7 +14,6 @@ from app.utils.agents.tools.create_persona_tools import create_persona_tools
 from app.utils.chat.get_realtime_history import get_realtime_history
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -44,12 +45,18 @@ class StartVoiceResponsePayload(BaseModel):
     success: bool
     message: str
     ephemeral_key: str
-    persona_tools: list[dict[str, str]]  # List of {name, description, parameters} for each tool
-    tool_context_map: dict[str, PersonaToolContext]  # Map of tool_name -> PersonaToolContext
+    persona_tools: list[
+        dict[str, str]
+    ]  # List of {name, description, parameters} for each tool
+    tool_context_map: dict[
+        str, PersonaToolContext
+    ]  # Map of tool_name -> PersonaToolContext
     instructions: str  # Voice agent instructions telling model to use tools
     model: str  # Model name (e.g., "gpt-realtime-mini")
     voice: str | None = None  # Voice ID for audio output
-    transcription_model: str | None = None  # Transcription model (e.g., "gpt-4o-mini-transcribe")
+    transcription_model: str | None = (
+        None  # Transcription model (e.g., "gpt-4o-mini-transcribe")
+    )
     transcription_prompt: str | None = None  # Transcription prompt
     history: list[dict[str, Any]] = []  # Conversation history in RealtimeItem format
 
@@ -59,9 +66,7 @@ async def start_voice_error(payload: StartVoiceErrorPayload, room: str) -> None:
     await sio.emit("start_voice_error", payload.model_dump(), room=room)
 
 
-async def start_voice_response(
-    payload: StartVoiceResponsePayload, room: str
-) -> None:
+async def start_voice_response(payload: StartVoiceResponsePayload, room: str) -> None:
     await sio.emit("start_voice_response", payload.model_dump(), room=room)
 
 
@@ -96,7 +101,9 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             # Generate ephemeral key first
             try:
                 ephemeral_key, expires_in = await _generate_ephemeral_key_internal()
-                logger.info(f"Generated ephemeral key for chat {chat_id} (expires in {expires_in}s)")
+                logger.info(
+                    f"Generated ephemeral key for chat {chat_id} (expires in {expires_in}s)"
+                )
             except Exception as e:
                 logger.error(f"Failed to generate ephemeral key: {e}", exc_info=True)
                 await start_voice_error(
@@ -141,22 +148,33 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             # Build context for voice agent (use voice fields with fallback to text fields)
             voice_temperature = context_row.get("voice_temperature")
             context = {
-                "model_name": context_row.get("voice_model_name") or context_row.get("model_name"),
-                "provider_name": context_row.get("voice_provider") or context_row.get("provider"),
-                "base_url": context_row.get("voice_base_url") or context_row.get("base_url", ""),
-                "api_key": context_row.get("voice_api_key") or context_row.get("api_key"),
-                "temperature": float(voice_temperature if voice_temperature is not None else context_row.get("temperature", 0.7)),
-                "reasoning": context_row.get("voice_reasoning") or context_row.get("reasoning"),
+                "model_name": context_row.get("voice_model_name")
+                or context_row.get("model_name"),
+                "provider_name": context_row.get("voice_provider")
+                or context_row.get("provider"),
+                "base_url": context_row.get("voice_base_url")
+                or context_row.get("base_url", ""),
+                "api_key": context_row.get("voice_api_key")
+                or context_row.get("api_key"),
+                "temperature": float(
+                    voice_temperature
+                    if voice_temperature is not None
+                    else context_row.get("temperature", 0.7)
+                ),
+                "reasoning": context_row.get("voice_reasoning")
+                or context_row.get("reasoning"),
             }
 
             # Get or create run_id for persona tools
             # We need: department_id, model_id, persona_id, agent_id, key_id, profile_id
             # Use voice fields from context
             department_id_str = context_row.get("department_id")
-            model_id_str = context_row.get("voice_model_id") or context_row.get("model_id")
+            model_id_str = context_row.get("voice_model_id") or context_row.get(
+                "model_id"
+            )
             voice_agent_id_str = context_row.get("voice_agent_id")
             profile_id_str = context_row.get("profile_id")
-            
+
             if not department_id_str or not model_id_str:
                 await start_voice_error(
                     StartVoiceErrorPayload(
@@ -166,7 +184,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     room=sid,
                 )
                 return
-            
+
             if not voice_agent_id_str:
                 await start_voice_error(
                     StartVoiceErrorPayload(
@@ -176,7 +194,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     room=sid,
                 )
                 return
-            
+
             # Get first persona ID for run creation
             first_persona_id_str = None
             for persona in personas:
@@ -184,7 +202,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 if persona_id_val:
                     first_persona_id_str = str(persona_id_val)
                     break
-            
+
             if not first_persona_id_str:
                 await start_voice_error(
                     StartVoiceErrorPayload(
@@ -194,13 +212,15 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     room=sid,
                 )
                 return
-            
+
             # Convert to UUID objects
             try:
                 department_id_uuid = uuid.UUID(str(department_id_str))
                 model_id_uuid = uuid.UUID(str(model_id_str))
                 first_persona_id_uuid = uuid.UUID(first_persona_id_str)
-                profile_id_uuid = uuid.UUID(str(profile_id_str)) if profile_id_str else None
+                profile_id_uuid = (
+                    uuid.UUID(str(profile_id_str)) if profile_id_str else None
+                )
                 simulation_agent_id = uuid.UUID(str(voice_agent_id_str))
             except (ValueError, TypeError) as e:
                 logger.error(f"Invalid UUID format: {e}")
@@ -212,7 +232,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     room=sid,
                 )
                 return
-            
+
             # Get key_id via settings system: provider -> active settings -> setting_provider_keys
             # Get active settings for profile (or default if no profile)
             if profile_id_uuid:
@@ -307,8 +327,10 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 try:
                     key_id_uuid = uuid.UUID(key_id_row["key_id"])
                 except (ValueError, TypeError):
-                    logger.warning(f"Invalid key_id format from database: {key_id_row['key_id']}")
-            
+                    logger.warning(
+                        f"Invalid key_id format from database: {key_id_row['key_id']}"
+                    )
+
             # Get or create run for this chat
             sql_get_or_create_run = load_sql(
                 "sql/v3/simulations/get_or_create_run_for_chat.sql"
@@ -324,7 +346,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 key_id_uuid,  # $7: key_id (can be None)
                 simulation_agent_id,  # $8: agent_id
             )
-            
+
             if not run_row:
                 await start_voice_error(
                     StartVoiceErrorPayload(
@@ -334,15 +356,18 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     room=sid,
                 )
                 return
-            
+
             model_run_id = uuid.UUID(run_row["run_id"])
-            
+
             # Import emit functions from send_message
             from app.socket.simulations.send_message import (
                 SimulationMessageCompletePayload,
-                SimulationMessageTokenPayload, SimulationNewMessagePayload,
-                simulation_message_complete, simulation_message_token,
-                simulation_new_message)
+                SimulationMessageTokenPayload,
+                SimulationNewMessagePayload,
+                simulation_message_complete,
+                simulation_message_token,
+                simulation_new_message,
+            )
 
             # Create emit wrapper functions for persona tools
             async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:
@@ -350,19 +375,19 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     SimulationNewMessagePayload(**event_data),
                     room=f"simulation_{chat_id_uuid}",
                 )
-            
+
             async def emit_token_wrapper(event_data: dict[str, Any]) -> None:
                 await simulation_message_token(
                     SimulationMessageTokenPayload(**event_data),
                     room=f"simulation_{chat_id_uuid}",
                 )
-            
+
             async def emit_complete_wrapper(event_data: dict[str, Any]) -> None:
                 await simulation_message_complete(
                     SimulationMessageCompletePayload(**event_data),
                     room=f"simulation_{chat_id_uuid}",
                 )
-            
+
             # Create persona tools with all required arguments
             persona_tools = create_persona_tools(
                 personas,
@@ -384,7 +409,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             if not base_voice_system_prompt:
                 # Fallback to text system prompt if voice prompt not available
                 base_voice_system_prompt = context_row.get("system_prompt", "")
-            
+
             if not base_voice_system_prompt:
                 await start_voice_error(
                     StartVoiceErrorPayload(
@@ -394,14 +419,16 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     room=sid,
                 )
                 return
-            
+
             # Get persona instructions only (not full system prompts)
-            sql_get_persona_instructions = load_sql("sql/v3/voice/get_persona_instructions.sql")
+            sql_get_persona_instructions = load_sql(
+                "sql/v3/voice/get_persona_instructions.sql"
+            )
             persona_instruction_rows = await conn.fetch(
                 sql_get_persona_instructions,
                 str(chat_id_uuid),
             )
-            
+
             # Build map of persona_name -> instructions
             persona_instructions_map: dict[str, str] = {}
             for row in persona_instruction_rows:
@@ -409,27 +436,27 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 instructions = row.get("instructions", "")
                 if persona_name:
                     persona_instructions_map[persona_name] = instructions or ""
-            
+
             # Create debug_info tool for voice agent
             # We need to create a simple wrapper that can be called from Realtime API
             # The actual execution will happen server-side via voice_debug_info event
             from agents import function_tool
-            
+
             async def debug_info_wrapper(content: str) -> str:
                 """Debug info tool wrapper for voice mode.
-                
+
                 This tool is called by the Realtime API agent. The actual execution
                 happens server-side via the voice_debug_info WebSocket event.
                 """
                 # This function is executed client-side by Realtime API
                 # The actual server-side handling happens in voice_debug_info handler
                 return "Debug info logged"
-            
+
             debug_info_tool = function_tool(debug_info_wrapper)
-            
+
             # Add debug_info tool to tools list
             all_tools = list(persona_tools) + [debug_info_tool]
-            
+
             # Build voice agent with base prompt and persona instructions
             voice_agent, complete_instructions = build_voice_agent(
                 context,
@@ -437,7 +464,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 base_voice_system_prompt,
                 persona_instructions_map,
             )
-            
+
             # Use complete_instructions for RealtimeAgent (this goes to instructions field)
             voice_agent_instructions = complete_instructions
 
@@ -465,7 +492,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 # All persona tools have the same signature: message: str = Field(...)
                 # Try to get the function from the tool, or construct schema manually
                 tool_parameters: dict[str, Any] = {}
-                
+
                 # Try to access the underlying function from the tool
                 func = None
                 if hasattr(tool, "func"):
@@ -474,32 +501,35 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     func = tool._func
                 elif hasattr(tool, "function"):
                     func = tool.function
-                
+
                 if func:
                     try:
                         # Get function signature and type hints
                         sig = inspect.signature(func)
                         hints = get_type_hints(func, include_extras=True)
-                        
+
                         # Build JSON schema from function parameters
                         properties: dict[str, Any] = {}
                         required: list[str] = []
-                        
+
                         for param_name, param in sig.parameters.items():
                             if param_name == "self":
                                 continue
-                            
+
                             param_type = hints.get(param_name, str)
                             param_default = param.default
-                            
+
                             # Check if it's a Field with description
                             field_info = None
                             # Check if param_default is a Field instance
-                            if hasattr(param_default, "__class__") and param_default.__class__.__name__ == "FieldInfo":
+                            if (
+                                hasattr(param_default, "__class__")
+                                and param_default.__class__.__name__ == "FieldInfo"
+                            ):
                                 field_info = param_default
                             elif hasattr(param_default, "description"):
                                 field_info = param_default
-                            
+
                             # Determine type
                             type_str = "string"
                             if param_type == int:
@@ -508,36 +538,47 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                                 type_str = "number"
                             elif param_type == bool:
                                 type_str = "boolean"
-                            
+
                             prop: dict[str, Any] = {"type": type_str}
-                            
+
                             # Add description if available
                             if field_info:
-                                if hasattr(field_info, "description") and field_info.description:
+                                if (
+                                    hasattr(field_info, "description")
+                                    and field_info.description
+                                ):
                                     prop["description"] = str(field_info.description)
-                            
+
                             properties[param_name] = prop
-                            
+
                             # Check if required (no default or default is Field)
                             is_field_default = (
-                                hasattr(param.default, "__class__") 
+                                hasattr(param.default, "__class__")
                                 and param.default.__class__.__name__ == "FieldInfo"
                             )
-                            if param.default == inspect.Parameter.empty or is_field_default:
+                            if (
+                                param.default == inspect.Parameter.empty
+                                or is_field_default
+                            ):
                                 required.append(param_name)
-                        
+
                         tool_parameters = {
                             "type": "object",
                             "properties": properties,
                             "required": required,
                         }
                     except Exception as e:
-                        logger.warning(f"Failed to extract schema from tool {tool.name}: {e}")
+                        logger.warning(
+                            f"Failed to extract schema from tool {tool.name}: {e}"
+                        )
                         # Fallback: construct schema manually based on tool name
                         tool_name_str = str(tool.name)
                         if tool_name_str == "speak":
                             # Speak tool fallback
-                            persona_names_list = [f'"{p.get("persona_name") or p.get("name", "")}"' for p in personas]
+                            persona_names_list = [
+                                f'"{p.get("persona_name") or p.get("name", "")}"'
+                                for p in personas
+                            ]
                             tool_parameters = {
                                 "type": "object",
                                 "properties": {
@@ -548,7 +589,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                                     "message": {
                                         "type": "string",
                                         "description": "The message content that the persona should say.",
-                                    }
+                                    },
                                 },
                                 "required": ["persona", "message"],
                             }
@@ -576,7 +617,10 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                     tool_name_str = str(tool.name)
                     if tool_name_str == "speak":
                         # Speak tool fallback
-                        persona_names_list = [f'"{p.get("persona_name") or p.get("name", "")}"' for p in personas]
+                        persona_names_list = [
+                            f'"{p.get("persona_name") or p.get("name", "")}"'
+                            for p in personas
+                        ]
                         tool_parameters = {
                             "type": "object",
                             "properties": {
@@ -587,7 +631,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                                 "message": {
                                     "type": "string",
                                     "description": "The message content that the persona should say.",
-                                }
+                                },
                             },
                             "required": ["persona", "message"],
                         }
@@ -613,7 +657,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
 
                 # Tool context map is no longer needed for the single speak tool
                 # The persona is determined from the tool arguments (persona parameter)
-                
+
                 persona_tools_response.append(
                     {
                         "name": tool_name_str,
@@ -625,7 +669,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             # Build session config with simple typed fields
             # Model defaults to "gpt-realtime-mini" if not specified in context
             model_name = context.get("model_name", "gpt-realtime-mini")
-            
+
             # Default transcription model
             transcription_model_default = "gpt-4o-mini-transcribe"
 
@@ -634,10 +678,10 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
             message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
             messages = [dict(row) for row in message_rows]
-            
+
             # Convert messages to RealtimeItem format
             realtime_history = get_realtime_history(messages)
-            
+
             logger.info(
                 f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools and {len(realtime_history)} history items"
             )
@@ -675,9 +719,6 @@ async def start_voice(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in start_voice for {sid}: {e}")
         await start_voice_error(
-            StartVoiceErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            StartVoiceErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
-

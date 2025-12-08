@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
-from app.utils.auth.encrypt_api_key import encrypt_api_key
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -70,7 +69,9 @@ async def create_auth(
                         "name": item.name,
                         "description": item.description,
                         "encrypted": True,
-                        "key_id": item.key_id if hasattr(item, 'key_id') and item.key_id else None,
+                        "key_id": item.key_id
+                        if hasattr(item, "key_id") and item.key_id
+                        else None,
                     }
                 else:
                     # For non-encrypted items, use value (key_id is ignored)
@@ -121,4 +122,3 @@ async def create_auth(
             sql_params=sql_params,
             request=http_request,
         )
-

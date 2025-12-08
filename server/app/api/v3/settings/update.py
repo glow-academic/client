@@ -35,8 +35,12 @@ class UpdateSettingsRequest(BaseModel):
     warning_threshold: int
     danger_threshold: int
     profileId: str  # Required for auditing/access control
-    provider_key_mapping: dict[str, str] | None = None  # Provider key mapping (provider_id -> key_id)
-    auth_key_mapping: dict[str, dict[str, str]] | None = None  # Auth key mapping (auth_id -> auth_item_id -> key_id)
+    provider_key_mapping: dict[str, str] | None = (
+        None  # Provider key mapping (provider_id -> key_id)
+    )
+    auth_key_mapping: dict[str, dict[str, str]] | None = (
+        None  # Auth key mapping (auth_id -> auth_item_id -> key_id)
+    )
 
 
 class UpdateSettingsResponse(BaseModel):
@@ -67,9 +71,8 @@ async def update_settings(
         async with transaction(conn):
             # Prepare key mappings as JSONB
             import json
-            provider_key_mapping_json = json.dumps(
-                request.provider_key_mapping or {}
-            )
+
+            provider_key_mapping_json = json.dumps(request.provider_key_mapping or {})
             auth_key_mapping_json = json.dumps(request.auth_key_mapping or {})
 
             # Update settings: deactivate current active, insert new active row
@@ -123,9 +126,7 @@ async def update_settings(
             )
 
             if not result:
-                raise HTTPException(
-                    status_code=500, detail="Failed to update settings"
-                )
+                raise HTTPException(status_code=500, detail="Failed to update settings")
 
             settings_id = result["settings_id"]
 
@@ -151,4 +152,3 @@ async def update_settings(
             sql_params=sql_params,
             request=http_request,
         )
-

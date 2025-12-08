@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -11,8 +14,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import DepartmentMapping, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -99,7 +100,7 @@ async def get_staff_detail(
         # Build response
         emails = row.get("emails") or []
         primary_email = row.get("primary_email")
-        
+
         # Parse department_mapping
         department_mapping_data = parse_jsonb(row.get("department_mapping"))
         department_mapping: DepartmentMapping = {}
@@ -110,16 +111,16 @@ async def get_staff_detail(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
                     )
-        
+
         valid_department_ids = row.get("valid_department_ids") or []
         if not isinstance(valid_department_ids, list):
             valid_department_ids = []
-        
+
         # Handle primary_department_id - convert to string if not None
         primary_department_id = row.get("primary_department_id")
         if primary_department_id is not None:
             primary_department_id = str(primary_department_id)
-        
+
         response_data = StaffDetailResponse(
             profile_id=str(row.get("profile_id", "")),
             first_name=row.get("first_name", ""),
@@ -158,4 +159,3 @@ async def get_staff_detail(
             sql_params=sql_params,
             request=request,
         )
-

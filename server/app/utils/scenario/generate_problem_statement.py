@@ -4,22 +4,29 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, gen_trace_id, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
+
 from app.main import get_scenario_storage
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
-from app.utils.images.generate_image import generate_image_from_prompt
 from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.scenario.image_generation import (
-    clear_image_generation_results, get_image_generation_results,
-    set_image_generation_context)
+    get_image_generation_results,
+    set_image_generation_context,
+)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
 
@@ -67,13 +74,13 @@ async def generate_scenario_problem_statement(
         department_id,  # Already a UUID object
         persona_id if persona_id else None,  # Already a UUID object or None
         document_ids if document_ids else [],  # Already a list of UUID objects
-        parameter_item_ids if parameter_item_ids else [],  # Already a list of UUID objects
+        parameter_item_ids
+        if parameter_item_ids
+        else [],  # Already a list of UUID objects
     )
 
     if not context_row:
-        raise ValueError(
-            f"No scenario agent configured for department {department_id}"
-        )
+        raise ValueError(f"No scenario agent configured for department {department_id}")
 
     # Parse JSON arrays
     documents = (
@@ -148,11 +155,11 @@ async def generate_scenario_problem_statement(
     # Create scenario generation tools
     if group_id is None:
         group_id = uuid.uuid4()
-    
+
     # Generate trace_id for this operation
     scenario_trace_id = gen_trace_id()
     primary_id = str(group_id)  # Use group_id as primary_id
-    
+
     # Set image generation context before creating tools (async)
     # Note: No room/sid for API endpoints - images will generate but no WebSocket events
     if images_enabled and final_profile_id:
@@ -163,7 +170,7 @@ async def generate_scenario_problem_statement(
             department_id=str(department_id) if department_id else None,
             room=None,  # API endpoint - no WebSocket room
         )
-    
+
     scenario_tools = create_scenario_tools(
         group_id,
         objectives_enabled=objectives_enabled,
@@ -172,9 +179,7 @@ async def generate_scenario_problem_statement(
         trace_id=primary_id,
     )
     scenario_tools.append(debug_info_tool)
-    logger.info(
-        f"Created {len(scenario_tools)} scenario tools (including debug_info)"
-    )
+    logger.info(f"Created {len(scenario_tools)} scenario tools (including debug_info)")
 
     # Create tool use behavior to check when all required tools are called
     def tool_use_behavior(
@@ -246,9 +251,7 @@ async def generate_scenario_problem_statement(
                 f"{next_allowed_et.strftime('%B %d, %Y')}."
             )
         else:
-            error_message = (
-                f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-            )
+            error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
         raise ValueError(error_message)
 
     # Create model run with all junction records using SQL file
@@ -287,22 +290,14 @@ async def generate_scenario_problem_statement(
 
     logger.info("Scenario generation completed successfully")
     logger.info(f"Title: {scenario_result.get('title', 'N/A')}")
-    logger.info(
-        f"Description: {scenario_result.get('description', 'N/A')[:100]}..."
-    )
-    objectives = (
-        scenario_result.get("objectives", [])
-        if objectives_enabled
-        else []
-    )
+    logger.info(f"Description: {scenario_result.get('description', 'N/A')[:100]}...")
+    objectives = scenario_result.get("objectives", []) if objectives_enabled else []
     logger.info(f"Objectives: {objectives}")
 
     usage = result.context_wrapper.usage
 
     # Update model run with token usage using SQL file
-    sql_update_tokens = load_sql(
-        "sql/v3/model_runs/update_model_run_tokens.sql"
-    )
+    sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
     await conn.execute(
         sql_update_tokens,
         str(model_run_id),
@@ -342,4 +337,3 @@ async def generate_scenario_problem_statement(
         "objectives": objectives,
         "generated_image_ids": generated_image_ids if generated_image_ids else None,
     }
-

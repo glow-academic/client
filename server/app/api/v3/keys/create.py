@@ -60,7 +60,14 @@ async def create_key(
 
             # Create key with department links
             sql_query = load_sql("sql/v3/keys/create_key.sql")
-            sql_params = (request.name, encrypted_key, request.description, request.active, department_ids, request.profileId)
+            sql_params = (
+                request.name,
+                encrypted_key,
+                request.description,
+                request.active,
+                department_ids,
+                request.profileId,
+            )
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
@@ -92,4 +99,3 @@ async def create_key(
             sql_params=sql_params,
             request=http_request,
         )
-

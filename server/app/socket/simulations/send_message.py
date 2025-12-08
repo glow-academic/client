@@ -3,27 +3,31 @@
 import asyncio
 import json
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.main import get_pool, get_simulation_tool_calls_dict, get_hint_storage, sio
-from app.utils.storage.request_storage import build_storage_key
+from pydantic import BaseModel, ValidationError
+
+from app.main import get_hint_storage, get_pool, get_simulation_tool_calls_dict, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.utils.agents.tools.create_persona_tools import (create_persona_tools,
-                                                         find_persona_by_name)
+from app.utils.agents.tools.create_persona_tools import (
+    create_persona_tools,
+    find_persona_by_name,
+)
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
+from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
 
@@ -50,32 +54,32 @@ def extract_new_message_chars(
     prev_json: str, new_json: str, last_index: int
 ) -> tuple[str, int, bool]:
     """Extract new message characters from JSON string incrementally.
-    
+
     Returns:
         Tuple of (new_message_chars, new_last_index, in_message_flag)
     """
     if len(new_json) <= last_index:
         return "", last_index, False
-    
+
     # Find the start of the message field value in the new JSON
     message_start_pattern = '"message"'
     message_start_idx = new_json.find(message_start_pattern, 0)
     if message_start_idx == -1:
         return "", last_index, False
-    
+
     # Find the colon after "message"
     colon_idx = new_json.find(":", message_start_idx)
     if colon_idx == -1:
         return "", last_index, False
-    
+
     # Find the opening quote of the value
     quote_idx = new_json.find('"', colon_idx)
     if quote_idx == -1:
         return "", last_index, False
-    
+
     # Start reading from after the opening quote
     message_value_start = quote_idx + 1
-    
+
     # If we haven't reached the message value start yet, check if we can start extracting
     if last_index < message_value_start:
         # Check if we've now reached or passed the message value start
@@ -91,37 +95,37 @@ def extract_new_message_chars(
     else:
         # We're already past the start, continue from last_index
         start_extracting_from = last_index
-    
+
     # Extract characters from start_extracting_from to end (or closing quote)
     new_chars = []
     i = start_extracting_from
     in_message = True  # We're definitely in the message value now
     escape_next = False
-    
+
     while i < len(new_json):
         char = new_json[i]
-        
+
         if escape_next:
             # Previous char was backslash, include this char as-is
             new_chars.append(char)
             escape_next = False
             i += 1
             continue
-        
+
         if char == "\\":
             escape_next = True
             new_chars.append(char)
             i += 1
             continue
-        
+
         if char == '"' and not escape_next:
             # Exiting message value
             break
-        
+
         # We're in the message value, add the character
         new_chars.append(char)
         i += 1
-    
+
     new_message = "".join(new_chars)
     return new_message, i, in_message
 
@@ -134,6 +138,7 @@ class SendSimulationMessageErrorPayload(BaseModel):
 
 class HintItem(BaseModel):
     """Individual hint item with index and text."""
+
     idx: int
     hint: str
 
@@ -448,7 +453,7 @@ async def _generate_hints_background_inline(
                 str(context["agent_id"]),  # agent_id
             )
             model_run_id = uuid.UUID(model_run_row["run_id"])
-            
+
             # Log system and developer messages for this run
             hint_dev_content = "Now please generate the hints based on the previous conversation. You must call all three hint tools (provide_hint_1, provide_hint_2, and provide_hint_3) to provide short, concise guidance for the GTA."
             await log_run_messages(
@@ -469,7 +474,7 @@ async def _generate_hints_background_inline(
                     input=input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
-            
+
             # Log assistant message (model output)
             assistant_output = getattr(result, "final_output", None) or ""
             if assistant_output:
@@ -553,7 +558,9 @@ async def _generate_hints_background_inline(
                         sql_insert, str(message_id), next_idx, hint_text
                     )
                     hint_result = {
-                        "simulation_message_id": hint_result_row["simulation_message_id"],
+                        "simulation_message_id": hint_result_row[
+                            "simulation_message_id"
+                        ],
                         "idx": hint_result_row["idx"],
                     }
                     hint_ids.append(hint_result)
@@ -661,7 +668,9 @@ async def _send_simulation_message_impl(
                 # 1. Get or create a run for this chat (needed for message creation)
                 # We'll get the run details from context later, but for now we need a run_id
                 # For user messages, we'll use the latest run or create one
-                sql_get_run = load_sql("sql/v3/simulations/get_or_create_run_for_chat.sql")
+                sql_get_run = load_sql(
+                    "sql/v3/simulations/get_or_create_run_for_chat.sql"
+                )
                 # We need context to create a run, so we'll get it first
                 # For now, get the latest run for the chat
                 latest_run_row = await conn.fetchrow(
@@ -673,9 +682,9 @@ async def _send_simulation_message_impl(
                     ORDER BY r.created_at DESC
                     LIMIT 1
                     """,
-                    str(chat_id_uuid)
+                    str(chat_id_uuid),
                 )
-                
+
                 # 1. Add the user message to the chat (skip if this is a retry)
                 user_message = None
                 if message_str and message_str.strip() != "" and not is_retry:
@@ -697,7 +706,9 @@ async def _send_simulation_message_impl(
                             "created_at": user_message_row["created_at"],
                         }
                         # Link message to run via message_runs
-                        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                        sql_link = load_sql(
+                            "sql/v3/simulations/link_message_to_run.sql"
+                        )
                         await conn.execute(
                             sql_link,
                             str(user_message["id"]),
@@ -705,7 +716,9 @@ async def _send_simulation_message_impl(
                         )
 
                         # Create branch from latest message to new user message (if latest exists)
-                        sql_latest = load_sql("sql/v3/simulations/get_latest_message.sql")
+                        sql_latest = load_sql(
+                            "sql/v3/simulations/get_latest_message.sql"
+                        )
                         latest_message_row = await conn.fetchrow(
                             sql_latest, str(chat_id_uuid)
                         )
@@ -714,7 +727,9 @@ async def _send_simulation_message_impl(
                             user_id_str = str(user_message["id"])
                             # Prevent self-references (parent_id != child_id)
                             if latest_id_str != user_id_str:
-                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                sql_branch = load_sql(
+                                    "sql/v3/simulations/create_message_branch.sql"
+                                )
                                 await conn.execute(
                                     sql_branch,
                                     latest_id_str,
@@ -767,24 +782,13 @@ async def _send_simulation_message_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket.get_active_run import \
-                        get_active_run
-                    from app.utils.websocket.is_run_cancelled import \
-                        is_run_cancelled
-                    from app.utils.websocket.remove_active_result import \
-                        remove_active_result
-                    from app.utils.websocket.store_active_events import \
-                        store_active_events
-                    from app.utils.websocket.store_active_result import \
-                        store_active_result
-                    from app.utils.websocket.store_active_run import \
-                        store_active_run
+                    from app.utils.websocket.store_active_run import store_active_run
 
                     # Fetch context for the chat
-                    sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
-                    context_row = await conn.fetchrow(
-                        sql_context, str(chat_id_uuid)
+                    sql_context = load_sql(
+                        "sql/v3/agents/get_simulation_run_context.sql"
                     )
+                    context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
                     if not context_row:
                         raise ValueError(
                             f"Chat {chat_id_uuid} not found or no persona configured"
@@ -922,7 +926,9 @@ async def _send_simulation_message_impl(
                         uuid.UUID(context["persona_id"]),
                     )
                     if not simulation_agent_row:
-                        raise ValueError(f"Simulation Text Agent not found for persona {context['persona_id']}")
+                        raise ValueError(
+                            f"Simulation Text Agent not found for persona {context['persona_id']}"
+                        )
                     simulation_agent_id = simulation_agent_row["agent_id"]
 
                     # Create model run with all junction records using SQL file (using persona, not agent)
@@ -940,7 +946,7 @@ async def _send_simulation_message_impl(
                         str(simulation_agent_id),  # agent_id
                     )
                     model_run_id = uuid.UUID(model_run_row["run_id"])
-                    
+
                     # Link run to chat if not already linked
                     await conn.execute(
                         """
@@ -949,20 +955,27 @@ async def _send_simulation_message_impl(
                         ON CONFLICT (run_id, chat_id) DO NOTHING
                         """,
                         str(model_run_id),
-                        str(chat_id_uuid)
+                        str(chat_id_uuid),
                     )
-                    
+
                     # Link system/developer messages to run
-                    sql_link_sys_dev = load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql")
+                    sql_link_sys_dev = load_sql(
+                        "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                    )
                     await conn.fetchrow(
                         sql_link_sys_dev,
                         str(model_run_id),
                         context.get("department_id"),
                         str(chat_id_uuid),
                     )
-                    
+
                     # Create user message if it wasn't created earlier (no run existed)
-                    if not user_message and message_str and message_str.strip() != "" and not is_retry:
+                    if (
+                        not user_message
+                        and message_str
+                        and message_str.strip() != ""
+                        and not is_retry
+                    ):
                         # Create message without run_id
                         sql = load_sql("sql/v3/simulations/create_message.sql")
                         user_message_row = await conn.fetchrow(
@@ -973,7 +986,9 @@ async def _send_simulation_message_impl(
                             "created_at": user_message_row["created_at"],
                         }
                         # Link message to run via message_runs
-                        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                        sql_link = load_sql(
+                            "sql/v3/simulations/link_message_to_run.sql"
+                        )
                         await conn.execute(
                             sql_link,
                             str(user_message["id"]),
@@ -993,7 +1008,9 @@ async def _send_simulation_message_impl(
                             user_msg_id = str(user_message["id"])
                             # Link developer → user (if developer exists and IDs are different)
                             if dev_msg_id and str(dev_msg_id) != user_msg_id:
-                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                sql_branch = load_sql(
+                                    "sql/v3/simulations/create_message_branch.sql"
+                                )
                                 await conn.execute(
                                     sql_branch,
                                     str(dev_msg_id),
@@ -1001,7 +1018,9 @@ async def _send_simulation_message_impl(
                                 )
                             # Link system → user (if system exists, no developer, and IDs are different)
                             elif sys_msg_id and str(sys_msg_id) != user_msg_id:
-                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                sql_branch = load_sql(
+                                    "sql/v3/simulations/create_message_branch.sql"
+                                )
                                 await conn.execute(
                                     sql_branch,
                                     str(sys_msg_id),
@@ -1012,12 +1031,14 @@ async def _send_simulation_message_impl(
                     sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
                     persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
                     personas = [dict(row) for row in persona_rows]
-                    
+
                     # Track parent message for branching (user message or latest)
                     parent_message_id_for_branching: uuid.UUID | None = None
                     if is_retry:
                         # For retry: branch from previous user message
-                        sql_prev_user = load_sql("sql/v3/simulations/get_previous_user_message.sql")
+                        sql_prev_user = load_sql(
+                            "sql/v3/simulations/get_previous_user_message.sql"
+                        )
                         prev_user_row = await conn.fetchrow(
                             sql_prev_user, str(chat_id_uuid)
                         )
@@ -1032,41 +1053,51 @@ async def _send_simulation_message_impl(
                             parent_message_id_for_branching = user_message["id"]
                         else:
                             # Fallback: use latest message (shouldn't happen in normal flow)
-                            sql_latest = load_sql("sql/v3/simulations/get_latest_message.sql")
+                            sql_latest = load_sql(
+                                "sql/v3/simulations/get_latest_message.sql"
+                            )
                             latest_message_row = await conn.fetchrow(
                                 sql_latest, str(chat_id_uuid)
                             )
                             if latest_message_row:
-                                parent_message_id_for_branching = latest_message_row["id"]
-                    
+                                parent_message_id_for_branching = latest_message_row[
+                                    "id"
+                                ]
+
                     # Create emit function wrappers for persona tools
-                    async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:
+                    async def emit_new_message_wrapper(
+                        event_data: dict[str, Any],
+                    ) -> None:
                         await simulation_new_message(
                             SimulationNewMessagePayload(**event_data),
                             room=f"simulation_{chat_id_uuid}",
                         )
-                    
+
                     async def emit_token_wrapper(event_data: dict[str, Any]) -> None:
                         await simulation_message_token(
                             SimulationMessageTokenPayload(**event_data),
                             room=f"simulation_{chat_id_uuid}",
                         )
-                    
+
                     async def emit_complete_wrapper(event_data: dict[str, Any]) -> None:
                         await simulation_message_complete(
                             SimulationMessageCompletePayload(**event_data),
                             room=f"simulation_{chat_id_uuid}",
                         )
-                    
+
                     # Track completed tool messages for hint generation
                     completed_tool_messages: list[dict[str, Any]] = []
-                    
+
                     # Create wrapper that tracks completed messages
-                    async def emit_complete_with_tracking(event_data: dict[str, Any]) -> None:
+                    async def emit_complete_with_tracking(
+                        event_data: dict[str, Any],
+                    ) -> None:
                         await emit_complete_wrapper(event_data)
                         # Track completed message for hint generation
-                        completed_tool_messages.append({"id": uuid.UUID(event_data["message_id"])})
-                    
+                        completed_tool_messages.append(
+                            {"id": uuid.UUID(event_data["message_id"])}
+                        )
+
                     # Create persona tools if personas exist
                     persona_tools = []
                     if personas:
@@ -1083,35 +1114,46 @@ async def _send_simulation_message_impl(
                         logger.info(
                             f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}"
                         )
-                        
+
                         # Get persona instructions for developer message
-                        sql_get_persona_instructions = load_sql("sql/v3/voice/get_persona_instructions.sql")
+                        sql_get_persona_instructions = load_sql(
+                            "sql/v3/voice/get_persona_instructions.sql"
+                        )
                         persona_instruction_rows = await conn.fetch(
                             sql_get_persona_instructions,
                             str(chat_id_uuid),
                         )
-                        
+
                         # Build map of persona_name -> instructions
                         persona_instructions_map: dict[str, str] = {}
                         for row in persona_instruction_rows:
                             persona_name = row.get("persona_name", "")
                             instructions = row.get("instructions", "")
                             if persona_name:
-                                persona_instructions_map[persona_name] = instructions or ""
-                        
+                                persona_instructions_map[persona_name] = (
+                                    instructions or ""
+                                )
+
                         # Build developer message with persona instructions
-                        persona_names = [p.get("persona_name") or p.get("name", "Unknown") for p in personas]
+                        persona_names = [
+                            p.get("persona_name") or p.get("name", "Unknown")
+                            for p in personas
+                        ]
                         persona_descriptions = []
                         for persona_name in persona_names:
-                            instructions = persona_instructions_map.get(persona_name, "")
+                            instructions = persona_instructions_map.get(
+                                persona_name, ""
+                            )
                             if instructions:
-                                persona_descriptions.append(f"- {persona_name}: {instructions}")
+                                persona_descriptions.append(
+                                    f"- {persona_name}: {instructions}"
+                                )
                             else:
                                 persona_descriptions.append(f"- {persona_name}")
-                        
+
                         # Build list of available persona names for tool usage
                         persona_names_list = [f'"{name}"' for name in persona_names]
-                        
+
                         developer_message_personas: TResponseInputItem = {
                             "role": "developer",
                             "content": f"""Available personas and their personalities:
@@ -1120,16 +1162,17 @@ async def _send_simulation_message_impl(
 Tool Usage Instructions:
 - You MUST use the `speak` tool to respond as a persona
 - The `speak` tool takes two parameters:
-  * `persona`: The name of the persona that should speak (must be one of: {', '.join(persona_names_list)})
+  * `persona`: The name of the persona that should speak (must be one of: {", ".join(persona_names_list)})
   * `message`: The message content that the persona should say
 - Call exactly one tool per user message
 - Never respond directly - always use the `speak` tool
 - The persona name must match exactly one of the available personas listed above""",
                         }
                         input_items.append(developer_message_personas)
-                        
+
                         # Add debug_info tool to persona_tools
                         from app.utils.debug_info import debug_info
+
                         persona_tools.append(debug_info)
 
                     # Create agent instance using context data with persona tools
@@ -1144,7 +1187,7 @@ Tool Usage Instructions:
                         api_key=context["api_key"],
                         tools=persona_tools,
                     )
-                    
+
                     # Link run to chat if not already linked
                     await conn.execute(
                         """
@@ -1153,20 +1196,27 @@ Tool Usage Instructions:
                         ON CONFLICT (run_id, chat_id) DO NOTHING
                         """,
                         str(model_run_id),
-                        str(chat_id_uuid)
+                        str(chat_id_uuid),
                     )
-                    
+
                     # Link system/developer messages to run
-                    sql_link_sys_dev = load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql")
+                    sql_link_sys_dev = load_sql(
+                        "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                    )
                     await conn.fetchrow(
                         sql_link_sys_dev,
                         str(model_run_id),
                         context.get("department_id"),
                         str(chat_id_uuid),
                     )
-                    
+
                     # Create user message if it wasn't created earlier (no run existed)
-                    if not user_message and message_str and message_str.strip() != "" and not is_retry:
+                    if (
+                        not user_message
+                        and message_str
+                        and message_str.strip() != ""
+                        and not is_retry
+                    ):
                         # Create message without run_id
                         sql = load_sql("sql/v3/simulations/create_message.sql")
                         user_message_row = await conn.fetchrow(
@@ -1177,7 +1227,9 @@ Tool Usage Instructions:
                             "created_at": user_message_row["created_at"],
                         }
                         # Link message to run via message_runs
-                        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                        sql_link = load_sql(
+                            "sql/v3/simulations/link_message_to_run.sql"
+                        )
                         await conn.execute(
                             sql_link,
                             str(user_message["id"]),
@@ -1197,7 +1249,9 @@ Tool Usage Instructions:
                             user_msg_id = str(user_message["id"])
                             # Link developer → user (if developer exists and IDs are different)
                             if dev_msg_id and str(dev_msg_id) != user_msg_id:
-                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                sql_branch = load_sql(
+                                    "sql/v3/simulations/create_message_branch.sql"
+                                )
                                 await conn.execute(
                                     sql_branch,
                                     str(dev_msg_id),
@@ -1205,23 +1259,25 @@ Tool Usage Instructions:
                                 )
                             # Link system → user (if system exists, no developer, and IDs are different)
                             elif sys_msg_id and str(sys_msg_id) != user_msg_id:
-                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                sql_branch = load_sql(
+                                    "sql/v3/simulations/create_message_branch.sql"
+                                )
                                 await conn.execute(
                                     sql_branch,
                                     str(sys_msg_id),
                                     user_msg_id,
                                 )
-                    
+
                     # Get tool calls tracking dict for this chat
                     tool_calls_dict = get_simulation_tool_calls_dict()
                     chat_id_str = str(chat_id_uuid)
                     if chat_id_str not in tool_calls_dict:
                         tool_calls_dict[chat_id_str] = {}
-                    
+
                     # Track fake_id -> real_id mapping and counter for unique IDs
                     fake_id_to_real_id: dict[str, str] = {}
                     tool_call_counter = 0
-                    
+
                     with trace(
                         context["chat_title"],
                         trace_id=context["trace_id"],
@@ -1232,33 +1288,44 @@ Tool Usage Instructions:
                             input=input_items,
                             context=DebugContext(conn=conn, run_id=model_run_id),
                         )
-                    
+
                     # Store the result in active runs for potential cancellation
-                    from app.utils.websocket.store_active_run import \
-                        store_active_run
+
                     await store_active_run(chat_id_str, result)
-                    
+
                     try:
                         # Process streaming events
                         event_count = 0
                         async for event in result.stream_events():
                             event_count += 1
-                            
+
                             # Check for run_item_stream_event to get tool name
-                            if hasattr(event, "type") and event.type == "run_item_stream_event":
+                            if (
+                                hasattr(event, "type")
+                                and event.type == "run_item_stream_event"
+                            ):
                                 item = getattr(event, "item", None)
                                 if item:
                                     # Check if this is a function call item
-                                    item_type = getattr(item, "type", None) if hasattr(item, "type") else None
+                                    item_type = (
+                                        getattr(item, "type", None)
+                                        if hasattr(item, "type")
+                                        else None
+                                    )
                                     if item_type == "function_call":
                                         # Get tool call ID and name from the item
                                         item_id = getattr(item, "id", None)
                                         tool_name = getattr(item, "name", None)
-                                        
+
                                         if item_id and tool_name:
                                             # Initialize tool call state if not exists
-                                            if item_id not in tool_calls_dict[chat_id_str]:
-                                                tool_calls_dict[chat_id_str][item_id] = {
+                                            if (
+                                                item_id
+                                                not in tool_calls_dict[chat_id_str]
+                                            ):
+                                                tool_calls_dict[chat_id_str][
+                                                    item_id
+                                                ] = {
                                                     "name": tool_name,
                                                     "response_id": str(item_id),
                                                     "arguments_raw": "",
@@ -1271,33 +1338,48 @@ Tool Usage Instructions:
                                                 }
                                             else:
                                                 # Update name if we didn't have it yet
-                                                tool_calls_dict[chat_id_str][item_id]["name"] = tool_name
-                            
+                                                tool_calls_dict[chat_id_str][item_id][
+                                                    "name"
+                                                ] = tool_name
+
                             # Check for raw_response_event and inspect data for tool call deltas
-                            if hasattr(event, "type") and event.type == "raw_response_event":
+                            if (
+                                hasattr(event, "type")
+                                and event.type == "raw_response_event"
+                            ):
                                 event_data = getattr(event, "data", None)
                                 if not event_data:
                                     continue
-                                
+
                                 # Check if this is a function call arguments delta event
-                                event_data_type = getattr(event_data, "type", None) if hasattr(event_data, "type") else None
-                                
+                                event_data_type = (
+                                    getattr(event_data, "type", None)
+                                    if hasattr(event_data, "type")
+                                    else None
+                                )
+
                                 # Handle response.output_item.added to get tool name and item_id
                                 if event_data_type == "response.output_item.added":
                                     # Extract item information from the added event
                                     item = getattr(event_data, "item", None)
                                     if item:
-                                        item_type = getattr(item, "type", None) if hasattr(item, "type") else None
+                                        item_type = (
+                                            getattr(item, "type", None)
+                                            if hasattr(item, "type")
+                                            else None
+                                        )
                                         if item_type == "function_call":
                                             fake_item_id = getattr(item, "id", None)
                                             tool_name = getattr(item, "name", None)
                                             # Try to get call_id from item (this is the unique identifier we want to use)
                                             call_id = getattr(item, "call_id", None)
-                                            
+
                                             # Also try to get item_id from event_data directly if not in item
                                             if not fake_item_id:
-                                                fake_item_id = getattr(event_data, "item_id", None)
-                                            
+                                                fake_item_id = getattr(
+                                                    event_data, "item_id", None
+                                                )
+
                                             # Use call_id as the unique identifier if available, otherwise generate one
                                             if call_id:
                                                 real_item_id = call_id
@@ -1306,46 +1388,80 @@ Tool Usage Instructions:
                                                 tool_call_counter += 1
                                                 real_item_id = f"{chat_id_str}_{tool_call_counter}_{uuid.uuid4().hex[:8]}"
                                             else:
-                                                logger.error(f"output_item.added: missing both call_id and item_id")
+                                                logger.error(
+                                                    "output_item.added: missing both call_id and item_id"
+                                                )
                                                 continue
-                                            
+
                                             if tool_name:
                                                 # Map fake_id to real_id for delta events (they use fake_id)
                                                 if fake_item_id:
-                                                    fake_id_to_real_id[fake_item_id] = real_item_id
-                                                
+                                                    fake_id_to_real_id[fake_item_id] = (
+                                                        real_item_id
+                                                    )
+
                                                 # Check if this call_id already exists (prevent duplicates)
-                                                if real_item_id in tool_calls_dict[chat_id_str]:
+                                                if (
+                                                    real_item_id
+                                                    in tool_calls_dict[chat_id_str]
+                                                ):
                                                     continue
-                                                
+
                                                 # Check if state already exists (from deltas that arrived first)
-                                                if real_item_id in tool_calls_dict[chat_id_str]:
+                                                if (
+                                                    real_item_id
+                                                    in tool_calls_dict[chat_id_str]
+                                                ):
                                                     # Update the name and process accumulated arguments
-                                                    existing_state = tool_calls_dict[chat_id_str][real_item_id]
+                                                    existing_state = tool_calls_dict[
+                                                        chat_id_str
+                                                    ][real_item_id]
                                                     existing_state["name"] = tool_name
                                                     existing_state["call_id"] = call_id
-                                                    
+
                                                     # Process accumulated arguments if any
                                                     if existing_state["arguments_raw"]:
-                                                        accumulated_raw = existing_state["arguments_raw"]
-                                                        
+                                                        accumulated_raw = (
+                                                            existing_state[
+                                                                "arguments_raw"
+                                                            ]
+                                                        )
+
                                                         # Extract persona
-                                                        if not existing_state["persona_so_far"]:
-                                                            persona = extract_persona_from_json(accumulated_raw)
+                                                        if not existing_state[
+                                                            "persona_so_far"
+                                                        ]:
+                                                            persona = extract_persona_from_json(
+                                                                accumulated_raw
+                                                            )
                                                             if persona:
-                                                                existing_state["persona_so_far"] = persona
-                                                        
+                                                                existing_state[
+                                                                    "persona_so_far"
+                                                                ] = persona
+
                                                         # Extract message content
-                                                        new_message_chars, new_index, in_message = extract_new_message_chars(
+                                                        (
+                                                            new_message_chars,
+                                                            new_index,
+                                                            in_message,
+                                                        ) = extract_new_message_chars(
                                                             "", accumulated_raw, 0
                                                         )
-                                                        existing_state["last_processed_index"] = new_index
-                                                        existing_state["in_message"] = in_message
+                                                        existing_state[
+                                                            "last_processed_index"
+                                                        ] = new_index
+                                                        existing_state["in_message"] = (
+                                                            in_message
+                                                        )
                                                         if new_message_chars:
-                                                            existing_state["message_so_far"] = new_message_chars
+                                                            existing_state[
+                                                                "message_so_far"
+                                                            ] = new_message_chars
                                                 else:
                                                     # Initialize tool call state with call_id as the key
-                                                    tool_calls_dict[chat_id_str][real_item_id] = {
+                                                    tool_calls_dict[chat_id_str][
+                                                        real_item_id
+                                                    ] = {
                                                         "name": tool_name,
                                                         "response_id": real_item_id,
                                                         "call_id": call_id,  # Store the actual call_id
@@ -1360,43 +1476,54 @@ Tool Usage Instructions:
                                                         "completed": False,
                                                     }
                                             else:
-                                                logger.warning(f"output_item.added: missing tool_name: call_id={call_id}, item_id={fake_item_id}")
-                                
-                                if event_data_type == "response.function_call_arguments.delta":
+                                                logger.warning(
+                                                    f"output_item.added: missing tool_name: call_id={call_id}, item_id={fake_item_id}"
+                                                )
+
+                                if (
+                                    event_data_type
+                                    == "response.function_call_arguments.delta"
+                                ):
                                     # This is a ResponseFunctionCallArgumentsDeltaEvent
                                     # It has: delta (str), item_id (str) - item_id is the fake_id
                                     # Also check for call_id in event_data
                                     fake_item_id = getattr(event_data, "item_id", None)
                                     arguments_delta = getattr(event_data, "delta", None)
-                                    
+
                                     # Try to get call_id from event_data (might be available)
                                     call_id = getattr(event_data, "call_id", None)
-                                    
+
                                     if not arguments_delta:
                                         continue
-                                    
+
                                     # Determine the real_id: prefer call_id, then mapped fake_id, then wait
                                     if call_id:
                                         # Use call_id directly if available
                                         delta_real_item_id = call_id
                                     elif fake_item_id:
                                         # Map fake_id to real_id (from output_item.added)
-                                        delta_real_item_id = fake_id_to_real_id.get(fake_item_id)
+                                        delta_real_item_id = fake_id_to_real_id.get(
+                                            fake_item_id
+                                        )
                                         if not delta_real_item_id:
                                             # If we haven't seen this fake_id before, wait for output_item.added
                                             # Don't generate a new ID here - wait for the added event
                                             continue
                                     else:
-                                        logger.warning(f"Delta event has no call_id or item_id, skipping")
+                                        logger.warning(
+                                            "Delta event has no call_id or item_id, skipping"
+                                        )
                                         continue
-                                    
+
                                     if not delta_real_item_id:
-                                        logger.error(f"Failed to get real_id for fake_id={fake_item_id}, call_id={call_id}")
+                                        logger.error(
+                                            f"Failed to get real_id for fake_id={fake_item_id}, call_id={call_id}"
+                                        )
                                         continue
-                                    
+
                                     # Use delta_real_item_id as the tool_call_id for tracking
                                     tool_call_id = delta_real_item_id  # type: ignore[assignment]
-                                    
+
                                     # Get or create tool call state
                                     if tool_call_id not in tool_calls_dict[chat_id_str]:
                                         # First delta for this tool call - create state (name will be set from output_item.added)
@@ -1412,59 +1539,82 @@ Tool Usage Instructions:
                                             "parent_message_id": parent_message_id_for_branching,
                                             "completed": False,
                                         }
-                                    
-                                    tool_call_state = tool_calls_dict[chat_id_str][tool_call_id]
-                                    
+
+                                    tool_call_state = tool_calls_dict[chat_id_str][
+                                        tool_call_id
+                                    ]
+
                                     # Skip if we don't know the tool name yet (wait for output_item.added)
                                     if tool_call_state["name"] is None:
                                         # Just accumulate arguments for now
-                                        tool_call_state["arguments_raw"] += arguments_delta
+                                        tool_call_state["arguments_raw"] += (
+                                            arguments_delta
+                                        )
                                         continue
-                                    
+
                                     # Only process "speak" tool calls
                                     if tool_call_state["name"] != "speak":
                                         continue
-                                    
+
                                     # Append arguments delta
                                     prev_raw = tool_call_state["arguments_raw"]
                                     tool_call_state["arguments_raw"] += arguments_delta
                                     new_raw = tool_call_state["arguments_raw"]
-                                    
+
                                     # Extract persona if available
                                     if not tool_call_state["persona_so_far"]:
                                         persona = extract_persona_from_json(new_raw)
                                         if persona:
                                             tool_call_state["persona_so_far"] = persona
-                                    
+
                                     # Extract new message content incrementally
-                                    new_message_chars, new_index, in_message = extract_new_message_chars(
-                                        prev_raw, new_raw, tool_call_state["last_processed_index"]
+                                    new_message_chars, new_index, in_message = (
+                                        extract_new_message_chars(
+                                            prev_raw,
+                                            new_raw,
+                                            tool_call_state["last_processed_index"],
+                                        )
                                     )
                                     tool_call_state["last_processed_index"] = new_index
                                     tool_call_state["in_message"] = in_message
-                                    
+
                                     if new_message_chars:
-                                        tool_call_state["message_so_far"] += new_message_chars
-                                        
+                                        tool_call_state["message_so_far"] += (
+                                            new_message_chars
+                                        )
+
                                         # Create DB message if not created yet
                                         if tool_call_state["db_message_id"] is None:
-                                            sql_create_message = load_sql("sql/v3/simulations/create_message.sql")
+                                            sql_create_message = load_sql(
+                                                "sql/v3/simulations/create_message.sql"
+                                            )
                                             assistant_message_row = await conn.fetchrow(
-                                                sql_create_message, "assistant", "", False, None
+                                                sql_create_message,
+                                                "assistant",
+                                                "",
+                                                False,
+                                                None,
                                             )
                                             db_message_id = assistant_message_row["id"]
-                                            tool_call_state["db_message_id"] = db_message_id
-                                            
-                                            # Link message to run
-                                            sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
-                                            await conn.execute(
-                                                sql_link, str(db_message_id), str(model_run_id)
+                                            tool_call_state["db_message_id"] = (
+                                                db_message_id
                                             )
-                                            
+
+                                            # Link message to run
+                                            sql_link = load_sql(
+                                                "sql/v3/simulations/link_message_to_run.sql"
+                                            )
+                                            await conn.execute(
+                                                sql_link,
+                                                str(db_message_id),
+                                                str(model_run_id),
+                                            )
+
                                             # Link to persona if we have it
                                             if tool_call_state["persona_so_far"]:
                                                 persona_match = find_persona_by_name(
-                                                    tool_call_state["persona_so_far"], personas
+                                                    tool_call_state["persona_so_far"],
+                                                    personas,
                                                 )
                                                 if persona_match:
                                                     persona_id, _ = persona_match
@@ -1478,29 +1628,38 @@ Tool Usage Instructions:
                                                             str(persona_id),
                                                         )
                                                     except Exception as link_err:
-                                                        logger.warning(f"Failed to link message to persona: {link_err}")
-                                            
+                                                        logger.warning(
+                                                            f"Failed to link message to persona: {link_err}"
+                                                        )
+
                                             # Create branch if parent exists
                                             if tool_call_state["parent_message_id"]:
-                                                parent_id_str = str(tool_call_state["parent_message_id"])
+                                                parent_id_str = str(
+                                                    tool_call_state["parent_message_id"]
+                                                )
                                                 assistant_id_str = str(db_message_id)
                                                 if parent_id_str != assistant_id_str:
-                                                    sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                                    sql_branch = load_sql(
+                                                        "sql/v3/simulations/create_message_branch.sql"
+                                                    )
                                                     await conn.execute(
                                                         sql_branch,
                                                         parent_id_str,
                                                         assistant_id_str,
                                                     )
-                                            
+
                                             # Emit new message event
                                             persona_id_str = None
                                             if tool_call_state["persona_so_far"]:
                                                 persona_match = find_persona_by_name(
-                                                    tool_call_state["persona_so_far"], personas
+                                                    tool_call_state["persona_so_far"],
+                                                    personas,
                                                 )
                                                 if persona_match:
-                                                    persona_id_str = str(persona_match[0])
-                                            
+                                                    persona_id_str = str(
+                                                        persona_match[0]
+                                                    )
+
                                             await simulation_new_message(
                                                 SimulationNewMessagePayload(
                                                     message_id=str(db_message_id),
@@ -1508,52 +1667,73 @@ Tool Usage Instructions:
                                                     role="assistant",
                                                     content="",
                                                     completed=False,
-                                                    created_at=assistant_message_row["created_at"].isoformat(),
+                                                    created_at=assistant_message_row[
+                                                        "created_at"
+                                                    ].isoformat(),
                                                     persona_id=persona_id_str,
                                                 ),
                                                 room=f"simulation_{chat_id_uuid}",
                                             )
-                                        
+
                                         # Update DB with accumulated content
-                                        sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
+                                        sql_update = load_sql(
+                                            "sql/v3/simulations/update_message_content.sql"
+                                        )
                                         await conn.execute(
                                             sql_update,
                                             tool_call_state["message_so_far"],
                                             str(tool_call_state["db_message_id"]),
                                         )
-                                        
+
                                         # Emit token event
                                         await simulation_message_token(
                                             SimulationMessageTokenPayload(
-                                                message_id=str(tool_call_state["db_message_id"]),
+                                                message_id=str(
+                                                    tool_call_state["db_message_id"]
+                                                ),
                                                 chat_id=chat_id_str,
                                                 token=new_message_chars,
-                                                accumulated_content=tool_call_state["message_so_far"],
+                                                accumulated_content=tool_call_state[
+                                                    "message_so_far"
+                                                ],
                                             ),
                                             room=f"simulation_{chat_id_uuid}",
                                         )
-                            
+
                             # Check for tool call completion via raw_response_event with output_item.done
-                            if hasattr(event, "type") and event.type == "raw_response_event":
+                            if (
+                                hasattr(event, "type")
+                                and event.type == "raw_response_event"
+                            ):
                                 event_data = getattr(event, "data", None)
                                 if event_data:
-                                    event_data_type = getattr(event_data, "type", None) if hasattr(event_data, "type") else None
+                                    event_data_type = (
+                                        getattr(event_data, "type", None)
+                                        if hasattr(event_data, "type")
+                                        else None
+                                    )
                                     if event_data_type == "response.output_item.done":
                                         # Get item_id from the done event (this will be fake_id)
-                                        fake_item_id = getattr(event_data, "item_id", None)
+                                        fake_item_id = getattr(
+                                            event_data, "item_id", None
+                                        )
                                         # Try to get call_id from event_data or item
                                         item = getattr(event_data, "item", None)
                                         call_id = None
                                         if item:
                                             call_id = getattr(item, "call_id", None)
                                         if not call_id:
-                                            call_id = getattr(event_data, "call_id", None)
-                                        
+                                            call_id = getattr(
+                                                event_data, "call_id", None
+                                            )
+
                                         # Prefer call_id, fallback to mapped fake_id
                                         if call_id:
                                             done_real_item_id = call_id
                                         elif fake_item_id:
-                                            done_real_item_id = fake_id_to_real_id.get(fake_item_id)
+                                            done_real_item_id = fake_id_to_real_id.get(
+                                                fake_item_id
+                                            )
                                         else:
                                             # Log more details about the event to understand what's missing
                                             logger.warning(
@@ -1562,54 +1742,93 @@ Tool Usage Instructions:
                                                 f"item keys: {dir(item) if item else None}"
                                             )
                                             continue
-                                        
+
                                         if not done_real_item_id:
-                                            logger.warning(f"Completion event for unknown fake_id={fake_item_id}, call_id={call_id}")
+                                            logger.warning(
+                                                f"Completion event for unknown fake_id={fake_item_id}, call_id={call_id}"
+                                            )
                                             continue
-                                        if done_real_item_id in tool_calls_dict.get(chat_id_str, {}):
+                                        if done_real_item_id in tool_calls_dict.get(
+                                            chat_id_str, {}
+                                        ):
                                             tool_call_id = done_real_item_id  # type: ignore[assignment]
-                                            tool_call_state = tool_calls_dict[chat_id_str][tool_call_id]
-                                            
+                                            tool_call_state = tool_calls_dict[
+                                                chat_id_str
+                                            ][tool_call_id]
+
                                             # Only process "speak" tool calls
                                             if tool_call_state.get("name") != "speak":
                                                 continue
-                                            
+
                                             # Check if already completed (prevent double-processing)
                                             if tool_call_state.get("completed"):
                                                 continue
-                                            
+
                                             tool_call_state["completed"] = True
-                                            
+
                                             # Parse final JSON arguments and complete
                                             try:
-                                                final_args = json.loads(tool_call_state["arguments_raw"])
-                                                final_message = final_args.get("message", tool_call_state["message_so_far"])
-                                                final_persona = final_args.get("persona", tool_call_state["persona_so_far"])
-                                                
+                                                final_args = json.loads(
+                                                    tool_call_state["arguments_raw"]
+                                                )
+                                                final_message = final_args.get(
+                                                    "message",
+                                                    tool_call_state["message_so_far"],
+                                                )
+                                                final_persona = final_args.get(
+                                                    "persona",
+                                                    tool_call_state["persona_so_far"],
+                                                )
+
                                                 # Update final content
-                                                tool_call_state["message_so_far"] = final_message
-                                                if final_persona and not tool_call_state["persona_so_far"]:
-                                                    tool_call_state["persona_so_far"] = final_persona
-                                                
-                                                db_message_id = tool_call_state["db_message_id"]
+                                                tool_call_state["message_so_far"] = (
+                                                    final_message
+                                                )
+                                                if (
+                                                    final_persona
+                                                    and not tool_call_state[
+                                                        "persona_so_far"
+                                                    ]
+                                                ):
+                                                    tool_call_state[
+                                                        "persona_so_far"
+                                                    ] = final_persona
+
+                                                db_message_id = tool_call_state[
+                                                    "db_message_id"
+                                                ]
                                                 if db_message_id:
                                                     # Update DB with final content
-                                                    sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
-                                                    await conn.execute(
-                                                        sql_update, final_message, str(db_message_id)
+                                                    sql_update = load_sql(
+                                                        "sql/v3/simulations/update_message_content.sql"
                                                     )
-                                                    
+                                                    await conn.execute(
+                                                        sql_update,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
                                                     # Complete message
-                                                    sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-                                                    await conn.execute(
-                                                        sql_complete, final_message, str(db_message_id)
+                                                    sql_complete = load_sql(
+                                                        "sql/v3/simulations/complete_message.sql"
                                                     )
-                                                    
+                                                    await conn.execute(
+                                                        sql_complete,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
                                                     # Link to persona if we have it and haven't already
                                                     if final_persona:
-                                                        persona_match = find_persona_by_name(final_persona, personas)
+                                                        persona_match = (
+                                                            find_persona_by_name(
+                                                                final_persona, personas
+                                                            )
+                                                        )
                                                         if persona_match:
-                                                            persona_id, _ = persona_match
+                                                            persona_id, _ = (
+                                                                persona_match
+                                                            )
                                                             sql_link_persona = load_sql(
                                                                 "sql/v3/simulations/link_message_to_persona.sql"
                                                             )
@@ -1621,27 +1840,37 @@ Tool Usage Instructions:
                                                                 )
                                                             except Exception:
                                                                 pass  # Already linked or error
-                                                    
+
                                                     # Emit completion event
                                                     await simulation_message_complete(
                                                         SimulationMessageCompletePayload(
-                                                            message_id=str(db_message_id),
+                                                            message_id=str(
+                                                                db_message_id
+                                                            ),
                                                             chat_id=chat_id_str,
                                                             final_content=final_message,
                                                         ),
                                                         room=f"simulation_{chat_id_uuid}",
                                                     )
-                                                    
+
                                                     # Emit final message update
                                                     persona_id_str = None
                                                     if final_persona:
-                                                        persona_match = find_persona_by_name(final_persona, personas)
+                                                        persona_match = (
+                                                            find_persona_by_name(
+                                                                final_persona, personas
+                                                            )
+                                                        )
                                                         if persona_match:
-                                                            persona_id_str = str(persona_match[0])
-                                                    
+                                                            persona_id_str = str(
+                                                                persona_match[0]
+                                                            )
+
                                                     await simulation_new_message(
                                                         SimulationNewMessagePayload(
-                                                            message_id=str(db_message_id),
+                                                            message_id=str(
+                                                                db_message_id
+                                                            ),
                                                             chat_id=chat_id_str,
                                                             role="assistant",
                                                             content=final_message,
@@ -1651,94 +1880,168 @@ Tool Usage Instructions:
                                                         ),
                                                         room=f"simulation_{chat_id_uuid}",
                                                     )
-                                                    
+
                                                     # Track completed tool messages for hint generation
-                                                    completed_tool_messages.append({
-                                                        "id": db_message_id,
-                                                        "content": final_message,
-                                                    })
-                                                
+                                                    completed_tool_messages.append(
+                                                        {
+                                                            "id": db_message_id,
+                                                            "content": final_message,
+                                                        }
+                                                    )
+
                                                 # Clean up tool call state
-                                                del tool_calls_dict[chat_id_str][tool_call_id]
-                                                
+                                                del tool_calls_dict[chat_id_str][
+                                                    tool_call_id
+                                                ]
+
                                             except json.JSONDecodeError as e:
-                                                logger.error(f"Failed to parse final tool call arguments: {e}")
+                                                logger.error(
+                                                    f"Failed to parse final tool call arguments: {e}"
+                                                )
                                                 # Still try to complete with what we have
                                                 if tool_call_state["db_message_id"]:
-                                                    final_message = tool_call_state["message_so_far"]
-                                                    sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
+                                                    final_message = tool_call_state[
+                                                        "message_so_far"
+                                                    ]
+                                                    sql_complete = load_sql(
+                                                        "sql/v3/simulations/complete_message.sql"
+                                                    )
                                                     await conn.execute(
                                                         sql_complete,
                                                         final_message,
-                                                        str(tool_call_state["db_message_id"]),
+                                                        str(
+                                                            tool_call_state[
+                                                                "db_message_id"
+                                                            ]
+                                                        ),
                                                     )
                                                     await simulation_message_complete(
                                                         SimulationMessageCompletePayload(
-                                                            message_id=str(tool_call_state["db_message_id"]),
+                                                            message_id=str(
+                                                                tool_call_state[
+                                                                    "db_message_id"
+                                                                ]
+                                                            ),
                                                             chat_id=chat_id_str,
                                                             final_content=final_message,
                                                         ),
                                                         room=f"simulation_{chat_id_uuid}",
                                                     )
-                                                del tool_calls_dict[chat_id_str][tool_call_id]
-                            
+                                                del tool_calls_dict[chat_id_str][
+                                                    tool_call_id
+                                                ]
+
                             # Check for tool call completion via run_item_stream_event with function_call_output
-                            if hasattr(event, "type") and event.type == "run_item_stream_event":
+                            if (
+                                hasattr(event, "type")
+                                and event.type == "run_item_stream_event"
+                            ):
                                 item = getattr(event, "item", None)
                                 if item:
-                                    item_type = getattr(item, "type", None) if hasattr(item, "type") else None
+                                    item_type = (
+                                        getattr(item, "type", None)
+                                        if hasattr(item, "type")
+                                        else None
+                                    )
                                     if item_type == "function_call_output":
                                         # Tool call has completed - get the item_id (might be fake_id)
-                                        fake_item_id = getattr(item, "id", None) or getattr(item, "item_id", None)
+                                        fake_item_id = getattr(
+                                            item, "id", None
+                                        ) or getattr(item, "item_id", None)
                                         # Map fake_id to real_id, or use directly if already real_id
-                                        output_real_item_id: str | None = fake_id_to_real_id.get(fake_item_id, fake_item_id) if fake_item_id else None  # type: ignore[assignment]
+                                        output_real_item_id: str | None = (
+                                            fake_id_to_real_id.get(
+                                                fake_item_id, fake_item_id
+                                            )
+                                            if fake_item_id
+                                            else None
+                                        )  # type: ignore[assignment]
                                         if not output_real_item_id:
-                                            logger.warning(f"Completion event for unknown fake_id={fake_item_id}")
+                                            logger.warning(
+                                                f"Completion event for unknown fake_id={fake_item_id}"
+                                            )
                                             continue
-                                        if output_real_item_id in tool_calls_dict.get(chat_id_str, {}):
+                                        if output_real_item_id in tool_calls_dict.get(
+                                            chat_id_str, {}
+                                        ):
                                             tool_call_id = output_real_item_id  # type: ignore[assignment]
-                                            tool_call_state = tool_calls_dict[chat_id_str][tool_call_id]
-                                            
+                                            tool_call_state = tool_calls_dict[
+                                                chat_id_str
+                                            ][tool_call_id]
+
                                             # Only process "speak" tool calls
                                             if tool_call_state.get("name") != "speak":
                                                 continue
-                                            
+
                                             # Check if already completed (prevent double-processing)
                                             if tool_call_state.get("completed"):
                                                 continue
-                                            
+
                                             tool_call_state["completed"] = True
-                                            
+
                                             # Parse final JSON arguments and complete
                                             try:
-                                                final_args = json.loads(tool_call_state["arguments_raw"])
-                                                final_message = final_args.get("message", tool_call_state["message_so_far"])
-                                                final_persona = final_args.get("persona", tool_call_state["persona_so_far"])
-                                                
+                                                final_args = json.loads(
+                                                    tool_call_state["arguments_raw"]
+                                                )
+                                                final_message = final_args.get(
+                                                    "message",
+                                                    tool_call_state["message_so_far"],
+                                                )
+                                                final_persona = final_args.get(
+                                                    "persona",
+                                                    tool_call_state["persona_so_far"],
+                                                )
+
                                                 # Update final content
-                                                tool_call_state["message_so_far"] = final_message
-                                                if final_persona and not tool_call_state["persona_so_far"]:
-                                                    tool_call_state["persona_so_far"] = final_persona
-                                                
-                                                db_message_id = tool_call_state["db_message_id"]
+                                                tool_call_state["message_so_far"] = (
+                                                    final_message
+                                                )
+                                                if (
+                                                    final_persona
+                                                    and not tool_call_state[
+                                                        "persona_so_far"
+                                                    ]
+                                                ):
+                                                    tool_call_state[
+                                                        "persona_so_far"
+                                                    ] = final_persona
+
+                                                db_message_id = tool_call_state[
+                                                    "db_message_id"
+                                                ]
                                                 if db_message_id:
                                                     # Update DB with final content
-                                                    sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
-                                                    await conn.execute(
-                                                        sql_update, final_message, str(db_message_id)
+                                                    sql_update = load_sql(
+                                                        "sql/v3/simulations/update_message_content.sql"
                                                     )
-                                                    
+                                                    await conn.execute(
+                                                        sql_update,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
                                                     # Complete message
-                                                    sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-                                                    await conn.execute(
-                                                        sql_complete, final_message, str(db_message_id)
+                                                    sql_complete = load_sql(
+                                                        "sql/v3/simulations/complete_message.sql"
                                                     )
-                                                    
+                                                    await conn.execute(
+                                                        sql_complete,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
                                                     # Link to persona if we have it and haven't already
                                                     if final_persona:
-                                                        persona_match = find_persona_by_name(final_persona, personas)
+                                                        persona_match = (
+                                                            find_persona_by_name(
+                                                                final_persona, personas
+                                                            )
+                                                        )
                                                         if persona_match:
-                                                            persona_id, _ = persona_match
+                                                            persona_id, _ = (
+                                                                persona_match
+                                                            )
                                                             sql_link_persona = load_sql(
                                                                 "sql/v3/simulations/link_message_to_persona.sql"
                                                             )
@@ -1750,27 +2053,37 @@ Tool Usage Instructions:
                                                                 )
                                                             except Exception:
                                                                 pass  # Already linked or error
-                                                    
+
                                                     # Emit completion event
                                                     await simulation_message_complete(
                                                         SimulationMessageCompletePayload(
-                                                            message_id=str(db_message_id),
+                                                            message_id=str(
+                                                                db_message_id
+                                                            ),
                                                             chat_id=chat_id_str,
                                                             final_content=final_message,
                                                         ),
                                                         room=f"simulation_{chat_id_uuid}",
                                                     )
-                                                    
+
                                                     # Emit final message update
                                                     persona_id_str = None
                                                     if final_persona:
-                                                        persona_match = find_persona_by_name(final_persona, personas)
+                                                        persona_match = (
+                                                            find_persona_by_name(
+                                                                final_persona, personas
+                                                            )
+                                                        )
                                                         if persona_match:
-                                                            persona_id_str = str(persona_match[0])
-                                                    
+                                                            persona_id_str = str(
+                                                                persona_match[0]
+                                                            )
+
                                                     await simulation_new_message(
                                                         SimulationNewMessagePayload(
-                                                            message_id=str(db_message_id),
+                                                            message_id=str(
+                                                                db_message_id
+                                                            ),
                                                             chat_id=chat_id_str,
                                                             role="assistant",
                                                             content=final_message,
@@ -1780,134 +2093,232 @@ Tool Usage Instructions:
                                                         ),
                                                         room=f"simulation_{chat_id_uuid}",
                                                     )
-                                                    
+
                                                     # Track completed tool messages for hint generation
-                                                    completed_tool_messages.append({
-                                                        "id": db_message_id,
-                                                        "content": final_message,
-                                                    })
-                                                
+                                                    completed_tool_messages.append(
+                                                        {
+                                                            "id": db_message_id,
+                                                            "content": final_message,
+                                                        }
+                                                    )
+
                                                 # Clean up tool call state
-                                                del tool_calls_dict[chat_id_str][tool_call_id]
-                                                
+                                                del tool_calls_dict[chat_id_str][
+                                                    tool_call_id
+                                                ]
+
                                             except json.JSONDecodeError as e:
-                                                logger.error(f"Failed to parse final tool call arguments: {e}")
+                                                logger.error(
+                                                    f"Failed to parse final tool call arguments: {e}"
+                                                )
                                                 # Still try to complete with what we have
                                                 if tool_call_state["db_message_id"]:
-                                                    final_message = tool_call_state["message_so_far"]
-                                                    sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
+                                                    final_message = tool_call_state[
+                                                        "message_so_far"
+                                                    ]
+                                                    sql_complete = load_sql(
+                                                        "sql/v3/simulations/complete_message.sql"
+                                                    )
                                                     await conn.execute(
                                                         sql_complete,
                                                         final_message,
-                                                        str(tool_call_state["db_message_id"]),
+                                                        str(
+                                                            tool_call_state[
+                                                                "db_message_id"
+                                                            ]
+                                                        ),
                                                     )
                                                     await simulation_message_complete(
                                                         SimulationMessageCompletePayload(
-                                                            message_id=str(tool_call_state["db_message_id"]),
+                                                            message_id=str(
+                                                                tool_call_state[
+                                                                    "db_message_id"
+                                                                ]
+                                                            ),
                                                             chat_id=chat_id_str,
                                                             final_content=final_message,
                                                         ),
                                                         room=f"simulation_{chat_id_uuid}",
                                                     )
-                                                    del tool_calls_dict[chat_id_str][tool_call_id]
-                            
+                                                    del tool_calls_dict[chat_id_str][
+                                                        tool_call_id
+                                                    ]
+
                             # Also check for response.output_item.done event which indicates completion
-                            if hasattr(event, "type") and event.type == "raw_response_event":
+                            if (
+                                hasattr(event, "type")
+                                and event.type == "raw_response_event"
+                            ):
                                 event_data = getattr(event, "data", None)
                                 if event_data:
-                                    event_data_type = getattr(event_data, "type", None) if hasattr(event_data, "type") else None
+                                    event_data_type = (
+                                        getattr(event_data, "type", None)
+                                        if hasattr(event_data, "type")
+                                        else None
+                                    )
                                     if event_data_type == "response.output_item.done":
                                         # Get item_id from the item in the event (might be fake_id)
                                         item = getattr(event_data, "item", None)
                                         if item:
-                                            fake_item_id = getattr(item, "id", None) or getattr(item, "item_id", None) or getattr(event_data, "item_id", None)
+                                            fake_item_id = (
+                                                getattr(item, "id", None)
+                                                or getattr(item, "item_id", None)
+                                                or getattr(event_data, "item_id", None)
+                                            )
                                             # Try to get call_id from item
                                             call_id = getattr(item, "call_id", None)
                                             if not call_id:
-                                                call_id = getattr(event_data, "call_id", None)
-                                            
+                                                call_id = getattr(
+                                                    event_data, "call_id", None
+                                                )
+
                                             # Prefer call_id, fallback to mapped fake_id
                                             if call_id:
                                                 done2_real_item_id = call_id
                                             elif fake_item_id:
-                                                done2_real_item_id = fake_id_to_real_id.get(fake_item_id)
+                                                done2_real_item_id = (
+                                                    fake_id_to_real_id.get(fake_item_id)
+                                                )
                                             else:
-                                                logger.warning(f"Completion event has no call_id or item_id")
+                                                logger.warning(
+                                                    "Completion event has no call_id or item_id"
+                                                )
                                                 continue
-                                            
+
                                             if not done2_real_item_id:
-                                                logger.warning(f"Completion event for unknown fake_id={fake_item_id}, call_id={call_id}")
+                                                logger.warning(
+                                                    f"Completion event for unknown fake_id={fake_item_id}, call_id={call_id}"
+                                                )
                                                 continue
-                                            if done2_real_item_id in tool_calls_dict.get(chat_id_str, {}):
+                                            if (
+                                                done2_real_item_id
+                                                in tool_calls_dict.get(chat_id_str, {})
+                                            ):
                                                 tool_call_id = done2_real_item_id  # type: ignore[assignment]
-                                                tool_call_state = tool_calls_dict[chat_id_str][tool_call_id]
-                                                
+                                                tool_call_state = tool_calls_dict[
+                                                    chat_id_str
+                                                ][tool_call_id]
+
                                                 # Only process "speak" tool calls
-                                                if tool_call_state.get("name") != "speak":
+                                                if (
+                                                    tool_call_state.get("name")
+                                                    != "speak"
+                                                ):
                                                     continue
-                                                
+
                                                 # Complete the tool call
                                                 try:
-                                                    final_args = json.loads(tool_call_state["arguments_raw"])
-                                                    final_message = final_args.get("message", tool_call_state["message_so_far"])
-                                                    final_persona = final_args.get("persona", tool_call_state["persona_so_far"])
-                                                    
+                                                    final_args = json.loads(
+                                                        tool_call_state["arguments_raw"]
+                                                    )
+                                                    final_message = final_args.get(
+                                                        "message",
+                                                        tool_call_state[
+                                                            "message_so_far"
+                                                        ],
+                                                    )
+                                                    final_persona = final_args.get(
+                                                        "persona",
+                                                        tool_call_state[
+                                                            "persona_so_far"
+                                                        ],
+                                                    )
+
                                                     # Update final content
-                                                    tool_call_state["message_so_far"] = final_message
-                                                    if final_persona and not tool_call_state["persona_so_far"]:
-                                                        tool_call_state["persona_so_far"] = final_persona
-                                                    
-                                                    db_message_id = tool_call_state["db_message_id"]
+                                                    tool_call_state[
+                                                        "message_so_far"
+                                                    ] = final_message
+                                                    if (
+                                                        final_persona
+                                                        and not tool_call_state[
+                                                            "persona_so_far"
+                                                        ]
+                                                    ):
+                                                        tool_call_state[
+                                                            "persona_so_far"
+                                                        ] = final_persona
+
+                                                    db_message_id = tool_call_state[
+                                                        "db_message_id"
+                                                    ]
                                                     if db_message_id:
                                                         # Update DB with final content
-                                                        sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
-                                                        await conn.execute(
-                                                            sql_update, final_message, str(db_message_id)
+                                                        sql_update = load_sql(
+                                                            "sql/v3/simulations/update_message_content.sql"
                                                         )
-                                                        
+                                                        await conn.execute(
+                                                            sql_update,
+                                                            final_message,
+                                                            str(db_message_id),
+                                                        )
+
                                                         # Complete message
-                                                        sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-                                                        await conn.execute(
-                                                            sql_complete, final_message, str(db_message_id)
+                                                        sql_complete = load_sql(
+                                                            "sql/v3/simulations/complete_message.sql"
                                                         )
-                                                        
+                                                        await conn.execute(
+                                                            sql_complete,
+                                                            final_message,
+                                                            str(db_message_id),
+                                                        )
+
                                                         # Link to persona if we have it and haven't already
                                                         if final_persona:
-                                                            persona_match = find_persona_by_name(final_persona, personas)
+                                                            persona_match = (
+                                                                find_persona_by_name(
+                                                                    final_persona,
+                                                                    personas,
+                                                                )
+                                                            )
                                                             if persona_match:
-                                                                persona_id, _ = persona_match
+                                                                persona_id, _ = (
+                                                                    persona_match
+                                                                )
                                                                 sql_link_persona = load_sql(
                                                                     "sql/v3/simulations/link_message_to_persona.sql"
                                                                 )
                                                                 try:
                                                                     await conn.execute(
                                                                         sql_link_persona,
-                                                                        str(db_message_id),
+                                                                        str(
+                                                                            db_message_id
+                                                                        ),
                                                                         str(persona_id),
                                                                     )
                                                                 except Exception:
                                                                     pass  # Already linked or error
-                                                        
+
                                                         # Emit completion event
                                                         await simulation_message_complete(
                                                             SimulationMessageCompletePayload(
-                                                                message_id=str(db_message_id),
+                                                                message_id=str(
+                                                                    db_message_id
+                                                                ),
                                                                 chat_id=chat_id_str,
                                                                 final_content=final_message,
                                                             ),
                                                             room=f"simulation_{chat_id_uuid}",
                                                         )
-                                                        
+
                                                         # Emit final message update
                                                         persona_id_str = None
                                                         if final_persona:
-                                                            persona_match = find_persona_by_name(final_persona, personas)
+                                                            persona_match = (
+                                                                find_persona_by_name(
+                                                                    final_persona,
+                                                                    personas,
+                                                                )
+                                                            )
                                                             if persona_match:
-                                                                persona_id_str = str(persona_match[0])
-                                                        
+                                                                persona_id_str = str(
+                                                                    persona_match[0]
+                                                                )
+
                                                         await simulation_new_message(
                                                             SimulationNewMessagePayload(
-                                                                message_id=str(db_message_id),
+                                                                message_id=str(
+                                                                    db_message_id
+                                                                ),
                                                                 chat_id=chat_id_str,
                                                                 role="assistant",
                                                                 content=final_message,
@@ -1917,100 +2328,176 @@ Tool Usage Instructions:
                                                             ),
                                                             room=f"simulation_{chat_id_uuid}",
                                                         )
-                                                        
+
                                                         # Track completed tool messages for hint generation
-                                                        completed_tool_messages.append({
-                                                            "id": db_message_id,
-                                                            "content": final_message,
-                                                        })
-                                                    
+                                                        completed_tool_messages.append(
+                                                            {
+                                                                "id": db_message_id,
+                                                                "content": final_message,
+                                                            }
+                                                        )
+
                                                     # Clean up tool call state
-                                                    del tool_calls_dict[chat_id_str][tool_call_id]
-                                                    
+                                                    del tool_calls_dict[chat_id_str][
+                                                        tool_call_id
+                                                    ]
+
                                                 except json.JSONDecodeError as e:
-                                                    logger.error(f"Failed to parse final tool call arguments: {e}")
+                                                    logger.error(
+                                                        f"Failed to parse final tool call arguments: {e}"
+                                                    )
                                                     # Still try to complete with what we have
                                                     if tool_call_state["db_message_id"]:
-                                                        final_message = tool_call_state["message_so_far"]
-                                                        sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
+                                                        final_message = tool_call_state[
+                                                            "message_so_far"
+                                                        ]
+                                                        sql_complete = load_sql(
+                                                            "sql/v3/simulations/complete_message.sql"
+                                                        )
                                                         await conn.execute(
                                                             sql_complete,
                                                             final_message,
-                                                            str(tool_call_state["db_message_id"]),
+                                                            str(
+                                                                tool_call_state[
+                                                                    "db_message_id"
+                                                                ]
+                                                            ),
                                                         )
                                                         await simulation_message_complete(
                                                             SimulationMessageCompletePayload(
-                                                                message_id=str(tool_call_state["db_message_id"]),
+                                                                message_id=str(
+                                                                    tool_call_state[
+                                                                        "db_message_id"
+                                                                    ]
+                                                                ),
                                                                 chat_id=chat_id_str,
                                                                 final_content=final_message,
                                                             ),
                                                             room=f"simulation_{chat_id_uuid}",
                                                         )
-                                                        del tool_calls_dict[chat_id_str][tool_call_id]
-                    
+                                                        del tool_calls_dict[
+                                                            chat_id_str
+                                                        ][tool_call_id]
+
                     except BaseException as stream_error:
                         # Re-raise CancelledError and other BaseExceptions to outer handler
-                        if isinstance(stream_error, (asyncio.CancelledError, KeyboardInterrupt, SystemExit)):
+                        if isinstance(
+                            stream_error,
+                            (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
+                        ):
                             raise
-                        logger.error(f"Error processing stream: {stream_error}", exc_info=True)
+                        logger.error(
+                            f"Error processing stream: {stream_error}", exc_info=True
+                        )
                         raise
                     except Exception as stream_error:
-                        logger.error(f"Error processing stream: {stream_error}", exc_info=True)
+                        logger.error(
+                            f"Error processing stream: {stream_error}", exc_info=True
+                        )
                         raise
                     finally:
                         # Complete any remaining tool calls that weren't completed during streaming
                         # Note: We need to use a fresh connection here since conn might be closed
-                        if chat_id_str in tool_calls_dict and tool_calls_dict[chat_id_str]:
+                        if (
+                            chat_id_str in tool_calls_dict
+                            and tool_calls_dict[chat_id_str]
+                        ):
                             pool = get_pool()
                             if pool:
                                 try:
                                     async with pool.acquire() as cleanup_conn:
-                                        for tool_call_id, tool_call_state in list(tool_calls_dict[chat_id_str].items()):
+                                        for tool_call_id, tool_call_state in list(
+                                            tool_calls_dict[chat_id_str].items()
+                                        ):
                                             try:
-                                                db_message_id = tool_call_state.get("db_message_id")
-                                                if db_message_id and tool_call_state.get("message_so_far"):
-                                                    final_message = tool_call_state["message_so_far"]
-                                                    
+                                                db_message_id = tool_call_state.get(
+                                                    "db_message_id"
+                                                )
+                                                if (
+                                                    db_message_id
+                                                    and tool_call_state.get(
+                                                        "message_so_far"
+                                                    )
+                                                ):
+                                                    final_message = tool_call_state[
+                                                        "message_so_far"
+                                                    ]
+
                                                     # Try to parse final JSON if available
                                                     try:
-                                                        if tool_call_state.get("arguments_raw"):
-                                                            final_args = json.loads(tool_call_state["arguments_raw"])
-                                                            final_message = final_args.get("message", final_message)
+                                                        if tool_call_state.get(
+                                                            "arguments_raw"
+                                                        ):
+                                                            final_args = json.loads(
+                                                                tool_call_state[
+                                                                    "arguments_raw"
+                                                                ]
+                                                            )
+                                                            final_message = (
+                                                                final_args.get(
+                                                                    "message",
+                                                                    final_message,
+                                                                )
+                                                            )
                                                     except json.JSONDecodeError:
                                                         pass  # Use accumulated message
-                                                    
+
                                                     # Update DB
-                                                    sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
-                                                    await cleanup_conn.execute(sql_update, final_message, str(db_message_id))
-                                                    
-                                                    sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-                                                    await cleanup_conn.execute(sql_complete, final_message, str(db_message_id))
-                                                    
+                                                    sql_update = load_sql(
+                                                        "sql/v3/simulations/update_message_content.sql"
+                                                    )
+                                                    await cleanup_conn.execute(
+                                                        sql_update,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
+                                                    sql_complete = load_sql(
+                                                        "sql/v3/simulations/complete_message.sql"
+                                                    )
+                                                    await cleanup_conn.execute(
+                                                        sql_complete,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
                                                     # Emit completion
                                                     await simulation_message_complete(
                                                         SimulationMessageCompletePayload(
-                                                            message_id=str(db_message_id),
+                                                            message_id=str(
+                                                                db_message_id
+                                                            ),
                                                             chat_id=chat_id_str,
                                                             final_content=final_message,
                                                         ),
                                                         room=f"simulation_{chat_id_uuid}",
                                                     )
-                                                    
-                                                    completed_tool_messages.append({
-                                                        "id": db_message_id,
-                                                        "content": final_message,
-                                                    })
+
+                                                    completed_tool_messages.append(
+                                                        {
+                                                            "id": db_message_id,
+                                                            "content": final_message,
+                                                        }
+                                                    )
                                             except Exception as e:
-                                                logger.error(f"Error completing tool call {tool_call_id}: {e}", exc_info=True)
+                                                logger.error(
+                                                    f"Error completing tool call {tool_call_id}: {e}",
+                                                    exc_info=True,
+                                                )
                                 except Exception as e:
-                                    logger.error(f"Error acquiring connection for cleanup: {e}", exc_info=True)
-                            
+                                    logger.error(
+                                        f"Error acquiring connection for cleanup: {e}",
+                                        exc_info=True,
+                                    )
+
                             # Clean up tool call states
                             del tool_calls_dict[chat_id_str]
-                        
+
                         # Clean up active run
-                        from app.utils.websocket.remove_active_run import \
-                            remove_active_run
+                        from app.utils.websocket.remove_active_run import (
+                            remove_active_run,
+                        )
+
                         await remove_active_run(chat_id_str)
 
                     # Update token usage
@@ -2148,14 +2635,18 @@ Tool Usage Instructions:
                 if pool:
                     async with pool.acquire() as conn:
                         # Get run_id from chat_id
-                        sql_get_run = load_sql("sql/v3/simulations/get_latest_run_for_chat.sql")
+                        sql_get_run = load_sql(
+                            "sql/v3/simulations/get_latest_run_for_chat.sql"
+                        )
                         run_row = await conn.fetchrow(
                             sql_get_run,
                             uuid.UUID(chat_id),
                         )
                         if run_row:
                             # Create an error message in the database
-                            sql = load_sql("sql/v3/simulations/insert_error_message.sql")
+                            sql = load_sql(
+                                "sql/v3/simulations/insert_error_message.sql"
+                            )
                             error_message_record = await conn.fetchrow(
                                 sql,
                                 run_row["run_id"],
@@ -2165,17 +2656,23 @@ Tool Usage Instructions:
                             error_message_record = None
 
                         # Emit the error message to clients
-                        if error_message_record and hasattr(error_message_record, 'items'):
+                        if error_message_record and hasattr(
+                            error_message_record, "items"
+                        ):
                             # Convert asyncpg.Record to dict
-                            error_message_dict: dict[str, Any] = {k: v for k, v in error_message_record.items()}
+                            error_message_dict: dict[str, Any] = {
+                                k: v for k, v in error_message_record.items()
+                            }
                             created_at = error_message_dict.get("created_at")
                             created_at_str = (
                                 created_at.isoformat()
                                 if created_at and hasattr(created_at, "isoformat")
-                                else str(created_at) if created_at else ""
+                                else str(created_at)
+                                if created_at
+                                else ""
                             )
                             error_message_id = str(error_message_dict.get("id", ""))
-                            
+
                             await simulation_new_message(
                                 SimulationNewMessagePayload(
                                     message_id=str(error_message_id),

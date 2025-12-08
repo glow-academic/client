@@ -5,7 +5,9 @@ from typing import Any
 from agents.items import TResponseInputItem
 
 
-def format_question_info(questions: list[dict[str, Any]], video_length_seconds: int | None = None) -> tuple[TResponseInputItem, dict[str, str]]:
+def format_question_info(
+    questions: list[dict[str, Any]], video_length_seconds: int | None = None
+) -> tuple[TResponseInputItem, dict[str, str]]:
     """
     Format question information as TResponseInputItem with simple number mapping.
 
@@ -29,16 +31,16 @@ def format_question_info(questions: list[dict[str, Any]], video_length_seconds: 
     # Create mapping from simple numbers (1, 2, 3) to UUIDs
     question_id_mapping: dict[str, str] = {}
     formatted_questions = []
-    
+
     for question_index, question in enumerate(questions, start=1):
         question_id = question.get("id", "")
         allow_multiple = question.get("allow_multiple", False)
         type_label = "Multi-select" if allow_multiple else "Multiple Choice"
-        
+
         # Map simple number to UUID
         simple_id = str(question_index)
         question_id_mapping[simple_id] = question_id
-        
+
         # Display simple number instead of UUID
         question_text = (
             f"Question ID: {simple_id}\n"
@@ -50,7 +52,7 @@ def format_question_info(questions: list[dict[str, Any]], video_length_seconds: 
         "The following are the questions that should be incorporated into the video outline:\n\n"
         + "\n---\n\n".join(formatted_questions)
     )
-    
+
     if video_length_seconds:
         content += (
             f"\n\n**IMPORTANT - Video Length and Timestamps:**\n"
@@ -76,4 +78,3 @@ def format_question_info(questions: list[dict[str, Any]], video_length_seconds: 
         },
         question_id_mapping,
     )
-

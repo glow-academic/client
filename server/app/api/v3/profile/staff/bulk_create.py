@@ -50,10 +50,18 @@ async def bulk_create_profile(
         emails = []
         for p in request.profiles:
             if not p.emails or len(p.emails) == 0:
-                raise HTTPException(status_code=400, detail=f"Profile {p.firstName} {p.lastName} must have at least one email")
-            primary_index = p.primary_email_index if p.primary_email_index is not None else 0
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Profile {p.firstName} {p.lastName} must have at least one email",
+                )
+            primary_index = (
+                p.primary_email_index if p.primary_email_index is not None else 0
+            )
             if primary_index < 0 or primary_index >= len(p.emails):
-                raise HTTPException(status_code=400, detail=f"Invalid primary_email_index for {p.firstName} {p.lastName}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid primary_email_index for {p.firstName} {p.lastName}",
+                )
             emails.append(p.emails[primary_index])
         roles = [p.role for p in request.profiles]
         # Department IDs must be parallel array (use None/null for profiles without departments)
@@ -97,15 +105,25 @@ async def bulk_create_profile(
             for i, profile_req in enumerate(request.profiles):
                 if len(profile_req.emails) > 1:
                     profile_id = profile_ids[i]
-                    primary_index = profile_req.primary_email_index if profile_req.primary_email_index is not None else 0
-                    additional_emails = [e for j, e in enumerate(profile_req.emails) if j != primary_index]
+                    primary_index = (
+                        profile_req.primary_email_index
+                        if profile_req.primary_email_index is not None
+                        else 0
+                    )
+                    additional_emails = [
+                        e
+                        for j, e in enumerate(profile_req.emails)
+                        if j != primary_index
+                    ]
                     if additional_emails:
                         insert_email_sql = """
                             INSERT INTO profile_emails (profile_id, email, is_primary, active)
                             SELECT $1::uuid, unnest($2::text[]), false, true
                             WHERE NOT EXISTS (SELECT 1 FROM profile_emails WHERE email = unnest($2::text[]) AND active = true)
                         """
-                        await conn.execute(insert_email_sql, profile_id, additional_emails)
+                        await conn.execute(
+                            insert_email_sql, profile_id, additional_emails
+                        )
 
         result_data = BulkCreateStaffResponse(
             success=True,

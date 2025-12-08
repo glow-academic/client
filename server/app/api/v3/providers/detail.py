@@ -99,8 +99,12 @@ async def get_provider_detail(
             description=row.get("description", ""),
             value=row.get("value", ""),
             active=row.get("active", False),
-            created_at=row.get("created_at").isoformat() if row.get("created_at") else "",
-            updated_at=row.get("updated_at").isoformat() if row.get("updated_at") else "",
+            created_at=row.get("created_at").isoformat()
+            if row.get("created_at")
+            else "",
+            updated_at=row.get("updated_at").isoformat()
+            if row.get("updated_at")
+            else "",
             base_url=row.get("base_url", ""),
             can_edit=can_edit,
             can_delete=can_delete,
@@ -128,4 +132,3 @@ async def get_provider_detail(
             sql_params=sql_params,
             request=request,
         )
-

@@ -3,7 +3,6 @@ Tests for app.utils.mime.infer_mime_from_name
 """
 
 
-
 class TestInfer_Mime_From_Name:
     """Tests for infer_mime_from_name function."""
 

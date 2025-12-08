@@ -2,9 +2,10 @@
 
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import _voice_message_ids, _voice_sessions, sio
 from app.utils.logging.db_logger import get_logger
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -35,9 +36,7 @@ async def stop_voice_error(payload: StopVoiceErrorPayload, room: str) -> None:
     await sio.emit("stop_voice_error", payload.model_dump(), room=room)
 
 
-async def stop_voice_response(
-    payload: StopVoiceResponsePayload, room: str
-) -> None:
+async def stop_voice_response(payload: StopVoiceResponsePayload, room: str) -> None:
     await sio.emit("stop_voice_response", payload.model_dump(), room=room)
 
 
@@ -89,9 +88,6 @@ async def stop_voice(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in stop_voice for {sid}: {e}")
         await stop_voice_error(
-            StopVoiceErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            StopVoiceErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
-

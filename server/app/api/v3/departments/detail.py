@@ -1,10 +1,12 @@
 """Department detail endpoint - v3 API."""
 
 import json
-import os
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -12,8 +14,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 class DepartmentDetailRequest(BaseModel):
@@ -135,9 +135,7 @@ async def get_department_detail(
                 if isinstance(sdata, dict):
                     department_ids = None
                     if sdata.get("department_ids"):
-                        department_ids = [
-                            str(did) for did in sdata["department_ids"]
-                        ]
+                        department_ids = [str(did) for did in sdata["department_ids"]]
                     settings_mapping[sid] = SettingsMappingItem(
                         settings_id=sdata.get("settings_id", sid),
                         created_at=sdata.get("created_at", ""),

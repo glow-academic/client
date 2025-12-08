@@ -5,12 +5,6 @@ import re
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.main import get_db
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
@@ -18,7 +12,6 @@ from pydantic import BaseModel
 from app.api.v3.attempts.full import (
     AggregatedResults,
     AllSimulationScenarioItem,
-    AttemptItem,
     AttemptProfileItem,
     ChatData,
     ChatItem,
@@ -35,6 +28,12 @@ from app.api.v3.attempts.full import (
     StandardGroupMappingItem,
     TimerItem,
 )
+from app.main import get_db
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
+from app.utils.sql_helper import load_sql
 
 router = APIRouter()
 
@@ -150,11 +149,7 @@ async def get_run_full(
             )
             messages = [MessageItem(**m) for m in chat_data.get("messages", [])]
             hints = [HintsByMessage(**h) for h in chat_data.get("hints", [])]
-            grade = (
-                GradeItem(**chat_data["grade"])
-                if chat_data.get("grade")
-                else None
-            )
+            grade = GradeItem(**chat_data["grade"]) if chat_data.get("grade") else None
             grading_state = (
                 GradingState(**chat_data["gradingState"])
                 if chat_data.get("gradingState")
@@ -268,4 +263,3 @@ async def get_run_full(
             sql_params=sql_params,
             request=http_request,
         )
-

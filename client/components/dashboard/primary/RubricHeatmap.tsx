@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { RubricPicker } from "@/components/common/forms/RubricPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   Card,
   CardContent,
@@ -202,12 +202,18 @@ export default function RubricHeatmap({
                 : "Correlation between skill areas (standard groups)"}
             </CardDescription>
           </div>
-          <RubricPicker
-            mapping={rubricMapping}
-            validIds={validRubricIds}
+          <GenericPicker
+            items={rubricMapping}
+            itemIds={validRubricIds}
             selectedIds={selectedRubrics}
             onSelect={setSelectedRubrics}
+            getId={(rubric) => (rubric as unknown as { id: string }).id}
+            getLabel={(rubric) => rubric.name || ""}
+            getSearchText={(rubric) =>
+              `${rubric.name} ${rubric.description || ""}`
+            }
             placeholder="Filter by rubric..."
+            hideSelectedChips={true}
             buttonClassName={cn(isMobile ? "w-full sm:w-48" : "w-48")}
           />
         </div>
@@ -231,28 +237,28 @@ export default function RubricHeatmap({
                           className={cn(
                             "p-1 h-30 relative",
                             isMobile ? "w-16" : "w-24",
-                            hoveredCell.col === colIndex && "bg-muted", // Highlight on hover
+                            hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
                           )}
                         >
                           {/* Rotated Label */}
                           <div
                             className={cn(
                               "absolute bottom-2 left-1/2 -translate-x-1/2",
-                              isMobile && "bottom-1",
+                              isMobile && "bottom-1"
                             )}
                             style={{ writingMode: "vertical-rl" }}
                           >
                             <span
                               className={cn(
                                 "font-normal text-muted-foreground whitespace-nowrap",
-                                isMobile ? "text-[10px]" : "text-xs",
+                                isMobile ? "text-[10px]" : "text-xs"
                               )}
                             >
                               {group.shortName}
                             </span>
                           </div>
                         </TableHead>
-                      ),
+                      )
                     )}
                   </TableRow>
                 </TableHeader>
@@ -270,7 +276,7 @@ export default function RubricHeatmap({
                           className={cn(
                             "font-medium p-1 text-right text-muted-foreground",
                             isMobile ? "text-[10px]" : "text-xs",
-                            hoveredCell.row === rowIndex && "bg-muted", // Highlight on hover
+                            hoveredCell.row === rowIndex && "bg-muted" // Highlight on hover
                           )}
                         >
                           {group.shortName}
@@ -296,7 +302,7 @@ export default function RubricHeatmap({
                                 key={colIndex}
                                 className={cn(
                                   "text-center p-1",
-                                  isMobile ? "w-12" : "w-20",
+                                  isMobile ? "w-12" : "w-20"
                                 )}
                                 onMouseEnter={() =>
                                   setHoveredThrottled(rowIndex, colIndex)
@@ -310,11 +316,11 @@ export default function RubricHeatmap({
                                           "rounded-sm flex items-center justify-center font-mono",
                                           isMobile
                                             ? "w-12 h-5 text-[10px]"
-                                            : "w-20 h-6 text-xs",
+                                            : "w-20 h-6 text-xs"
                                         )}
                                         style={{
                                           backgroundColor: getCorrelationColor(
-                                            cell.correlation,
+                                            cell.correlation
                                           ),
                                         }}
                                       >
@@ -323,7 +329,7 @@ export default function RubricHeatmap({
                                             "font-semibold",
                                             Math.abs(cell.correlation) >= 0.7
                                               ? "text-white"
-                                              : "text-gray-800",
+                                              : "text-gray-800"
                                           )}
                                         >
                                           {cell.correlation.toFixed(2)}
@@ -349,7 +355,7 @@ export default function RubricHeatmap({
                                       "rounded-sm flex items-center justify-center font-mono",
                                       isMobile
                                         ? "w-12 h-5 text-[10px]"
-                                        : "w-20 h-6 text-xs",
+                                        : "w-20 h-6 text-xs"
                                     )}
                                     style={{ backgroundColor: cell.color }}
                                   >
@@ -358,7 +364,7 @@ export default function RubricHeatmap({
                                         "font-semibold",
                                         Math.abs(cell.correlation) >= 0.7
                                           ? "text-white"
-                                          : "text-gray-800",
+                                          : "text-gray-800"
                                       )}
                                     >
                                       {cell.correlation.toFixed(2)}
@@ -367,10 +373,10 @@ export default function RubricHeatmap({
                                 )}
                               </TableCell>
                             );
-                          },
+                          }
                         )}
                       </TableRow>
-                    ),
+                    )
                   )}
                 </TableBody>
               </Table>

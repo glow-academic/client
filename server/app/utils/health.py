@@ -3,14 +3,13 @@
 import os
 import time
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import asyncpg  # type: ignore
 import httpx  # type: ignore
-from app.main import (TUS_UPLOADS_DIR, get_pool, get_redis_client,
-                      get_sio_instance)
 from fastapi import status  # type: ignore
+
+from app.main import get_pool, get_redis_client, get_sio_instance
 
 
 @dataclass
@@ -114,7 +113,9 @@ async def check_websocket() -> ServiceCheckResult:
         handlers = getattr(sio, "handlers", {})
         if not handlers:
             latency = (time.perf_counter() - start) * 1000
-            return ServiceCheckResult(False, latency, "no websocket handlers registered")
+            return ServiceCheckResult(
+                False, latency, "no websocket handlers registered"
+            )
 
         latency = (time.perf_counter() - start) * 1000
         return ServiceCheckResult(True, latency)
@@ -219,4 +220,3 @@ async def run_service_checks() -> dict[str, ServiceCheckResult]:
         "websocket": websocket,
         "tus": tus,
     }
-

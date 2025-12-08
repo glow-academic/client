@@ -173,7 +173,6 @@ parameter_mapping_data AS (
             jsonb_build_object(
                 'name', lp.parameter_name,
                 'description', lp.parameter_description,
-                'numerical', l,
                 'document_parameter', false,
                 'persona_parameter', true
             )

@@ -87,4 +87,3 @@ async def delete_provider(
             sql_params=sql_params,
             request=http_request,
         )
-

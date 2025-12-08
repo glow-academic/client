@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app.main import get_db, get_pool
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.evals.run_eval_worker import run_eval_parallel, cancel_eval_tasks
+from app.utils.evals.run_eval_worker import run_eval_parallel
 from app.utils.sql_helper import load_sql
 
 
@@ -38,7 +38,7 @@ async def _emit_eval_progress(event_data: dict[str, Any]) -> None:
     """Emit eval progress event via WebSocket."""
     # Import here to avoid circular dependency
     from app.socket.evals.run import eval_progress
-    
+
     await eval_progress(
         {
             "eval_id": event_data.get("eval_id"),
@@ -104,6 +104,7 @@ async def run_eval(
                 except Exception as e:
                     # Log error but don't fail the request
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.error(f"Error running eval {eval_id}: {e}")
 
@@ -135,4 +136,3 @@ async def run_eval(
             sql_params=sql_params,
             request=http_request,
         )
-

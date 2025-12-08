@@ -22,7 +22,7 @@ import type {
   UpdatePersonaOut,
 } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
 import {
@@ -469,9 +469,9 @@ export default function Persona({
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 {formData?.departmentIds !== undefined ? (
-                  <DepartmentPicker
-                    mapping={personaData?.department_mapping || {}}
-                    validIds={personaData?.valid_department_ids || []}
+                  <GenericPicker
+                    items={personaData?.department_mapping || {}}
+                    itemIds={personaData?.valid_department_ids || []}
                     selectedIds={formData.departmentIds || []}
                     onSelect={(ids) =>
                       setFormData((prev) => ({
@@ -479,10 +479,14 @@ export default function Persona({
                         departmentIds: ids,
                       }))
                     }
+                    getId={(dept) => (dept as unknown as { id: string }).id}
+                    getLabel={(dept) => dept.name || ""}
+                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                     placeholder="All Departments"
                     disabled={isReadonly}
                     multiSelect={true}
-                    triggerProps={{ "data-testid": "picker-department" }}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
                   />
                 ) : null}
               </div>

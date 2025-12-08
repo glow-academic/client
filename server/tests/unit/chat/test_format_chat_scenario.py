@@ -3,7 +3,6 @@ Tests for app.utils.chat.format_chat_scenario
 """
 
 
-
 class TestFormat_Chat_Scenario:
     """Tests for format_chat_scenario function."""
 

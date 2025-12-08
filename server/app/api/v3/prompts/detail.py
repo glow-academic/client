@@ -153,8 +153,12 @@ async def get_prompt_detail(
             description=row.get("description"),
             active=row.get("active", False),
             system_prompt=row.get("system_prompt", ""),
-            created_at=row.get("created_at").isoformat() if row.get("created_at") else "",
-            updated_at=row.get("updated_at").isoformat() if row.get("updated_at") else "",
+            created_at=row.get("created_at").isoformat()
+            if row.get("created_at")
+            else "",
+            updated_at=row.get("updated_at").isoformat()
+            if row.get("updated_at")
+            else "",
             department_ids=dept_ids,
             agent_ids=agent_ids,
             persona_ids=persona_ids,
@@ -187,4 +191,3 @@ async def get_prompt_detail(
             sql_params=sql_params,
             request=request,
         )
-

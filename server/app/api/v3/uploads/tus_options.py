@@ -37,4 +37,3 @@ async def tus_options_upload_id(upload_id: str, request: Request) -> Response:
             "Access-Control-Max-Age": "86400",
         }
     )
-

@@ -3,10 +3,11 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -48,9 +49,7 @@ async def _voice_user_message_impl(sid: str, data: VoiceUserMessagePayload) -> N
         chat_id = data.chat_id
         if not chat_id:
             await voice_user_message_error(
-                VoiceUserMessageErrorPayload(
-                    success=False, message="Missing chat_id"
-                ),
+                VoiceUserMessageErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
             )
             return
@@ -163,9 +162,7 @@ async def _voice_user_message_impl(sid: str, data: VoiceUserMessagePayload) -> N
                 simulation_new_message,
             )
 
-            logger.info(
-                f"Emitting user message to room simulation_{chat_id_uuid}"
-            )
+            logger.info(f"Emitting user message to room simulation_{chat_id_uuid}")
             await simulation_new_message(
                 SimulationNewMessagePayload(
                     message_id=str(user_message["id"]),
@@ -202,9 +199,7 @@ async def _voice_user_message_impl(sid: str, data: VoiceUserMessagePayload) -> N
             room=sid,
         )
     except Exception as e:
-        logger.error(
-            f"Error in voice_user_message for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in voice_user_message for {sid}: {str(e)}", exc_info=True)
         await voice_user_message_error(
             VoiceUserMessageErrorPayload(success=False, message=str(e)), room=sid
         )
@@ -224,4 +219,3 @@ async def voice_user_message(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

@@ -5,21 +5,33 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem, DepartmentMapping, DepartmentMappingItem,
-                              DocumentMapping, DocumentMappingItem,
-                              ObjectiveMapping, ObjectiveMappingItem,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              PersonaMapping, PersonaMappingItem,
-                              SimulationMapping, SimulationMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    DocumentMapping,
+    DocumentMappingItem,
+    ObjectiveMapping,
+    ObjectiveMappingItem,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -123,11 +135,11 @@ class ScenarioDetailResponse(BaseModel):
     objective_mapping: ObjectiveMapping
     department_mapping: DepartmentMapping
     problem_statement_mapping: dict[str, ProblemStatementInfo]
-    
+
     # Parameter IDs
     scenario_parameter_ids: list[str]
     valid_parameter_ids: list[str]
-    
+
     # Agent IDs
     scenario_agent_id: str
     image_agent_id: str
@@ -401,8 +413,8 @@ async def get_scenario_detail(
         # Scenarios are immutable once in use (exception to general rule)
         # Also check if default object and user is not superadmin
         can_edit = (
-            not in_use_by_active 
-            and not is_generated 
+            not in_use_by_active
+            and not is_generated
             and not (is_default and not is_superadmin)
         )
         can_duplicate = True
@@ -421,7 +433,7 @@ async def get_scenario_detail(
         valid_document_ids = scenario["valid_document_ids"] or []
         dept_ids_raw = scenario["valid_department_ids"] or []
         dept_ids = [str(did) for did in dept_ids_raw]
-        
+
         # Parse scenario_images from JSONB
         scenario_images_data = parse_jsonb(scenario.get("scenario_images"))
         scenario_images: list[dict[str, Any]] = []
@@ -458,9 +470,7 @@ async def get_scenario_detail(
                         roles=[str(r) for r in roles],
                     )
 
-        valid_agent_ids = [
-            str(aid) for aid in (scenario.get("valid_agent_ids") or [])
-        ]
+        valid_agent_ids = [str(aid) for aid in (scenario.get("valid_agent_ids") or [])]
 
         # Parse scenario_parameter_ids and valid_parameter_ids
         scenario_parameter_ids = scenario.get("parameter_ids") or []
@@ -477,7 +487,9 @@ async def get_scenario_detail(
             problem_statement_id=scenario.get("problem_statement_id"),
             active=scenario["active"],
             generated=is_generated,
-            documents_enabled=scenario.get("documents_enabled", scenario.get("use_documents", False)),  # Backward compatibility
+            documents_enabled=scenario.get(
+                "documents_enabled", scenario.get("use_documents", False)
+            ),  # Backward compatibility
             document_vision_enabled=scenario.get("document_vision_enabled", False),
             objectives_enabled=scenario.get("objectives_enabled", True),
             image_enabled=scenario.get("image_enabled", False),

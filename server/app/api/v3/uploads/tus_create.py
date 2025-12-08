@@ -4,7 +4,6 @@ import base64
 import json
 import os
 import uuid
-from pathlib import Path
 
 from fastapi import APIRouter, Request, Response
 
@@ -99,4 +98,3 @@ async def tus_creation(request: Request) -> Response:
             "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
         },
     )
-

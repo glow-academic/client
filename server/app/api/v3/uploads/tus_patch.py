@@ -59,4 +59,3 @@ async def tus_patch(upload_id: str, request: Request) -> Response:
             "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
         }
     )
-

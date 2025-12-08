@@ -127,4 +127,3 @@ async def test_update_settings_no_existing_active(
     assert new_settings is not None
     assert new_settings["active"] is True
     assert new_settings["primary_color"] == "#FF0000"
-

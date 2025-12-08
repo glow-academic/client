@@ -3,16 +3,21 @@
 import json
 import uuid
 import zipfile
-from pathlib import Path
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from agents import FunctionToolResult, Runner, RunContextWrapper, ToolsToFinalOutputResult, trace
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    trace,
+)
 from agents.items import TResponseInputItem
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 
-from app.main import TUS_UPLOADS_DIR, UPLOAD_FOLDER, classification_results, get_db
+from app.main import TUS_UPLOADS_DIR, classification_results, get_db
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_classification_tools import (
     create_classification_tools,
@@ -140,12 +145,14 @@ async def classify_upload(
         profile_id_uuid = uuid.UUID(request_body.profileId)
         user_dept_rows = await conn.fetch(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true LIMIT 1",
-            profile_id_uuid
+            profile_id_uuid,
         )
         department_id = user_dept_rows[0]["department_id"] if user_dept_rows else None
 
         # Get classification agent context
-        sql_context = load_sql("sql/v3/agents/get_upload_classification_run_context.sql")
+        sql_context = load_sql(
+            "sql/v3/agents/get_upload_classification_run_context.sql"
+        )
         context_row = await conn.fetchrow(
             sql_context,
             department_id,
@@ -176,7 +183,10 @@ async def classify_upload(
         }
 
         # Check rate limit
-        if context["req_per_day"] is not None and context["runs_today_count"] >= context["req_per_day"]:
+        if (
+            context["req_per_day"] is not None
+            and context["runs_today_count"] >= context["req_per_day"]
+        ):
             return ClassifyUploadResponse(
                 success=False,
                 message=f"Daily request limit of {context['req_per_day']} reached. Please try again tomorrow.",
@@ -188,7 +198,7 @@ async def classify_upload(
 
         # Create tool use behavior - allow agent to finish after tool calls
         classification_progress_tracker: dict[str, bool] = {}
-        
+
         def tool_use_behavior(
             tool_context: RunContextWrapper[Any],
             tool_results: list[FunctionToolResult],
@@ -197,7 +207,7 @@ async def classify_upload(
             for result in tool_results:
                 if hasattr(result, "name"):
                     classification_progress_tracker[result.name] = True
-            
+
             # Allow agent to finish after making tool calls
             # The agent will naturally finish when it's done classifying
             return ToolsToFinalOutputResult(is_final_output=False)
@@ -219,7 +229,7 @@ async def classify_upload(
 
         # Format file list for agent input
         file_list_text = "\n".join(
-            [f"{i+1}. {name}" for i, name in enumerate(file_names)]
+            [f"{i + 1}. {name}" for i, name in enumerate(file_names)]
         )
 
         # Format parameter items for agent input
@@ -259,8 +269,10 @@ Use the provided classification tools to indicate which files match each paramet
 
         # Run classification agent
         # Convert to developer message (non-simulation handlers use developer, not user)
-        input_items: list[TResponseInputItem] = [{"role": "developer", "content": agent_input}]  # type: ignore[assignment]
-        
+        input_items: list[TResponseInputItem] = [
+            {"role": "developer", "content": agent_input}
+        ]  # type: ignore[assignment]
+
         # Log system and developer messages for this run
         await log_run_messages(
             conn=conn,
@@ -269,7 +281,7 @@ Use the provided classification tools to indicate which files match each paramet
             input_items=input_items,
             department_id=department_id,
         )
-        
+
         with trace(
             "Classification Agent",
             trace_id=None,
@@ -280,7 +292,7 @@ Use the provided classification tools to indicate which files match each paramet
                 input_items,
                 context=DebugContext(conn=conn, run_id=model_run_id),
             )
-        
+
         # Log assistant message (model output)
         assistant_output = getattr(result, "final_output", None) or ""
         if assistant_output:
@@ -342,4 +354,3 @@ Use the provided classification tools to indicate which files match each paramet
             message=f"Failed to classify upload: {str(e)}",
             suggestedParameterItemIds={},
         )
-

@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper,
-                    ToolsToFinalOutputResult)
+from agents import FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
+
 # Note: Progress checking in tool_use_behavior is synchronous, but storage is async
 # For now, we'll check progress after tool execution completes
 # This is a limitation of the current tool_use_behavior pattern
@@ -33,10 +33,11 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
     ) -> ToolsToFinalOutputResult:
         # Count hint tools that have been called
         hint_tool_count = sum(
-            1 for result in tool_results
+            1
+            for result in tool_results
             if result.tool_name and result.tool_name.startswith("provide_hint_")
         )
-        
+
         all_hints_complete = hint_tool_count >= 3
 
         logger.info(

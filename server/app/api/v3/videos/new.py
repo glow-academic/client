@@ -4,18 +4,25 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              ParameterItemMapping, ParameterMapping,
-                              PersonaMapping, PersonaMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ParameterItemMapping,
+    ParameterMapping,
+    PersonaMapping,
+    PersonaMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -134,9 +141,7 @@ async def get_video_new(
 
     try:
         # Load SQL query
-        sql_query = load_sql(
-            "sql/v3/videos/get_video_new_complete.sql"
-        )
+        sql_query = load_sql("sql/v3/videos/get_video_new_complete.sql")
         sql_params = (request_data.profileId,)
 
         # Execute query
@@ -162,7 +167,9 @@ async def get_video_new(
                     )
 
         # Parse problem_statement_mapping from JSONB
-        problem_statement_mapping_data = parse_jsonb(result.get("problem_statement_mapping"))
+        problem_statement_mapping_data = parse_jsonb(
+            result.get("problem_statement_mapping")
+        )
         problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
         if isinstance(problem_statement_mapping_data, dict):
             for k, v in problem_statement_mapping_data.items():
@@ -219,12 +226,11 @@ async def get_video_new(
                         roles=[str(r) for r in roles],
                     )
 
-        valid_agent_ids = [
-            str(aid) for aid in (result.get("valid_agent_ids") or [])
-        ]
+        valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
 
         # Parse parameter_mapping from JSONB
         from app.utils.schema import ParameterMappingItem
+
         parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
         parameter_mapping: ParameterMapping = {}
         if isinstance(parameter_mapping_data, dict):
@@ -242,6 +248,7 @@ async def get_video_new(
 
         # Parse parameter_item_mapping from JSONB
         from app.utils.schema import ParameterItemMappingItem
+
         parameter_item_mapping_data = parse_jsonb(result.get("parameter_item_mapping"))
         parameter_item_mapping: ParameterItemMapping = {}
         if isinstance(parameter_item_mapping_data, dict):
@@ -379,4 +386,3 @@ async def get_video_new(
             sql_params=sql_params,
             request=request,
         )
-

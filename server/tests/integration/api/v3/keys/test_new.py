@@ -39,4 +39,3 @@ async def test_get_key_new(
     assert isinstance(data["valid_department_ids"], list)
     assert isinstance(data["department_mapping"], dict)
     assert isinstance(data["model_mapping"], dict)
-

@@ -32,9 +32,7 @@ async def test_delete_key(
     assert data["message"] == "Key deleted successfully"
 
     # Verify key was deleted
-    key = await db.fetchrow(
-        "SELECT * FROM keys WHERE id = $1", key_id
-    )
+    key = await db.fetchrow("SELECT * FROM keys WHERE id = $1", key_id)
     assert key is None
 
     # Verify department links were cascade deleted
@@ -60,4 +58,3 @@ async def test_delete_key_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

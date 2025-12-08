@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ParameterPicker } from "@/components/common/forms/ParameterPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -332,9 +332,9 @@ export default function Field({
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             {formData?.departmentIds !== undefined ? (
-              <DepartmentPicker
-                mapping={departmentMapping}
-                validIds={validDepartmentIds}
+              <GenericPicker
+                items={departmentMapping}
+                itemIds={validDepartmentIds}
                 selectedIds={formData.departmentIds || []}
                 onSelect={(ids) =>
                   setFormData((prev) => ({
@@ -342,9 +342,13 @@ export default function Field({
                     departmentIds: ids,
                   }))
                 }
+                getId={(dept) => (dept as unknown as { id: string }).id}
+                getLabel={(dept) => dept.name || ""}
+                getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                 placeholder="All Departments"
                 multiSelect={true}
-                triggerProps={{ "data-testid": "picker-department" }}
+                hideSelectedChips={true}
+                buttonClassName="w-full"
               />
             ) : null}
           </div>

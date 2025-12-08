@@ -49,7 +49,9 @@ async def duplicate_parameter(
             # Duplicate parameter with items and department links in single SQL (DHH style)
             sql_query = load_sql("sql/v3/parameters/duplicate_parameter_complete.sql")
             sql_params = (request.parameterId, request.profileId)
-            new_parameter = await conn.fetchrow(sql_query, request.parameterId, request.profileId)
+            new_parameter = await conn.fetchrow(
+                sql_query, request.parameterId, request.profileId
+            )
 
             if not new_parameter:
                 raise ValueError(f"Parameter not found: {request.parameterId}")

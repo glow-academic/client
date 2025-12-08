@@ -4,10 +4,10 @@ import uuid
 from typing import Any
 
 from agents import Tool, function_tool
+
 from app.main import get_dynamic_document_storage
 from app.utils.logging.db_logger import get_logger
 from app.utils.storage.request_storage import build_storage_key
-from pydantic import Field
 
 logger = get_logger(__name__)
 
@@ -18,7 +18,7 @@ def create_dynamic_document_function(
     primary_id: str | None = None,
 ) -> Tool:
     """Create a function tool for creating dynamic child documents from template parents.
-    
+
     Args:
         group_id: Optional group ID
         profile_id: Profile ID for tenant isolation
@@ -43,14 +43,14 @@ def create_dynamic_document_function(
         """
         if not profile_id or not primary_id:
             return "Error: Storage configuration missing"
-        
+
         storage = get_dynamic_document_storage()
         storage_key = build_storage_key(
             operation_type="dynamic_document",
             profile_id=profile_id,
             primary_id=primary_id,
         )
-        
+
         # Get available templates from storage
         templates = await storage.get(storage_key, "templates")
         if not templates:
@@ -59,7 +59,7 @@ def create_dynamic_document_function(
         # Use the first available template (typically there will be only one)
         parent_template = templates[0]
         parent_document_id = parent_template.get("document_id", "")
-        
+
         if not parent_document_id:
             return "Error: Could not determine parent template document ID."
 
@@ -70,13 +70,15 @@ def create_dynamic_document_function(
         dynamic_documents = await storage.get(storage_key, "dynamic_documents")
         if not dynamic_documents:
             dynamic_documents = []
-        
+
         # Append new document request
-        dynamic_documents.append({
-            "parent_document_id": parent_document_id,
-            "template_args": template_args,
-        })
-        
+        dynamic_documents.append(
+            {
+                "parent_document_id": parent_document_id,
+                "template_args": template_args,
+            }
+        )
+
         # Store updated list
         await storage.set(storage_key, "dynamic_documents", dynamic_documents)
 
@@ -84,7 +86,6 @@ def create_dynamic_document_function(
             f"✓ Queued dynamic document creation: parent={parent_document_id}, "
             f"args={list(template_args.keys())}"
         )
-        return f"Queued dynamic document creation. Child document will be created after scenario generation with provided template values."
+        return "Queued dynamic document creation. Child document will be created after scenario generation with provided template values."
 
     return function_tool(create_document)
-

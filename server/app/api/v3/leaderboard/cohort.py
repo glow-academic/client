@@ -5,17 +5,21 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (ScenarioMapping, ScenarioMappingItem,
-                              SimulationFilter, SimulationMapping)
+from app.utils.schema import (
+    ScenarioMapping,
+    ScenarioMappingItem,
+    SimulationFilter,
+)
 from app.utils.sql_helper import load_sql
 from app.utils.theme.oklch_to_hex import oklch_to_hex
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -32,9 +36,9 @@ class LeaderboardCohortDetailFilters(BaseModel):
 
 
 # Import shared response types from bundle
-from app.api.v3.leaderboard.bundle import (LeaderboardBundleResponse,
-                                           LeaderboardMetric,
-                                           LeaderboardMetrics, LeaderboardRow)
+from app.api.v3.leaderboard.bundle import (
+    LeaderboardBundleResponse,
+)
 
 
 @router.post("/cohort", response_model=LeaderboardBundleResponse)
@@ -134,7 +138,7 @@ async def get_leaderboard_cohort_detail(
                 scenario_mapping_raw = json.loads(scenario_mapping_raw)
             except (json.JSONDecodeError, ValueError):
                 scenario_mapping_raw = {}
-        
+
         if isinstance(scenario_mapping_raw, dict):
             for scenario_id, scenario_data in scenario_mapping_raw.items():
                 if isinstance(scenario_data, dict):
@@ -229,4 +233,3 @@ async def get_leaderboard_cohort_detail(
             sql_params=sql_params,
             request=request,
         )
-

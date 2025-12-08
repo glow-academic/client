@@ -5,11 +5,12 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 import httpx  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
@@ -33,7 +34,7 @@ class EphemeralKeyResponse(BaseModel):
 
 async def _generate_ephemeral_key_internal() -> tuple[str, int]:
     """Internal function to generate ephemeral key using OpenAI REST API.
-    
+
     Returns:
         Tuple of (ephemeral_key, expires_in)
     """
@@ -62,10 +63,10 @@ async def _generate_ephemeral_key_internal() -> tuple[str, int]:
         data = response.json()
         ephemeral_key = data.get("value")
         expires_in = data.get("expires_in", 3600)
-        
+
         if not ephemeral_key:
             raise ValueError("No ephemeral key in response")
-        
+
         return ephemeral_key, expires_in
 
 
@@ -84,9 +85,9 @@ async def generate_ephemeral_key(
 
     try:
         ephemeral_key, expires_in = await _generate_ephemeral_key_internal()
-        
+
         logger.info(f"Generated ephemeral key (expires in {expires_in}s)")
-        
+
         return EphemeralKeyResponse(
             success=True,
             message="Ephemeral key generated successfully",
@@ -109,4 +110,3 @@ async def generate_ephemeral_key(
             status_code=500,
             detail=f"Failed to generate ephemeral key: {str(e)}",
         )
-

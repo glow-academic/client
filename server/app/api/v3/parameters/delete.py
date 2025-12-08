@@ -48,7 +48,9 @@ async def delete_parameter(
             # Delete parameter with usage check in single SQL (DHH style)
             sql_query = load_sql("sql/v3/parameters/delete_parameter_complete.sql")
             sql_params = (request.parameterId, request.profileId)
-            result = await conn.fetchrow(sql_query, request.parameterId, request.profileId)
+            result = await conn.fetchrow(
+                sql_query, request.parameterId, request.profileId
+            )
 
             if not result:
                 raise ValueError(f"Parameter not found: {request.parameterId}")

@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 // RubricPicker is now used in SimulationContentTable, not here
 import { Textarea } from "@/components/ui/textarea";
 
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   SimulationContentTable,
   type ContentItem,
@@ -1426,15 +1426,19 @@ export default function Simulation({
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
               {formData?.departmentIds !== undefined ? (
-                <DepartmentPicker
-                  mapping={simulationData?.department_mapping || {}}
-                  validIds={simulationData?.valid_department_ids || []}
+                <GenericPicker
+                  items={simulationData?.department_mapping || {}}
+                  itemIds={simulationData?.valid_department_ids || []}
                   selectedIds={formData.departmentIds || []}
                   onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                  getId={(dept) => (dept as unknown as { id: string }).id}
+                  getLabel={(dept) => dept.name || ""}
+                  getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                   placeholder="All Departments"
                   disabled={isReadonly}
                   multiSelect={true}
-                  triggerProps={{ "data-testid": "picker-department" }}
+                  hideSelectedChips={true}
+                  buttonClassName="w-full"
                 />
               ) : null}
               {errors.departmentIds && (

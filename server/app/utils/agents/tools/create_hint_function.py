@@ -1,11 +1,10 @@
 """Create a function tool for providing a specific hint."""
 
-
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.utils.logging.db_logger import get_logger
 from app.main import get_hint_storage
+from app.utils.logging.db_logger import get_logger
 from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
@@ -17,7 +16,7 @@ def create_hint_function(
     primary_id: str | None = None,
 ) -> Tool:
     """Create a function tool for providing a specific hint.
-    
+
     Args:
         hint_number: Hint number (1, 2, or 3)
         profile_id: Profile ID for tenant isolation
@@ -48,14 +47,14 @@ def create_hint_function(
         """
         if not profile_id or not primary_id:
             return "Error: Storage configuration missing"
-        
+
         storage = get_hint_storage()
         storage_key = build_storage_key(
             operation_type="hint_generation",
             profile_id=profile_id,
             primary_id=primary_id,
         )
-        
+
         await storage.set(storage_key, f"hint_{hint_number}", hint)
         await storage.set(storage_key, f"hint_{hint_number}_progress", True)
 

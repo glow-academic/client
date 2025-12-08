@@ -19,7 +19,7 @@ async def get_superadmin_email(
     """Get superadmin ID by email."""
     profile_id = await conn.fetchval(
         "SELECT profile_id FROM profile_emails WHERE email = $1 AND active = true",
-        email
+        email,
     )
     if not profile_id:
         raise ValueError(f"Profile with email {email} not found in seed data")

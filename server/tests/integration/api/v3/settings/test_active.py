@@ -89,4 +89,3 @@ async def test_get_active_settings_caching(
     assert response2.headers.get("X-Cache-Hit") == "1"  # Cache hit
     assert response2.headers.get("X-Cache-Tags") == "settings"
     assert response2.json()["settings_id"] == str(settings_id)
-

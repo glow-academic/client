@@ -43,7 +43,9 @@ async def duplicate_agent(
     try:
         sql_query = load_sql("sql/v3/agents/duplicate_agent.sql")
         sql_params = (request.agentId, request.profileId)
-        new_agent_row = await conn.fetchrow(sql_query, request.agentId, request.profileId)
+        new_agent_row = await conn.fetchrow(
+            sql_query, request.agentId, request.profileId
+        )
 
         if not new_agent_row:
             raise HTTPException(status_code=500, detail="Failed to duplicate agent")

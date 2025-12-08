@@ -5,6 +5,9 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -12,8 +15,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import SimulationFilter
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -264,7 +265,9 @@ async def get_pricing_runs(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (model_options_data if isinstance(model_options_data, list) else [])
+            for opt in (
+                model_options_data if isinstance(model_options_data, list) else []
+            )
         ]
 
         profile_options_data = parsed_result.get("profileOptions", [])
@@ -276,7 +279,9 @@ async def get_pricing_runs(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (profile_options_data if isinstance(profile_options_data, list) else [])
+            for opt in (
+                profile_options_data if isinstance(profile_options_data, list) else []
+            )
         ]
 
         actor_options_data = parsed_result.get("actorOptions", [])
@@ -288,7 +293,9 @@ async def get_pricing_runs(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (actor_options_data if isinstance(actor_options_data, list) else [])
+            for opt in (
+                actor_options_data if isinstance(actor_options_data, list) else []
+            )
         ]
 
         # Build model runs list
@@ -403,4 +410,3 @@ async def get_pricing_runs(
             sql_params=sql_params,
             request=request,
         )
-

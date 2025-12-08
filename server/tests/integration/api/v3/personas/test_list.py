@@ -64,7 +64,7 @@ async def test_list_personas_empty(
     await db.execute(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
         "VALUES($1, 'redacted@purdue.edu', true, true)",
-        new_profile_id
+        new_profile_id,
     )
 
     response = await client.post(

@@ -44,4 +44,3 @@ def format_parameter_item_info(
 
 
 __all__ = ["format_parameter_item_info"]
-

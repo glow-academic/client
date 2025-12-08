@@ -15,8 +15,9 @@ from datetime import datetime, timedelta
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from tests.seed_helpers import (get_cs_dept_id,  # type: ignore
-                                get_superadmin_email)
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    )
 
 pytestmark = pytest.mark.asyncio
 
@@ -205,7 +206,9 @@ async def test_history_with_user_provided_filters(
     # Use TA role so profileId filtering works (instructional would set it to None)
     profile_id = await _create_test_profile(db, role="ta")
     cohort_id = await _create_test_cohort(db, "Test Cohort")
-    simulation_id = await _create_test_simulation(db, "Test Simulation", department_id=dept_id)
+    simulation_id = await _create_test_simulation(
+        db, "Test Simulation", department_id=dept_id
+    )
 
     # Link profile to cohort (required for cohort filtering)
     await _link_profile_to_cohort(db, profile_id, cohort_id)
@@ -215,7 +218,9 @@ async def test_history_with_user_provided_filters(
     start_date = datetime(2025, 8, 1, 0, 0, 0)
     end_date = datetime(2025, 11, 1, 23, 59, 59)
     attempt_date = datetime(2025, 9, 15, 12, 0, 0)
-    attempt_id = await _create_test_attempt(db, simulation_id, profile_id, created_at=attempt_date)
+    attempt_id = await _create_test_attempt(
+        db, simulation_id, profile_id, created_at=attempt_date
+    )
 
     # Create a chat
     await _create_test_chat(db, attempt_id, completed=True)
@@ -535,12 +540,20 @@ async def test_history_search_filter(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test search functionality (searches profile name, simulation name, persona names)."""
-    profile1_id = await _create_test_profile(db, role="ta", first_name="John", last_name="Doe")
-    profile2_id = await _create_test_profile(db, role="ta", first_name="Jane", last_name="Smith")
+    profile1_id = await _create_test_profile(
+        db, role="ta", first_name="John", last_name="Doe"
+    )
+    profile2_id = await _create_test_profile(
+        db, role="ta", first_name="Jane", last_name="Smith"
+    )
     dept_id = await get_cs_dept_id(db)
 
-    sim1_id = await _create_test_simulation(db, "Math Simulation", department_id=dept_id)
-    sim2_id = await _create_test_simulation(db, "Science Simulation", department_id=dept_id)
+    sim1_id = await _create_test_simulation(
+        db, "Math Simulation", department_id=dept_id
+    )
+    sim2_id = await _create_test_simulation(
+        db, "Science Simulation", department_id=dept_id
+    )
 
     # Link profiles to cohorts for proper filtering
     cohort1_id = await _create_test_cohort(db, "Cohort 1")
@@ -551,8 +564,12 @@ async def test_history_search_filter(
     await _link_cohort_to_simulation(db, cohort2_id, sim2_id)
 
     attempt_date = datetime.now() - timedelta(days=5)
-    attempt1_id = await _create_test_attempt(db, sim1_id, profile1_id, created_at=attempt_date)
-    attempt2_id = await _create_test_attempt(db, sim2_id, profile2_id, created_at=attempt_date)
+    attempt1_id = await _create_test_attempt(
+        db, sim1_id, profile1_id, created_at=attempt_date
+    )
+    attempt2_id = await _create_test_attempt(
+        db, sim2_id, profile2_id, created_at=attempt_date
+    )
 
     await _create_test_chat(db, attempt1_id, completed=True)
     await _create_test_chat(db, attempt2_id, completed=True)
@@ -630,8 +647,12 @@ async def test_history_profile_ids_filter(
     await _link_cohort_to_simulation(db, cohort2_id, sim_id)
 
     attempt_date = datetime.now() - timedelta(days=5)
-    attempt1_id = await _create_test_attempt(db, sim_id, profile1_id, created_at=attempt_date)
-    attempt2_id = await _create_test_attempt(db, sim_id, profile2_id, created_at=attempt_date)
+    attempt1_id = await _create_test_attempt(
+        db, sim_id, profile1_id, created_at=attempt_date
+    )
+    attempt2_id = await _create_test_attempt(
+        db, sim_id, profile2_id, created_at=attempt_date
+    )
 
     await _create_test_chat(db, attempt1_id, completed=True)
     await _create_test_chat(db, attempt2_id, completed=True)
@@ -676,8 +697,12 @@ async def test_history_simulation_ids_filter(
     sim2_id = await _create_test_simulation(db, "Simulation 2", department_id=dept_id)
 
     attempt_date = datetime.now() - timedelta(days=5)
-    attempt1_id = await _create_test_attempt(db, sim1_id, profile_id, created_at=attempt_date)
-    attempt2_id = await _create_test_attempt(db, sim2_id, profile_id, created_at=attempt_date)
+    attempt1_id = await _create_test_attempt(
+        db, sim1_id, profile_id, created_at=attempt_date
+    )
+    attempt2_id = await _create_test_attempt(
+        db, sim2_id, profile_id, created_at=attempt_date
+    )
 
     await _create_test_chat(db, attempt1_id, completed=True)
     await _create_test_chat(db, attempt2_id, completed=True)
@@ -774,8 +799,12 @@ async def test_history_sorting(
 
     attempt_date1 = datetime.now() - timedelta(days=10)
     attempt_date2 = datetime.now() - timedelta(days=5)
-    attempt1_id = await _create_test_attempt(db, sim1_id, profile_id, created_at=attempt_date1)
-    attempt2_id = await _create_test_attempt(db, sim2_id, profile_id, created_at=attempt_date2)
+    attempt1_id = await _create_test_attempt(
+        db, sim1_id, profile_id, created_at=attempt_date1
+    )
+    attempt2_id = await _create_test_attempt(
+        db, sim2_id, profile_id, created_at=attempt_date2
+    )
 
     await _create_test_chat(db, attempt1_id, completed=True)
     await _create_test_chat(db, attempt2_id, completed=True)
@@ -856,7 +885,9 @@ async def test_history_pagination(
     attempt_ids = []
     for i in range(5):
         attempt_date = datetime.now() - timedelta(days=i)
-        attempt_id = await _create_test_attempt(db, sim_id, profile_id, created_at=attempt_date)
+        attempt_id = await _create_test_attempt(
+            db, sim_id, profile_id, created_at=attempt_date
+        )
         await _create_test_chat(db, attempt_id, completed=True)
         attempt_ids.append(attempt_id)
 
@@ -930,7 +961,7 @@ async def test_history_empty_cohort_ids(
     cohort_id = await _create_test_cohort(db, "Test Cohort")
     await _link_profile_to_cohort(db, profile_id, cohort_id)
     await _link_cohort_to_simulation(db, cohort_id, sim_id)
-    
+
     attempt_id = await _create_test_attempt(db, sim_id, profile_id)
     await _create_test_chat(db, attempt_id, completed=True)
 
@@ -973,7 +1004,7 @@ async def test_history_empty_department_ids(
     cohort_id = await _create_test_cohort(db, "Test Cohort")
     await _link_profile_to_cohort(db, profile_id, cohort_id)
     await _link_cohort_to_simulation(db, cohort_id, sim_id)
-    
+
     attempt_id = await _create_test_attempt(db, sim_id, profile_id)
     await _create_test_chat(db, attempt_id, completed=True)
 
@@ -1015,7 +1046,9 @@ async def test_history_role_based_filtering_ta(
     sim_id = await _create_test_simulation(db, "Test Simulation", department_id=dept_id)
 
     attempt_date = datetime.now() - timedelta(days=5)
-    ta_attempt_id = await _create_test_attempt(db, sim_id, ta_profile_id, created_at=attempt_date)
+    ta_attempt_id = await _create_test_attempt(
+        db, sim_id, ta_profile_id, created_at=attempt_date
+    )
     other_attempt_id = await _create_test_attempt(
         db, sim_id, other_ta_profile_id, created_at=attempt_date
     )
@@ -1069,7 +1102,9 @@ async def test_history_role_based_filtering_instructional(
     await _link_cohort_to_simulation(db, cohort2_id, sim_id)
 
     attempt_date = datetime.now() - timedelta(days=5)
-    ta_attempt_id = await _create_test_attempt(db, sim_id, ta_profile_id, created_at=attempt_date)
+    ta_attempt_id = await _create_test_attempt(
+        db, sim_id, ta_profile_id, created_at=attempt_date
+    )
     instructional_attempt_id = await _create_test_attempt(
         db, sim_id, instructional_profile_id, created_at=attempt_date
     )
@@ -1106,4 +1141,3 @@ async def test_history_role_based_filtering_instructional(
     # Should see both attempts (profileId filtering is ignored for instructional)
     assert ta_attempt_id in attempt_ids
     assert instructional_attempt_id in attempt_ids
-

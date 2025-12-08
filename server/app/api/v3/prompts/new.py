@@ -97,7 +97,9 @@ async def get_prompt_new(
         # Get user role and primary department for default behavior
         user_role = row.get("user_role", "guest")
         is_superadmin = user_role == "superadmin"
-        primary_department_id = row.get("department_id")  # From primary_department_id CTE
+        primary_department_id = row.get(
+            "department_id"
+        )  # From primary_department_id CTE
 
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
@@ -132,8 +134,12 @@ async def get_prompt_new(
             description=row.get("description"),
             active=row.get("active", True),
             system_prompt=row.get("system_prompt", ""),
-            created_at=row.get("created_at").isoformat() if row.get("created_at") else "",
-            updated_at=row.get("updated_at").isoformat() if row.get("updated_at") else "",
+            created_at=row.get("created_at").isoformat()
+            if row.get("created_at")
+            else "",
+            updated_at=row.get("updated_at").isoformat()
+            if row.get("updated_at")
+            else "",
             department_ids=dept_ids or [],
             agent_ids=agent_ids,
             persona_ids=persona_ids,
@@ -166,4 +172,3 @@ async def get_prompt_new(
             sql_params=sql_params,
             request=request,
         )
-

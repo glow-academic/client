@@ -1,6 +1,5 @@
 """Persona search endpoint - v3 API."""
 
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 

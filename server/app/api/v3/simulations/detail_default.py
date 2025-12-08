@@ -5,19 +5,27 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              ScenarioMapping, ScenarioMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    RubricMapping,
+    RubricMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline schemas
@@ -164,9 +172,7 @@ async def get_simulation_new(
 
     try:
         # Load SQL string
-        sql_query = load_sql(
-            "sql/v3/simulations/get_simulation_new_complete.sql"
-        )
+        sql_query = load_sql("sql/v3/simulations/get_simulation_new_complete.sql")
         sql_params = (request_data.profileId,)
 
         # Execute query
@@ -189,7 +195,12 @@ async def get_simulation_new(
         can_duplicate = is_admin
         # Can't delete if can't edit (stricter than can_edit)
         # Also can't delete if practice OR has any cohort links OR not admin
-        can_delete = can_edit and is_admin and not practice_simulation and total_cohort_links == 0
+        can_delete = (
+            can_edit
+            and is_admin
+            and not practice_simulation
+            and total_cohort_links == 0
+        )
 
         # Parse scenarios list from JSONB
         scenarios_list: list[ScenarioInSimulation] = []
@@ -209,7 +220,9 @@ async def get_simulation_new(
                             parameter_item_ids=s_data.get("parameter_item_ids", []),
                             hints_enabled=s_data.get("hints_enabled", False),
                             objectives_enabled=s_data.get("objectives_enabled", True),
-                            image_input_enabled=s_data.get("image_input_enabled", False),
+                            image_input_enabled=s_data.get(
+                                "image_input_enabled", False
+                            ),
                             rubric_id=s_data.get("rubric_id"),
                             time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),
@@ -391,7 +404,7 @@ async def get_simulation_new(
         user_role_from_result = result.get("user_role", "trainee")
         is_superadmin = user_role_from_result == "superadmin"
         primary_department_id = result.get("primary_department_id")
-        
+
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
         # Non-superadmin: [primaryDepartmentId] if available

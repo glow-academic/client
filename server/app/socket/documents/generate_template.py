@@ -7,18 +7,23 @@ from typing import Any
 
 from agents import Runner, trace
 from agents.items import TResponseInputItem
+from pydantic import BaseModel, ValidationError
+
 from app.main import UPLOAD_FOLDER, get_pool, sio
 from app.utils.agents.build_document_agent import build_document_agent
 from app.utils.agents.tools.create_document_tools import (
-    create_document_tools, document_progress, document_results)
+    create_document_tools,
+    document_progress,
+    document_results,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.debug_info import DebugContext
-from app.utils.document.format_document_template_context import \
-    format_document_template_context
+from app.utils.document.format_document_template_context import (
+    format_document_template_context,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -78,14 +83,18 @@ async def document_template_generation_complete(
 async def document_template_generation_error(
     payload: DocumentTemplateGenerationErrorPayload, room: str
 ) -> None:
-    await sio.emit("document_template_generation_error", payload.model_dump(), room=room)
+    await sio.emit(
+        "document_template_generation_error", payload.model_dump(), room=room
+    )
 
 
 async def _generate_document_template_impl(
     sid: str, data: GenerateDocumentTemplatePayload
 ) -> None:
     """Handle document template generation requests via WebSocket."""
-    trace_id = None  # Document agent doesn't use trace_id, but we can generate one if needed
+    trace_id = (
+        None  # Document agent doesn't use trace_id, but we can generate one if needed
+    )
 
     try:
         logger.info(
@@ -262,9 +271,7 @@ async def _generate_document_template_impl(
                         f"{next_allowed_et.strftime('%B %d, %Y')}."
                     )
                 else:
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                    )
+                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                 await document_template_generation_error(
                     DocumentTemplateGenerationErrorPayload(
                         success=False, message=error_message, trace_id=trace_id
@@ -307,7 +314,7 @@ async def _generate_document_template_impl(
                     input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
-            
+
             # Log assistant message (model output)
             assistant_output = getattr(run_result, "final_output", None) or ""
             if assistant_output:
@@ -500,4 +507,3 @@ async def generate_document_template(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

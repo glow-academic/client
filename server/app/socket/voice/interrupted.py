@@ -2,9 +2,10 @@
 
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import _voice_sessions, sio
 from app.utils.logging.db_logger import get_logger
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -23,9 +24,7 @@ async def _voice_interrupted_impl(sid: str, data: VoiceInterruptedPayload) -> No
     We log it for debugging purposes.
     """
     try:
-        logger.debug(
-            f"Received voice_interrupted from {sid} for chat {data.chat_id}"
-        )
+        logger.debug(f"Received voice_interrupted from {sid} for chat {data.chat_id}")
 
         chat_id = data.chat_id
         if not chat_id:
@@ -43,9 +42,7 @@ async def _voice_interrupted_impl(sid: str, data: VoiceInterruptedPayload) -> No
         logger.info(f"Audio interrupted for chat {chat_id}")
 
     except Exception as e:
-        logger.error(
-            f"Error in voice_interrupted for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in voice_interrupted for {sid}: {str(e)}", exc_info=True)
 
 
 @sio.event  # type: ignore
@@ -56,4 +53,3 @@ async def voice_interrupted(sid: str, data: dict[str, Any]) -> None:
         await _voice_interrupted_impl(sid, validated)
     except ValidationError as e:
         logger.error(f"Validation error in voice_interrupted for {sid}: {e}")
-

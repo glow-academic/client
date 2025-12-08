@@ -1,9 +1,9 @@
 """Format document template information for scenario agent input."""
 
-import json
 from typing import Any
 
 from agents.items import TResponseInputItem
+
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -28,35 +28,36 @@ async def format_document_template_info(
     """
     if not document_templates:
         return None
-    
+
     # Store available templates in request-scoped storage if profile_id/primary_id provided
     if profile_id and primary_id:
         from app.main import get_dynamic_document_storage
         from app.utils.storage.request_storage import build_storage_key
-        
+
         storage = get_dynamic_document_storage()
         storage_key = build_storage_key(
             operation_type="dynamic_document",
             profile_id=profile_id,
             primary_id=primary_id,
         )
-        
+
         # Store templates and schemas
         template_schemas = {}
         for template in document_templates:
             document_id = template.get("document_id", "")
             template_args = template.get("template_args", {})
-            
+
             # Parse template_args if it's a string
             if isinstance(template_args, str):
                 try:
                     import json
+
                     template_args = json.loads(template_args)
                 except json.JSONDecodeError:
                     template_args = {}
-            
+
             template_schemas[document_id] = template_args
-        
+
         await storage.set(storage_key, "templates", document_templates)
         await storage.set(storage_key, "template_schemas", template_schemas)
 
@@ -65,19 +66,21 @@ async def format_document_template_info(
         document_id = template.get("document_id", "")
         document_name = template.get("document_name", "Unknown Document")
         template_args = template.get("template_args", {})
-        
+
         # Parse template_args if it's a string
         if isinstance(template_args, str):
             try:
                 template_args = json.loads(template_args)
             except json.JSONDecodeError:
-                logger.warning(f"Failed to parse template_args for document {document_id}")
+                logger.warning(
+                    f"Failed to parse template_args for document {document_id}"
+                )
                 template_args = {}
 
         # Format template schema info
         schema_name = template_args.get("name", "Template")
         fields = template_args.get("fields", [])
-        
+
         # Build field descriptions
         field_descriptions = []
         for field in fields:
@@ -87,16 +90,20 @@ async def format_document_template_info(
             description = field.get("description", "")
             placeholder = field.get("placeholder", "")
             required_str = " (required)" if required else " (optional)"
-            
+
             field_desc = f"  - {field_name}: {field_type}{required_str}"
             if description:
                 field_desc += f"\n    Description: {description}"
             if placeholder:
                 field_desc += f"\n    Example: {placeholder}"
-            
+
             field_descriptions.append(field_desc)
 
-        fields_text = "\n".join(field_descriptions) if field_descriptions else "  (no fields defined)"
+        fields_text = (
+            "\n".join(field_descriptions)
+            if field_descriptions
+            else "  (no fields defined)"
+        )
 
         template_info = f"""Document Template: {document_name}
   Document ID: {document_id}
@@ -122,15 +129,17 @@ async def format_document_template_info(
             field_name = field.get("name", "")
             if field_name:
                 field_names.append(field_name)
-    
-    fields_list = ", ".join(field_names) if field_names else "(see template schema above)"
+
+    fields_list = (
+        ", ".join(field_names) if field_names else "(see template schema above)"
+    )
 
     content = (
         "The following document template is available for dynamic creation. "
         "You can use the create_document tool to create a customized child document "
         "by providing the template argument values directly as individual parameters.\n\n"
-        + "\n".join(formatted_templates) +
-        f"\n\nTo create a dynamic document, call create_document with the individual "
+        + "\n".join(formatted_templates)
+        + f"\n\nTo create a dynamic document, call create_document with the individual "
         f"template argument values. Available arguments:\n{fields_list}\n"
         f"Example: create_document({', '.join([f'{f}=value' for f in field_names[:3]]) if field_names else 'arg1=value1, arg2=value2'})"
     )
@@ -139,4 +148,3 @@ async def format_document_template_info(
         "role": "developer",
         "content": content,
     }
-

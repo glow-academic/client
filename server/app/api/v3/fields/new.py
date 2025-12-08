@@ -143,4 +143,3 @@ async def get_field_new(
             sql_params=sql_params,
             request=http_request,
         )
-

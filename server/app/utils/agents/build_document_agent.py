@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper,
-                    ToolsToFinalOutputResult)
+from agents import FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
+
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_document_tools import document_progress
 from app.utils.logging.db_logger import get_logger
@@ -33,7 +33,7 @@ def build_document_agent(
         template_html_complete = document_progress.get("template_html", False)
         template_schema_complete = document_progress.get("template_schema", False)
         both_complete = template_html_complete and template_schema_complete
-        
+
         logger.info(
             f"Tool use behavior check: template_html={template_html_complete}, "
             f"template_schema={template_schema_complete}, both_complete={both_complete}"
@@ -53,4 +53,3 @@ def build_document_agent(
         parallel_tool_calls=False,
         tool_use_behavior=tool_use_behavior,
     )
-

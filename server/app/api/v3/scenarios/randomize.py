@@ -6,14 +6,16 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
-from app.utils.scenario.generate_problem_statement import \
-    generate_scenario_problem_statement
+from app.utils.scenario.generate_problem_statement import (
+    generate_scenario_problem_statement,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
@@ -73,14 +75,12 @@ async def randomize_scenario_attributes(
     # Step 1: Department selection with fallback logic
     # Track if we should use "all departments" (empty array) vs specific department(s)
     use_all_departments = not department_ids or len(department_ids) == 0
-    
+
     selected_department_id: uuid.UUID | None = None
     if department_ids and len(department_ids) > 0:
         # Use provided departments, randomly pick one
         selected_department_id = random.choice(department_ids)
-        logger.info(
-            f"Using provided department_id: {selected_department_id}"
-        )
+        logger.info(f"Using provided department_id: {selected_department_id}")
     elif profile_id:
         # Get profile's accessible departments
         sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
@@ -88,9 +88,7 @@ async def randomize_scenario_attributes(
         if profile_dept_rows and len(profile_dept_rows) > 0:
             profile_dept_ids = [uuid.UUID(str(row["id"])) for row in profile_dept_rows]
             selected_department_id = random.choice(profile_dept_ids)
-            logger.info(
-                f"Using department_id from profile: {selected_department_id}"
-            )
+            logger.info(f"Using department_id from profile: {selected_department_id}")
     else:
         # Fallback to all active departments
         sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
@@ -98,9 +96,7 @@ async def randomize_scenario_attributes(
         if all_dept_rows and len(all_dept_rows) > 0:
             all_dept_ids = [uuid.UUID(str(row["id"])) for row in all_dept_rows]
             selected_department_id = random.choice(all_dept_ids)
-            logger.info(
-                f"Using first active department: {selected_department_id}"
-            )
+            logger.info(f"Using first active department: {selected_department_id}")
 
     if not selected_department_id:
         raise ValueError(
@@ -110,7 +106,9 @@ async def randomize_scenario_attributes(
     # Step 2: Load randomization data
     # If department_ids was null/empty (all departments), pass empty array to SQL query
     # Otherwise pass the selected department for filtering
-    dept_uuids: list[uuid.UUID] = [] if use_all_departments else [selected_department_id]
+    dept_uuids: list[uuid.UUID] = (
+        [] if use_all_departments else [selected_department_id]
+    )
     sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
     result = await conn.fetchrow(sql, dept_uuids, scenario_id)
 
@@ -173,7 +171,9 @@ async def randomize_scenario_attributes(
     all_parameter_items = []
     for pi in parameter_items_data:
         if "id" not in pi or "parameter_id" not in pi:
-            logger.warning("Skipping parameter item entry missing 'id' or 'parameter_id' field")
+            logger.warning(
+                "Skipping parameter item entry missing 'id' or 'parameter_id' field"
+            )
             continue
         all_parameter_items.append(
             {
@@ -186,7 +186,9 @@ async def randomize_scenario_attributes(
     document_parameter_items_junction = []
     for j in document_parameter_items_data:
         if "document_id" not in j or "parameter_item_id" not in j:
-            logger.warning("Skipping document_parameter_item junction entry missing required fields")
+            logger.warning(
+                "Skipping document_parameter_item junction entry missing required fields"
+            )
             continue
         document_parameter_items_junction.append(
             {
@@ -214,7 +216,7 @@ async def randomize_scenario_attributes(
     scenario_persona_ids: list[uuid.UUID] = []
     # Check if persona is in targets - if so, ignore provided persona_ids and randomize
     should_randomize_persona = not targets or "persona" in [t.lower() for t in targets]
-    
+
     if scenario_id and existing_persona_ids:
         # Use existing persona links from parent - keep all personas (supports multiple agents)
         scenario_persona_ids = [uuid.UUID(p) for p in existing_persona_ids]
@@ -236,7 +238,7 @@ async def randomize_scenario_attributes(
 
     # Get single persona_id for agent calls
     persona_id = scenario_persona_ids[0] if scenario_persona_ids else None
-    
+
     # Step 3.5: Persona parameter selection (when randomizing personas)
     persona_param_ids: list[uuid.UUID] = []
     if not targets or "persona" in [t.lower() for t in targets]:
@@ -257,8 +259,10 @@ async def randomize_scenario_attributes(
     # Step 4: Parameter item selection
     param_ids: list[uuid.UUID] = []
     # Check if parameters is in targets - if so, ignore provided parameter_item_ids and randomize
-    should_randomize_parameters = not targets or "parameters" in [t.lower() for t in targets]
-    
+    should_randomize_parameters = not targets or "parameters" in [
+        t.lower() for t in targets
+    ]
+
     if scenario_id and existing_parameter_item_ids:
         # Use existing parameter item links from parent
         param_ids = [uuid.UUID(p) for p in existing_parameter_item_ids]
@@ -290,8 +294,10 @@ async def randomize_scenario_attributes(
     # Step 5: Document selection (with document_parameter_items junction logic)
     doc_ids: list[uuid.UUID] = []
     # Check if documents is in targets - if so, ignore provided document_ids and randomize
-    should_randomize_documents = not targets or "documents" in [t.lower() for t in targets]
-    
+    should_randomize_documents = not targets or "documents" in [
+        t.lower() for t in targets
+    ]
+
     if scenario_id and existing_document_ids:
         # Use existing document links from parent
         doc_ids = [uuid.UUID(d) for d in existing_document_ids]
@@ -329,9 +335,7 @@ async def randomize_scenario_attributes(
             # Select 1 document from matching documents
             selected_doc = random.choice(matching_documents)
             doc_ids = [selected_doc["id"]]
-            logger.info(
-                f"Selected document via parameter items: {selected_doc['id']}"
-            )
+            logger.info(f"Selected document via parameter items: {selected_doc['id']}")
         elif active_documents:
             # Fallback to random selection from active documents
             logger.info("No documents match parameter items, using random selection")
@@ -340,7 +344,7 @@ async def randomize_scenario_attributes(
             logger.info(f"Randomly selected document: {selected_doc['id']}")
         else:
             logger.info("No active documents found")
-    
+
     # Step 5.5: Document parameter extraction (when randomizing documents)
     document_param_ids: list[uuid.UUID] = []
     if doc_ids and (not targets or "documents" in [t.lower() for t in targets]):
@@ -382,7 +386,9 @@ async def randomize_scenario_attributes(
         sql = load_sql("sql/v3/scenarios/get_scenario_problem_statement_active.sql")
         problem_statement_row = await conn.fetchrow(sql, scenario_id)
         scenario_problem_statement = (
-            problem_statement_row["problem_statement"] if problem_statement_row else None
+            problem_statement_row["problem_statement"]
+            if problem_statement_row
+            else None
         )
 
         # Generate problem statement if missing
@@ -417,7 +423,9 @@ async def randomize_scenario_attributes(
             True,  # generated = True
             True,  # active = True
             parent_scenario_dict.get("objectives_enabled", True),
-            parent_scenario_dict.get("image_enabled", True),  # Use image_enabled, not image_input_enabled
+            parent_scenario_dict.get(
+                "image_enabled", True
+            ),  # Use image_enabled, not image_input_enabled
             parent_scenario_dict.get("scenario_agent_id"),  # Required field
             parent_scenario_dict.get("image_agent_id"),  # Required field
         )
@@ -431,8 +439,8 @@ async def randomize_scenario_attributes(
             sql = load_sql("sql/v3/scenarios/insert_scenario_problem_statement.sql")
             # Ensure we have a valid name - use scenario title if available, otherwise fallback
             problem_statement_name = (
-                scenario_title.strip() 
-                if scenario_title and scenario_title.strip() 
+                scenario_title.strip()
+                if scenario_title and scenario_title.strip()
                 else "Generated Problem Statement"
             )
             await conn.fetchrow(
@@ -442,7 +450,9 @@ async def randomize_scenario_attributes(
                 problem_statement_name,
                 True,  # active = True
             )
-            logger.info(f"Created problem statement for child scenario {child_scenario_id}")
+            logger.info(
+                f"Created problem statement for child scenario {child_scenario_id}"
+            )
 
         # Insert objectives
         if scenario_objectives and parent_scenario_dict.get("objectives_enabled", True):
@@ -470,7 +480,9 @@ async def randomize_scenario_attributes(
         if persona_id:
             sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
             await conn.execute(sql, child_scenario_id, persona_id, True)
-            logger.info(f"Linked persona {persona_id} to child scenario {child_scenario_id}")
+            logger.info(
+                f"Linked persona {persona_id} to child scenario {child_scenario_id}"
+            )
 
         # Link documents
         if doc_ids:
@@ -498,7 +510,9 @@ async def randomize_scenario_attributes(
         )
 
     # Combine all parameter item IDs: general + persona + document
-    all_param_item_ids = list(param_ids) + list(persona_param_ids) + list(document_param_ids)
+    all_param_item_ids = (
+        list(param_ids) + list(persona_param_ids) + list(document_param_ids)
+    )
     # Remove duplicates while preserving order
     seen = set()
     unique_param_item_ids = []
@@ -506,7 +520,7 @@ async def randomize_scenario_attributes(
         if pid not in seen:
             seen.add(pid)
             unique_param_item_ids.append(pid)
-    
+
     return {
         "department_id": selected_department_id,
         "persona_id": persona_id,
@@ -590,7 +604,9 @@ async def randomize_scenario_sections(
             personaIds=suggested_persona_ids,
             documentIds=[str(x) for x in result["document_ids"]],
             parameterItemIds=[str(x) for x in result["parameter_item_ids"]],
-            childScenarioId=str(result["child_scenario_id"]) if result["child_scenario_id"] else None,
+            childScenarioId=str(result["child_scenario_id"])
+            if result["child_scenario_id"]
+            else None,
         )
     except HTTPException:
         raise

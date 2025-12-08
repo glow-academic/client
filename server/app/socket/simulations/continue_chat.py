@@ -2,30 +2,35 @@
 
 import json
 import uuid
-from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.main import get_pool, get_grading_storage, sio
-from app.utils.storage.request_storage import build_storage_key
+from pydantic import BaseModel, ValidationError
+
+from app.main import get_grading_storage, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
-from app.utils.agents.tools.create_safe_field_name import \
-    create_safe_field_name
+from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
+from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
 
@@ -158,7 +163,11 @@ async def _create_chat_for_scenario_inline(
     # Get department_ids from scenario_departments junction table (for better department selection)
     sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
     scenario_dept_rows = await conn.fetch(sql, parent_scenario_id_uuid)
-    scenario_dept_ids = [uuid.UUID(str(row["department_id"])) for row in scenario_dept_rows] if scenario_dept_rows else None
+    scenario_dept_ids = (
+        [uuid.UUID(str(row["department_id"])) for row in scenario_dept_rows]
+        if scenario_dept_rows
+        else None
+    )
 
     # Call randomization function which handles attribute selection and child creation
     randomized_result = await randomize_scenario_attributes(
@@ -533,7 +542,7 @@ async def _run_grade_agent_inline(
             str(agent["id"]),  # agent_id
         )
         model_run_id = uuid.UUID(model_run_row["run_id"])
-        
+
         # Log system and developer messages for this run
         rubric_dev_content = rubric_input["content"]
         time_dev_content = time_message["content"]
@@ -555,7 +564,7 @@ async def _run_grade_agent_inline(
                 input=input_items,
                 context=DebugContext(conn=conn, run_id=model_run_id),
             )
-        
+
         # Log assistant message (model output)
         assistant_output = getattr(result, "final_output", None) or ""
         if assistant_output:
@@ -582,7 +591,7 @@ async def _run_grade_agent_inline(
         profile_id_str = context.get("profile_id")
         if not profile_id_str:
             raise ValueError("Profile ID not found in context")
-        
+
         storage = get_grading_storage()
         storage_key = build_storage_key(
             operation_type="grading",
@@ -787,14 +796,18 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     EndAllStartedPayload(chat_id=chat_id, attempt_id=attempt_id),
                     room=f"simulation_{chat_id}",
                 )
-                logger.info(f"Emitted end_all_started for chat {chat_id}, attempt {attempt_id}")
+                logger.info(
+                    f"Emitted end_all_started for chat {chat_id}, attempt {attempt_id}"
+                )
             else:
                 # If end_all is False, emit end_chat_started event immediately so all watchers see the loading state
                 await end_chat_started(
                     EndChatStartedPayload(chat_id=chat_id, attempt_id=attempt_id),
                     room=f"simulation_{chat_id}",
                 )
-                logger.info(f"Emitted end_chat_started for chat {chat_id}, attempt {attempt_id}")
+                logger.info(
+                    f"Emitted end_chat_started for chat {chat_id}, attempt {attempt_id}"
+                )
 
             simulation_attempt = attempt_with_profile
             profile_id = attempt_with_profile.get("profile_id")
@@ -812,7 +825,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     ),
                     room=sid,
                 )
-                logger.error(f"Emitted error to {sid}: Failed to get run context for chat {chat_id}")
+                logger.error(
+                    f"Emitted error to {sid}: Failed to get run context for chat {chat_id}"
+                )
                 return
 
             # department_id should always be present due to SQL fallback logic
@@ -900,10 +915,13 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
             # Recursively map child scenario ID to root parent ID for comparison with scenario_links (which contain parent IDs)
             current_chat_child_scenario_id = str(chat.get("scenario_id"))
             sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
-            current_chat_parent_row = await conn.fetchrow(sql, current_chat_child_scenario_id)
+            current_chat_parent_row = await conn.fetchrow(
+                sql, current_chat_child_scenario_id
+            )
             current_chat_scenario_id = (
                 str(current_chat_parent_row["root_scenario_id"])
-                if current_chat_parent_row and current_chat_parent_row.get("root_scenario_id")
+                if current_chat_parent_row
+                and current_chat_parent_row.get("root_scenario_id")
                 else current_chat_child_scenario_id
             )
 
@@ -924,10 +942,12 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     for child_id in child_scenario_ids:
                         root_row = await conn.fetchrow(sql, child_id)
                         if root_row and root_row.get("root_scenario_id"):
-                            parent_mappings.append({
-                                "child_id": child_id,
-                                "parent_id": str(root_row["root_scenario_id"])
-                            })
+                            parent_mappings.append(
+                                {
+                                    "child_id": child_id,
+                                    "parent_id": str(root_row["root_scenario_id"]),
+                                }
+                            )
                     # Filter to only include parents that are actually in scenario_links
                     # This prevents excluding scenarios from other simulations/scenarios
                     scenario_links_parent_ids = {
@@ -978,10 +998,13 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     # Recursively map child scenario ID to root parent ID for comparison with scenario_links
                     prev_chat_child_scenario_id = str(prev_chat_info["scenario_id"])
                     sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
-                    prev_chat_parent_row = await conn.fetchrow(sql, prev_chat_child_scenario_id)
+                    prev_chat_parent_row = await conn.fetchrow(
+                        sql, prev_chat_child_scenario_id
+                    )
                     prev_chat_parent_scenario_id = (
                         str(prev_chat_parent_row["root_scenario_id"])
-                        if prev_chat_parent_row and prev_chat_parent_row.get("root_scenario_id")
+                        if prev_chat_parent_row
+                        and prev_chat_parent_row.get("root_scenario_id")
                         else prev_chat_child_scenario_id
                     )
                     scenarios_with_grades_set.add(prev_chat_parent_scenario_id)
@@ -1007,10 +1030,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 # If end_all, mark all remaining incomplete chats as completed
                 if end_all:
                     for existing_chat in existing_chats:
-                        if (
-                            not existing_chat["completed"]
-                            and str(existing_chat["id"]) != str(chat_id)
-                        ):
+                        if not existing_chat["completed"] and str(
+                            existing_chat["id"]
+                        ) != str(chat_id):
                             sql = load_sql(
                                 "sql/v3/simulations/update_chat_completed.sql"
                             )
@@ -1039,10 +1061,12 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                         for child_id in child_scenario_ids:
                             root_row = await conn.fetchrow(sql, child_id)
                             if root_row and root_row.get("root_scenario_id"):
-                                parent_mappings.append({
-                                    "child_id": child_id,
-                                    "parent_id": str(root_row["root_scenario_id"])
-                                })
+                                parent_mappings.append(
+                                    {
+                                        "child_id": child_id,
+                                        "parent_id": str(root_row["root_scenario_id"]),
+                                    }
+                                )
                         # Filter to only include parents that are actually in scenario_links
                         # This prevents excluding scenarios from other simulations/scenarios
                         scenario_links_parent_ids = {
@@ -1079,15 +1103,24 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                                 and prev_chat_info["scenario_id"]
                             ):
                                 # Recursively map child scenario ID to root parent ID for comparison with scenario_links
-                                prev_chat_child_scenario_id = str(prev_chat_info["scenario_id"])
-                                sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
-                                prev_chat_parent_row = await conn.fetchrow(sql, prev_chat_child_scenario_id)
+                                prev_chat_child_scenario_id = str(
+                                    prev_chat_info["scenario_id"]
+                                )
+                                sql = load_sql(
+                                    "sql/v3/scenarios/get_root_scenario_id.sql"
+                                )
+                                prev_chat_parent_row = await conn.fetchrow(
+                                    sql, prev_chat_child_scenario_id
+                                )
                                 prev_chat_parent_scenario_id = (
                                     str(prev_chat_parent_row["root_scenario_id"])
-                                    if prev_chat_parent_row and prev_chat_parent_row.get("root_scenario_id")
+                                    if prev_chat_parent_row
+                                    and prev_chat_parent_row.get("root_scenario_id")
                                     else prev_chat_child_scenario_id
                                 )
-                                scenarios_with_grades_set.add(prev_chat_parent_scenario_id)
+                                scenarios_with_grades_set.add(
+                                    prev_chat_parent_scenario_id
+                                )
                     elif scenario_id_str not in existing_scenario_ids:
                         # Scenario not in map and doesn't have a chat yet = skipped, create new completed chat (no grade)
                         created = await _create_chat_for_scenario_inline(
@@ -1117,7 +1150,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     # Compute last used scenario index to continue from where we left off
                     num_scenarios = len(scenario_links)
                     last_used_index = 0  # Default to start from beginning
-                    
+
                     if num_scenarios > 0 and existing_chats:
                         # Get the most recent chat's scenario
                         # Query for the most recent chat with created_at to get accurate ordering
@@ -1131,30 +1164,37 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                         """
                         most_recent_row = await conn.fetchrow(sql, attempt_id)
                         if most_recent_row:
-                            most_recent_child_scenario_id = str(most_recent_row["scenario_id"])
+                            most_recent_child_scenario_id = str(
+                                most_recent_row["scenario_id"]
+                            )
                         else:
                             most_recent_child_scenario_id = ""
-                        
+
                         if most_recent_child_scenario_id:
                             # Recursively map child scenario ID to root parent scenario ID
                             sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
-                            parent_row = await conn.fetchrow(sql, most_recent_child_scenario_id)
+                            parent_row = await conn.fetchrow(
+                                sql, most_recent_child_scenario_id
+                            )
                             most_recent_parent_id = (
-                                str(parent_row["root_scenario_id"]) 
+                                str(parent_row["root_scenario_id"])
                                 if parent_row and parent_row.get("root_scenario_id")
                                 else most_recent_child_scenario_id
                             )
-                            
+
                             # Find the index of this parent scenario in scenario_links
                             for idx, scenario_link in enumerate(scenario_links):
-                                if str(scenario_link["scenario_id"]) == most_recent_parent_id:
+                                if (
+                                    str(scenario_link["scenario_id"])
+                                    == most_recent_parent_id
+                                ):
                                     last_used_index = idx
                                     break
-                    
+
                     # Start cycling from the next scenario after the last used one
                     # In infinite mode, allow cycling back to the same scenario (especially important for single-scenario simulations)
                     start_index = (last_used_index + 1) % num_scenarios
-                    
+
                     # Cycle through scenarios starting from start_index
                     # In infinite mode, we allow repeating scenarios, so no exclusion check needed
                     for offset in range(num_scenarios):
@@ -1185,7 +1225,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                             and scenario_id_str != current_chat_scenario_id
                             and scenario_id_str not in existing_scenario_ids
                         )
-                    
+
                     if should_create:
                         created_next_chat = await _create_chat_for_scenario_inline(
                             conn,
@@ -1246,10 +1286,13 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     if graded_chat_child_scenario_id:
                         # Recursively map to root parent ID from scenario_tree
                         sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
-                        graded_chat_parent_row = await conn.fetchrow(sql, graded_chat_child_scenario_id)
+                        graded_chat_parent_row = await conn.fetchrow(
+                            sql, graded_chat_child_scenario_id
+                        )
                         graded_chat_parent_scenario_id = (
                             str(graded_chat_parent_row["root_scenario_id"])
-                            if graded_chat_parent_row and graded_chat_parent_row.get("root_scenario_id")
+                            if graded_chat_parent_row
+                            and graded_chat_parent_row.get("root_scenario_id")
                             else graded_chat_child_scenario_id
                         )
                         # Only add if this parent scenario is actually in simulation_scenarios
@@ -1257,7 +1300,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                         if graded_chat_parent_scenario_id in {
                             str(sl["scenario_id"]) for sl in scenario_links
                         }:
-                            scenarios_with_grades_set.add(graded_chat_parent_scenario_id)
+                            scenarios_with_grades_set.add(
+                                graded_chat_parent_scenario_id
+                            )
                         # Recalculate next_index since we now have a new scenario with a grade
                         # This is for consistency and future operations, but shouldn't affect next_chat_id
                         # since it was already created with proper exclusions
@@ -1287,10 +1332,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 }
 
                 for existing_chat in existing_chats:
-                    if (
-                        not existing_chat["completed"]
-                        and str(existing_chat["id"]) != str(chat_id)
-                    ):
+                    if not existing_chat["completed"] and str(
+                        existing_chat["id"]
+                    ) != str(chat_id):
                         other_message_count = message_count_map.get(
                             str(existing_chat["id"]), 0
                         )
@@ -1312,13 +1356,17 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     for offset in range(total_needed):
                         next_id = scenario_links[start_index + offset]["scenario_id"]
                         created = await _create_chat_for_scenario_inline(
-                            conn, str(next_id), attempt_id, profile_id, mark_completed=True
+                            conn,
+                            str(next_id),
+                            attempt_id,
+                            profile_id,
+                            mark_completed=True,
                         )
                         if created is None:
                             break
                         created_chats_count += 1
 
-            # Determine if attempt is finished: ALL parent scenarios from simulation_scenarios 
+            # Determine if attempt is finished: ALL parent scenarios from simulation_scenarios
             # must have at least one graded chat (linked via attempt_chats)
             # This uses simulation_scenarios as the source of truth
             # For infinite mode, attempts never finish (they cycle indefinitely)
@@ -1326,15 +1374,21 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 is_attempt_finished = False
             else:
                 sql = load_sql("sql/v3/simulations/get_scenarios_with_grades.sql")
-                scenarios_with_grades_for_finished_check = await conn.fetch(sql, attempt_id)
+                scenarios_with_grades_for_finished_check = await conn.fetch(
+                    sql, attempt_id
+                )
                 scenarios_with_grades_for_finished = {
-                    str(row["parent_scenario_id"]) for row in scenarios_with_grades_for_finished_check
+                    str(row["parent_scenario_id"])
+                    for row in scenarios_with_grades_for_finished_check
                 }
                 # Check if all parent scenarios from simulation_scenarios have graded chats
-                all_parent_scenario_ids = {str(sl["scenario_id"]) for sl in scenario_links}
-                is_attempt_finished = (
-                    len(all_parent_scenario_ids) > 0 
-                    and all_parent_scenario_ids.issubset(scenarios_with_grades_for_finished)
+                all_parent_scenario_ids = {
+                    str(sl["scenario_id"]) for sl in scenario_links
+                }
+                is_attempt_finished = len(
+                    all_parent_scenario_ids
+                ) > 0 and all_parent_scenario_ids.issubset(
+                    scenarios_with_grades_for_finished
                 )
 
             # Include chats created from previous_chat_map handling
@@ -1369,7 +1423,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     message="Ended all chats for this attempt",
                     chat_id=chat_id,
                     attempt_id=attempt_id,
-                    completed_chat_ids=completed_chat_ids if completed_chat_ids else None,
+                    completed_chat_ids=completed_chat_ids
+                    if completed_chat_ids
+                    else None,
                     next_chat_ids=next_chat_ids if next_chat_ids else None,
                     all_completed=True,
                 )
@@ -1383,9 +1439,15 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     success=True,
                     message="Simulation continued successfully",
                     completed_chat_id=str(result["completed_chat_id"]),
-                    next_chat_id=str(result["next_chat_id"]) if result["next_chat_id"] else None,
-                    is_attempt_finished=bool(result["is_attempt_finished"]) if result["is_attempt_finished"] is not None else None,
-                    simulation_grade_id=str(result["simulation_grade_id"]) if result["simulation_grade_id"] else None,
+                    next_chat_id=str(result["next_chat_id"])
+                    if result["next_chat_id"]
+                    else None,
+                    is_attempt_finished=bool(result["is_attempt_finished"])
+                    if result["is_attempt_finished"] is not None
+                    else None,
+                    simulation_grade_id=str(result["simulation_grade_id"])
+                    if result["simulation_grade_id"]
+                    else None,
                 )
                 # Emit to requester
                 await simulation_continued(continued_payload, room=sid)
@@ -1416,7 +1478,9 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
         validated = ContinueSimulationPayload(**data)
         await _continue_simulation_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in continue_simulation for {sid}: {e}", exc_info=True)
+        logger.error(
+            f"Validation error in continue_simulation for {sid}: {e}", exc_info=True
+        )
         await continue_simulation_error(
             ContinueSimulationErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
@@ -1424,7 +1488,10 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
             room=sid,
         )
     except Exception as e:
-        logger.error(f"Unexpected error in continue_simulation wrapper for {sid}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Unexpected error in continue_simulation wrapper for {sid}: {str(e)}",
+            exc_info=True,
+        )
         await continue_simulation_error(
             ContinueSimulationErrorPayload(
                 success=False, message=f"Unexpected error: {str(e)}"

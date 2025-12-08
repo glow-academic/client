@@ -5,8 +5,8 @@ import uuid
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.utils.logging.db_logger import get_logger
 from app.main import get_scenario_storage
+from app.utils.logging.db_logger import get_logger
 from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
@@ -18,7 +18,7 @@ def create_title_description_function(
     primary_id: str | None = None,
 ) -> Tool:
     """Create a function tool for setting scenario title and description.
-    
+
     Args:
         group_id: Optional group ID
         profile_id: Profile ID for tenant isolation
@@ -52,14 +52,14 @@ def create_title_description_function(
         if not profile_id or not primary_id:
             logger.error("profile_id and primary_id required for storage")
             return "Error: Storage configuration missing"
-        
+
         storage = get_scenario_storage()
         storage_key = build_storage_key(
             operation_type="scenario_generation",
             profile_id=profile_id,
             primary_id=primary_id,
         )
-        
+
         await storage.set(storage_key, "title", title)
         await storage.set(storage_key, "description", scenario)
         await storage.set(storage_key, "title_description_progress", True)

@@ -129,9 +129,7 @@ async def test_connect_profile_takeover(
     assert result is True
 
     # Verify old socket was disconnected
-    [
-        call for call in mock_sio.emitted_events if call[0] == "disconnect"
-    ]
+    [call for call in mock_sio.emitted_events if call[0] == "disconnect"]
     # Note: disconnect is called via sio.disconnect() which may not emit events
     # Instead verify new socket owns the profile
     assert new_sid in mock_sio.rooms.get(profile_id, set())
@@ -165,7 +163,7 @@ async def test_connect_guest_profile_id_resolution(
     await db.execute(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
         "VALUES($1, 'redacted@purdue.edu', true, true)",
-        guest_id
+        guest_id,
     )
 
     sid = "test_sid_guest"

@@ -138,8 +138,12 @@ async def get_key_detail(
             key_masked=row.get("key_masked", "****"),
             type=row.get("type", "api"),
             active=row.get("active", False),
-            created_at=row.get("created_at").isoformat() if row.get("created_at") else "",
-            updated_at=row.get("updated_at").isoformat() if row.get("updated_at") else "",
+            created_at=row.get("created_at").isoformat()
+            if row.get("created_at")
+            else "",
+            updated_at=row.get("updated_at").isoformat()
+            if row.get("updated_at")
+            else "",
             department_ids=dept_ids,
             model_ids=model_ids,
             valid_department_ids=valid_department_ids,
@@ -170,4 +174,3 @@ async def get_key_detail(
             sql_params=sql_params,
             request=request,
         )
-

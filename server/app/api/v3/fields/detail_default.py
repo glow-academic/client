@@ -1,13 +1,15 @@
 """Field detail default endpoint for edit mode."""
 
+from typing import Annotated
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, Request, Response
+
 from app.api.v3.fields.detail import (
     FieldDetailRequest,
     FieldDetailResponse,
     get_field_detail,
 )
-from fastapi import APIRouter, Depends, Request, Response
-from typing import Annotated
-import asyncpg  # type: ignore
 from app.main import get_db
 
 router = APIRouter()
@@ -23,4 +25,3 @@ async def get_field_detail_default(
     """Get default field detail for edit mode (same as detail)."""
     # For fields, detail_default is the same as detail
     return await get_field_detail(request, http_request, response, conn)
-

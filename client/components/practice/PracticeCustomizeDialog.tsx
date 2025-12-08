@@ -1,7 +1,9 @@
 "use client";
 
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { Brain, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
 import {
@@ -198,13 +200,18 @@ export function PracticeCustomizeDialog({
                 data-testid="practice-department-picker"
               >
                 <Label>Department</Label>
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={validDepartmentIds}
+                <GenericPicker
+                  items={departmentMapping}
+                  itemIds={validDepartmentIds}
                   selectedIds={selectedDepartmentIds}
                   onSelect={setSelectedDepartmentIds}
+                  getId={(dept) => (dept as unknown as { id: string }).id}
+                  getLabel={(dept) => dept.name || ""}
+                  getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
                   multiSelect={false}
                   placeholder="Select department (optional)"
+                  hideSelectedChips={true}
+                  buttonClassName="w-full"
                 />
               </div>
             )}

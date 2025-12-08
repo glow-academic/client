@@ -71,7 +71,15 @@ async def update_prompt(
 
             # Update prompt with department links
             sql_query = load_sql("sql/v3/prompts/update_prompt.sql")
-            sql_params = (request.promptId, request.name, request.description, request.system_prompt, request.active, department_ids, request.profileId)
+            sql_params = (
+                request.promptId,
+                request.name,
+                request.description,
+                request.system_prompt,
+                request.active,
+                department_ids,
+                request.profileId,
+            )
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
@@ -103,4 +111,3 @@ async def update_prompt(
             sql_params=sql_params,
             request=http_request,
         )
-

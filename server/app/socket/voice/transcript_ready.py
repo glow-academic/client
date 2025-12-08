@@ -3,10 +3,11 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, get_voice_speech_timestamps, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -182,12 +183,13 @@ async def _voice_transcript_ready_impl(
 
             # Emit user message to connected clients (same pattern as voice_user_message.py)
             from app.socket.simulations.send_message import (
-                MessageSentPayload, SimulationNewMessagePayload, message_sent,
-                simulation_new_message)
-
-            logger.info(
-                f"Emitting user message to room simulation_{chat_id_uuid}"
+                MessageSentPayload,
+                SimulationNewMessagePayload,
+                message_sent,
+                simulation_new_message,
             )
+
+            logger.info(f"Emitting user message to room simulation_{chat_id_uuid}")
             await simulation_new_message(
                 SimulationNewMessagePayload(
                     message_id=str(user_message["id"]),

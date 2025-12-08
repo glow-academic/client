@@ -4,19 +4,27 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (CohortMapping, CohortMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              PersonaMapping, PersonaMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              ScenarioMapping, ScenarioMappingItem)
+from app.utils.schema import (
+    CohortMapping,
+    CohortMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+    RubricMapping,
+    RubricMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -117,7 +125,9 @@ async def get_simulations_list(
                         persona_mapping_raw = sdata.get("persona_mapping", {})
                         if isinstance(persona_mapping_raw, str):
                             persona_mapping_raw = json.loads(persona_mapping_raw)
-                        if persona_mapping_raw and isinstance(persona_mapping_raw, dict):
+                        if persona_mapping_raw and isinstance(
+                            persona_mapping_raw, dict
+                        ):
                             for pid, pdata in persona_mapping_raw.items():
                                 if isinstance(pdata, dict):
                                     persona_mapping_parsed[pid] = PersonaMappingItem(
@@ -209,7 +219,9 @@ async def get_simulations_list(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
             filters.profileId,
         )
-        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+        user_department_ids = {
+            str(row["department_id"]) for row in user_department_rows
+        }
 
         # Build facet options
         rubric_options = [

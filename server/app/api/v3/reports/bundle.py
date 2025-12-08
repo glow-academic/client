@@ -4,20 +4,27 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.api.v3.reports.export import router as export_router
 from app.main import get_db
 from app.utils.analytics_query_builder import (
-    build_base_filter, build_profile_and_analytics_filters)
+    build_profile_and_analytics_filters,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (MetricResponse, ScenarioMapping,
-                              ScenarioMappingItem, SimulationFilter,
-                              SimulationMapping, SimulationMappingItem)
+from app.utils.schema import (
+    MetricResponse,
+    ScenarioMapping,
+    ScenarioMappingItem,
+    SimulationFilter,
+    SimulationMapping,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 router.include_router(export_router)
@@ -106,10 +113,10 @@ async def get_reports(
 ) -> ReportsBundleResponse:
     """Get reports bundle with aggregated metrics per profile and entity mappings."""
     tags = ["reports"]  # From router tags
-    
+
     # Check for cache bypass header (for hard refresh)
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
@@ -158,7 +165,7 @@ async def get_reports(
         # Build ORDER BY clause
         sort_by = filters.sortBy or "averageScore"
         sort_order = (filters.sortOrder or "desc").upper()
-        
+
         # Map sortBy to actual column names
         sort_column_map = {
             "averageScore": "avg_score",
@@ -173,13 +180,13 @@ async def get_reports(
             "totalAttempts": "total_attempts",
             "profileName": "LOWER(first_name || ' ' || last_name)",
         }
-        
+
         sort_column = sort_column_map.get(sort_by, "avg_score")
         # Add NULLS LAST to ensure NULL values (shown as "N/A" in UI) are sorted to the end
         order_by_clause = f"ORDER BY {sort_column} {sort_order} NULLS LAST"
         # Also need ORDER BY in json_agg to preserve sort order
         json_agg_order_by = f"ORDER BY {sort_column} {sort_order} NULLS LAST"
-        
+
         # Build LIMIT/OFFSET clause
         page = filters.page or 0
         page_size = filters.pageSize or 100
@@ -226,7 +233,9 @@ async def get_reports(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (profile_options_data if isinstance(profile_options_data, list) else [])
+            for opt in (
+                profile_options_data if isinstance(profile_options_data, list) else []
+            )
         ]
 
         simulation_options_data = parsed_result.get("simulationOptions", [])
@@ -238,7 +247,11 @@ async def get_reports(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (simulation_options_data if isinstance(simulation_options_data, list) else [])
+            for opt in (
+                simulation_options_data
+                if isinstance(simulation_options_data, list)
+                else []
+            )
         ]
 
         scenario_options_data = parsed_result.get("scenarioOptions", [])
@@ -250,7 +263,9 @@ async def get_reports(
                 label=opt.get("label", ""),
                 count=opt.get("count", 0),
             )
-            for opt in (scenario_options_data if isinstance(scenario_options_data, list) else [])
+            for opt in (
+                scenario_options_data if isinstance(scenario_options_data, list) else []
+            )
         ]
 
         # Parse scenario mapping from JSONB (replicate v2 logic)

@@ -86,4 +86,3 @@ async def delete_video(
             sql_params=sql_params,
             request=http_request,
         )
-

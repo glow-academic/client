@@ -142,7 +142,7 @@ async def get_logs_bundle(
 
         # Parse health KPIs
         health_kpis_data = parsed_result.get("health_kpis", {})
-        
+
         def parse_health_kpi(kpi_data: dict[str, Any]) -> HealthKPI:
             """Parse a single health KPI with proper trend data."""
             trend_data = kpi_data.get("trend", [])
@@ -151,14 +151,14 @@ async def get_logs_bundle(
             if not isinstance(trend_data, list):
                 trend_data = []
             trend = [TrendData(**item) for item in trend_data if isinstance(item, dict)]
-            
+
             return HealthKPI(
                 ok=kpi_data.get("ok", False),
                 latency_ms=kpi_data.get("latency_ms", 0.0),
                 error=kpi_data.get("error", ""),
                 trend=trend,
             )
-        
+
         health_kpis = HealthKPIs(
             websocket=parse_health_kpi(health_kpis_data.get("websocket", {})),
             redis=parse_health_kpi(health_kpis_data.get("redis", {})),
@@ -172,7 +172,8 @@ async def get_logs_bundle(
         if isinstance(metrics_data, str):
             metrics_data = json.loads(metrics_data)
         metrics = [
-            MetricsDataPoint(**item) for item in (metrics_data if isinstance(metrics_data, list) else [])
+            MetricsDataPoint(**item)
+            for item in (metrics_data if isinstance(metrics_data, list) else [])
         ]
 
         # Parse feedback
@@ -180,7 +181,8 @@ async def get_logs_bundle(
         if isinstance(feedback_data, str):
             feedback_data = json.loads(feedback_data)
         feedback = [
-            FeedbackItem(**item) for item in (feedback_data if isinstance(feedback_data, list) else [])
+            FeedbackItem(**item)
+            for item in (feedback_data if isinstance(feedback_data, list) else [])
         ]
 
         # Build response
@@ -212,4 +214,3 @@ async def get_logs_bundle(
             sql_params=sql_params,
             request=http_request,
         )
-

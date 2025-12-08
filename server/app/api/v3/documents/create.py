@@ -5,12 +5,13 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -78,11 +79,13 @@ async def create_document(
         sql_params = (
             document_id,
             request_body.name,
-            request_body.description or '',
+            request_body.description or "",
             uuid.UUID(request_body.uploadId) if request_body.uploadId else None,
             dept_uuids,
             param_item_uuids,
-            uuid.UUID(request_body.templateUploadId) if request_body.templateUploadId else None,
+            uuid.UUID(request_body.templateUploadId)
+            if request_body.templateUploadId
+            else None,
             template_args_jsonb,
             param_ids,
         )
@@ -111,4 +114,3 @@ async def create_document(
             sql_params=sql_params,
             request=request,
         )
-

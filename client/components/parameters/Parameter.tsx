@@ -10,9 +10,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { DocumentPicker } from "@/components/common/forms/DocumentPicker";
-import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { Brain, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   ParameterFieldsTable,
   type FieldConnectionItem,
@@ -721,9 +723,9 @@ export default function Parameter({
               <div className="space-y-2">
                 <Label>Departments</Label>
                 {formData?.departmentIds !== undefined ? (
-                  <DepartmentPicker
-                    mapping={departmentMapping}
-                    validIds={validDepartmentIds}
+                  <GenericPicker
+                    items={departmentMapping}
+                    itemIds={validDepartmentIds}
                     selectedIds={formData.departmentIds || []}
                     onSelect={(ids) =>
                       setFormData((prev) => ({
@@ -731,8 +733,14 @@ export default function Parameter({
                         departmentIds: ids.length > 0 ? ids : null,
                       }))
                     }
+                    getId={(dept) => (dept as unknown as { id: string }).id}
+                    getLabel={(dept) => dept.name || ""}
+                    getSearchText={(dept) =>
+                      `${dept.name} ${dept.description || ""}`
+                    }
                     placeholder="All Departments"
                     multiSelect={true}
+                    hideSelectedChips={true}
                     disabled={
                       !!(
                         isEditMode &&
@@ -740,6 +748,7 @@ export default function Parameter({
                         !parameterDetail.can_edit
                       )
                     }
+                    buttonClassName="w-full"
                   />
                 ) : null}
                 <p className="text-xs text-muted-foreground">
@@ -787,8 +796,8 @@ export default function Parameter({
               <div className="space-y-2">
                 <Label>Link to Personas</Label>
                 {formData?.personaIds !== undefined ? (
-                  <PersonaPicker
-                    mapping={
+                  <GenericPicker
+                    items={
                       filteredPersonaMapping as Record<
                         string,
                         {
@@ -800,7 +809,7 @@ export default function Parameter({
                         }
                       >
                     }
-                    validIds={filteredPersonaIds}
+                    itemIds={filteredPersonaIds}
                     selectedIds={formData.personaIds}
                     onSelect={(ids) =>
                       setFormData((prev) => ({
@@ -808,8 +817,104 @@ export default function Parameter({
                         personaIds: ids,
                       }))
                     }
+                    getId={(persona) => (persona as unknown as { id: string }).id}
+                    getLabel={(persona) => persona.name || ""}
+                    getSearchText={(persona) => `${persona.name} ${persona.description || ""}`}
+                    renderItem={(persona, isSelected) => {
+                      const IconComponent = getPersonaIconComponent(persona.icon) || Brain;
+                      const hexColor = persona.color || "#64748b";
+                      const generateGradient = (hex: string) => {
+                        const cleanHex = hex.replace("#", "");
+                        const r = parseInt(cleanHex.substr(0, 2), 16);
+                        const g = parseInt(cleanHex.substr(2, 2), 16);
+                        const b = parseInt(cleanHex.substr(4, 2), 16);
+                        const lighterR = Math.min(255, r + 60);
+                        const lighterG = Math.min(255, g + 60);
+                        const lighterB = Math.min(255, b + 60);
+                        const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                        return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                      };
+                      return (
+                        <div className="flex items-center gap-3 w-full">
+                          <div
+                            className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                            style={{
+                              background: generateGradient(hexColor),
+                            }}
+                          >
+                            <IconComponent className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{persona.name}</div>
+                            {persona.description && (
+                              <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                {persona.description}
+                              </div>
+                            )}
+                          </div>
+                          <Check
+                            className={cn(
+                              "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
+                              isSelected ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                        </div>
+                      );
+                    }}
+                    renderButton={(selectedItems, placeholder) => {
+                      if (selectedItems.length === 0) return placeholder;
+                      if (selectedItems.length === 1) {
+                        const persona = selectedItems[0];
+                        const IconComponent = getPersonaIconComponent(persona?.icon) || Brain;
+                        const hexColor = persona?.color || "#64748b";
+                        const generateGradient = (hex: string) => {
+                          const cleanHex = hex.replace("#", "");
+                          const r = parseInt(cleanHex.substr(0, 2), 16);
+                          const g = parseInt(cleanHex.substr(2, 2), 16);
+                          const b = parseInt(cleanHex.substr(4, 2), 16);
+                          const lighterR = Math.min(255, r + 60);
+                          const lighterG = Math.min(255, g + 60);
+                          const lighterB = Math.min(255, b + 60);
+                          const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                          return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                        };
+                        return (
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div
+                              className="p-1 rounded-md shadow-sm flex-shrink-0"
+                              style={{
+                                background: generateGradient(hexColor),
+                              }}
+                            >
+                              <IconComponent className="h-3.5 w-3.5 text-white" />
+                            </div>
+                            <span className="truncate">{persona?.name || placeholder}</span>
+                          </div>
+                        );
+                      }
+                      return `${selectedItems.length} selected`;
+                    }}
+                    renderChip={(persona, onRemove) => (
+                      <div
+                        key={(persona as unknown as { id: string }).id}
+                        className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
+                      >
+                        <span className="truncate">{persona.name}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove((persona as unknown as { id: string }).id);
+                          }}
+                          className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
                     placeholder="Select personas..."
                     multiSelect={true}
+                    hideSelectedChips={false}
                     disabled={
                       !!(
                         isEditMode &&
@@ -817,6 +922,8 @@ export default function Parameter({
                         !parameterDetail.can_edit
                       )
                     }
+                    buttonClassName="w-full"
+                    groupHeading="Personas"
                   />
                 ) : null}
                 <p className="text-xs text-muted-foreground">

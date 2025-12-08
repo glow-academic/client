@@ -42,10 +42,13 @@ This test file covers the core business logic for continuing simulation attempts
 
 import asyncpg  # type: ignore
 import pytest
-from app.socket.simulations.continue_chat import continue_simulation
 from tests.integration.socket.conftest import MockSocketIO
-from tests.seed_helpers import get_cs_dept_id  # type: ignore
-from tests.seed_helpers import get_superadmin_alias
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,
+)
+
+from app.socket.simulations.continue_chat import continue_simulation
 
 pytestmark = pytest.mark.asyncio
 
@@ -93,7 +96,11 @@ async def test_continue_simulation_missing_attempt_id(
     assert len(error_events) >= 1
     # Check message in either 'message' field or error details
     message = error_events[0].get("message", "") or str(error_events[0])
-    assert "attempt_id" in message.lower() or "missing" in message.lower() or "required" in message.lower()
+    assert (
+        "attempt_id" in message.lower()
+        or "missing" in message.lower()
+        or "required" in message.lower()
+    )
 
 
 async def test_continue_simulation_chat_not_found(
@@ -171,13 +178,13 @@ async def _create_test_simulation_with_scenarios(
     num_scenarios: int = 3,
 ) -> tuple[str, list[str]]:
     """Create a test simulation with multiple scenarios.
-    
+
     Returns:
         Tuple of (simulation_id, list of parent scenario IDs in order)
     """
     profile_id = await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
-    
+
     # Create rubric
     rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")
     if not rubric_id:
@@ -185,14 +192,13 @@ async def _create_test_simulation_with_scenarios(
             "INSERT INTO rubrics(name, description, points, pass_points, active) "
             "VALUES ('Test Rubric', 'Test', 100, 70, true) RETURNING id"
         )
-    
+
     # Create parent scenarios
     parent_scenario_ids = []
     for i in range(num_scenarios):
         scenario_id = await db.fetchval(
-            "INSERT INTO scenarios(name, active) "
-            "VALUES ($1, true) RETURNING id",
-            f"Test Scenario {i+1}",
+            "INSERT INTO scenarios(name, active) VALUES ($1, true) RETURNING id",
+            f"Test Scenario {i + 1}",
         )
         # Create self-referencing entry in scenario_tree (parent = child)
         await db.execute(
@@ -200,14 +206,14 @@ async def _create_test_simulation_with_scenarios(
             scenario_id,
         )
         parent_scenario_ids.append(str(scenario_id))
-    
+
     # Create simulation
     simulation_id = await db.fetchval(
         "INSERT INTO simulations(title, description, rubric_id, active, practice_simulation) "
         "VALUES ('Test Simulation', 'Test', $1, true, false) RETURNING id",
         rubric_id,
     )
-    
+
     # Link simulation to department
     await db.execute(
         "INSERT INTO simulation_departments(simulation_id, department_id, active) "
@@ -215,7 +221,7 @@ async def _create_test_simulation_with_scenarios(
         simulation_id,
         dept_id,
     )
-    
+
     # Link scenarios to simulation via simulation_scenarios (source of truth)
     for idx, scenario_id in enumerate(parent_scenario_ids):
         await db.execute(
@@ -225,7 +231,7 @@ async def _create_test_simulation_with_scenarios(
             scenario_id,
             idx + 1,  # position starts at 1
         )
-    
+
     return (str(simulation_id), parent_scenario_ids)
 
 
@@ -235,16 +241,15 @@ async def _create_test_attempt(
     profile_id: str,
 ) -> str:
     """Create a test simulation attempt.
-    
+
     Note: simulation_attempts table doesn't have an 'active' column.
     The 'active' flag is managed via attempt_profiles junction table.
     """
     attempt_id = await db.fetchval(
-        "INSERT INTO simulation_attempts(simulation_id) "
-        "VALUES ($1) RETURNING id",
+        "INSERT INTO simulation_attempts(simulation_id) VALUES ($1) RETURNING id",
         simulation_id,
     )
-    
+
     # Link profile to attempt via junction table (this has the 'active' flag)
     await db.execute(
         "INSERT INTO attempt_profiles(attempt_id, profile_id, active) "
@@ -252,7 +257,7 @@ async def _create_test_attempt(
         attempt_id,
         profile_id,
     )
-    
+
     return str(attempt_id)
 
 
@@ -264,14 +269,14 @@ async def _create_test_chat(
     num_messages: int = 0,
 ) -> str:
     """Create a test simulation chat linked to an attempt.
-    
+
     Args:
         db: Database connection
         scenario_id: Scenario ID (can be parent or child)
         attempt_id: Attempt ID to link chat to
         completed: Whether chat is marked as completed
         num_messages: Number of messages to create in the chat
-    
+
     Returns:
         Chat ID as string
     """
@@ -283,24 +288,24 @@ async def _create_test_chat(
         completed,
         "test-trace-id",
     )
-    
+
     # Link chat to attempt via junction table
     await db.execute(
         "INSERT INTO attempt_chats(attempt_id, chat_id) VALUES ($1, $2)",
         attempt_id,
         chat_id,
     )
-    
+
     # Create messages if requested
     for i in range(num_messages):
         await db.execute(
             "INSERT INTO simulation_messages(chat_id, content, type, completed) "
             "VALUES ($1, $2, $3, true)",
             chat_id,
-            f"Test message {i+1}",
+            f"Test message {i + 1}",
             "query" if i % 2 == 0 else "response",
         )
-    
+
     return str(chat_id)
 
 
@@ -335,14 +340,14 @@ async def _create_child_scenario(
         "INSERT INTO scenarios(name, active) VALUES ($1, true) RETURNING id",
         name,
     )
-    
+
     # Link child to parent in scenario_tree
     await db.execute(
         "INSERT INTO scenario_tree(parent_id, child_id, active) VALUES ($1, $2, true)",
         parent_scenario_id,
         child_id,
     )
-    
+
     return str(child_id)
 
 
@@ -355,7 +360,7 @@ async def test_continue_simulation_creates_next_chat(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test that continue_simulation creates the next chat in sequence.
-    
+
     Business Logic:
     - When ending a chat, the system should create a new chat for the next scenario
     - Next scenario is determined by `simulation_scenarios.position`
@@ -364,27 +369,29 @@ async def test_continue_simulation_creates_next_chat(
     profile_id = await get_superadmin_alias(db)
     simulation_id, scenario_ids = await _create_test_simulation_with_scenarios(db, 3)
     attempt_id = await _create_test_attempt(db, simulation_id, profile_id)
-    
+
     # Create first chat for scenario 1 with messages
     # Note: We create it as incomplete first, then mark as completed after grading
     # to avoid triggering automatic grading in continue_simulation
     chat1_id = await _create_test_chat(
         db, scenario_ids[0], attempt_id, completed=False, num_messages=5
     )
-    
+
     # Get rubric for grading
-    rubric_id = await db.fetchval("SELECT rubric_id FROM simulations WHERE id = $1", simulation_id)
-    
+    rubric_id = await db.fetchval(
+        "SELECT rubric_id FROM simulations WHERE id = $1", simulation_id
+    )
+
     # Grade the first chat
     await _create_test_grade(db, chat1_id, rubric_id)
-    
+
     # Mark chat as completed after grading (this way continue_simulation won't try to grade it)
     await db.execute(
         "UPDATE simulation_chats SET completed = true WHERE id = $1", chat1_id
     )
-    
+
     mock_sio.clear()
-    
+
     # Continue simulation - should create chat for scenario 2
     sid = "test_sid_123"
     await continue_simulation(
@@ -394,15 +401,17 @@ async def test_continue_simulation_creates_next_chat(
             "attempt_id": attempt_id,
         },
     )
-    
+
     # Verify success event
     continued_events = mock_sio.get_events("simulation_continued")
     assert len(continued_events) == 1
     assert continued_events[0]["success"] is True
     assert continued_events[0]["completed_chat_id"] == chat1_id
     assert continued_events[0]["next_chat_id"] is not None
-    assert continued_events[0]["is_attempt_finished"] is False  # Only 1 of 3 scenarios done
-    
+    assert (
+        continued_events[0]["is_attempt_finished"] is False
+    )  # Only 1 of 3 scenarios done
+
     # Verify new chat was created and linked to attempt
     next_chat_id = continued_events[0]["next_chat_id"]
     chat_row = await db.fetchrow(
@@ -420,7 +429,7 @@ async def test_continue_simulation_with_previous_chat_id(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test reusing a chat from a previous attempt via `previous_chat_id`.
-    
+
     Business Logic:
     - `previous_chat_id` allows reusing a chat from a previous attempt
     - The old chat is linked to the new attempt via `attempt_chats` junction table
@@ -429,24 +438,26 @@ async def test_continue_simulation_with_previous_chat_id(
     """
     profile_id = await get_superadmin_alias(db)
     simulation_id, scenario_ids = await _create_test_simulation_with_scenarios(db, 2)
-    
+
     # Create first attempt with first scenario
     attempt1_id = await _create_test_attempt(db, simulation_id, profile_id)
     chat1_id = await _create_test_chat(
         db, scenario_ids[0], attempt1_id, completed=True, num_messages=5
     )
-    rubric_id = await db.fetchval("SELECT rubric_id FROM simulations WHERE id = $1", simulation_id)
+    rubric_id = await db.fetchval(
+        "SELECT rubric_id FROM simulations WHERE id = $1", simulation_id
+    )
     await _create_test_grade(db, chat1_id, rubric_id)
-    
+
     # Create second attempt
     attempt2_id = await _create_test_attempt(db, simulation_id, profile_id)
     chat2_id = await _create_test_chat(
         db, scenario_ids[0], attempt2_id, completed=True, num_messages=3
     )
     await _create_test_grade(db, chat2_id, rubric_id)
-    
+
     mock_sio.clear()
-    
+
     # Continue second attempt, reusing chat1 from first attempt for scenario 2
     sid = "test_sid_123"
     await continue_simulation(
@@ -457,12 +468,12 @@ async def test_continue_simulation_with_previous_chat_id(
             "previous_chat_id": chat1_id,  # Reuse chat from attempt1
         },
     )
-    
+
     # Verify success
     continued_events = mock_sio.get_events("simulation_continued")
     assert len(continued_events) == 1
     assert continued_events[0]["success"] is True
-    
+
     # Verify that chat1 is now linked to attempt2
     link_row = await db.fetchrow(
         "SELECT * FROM attempt_chats WHERE attempt_id = $1 AND chat_id = $2",
@@ -470,9 +481,11 @@ async def test_continue_simulation_with_previous_chat_id(
         chat1_id,
     )
     assert link_row is not None
-    
+
     # Verify the reused chat is for scenario 2
-    chat_row = await db.fetchrow("SELECT scenario_id FROM simulation_chats WHERE id = $1", chat1_id)
+    chat_row = await db.fetchrow(
+        "SELECT scenario_id FROM simulation_chats WHERE id = $1", chat1_id
+    )
     assert str(chat_row["scenario_id"]) == scenario_ids[1]
 
 
@@ -480,7 +493,7 @@ async def test_continue_simulation_with_previous_chat_map(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test reusing multiple chats from previous attempts via `previous_chat_map`.
-    
+
     Business Logic:
     - `previous_chat_map` maps scenario IDs to chat IDs that should be reused
     - Allows reusing multiple chats at once when continuing an attempt
@@ -488,24 +501,28 @@ async def test_continue_simulation_with_previous_chat_map(
     """
     profile_id = await get_superadmin_alias(db)
     simulation_id, scenario_ids = await _create_test_simulation_with_scenarios(db, 3)
-    
+
     # Create first attempt with all scenarios
     attempt1_id = await _create_test_attempt(db, simulation_id, profile_id)
     chat1_id = await _create_test_chat(db, scenario_ids[0], attempt1_id, completed=True)
     chat2_id = await _create_test_chat(db, scenario_ids[1], attempt1_id, completed=True)
     chat3_id = await _create_test_chat(db, scenario_ids[2], attempt1_id, completed=True)
-    rubric_id = await db.fetchval("SELECT rubric_id FROM simulations WHERE id = $1", simulation_id)
+    rubric_id = await db.fetchval(
+        "SELECT rubric_id FROM simulations WHERE id = $1", simulation_id
+    )
     await _create_test_grade(db, chat1_id, rubric_id)
     await _create_test_grade(db, chat2_id, rubric_id)
     await _create_test_grade(db, chat3_id, rubric_id)
-    
+
     # Create second attempt
     attempt2_id = await _create_test_attempt(db, simulation_id, profile_id)
-    new_chat1_id = await _create_test_chat(db, scenario_ids[0], attempt2_id, completed=True)
+    new_chat1_id = await _create_test_chat(
+        db, scenario_ids[0], attempt2_id, completed=True
+    )
     await _create_test_grade(db, new_chat1_id, rubric_id)
-    
+
     mock_sio.clear()
-    
+
     # Continue second attempt, reusing chats 2 and 3 from attempt1
     sid = "test_sid_123"
     await continue_simulation(
@@ -519,12 +536,12 @@ async def test_continue_simulation_with_previous_chat_map(
             },
         },
     )
-    
+
     # Verify success
     continued_events = mock_sio.get_events("simulation_continued")
     assert len(continued_events) == 1
     assert continued_events[0]["success"] is True
-    
+
     # Verify both chats are linked to attempt2
     link2 = await db.fetchrow(
         "SELECT * FROM attempt_chats WHERE attempt_id = $1 AND chat_id = $2",
@@ -544,7 +561,7 @@ async def test_continue_simulation_attempt_completion_logic(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test that attempt completion is determined correctly.
-    
+
     Business Logic:
     - An attempt is finished when ALL parent scenarios from `simulation_scenarios`
       have at least one graded chat
@@ -554,18 +571,20 @@ async def test_continue_simulation_attempt_completion_logic(
     profile_id = await get_superadmin_alias(db)
     simulation_id, scenario_ids = await _create_test_simulation_with_scenarios(db, 3)
     attempt_id = await _create_test_attempt(db, simulation_id, profile_id)
-    rubric_id = await db.fetchval("SELECT rubric_id FROM simulations WHERE id = $1", simulation_id)
-    
+    rubric_id = await db.fetchval(
+        "SELECT rubric_id FROM simulations WHERE id = $1", simulation_id
+    )
+
     # Complete and grade scenario 1
     chat1_id = await _create_test_chat(db, scenario_ids[0], attempt_id, completed=True)
     await _create_test_grade(db, chat1_id, rubric_id)
-    
+
     # Complete and grade scenario 2
     chat2_id = await _create_test_chat(db, scenario_ids[1], attempt_id, completed=True)
     await _create_test_grade(db, chat2_id, rubric_id)
-    
+
     mock_sio.clear()
-    
+
     # Continue - should create chat for scenario 3, attempt not finished yet
     await continue_simulation(
         sid := "test_sid_123",
@@ -574,20 +593,22 @@ async def test_continue_simulation_attempt_completion_logic(
             "attempt_id": attempt_id,
         },
     )
-    
+
     continued_events = mock_sio.get_events("simulation_continued")
     assert len(continued_events) == 1
-    assert continued_events[0]["is_attempt_finished"] is False  # Scenario 3 not done yet
-    
+    assert (
+        continued_events[0]["is_attempt_finished"] is False
+    )  # Scenario 3 not done yet
+
     # Complete and grade scenario 3
     chat3_id = continued_events[0]["next_chat_id"]
     await db.execute(
         "UPDATE simulation_chats SET completed = true WHERE id = $1", chat3_id
     )
     await _create_test_grade(db, chat3_id, rubric_id)
-    
+
     mock_sio.clear()
-    
+
     # Continue again - attempt should now be finished
     await continue_simulation(
         sid,
@@ -596,7 +617,7 @@ async def test_continue_simulation_attempt_completion_logic(
             "attempt_id": attempt_id,
         },
     )
-    
+
     continued_events = mock_sio.get_events("simulation_continued")
     assert len(continued_events) == 1
     assert continued_events[0]["is_attempt_finished"] is True  # All scenarios done
@@ -606,7 +627,7 @@ async def test_continue_simulation_with_child_scenario_grades(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test that child scenario grades are correctly mapped to parent scenarios.
-    
+
     Business Logic:
     - A parent scenario is considered complete if ANY of its child variants has a grade
     - Uses `scenario_tree` to map child scenario IDs to parent IDs
@@ -615,17 +636,23 @@ async def test_continue_simulation_with_child_scenario_grades(
     profile_id = await get_superadmin_alias(db)
     simulation_id, scenario_ids = await _create_test_simulation_with_scenarios(db, 2)
     attempt_id = await _create_test_attempt(db, simulation_id, profile_id)
-    rubric_id = await db.fetchval("SELECT rubric_id FROM simulations WHERE id = $1", simulation_id)
-    
+    rubric_id = await db.fetchval(
+        "SELECT rubric_id FROM simulations WHERE id = $1", simulation_id
+    )
+
     # Create a child scenario variant for scenario 1
-    child_scenario_id = await _create_child_scenario(db, scenario_ids[0], "Child Variant")
-    
+    child_scenario_id = await _create_child_scenario(
+        db, scenario_ids[0], "Child Variant"
+    )
+
     # Create chat with child scenario and grade it
-    child_chat_id = await _create_test_chat(db, child_scenario_id, attempt_id, completed=True)
+    child_chat_id = await _create_test_chat(
+        db, child_scenario_id, attempt_id, completed=True
+    )
     await _create_test_grade(db, child_chat_id, rubric_id)
-    
+
     mock_sio.clear()
-    
+
     # Continue - should recognize scenario 1 as complete (via child grade)
     # and create chat for scenario 2
     await continue_simulation(
@@ -635,12 +662,12 @@ async def test_continue_simulation_with_child_scenario_grades(
             "attempt_id": attempt_id,
         },
     )
-    
+
     continued_events = mock_sio.get_events("simulation_continued")
     assert len(continued_events) == 1
     assert continued_events[0]["success"] is True
     assert continued_events[0]["next_chat_id"] is not None
-    
+
     # Verify new chat is for scenario 2 (parent)
     next_chat_id = continued_events[0]["next_chat_id"]
     next_chat_row = await db.fetchrow(
@@ -653,7 +680,7 @@ async def test_continue_simulation_advancing_chat_logic(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test that advancing chats (0 messages, completed, no grade) are created correctly.
-    
+
     Business Logic:
     - When user presses "end session" without completing a chat, system creates
       an advancing chat: 0 messages, marked as completed, but no grade
@@ -664,14 +691,16 @@ async def test_continue_simulation_advancing_chat_logic(
     profile_id = await get_superadmin_alias(db)
     simulation_id, scenario_ids = await _create_test_simulation_with_scenarios(db, 2)
     attempt_id = await _create_test_attempt(db, simulation_id, profile_id)
-    rubric_id = await db.fetchval("SELECT rubric_id FROM simulations WHERE id = $1", simulation_id)
-    
+    rubric_id = await db.fetchval(
+        "SELECT rubric_id FROM simulations WHERE id = $1", simulation_id
+    )
+
     # Create first chat with grade
     chat1_id = await _create_test_chat(db, scenario_ids[0], attempt_id, completed=True)
     await _create_test_grade(db, chat1_id, rubric_id)
-    
+
     mock_sio.clear()
-    
+
     # Continue - creates advancing chat for scenario 2 (no messages, completed, no grade)
     await continue_simulation(
         sid := "test_sid_123",
@@ -680,31 +709,32 @@ async def test_continue_simulation_advancing_chat_logic(
             "attempt_id": attempt_id,
         },
     )
-    
+
     continued_events = mock_sio.get_events("simulation_continued")
     assert len(continued_events) == 1
     advancing_chat_id = continued_events[0]["next_chat_id"]
-    
+
     # Verify advancing chat properties
     advancing_chat = await db.fetchrow(
-        "SELECT completed, scenario_id FROM simulation_chats WHERE id = $1", advancing_chat_id
+        "SELECT completed, scenario_id FROM simulation_chats WHERE id = $1",
+        advancing_chat_id,
     )
     assert advancing_chat["completed"] is True
     assert str(advancing_chat["scenario_id"]) == scenario_ids[1]
-    
+
     # Verify no messages in advancing chat
     message_count = await db.fetchval(
         "SELECT COUNT(*) FROM simulation_messages WHERE chat_id = $1", advancing_chat_id
     )
     assert message_count == 0
-    
+
     # Verify no grade for advancing chat
     grade_count = await db.fetchval(
         "SELECT COUNT(*) FROM simulation_chat_grades WHERE simulation_chat_id = $1",
         advancing_chat_id,
     )
     assert grade_count == 0
-    
+
     # Verify advancing chat is linked to attempt
     link = await db.fetchrow(
         "SELECT * FROM attempt_chats WHERE attempt_id = $1 AND chat_id = $2",
@@ -718,7 +748,7 @@ async def test_continue_simulation_end_all_flag(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test that `end_all` flag properly ends all remaining chats.
-    
+
     Business Logic:
     - `end_all=True` creates advancing chats for all remaining incomplete scenarios
     - All created chats are marked as completed but have no grades
@@ -727,14 +757,16 @@ async def test_continue_simulation_end_all_flag(
     profile_id = await get_superadmin_alias(db)
     simulation_id, scenario_ids = await _create_test_simulation_with_scenarios(db, 3)
     attempt_id = await _create_test_attempt(db, simulation_id, profile_id)
-    rubric_id = await db.fetchval("SELECT rubric_id FROM simulations WHERE id = $1", simulation_id)
-    
+    rubric_id = await db.fetchval(
+        "SELECT rubric_id FROM simulations WHERE id = $1", simulation_id
+    )
+
     # Complete and grade scenario 1
     chat1_id = await _create_test_chat(db, scenario_ids[0], attempt_id, completed=True)
     await _create_test_grade(db, chat1_id, rubric_id)
-    
+
     mock_sio.clear()
-    
+
     # End all - should create advancing chats for scenarios 2 and 3
     await continue_simulation(
         sid := "test_sid_123",
@@ -744,25 +776,25 @@ async def test_continue_simulation_end_all_flag(
             "end_all": True,
         },
     )
-    
+
     # Verify end_all_completed event
     end_all_events = mock_sio.get_events("end_all_completed")
     assert len(end_all_events) == 1
     assert end_all_events[0]["success"] is True
     assert end_all_events[0]["all_completed"] is True
-    
+
     # Verify advancing chats were created for scenarios 2 and 3
     next_chat_ids = end_all_events[0]["next_chat_ids"]
     assert len(next_chat_ids) == 2
     assert None not in next_chat_ids
-    
+
     # Verify both advancing chats are completed but have no grades
     for next_chat_id in next_chat_ids:
         chat = await db.fetchrow(
             "SELECT completed FROM simulation_chats WHERE id = $1", next_chat_id
         )
         assert chat["completed"] is True
-        
+
         grade_count = await db.fetchval(
             "SELECT COUNT(*) FROM simulation_chat_grades WHERE simulation_chat_id = $1",
             next_chat_id,

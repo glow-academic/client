@@ -3,12 +3,15 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import _voice_message_ids, get_pool, sio
-from app.socket.simulations.send_message import (SimulationRunCompletePayload,
-                                                 simulation_run_complete)
+from app.socket.simulations.send_message import (
+    SimulationRunCompletePayload,
+    simulation_run_complete,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -24,9 +27,7 @@ class VoiceResponseDonePayload(BaseModel):
     usage: dict[str, Any]
 
 
-async def _voice_response_done_impl(
-    sid: str, data: VoiceResponseDonePayload
-) -> None:
+async def _voice_response_done_impl(sid: str, data: VoiceResponseDonePayload) -> None:
     """Handle response.done event from Realtime API.
 
     Creates runs for accumulated message IDs and tracks token usage with separate
@@ -51,7 +52,7 @@ async def _voice_response_done_impl(
 
         # Get accumulated message IDs for this chat
         message_ids = _voice_message_ids.get(chat_id, [])
-        
+
         # Process message IDs if any exist (for run creation)
         if message_ids:
             logger.info(
@@ -72,8 +73,8 @@ async def _voice_response_done_impl(
 
                 # Extract required fields from context
                 department_id_str = context_row.get("department_id")
-                model_id_str = (
-                    context_row.get("voice_model_id") or context_row.get("model_id")
+                model_id_str = context_row.get("voice_model_id") or context_row.get(
+                    "model_id"
                 )
                 voice_agent_id_str = context_row.get("voice_agent_id")
                 profile_id_str = context_row.get("profile_id")
@@ -94,7 +95,9 @@ async def _voice_response_done_impl(
                         uuid.UUID(str(profile_id_str)) if profile_id_str else None
                     )
                     voice_agent_id_uuid = (
-                        uuid.UUID(str(voice_agent_id_str)) if voice_agent_id_str else None
+                        uuid.UUID(str(voice_agent_id_str))
+                        if voice_agent_id_str
+                        else None
                     )
                 except (ValueError, TypeError) as e:
                     logger.error(f"Invalid UUID format: {e}")
@@ -103,7 +106,9 @@ async def _voice_response_done_impl(
                     return
 
                 if not voice_agent_id_uuid:
-                    logger.error(f"Missing voice_agent_id in context for chat {chat_id}")
+                    logger.error(
+                        f"Missing voice_agent_id in context for chat {chat_id}"
+                    )
                     if chat_id in _voice_message_ids:
                         del _voice_message_ids[chat_id]
                     return
@@ -217,7 +222,9 @@ async def _voice_response_done_impl(
 
                 first_persona_id = None
                 for persona_row in persona_rows:
-                    persona_id_val = persona_row.get("persona_id") or persona_row.get("id")
+                    persona_id_val = persona_row.get("persona_id") or persona_row.get(
+                        "id"
+                    )
                     if persona_id_val:
                         try:
                             first_persona_id = uuid.UUID(str(persona_id_val))
@@ -248,8 +255,12 @@ async def _voice_response_done_impl(
                 cached_audio_tokens = cached_token_details.get("audio_tokens", 0) or 0
 
                 # Create a run for each message ID
-                sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
-                sql_link_message = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                sql_create_run = load_sql(
+                    "sql/v3/model_runs/create_model_run_complete.sql"
+                )
+                sql_link_message = load_sql(
+                    "sql/v3/simulations/link_message_to_run.sql"
+                )
                 sql_update_tokens = load_sql(
                     "sql/v3/model_runs/update_model_run_tokens_audio_text_image.sql"
                 )
@@ -357,9 +368,7 @@ async def _voice_response_done_impl(
         )
 
     except Exception as e:
-        logger.error(
-            f"Error in voice_response_done for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in voice_response_done for {sid}: {str(e)}", exc_info=True)
         # Clear accumulator on error to prevent stale data
         if chat_id in _voice_message_ids:
             del _voice_message_ids[chat_id]
@@ -386,4 +395,3 @@ async def voice_response_done(sid: str, data: dict[str, Any]) -> None:
         await _voice_response_done_impl(sid, validated)
     except ValidationError as e:
         logger.error(f"Validation error in voice_response_done for {sid}: {e}")
-

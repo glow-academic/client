@@ -21,7 +21,9 @@ class CreateStaffRequest(BaseModel):
     firstName: str
     lastName: str
     emails: list[str]  # List of emails (first one will be set as primary)
-    primary_email_index: int | None = None  # Index in emails array for primary (defaults to 0)
+    primary_email_index: int | None = (
+        None  # Index in emails array for primary (defaults to 0)
+    )
     role: str
     primary_department_id: str | None = None
 
@@ -50,13 +52,19 @@ async def create_profile(
 
         # Validate emails array
         if not request.emails or len(request.emails) == 0:
-            raise HTTPException(status_code=400, detail="At least one email is required")
+            raise HTTPException(
+                status_code=400, detail="At least one email is required"
+            )
 
         # Determine primary email index (default to 0)
-        primary_index = request.primary_email_index if request.primary_email_index is not None else 0
+        primary_index = (
+            request.primary_email_index
+            if request.primary_email_index is not None
+            else 0
+        )
         if primary_index < 0 or primary_index >= len(request.emails):
             raise HTTPException(status_code=400, detail="Invalid primary_email_index")
-        
+
         primary_email = request.emails[primary_index]
 
         # Single consolidated query: validates email, creates profile, and inserts department
@@ -99,7 +107,9 @@ async def create_profile(
                     WHERE NOT EXISTS (SELECT 1 FROM profile_emails WHERE email = unnest($2::text[]) AND active = true)
                 """
                 # Get all emails except the primary one
-                additional_emails = [e for i, e in enumerate(request.emails) if i != primary_index]
+                additional_emails = [
+                    e for i, e in enumerate(request.emails) if i != primary_index
+                ]
                 if additional_emails:
                     await conn.execute(insert_email_sql, profile_id, additional_emails)
 

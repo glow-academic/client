@@ -3,9 +3,10 @@
 import datetime
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_voice_speech_timestamps, sio
 from app.utils.logging.db_logger import get_logger
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -26,9 +27,7 @@ async def voice_speech_started_emit(
     await sio.emit("voice_speech_started", payload.model_dump(), room=room)
 
 
-async def _voice_speech_started_impl(
-    sid: str, data: VoiceSpeechStartedPayload
-) -> None:
+async def _voice_speech_started_impl(sid: str, data: VoiceSpeechStartedPayload) -> None:
     """Handle speech started event from Realtime API.
 
     This event is emitted when the user starts speaking. We relay it back
@@ -49,7 +48,7 @@ async def _voice_speech_started_impl(
         if chat_id not in timestamps_dict:
             timestamps_dict[chat_id] = {}
         timestamps_dict[chat_id][data.item_id] = datetime.datetime.now(
-            datetime.timezone.utc
+            datetime.UTC
         )
         logger.info(
             f"Stored speech_started timestamp for chat_id={chat_id}, item_id={data.item_id}"
@@ -57,7 +56,7 @@ async def _voice_speech_started_impl(
 
         # Clean up stale timestamp entries (older than 5 minutes)
         # This prevents memory leaks if transcript_ready never arrives
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         stale_threshold = datetime.timedelta(minutes=5)
         for chat_id_key in list(timestamps_dict.keys()):
             for item_id_key in list(timestamps_dict[chat_id_key].keys()):

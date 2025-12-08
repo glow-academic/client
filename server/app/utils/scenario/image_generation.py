@@ -14,7 +14,7 @@ async def set_image_generation_context(
     room: str | None = None,
 ) -> None:
     """Set the context for image generation tool.
-    
+
     Args:
         agent_id: Agent ID for image generation
         profile_id: Profile ID for tenant isolation (required)
@@ -28,7 +28,7 @@ async def set_image_generation_context(
         profile_id=profile_id,
         primary_id=primary_id,
     )
-    
+
     # Clear existing context and set new values
     await storage.clear(storage_key)
     await storage.set(storage_key, "agent_id", agent_id)
@@ -44,11 +44,11 @@ async def get_image_generation_results(
     primary_id: str,
 ) -> dict[str, Any]:
     """Get image generation results for a request.
-    
+
     Args:
         profile_id: Profile ID for tenant isolation
         primary_id: Primary ID for storage key (trace_id, scenario_id, etc.)
-        
+
     Returns:
         Dictionary with image generation results (empty dict if none)
     """
@@ -58,7 +58,7 @@ async def get_image_generation_results(
         profile_id=profile_id,
         primary_id=primary_id,
     )
-    
+
     images = await storage.get(storage_key, "images")
     return {"images": images} if images else {}
 
@@ -68,7 +68,7 @@ async def clear_image_generation_results(
     primary_id: str,
 ) -> None:
     """Clear image generation results for a request.
-    
+
     Args:
         profile_id: Profile ID for tenant isolation
         primary_id: Primary ID for storage key (trace_id, scenario_id, etc.)
@@ -79,6 +79,5 @@ async def clear_image_generation_results(
         profile_id=profile_id,
         primary_id=primary_id,
     )
-    
-    await storage.delete(storage_key, "images")
 
+    await storage.delete(storage_key, "images")
