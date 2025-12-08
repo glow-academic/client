@@ -34,9 +34,11 @@ CREATE TABLE parameters (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   active BOOLEAN     NOT NULL DEFAULT FALSE,
-  practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
   document_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  persona_parameter BOOLEAN     NOT NULL DEFAULT FALSE
+  persona_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  scenario_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  video_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  simulation_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE fields (

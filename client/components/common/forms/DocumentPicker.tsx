@@ -49,7 +49,7 @@ type DocumentItem = {
   file_path: string | null;
   mime_type: string | null;
   parameter_item_ids: string[];
-  upload_id: string;
+  upload_id?: string;
 };
 
 // Extended mapping item for documents with tags
@@ -57,6 +57,8 @@ export interface DocumentMappingItem extends MappingItem {
   tags?: string[];
   filePath?: string;
   mimeType?: string;
+  parameter_ids?: string[] | null;
+  field_ids?: string[] | null;
 }
 
 export interface DocumentPickerProps<

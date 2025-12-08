@@ -308,9 +308,7 @@ export default function Scenario({
   type UpdateScenarioBody = UpdateScenarioIn extends { body: infer B }
     ? B
     : never;
-  type GenerateAIScenarioBody = GenerateAIScenarioIn extends { body: infer B }
-    ? B
-    : never;
+  type GenerateAIScenarioBody = GenerateAIScenarioIn;
   type RandomizeScenarioBody = RandomizeScenarioIn extends { body: infer B }
     ? B
     : never;
@@ -431,10 +429,7 @@ export default function Scenario({
     [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
-  const defaultParameterIds = useMemo(() => {
-    // Empty array means "all parameters" (similar to departments for superadmin)
-    return scenarioData?.valid_parameter_ids || [];
-  }, [scenarioData?.valid_parameter_ids]);
+  // defaultParameterIds removed - not used (empty array means "all parameters")
 
   const initialFormData = useMemo(
     () => ({
@@ -941,67 +936,6 @@ export default function Scenario({
     currentParameterItemIds,
   ]);
 
-  // Filter personas based on selected parameters from Step 1
-  const validPersonaIdsFiltered = useMemo(() => {
-    const selectedParamIds = formData.parameterIds || [];
-    const baseIds = scenarioData?.valid_persona_ids || [];
-
-    // If no parameters selected, show all personas
-    if (selectedParamIds.length === 0) {
-      return baseIds;
-    }
-
-    // Filter personas that are valid for at least one selected parameter
-    // A persona is valid if:
-    // 1. It has parameter_ids that include any selected parameter, OR
-    // 2. It has no parameter_ids (valid for all parameters)
-    return baseIds.filter((personaId) => {
-      const persona = personaMapping[personaId];
-      if (!persona) return false;
-
-      const personaParamIds = persona.parameter_ids || [];
-      // If persona has no parameter restrictions, it's valid for all
-      if (personaParamIds.length === 0) {
-        return true;
-      }
-
-      // Check if any selected parameter matches persona's parameters
-      return selectedParamIds.some((paramId) =>
-        personaParamIds.includes(paramId)
-      );
-    });
-  }, [scenarioData?.valid_persona_ids, formData.parameterIds, personaMapping]);
-
-  // Filter documents based on selected parameters from Step 1
-  const validDocumentIdsFiltered = useMemo(() => {
-    const selectedParamIds = formData.parameterIds || [];
-    const baseIds = scenarioData?.valid_document_ids || [];
-
-    // If no parameters selected, show all documents
-    if (selectedParamIds.length === 0) {
-      return baseIds;
-    }
-
-    // Filter documents that are valid for at least one selected parameter
-    return baseIds.filter((docId) => {
-      const doc = documentMapping[docId];
-      if (!doc) return false;
-
-      const docParamIds = doc.parameter_ids || [];
-      // If document has no parameter restrictions, it's valid for all
-      if (docParamIds.length === 0) {
-        return true;
-      }
-
-      // Check if any selected parameter matches document's parameters
-      return selectedParamIds.some((paramId) => docParamIds.includes(paramId));
-    });
-  }, [
-    scenarioData?.valid_document_ids,
-    formData.parameterIds,
-    documentMapping,
-  ]);
-
   // Filter fields based on selected personas, documents, and parameters
   // Also include conditional parameters when fields are selected
   // When personas/documents are selected, only show fields linked to those selections
@@ -1203,7 +1137,10 @@ export default function Scenario({
     if (selectedParamIds.length === 0) {
       const filtered: typeof parameterMapping = {};
       Object.keys(parameterMapping).forEach((paramId) => {
-        filtered[paramId] = parameterMapping[paramId];
+        const param = parameterMapping[paramId];
+        if (param) {
+          filtered[paramId] = param;
+        }
       });
       return filtered;
     }
@@ -1216,7 +1153,10 @@ export default function Scenario({
         selectedParamIds.includes(paramId) ||
         conditionalParamIds.has(paramId)
       ) {
-        filtered[paramId] = parameterMapping[paramId];
+        const param = parameterMapping[paramId];
+        if (param) {
+          filtered[paramId] = param;
+        }
       }
     });
     return filtered;
@@ -1405,6 +1345,7 @@ export default function Scenario({
         active: scenarioData.active ?? true,
         scenarioAgentId: scenarioData.scenario_agent_id || null,
         imageAgentId: scenarioData.image_agent_id || null,
+        parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       // Initialize previousDepartmentIds when loading scenario data
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
@@ -1486,6 +1427,9 @@ export default function Scenario({
         problemStatement: scenarioData.problem_statement,
         departmentIds: scenarioData.department_ids || [],
         active: scenarioData.active ?? true,
+        scenarioAgentId: scenarioData.scenario_agent_id || null,
+        imageAgentId: scenarioData.image_agent_id || null,
+        parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       setOriginalDocumentIds(scenarioData.document_ids);
       setOriginalParameterItemIds(
@@ -2105,10 +2049,6 @@ export default function Scenario({
                 currentParameterItemIds,
                 parameterItemMapping
               ),
-              parameter_ids:
-                formData.parameterIds && formData.parameterIds.length > 0
-                  ? formData.parameterIds
-                  : null,
               documents_enabled: useDocuments,
               document_vision_enabled: documentVisionEnabled,
               objectives_enabled: useObjectives,
@@ -2192,10 +2132,6 @@ export default function Scenario({
           image?.upload_id || image?.id ? [image.upload_id || image.id] : null,
         image_names: image?.name ? [image.name] : null,
         parameters: parametersDict,
-        parameter_ids:
-          formData.parameterIds && formData.parameterIds.length > 0
-            ? formData.parameterIds
-            : null,
         scenario_agent_id: formData.scenarioAgentId || null,
         image_agent_id: formData.imageAgentId || null,
       };
@@ -2496,7 +2432,7 @@ export default function Scenario({
                               </div>
                             </div>
                           )}
-                          renderItem={(item, isSelected) => (
+                          renderItem={(item, _isSelected) => (
                             <div className="flex items-center justify-between w-full">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <div className="flex-1 min-w-0">
@@ -2557,7 +2493,7 @@ export default function Scenario({
                               </div>
                             </div>
                           )}
-                          renderItem={(item, isSelected) => (
+                          renderItem={(item, _isSelected) => (
                             <div className="flex items-center justify-between w-full">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <div className="flex-1 min-w-0">
@@ -2731,13 +2667,13 @@ export default function Scenario({
                   </div>
                 );
               }}
-              renderButton={(selectedItems, placeholder) => {
-                if (selectedItems.length === 0) return placeholder;
+              renderButton={(selectedItems) => {
+                if (selectedItems.length === 0) return "Select a persona...";
                 if (selectedItems.length === 1) {
                   const persona = selectedItems[0];
                   const IconComponent =
-                    getPersonaIconComponent(persona?.icon) || Brain;
-                  const hexColor = persona?.color || "#64748b";
+                    getPersonaIconComponent(persona?.icon || "") || Brain;
+                  const hexColor: string = persona?.color || "#64748b";
                   const generateGradient = (hex: string) => {
                     const cleanHex = hex.replace("#", "");
                     const r = parseInt(cleanHex.substr(0, 2), 16);
@@ -2760,7 +2696,7 @@ export default function Scenario({
                         <IconComponent className="h-3.5 w-3.5 text-white" />
                       </div>
                       <span className="truncate">
-                        {persona?.name || placeholder}
+                        {persona?.name || "Select a persona..."}
                       </span>
                     </div>
                   );
@@ -2778,7 +2714,7 @@ export default function Scenario({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onRemove((persona as unknown as { id: string }).id);
+                        onRemove();
                       }}
                       className="text-muted-foreground hover:text-destructive flex-shrink-0"
                     >
@@ -3076,7 +3012,9 @@ export default function Scenario({
                         return "New Problem Statement";
                       }
                       const problemStatement = selectedItems[0];
-                      const date = new Date(problemStatement.updated_at);
+                      const date = problemStatement?.updated_at
+                        ? new Date(problemStatement.updated_at)
+                        : new Date();
                       return `Version ${date.toLocaleDateString()}`;
                     }}
                     renderItem={(item, isSelected) => {

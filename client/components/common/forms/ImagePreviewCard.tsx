@@ -21,7 +21,7 @@ import * as React from "react";
 type ImageItem = {
   id: string;
   name: string;
-  mime_type: string;
+  mime_type?: string;
 };
 
 export interface ImagePreviewCardProps {

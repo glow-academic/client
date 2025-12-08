@@ -22,9 +22,24 @@ type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v3/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v3/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v3/scenarios/update", "post">;
-// GenerateAIScenario types removed - now using WebSocket
-type GenerateAIScenarioIn = never;
-type GenerateAIScenarioOut = never;
+// GenerateAIScenario types - using WebSocket event types
+type GenerateAIScenarioIn = {
+  departmentId: string;
+  personaIds: string[] | null;
+  documentIds: string[] | null;
+  parameterItemIds: string[] | null;
+  profileId: string | null;
+  userInstructions: string | null;
+  objectivesEnabled: boolean;
+};
+type GenerateAIScenarioOut = {
+  success: boolean;
+  message: string;
+  title: string;
+  description: string;
+  objectives: string[];
+  dynamic_document_mapping: Record<string, string> | null;
+};
 type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
 type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
