@@ -247,12 +247,15 @@ field_connections_json AS (
 -- Personas filtered by parameter's selected departments
 parameter_department_ids AS (
     SELECT 
+        dept_id as department_id
+    FROM parameter_departments_aggregated pda
+    CROSS JOIN LATERAL unnest(
         CASE 
             WHEN pda.department_ids IS NOT NULL AND array_length(pda.department_ids, 1) > 0
-            THEN unnest(pda.department_ids::uuid[])
-            ELSE NULL::uuid
-        END as department_id
-    FROM parameter_departments_aggregated pda
+            THEN pda.department_ids::uuid[]
+            ELSE ARRAY[]::uuid[]
+        END
+    ) AS dept_id
 ),
 filtered_personas AS (
     SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description
