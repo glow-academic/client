@@ -291,7 +291,6 @@ async def get_simulation_new(
                                     description=pidata.get("description", ""),
                                     parameter_id=pidata.get("parameter_id", ""),
                                     parameter_name=pidata.get("parameter_name", ""),
-                                    value=pidata.get("value", ""),
                                 )
 
                     persona_ids = []
@@ -362,7 +361,6 @@ async def get_simulation_new(
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
-                        value=pidata.get("value", ""),
                     )
 
         # Parse parameter items list

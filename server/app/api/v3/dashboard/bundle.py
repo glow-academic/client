@@ -1481,7 +1481,6 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             description=pi_data.get("description", ""),
             parameter_id=pi_data.get("parameterId", ""),
             parameter_name=pi_data.get("parameterName", ""),
-            value=pi_data.get("value", ""),
         )
 
     # Compute all actionable insights

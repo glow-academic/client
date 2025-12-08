@@ -127,7 +127,6 @@ type ParameterItemMappingItem = {
   description: string;
   parameter_id: string;
   parameter_name: string;
-  value: string; // ParameterSelector expects string
 };
 
 type ParameterMapping = Record<string, ParameterMappingItem>;
@@ -1318,7 +1317,6 @@ export default function Video({
           description: item?.description || "",
           parameter_id: item?.parameter_id || "",
           parameter_name: item?.parameter_name || "",
-          value: item?.value !== undefined ? String(item.value) : "",
         },
       ])
     ) as ParameterItemMapping;

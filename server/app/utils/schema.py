@@ -73,12 +73,11 @@ class ParameterMappingItem(MappingItem):
     video_parameter: bool = False
 
 
-class ParameterItemMappingItem(MappingItem):
-    """Parameter item mapping item - extends MappingItem with parameter context"""
+class FieldMappingItem(MappingItem):
+    """Field mapping item - extends MappingItem with parameter context"""
 
     parameter_id: str
     parameter_name: str
-    value: str
 
 
 class CohortMappingItem(MappingItem):
@@ -120,7 +119,7 @@ class ScenarioMappingItem(BaseModel):
     persona_ids: list[str]
     persona_mapping: "PersonaMapping"
     document_mapping: "DocumentMapping"
-    parameter_item_mapping: "ParameterItemMapping"
+    parameter_item_mapping: "FieldMapping"
     parameter_item_ids: list[str]
     document_ids: list[str]
 
@@ -168,7 +167,10 @@ PersonaMapping = dict[str, PersonaMappingItem]
 RubricMapping = dict[str, RubricMappingItem]
 SimulationMapping = dict[str, SimulationMappingItem]
 ParameterMapping = dict[str, ParameterMappingItem]
-ParameterItemMapping = dict[str, ParameterItemMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+# Backward compatibility alias
+ParameterItemMapping = FieldMapping
+ParameterItemMappingItem = FieldMappingItem
 CohortMapping = dict[str, CohortMappingItem]
 DocumentMapping = dict[str, DocumentMappingItem]
 StaffMapping = dict[str, StaffMappingItem]

@@ -285,7 +285,6 @@ async def get_practice_overview(
                         description=item_data.get("description", ""),
                         parameter_id=item_data.get("parameter_id", ""),
                         parameter_name=item_data.get("parameter_name", ""),
-                        value=item_data.get("value", ""),
                     )
 
         # Parse embedded department mapping

@@ -61,7 +61,7 @@ department_mapping_data AS (
     ) as mapping
     FROM all_department_ids adi
     LEFT JOIN departments d ON d.id = adi.department_id
-)
+),
 field_conditional_parameters_agg AS (
     SELECT 
         fcp.field_id,

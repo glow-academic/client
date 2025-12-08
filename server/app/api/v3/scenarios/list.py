@@ -145,7 +145,6 @@ async def get_scenarios_list(
                             if pdata.get("parameter_id")
                             else "",
                             parameter_name=pdata.get("parameter_name", ""),
-                            value=pdata.get("value", ""),
                         )
 
             # Parse cohort mapping from JSONB

@@ -19,7 +19,6 @@ class CreateFieldRequest(BaseModel):
     description: str
     active: bool = True
     department_ids: list[str] | None  # None = cross-department (superadmin only)
-    parameter_ids: list[str] | None  # None = no parameters
     conditional_parameter_ids: list[str] | None = None  # Parameters to show when this field is selected
     profileId: str  # Required for auditing/access control
 
@@ -56,7 +55,6 @@ async def create_field(
                 request.description,
                 request.active,
                 request.department_ids,
-                request.parameter_ids,
                 request.conditional_parameter_ids,
                 request.profileId,
             )

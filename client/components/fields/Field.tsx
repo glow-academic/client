@@ -32,7 +32,6 @@ interface FormData {
   description?: string;
   active?: boolean;
   departmentIds?: string[] | null;
-  parameterIds?: string[] | null;
   conditionalParameterIds?: string[] | null;
 }
 
@@ -88,7 +87,6 @@ export default function Field({
       description: "",
       active: true,
       departmentIds: defaultDepartmentIds,
-      parameterIds: [],
       conditionalParameterIds: [],
     }),
     [defaultDepartmentIds],
@@ -152,7 +150,6 @@ export default function Field({
         description: fieldDetail.description || "",
         active: fieldDetail.active ?? true,
         departmentIds: fieldDetail.department_ids || null,
-        parameterIds: fieldDetail.parameter_ids || [],
         conditionalParameterIds: fieldDetail.conditional_parameter_ids || [],
       });
     } else if (!isEditMode && fieldDetailDefault) {
@@ -160,7 +157,6 @@ export default function Field({
       setFormData({
         ...initialFormData,
         departmentIds: defaultDepartmentIds,
-        parameterIds: [],
         conditionalParameterIds: [],
       });
     } else if (!isEditMode && !fieldDetailDefault) {
@@ -236,7 +232,6 @@ export default function Field({
             description: formData.description!,
             active: formData.active ?? true,
             department_ids: formData.departmentIds || null,
-            parameter_ids: formData.parameterIds || null,
             conditional_parameter_ids: formData.conditionalParameterIds || null,
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
@@ -251,7 +246,6 @@ export default function Field({
             description: formData.description!,
             active: formData.active ?? true,
             department_ids: formData.departmentIds || null,
-            parameter_ids: formData.parameterIds || null,
             conditional_parameter_ids: formData.conditionalParameterIds || null,
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
@@ -353,32 +347,6 @@ export default function Field({
                 triggerProps={{ "data-testid": "picker-department" }}
               />
             ) : null}
-          </div>
-        ) : null}
-
-        {/* Parameter Selection */}
-        {validParameterIds && validParameterIds.length > 0 ? (
-          <div className="space-y-2">
-            <Label htmlFor="parameters">Parameters</Label>
-            {formData?.parameterIds !== undefined ? (
-              <ParameterPicker
-                mapping={parameterMapping}
-                validIds={validParameterIds}
-                selectedIds={formData.parameterIds || []}
-                onSelect={(ids) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    parameterIds: ids,
-                  }))
-                }
-                placeholder="Select parameters..."
-                multiSelect={true}
-                triggerProps={{ "data-testid": "picker-parameter" }}
-              />
-            ) : null}
-            <p className="text-xs text-muted-foreground">
-              Select which parameters this field belongs to
-            </p>
           </div>
         ) : null}
 

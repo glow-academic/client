@@ -432,15 +432,14 @@ parameter_item_data AS (
         f.name,
         COALESCE(f.description, '') as description,
         fp.parameter_id,
-        par.name as parameter_name,
-        f.value
+        par.name as parameter_name
     FROM fields f
     JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters par ON par.id = fp.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE par.active = true
       AND par.practice_parameter = true
-    GROUP BY f.id, f.name, f.description, fp.parameter_id, par.id, par.name, f.value
+    GROUP BY f.id, f.name, f.description, fp.parameter_id, par.id, par.name
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
@@ -454,8 +453,7 @@ parameter_item_mapping_data AS (
                 'name', pi.name,
                 'description', pi.description,
                 'parameter_id', pi.parameter_id::text,
-                'parameter_name', pi.parameter_name,
-                'value', pi.value
+                'parameter_name', pi.parameter_name
             )
         ),
         '{}'::jsonb

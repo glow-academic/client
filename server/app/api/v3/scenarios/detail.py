@@ -314,7 +314,6 @@ async def get_scenario_detail(
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
-                        value=pidata.get("value", ""),
                     )
 
         department_mapping: DepartmentMapping = {}

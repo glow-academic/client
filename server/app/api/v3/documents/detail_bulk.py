@@ -123,7 +123,6 @@ async def get_document_detail_bulk(
                             description=pdata.get("description", ""),
                             parameter_id=pdata.get("parameter_id", ""),
                             parameter_name=pdata.get("parameter_name", ""),
-                            value="",  # Not included in bulk query
                         )
 
         # Convert arrays

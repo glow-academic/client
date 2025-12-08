@@ -28,7 +28,6 @@ type ParameterItemMappingItem = {
   description: string;
   parameter_id: string;
   parameter_name: string;
-  value: string;
 };
 
 type ParameterItemMapping = Record<string, ParameterItemMappingItem>;
@@ -318,6 +317,19 @@ export function ParameterSelector({
     }
   };
 
+  // Extract numeric value from field name (for numerical parameters)
+  // Names may be in format "Name (5)" or just "5"
+  const extractNumericValue = (name: string): number => {
+    // Try to extract number from parentheses: "Name (5)" -> 5
+    const parenMatch = name.match(/\((\d+(?:\.\d+)?)\)/);
+    if (parenMatch) {
+      return parseFloat(parenMatch[1]);
+    }
+    // Try parsing the entire name as a number
+    const parsed = parseFloat(name.trim());
+    return isNaN(parsed) ? NaN : parsed;
+  };
+
   const getSelectedNumericalValue = (parameterId: string): number[] => {
     const selectedItemIds = selectedItemsByParameter[parameterId] || [];
 
@@ -331,7 +343,7 @@ export function ParameterSelector({
     const values = selectedItemIds
       .map((itemId) => {
         const item = parameterItemMapping[itemId];
-        return item ? parseFloat(item.value) : NaN;
+        return item ? extractNumericValue(item.name) : NaN;
       })
       .filter((v) => !isNaN(v));
 
@@ -352,7 +364,7 @@ export function ParameterSelector({
     const values = itemIds
       .map((itemId) => {
         const item = parameterItemMapping[itemId];
-        return item ? parseFloat(item.value) : NaN;
+        return item ? extractNumericValue(item.name) : NaN;
       })
       .filter((v) => !isNaN(v));
 
@@ -477,7 +489,7 @@ export function ParameterSelector({
                         .map((id) => {
                           const item = parameterItemMapping[id];
                           if (!item) return null;
-                          const value = parseFloat(item.value);
+                          const value = extractNumericValue(item.name);
                           return {
                             id,
                             item,

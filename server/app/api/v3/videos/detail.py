@@ -360,7 +360,6 @@ async def get_video_detail(
                         description=idata.get("description", ""),
                         parameter_id=idata.get("parameter_id", ""),
                         parameter_name=idata.get("parameter_name", ""),
-                        value=idata.get("value", ""),
                     )
 
         # Parse parameter_item_ids

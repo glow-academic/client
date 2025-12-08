@@ -206,7 +206,6 @@ async def get_persona_new(
                         description=idata.get("description", ""),
                         parameter_id=idata.get("parameter_id", ""),
                         parameter_name=idata.get("parameter_name", ""),
-                        value=idata.get("value", ""),
                     )
 
         # Parse parameter arrays

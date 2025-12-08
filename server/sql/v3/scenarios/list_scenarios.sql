@@ -150,8 +150,7 @@ parameter_item_mapping_data AS (
                 'name', f.name,
                 'description', COALESCE(f.description, ''),
                 'parameter_id', fp.parameter_id::text,
-                'parameter_name', p.name,
-                'value', COALESCE(f.value, '')
+                'parameter_name', p.name
             )
         ) FILTER (WHERE f.id IS NOT NULL),
         '{}'::jsonb

@@ -24,7 +24,6 @@ type ParameterItemMappingItem = {
   description: string;
   parameter_id: string;
   parameter_name: string;
-  value: string;
 };
 
 type ParameterMappingItem = {

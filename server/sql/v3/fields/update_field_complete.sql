@@ -5,7 +5,7 @@ WITH resolve_guest_profile AS (
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
              JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $8::uuid AND sdg.active = true
+             WHERE pd.profile_id = $7::uuid AND sdg.active = true
              LIMIT 1),
             (SELECT sdg.profile_id FROM settings_default_guest sdg
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
@@ -16,10 +16,10 @@ WITH resolve_guest_profile AS (
 resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $8::text = 'guest-profile-id' THEN
+            WHEN $7::text = 'guest-profile-id' THEN
                 (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $8::text IS NULL OR $8::text = '' THEN NULL::uuid
-            ELSE $8::uuid
+            WHEN $7::text IS NULL OR $7::text = '' THEN NULL::uuid
+            ELSE $7::uuid
         END as resolved_profile_id
 ),
 update_field AS (
@@ -30,28 +30,6 @@ update_field AS (
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as field_id
-),
-delete_existing_parameters AS (
-    -- Delete all existing parameter links (soft delete by setting active = false)
-    UPDATE parameter_fields 
-    SET active = false, updated_at = NOW()
-    WHERE field_id = $1::uuid
-),
-link_parameters AS (
-    -- Link field to parameters if provided (creates/updates parameter_fields entries)
-    INSERT INTO parameter_fields (parameter_id, field_id, default, active, created_at, updated_at)
-    SELECT 
-        param_id::uuid,
-        $1::uuid,
-        false, -- default will be set when parameter is edited
-        true,
-        NOW(),
-        NOW()
-    FROM UNNEST(COALESCE($6::text[], ARRAY[]::text[])) as param_id
-    WHERE $6 IS NOT NULL AND array_length($6::text[], 1) > 0
-    ON CONFLICT (parameter_id, field_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
 ),
 delete_existing_conditional_parameters AS (
     -- Delete all existing conditional parameter links (soft delete)
@@ -68,8 +46,8 @@ link_conditional_parameters AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST(COALESCE($7::text[], ARRAY[]::text[])) as cond_param_id
-    WHERE $7 IS NOT NULL AND array_length($7::text[], 1) > 0
+    FROM UNNEST(COALESCE($6::text[], ARRAY[]::text[])) as cond_param_id
+    WHERE $6 IS NOT NULL AND array_length($6::text[], 1) > 0
     ON CONFLICT (field_id, conditional_parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

@@ -79,11 +79,11 @@ parameter_sample_items AS (
             jsonb_build_object(
                 'parameter_item_id', fp_sub.field_id::text,
                 'name', fp_sub.name,
-                'description', fp_sub.description,
+                'description', fp_sub.description
             ) ORDER BY fp_sub.name
         ) as sample_items
     FROM (
-        SELECT f.id as field_id, pf.parameter_id, f.name, f.description,
+        SELECT f.id as field_id, fp.parameter_id, f.name, f.description,
                ROW_NUMBER() OVER (PARTITION BY fp.parameter_id ORDER BY f.name) as rn
         FROM parameter_fields fp
         JOIN fields f ON f.id = fp.field_id

@@ -485,8 +485,7 @@ user_context AS (
                 fp.parameter_id,
                 f.name,
                 COALESCE(f.description, '') as description,
-                p.name as parameter_name,
-                f.value
+                p.name as parameter_name
             FROM fields f
             JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
             JOIN parameters p ON p.id = fp.parameter_id
@@ -514,8 +513,7 @@ user_context AS (
                         'name', pid.name,
                         'description', pid.description,
                         'parameter_id', pid.parameter_id::text,
-                        'parameter_name', pid.parameter_name,
-                        'value', pid.value
+                        'parameter_name', pid.parameter_name
                     )
                 ),
                 '{}'::jsonb

@@ -543,7 +543,7 @@ parameter_item_data AS (
         f.name,
         COALESCE(f.description, '') as description,
         fp.parameter_id,
-        p.name as parameter_name,
+        p.name as parameter_name
     FROM fields f
     JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
     JOIN parameters p ON p.id = pf.parameter_id
@@ -564,8 +564,7 @@ parameter_item_mapping_data AS (
                 'name', pi.name,
                 'description', pi.description,
                 'parameter_id', pi.parameter_id::text,
-                'parameter_name', pi.parameter_name,
-                'value', pi.value
+                'parameter_name', pi.parameter_name
             )
         ), '{}'::jsonb) as parameter_item_mapping
     FROM parameter_item_data pi
