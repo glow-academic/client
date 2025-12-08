@@ -62,6 +62,7 @@ import {
 } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
+import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
@@ -490,9 +491,9 @@ export default function Scenario({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Min/max state for randomization
-  const [personaMinMax, setPersonaMinMax] = useState({ min: 1, max: 1 });
-  const [documentMinMax, setDocumentMinMax] = useState({ min: 1, max: 1 });
+  // Min/max state for randomization (max capped at 5)
+  const [personaMinMax, setPersonaMinMax] = useState({ min: 1, max: 2 });
+  const [documentMinMax, setDocumentMinMax] = useState({ min: 0, max: 2 });
   const [parameterMinMax, setParameterMinMax] = useState<
     Record<string, { min: number; max: number }>
   >({});
@@ -1713,7 +1714,7 @@ export default function Scenario({
       const updated = { ...prev };
       paramIds.forEach((paramId) => {
         if (!updated[paramId]) {
-          updated[paramId] = { min: 1, max: 1 };
+          updated[paramId] = { min: 1, max: 2 };
         }
       });
       // Remove entries for parameters that no longer exist
@@ -1788,10 +1789,11 @@ export default function Scenario({
       toast.error("No valid parameter items available to randomize");
       return;
     }
-    const { min, max } = parameterMinMax[paramId] || { min: 1, max: 1 };
+    const { min, max } = parameterMinMax[paramId] || { min: 1, max: 2 };
+    const cappedMax = Math.min(5, max);
     const count = Math.min(
-      max,
-      Math.max(min, Math.floor(Math.random() * (max - min + 1)) + min)
+      cappedMax,
+      Math.max(min, Math.floor(Math.random() * (cappedMax - min + 1)) + min)
     );
     const shuffled = [...validItemsForParam].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(
@@ -1832,9 +1834,10 @@ export default function Scenario({
       return;
     }
     const { min, max } = personaMinMax;
+    const cappedMax = Math.min(5, max);
     const count = Math.min(
-      max,
-      Math.max(min, Math.floor(Math.random() * (max - min + 1)) + min)
+      cappedMax,
+      Math.max(min, Math.floor(Math.random() * (cappedMax - min + 1)) + min)
     );
     const shuffled = [...validIds].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, Math.min(count, validIds.length));
@@ -1859,9 +1862,10 @@ export default function Scenario({
       return;
     }
     const { min, max } = documentMinMax;
+    const cappedMax = Math.min(5, max);
     const count = Math.min(
-      max,
-      Math.max(min, Math.floor(Math.random() * (max - min + 1)) + min)
+      cappedMax,
+      Math.max(min, Math.floor(Math.random() * (cappedMax - min + 1)) + min)
     );
     const shuffled = [...validIds].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, Math.min(count, validIds.length));
@@ -2691,52 +2695,16 @@ export default function Scenario({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <Label
-                  htmlFor="persona-min"
-                  className="text-xs text-muted-foreground"
-                >
-                  Min:
-                </Label>
-                <Input
-                  id="persona-min"
-                  type="number"
-                  min="0"
-                  max={validPersonaIds.length}
-                  value={personaMinMax.min}
-                  onChange={(e) =>
-                    setPersonaMinMax((prev) => ({
-                      ...prev,
-                      min: Math.max(0, parseInt(e.target.value) || 0),
-                    }))
-                  }
-                  className="w-16 h-8 text-xs"
-                  disabled={isReadonly}
-                />
-              </div>
-              <div className="flex items-center gap-1">
-                <Label
-                  htmlFor="persona-max"
-                  className="text-xs text-muted-foreground"
-                >
-                  Max:
-                </Label>
-                <Input
-                  id="persona-max"
-                  type="number"
-                  min="0"
-                  max={validPersonaIds.length}
-                  value={personaMinMax.max}
-                  onChange={(e) =>
-                    setPersonaMinMax((prev) => ({
-                      ...prev,
-                      max: Math.max(prev.min, parseInt(e.target.value) || 1),
-                    }))
-                  }
-                  className="w-16 h-8 text-xs"
-                  disabled={isReadonly}
-                />
-              </div>
+              <RangeSlider
+                min={1}
+                max={Math.min(5, validPersonaIds.length)}
+                value={[personaMinMax.min, Math.min(5, personaMinMax.max)]}
+                onValueChange={([min, max]) =>
+                  setPersonaMinMax({ min, max: Math.min(5, max) })
+                }
+                disabled={isReadonly}
+                className="w-[200px]"
+              />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -2921,55 +2889,16 @@ export default function Scenario({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <Label
-                  htmlFor="document-min"
-                  className="text-xs text-muted-foreground"
-                >
-                  Min:
-                </Label>
-                <Input
-                  id="document-min"
-                  type="number"
-                  min="0"
-                  max={Math.min(2, validDocumentIds.length)}
-                  value={documentMinMax.min}
-                  onChange={(e) =>
-                    setDocumentMinMax((prev) => ({
-                      ...prev,
-                      min: Math.max(0, parseInt(e.target.value) || 0),
-                    }))
-                  }
-                  className="w-16 h-8 text-xs"
-                  disabled={isReadonly}
-                />
-              </div>
-              <div className="flex items-center gap-1">
-                <Label
-                  htmlFor="document-max"
-                  className="text-xs text-muted-foreground"
-                >
-                  Max:
-                </Label>
-                <Input
-                  id="document-max"
-                  type="number"
-                  min="0"
-                  max={Math.min(2, validDocumentIds.length)}
-                  value={documentMinMax.max}
-                  onChange={(e) =>
-                    setDocumentMinMax((prev) => ({
-                      ...prev,
-                      max: Math.max(
-                        prev.min,
-                        Math.min(2, parseInt(e.target.value) || 1)
-                      ),
-                    }))
-                  }
-                  className="w-16 h-8 text-xs"
-                  disabled={isReadonly}
-                />
-              </div>
+              <RangeSlider
+                min={0}
+                max={Math.min(5, validDocumentIds.length)}
+                value={[documentMinMax.min, Math.min(5, documentMinMax.max)]}
+                onValueChange={([min, max]) =>
+                  setDocumentMinMax({ min, max: Math.min(5, max) })
+                }
+                disabled={isReadonly}
+                className="w-[200px]"
+              />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -3032,7 +2961,7 @@ export default function Scenario({
             const selectedItemsForParam = currentParameterItemIds.filter(
               (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
             );
-            const paramMinMax = parameterMinMax[paramId] || { min: 1, max: 1 };
+            const paramMinMax = parameterMinMax[paramId] || { min: 1, max: 2 };
 
             return (
               <Card
@@ -3066,61 +2995,19 @@ export default function Scenario({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <Label
-                        htmlFor={`param-${paramId}-min`}
-                        className="text-xs text-muted-foreground"
-                      >
-                        Min:
-                      </Label>
-                      <Input
-                        id={`param-${paramId}-min`}
-                        type="number"
-                        min="0"
-                        max={validItemsForParam.length}
-                        value={paramMinMax.min}
-                        onChange={(e) =>
-                          setParameterMinMax((prev) => ({
-                            ...prev,
-                            [paramId]: {
-                              min: Math.max(0, parseInt(e.target.value) || 0),
-                              max: prev[paramId]?.max || 1,
-                            },
-                          }))
-                        }
-                        className="w-16 h-8 text-xs"
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Label
-                        htmlFor={`param-${paramId}-max`}
-                        className="text-xs text-muted-foreground"
-                      >
-                        Max:
-                      </Label>
-                      <Input
-                        id={`param-${paramId}-max`}
-                        type="number"
-                        min="0"
-                        max={validItemsForParam.length}
-                        value={paramMinMax.max}
-                        onChange={(e) =>
-                          setParameterMinMax((prev) => ({
-                            ...prev,
-                            [paramId]: {
-                              min: prev[paramId]?.min || 1,
-                              max: Math.max(
-                                prev[paramId]?.min || 1,
-                                parseInt(e.target.value) || 1
-                              ),
-                            },
-                          }))
-                        }
-                        className="w-16 h-8 text-xs"
-                        disabled={isReadonly}
-                      />
-                    </div>
+                    <RangeSlider
+                      min={1}
+                      max={Math.min(5, validItemsForParam.length)}
+                      value={[paramMinMax.min, Math.min(5, paramMinMax.max)]}
+                      onValueChange={([min, max]) =>
+                        setParameterMinMax((prev) => ({
+                          ...prev,
+                          [paramId]: { min, max: Math.min(5, max) },
+                        }))
+                      }
+                      disabled={isReadonly}
+                      className="w-[200px]"
+                    />
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
