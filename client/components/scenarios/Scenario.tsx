@@ -690,61 +690,45 @@ export default function Scenario({
     }
 
     // Apply field-based filtering (bidirectional: fields → personas)
-    // If persona has fields, find parameters for those fields and require ALL selected fields from those parameters
-    const selectedFieldIds = currentParameterItemIds || [];
+    // When specific fields are selected, only show personas that have those exact fields
+    const selectedFieldIds = Array.isArray(currentParameterItemIds)
+      ? currentParameterItemIds
+      : [];
     if (selectedFieldIds.length === 0) {
       return paramFiltered;
     }
 
-    // Group selected fields by parameter_id
-    const selectedFieldsByParameter = new Map<string, string[]>();
-    selectedFieldIds.forEach((fieldId) => {
-      const field = parameterItemMapping[fieldId];
-      if (field?.parameter_id) {
-        const paramId = field.parameter_id;
-        if (!selectedFieldsByParameter.has(paramId)) {
-          selectedFieldsByParameter.set(paramId, []);
-        }
-        selectedFieldsByParameter.get(paramId)!.push(fieldId);
-      }
-    });
+    // Always include currently selected personas (for edit mode)
+    const selectedPersonaIdSetForFilter = new Set(selectedPersonaIds);
 
     return paramFiltered.filter((personaId) => {
-      const persona = personaMapping[personaId];
-      if (!persona) return true; // Keep if persona not found in mapping
-
-      const personaFieldIds = persona.field_ids || [];
-      // If persona has no fields, it's valid for all (no restrictions)
-      if (personaFieldIds.length === 0) {
+      // Always include currently selected personas
+      if (selectedPersonaIdSetForFilter.has(personaId)) {
         return true;
       }
 
-      // Find which parameters the persona's fields belong to
-      const personaParameterIds = new Set<string>();
-      personaFieldIds.forEach((fieldId) => {
-        const field = parameterItemMapping[fieldId];
-        if (field?.parameter_id) {
-          personaParameterIds.add(field.parameter_id);
-        }
-      });
+      const persona = personaMapping[personaId];
+      if (!persona) return true; // Keep if persona not found in mapping
 
-      // For each parameter that the persona has fields from:
-      // If there are selected fields from that parameter, persona must have at least ONE of them
+      const personaFieldIds = Array.isArray(persona.field_ids)
+        ? persona.field_ids
+        : [];
       const personaFieldSet = new Set(personaFieldIds);
-      for (const paramId of personaParameterIds) {
-        const selectedFieldsForParam = selectedFieldsByParameter.get(paramId);
-        if (selectedFieldsForParam && selectedFieldsForParam.length > 0) {
-          // Check if persona has at least ONE selected field from this parameter
-          const hasAtLeastOneField = selectedFieldsForParam.some((fieldId) =>
-            personaFieldSet.has(fieldId)
-          );
-          if (!hasAtLeastOneField) {
-            return false; // Persona doesn't have any selected fields from this parameter
-          }
+
+      // Check each selected field: persona must have the exact selected field
+      for (const selectedFieldId of selectedFieldIds) {
+        if (!selectedFieldId) continue;
+
+        const selectedField = parameterItemMapping[selectedFieldId];
+        if (!selectedField?.parameter_id) continue;
+
+        // Persona must have this exact selected field
+        if (!personaFieldSet.has(selectedFieldId)) {
+          return false; // Persona doesn't have the selected field
         }
       }
 
-      return true; // Persona has at least one selected field from each relevant parameter
+      return true; // Persona has all required exact fields
     });
   }, [
     scenarioData?.valid_persona_ids,
@@ -923,72 +907,56 @@ export default function Scenario({
     }
 
     // Apply field-based filtering (bidirectional: fields → documents)
-    // If document has fields, find parameters for those fields and require ALL selected fields from those parameters
-    const selectedFieldIds = currentParameterItemIds || [];
+    // When specific fields are selected, only show documents that have those exact fields
+    const selectedFieldIds = Array.isArray(currentParameterItemIds)
+      ? currentParameterItemIds
+      : [];
     if (selectedFieldIds.length === 0) {
       return paramFiltered;
     }
 
-    // Group selected fields by parameter_id
-    const selectedFieldsByParameter = new Map<string, string[]>();
-    selectedFieldIds.forEach((fieldId) => {
-      const field = parameterItemMapping[fieldId];
-      if (field?.parameter_id) {
-        const paramId = field.parameter_id;
-        if (!selectedFieldsByParameter.has(paramId)) {
-          selectedFieldsByParameter.set(paramId, []);
-        }
-        selectedFieldsByParameter.get(paramId)!.push(fieldId);
-      }
-    });
+    // Always include currently selected documents (for edit mode)
+    const selectedDocIdsForFilter = new Set(currentDocumentIds);
 
     return paramFiltered.filter((docId) => {
+      // Always include currently selected documents
+      if (selectedDocIdsForFilter.has(docId)) {
+        return true;
+      }
+
       // Get fields from documentMapping
       const doc = documentMapping[docId];
-      const docFieldIds = doc?.field_ids || [];
+      const docFieldIds = Array.isArray(doc?.field_ids) ? doc.field_ids : [];
 
       // Get fields from document_details (parameter_item_ids is actually field_ids)
       const docDetails = scenarioData?.document_details?.find(
         (d) => d.document_id === docId
       );
-      const docDetailsFieldIds = docDetails?.parameter_item_ids || [];
+      const docDetailsFieldIds = Array.isArray(docDetails?.parameter_item_ids)
+        ? docDetails.parameter_item_ids
+        : [];
 
       // Combine both sources of field IDs
       const allDocFieldIds = Array.from(
         new Set([...docFieldIds, ...docDetailsFieldIds])
       );
 
-      // If document has no fields, it's valid for all (no restrictions)
-      if (allDocFieldIds.length === 0) {
-        return true;
-      }
-
-      // Find which parameters the document's fields belong to
-      const docParameterIds = new Set<string>();
-      allDocFieldIds.forEach((fieldId) => {
-        const field = parameterItemMapping[fieldId];
-        if (field?.parameter_id) {
-          docParameterIds.add(field.parameter_id);
-        }
-      });
-
-      // For each parameter that the document has fields from:
-      // If there are selected fields from that parameter, document must have at least ONE of them
       const docFieldSet = new Set(allDocFieldIds);
-      for (const paramId of docParameterIds) {
-        const selectedFieldsForParam = selectedFieldsByParameter.get(paramId);
-        if (selectedFieldsForParam && selectedFieldsForParam.length > 0) {
-          // Check if document has at least ONE selected field from this parameter
-          const hasAtLeastOneField = selectedFieldsForParam.some((fieldId) =>
-            docFieldSet.has(fieldId)
-          );
-          if (!hasAtLeastOneField) {
-            return false; // Document doesn't have any selected fields from this parameter
-          }
+
+      // Check each selected field: document must have the exact selected field
+      for (const selectedFieldId of selectedFieldIds) {
+        if (!selectedFieldId) continue;
+
+        const selectedField = parameterItemMapping[selectedFieldId];
+        if (!selectedField?.parameter_id) continue;
+
+        // Document must have this exact selected field
+        if (!docFieldSet.has(selectedFieldId)) {
+          return false; // Document doesn't have the selected field
         }
       }
 
-      return true; // Document has at least one selected field from each relevant parameter
+      return true; // Document has all required exact fields
     });
   }, [
     scenarioData?.valid_document_ids,
