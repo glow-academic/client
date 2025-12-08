@@ -751,91 +751,42 @@ export default function Scenario({
     // Always include currently selected documents (for edit mode - ensures selected items are visible)
     const selectedDocIds = new Set(currentDocumentIds);
 
-    // If no departments selected, return all valid IDs plus selected ones
+    // If no departments selected, start with all valid IDs plus selected ones
+    let deptFilteredIds: string[];
     if (selectedDeptIds.length === 0) {
-      const allValidIds = Array.from(new Set([...baseIds, ...selectedDocIds]));
-
-      // Filter by selected document parameter items if any are selected
-      // Compute documentParameterItemIds inline to avoid dependency order issue
-      const currentDocParamItemIds = currentParameterItemIds.filter(
-        (itemId) => {
-          const item = parameterItemMapping[itemId];
-          if (!item) return false;
-          const paramId = item.parameter_id;
-          // Check if this is a document parameter by checking parameterMapping
-          const param = parameterMapping[paramId];
-          return param?.document_parameter === true;
+      deptFilteredIds = Array.from(new Set([...baseIds, ...selectedDocIds]));
+    } else {
+      // Get union of document_ids from ALL departments (to identify cross-department items)
+      const allDeptDocumentIds = new Set<string>();
+      Object.values(departmentMapping).forEach((deptData) => {
+        if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
+          deptData.document_ids.forEach((id) => allDeptDocumentIds.add(id));
         }
-      );
+      });
 
-      if (currentDocParamItemIds.length > 0) {
-        // If document_details is empty/missing, can't filter - show all documents
-        if (
-          !scenarioData?.document_details ||
-          scenarioData.document_details.length === 0
-        ) {
-          return allValidIds;
+      // Get union of document_ids from selected departments
+      const selectedDeptDocumentIds = new Set<string>();
+      selectedDeptIds.forEach((deptId) => {
+        const deptData = departmentMapping[deptId];
+        if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
+          deptData.document_ids.forEach((id) =>
+            selectedDeptDocumentIds.add(id)
+          );
         }
+      });
 
-        const docsWithSelectedParams = new Set<string>();
-        scenarioData.document_details.forEach((doc) => {
-          if (doc.parameter_item_ids) {
-            // Check if document has all selected document parameter items
-            const docParamItemsSet = new Set(doc.parameter_item_ids);
-            const hasAllSelectedParams = currentDocParamItemIds.every(
-              (paramId) => docParamItemsSet.has(paramId)
-            );
-            if (hasAllSelectedParams) {
-              docsWithSelectedParams.add(doc.document_id);
-            }
-          }
-        });
+      // Include items that are:
+      // 1. In selected departments
+      // 2. Cross-department (not in any department's document_ids)
+      // 3. Currently selected
+      const filtered = baseIds.filter((id) => {
+        const inSelectedDepts = selectedDeptDocumentIds.has(id);
+        const isCrossDept = !allDeptDocumentIds.has(id); // Not in any department = cross-department
+        return inSelectedDepts || isCrossDept;
+      });
 
-        // If no documents match, show all (document_details might be incomplete)
-        if (docsWithSelectedParams.size === 0) {
-          return allValidIds;
-        }
-
-        // Intersect: only show documents that have the selected parameter items
-        // Also include currently selected documents
-        return allValidIds.filter(
-          (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id)
-        );
-      }
-
-      return allValidIds;
+      deptFilteredIds = Array.from(new Set([...filtered, ...selectedDocIds]));
     }
-
-    // Get union of document_ids from ALL departments (to identify cross-department items)
-    const allDeptDocumentIds = new Set<string>();
-    Object.values(departmentMapping).forEach((deptData) => {
-      if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
-        deptData.document_ids.forEach((id) => allDeptDocumentIds.add(id));
-      }
-    });
-
-    // Get union of document_ids from selected departments
-    const selectedDeptDocumentIds = new Set<string>();
-    selectedDeptIds.forEach((deptId) => {
-      const deptData = departmentMapping[deptId];
-      if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
-        deptData.document_ids.forEach((id) => selectedDeptDocumentIds.add(id));
-      }
-    });
-
-    // Include items that are:
-    // 1. In selected departments
-    // 2. Cross-department (not in any department's document_ids)
-    // 3. Currently selected
-    const filtered = baseIds.filter((id) => {
-      const inSelectedDepts = selectedDeptDocumentIds.has(id);
-      const isCrossDept = !allDeptDocumentIds.has(id); // Not in any department = cross-department
-      return inSelectedDepts || isCrossDept;
-    });
-
-    const deptFilteredIds = Array.from(
-      new Set([...filtered, ...selectedDocIds])
-    );
 
     // Filter by selected document parameter items if any are selected
     // Compute documentParameterItemIds inline to avoid dependency order issue
@@ -854,33 +805,30 @@ export default function Scenario({
         !scenarioData?.document_details ||
         scenarioData.document_details.length === 0
       ) {
-        return deptFilteredIds;
-      }
-
-      const docsWithSelectedParams = new Set<string>();
-      scenarioData.document_details.forEach((doc) => {
-        if (doc.parameter_item_ids) {
-          // Check if document has all selected document parameter items
-          const docParamItemsSet = new Set(doc.parameter_item_ids);
-          const hasAllSelectedParams = currentDocParamItemIds.every((paramId) =>
-            docParamItemsSet.has(paramId)
-          );
-          if (hasAllSelectedParams) {
-            docsWithSelectedParams.add(doc.document_id);
+        // Continue to field-based filtering below
+      } else {
+        const docsWithSelectedParams = new Set<string>();
+        scenarioData.document_details.forEach((doc) => {
+          if (doc.parameter_item_ids) {
+            // Check if document has all selected document parameter items
+            const docParamItemsSet = new Set(doc.parameter_item_ids);
+            const hasAllSelectedParams = currentDocParamItemIds.every(
+              (paramId) => docParamItemsSet.has(paramId)
+            );
+            if (hasAllSelectedParams) {
+              docsWithSelectedParams.add(doc.document_id);
+            }
           }
+        });
+
+        // If documents match document parameter filtering, apply it
+        if (docsWithSelectedParams.size > 0) {
+          deptFilteredIds = deptFilteredIds.filter(
+            (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id)
+          );
         }
-      });
-
-      // If no documents match, show all (document_details might be incomplete)
-      if (docsWithSelectedParams.size === 0) {
-        return deptFilteredIds;
+        // If no documents match, continue to field-based filtering (don't filter out everything)
       }
-
-      // Intersect: only show documents that have the selected parameter items
-      // Also include currently selected documents
-      return deptFilteredIds.filter(
-        (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id)
-      );
     }
 
     const deptFiltered = deptFilteredIds;
@@ -940,6 +888,11 @@ export default function Scenario({
       const allDocFieldIds = Array.from(
         new Set([...docFieldIds, ...docDetailsFieldIds])
       );
+
+      // If document has no fields at all, and we have selected fields, filter it out
+      if (allDocFieldIds.length === 0 && selectedFieldIds.length > 0) {
+        return false;
+      }
 
       const docFieldSet = new Set(allDocFieldIds);
 
