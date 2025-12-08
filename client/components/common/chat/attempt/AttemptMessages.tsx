@@ -80,6 +80,7 @@ export interface AttemptMessagesProps {
     personaIcon?: string | null;
     personaColor?: string | null;
   } | null;
+  backgroundImage?: string | null;
 }
 
 // Utility function to generate gradient from hex color (same as PersonaPicker)
@@ -120,6 +121,7 @@ export default function AttemptMessages({
   currentChatHints = [],
   personas,
   scenario: _scenario,
+  backgroundImage,
 }: AttemptMessagesProps) {
   const { socket } = useProfile();
   const router = useRouter();
@@ -148,7 +150,7 @@ export default function AttemptMessages({
     string | null
   >(null);
   const [messagesWithNewHints, setMessagesWithNewHints] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
 
   // State to track if report dialog is open
@@ -156,7 +158,7 @@ export default function AttemptMessages({
 
   // State to track streaming content for messages (messageId -> accumulatedContent)
   const [streamingContent, setStreamingContent] = useState<Map<string, string>>(
-    new Map(),
+    new Map()
   );
 
   // State to track optimistic messages from WebSocket events
@@ -228,7 +230,7 @@ export default function AttemptMessages({
           } else if (!isCurrentOptimistic && isExistingOptimistic) {
             // Current is real, existing is optimistic - replace existing
             const existingIndex = deduplicatedMessages.findIndex(
-              (m) => m.id === existingMessageId,
+              (m) => m.id === existingMessageId
             );
             if (existingIndex !== -1) {
               deduplicatedMessages[existingIndex] = msg;
@@ -238,16 +240,16 @@ export default function AttemptMessages({
           } else {
             // Both are same type - prefer the one from propMessages (server data)
             const currentIsFromProps = propMessages.some(
-              (m) => m.id === msg.id,
+              (m) => m.id === msg.id
             );
             const existingIsFromProps = propMessages.some(
-              (m) => m.id === existingMessageId,
+              (m) => m.id === existingMessageId
             );
 
             if (currentIsFromProps && !existingIsFromProps) {
               // Current is from props, existing is not - replace existing
               const existingIndex = deduplicatedMessages.findIndex(
-                (m) => m.id === existingMessageId,
+                (m) => m.id === existingMessageId
               );
               if (existingIndex !== -1) {
                 deduplicatedMessages[existingIndex] = msg;
@@ -277,7 +279,7 @@ export default function AttemptMessages({
   const sortedMessages = useMemo(() => {
     return [...messages].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
   }, [messages]);
 
@@ -311,7 +313,7 @@ export default function AttemptMessages({
     // Find the previous user message to retry with
     const sortedMessages = messages.sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     // Find the previous user message (query type) that came before this error
@@ -330,7 +332,7 @@ export default function AttemptMessages({
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
       const viewport = scrollArea.querySelector(
-        "[data-radix-scroll-area-viewport]",
+        "[data-radix-scroll-area-viewport]"
       ) as HTMLElement;
       if (viewport)
         viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
@@ -350,7 +352,7 @@ export default function AttemptMessages({
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
     const viewport = scrollArea.querySelector(
-      "[data-radix-scroll-area-viewport]",
+      "[data-radix-scroll-area-viewport]"
     ) as HTMLElement;
     if (!viewport) return;
     const handleScrollEvent = () => {
@@ -591,7 +593,7 @@ export default function AttemptMessages({
                         real_id: data.message_id,
                         optimistic_content: optMsg.content.substring(0, 50),
                         real_content: data.content.substring(0, 50),
-                      },
+                      }
                     );
                     break;
                   }
@@ -636,7 +638,7 @@ export default function AttemptMessages({
                     {
                       optimistic_id: tempId,
                       real_id: data.message_id,
-                    },
+                    }
                   );
                   break;
                 }
@@ -753,7 +755,7 @@ export default function AttemptMessages({
       if (data.chat_id === targetChatId) {
         // Look up optimistic message ID by item_id
         const optimisticMessageId = itemIdToOptimisticIdRef.current.get(
-          data.item_id,
+          data.item_id
         );
 
         if (optimisticMessageId) {
@@ -779,7 +781,7 @@ export default function AttemptMessages({
           // eslint-disable-next-line no-console
           console.warn(
             "[Voice] No optimistic message found for item_id in delta:",
-            data.item_id,
+            data.item_id
           );
         }
       }
@@ -796,7 +798,7 @@ export default function AttemptMessages({
 
         // Look up optimistic message ID by item_id
         const optimisticMessageId = itemIdToOptimisticIdRef.current.get(
-          data.item_id,
+          data.item_id
         );
 
         if (optimisticMessageId) {
@@ -817,7 +819,7 @@ export default function AttemptMessages({
                   optimistic_message_id: optimisticMessageId,
                   item_id: data.item_id,
                   transcript: data.transcript.substring(0, 100),
-                },
+                }
               );
             }
             return newMap;
@@ -829,7 +831,7 @@ export default function AttemptMessages({
           // eslint-disable-next-line no-console
           console.warn(
             "[Voice] No optimistic message found for item_id:",
-            data.item_id,
+            data.item_id
           );
         }
       }
@@ -846,7 +848,7 @@ export default function AttemptMessages({
       socket.off("simulation_message_token", handleSimulationMessageToken);
       socket.off(
         "simulation_message_complete",
-        handleSimulationMessageComplete,
+        handleSimulationMessageComplete
       );
       socket.off("simulation_new_message", handleSimulationNewMessage);
       socket.off("voice_speech_started", handleVoiceSpeechStarted);
@@ -896,10 +898,21 @@ export default function AttemptMessages({
     };
   }, [socket, simulation?.practiceSimulation, targetChatId, router]);
 
+  // Determine background image style dynamically
+  const backgroundStyle = backgroundImage
+    ? {
+        "--bg-image-url": `url('${backgroundImage}')`,
+        backgroundSize: "cover" as const,
+        backgroundPosition: "center" as const,
+        backgroundRepeat: "no-repeat" as const,
+      }
+    : undefined;
+
   return (
     <div
-      className="flex-1 flex flex-col p-0 min-h-0 relative"
+      className={`flex-1 flex flex-col p-0 min-h-0 relative ${backgroundImage ? "attempt-messages-background" : ""}`}
       data-testid="attempt-messages-container"
+      style={backgroundStyle}
     >
       <TooltipProvider>
         <>
@@ -1175,7 +1188,7 @@ export default function AttemptMessages({
                                         size="sm"
                                         onClick={() =>
                                           handleRetry(
-                                            sortedMessages.indexOf(message),
+                                            sortedMessages.indexOf(message)
                                           )
                                         }
                                         className="h-8 w-8 p-0"
