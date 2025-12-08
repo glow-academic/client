@@ -174,6 +174,18 @@ export default function Agents({
           return value.some((v) => rowIds.includes(v));
         },
       },
+      {
+        accessorKey: "updated_at",
+        header: "Updated",
+        cell: ({ row }) => {
+          const date = new Date(row.original.updated_at);
+          return (
+            <div className="text-sm text-muted-foreground">
+              {date.toLocaleDateString()}
+            </div>
+          );
+        },
+      },
     ],
     [modelMapping],
   );

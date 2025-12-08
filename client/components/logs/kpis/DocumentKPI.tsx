@@ -13,9 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { useChartColors } from "@/lib/utils/chartColors";
+import { useChartColors, chartColorFallbacks } from "@/lib/utils/chartColors";
 import { FileText } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -47,8 +47,17 @@ export default function DocumentKPI({
   trend,
 }: DocumentKPIProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const chartColors = useChartColors();
   const chartColor = chartColors[2]; // chart-3
+
+  // Prevent hydration mismatch by only using CSS variable colors after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Use fallback color during SSR/initial render to prevent hydration mismatch
+  const displayColor = isMounted ? chartColor : chartColorFallbacks.chart3;
 
   // Convert hex/rgb to rgba for gradient
   const colorToRgba = (color: string, alpha: number) => {
@@ -64,10 +73,10 @@ export default function DocumentKPI({
   // Generate gradient style from color
   const gradientStyle = useMemo(() => {
     return {
-      background: `linear-gradient(to bottom right, ${colorToRgba(chartColor, 0.1)}, ${colorToRgba(chartColor, 0.2)})`,
-      borderColor: colorToRgba(chartColor, 0.3),
+      background: `linear-gradient(to bottom right, ${colorToRgba(displayColor, 0.1)}, ${colorToRgba(displayColor, 0.2)})`,
+      borderColor: colorToRgba(displayColor, 0.3),
     };
-  }, [chartColor]);
+  }, [displayColor]);
 
   // Format date for display
   const formatDate = (dateStr: string) => {
@@ -103,7 +112,7 @@ export default function DocumentKPI({
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Document</CardTitle>
-          <FileText className="h-4 w-4" style={{ color: chartColor }} />
+          <FileText className="h-4 w-4" style={{ color: displayColor }} />
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className="flex items-center gap-2 mb-1">
@@ -111,7 +120,7 @@ export default function DocumentKPI({
               {ok ? "Healthy" : "Unhealthy"}
             </Badge>
           </div>
-          <div className="text-sm" style={{ color: chartColor }}>
+          <div className="text-sm" style={{ color: displayColor }}>
             {formatLatency(latency_ms)}
           </div>
         </CardContent>
@@ -173,7 +182,7 @@ export default function DocumentKPI({
                     yAxisId="left"
                     type="monotone"
                     dataKey="uptime"
-                    stroke={chartColor}
+                    stroke={displayColor}
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     name="uptime"

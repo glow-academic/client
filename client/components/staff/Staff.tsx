@@ -30,7 +30,6 @@ import { toast } from "sonner";
 // UI Components
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
-import { Check, User } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -2196,7 +2195,7 @@ export default function Staff({
                                       getLabel={(role) => role.name}
                                       getSearchText={(role) => `${role.name} ${role.description || ""}`}
                                       renderItem={(role, isSelected) => {
-                                        const IconComponent = role.icon || User;
+                                        const IconComponent = role.icon || UserIcon;
                                         const hexColor = role.color || "#64748b";
                                         const generateGradient = (hex: string) => {
                                           const cleanHex = hex.replace("#", "");
@@ -2239,7 +2238,7 @@ export default function Staff({
                                       renderButton={(selectedItems, placeholder) => {
                                         if (selectedItems.length === 0) return placeholder;
                                         const role = selectedItems[0];
-                                        const IconComponent = role?.icon || User;
+                                        const IconComponent = role?.icon || UserIcon;
                                         const hexColor = role?.color || "#64748b";
                                         const generateGradient = (hex: string) => {
                                           const cleanHex = hex.replace("#", "");

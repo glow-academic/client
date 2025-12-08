@@ -169,6 +169,18 @@ export default function Models({
           return value.includes(status);
         },
       },
+      {
+        accessorKey: "updated_at",
+        header: "Updated",
+        cell: ({ row }) => {
+          const date = new Date(row.original.updated_at);
+          return (
+            <div className="text-sm text-muted-foreground">
+              {date.toLocaleDateString()}
+            </div>
+          );
+        },
+      },
     ],
     [],
   );

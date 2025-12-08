@@ -51,6 +51,7 @@ class SimulationItem(BaseModel):
     rubric_id: str
     num_cohorts: int  # Number of cohorts using this simulation
     cohort_ids: list[str]  # Array of cohort IDs linked to this simulation
+    updated_at: str
 
 
 class SimulationsListResponse(BaseModel):
@@ -211,6 +212,7 @@ async def get_simulations_list(
                     rubric_id=str(row["rubric_id"]) if row["rubric_id"] else "",
                     num_cohorts=row["num_cohorts"],
                     cohort_ids=cohort_ids,
+                    updated_at=str(row["updated_at"]),
                 )
             )
 

@@ -98,7 +98,7 @@ export function Scenarios({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "updatedAt", desc: true },
+    { id: "updated_at", desc: true },
   ]);
 
   // Use server-provided data directly
@@ -256,6 +256,18 @@ export function Scenarios({
               ) : (
                 <span className="text-muted-foreground">No persona</span>
               )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "updated_at",
+        header: "Updated",
+        cell: ({ row }) => {
+          const date = new Date(row.original.updated_at);
+          return (
+            <div className="text-sm text-muted-foreground">
+              {date.toLocaleDateString()}
             </div>
           );
         },

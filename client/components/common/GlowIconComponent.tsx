@@ -5,6 +5,9 @@
  * @AshokSaravanan222 & @siladiea
  * 12/2025
  */
+"use client";
+
+import { useId } from "react";
 
 /**
  * Configuration for the Glow icon
@@ -107,8 +110,9 @@ export function GlowIconSVGElement({
     ...config,
   };
 
-  const uniqueId =
-    gradientId || `glow-gradient-${Math.random().toString(36).substr(2, 9)}`;
+  // Use React's useId() for stable, hydration-safe unique IDs
+  const reactId = useId();
+  const uniqueId = gradientId || `glow-gradient-${reactId.replace(/:/g, "-")}`;
   const center = viewBoxSize / 2;
 
   return (

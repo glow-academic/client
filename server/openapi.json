@@ -34753,6 +34753,10 @@
           "can_leave": {
             "type": "boolean",
             "title": "Can Leave"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -34768,7 +34772,8 @@
           "can_edit",
           "can_delete",
           "can_duplicate",
-          "can_leave"
+          "can_leave",
+          "updated_at"
         ],
         "title": "CohortItem",
         "description": "Cohort item for list view."
@@ -36516,6 +36521,10 @@
           "can_delete": {
             "type": "boolean",
             "title": "Can Delete"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -36539,7 +36548,8 @@
           "num_scenarios",
           "can_edit",
           "can_duplicate",
-          "can_delete"
+          "can_delete",
+          "updated_at"
         ],
         "title": "PersonaItem",
         "description": "Individual persona item in the response."
@@ -38026,6 +38036,10 @@
             },
             "type": "array",
             "title": "Cohort Ids"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -38046,7 +38060,8 @@
           "can_edit",
           "can_delete",
           "can_duplicate",
-          "cohort_ids"
+          "cohort_ids",
+          "updated_at"
         ],
         "title": "ScenarioItem",
         "description": "Individual scenario item in the response."
@@ -39022,6 +39037,10 @@
             },
             "type": "array",
             "title": "Cohort Ids"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -39039,7 +39058,8 @@
           "scenario_ids",
           "rubric_id",
           "num_cohorts",
-          "cohort_ids"
+          "cohort_ids",
+          "updated_at"
         ],
         "title": "SimulationItem",
         "description": "Simulation item in list response."

@@ -174,6 +174,7 @@ SELECT
     c.title as name,
     c.description,
     c.active,
+    c.updated_at,
     COALESCE(cdd.department_ids, NULL) as department_ids,
     COALESCE(cp.profile_ids, ARRAY[]::uuid[]) as profile_ids,
     COALESCE(cs.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
@@ -256,10 +257,10 @@ WHERE (
         OR
         up.role != 'instructional'
     )
-GROUP BY c.id, c.title, c.description, c.active, 
+GROUP BY c.id, c.title, c.description, c.active, c.updated_at,
          cdd.department_ids, cp.profile_ids, cprf.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id, dmd.mapping, sm.mapping
 HAVING 
     COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0
     OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)
-ORDER BY c.title
+ORDER BY c.updated_at DESC NULLS LAST
 

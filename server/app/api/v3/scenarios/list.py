@@ -58,6 +58,7 @@ class ScenarioItem(BaseModel):
     can_delete: bool
     can_duplicate: bool
     cohort_ids: list[str]
+    updated_at: str
 
 
 class ScenariosListResponse(BaseModel):
@@ -259,6 +260,7 @@ async def get_scenarios_list(
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],
                     cohort_ids=cohort_ids,
+                    updated_at=str(row["updated_at"]),
                 )
             )
 

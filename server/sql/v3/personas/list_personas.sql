@@ -201,6 +201,7 @@ SELECT
     pd.reasoning,
     pd.temperature,
     pd.active,
+    pd.updated_at,
     pd.scenario_ids,
     pd.num_scenarios,
     pd.agent_name,

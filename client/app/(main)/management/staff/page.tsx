@@ -56,33 +56,27 @@ type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getStaffList = async (
-  input: StaffListIn
-): Promise<StaffListOut> => {
+const getStaffList = async (input: StaffListIn): Promise<StaffListOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post(
-    "/profile/staff/list",
-    input,
-    {
-      cache: "no-store",
-      ...(bypassCache && {
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
-      }),
-    }
-  );
+  return api.post("/profile/staff/list", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
 };
 
 const getInitialSearchData = cache(
   async (input: SearchStaffIn): Promise<SearchStaffOut> => {
     return api.post("/profile/staff/search-staff", input);
-  },
+  }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function deleteStaff(
-  input: DeleteStaffIn,
+  input: DeleteStaffIn
 ): Promise<DeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -90,7 +84,7 @@ export async function deleteStaff(
 }
 
 export async function bulkDeleteStaff(
-  input: BulkDeleteStaffIn,
+  input: BulkDeleteStaffIn
 ): Promise<BulkDeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -98,7 +92,7 @@ export async function bulkDeleteStaff(
 }
 
 export async function updateStaff(
-  input: UpdateStaffIn,
+  input: UpdateStaffIn
 ): Promise<UpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -106,23 +100,22 @@ export async function updateStaff(
 }
 
 export async function bulkUpdateStaff(
-  input: BulkUpdateStaffIn,
+  input: BulkUpdateStaffIn
 ): Promise<BulkUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/profile/staff/bulk-update", input);
 }
 
-
 export async function searchStaff(
-  input: SearchStaffIn,
+  input: SearchStaffIn
 ): Promise<SearchStaffOut> {
   "use server";
   return api.post("/profile/staff/search-staff", input);
 }
 
 export async function getCreateStaffData(
-  input: CreateStaffDataIn,
+  input: CreateStaffDataIn
 ): Promise<CreateStaffDataOut> {
   "use server";
   return api.post("/profile/staff/create-staff-data", input);
@@ -134,22 +127,19 @@ export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
 }
 
 export async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn,
+  input: BulkCreateOrUpdateStaffIn
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post(
-    "/profile/staff/bulk-create-or-update-staff",
-    input,
-  );
+  return api.post("/profile/staff/bulk-create-or-update-staff", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Staff",
-    description: "Manage teaching staff and role assignments for teaching assistant training programs. Organize staff members, assign roles and permissions, and coordinate learning cohort participation for effective L&D program administration.",
+    description:
+      "Manage teaching staff and role assignments for teaching assistant training programs. Organize staff members, assign roles and permissions, and coordinate learning cohort participation for effective L&D program administration.",
   };
-}
 }
 
 export default async function StaffPage() {
@@ -203,15 +193,21 @@ export type {
   BulkDeleteStaffIn,
   BulkDeleteStaffOut,
   BulkUpdateStaffIn,
-  BulkUpdateStaffOut, CreateStaffDataIn,
-  CreateStaffDataOut, CSVColumnMapping, DeleteStaffIn,
+  BulkUpdateStaffOut,
+  CreateStaffDataIn,
+  CreateStaffDataOut,
+  CSVColumnMapping,
+  DeleteStaffIn,
   DeleteStaffOut,
   ProcessCSVIn,
   ProcessCSVOut,
-  ProcessedCSVRow, ProfileListItem, SearchStaffIn, SearchStaffItem, SearchStaffOut,
+  ProcessedCSVRow,
+  ProfileListItem,
+  SearchStaffIn,
+  SearchStaffItem,
+  SearchStaffOut,
   StaffListIn,
   StaffListOut,
   UpdateStaffIn,
-  UpdateStaffOut
+  UpdateStaffOut,
 };
-

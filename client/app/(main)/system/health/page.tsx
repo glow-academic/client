@@ -27,7 +27,7 @@ type BulkDeleteLogsOut = OutputOf<"/api/v3/logs/bulk-delete", "post">;
 const getLogsBundle = cache(
   async (input: LogsBundleIn): Promise<LogsBundleOut> => {
     return api.post("/logs/bundle", input);
-  },
+  }
 );
 
 /** ---- Direct fetch (no Next.js cache) ----
@@ -55,12 +55,12 @@ const getLogsRuns = async (input: LogsRunsIn): Promise<LogsRunsOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
 async function bulkDeleteLogs(
-  input: BulkDeleteLogsIn,
+  input: BulkDeleteLogsIn
 ): Promise<BulkDeleteLogsOut> {
   "use server";
   const session = await getSession();
@@ -80,9 +80,9 @@ async function bulkDeleteLogs(
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "System",
-    description: "System health monitoring and diagnostics for teaching assistant training platform. Monitor platform performance, check system status, and maintain operational health for educational institutions and L&D programs.",
+    description:
+      "System health monitoring and diagnostics for teaching assistant training platform. Monitor platform performance, check system status, and maintain operational health for educational institutions and L&D programs.",
   };
-}
 }
 
 interface SystemPageProps {

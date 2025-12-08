@@ -47,6 +47,7 @@ class CohortItem(BaseModel):
     can_delete: bool
     can_duplicate: bool
     can_leave: bool
+    updated_at: str
 
 
 class CohortsListResponse(BaseModel):
@@ -156,6 +157,7 @@ async def get_cohorts_list(
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],
                     can_leave=row["can_leave"],
+                    updated_at=str(row["updated_at"]),
                 )
             )
 

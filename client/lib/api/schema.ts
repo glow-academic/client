@@ -14047,6 +14047,8 @@ export interface components {
             can_duplicate: boolean;
             /** Can Leave */
             can_leave: boolean;
+            /** Updated At */
+            updated_at: string;
         };
         /**
          * DepartmentDetailResponse
@@ -14639,6 +14641,8 @@ export interface components {
             can_duplicate: boolean;
             /** Can Delete */
             can_delete: boolean;
+            /** Updated At */
+            updated_at: string;
         };
         /**
          * DebugInfoItem
@@ -15155,6 +15159,8 @@ export interface components {
             can_duplicate: boolean;
             /** Cohort Ids */
             cohort_ids: string[];
+            /** Updated At */
+            updated_at: string;
         };
         /**
          * ObjectiveWithDepartments
@@ -15504,6 +15510,8 @@ export interface components {
             num_cohorts: number;
             /** Cohort Ids */
             cohort_ids: string[];
+            /** Updated At */
+            updated_at: string;
         };
         /**
          * ParameterItem

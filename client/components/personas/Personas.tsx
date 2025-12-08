@@ -106,7 +106,7 @@ export default function Personas({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "updatedAt", desc: true },
+    { id: "updated_at", desc: true },
   ]);
 
   // Use server-provided data directly
@@ -256,6 +256,18 @@ export default function Personas({
           if (value.length === 0) return true;
           if (rowIds.length === 0) return true; // Show cross-department items when no filter
           return value.some((v) => rowIds.includes(v));
+        },
+      },
+      {
+        accessorKey: "updated_at",
+        header: "Updated",
+        cell: ({ row }) => {
+          const date = new Date(row.original.updated_at);
+          return (
+            <div className="text-sm text-muted-foreground">
+              {date.toLocaleDateString()}
+            </div>
+          );
         },
       },
     ];

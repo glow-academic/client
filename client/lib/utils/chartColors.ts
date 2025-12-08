@@ -75,7 +75,7 @@ const fallbacks = {
   neutral: "oklch(0.556 0 0)",
 };
 
-const chartColorFallbacks = {
+export const chartColorFallbacks = {
   chart1: "oklch(0.646 0.222 41.116)",
   chart2: "oklch(0.6 0.118 184.704)",
   chart3: "oklch(0.398 0.07 227.392)",

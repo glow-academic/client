@@ -54,6 +54,7 @@ class PersonaItem(BaseModel):
     can_edit: bool
     can_duplicate: bool
     can_delete: bool
+    updated_at: str
 
 
 class PersonasListResponse(BaseModel):
@@ -211,6 +212,7 @@ async def get_personas_list(
                     can_edit=row["can_edit"],
                     can_duplicate=row["can_duplicate"],
                     can_delete=row["can_delete"],
+                    updated_at=str(row["updated_at"]),
                 )
             )
 
