@@ -240,8 +240,9 @@ export function ParameterSelector({
   }, [validParameterItemIds, parameterItemMapping]);
 
   // Separate parameters into numerical and non-numerical
+  // Use all parameters from parameterMapping (not just those with fields) so we can see parameters with 0 fields
   const { numericalParameters, nonNumericalParameters } = useMemo(() => {
-    const parameterIds = Object.keys(parameterItemsByParameter);
+    const parameterIds = Object.keys(parameterMapping);
     const numerical: string[] = [];
     const nonNumerical: string[] = [];
 
@@ -258,7 +259,7 @@ export function ParameterSelector({
       numericalParameters: numerical,
       nonNumericalParameters: nonNumerical,
     };
-  }, [parameterItemsByParameter, parameterMapping]);
+  }, [parameterMapping]);
 
   // Group selected items by parameter
   const selectedItemsByParameter = useMemo(() => {

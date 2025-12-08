@@ -262,7 +262,9 @@ document_mapping_data AS (
 ),
 available_scenario_parameters AS (
     -- Get all parameters that could be linked to scenarios (via scenario_parameters)
+    -- OR parameters that are referenced by accessible fields (even if not linked to scenarios)
     -- For new scenarios, show all active parameters that are linked to at least one scenario
+    -- OR parameters that have fields accessible to the user
     SELECT DISTINCT
         p.id,
         p.name,
@@ -271,10 +273,27 @@ available_scenario_parameters AS (
         CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
     FROM parameters p
     WHERE p.active = true
-    AND EXISTS (
-        SELECT 1 FROM scenario_parameters sp 
-        WHERE sp.parameter_id = p.id 
-        AND sp.active = true
+    AND (
+        -- Parameters linked to scenarios
+        EXISTS (
+            SELECT 1 FROM scenario_parameters sp 
+            WHERE sp.parameter_id = p.id 
+            AND sp.active = true
+        )
+        OR
+        -- Parameters referenced by accessible fields (for document/persona parameters)
+        EXISTS (
+            SELECT 1 FROM parameter_fields pf
+            JOIN fields f ON f.id = pf.field_id
+            LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+            WHERE pf.parameter_id = p.id
+            AND pf.active = true
+            AND f.active = true
+            AND (
+                fd.department_id IN (SELECT id FROM user_departments)
+                OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
+            )
+        )
     )
 ),
 parameter_data AS (

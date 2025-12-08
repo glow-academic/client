@@ -431,6 +431,11 @@ export default function Scenario({
     [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
+  const defaultParameterIds = useMemo(() => {
+    // Empty array means "all parameters" (similar to departments for superadmin)
+    return scenarioData?.valid_parameter_ids || [];
+  }, [scenarioData?.valid_parameter_ids]);
+
   const initialFormData = useMemo(
     () => ({
       name: "New Scenario",
@@ -439,7 +444,7 @@ export default function Scenario({
       active: true,
       scenarioAgentId: null as string | null,
       imageAgentId: null as string | null,
-      parameterIds: [] as string[],
+      parameterIds: [] as string[], // Empty means "all parameters"
     }),
     [defaultDepartmentIds]
   );
@@ -999,10 +1004,12 @@ export default function Scenario({
 
   // Filter fields based on selected personas, documents, and parameters
   // Also include conditional parameters when fields are selected
+  // When personas/documents are selected, only show fields linked to those selections
   const validGeneralParameterItemIds = useMemo(() => {
     const selectedParamIds = formData.parameterIds || [];
-    const selectedPersonaIdsSet = new Set(selectedPersonaIds);
-    const selectedDocIdsSet = new Set(currentDocumentIds);
+    const hasSelectedPersonas = selectedPersonaIds.length > 0;
+    const hasSelectedDocuments = currentDocumentIds.length > 0;
+    const hasSelections = hasSelectedPersonas || hasSelectedDocuments;
 
     // Get all fields linked to selected personas
     const personaFields = new Set<string>();
@@ -1020,7 +1027,7 @@ export default function Scenario({
       if (doc?.field_ids) {
         doc.field_ids.forEach((fieldId) => documentFields.add(fieldId));
       }
-      // Also check document_details for field_ids
+      // Also check document_details for field_ids (parameter_item_ids is actually field_ids)
       const docDetails = scenarioData?.document_details?.find(
         (d) => d.document_id === docId
       );
@@ -1042,54 +1049,124 @@ export default function Scenario({
       }
     });
 
-    // Filter fields:
-    // 1. Fields linked to selected personas
-    // 2. Fields linked to selected documents
-    // 3. Fields whose parameters are in selectedParamIds (from Step 1)
-    // 4. Fields whose parameters are conditional parameters of selected fields
-    // 5. Fields not linked to any persona/document (always available)
+    // Filter fields with clean data rules:
+    // 1. Exclude fields where id == parameter_id (these are parameters, not fields)
+    // 2. If personas/documents are selected: only show fields linked to those OR matching selected parameters
+    // 3. If no personas/documents selected: show fields matching selected parameters (or all if empty)
+    // 4. Always include conditional parameters and unlinked fields
     return validParameterItemIds.filter((fieldId) => {
       const field = parameterItemMapping[fieldId];
       if (!field) return false;
 
       const fieldParamId = field.parameter_id;
 
-      // Check if field is linked to selected personas
-      if (personaFields.has(fieldId)) {
+      // Exclude fields where id == parameter_id (parameters incorrectly appearing as fields)
+      if (fieldId === fieldParamId) {
+        return false;
+      }
+
+      // If personas/documents are selected, enforce strict filtering
+      // Top parameter selection is still the source of truth
+      if (hasSelections) {
+        // If parameters are selected, only show fields matching those parameters
+        // (even if linked to personas/documents, they must match selected parameters)
+        if (selectedParamIds.length > 0) {
+          // Check if this field's parameter is linked to any persona/document
+          const parameter = parameterMapping[fieldParamId];
+          const isParameterLinkedToPersonas =
+            parameter?.persona_parameter === true;
+          const isParameterLinkedToDocuments =
+            parameter?.document_parameter === true;
+          const isParameterLinked =
+            isParameterLinkedToPersonas || isParameterLinkedToDocuments;
+
+          // If parameter is NOT linked to any persona/document, show ALL its fields
+          if (selectedParamIds.includes(fieldParamId) && !isParameterLinked) {
+            return true;
+          }
+
+          // If parameter IS linked, only show fields linked to selected personas/documents
+          if (selectedParamIds.includes(fieldParamId) && isParameterLinked) {
+            // Include fields linked to selected personas ONLY if they match selected parameters
+            if (
+              personaFields.has(fieldId) &&
+              selectedParamIds.includes(fieldParamId)
+            ) {
+              return true;
+            }
+
+            // Include fields linked to selected documents ONLY if they match selected parameters
+            if (
+              documentFields.has(fieldId) &&
+              selectedParamIds.includes(fieldParamId)
+            ) {
+              return true;
+            }
+
+            // Don't show unlinked fields for linked parameters
+            return false;
+          }
+
+          // Include conditional parameters if triggered by selected fields that match selected parameters
+          if (conditionalParamIds.has(fieldParamId)) {
+            // Check if any selected field triggers this conditional parameter AND matches selected parameters
+            const triggersConditional = currentParameterItemIds.some(
+              (selectedFieldId) => {
+                const selectedField = parameterItemMapping[selectedFieldId];
+                return (
+                  selectedField?.conditional_parameter_ids?.includes(
+                    fieldParamId
+                  ) && selectedParamIds.includes(selectedField.parameter_id)
+                );
+              }
+            );
+            if (triggersConditional) {
+              return true;
+            }
+          }
+
+          // Don't show fields that don't match selected parameters
+          return false;
+        }
+
+        // No parameters selected (empty = "all") - show fields linked to personas/documents
+        // Include fields linked to selected personas
+        if (personaFields.has(fieldId)) {
+          return true;
+        }
+
+        // Include fields linked to selected documents
+        if (documentFields.has(fieldId)) {
+          return true;
+        }
+
+        // Include conditional parameters
+        if (conditionalParamIds.has(fieldParamId)) {
+          return true;
+        }
+
+        // Don't include unlinked fields when selections exist (clean data)
+        return false;
+      }
+
+      // No personas/documents selected - show fields based on parameter selection
+      // Top parameter selection is the source of truth
+      if (selectedParamIds.length === 0) {
+        // Empty = "all parameters" - show all fields
         return true;
       }
 
-      // Check if field is linked to selected documents
-      if (documentFields.has(fieldId)) {
-        return true;
-      }
-
-      // Check if field's parameter is in selected parameters from Step 1
+      // Parameters are selected - only show fields for selected parameters
       if (selectedParamIds.includes(fieldParamId)) {
         return true;
       }
 
-      // Check if field's parameter is a conditional parameter
+      // Include conditional parameters only if they're triggered by selected fields
       if (conditionalParamIds.has(fieldParamId)) {
         return true;
       }
 
-      // Check if field is not linked to any persona/document (always available)
-      const isLinkedToPersona = Object.values(personaMapping).some((p) =>
-        p.field_ids?.includes(fieldId)
-      );
-      const isLinkedToDocument =
-        Object.values(documentMapping).some((d) =>
-          d.field_ids?.includes(fieldId)
-        ) ||
-        scenarioData?.document_details?.some((d) =>
-          d.parameter_item_ids?.includes(fieldId)
-        );
-
-      if (!isLinkedToPersona && !isLinkedToDocument) {
-        return true;
-      }
-
+      // Don't show other fields when parameters are selected (source of truth)
       return false;
     });
   }, [
@@ -1101,14 +1178,18 @@ export default function Scenario({
     personaMapping,
     documentMapping,
     parameterItemMapping,
+    parameterMapping,
     scenarioData?.document_details,
   ]);
 
   const generalParameterMapping = useMemo(() => {
-    // Include all parameters that are in selectedParamIds OR are conditional parameters
+    // Top parameter selection is the source of truth for section 4
+    // Show all selected parameters (or all if empty), regardless of whether they have fields
+    // This allows debugging - parameters with 0 fields will still be visible
     const selectedParamIds = formData.parameterIds || [];
     const conditionalParamIds = new Set<string>();
 
+    // Get conditional parameters from currently selected fields
     currentParameterItemIds.forEach((fieldId) => {
       const field = parameterItemMapping[fieldId];
       if (field?.conditional_parameter_ids) {
@@ -1118,6 +1199,17 @@ export default function Scenario({
       }
     });
 
+    // If no parameters selected, include all parameters (empty means "all")
+    if (selectedParamIds.length === 0) {
+      const filtered: typeof parameterMapping = {};
+      Object.keys(parameterMapping).forEach((paramId) => {
+        filtered[paramId] = parameterMapping[paramId];
+      });
+      return filtered;
+    }
+
+    // Parameters are selected - include all selected parameters and conditional ones
+    // Include them even if they have 0 fields (for debugging/visibility)
     const filtered: typeof parameterMapping = {};
     Object.keys(parameterMapping).forEach((paramId) => {
       if (
@@ -2320,7 +2412,12 @@ export default function Scenario({
                 {formData?.parameterIds !== undefined ? (
                   <GenericPicker
                     items={parameterMapping}
-                    itemIds={scenarioData.valid_parameter_ids || []}
+                    itemIds={Array.from(
+                      new Set([
+                        ...(scenarioData.valid_parameter_ids || []),
+                        ...(formData.parameterIds || []),
+                      ])
+                    )}
                     selectedIds={formData.parameterIds || []}
                     onSelect={(ids) => handleInputChange("parameterIds", ids)}
                     getId={(item) => (item as unknown as { id: string }).id}
@@ -2328,7 +2425,7 @@ export default function Scenario({
                     getSearchText={(item) =>
                       `${item.name} ${item.description || ""}`
                     }
-                    placeholder="Select parameters..."
+                    placeholder="All Parameters"
                     disabled={isReadonly}
                     multiSelect={true}
                     hideSelectedChips={true}
