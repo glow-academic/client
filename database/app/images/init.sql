@@ -10,12 +10,26 @@ CREATE TABLE images (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
-  upload_id  UUID        REFERENCES uploads(id) ON DELETE RESTRICT,
+  completed  BOOLEAN     NOT NULL DEFAULT FALSE,
   active     BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
 CREATE INDEX ON images (name);
 CREATE INDEX ON images (created_at);
 CREATE INDEX ON images (active);
-CREATE INDEX ON images (upload_id);
+
+-- Image → Uploads junction table (BCNF normalization)
+-- Allows version history of image uploads
+CREATE TABLE image_uploads (
+    image_id UUID NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    upload_id UUID NOT NULL REFERENCES uploads(id) ON DELETE CASCADE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (image_id, upload_id)
+);
+
+CREATE INDEX ON image_uploads (image_id);
+CREATE INDEX ON image_uploads (upload_id);
+CREATE INDEX ON image_uploads (image_id, active);
 

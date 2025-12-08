@@ -9,9 +9,6 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner,
 from agents.items import TResponseInputItem
 from app.main import get_scenario_storage
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_image_generation_function import (
-    clear_image_generation_results, get_image_generation_results,
-    set_image_generation_context)
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
@@ -20,6 +17,9 @@ from app.utils.images.generate_image import generate_image_from_prompt
 from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
+from app.utils.scenario.image_generation import (
+    clear_image_generation_results, get_image_generation_results,
+    set_image_generation_context)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
 
@@ -34,6 +34,7 @@ async def generate_scenario_problem_statement(
     parameter_item_ids: list[uuid.UUID] | None,
     profile_id: uuid.UUID | None,
     objectives_enabled: bool = True,
+    images_enabled: bool = False,  # Disabled by default for API endpoints
     group_id: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     """Generate scenario problem statement using scenario agent.
@@ -148,19 +149,19 @@ async def generate_scenario_problem_statement(
     if group_id is None:
         group_id = uuid.uuid4()
     
-    images_enabled = True  # Enable image generation by default
-    
     # Generate trace_id for this operation
     scenario_trace_id = gen_trace_id()
     primary_id = str(group_id)  # Use group_id as primary_id
     
     # Set image generation context before creating tools (async)
+    # Note: No room/sid for API endpoints - images will generate but no WebSocket events
     if images_enabled and final_profile_id:
         await set_image_generation_context(
             agent_id=context["agent_id"],
             profile_id=str(final_profile_id),
             primary_id=primary_id,
             department_id=str(department_id) if department_id else None,
+            room=None,  # API endpoint - no WebSocket room
         )
     
     scenario_tools = create_scenario_tools(
@@ -318,42 +319,27 @@ async def generate_scenario_problem_statement(
         f"description length={len(description)}, objectives count={len(objectives)}"
     )
 
-    # Process generated images if any were created
+    # Retrieve image_ids from storage (images are generated in background via WebSocket)
+    generated_image_ids: list[str] = []
     if final_profile_id:
         image_results = await get_image_generation_results(
             profile_id=str(final_profile_id),
             primary_id=primary_id,
         )
-        if image_results.get("images"):
-            for img_request in image_results["images"]:
-                try:
-                    upload_id = await generate_image_from_prompt(
-                        name=img_request["name"],
-                        prompt=img_request["prompt"],
-                        agent_id=img_request["agent_id"],
-                        conn=conn,
-                        department_id=img_request.get("department_id"),
-                        profile_id=img_request.get("profile_id"),
-                    )
-                    logger.info(
-                        f"Created generated image '{img_request['name']}': upload_id={upload_id}"
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to generate image '{img_request.get('name', 'unknown')}': {e}",
-                        exc_info=True,
-                    )
-                    # Continue with other images even if one fails
-
-            # Clear image generation results after processing
-            await clear_image_generation_results(
-                profile_id=str(final_profile_id),
-                primary_id=primary_id,
+        # image_results["images"] contains list of image_ids (strings)
+        image_ids = image_results.get("images", [])
+        if image_ids:
+            generated_image_ids = image_ids
+            logger.info(
+                f"Retrieved {len(generated_image_ids)} image IDs from storage "
+                f"(generation in progress in background)"
             )
+            # Don't clear storage - background tasks will clean up individual image contexts
 
     return {
         "title": title,
         "description": description,
         "objectives": objectives,
+        "generated_image_ids": generated_image_ids if generated_image_ids else None,
     }
 

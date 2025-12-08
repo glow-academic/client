@@ -11,6 +11,7 @@ CREATE TABLE videos (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   length_seconds INTEGER NOT NULL CHECK (length_seconds > 0),
+  completed  BOOLEAN     NOT NULL DEFAULT FALSE,
   active     BOOLEAN     NOT NULL DEFAULT TRUE,
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_enabled BOOLEAN NOT NULL DEFAULT TRUE,

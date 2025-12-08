@@ -475,6 +475,8 @@ from app.socket.documents.generate_template import \
     generate_document_template  # noqa: E402; type: ignore
 from app.socket.scenarios.generate_ai import \
     generate_scenario_ai  # noqa: E402; type: ignore
+from app.socket.images.generate import \
+    generate_image  # noqa: E402; type: ignore
 from app.socket.simulations import send_simulation_message  # type: ignore
 from app.socket.simulations import start_simulation  # type: ignore
 from app.socket.simulations.continue_chat import \

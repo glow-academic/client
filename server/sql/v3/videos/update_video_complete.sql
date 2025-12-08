@@ -22,7 +22,6 @@ WITH updated_video AS (
         name = $2,
         length_seconds = $3,
         active = $4,
-        upload_id = COALESCE($5::uuid, upload_id),
         outline_agent_id = COALESCE($11::uuid, outline_agent_id),
         image_agent_id = COALESCE($12::uuid, image_agent_id),
         updated_at = NOW()
@@ -111,22 +110,66 @@ delete_old_video_images AS (
     DELETE FROM video_images
     WHERE video_id = $1::uuid
 ),
+create_video_images AS (
+    -- Create images if they don't exist
+    INSERT INTO images (name, created_at, updated_at, active)
+    SELECT DISTINCT
+        img->>'name',
+        NOW(),
+        NOW(),
+        true
+    FROM jsonb_array_elements(COALESCE($9::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($9::jsonb, '[]'::jsonb)) > 0
+      AND NOT EXISTS (
+          SELECT 1 FROM images i
+          JOIN image_uploads iu ON iu.image_id = i.id
+          WHERE iu.upload_id = (img->>'upload_id')::uuid AND i.name = img->>'name'
+      )
+    RETURNING id as image_id
+),
+link_video_image_uploads AS (
+    -- Link images to uploads via junction table
+    INSERT INTO image_uploads (image_id, upload_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        cvi.image_id,
+        (img->>'upload_id')::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM create_video_images cvi
+    CROSS JOIN jsonb_array_elements(COALESCE($9::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($9::jsonb, '[]'::jsonb)) > 0
+    ON CONFLICT (image_id, upload_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+get_video_images AS (
+    -- Get existing images via image_uploads junction table
+    SELECT i.id as image_id
+    FROM jsonb_array_elements(COALESCE($9::jsonb, '[]'::jsonb)) as img
+    JOIN image_uploads iu ON iu.upload_id = (img->>'upload_id')::uuid
+    JOIN images i ON i.id = iu.image_id AND i.name = img->>'name'
+    WHERE iu.active = true
+),
+all_video_images AS (
+    SELECT image_id FROM create_video_images
+    UNION
+    SELECT image_id FROM get_video_images
+),
 link_video_images AS (
-    -- Link video images if provided (create junction table entries)
-    INSERT INTO video_images (video_id, upload_id, name, active, created_at, updated_at)
+    -- Link images to video via junction table
+    INSERT INTO video_images (video_id, image_id, active, created_at, updated_at)
     SELECT 
         uv.video_id,
-        (img->>'upload_id')::uuid,
-        img->>'name',
+        avi.image_id,
         true,
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN jsonb_array_elements(COALESCE($9::jsonb, '[]'::jsonb)) as img
+    CROSS JOIN all_video_images avi
     WHERE jsonb_array_length(COALESCE($9::jsonb, '[]'::jsonb)) > 0
-    ON CONFLICT (video_id, upload_id) DO UPDATE SET
+    ON CONFLICT (video_id, image_id) DO UPDATE SET
         active = true,
-        name = EXCLUDED.name,
         updated_at = NOW()
 ),
 questions_data AS (

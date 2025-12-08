@@ -203,22 +203,69 @@ delete_old_images AS (
     DELETE FROM scenario_images
     WHERE scenario_id = $1::uuid
 ),
-link_images AS (
-    -- Link images if provided (create junction table entries)
-    INSERT INTO scenario_images (scenario_id, upload_id, name, active, created_at, updated_at)
-    SELECT 
-        $1::uuid,
-        (img->>'upload_id')::uuid,
+create_images AS (
+    -- Create images if they don't exist
+    INSERT INTO images (name, created_at, updated_at, active)
+    SELECT DISTINCT
         img->>'name',
-        true,
         NOW(),
-        NOW()
+        NOW(),
+        true
     FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
       AND jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
-    ON CONFLICT (scenario_id, upload_id) DO UPDATE SET
+      AND NOT EXISTS (
+          SELECT 1 FROM images i
+          JOIN image_uploads iu ON iu.image_id = i.id
+          WHERE iu.upload_id = (img->>'upload_id')::uuid AND i.name = img->>'name'
+      )
+    RETURNING id as image_id
+),
+link_image_uploads AS (
+    -- Link images to uploads via junction table
+    INSERT INTO image_uploads (image_id, upload_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        ci.image_id,
+        (img->>'upload_id')::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM create_images ci
+    CROSS JOIN jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    WHERE EXISTS (SELECT 1 FROM scenario_exists)
+      AND jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+    ON CONFLICT (image_id, upload_id) DO UPDATE SET
         active = true,
-        name = EXCLUDED.name,
+        updated_at = NOW()
+),
+get_images AS (
+    -- Get existing images via image_uploads junction table
+    SELECT i.id as image_id
+    FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    JOIN image_uploads iu ON iu.upload_id = (img->>'upload_id')::uuid
+    JOIN images i ON i.id = iu.image_id AND i.name = img->>'name'
+    WHERE EXISTS (SELECT 1 FROM scenario_exists)
+      AND iu.active = true
+),
+all_images AS (
+    SELECT image_id FROM create_images
+    UNION
+    SELECT image_id FROM get_images
+),
+link_images AS (
+    -- Link images to scenario via junction table
+    INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        ai.image_id,
+        true,
+        NOW(),
+        NOW()
+    FROM all_images ai
+    WHERE EXISTS (SELECT 1 FROM scenario_exists)
+      AND jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+    ON CONFLICT (scenario_id, image_id) DO UPDATE SET
+        active = true,
         updated_at = NOW()
 ),
 deactivate_scenario_parameters AS (

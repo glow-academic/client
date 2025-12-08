@@ -10,9 +10,6 @@ from agents.items import TResponseInputItem
 from app.main import (get_dynamic_document_storage, get_pool,
                       get_scenario_storage, sio)
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_image_generation_function import (
-    clear_image_generation_results, get_image_generation_results,
-    set_image_generation_context)
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
@@ -27,6 +24,9 @@ from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.scenario.format_document_template_info import \
     format_document_template_info
+from app.utils.scenario.image_generation import (
+    clear_image_generation_results, get_image_generation_results,
+    set_image_generation_context)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
 from pydantic import BaseModel, ValidationError
@@ -49,11 +49,34 @@ class ScenarioGenerationCompletePayload(BaseModel):
     description: str
     objectives: list[str]
     dynamic_document_mapping: dict[str, str] | None = None
+    generated_image_ids: list[str] | None = None
     trace_id: str | None = None
 
 
 class ScenarioGenerationErrorPayload(BaseModel):
     success: bool
+    message: str
+    trace_id: str | None = None
+
+
+class ScenarioImageGenerationProgressPayload(BaseModel):
+    type: str  # "start", "generating", "completed"
+    message: str | None = None
+    image_id: str | None = None
+    trace_id: str | None = None
+
+
+class ScenarioImageGenerationCompletePayload(BaseModel):
+    success: bool
+    image_id: str
+    upload_id: str
+    name: str
+    trace_id: str | None = None
+
+
+class ScenarioImageGenerationErrorPayload(BaseModel):
+    success: bool
+    image_id: str
     message: str
     trace_id: str | None = None
 
@@ -89,6 +112,28 @@ async def scenario_generation_error(
     payload: ScenarioGenerationErrorPayload, room: str
 ) -> None:
     await sio.emit("scenario_generation_error", payload.model_dump(), room=room)
+
+
+async def scenario_image_generation_progress(
+    payload: ScenarioImageGenerationProgressPayload, room: str
+) -> None:
+    await sio.emit(
+        "scenario_image_generation_progress",
+        payload.model_dump(exclude_none=True),
+        room=room,
+    )
+
+
+async def scenario_image_generation_complete(
+    payload: ScenarioImageGenerationCompletePayload, room: str
+) -> None:
+    await sio.emit("scenario_image_generation_complete", payload.model_dump(), room=room)
+
+
+async def scenario_image_generation_error(
+    payload: ScenarioImageGenerationErrorPayload, room: str
+) -> None:
+    await sio.emit("scenario_image_generation_error", payload.model_dump(), room=room)
 
 
 async def _generate_scenario_ai_impl(
@@ -484,43 +529,22 @@ async def _generate_scenario_ai_impl(
                     # Clear dynamic document results after processing
                     await storage.delete(storage_key, "dynamic_documents")
 
-            # Process generated images if any were created
-            generated_images: list[dict[str, Any]] = []
+            # Retrieve image_ids from storage (images are generated in background)
+            generated_image_ids: list[str] = []
             if final_profile_id:
                 image_results = await get_image_generation_results(
                     profile_id=str(final_profile_id),
                     primary_id=trace_id,
                 )
-                if image_results.get("images"):
-                    for img_request in image_results["images"]:
-                        try:
-                            upload_id = await generate_image_from_prompt(
-                                name=img_request["name"],
-                                prompt=img_request["prompt"],
-                                agent_id=img_request["agent_id"],
-                                conn=conn,
-                                department_id=img_request.get("department_id"),
-                                profile_id=img_request.get("profile_id"),
-                            )
-                            generated_images.append({
-                                "name": img_request["name"],
-                                "upload_id": upload_id,
-                            })
-                            logger.info(
-                                f"Created generated image '{img_request['name']}': upload_id={upload_id}"
-                            )
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to generate image '{img_request.get('name', 'unknown')}': {e}",
-                                exc_info=True,
-                            )
-                            # Continue with other images even if one fails
-
-                    # Clear image generation results after processing
-                    await clear_image_generation_results(
-                        profile_id=str(final_profile_id),
-                        primary_id=trace_id,
+                # image_results["images"] contains list of image_ids (strings)
+                image_ids = image_results.get("images", [])
+                if image_ids:
+                    generated_image_ids = image_ids
+                    logger.info(
+                        f"Retrieved {len(generated_image_ids)} image IDs from storage "
+                        f"(generation in progress in background)"
                     )
+                    # Don't clear storage - background tasks will clean up individual image contexts
 
             # Emit completion event
             await scenario_generation_complete(
@@ -531,6 +555,7 @@ async def _generate_scenario_ai_impl(
                     description=description,
                     objectives=limited_objectives,
                     dynamic_document_mapping=dynamic_document_mapping,
+                    generated_image_ids=generated_image_ids if generated_image_ids else None,
                     trace_id=trace_id,
                 ),
                 room=sid,

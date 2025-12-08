@@ -388,6 +388,7 @@ async def randomize_scenario_attributes(
         # Generate problem statement if missing
         if not scenario_problem_statement:
             logger.info("No problem statement found, generating via scenario agent")
+            # Disable image generation for API endpoints (only WebSocket should handle AI)
             generated = await generate_scenario_problem_statement(
                 conn=conn,
                 department_id=selected_department_id,
@@ -396,6 +397,7 @@ async def randomize_scenario_attributes(
                 parameter_item_ids=param_ids if param_ids else None,
                 profile_id=profile_id,
                 objectives_enabled=parent_scenario_dict.get("objectives_enabled", True),
+                images_enabled=False,  # Disable image generation for API endpoints
             )
             scenario_problem_statement = generated.get("description") or ""
             scenario_title = generated.get("title") or ""

@@ -9,7 +9,7 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner,
 from agents.items import TResponseInputItem
 from app.main import get_pool, get_scenario_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_image_generation_function import (
+from app.utils.scenario.image_generation import (
     clear_image_generation_results, get_image_generation_results,
     set_image_generation_context)
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
@@ -40,6 +40,7 @@ class ScenarioRegenerationCompletePayload(BaseModel):
     description: str
     objectives: list[str]
     dynamic_document_mapping: dict[str, Any] | None = None
+    generated_image_ids: list[str] | None = None
     trace_id: str | None = None
 
 
@@ -327,6 +328,7 @@ async def _regenerate_scenario_impl(
                     profile_id=str(final_profile_id),
                     primary_id=primary_id,
                     department_id=str(department_id) if department_id else None,
+                    room=sid,  # WebSocket room for emitting events
                 )
             
             scenario_tools = create_scenario_tools(
@@ -455,43 +457,22 @@ async def _regenerate_scenario_impl(
             # Limit objectives to maximum 3
             limited_objectives = objectives[:3] if objectives else []
 
-            # Process generated images if any were created
-            generated_images: list[dict[str, Any]] = []
+            # Retrieve image_ids from storage (images are generated in background)
+            generated_image_ids: list[str] = []
             if final_profile_id:
                 image_results = await get_image_generation_results(
                     profile_id=str(final_profile_id),
                     primary_id=primary_id,
                 )
-                if image_results.get("images"):
-                    for img_request in image_results["images"]:
-                        try:
-                            upload_id = await generate_image_from_prompt(
-                                name=img_request["name"],
-                                prompt=img_request["prompt"],
-                                agent_id=img_request["agent_id"],
-                                conn=conn,
-                                department_id=img_request.get("department_id"),
-                                profile_id=img_request.get("profile_id"),
-                            )
-                            generated_images.append({
-                                "name": img_request["name"],
-                                "upload_id": upload_id,
-                            })
-                            logger.info(
-                                f"Created generated image '{img_request['name']}': upload_id={upload_id}"
-                            )
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to generate image '{img_request.get('name', 'unknown')}': {e}",
-                                exc_info=True,
-                            )
-                            # Continue with other images even if one fails
-
-                    # Clear image generation results after processing
-                    await clear_image_generation_results(
-                        profile_id=str(final_profile_id),
-                        primary_id=primary_id,
+                # image_results["images"] contains list of image_ids (strings)
+                image_ids = image_results.get("images", [])
+                if image_ids:
+                    generated_image_ids = image_ids
+                    logger.info(
+                        f"Retrieved {len(generated_image_ids)} image IDs from storage "
+                        f"(generation in progress in background)"
                     )
+                    # Don't clear storage - background tasks will clean up individual image contexts
 
             # Emit completion event
             await scenario_regeneration_complete(

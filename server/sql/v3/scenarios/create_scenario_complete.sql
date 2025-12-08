@@ -194,30 +194,48 @@ link_parameters AS (
         updated_at = NOW()
 ),
 create_images AS (
-    -- Create images from uploads if they don't exist
-    INSERT INTO images (name, upload_id, created_at, updated_at, active)
+    -- Create images if they don't exist
+    INSERT INTO images (name, created_at, updated_at, active)
     SELECT DISTINCT
         img->>'name',
-        (img->>'upload_id')::uuid,
         NOW(),
         NOW(),
         true
     FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
     WHERE jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
       AND NOT EXISTS (
-          SELECT 1 FROM images i 
-          WHERE i.upload_id = (img->>'upload_id')::uuid AND i.name = img->>'name'
+          SELECT 1 FROM images i
+          JOIN image_uploads iu ON iu.image_id = i.id
+          WHERE iu.upload_id = (img->>'upload_id')::uuid AND i.name = img->>'name'
       )
-    RETURNING id as image_id, upload_id
+    RETURNING id as image_id
+),
+link_image_uploads AS (
+    -- Link images to uploads via junction table
+    INSERT INTO image_uploads (image_id, upload_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        ci.image_id,
+        (img->>'upload_id')::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM create_images ci
+    CROSS JOIN jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+    ON CONFLICT (image_id, upload_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 get_images AS (
-    -- Get existing images
-    SELECT i.id as image_id, i.upload_id
+    -- Get existing images via image_uploads junction table
+    SELECT i.id as image_id, iu.upload_id
     FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
-    JOIN images i ON i.upload_id = (img->>'upload_id')::uuid AND i.name = img->>'name'
+    JOIN image_uploads iu ON iu.upload_id = (img->>'upload_id')::uuid
+    JOIN images i ON i.id = iu.image_id AND i.name = img->>'name'
+    WHERE iu.active = true
 ),
 all_images AS (
-    SELECT image_id, upload_id FROM create_images
+    SELECT image_id, upload_id FROM link_image_uploads
     UNION
     SELECT image_id, upload_id FROM get_images
 ),

@@ -341,6 +341,7 @@
         "description": "string",
         "objectives": "string[]",
         "dynamic_document_mapping": "object{string:string}",
+        "generated_image_ids": "?string[]",
         "trace_id": "?string"
       }
     },

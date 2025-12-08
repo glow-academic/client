@@ -1,7 +1,7 @@
 -- Insert image record
--- Parameters: $1=name, $2=upload_id
+-- Parameters: $1=name
 -- Returns: id (text)
-INSERT INTO images (name, upload_id, created_at, updated_at, active)
-VALUES ($1, $2, NOW(), NOW(), true)
+INSERT INTO images (name, created_at, updated_at, active)
+VALUES ($1, NOW(), NOW(), true)
 RETURNING id::text as id;
 

@@ -232,20 +232,33 @@ async def generate_image_from_prompt(
     
     upload_id_uuid = uuid.UUID(upload_id_str)
     
-    # Create image record
+    # Create image record (without upload_id)
     sql_insert_image = load_sql("sql/v3/images/insert_image_complete.sql")
     image_row = await conn.fetchrow(
         sql_insert_image,
         name,
-        upload_id_str,
     )
     
     if not image_row:
         logger.warning(f"Failed to create image record for upload {upload_id_str}")
         # Don't fail - upload record exists, image can be created later
+        return str(upload_id_str)
+    
+    image_id_str = image_row["id"]
+    
+    # Link image to upload via junction table
+    sql_insert_image_upload = load_sql("sql/v3/images/insert_image_upload_complete.sql")
+    image_upload_row = await conn.fetchrow(
+        sql_insert_image_upload,
+        image_id_str,
+        upload_id_str,
+    )
+    
+    if not image_upload_row:
+        logger.warning(f"Failed to create image_uploads junction record for image {image_id_str}, upload {upload_id_str}")
     
     logger.info(
-        f"✓ Generated image '{name}': upload_id={upload_id_str}, "
+        f"✓ Generated image '{name}': image_id={image_id_str}, upload_id={upload_id_str}, "
         f"file_path={file_path}, size={file_size} bytes"
     )
     
