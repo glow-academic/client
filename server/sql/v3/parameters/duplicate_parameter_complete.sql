@@ -31,8 +31,11 @@ original_parameter AS (
     SELECT 
         name,
         description,
+        COALESCE(simulation_parameter, false) as simulation_parameter,
         COALESCE(document_parameter, false) as document_parameter,
-        COALESCE(practice_parameter, false) as practice_parameter
+        COALESCE(persona_parameter, false) as persona_parameter,
+        COALESCE(scenario_parameter, false) as scenario_parameter,
+        COALESCE(video_parameter, false) as video_parameter
     FROM parameters
     WHERE id = $1::uuid
 ),
@@ -41,15 +44,21 @@ new_parameter AS (
         name,
         description,
         active,
+        simulation_parameter,
         document_parameter,
-        practice_parameter
+        persona_parameter,
+        scenario_parameter,
+        video_parameter
     )
     SELECT 
         op.name || ' Copy',
         op.description,
         false,  -- Duplicated parameters are inactive by default
+        op.simulation_parameter,
         op.document_parameter,
-        op.practice_parameter
+        op.persona_parameter,
+        op.scenario_parameter,
+        op.video_parameter
     FROM original_parameter op
     RETURNING id::text as parameter_id
 ),

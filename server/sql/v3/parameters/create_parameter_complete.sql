@@ -1,5 +1,5 @@
 -- Create parameter with field connections and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=active, $4=practice_parameter, $5=parameter_level_department_ids (text array, nullable), $6=field_connections_json (jsonb array), $7=persona_ids (text array, nullable), $8=document_ids (text array, nullable), $9=profile_id (uuid or "guest-profile-id")
+-- Parameters: $1=name, $2=description, $3=active, $4=simulation_parameter, $5=document_parameter, $6=persona_parameter, $7=scenario_parameter, $8=video_parameter, $9=parameter_level_department_ids (text array, nullable), $10=field_connections_json (jsonb array), $11=persona_ids (text array, nullable), $12=document_ids (text array, nullable), $13=profile_id (uuid or "guest-profile-id")
 -- field_connections_json format: [{"field_id": "uuid", "default": true/false, "active": true/false}, ...]
 -- Exactly one field connection must have default=true
 WITH resolve_guest_profile AS (
@@ -11,7 +11,7 @@ WITH resolve_guest_profile AS (
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
              JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $11::uuid AND sdg.active = true
+             WHERE pd.profile_id = $13::uuid AND sdg.active = true
              LIMIT 1),
             -- Fallback to default (active) settings guest profile
             (SELECT sdg.profile_id FROM settings_default_guest sdg
@@ -23,10 +23,10 @@ WITH resolve_guest_profile AS (
 resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $11::text = 'guest-profile-id' THEN
+            WHEN $13::text = 'guest-profile-id' THEN
                 (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $11::text IS NULL OR $11::text = '' THEN NULL::uuid
-            ELSE $11::uuid
+            WHEN $13::text IS NULL OR $13::text = '' THEN NULL::uuid
+            ELSE $13::uuid
         END as resolved_profile_id
 ),
 new_parameter AS (
@@ -34,9 +34,13 @@ new_parameter AS (
         name,
         description,
         active,
-        practice_parameter
+        simulation_parameter,
+        document_parameter,
+        persona_parameter,
+        scenario_parameter,
+        video_parameter
     )
-    VALUES ($1, $2, $3, $4)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING id::text as parameter_id
 ),
 field_connections_expanded AS (
@@ -46,8 +50,8 @@ field_connections_expanded AS (
         COALESCE((conn->>'default')::boolean, false) as conn_default,
         COALESCE((conn->>'active')::boolean, true) as conn_active,
         ordinality as conn_order
-    FROM jsonb_array_elements(COALESCE($6::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(conn, ordinality)
-    WHERE COALESCE(jsonb_array_length(COALESCE($6::jsonb, '[]'::jsonb)), 0) > 0
+    FROM jsonb_array_elements(COALESCE($10::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(conn, ordinality)
+    WHERE COALESCE(jsonb_array_length(COALESCE($10::jsonb, '[]'::jsonb)), 0) > 0
     AND (conn->>'field_id')::uuid IS NOT NULL
 ),
 ensure_one_default AS (
@@ -127,8 +131,8 @@ link_parameter_departments AS (
         NOW(),
         NOW()
     FROM new_parameter np
-    CROSS JOIN UNNEST($5::text[]) as dept_id
-    WHERE $5::text[] IS NOT NULL AND array_length($5::text[], 1) > 0
+    CROSS JOIN UNNEST($9::text[]) as dept_id
+    WHERE $9::text[] IS NOT NULL AND array_length($9::text[], 1) > 0
     ON CONFLICT (parameter_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -143,8 +147,8 @@ link_parameter_personas AS (
         NOW(),
         NOW()
     FROM new_parameter np
-    CROSS JOIN UNNEST($7::text[]) as persona_id
-    WHERE $7::text[] IS NOT NULL AND array_length($7::text[], 1) > 0
+    CROSS JOIN UNNEST($11::text[]) as persona_id
+    WHERE $11::text[] IS NOT NULL AND array_length($11::text[], 1) > 0
     ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -159,8 +163,8 @@ link_parameter_documents AS (
         NOW(),
         NOW()
     FROM new_parameter np
-    CROSS JOIN UNNEST($8::text[]) as document_id
-    WHERE $8::text[] IS NOT NULL AND array_length($8::text[], 1) > 0
+    CROSS JOIN UNNEST($12::text[]) as document_id
+    WHERE $12::text[] IS NOT NULL AND array_length($12::text[], 1) > 0
     ON CONFLICT (parameter_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

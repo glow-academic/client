@@ -577,6 +577,7 @@ parameter_data_for_mapping AS (
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
+    AND p.scenario_parameter = true
     GROUP BY p.id, p.name, p.description
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0

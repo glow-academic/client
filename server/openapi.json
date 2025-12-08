@@ -14555,9 +14555,29 @@
             "type": "boolean",
             "title": "Active"
           },
-          "practice_parameter": {
+          "simulation_parameter": {
             "type": "boolean",
-            "title": "Practice Parameter",
+            "title": "Simulation Parameter",
+            "default": false
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter",
+            "default": false
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter",
+            "default": false
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter",
+            "default": false
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter",
             "default": false
           },
           "department_ids": {
@@ -22768,9 +22788,25 @@
             "type": "boolean",
             "title": "Active"
           },
-          "practice_parameter": {
+          "simulation_parameter": {
             "type": "boolean",
-            "title": "Practice Parameter"
+            "title": "Simulation Parameter"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter"
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter"
           },
           "department_ids": {
             "anyOf": [
@@ -22884,7 +22920,11 @@
           "name",
           "description",
           "active",
-          "practice_parameter",
+          "simulation_parameter",
+          "document_parameter",
+          "persona_parameter",
+          "scenario_parameter",
+          "video_parameter",
           "department_ids",
           "parameter_items",
           "department_mapping",
@@ -32092,9 +32132,25 @@
             "type": "boolean",
             "title": "Active"
           },
-          "practice_parameter": {
+          "simulation_parameter": {
             "type": "boolean",
-            "title": "Practice Parameter"
+            "title": "Simulation Parameter"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter"
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter"
           },
           "department_ids": {
             "anyOf": [
@@ -32156,7 +32212,11 @@
           "name",
           "description",
           "active",
-          "practice_parameter",
+          "simulation_parameter",
+          "document_parameter",
+          "persona_parameter",
+          "scenario_parameter",
+          "video_parameter",
           "department_ids",
           "field_connections",
           "profileId"

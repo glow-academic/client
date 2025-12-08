@@ -27,7 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
-import { GraduationCap, Power } from "lucide-react";
+import { GraduationCap, Power, PlayCircle, FileText, Users, Video } from "lucide-react";
 
 // Type-only import from server page
 import type {
@@ -50,7 +50,11 @@ interface FormData {
   name?: string;
   description?: string;
   active?: boolean;
-  practice_parameter?: boolean;
+  simulation_parameter?: boolean;
+  document_parameter?: boolean;
+  persona_parameter?: boolean;
+  scenario_parameter?: boolean;
+  video_parameter?: boolean;
   departmentIds?: string[] | null;
   personaIds?: string[];
   documentIds?: string[];
@@ -113,7 +117,11 @@ export default function Parameter({
       name: "",
       description: "",
       active: false,
-      practice_parameter: false,
+      simulation_parameter: false,
+      document_parameter: false,
+      persona_parameter: false,
+      scenario_parameter: false,
+      video_parameter: false,
       departmentIds:
         defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
       personaIds: [],
@@ -279,7 +287,11 @@ export default function Parameter({
         name: parameterData.name,
         description: parameterData.description,
         active: parameterData.active,
-        practice_parameter: parameterData.practice_parameter ?? false,
+        simulation_parameter: parameterData.simulation_parameter ?? false,
+        document_parameter: parameterData.document_parameter ?? false,
+        persona_parameter: parameterData.persona_parameter ?? false,
+        scenario_parameter: parameterData.scenario_parameter ?? false,
+        video_parameter: parameterData.video_parameter ?? false,
         departmentIds: parameterData.department_ids || null,
         personaIds: parameterData.persona_ids || [],
         documentIds: parameterData.document_ids || [],
@@ -477,7 +489,11 @@ export default function Parameter({
           name: formData.name!,
           description: formData.description!,
           active: formData.active || false,
-          practice_parameter: formData.practice_parameter || false,
+          simulation_parameter: formData.simulation_parameter || false,
+          document_parameter: formData.document_parameter || false,
+          persona_parameter: formData.persona_parameter || false,
+          scenario_parameter: formData.scenario_parameter || false,
+          video_parameter: formData.video_parameter || false,
           department_ids: formData.departmentIds ?? null,
           field_connections: fieldConnectionsToSubmit,
           persona_ids:
@@ -498,7 +514,11 @@ export default function Parameter({
           name: formData.name!,
           description: formData.description!,
           active: formData.active || false,
-          practice_parameter: formData.practice_parameter || false,
+          simulation_parameter: formData.simulation_parameter || false,
+          document_parameter: formData.document_parameter || false,
+          persona_parameter: formData.persona_parameter || false,
+          scenario_parameter: formData.scenario_parameter || false,
+          video_parameter: formData.video_parameter || false,
           department_ids: formData.departmentIds ?? null,
           field_connections: fieldConnectionsToSubmit,
           persona_ids:
@@ -791,9 +811,202 @@ export default function Parameter({
               </div>
             </div>
 
-            {/* Persona Links - Department Scoped */}
-            {parameterData?.persona_mapping && (
-              <div className="space-y-2">
+            {/* Simulation Parameter Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="simulation_parameter"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <PlayCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    Simulation Parameter
+                  </Label>
+                  {formData?.simulation_parameter !== undefined ? (
+                    <Switch
+                      id="simulation_parameter"
+                      data-testid="switch-parameter-simulation"
+                      checked={formData.simulation_parameter}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          simulation_parameter: checked,
+                          // Reset child switches when toggling simulation_parameter
+                          document_parameter: checked ? false : prev?.document_parameter ?? false,
+                          persona_parameter: checked ? false : prev?.persona_parameter ?? false,
+                          scenario_parameter: checked ? false : prev?.scenario_parameter ?? false,
+                          video_parameter: checked ? false : prev?.video_parameter ?? false,
+                        }))
+                      }
+                      disabled={
+                        isEditMode &&
+                        parameterDetail &&
+                        !parameterDetail.can_edit
+                      }
+                    />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Enable to use this parameter for simulation analysis (scenarios/videos)
+                </p>
+              </div>
+            </div>
+
+            {/* Conditional Switches Based on Simulation Parameter */}
+            {formData?.simulation_parameter === false ? (
+              <>
+                {/* Persona Parameter Switch */}
+                <div className="space-y-2 pt-2 pl-4 border-l-2 border-muted">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="persona_parameter"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                        Persona Parameter
+                      </Label>
+                      {formData?.persona_parameter !== undefined ? (
+                        <Switch
+                          id="persona_parameter"
+                          data-testid="switch-parameter-persona"
+                          checked={formData.persona_parameter}
+                          onCheckedChange={(checked) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              persona_parameter: checked,
+                            }))
+                          }
+                          disabled={
+                            isEditMode &&
+                            parameterDetail &&
+                            !parameterDetail.can_edit
+                          }
+                        />
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Link this parameter to specific personas
+                    </p>
+                  </div>
+                </div>
+
+                {/* Document Parameter Switch */}
+                <div className="space-y-2 pt-2 pl-4 border-l-2 border-muted">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="document_parameter"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                        Document Parameter
+                      </Label>
+                      {formData?.document_parameter !== undefined ? (
+                        <Switch
+                          id="document_parameter"
+                          data-testid="switch-parameter-document"
+                          checked={formData.document_parameter}
+                          onCheckedChange={(checked) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              document_parameter: checked,
+                            }))
+                          }
+                          disabled={
+                            isEditMode &&
+                            parameterDetail &&
+                            !parameterDetail.can_edit
+                          }
+                        />
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Link this parameter to specific documents
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : formData?.simulation_parameter === true ? (
+              <>
+                {/* Scenario Parameter Switch */}
+                <div className="space-y-2 pt-2 pl-4 border-l-2 border-muted">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="scenario_parameter"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <PlayCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                        Scenario Parameter
+                      </Label>
+                      {formData?.scenario_parameter !== undefined ? (
+                        <Switch
+                          id="scenario_parameter"
+                          data-testid="switch-parameter-scenario"
+                          checked={formData.scenario_parameter}
+                          onCheckedChange={(checked) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              scenario_parameter: checked,
+                            }))
+                          }
+                          disabled={
+                            isEditMode &&
+                            parameterDetail &&
+                            !parameterDetail.can_edit
+                          }
+                        />
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Enable for scenario analysis (links populated after-the-fact)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Video Parameter Switch */}
+                <div className="space-y-2 pt-2 pl-4 border-l-2 border-muted">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="video_parameter"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Video className="h-3.5 w-3.5 text-muted-foreground" />
+                        Video Parameter
+                      </Label>
+                      {formData?.video_parameter !== undefined ? (
+                        <Switch
+                          id="video_parameter"
+                          data-testid="switch-parameter-video"
+                          checked={formData.video_parameter}
+                          onCheckedChange={(checked) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              video_parameter: checked,
+                            }))
+                          }
+                          disabled={
+                            isEditMode &&
+                            parameterDetail &&
+                            !parameterDetail.can_edit
+                          }
+                        />
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Enable for video analysis (links populated after-the-fact)
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            {/* Show Persona Picker when persona_parameter is true */}
+            {formData?.persona_parameter === true &&
+              parameterData?.persona_mapping && (
+                <div className="space-y-2 pt-2 pl-4 border-l-2 border-muted">
                 <Label>Link to Personas</Label>
                 {formData?.personaIds !== undefined ? (
                   <GenericPicker
@@ -933,9 +1146,10 @@ export default function Parameter({
               </div>
             )}
 
-            {/* Document Links - Department Scoped */}
-            {parameterData?.document_mapping && (
-              <div className="space-y-2">
+            {/* Show Document Picker when document_parameter is true */}
+            {formData?.document_parameter === true &&
+              parameterData?.document_mapping && (
+                <div className="space-y-2 pt-2 pl-4 border-l-2 border-muted">
                 <Label>Link to Documents</Label>
                 {formData?.documentIds !== undefined ? (
                   <DocumentPicker
@@ -976,42 +1190,6 @@ export default function Parameter({
                 </p>
               </div>
             )}
-
-            {/* Practice Parameter Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="practice_parameter"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
-                    Practice
-                  </Label>
-                  {formData?.practice_parameter !== undefined ? (
-                    <Switch
-                      id="practice_parameter"
-                      data-testid="switch-parameter-practice"
-                      checked={formData.practice_parameter}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          practice_parameter: checked,
-                        }))
-                      }
-                      disabled={
-                        isEditMode &&
-                        parameterDetail &&
-                        !parameterDetail.can_edit
-                      }
-                    />
-                  ) : null}
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  This shows up as a custom practice option
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* Field Connections Section */}
@@ -1063,7 +1241,11 @@ export default function Parameter({
                       name: parameterData?.name,
                       description: parameterData?.description,
                       active: parameterData?.active,
-                      practice_parameter: parameterData?.practice_parameter,
+                      simulation_parameter: parameterData?.simulation_parameter ?? false,
+                      document_parameter: parameterData?.document_parameter ?? false,
+                      persona_parameter: parameterData?.persona_parameter ?? false,
+                      scenario_parameter: parameterData?.scenario_parameter ?? false,
+                      video_parameter: parameterData?.video_parameter ?? false,
                       departmentIds: parameterData?.department_ids,
                       personaIds: parameterData?.persona_ids || [],
                       documentIds: parameterData?.document_ids || [],

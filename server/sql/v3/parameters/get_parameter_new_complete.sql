@@ -192,7 +192,11 @@ parameter_data AS (
         p.name,
         p.description,
         p.active,
-        p.practice_parameter,
+        p.simulation_parameter,
+        p.document_parameter,
+        p.persona_parameter,
+        p.scenario_parameter,
+        p.video_parameter,
         COALESCE(pda.department_ids, NULL) as department_ids
     FROM parameters p
     JOIN default_parameter dp ON p.id = dp.id

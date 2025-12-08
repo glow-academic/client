@@ -6341,10 +6341,30 @@ export interface components {
             /** Active */
             active: boolean;
             /**
-             * Practice Parameter
+             * Simulation Parameter
              * @default false
              */
-            practice_parameter: boolean;
+            simulation_parameter: boolean;
+            /**
+             * Document Parameter
+             * @default false
+             */
+            document_parameter: boolean;
+            /**
+             * Persona Parameter
+             * @default false
+             */
+            persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Field Connections */
@@ -9538,8 +9558,16 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
-            /** Practice Parameter */
-            practice_parameter: boolean;
+            /** Simulation Parameter */
+            simulation_parameter: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+            /** Scenario Parameter */
+            scenario_parameter: boolean;
+            /** Video Parameter */
+            video_parameter: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Parameter Items */
@@ -13132,8 +13160,16 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
-            /** Practice Parameter */
-            practice_parameter: boolean;
+            /** Simulation Parameter */
+            simulation_parameter: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+            /** Scenario Parameter */
+            scenario_parameter: boolean;
+            /** Video Parameter */
+            video_parameter: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Field Connections */

@@ -41,7 +41,11 @@ class ParameterDetailResponse(BaseModel):
     name: str
     description: str
     active: bool
-    practice_parameter: bool
+    simulation_parameter: bool
+    document_parameter: bool
+    persona_parameter: bool
+    scenario_parameter: bool
+    video_parameter: bool
     department_ids: list[str] | None
     parameter_items: list[ParameterItemDetail]  # For backward compatibility
     department_mapping: dict[str, dict[str, Any]]
@@ -232,7 +236,11 @@ async def get_parameter_detail(
             name=result["name"],
             description=result["description"],
             active=result["active"],
-            practice_parameter=result["practice_parameter"],
+            simulation_parameter=result.get("simulation_parameter", False),
+            document_parameter=result.get("document_parameter", False),
+            persona_parameter=result.get("persona_parameter", False),
+            scenario_parameter=result.get("scenario_parameter", False),
+            video_parameter=result.get("video_parameter", False),
             department_ids=department_ids,
             parameter_items=parameter_items,
             department_mapping=department_mapping,
