@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
@@ -268,7 +268,7 @@ export default function Scenario({
   createScenarioAction,
   updateScenarioAction,
   generateAIScenarioAction: _generateAIScenarioAction,
-  randomizeScenarioAction,
+  randomizeScenarioAction: _randomizeScenarioAction,
 }: ScenarioProps) {
   const router = useRouter();
   const { effectiveProfile, socket, isConnected } = useProfile();
@@ -309,9 +309,6 @@ export default function Scenario({
     ? B
     : never;
   type GenerateAIScenarioBody = GenerateAIScenarioIn;
-  type RandomizeScenarioBody = RandomizeScenarioIn extends { body: infer B }
-    ? B
-    : never;
 
   // Server action handlers
   const handleCreateScenario = async (body: CreateScenarioBody) => {
@@ -408,13 +405,6 @@ export default function Scenario({
     });
   };
 
-  const handleRandomizeScenario = async (body: RandomizeScenarioBody) => {
-    if (!randomizeScenarioAction) {
-      throw new Error("randomizeScenarioAction is required");
-    }
-    return await randomizeScenarioAction({ body });
-  };
-
   // Wrapper functions for compatibility (matching original mutateAsync signature)
   const createScenario = handleCreateScenario;
   const updateScenario = handleUpdateScenario;
@@ -472,16 +462,14 @@ export default function Scenario({
   const [originalObjectives, setOriginalObjectives] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
-  const [isRandomizingPersona, setIsRandomizingPersona] = useState(false);
-  const [isRandomizingDocuments, setIsRandomizingDocuments] = useState(false);
-  const [isRandomizingParameters, setIsRandomizingParameters] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [showRegenerationDialog, setShowRegenerationDialog] = useState(false);
   const [regenerationInstructions, setRegenerationInstructions] = useState("");
   const [regenerateObjectives, setRegenerateObjectives] = useState(true);
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
-  const [useDocuments, setUseDocuments] = useState(true);
-  const [documentVisionEnabled, setDocumentVisionEnabled] = useState(false);
+  // Documents are always enabled (no switch)
+  const useDocuments = true;
+  const documentVisionEnabled = false;
   const [useImage, setUseImage] = useState(false);
   const [useObjectives, setUseObjectives] = useState(false);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
@@ -501,6 +489,13 @@ export default function Scenario({
   } | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Min/max state for randomization
+  const [personaMinMax, setPersonaMinMax] = useState({ min: 1, max: 1 });
+  const [documentMinMax, setDocumentMinMax] = useState({ min: 1, max: 1 });
+  const [parameterMinMax, setParameterMinMax] = useState<
+    Record<string, { min: number; max: number }>
+  >({});
 
   // Staged selections per department (preserved when departments are deselected)
   type StagedSelections = {
@@ -1472,16 +1467,7 @@ export default function Scenario({
           upload_id?: string;
         }>;
       };
-      // Load documents_enabled (with backward compatibility for use_documents)
-      setUseDocuments(
-        scenarioDataWithFlags.documents_enabled ??
-          scenarioDataWithFlags.use_documents ??
-          true
-      );
-      // Load document_vision_enabled
-      setDocumentVisionEnabled(
-        scenarioDataWithFlags.document_vision_enabled ?? false
-      );
+      // Documents are always enabled (no switch)
       // Load objectives_enabled
       setUseObjectives(scenarioDataWithFlags.objectives_enabled ?? false);
       // Load image_enabled and scenario image (single image - take first if exists)
@@ -1667,72 +1653,123 @@ export default function Scenario({
   }, [scenarioData, simulationMapping]);
 
   // Calculate step status
-  const getStepStatus = (stepId: string): StepStatus => {
-    // If we have a scenario description, mark all sections as completed
-    if (formData.problemStatement && formData.problemStatement.trim()) {
-      return "completed";
-    }
-
-    switch (stepId) {
-      case "basic":
-        // Always completed - name defaults to "New Scenario"
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      // If we have a scenario description, mark all sections as completed
+      if (formData.problemStatement && formData.problemStatement.trim()) {
         return "completed";
-      case "persona":
-        // Can start immediately, doesn't depend on name
-        return selectedPersonaIds.length > 0 ? "completed" : "active";
-      case "documents":
-        return selectedPersonaIds.length === 0
-          ? "pending"
-          : currentDocumentIds.length > 0 || !useDocuments
-            ? "completed"
-            : "active";
-      case "parameters":
-        return selectedPersonaIds.length === 0
-          ? "pending"
-          : currentParameterItemIds.length > 0
-            ? "completed"
-            : "active";
-      case "content":
-        return selectedPersonaIds.length === 0 ? "pending" : "active"; // Always active once personas are selected, user can choose to fill or leave blank
-      default:
-        return "pending";
-    }
-  };
+      }
 
-  const steps: Step[] = [
-    {
-      id: "basic",
-      title: "",
-      description: "",
-      status: getStepStatus("basic"),
+      switch (stepId) {
+        case "basic":
+          // Always completed - name defaults to "New Scenario"
+          return "completed";
+        case "persona":
+          // Can start immediately, doesn't depend on name
+          return selectedPersonaIds.length > 0 ? "completed" : "active";
+        case "documents":
+          return selectedPersonaIds.length === 0
+            ? "pending"
+            : currentDocumentIds.length > 0
+              ? "completed"
+              : "active";
+        case "parameters":
+          return selectedPersonaIds.length === 0
+            ? "pending"
+            : currentParameterItemIds.length > 0
+              ? "completed"
+              : "active";
+        case "content":
+          return selectedPersonaIds.length === 0 ? "pending" : "active"; // Always active once personas are selected, user can choose to fill or leave blank
+        default:
+          // Handle individual parameter steps (parameter-{paramId})
+          if (stepId.startsWith("parameter-")) {
+            const paramId = stepId.replace("parameter-", "");
+            const paramItems = currentParameterItemIds.filter(
+              (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+            );
+            return selectedPersonaIds.length === 0
+              ? "pending"
+              : paramItems.length > 0
+                ? "completed"
+                : "active";
+          }
+          return "pending";
+      }
     },
-    {
-      id: "persona",
-      title: "Select Persona Type",
-      description: "Choose the type of persona for this scenario",
-      status: getStepStatus("persona"),
-    },
-    {
-      id: "documents",
-      title: "Choose Documents",
-      description: "Select 1-2 relevant documents for this scenario",
-      status: getStepStatus("documents"),
-      optional: true,
-    },
-    {
-      id: "parameters",
-      title: "Set Parameters",
-      description: "Configure scenario parameters and environment",
-      status: getStepStatus("parameters"),
-    },
-    {
+    [
+      selectedPersonaIds,
+      currentDocumentIds,
+      currentParameterItemIds,
+      parameterItemMapping,
+      formData.problemStatement,
+    ]
+  );
+
+  // Initialize parameterMinMax when parameters are available
+  useEffect(() => {
+    const paramIds = Object.keys(generalParameterMapping);
+    setParameterMinMax((prev) => {
+      const updated = { ...prev };
+      paramIds.forEach((paramId) => {
+        if (!updated[paramId]) {
+          updated[paramId] = { min: 1, max: 1 };
+        }
+      });
+      // Remove entries for parameters that no longer exist
+      Object.keys(updated).forEach((paramId) => {
+        if (!paramIds.includes(paramId)) {
+          delete updated[paramId];
+        }
+      });
+      return updated;
+    });
+  }, [generalParameterMapping]);
+
+  // Dynamic steps array based on available parameters
+  const steps: Step[] = useMemo(() => {
+    const baseSteps: Step[] = [
+      {
+        id: "basic",
+        title: "",
+        description: "",
+        status: getStepStatus("basic"),
+      },
+      {
+        id: "persona",
+        title: "Select Persona Type",
+        description: "Choose the type of persona for this scenario",
+        status: getStepStatus("persona"),
+      },
+      {
+        id: "documents",
+        title: "Choose Documents",
+        description: "Select 1-2 relevant documents for this scenario",
+        status: getStepStatus("documents"),
+        optional: true,
+      },
+    ];
+
+    // Add individual parameter steps
+    const parameterSteps: Step[] = Object.entries(generalParameterMapping).map(
+      ([paramId, param]) => ({
+        id: `parameter-${paramId}`,
+        title: param.name,
+        description: param.description || "",
+        status: getStepStatus(`parameter-${paramId}`),
+      })
+    );
+
+    const contentStep: Step = {
       id: "content",
       title: "Scenario",
       description:
         "This is what the TA will see when they enter the scenario. Leave blank for auto-generation.",
       status: getStepStatus("content"),
-    },
-  ];
+    };
+
+    return [...baseSteps, ...parameterSteps, contentStep];
+  }, [generalParameterMapping, getStepStatus]);
 
   // Event handlers
   const handleInputChange = (
@@ -1742,73 +1779,67 @@ export default function Scenario({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleRandomizeParameters = async () => {
+  // Parameter actions - Client-side randomization per parameter
+  const handleRandomizeParameterClient = (paramId: string) => {
+    const validItemsForParam = validGeneralParameterItemIds.filter(
+      (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+    );
+    if (validItemsForParam.length === 0) {
+      toast.error("No valid parameter items available to randomize");
+      return;
+    }
+    const { min, max } = parameterMinMax[paramId] || { min: 1, max: 1 };
+    const count = Math.min(
+      max,
+      Math.max(min, Math.floor(Math.random() * (max - min + 1)) + min)
+    );
+    const shuffled = [...validItemsForParam].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(
+      0,
+      Math.min(count, validItemsForParam.length)
+    );
+
+    // Update only this parameter's items in currentParameterItemIds
+    const otherParamItems = currentParameterItemIds.filter(
+      (itemId) => parameterItemMapping[itemId]?.parameter_id !== paramId
+    );
+    setCurrentParameterItemIds([...otherParamItems, ...selected]);
+    toast.success(
+      `Randomized ${selected.length} item(s) for ${generalParameterMapping[paramId]?.name || "parameter"}`
+    );
+  };
+
+  const handleResetParameter = (paramId: string) => {
     try {
-      setIsRandomizingParameters(true);
-      // Randomize all selected parameter items
-      const resp = await handleRandomizeScenario({
-        name: formData.name || "",
-        personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
-        documentIds: currentDocumentIds,
-        parameterItemIds: currentParameterItemIds,
-        departmentIds: formData.departmentIds || null,
-        targets: ["parameters"],
-      });
-      if (!resp.success) throw new Error(resp.message);
-      // Use randomized parameter items
-      const randomizedParamItemIds = resp.parameterItemIds || [];
-      setCurrentParameterItemIds(randomizedParamItemIds);
-      toast.success("Parameter suggestions applied");
+      // Reset only this parameter's items
+      const otherParamItems = currentParameterItemIds.filter(
+        (itemId) => parameterItemMapping[itemId]?.parameter_id !== paramId
+      );
+      setCurrentParameterItemIds(otherParamItems);
+      toast.success(
+        `${generalParameterMapping[paramId]?.name || "Parameter"} reset`
+      );
     } catch {
-      toast.error("Failed to randomize parameters");
-    } finally {
-      setIsRandomizingParameters(false);
+      toast.error("Failed to reset parameter");
     }
   };
 
-  const handleResetParameters = () => {
-    try {
-      // Reset all parameter items
-      setCurrentParameterItemIds([]);
-      toast.success("Parameters reset");
-    } catch {
-      toast.error("Failed to reset parameters");
+  // Persona actions - Client-side randomization
+  const handleRandomizePersonaClient = () => {
+    const validIds = validPersonaIds; // Already filtered by constraints
+    if (validIds.length === 0) {
+      toast.error("No valid personas available to randomize");
+      return;
     }
-  };
-
-  // Handler for document parameters
-  // With bidirectional filtering, we just update state - the UI prevents invalid selections
-
-  // Handler for parameter items (now unified - no separate persona/document parameters)
-  const handleGeneralParameterItemIdsChange = (newParamItemIds: string[]) => {
-    setCurrentParameterItemIds(newParamItemIds);
-  };
-
-  // Persona actions
-  const handleRandomizePersona = async () => {
-    try {
-      setIsRandomizingPersona(true);
-      const resp = await handleRandomizeScenario({
-        name: formData.name || "",
-        personaIds: null, // Send null to force randomization
-        documentIds: currentDocumentIds,
-        parameterItemIds: currentParameterItemIds,
-        departmentIds: formData.departmentIds || null,
-        targets: ["persona"],
-      });
-      if (!resp.success) throw new Error(resp.message);
-      // Overwrite (not merge) personas - completely replace existing selection
-      setSelectedPersonaIds(resp.personaIds || []);
-      // Update parameter items if backend returns them
-      if (resp.parameterItemIds && resp.parameterItemIds.length > 0) {
-        setCurrentParameterItemIds(resp.parameterItemIds);
-      }
-      toast.success("Persona suggestion applied");
-    } catch {
-      toast.error("Failed to randomize persona");
-    } finally {
-      setIsRandomizingPersona(false);
-    }
+    const { min, max } = personaMinMax;
+    const count = Math.min(
+      max,
+      Math.max(min, Math.floor(Math.random() * (max - min + 1)) + min)
+    );
+    const shuffled = [...validIds].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(count, validIds.length));
+    setSelectedPersonaIds(selected);
+    toast.success(`Randomized ${selected.length} persona(s)`);
   };
 
   const handleResetPersona = () => {
@@ -1820,37 +1851,24 @@ export default function Scenario({
     }
   };
 
-  // Documents actions
-  const handleRandomizeDocuments = async () => {
-    try {
-      setIsRandomizingDocuments(true);
-      if (!useDocuments) {
-        toast("Documents disabled by choice");
-        return;
-      }
-      const resp = await handleRandomizeScenario({
-        name: formData.name || "",
-        personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
-        documentIds: null, // Send null to force randomization
-        parameterItemIds: currentParameterItemIds,
-        departmentIds: formData.departmentIds || null,
-        targets: ["documents"],
-      });
-      if (!resp.success) throw new Error(resp.message);
-      // Overwrite (not merge) documents - completely replace existing selection
-      // Deduplicate to prevent React key errors
-      const uniqueDocumentIds = Array.from(new Set(resp.documentIds || []));
-      setCurrentDocumentIds(uniqueDocumentIds);
-      // Update parameter items if backend returns them
-      if (resp.parameterItemIds && resp.parameterItemIds.length > 0) {
-        setCurrentParameterItemIds(resp.parameterItemIds);
-      }
-      toast.success("Document suggestions applied");
-    } catch {
-      toast.error("Failed to randomize documents");
-    } finally {
-      setIsRandomizingDocuments(false);
+  // Documents actions - Client-side randomization
+  const handleRandomizeDocumentsClient = () => {
+    const validIds = validDocumentIds; // Already filtered by constraints
+    if (validIds.length === 0) {
+      toast.error("No valid documents available to randomize");
+      return;
     }
+    const { min, max } = documentMinMax;
+    const count = Math.min(
+      max,
+      Math.max(min, Math.floor(Math.random() * (max - min + 1)) + min)
+    );
+    const shuffled = [...validIds].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(count, validIds.length));
+    // Enforce max 2 documents limit
+    const limitedSelected = selected.slice(0, 2);
+    setCurrentDocumentIds(limitedSelected);
+    toast.success(`Randomized ${limitedSelected.length} document(s)`);
   };
 
   const handleResetDocuments = () => {
@@ -2648,7 +2666,7 @@ export default function Scenario({
               : ""
           }`}
         >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
             <div className="flex items-center space-x-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -2672,20 +2690,62 @@ export default function Scenario({
                 <CardDescription>{steps[1]?.description || ""}</CardDescription>
               </div>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Label
+                  htmlFor="persona-min"
+                  className="text-xs text-muted-foreground"
+                >
+                  Min:
+                </Label>
+                <Input
+                  id="persona-min"
+                  type="number"
+                  min="0"
+                  max={validPersonaIds.length}
+                  value={personaMinMax.min}
+                  onChange={(e) =>
+                    setPersonaMinMax((prev) => ({
+                      ...prev,
+                      min: Math.max(0, parseInt(e.target.value) || 0),
+                    }))
+                  }
+                  className="w-16 h-8 text-xs"
+                  disabled={isReadonly}
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <Label
+                  htmlFor="persona-max"
+                  className="text-xs text-muted-foreground"
+                >
+                  Max:
+                </Label>
+                <Input
+                  id="persona-max"
+                  type="number"
+                  min="0"
+                  max={validPersonaIds.length}
+                  value={personaMinMax.max}
+                  onChange={(e) =>
+                    setPersonaMinMax((prev) => ({
+                      ...prev,
+                      max: Math.max(prev.min, parseInt(e.target.value) || 1),
+                    }))
+                  }
+                  className="w-16 h-8 text-xs"
+                  disabled={isReadonly}
+                />
+              </div>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={handleRandomizePersona}
-                    disabled={isReadonly || isRandomizingPersona}
+                    onClick={handleRandomizePersonaClient}
+                    disabled={isReadonly}
                   >
-                    {isRandomizingPersona ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Shuffle className="h-4 w-4" />
-                    )}
+                    <Shuffle className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Randomize</TooltipContent>
@@ -2834,7 +2894,7 @@ export default function Scenario({
               : ""
           }`}
         >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
             <div className="flex items-center space-x-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -2860,57 +2920,65 @@ export default function Scenario({
                 <CardDescription>{steps[2]?.description || ""}</CardDescription>
               </div>
             </div>
-            <div className="ml-auto flex items-center gap-3">
-              {/* Temporarily removed document vision switch */}
-              {/* <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Label
-                  htmlFor="document-vision"
-                  className="text-sm flex items-center gap-1.5"
+                  htmlFor="document-min"
+                  className="text-xs text-muted-foreground"
                 >
-                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                  Document Vision
+                  Min:
                 </Label>
-                <Switch
-                  id="document-vision"
-                  checked={documentVisionEnabled}
-                  onCheckedChange={(checked) => {
-                    setDocumentVisionEnabled(checked);
-                  }}
-                  disabled={isReadonly || !useDocuments}
-                />
-              </div> */}
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="use-documents"
-                  checked={useDocuments}
-                  onCheckedChange={(checked) => {
-                    setUseDocuments(checked);
-                    if (!checked) {
-                      setCurrentDocumentIds([]);
-                      setDocumentVisionEnabled(false);
-                    }
-                  }}
+                <Input
+                  id="document-min"
+                  type="number"
+                  min="0"
+                  max={Math.min(2, validDocumentIds.length)}
+                  value={documentMinMax.min}
+                  onChange={(e) =>
+                    setDocumentMinMax((prev) => ({
+                      ...prev,
+                      min: Math.max(0, parseInt(e.target.value) || 0),
+                    }))
+                  }
+                  className="w-16 h-8 text-xs"
                   disabled={isReadonly}
                 />
-                <Label htmlFor="use-documents" className="text-sm">
-                  Use documents
+              </div>
+              <div className="flex items-center gap-1">
+                <Label
+                  htmlFor="document-max"
+                  className="text-xs text-muted-foreground"
+                >
+                  Max:
                 </Label>
+                <Input
+                  id="document-max"
+                  type="number"
+                  min="0"
+                  max={Math.min(2, validDocumentIds.length)}
+                  value={documentMinMax.max}
+                  onChange={(e) =>
+                    setDocumentMinMax((prev) => ({
+                      ...prev,
+                      max: Math.max(
+                        prev.min,
+                        Math.min(2, parseInt(e.target.value) || 1)
+                      ),
+                    }))
+                  }
+                  className="w-16 h-8 text-xs"
+                  disabled={isReadonly}
+                />
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={handleRandomizeDocuments}
-                    disabled={
-                      isReadonly || isRandomizingDocuments || !useDocuments
-                    }
+                    onClick={handleRandomizeDocumentsClient}
+                    disabled={isReadonly}
                   >
-                    {isRandomizingDocuments ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Shuffle className="h-4 w-4" />
-                    )}
+                    <Shuffle className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Randomize</TooltipContent>
@@ -2940,7 +3008,7 @@ export default function Scenario({
               label=""
               placeholder="Select documents..."
               description="Choose documents that will be available during this scenario."
-              disabled={!useDocuments}
+              disabled={isReadonly}
               readonly={isReadonly}
               onSelect={(ids) => {
                 // Enforce max 2 documents and deduplicate
@@ -2952,88 +3020,161 @@ export default function Scenario({
           </CardContent>
         </Card>
 
-        {/* Step 4: Parameters */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("parameters") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("parameters") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("parameters") === "completed"
-                    ? "bg-green-500 text-white"
-                    : getStepStatus("parameters") === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+        {/* Individual Parameter Sections */}
+        {Object.entries(generalParameterMapping).map(
+          ([paramId, param], index) => {
+            const stepIndex = 3 + index; // After basic (0), persona (1), documents (2)
+            const stepId = `parameter-${paramId}`;
+            const stepStatus = getStepStatus(stepId);
+            const validItemsForParam = validGeneralParameterItemIds.filter(
+              (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+            );
+            const selectedItemsForParam = currentParameterItemIds.filter(
+              (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+            );
+            const paramMinMax = parameterMinMax[paramId] || { min: 1, max: 1 };
+
+            return (
+              <Card
+                key={paramId}
+                className={`transition-all ${!isEditMode && stepStatus === "active" ? "ring-2 ring-primary" : ""} ${
+                  !isEditMode && stepStatus === "pending" ? "opacity-50" : ""
                 }`}
               >
-                {getStepStatus("parameters") === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  "4"
-                )}
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-lg">
-                  {steps[3]?.title || ""}
-                </CardTitle>
-                <CardDescription>{steps[3]?.description || ""}</CardDescription>
-              </div>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleRandomizeParameters}
-                    disabled={isReadonly || isRandomizingParameters}
-                  >
-                    {isRandomizingParameters ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Shuffle className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Randomize</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleResetParameters}
+                <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                        stepStatus === "completed"
+                          ? "bg-green-500 text-white"
+                          : stepStatus === "active"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                      }`}
+                    >
+                      {stepStatus === "completed" ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        String(stepIndex + 1)
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{param.name}</CardTitle>
+                      <CardDescription>
+                        {param.description || ""}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <Label
+                        htmlFor={`param-${paramId}-min`}
+                        className="text-xs text-muted-foreground"
+                      >
+                        Min:
+                      </Label>
+                      <Input
+                        id={`param-${paramId}-min`}
+                        type="number"
+                        min="0"
+                        max={validItemsForParam.length}
+                        value={paramMinMax.min}
+                        onChange={(e) =>
+                          setParameterMinMax((prev) => ({
+                            ...prev,
+                            [paramId]: {
+                              min: Math.max(0, parseInt(e.target.value) || 0),
+                              max: prev[paramId]?.max || 1,
+                            },
+                          }))
+                        }
+                        className="w-16 h-8 text-xs"
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Label
+                        htmlFor={`param-${paramId}-max`}
+                        className="text-xs text-muted-foreground"
+                      >
+                        Max:
+                      </Label>
+                      <Input
+                        id={`param-${paramId}-max`}
+                        type="number"
+                        min="0"
+                        max={validItemsForParam.length}
+                        value={paramMinMax.max}
+                        onChange={(e) =>
+                          setParameterMinMax((prev) => ({
+                            ...prev,
+                            [paramId]: {
+                              min: prev[paramId]?.min || 1,
+                              max: Math.max(
+                                prev[paramId]?.min || 1,
+                                parseInt(e.target.value) || 1
+                              ),
+                            },
+                          }))
+                        }
+                        className="w-16 h-8 text-xs"
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleRandomizeParameterClient(paramId)
+                          }
+                          disabled={isReadonly}
+                        >
+                          <Shuffle className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Randomize</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleResetParameter(paramId)}
+                          disabled={isReadonly}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Reset</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ParameterSelector
+                    parameterMapping={{ [paramId]: param }}
+                    parameterItemMapping={parameterItemMapping}
+                    validParameterItemIds={validItemsForParam}
+                    selectedParameterItemIds={selectedItemsForParam}
+                    onParameterItemIdsChange={(newIds) => {
+                      // Update only this parameter's items
+                      const otherParamItems = currentParameterItemIds.filter(
+                        (itemId) =>
+                          parameterItemMapping[itemId]?.parameter_id !== paramId
+                      );
+                      setCurrentParameterItemIds([
+                        ...otherParamItems,
+                        ...newIds,
+                      ]);
+                    }}
                     disabled={isReadonly}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset</TooltipContent>
-              </Tooltip>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {Object.keys(generalParameterMapping).length > 0 ? (
-              <ParameterSelector
-                parameterMapping={generalParameterMapping}
-                parameterItemMapping={parameterItemMapping}
-                validParameterItemIds={validGeneralParameterItemIds}
-                selectedParameterItemIds={currentParameterItemIds}
-                onParameterItemIdsChange={handleGeneralParameterItemIdsChange}
-                disabled={isReadonly}
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No general environment parameters available.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                  />
+                </CardContent>
+              </Card>
+            );
+          }
+        )}
 
         {/* Step 5: Content */}
         <Card
