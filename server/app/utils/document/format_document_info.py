@@ -1,21 +1,84 @@
 """Build a structured list of per-document, per-page text and optional images."""
 
 import base64
+import json
 import os
 from typing import Any
 
 from agents.items import TResponseInputItem
-from openai.types.responses.response_input_image_param import ResponseInputImageParam
-from openai.types.responses.response_input_item_param import Message
-from openai.types.responses.response_input_message_content_list_param import (
-    ResponseInputMessageContentListParam,
-)
-from openai.types.responses.response_input_text_param import ResponseInputTextParam
-
 from app.main import UPLOAD_FOLDER
-from app.utils.document.pdf_pages_to_image_data_urls import pdf_pages_to_image_data_urls
+from app.utils.document.pdf_pages_to_image_data_urls import \
+    pdf_pages_to_image_data_urls
 from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 from app.utils.document.read_text_file import read_text_file
+from openai.types.responses.response_input_image_param import \
+    ResponseInputImageParam
+from openai.types.responses.response_input_item_param import Message
+from openai.types.responses.response_input_message_content_list_param import \
+    ResponseInputMessageContentListParam
+from openai.types.responses.response_input_text_param import \
+    ResponseInputTextParam
+
+
+def _format_template_args_notice(template_args: Any) -> str:
+    """Format template arguments schema as a readable notice.
+    
+    Args:
+        template_args: Template args dict with 'name' and 'fields' keys, or JSON string
+        
+    Returns:
+        Formatted string describing the template and its required arguments
+    """
+    if not template_args:
+        return ""
+    
+    # Parse template_args if it's a string
+    parsed_args: dict[str, Any] | None = None
+    if isinstance(template_args, str):
+        try:
+            parsed_args = json.loads(template_args)
+        except json.JSONDecodeError:
+            return ""
+    elif isinstance(template_args, dict):
+        parsed_args = template_args
+    else:
+        return ""
+    
+    if not parsed_args:
+        return ""
+    
+    schema_name = parsed_args.get("name", "Template")
+    fields = parsed_args.get("fields", [])
+    
+    if not fields:
+        return f"⚠️ TEMPLATE DOCUMENT: This is a template document ({schema_name}) with template arguments that need to be filled.\n\n"
+    
+    # Build field descriptions
+    field_descriptions = []
+    for field in fields:
+        field_name = field.get("name", "")
+        field_type = field.get("type", "string")
+        required = field.get("required", False)
+        description = field.get("description", "")
+        placeholder = field.get("placeholder", "")
+        required_str = " (required)" if required else " (optional)"
+        
+        field_desc = f"  - {field_name}: {field_type}{required_str}"
+        if description:
+            field_desc += f"\n    Description: {description}"
+        if placeholder:
+            field_desc += f"\n    Example: {placeholder}"
+        
+        field_descriptions.append(field_desc)
+    
+    fields_text = "\n".join(field_descriptions)
+    
+    notice = (
+        f"⚠️ TEMPLATE DOCUMENT: This is a template document ({schema_name}) with the following template arguments:\n\n"
+        f"{fields_text}\n\n"
+    )
+    
+    return notice
 
 
 def format_document_info(
@@ -27,7 +90,7 @@ def format_document_info(
     unavailable or disabled, only include docN-text-pageM.
 
     Args:
-        documents: List of dicts with keys: id, name, file_path, mime_type
+        documents: List of dicts with keys: id, name, file_path, mime_type, template (bool), template_args (dict)
         show_images: Whether to include images in the output
 
     Returns:
@@ -57,6 +120,13 @@ def format_document_info(
         # Note: document.tags removed in BCNF migration (now via simulation_tags)
         tags_display = ""  # document.tags removed
         mime_lower = (document.get("mime_type") or "").lower()
+        
+        # Check if this is a template document
+        is_template = document.get("template", False)
+        template_args = document.get("template_args")
+        template_notice = ""
+        if is_template and template_args:
+            template_notice = _format_template_args_notice(template_args)
 
         is_pdf = file_path.lower().endswith(".pdf") or "pdf" in mime_lower
         is_image = mime_lower.startswith("image/") or file_path.lower().endswith(
@@ -93,9 +163,11 @@ def format_document_info(
                     f"Tags: {tags_display if tags_display else 'None'}\n"
                     f"Content:\n"
                 )
+                # Add template notice before content (only on first page)
+                page_content = (template_notice if page_num == 0 else "") + page_text
                 text_item_page: ResponseInputTextParam = {
                     "type": "input_text",
-                    "text": header + page_text,
+                    "text": header + page_content,
                 }
                 content_items.append(text_item_page)
         elif is_image:
@@ -143,9 +215,11 @@ def format_document_info(
                 f"Tags: {tags_display if tags_display else 'None'}\n"
                 f"Content:\n"
             )
+            # Add template notice before content
+            full_content = template_notice + content
             text_item_single: ResponseInputTextParam = {
                 "type": "input_text",
-                "text": header + content,
+                "text": header + full_content,
             }
             content_items.append(text_item_single)
 

@@ -329,8 +329,6 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 format_document_info
             from app.utils.personas import format_persona_info
             from app.utils.scenario import format_parameter_item_info
-            from app.utils.scenario.format_document_template_info import \
-                format_document_template_info
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:
@@ -377,14 +375,6 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             # For regeneration, use scenario_id as primary_id (same scenario = same key)
             primary_id = str(scenario_id)
 
-            # Format document template info if templates are available
-            document_template_info = await format_document_template_info(
-                context["document_templates"],
-                profile_id=str(final_profile_id) if final_profile_id else None,
-                primary_id=primary_id,
-            )
-
-            input_items.append(document_template_info)
             clean_input_items = [item for item in input_items if item is not None]
 
             # Set image generation context before creating tools (async)

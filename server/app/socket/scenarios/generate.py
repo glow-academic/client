@@ -21,8 +21,6 @@ from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
-from app.utils.scenario.format_document_template_info import \
-    format_document_template_info
 from app.utils.sql_helper import load_sql
 from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
                       create_model)
@@ -530,13 +528,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # Use default guest profile from context if no profile_id provided
             final_profile_id = (
                 profile_id if profile_id else context["default_guest_profile_id"]
-            )
-
-            # Format document template info if templates are available
-            document_template_info = await format_document_template_info(
-                context["document_templates"],
-                profile_id=str(final_profile_id) if final_profile_id else None,
-                primary_id=trace_id,
             )
 
             # Create scenario generation tools inline
@@ -1086,7 +1077,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 persona_info,
                 document_info,
                 field_info,
-                document_template_info,
             ]
 
             clean_input_items = [item for item in input_items if item is not None]

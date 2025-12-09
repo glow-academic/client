@@ -93,19 +93,25 @@ SELECT
     pers.description as persona_description,
     
     -- Documents data (aggregated as JSON array)
+    -- Includes template file paths for template documents (COALESCE pattern)
     COALESCE(
         (SELECT json_agg(
             json_build_object(
                 'id', d.id::text,
                 'name', d.name,
-                'file_path', u.file_path,
-                'mime_type', u.mime_type
+                'file_path', COALESCE(u.file_path, template_u.file_path),
+                'mime_type', COALESCE(u.mime_type, template_u.mime_type),
+                'template', d.template,
+                'template_args', t.args
             )
             ORDER BY array_position(p.document_ids, d.id)
         )
         FROM documents d
         LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
         LEFT JOIN uploads u ON u.id = du.upload_id
+        LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+        LEFT JOIN templates t ON t.id = dt.template_id
+        LEFT JOIN uploads template_u ON template_u.id = t.upload_id
         WHERE d.id = ANY(p.document_ids)
         ),
         '[]'::json
