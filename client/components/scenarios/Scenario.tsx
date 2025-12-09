@@ -364,6 +364,15 @@ export default function Scenario({
       throw new Error("WebSocket not connected");
     }
 
+    // Determine if we're regenerating (problem statement exists) or generating new
+    const isRegenerating = !!formData.problemStatement?.trim();
+    const initialMessage = isRegenerating
+      ? "Regenerating scenario..."
+      : "Generating scenario...";
+
+    // Create a single toast at the start
+    const toastId = toast.loading(initialMessage);
+
     return new Promise((resolve, reject) => {
       // Set up event listeners
       const handleProgress = (data: {
@@ -372,10 +381,15 @@ export default function Scenario({
         tool_name?: string;
         trace_id?: string;
       }) => {
-        // Can show progress toast if needed
-        if (data.type === "start") {
-          toast.info(data.message || "Starting scenario generation...");
-        }
+        // Update the same toast with progress messages
+        const progressMessage =
+          data.message ||
+          (data.type === "start"
+            ? initialMessage
+            : data.tool_name
+              ? `Calling ${data.tool_name}...`
+              : "Processing...");
+        toast.loading(progressMessage, { id: toastId });
       };
 
       const handleComplete = (data: {
@@ -393,6 +407,12 @@ export default function Scenario({
         socket.off("scenario_generation_error", handleError);
 
         if (data.success) {
+          // Convert toast to success
+          const successMessage = isRegenerating
+            ? "Scenario regenerated successfully!"
+            : "Scenario generated successfully!";
+          toast.success(successMessage, { id: toastId });
+
           resolve({
             success: true,
             message: data.message,
@@ -402,6 +422,10 @@ export default function Scenario({
             dynamic_document_mapping: data.dynamic_document_mapping || null,
           });
         } else {
+          // Convert toast to error
+          toast.error(data.message || "Scenario generation failed", {
+            id: toastId,
+          });
           reject(new Error(data.message || "Scenario generation failed"));
         }
       };
@@ -416,6 +440,10 @@ export default function Scenario({
         socket.off("scenario_generation_complete", handleComplete);
         socket.off("scenario_generation_error", handleError);
 
+        // Convert toast to error
+        toast.error(data.message || "Scenario generation failed", {
+          id: toastId,
+        });
         reject(new Error(data.message || "Scenario generation failed"));
       };
 
@@ -2062,17 +2090,31 @@ export default function Scenario({
         ) {
           setCurrentObjectives(result.objectives);
         }
-        // Only show success toast if not in edit mode (edit mode shows its own toast after save)
-        if (!isEditMode) {
-          toast.success("Scenario generated successfully!");
-        }
+        // Toast is already handled in handleGenerateAIScenario
       } else {
         throw new Error("No scenario content was generated");
       }
     } catch (error) {
-      toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      // Error toast is already handled in handleGenerateAIScenario for WebSocket errors
+      // Only show toast for errors that occur BEFORE calling handleGenerateAIScenario
+      // (e.g., validation errors, connection errors before WebSocket call)
+      if (error instanceof Error) {
+        // Pre-WebSocket errors that should show a toast:
+        const preWebSocketErrors = [
+          "WebSocket not connected",
+          "No valid department found",
+          "No scenario content was generated",
+        ];
+        const isPreWebSocketError = preWebSocketErrors.some((msg) =>
+          error.message.includes(msg)
+        );
+        // All other errors come from handleGenerateAIScenario and already have toasts
+        if (isPreWebSocketError) {
+          toast.error(
+            `Failed to generate scenario: ${error.message || "Unknown error"}`
+          );
+        }
+      }
     } finally {
       setIsGeneratingScenario(false);
     }
