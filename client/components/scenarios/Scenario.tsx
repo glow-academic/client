@@ -1109,14 +1109,12 @@ export default function Scenario({
   };
 
   // Update URL params when selections change (for server-driven filtering)
+  // Follows analytics pattern: Form state → URL → router.refresh() → Server re-fetch → Filtered data
+  // Server already parses URL params and returns filtered data, so no need for URL → Form sync
   useEffect(() => {
     // Skip URL updates if we're currently applying randomized selections
     // This prevents infinite loops when randomized selections trigger state updates
     if (isApplyingRandomizedRef.current) {
-      return;
-    }
-
-    if (!formDataInitializedRef.current) {
       return;
     }
 
@@ -1140,6 +1138,8 @@ export default function Scenario({
         router.replace(`${pathname}?${newParams.toString()}`, {
           scroll: false,
         });
+        // Force server components to re-render with updated search params (like analytics)
+        router.refresh();
       }
     }, 100);
 
@@ -1166,137 +1166,6 @@ export default function Scenario({
     parameterMinMax,
     pathname,
   ]);
-
-  // Initialize state from URL query parameters (form-driven from query params)
-  useEffect(() => {
-    // Only initialize from URL params once, before formDataInitializedRef is set
-    if (formDataInitializedRef.current) {
-      return;
-    }
-
-    // Parse query params from URL
-    const personaIdsParam = searchParams.get("personaIds");
-    const documentIdsParam = searchParams.get("documentIds");
-    const parameterIdsParam = searchParams.get("parameterIds");
-    const parameterItemIdsParam = searchParams.get("parameterItemIds");
-    const departmentIdsParam = searchParams.get("departmentIds");
-
-    // Initialize search terms from URL
-    const personaSearchParam = searchParams.get("personaSearch");
-    const documentSearchParam = searchParams.get("documentSearch");
-    const parameterSearchParam = searchParams.get("parameterSearch");
-    if (personaSearchParam) {
-      setPersonaSearchTerm(personaSearchParam);
-    }
-    if (documentSearchParam) {
-      setDocumentSearchTerm(documentSearchParam);
-    }
-    if (parameterSearchParam) {
-      setParameterSearchTerm(parameterSearchParam);
-    }
-
-    // Initialize range values from URL
-    const personaMinParam = searchParams.get("personaMin");
-    const personaMaxParam = searchParams.get("personaMax");
-    if (personaMinParam || personaMaxParam) {
-      setPersonaMinMax({
-        min: personaMinParam ? parseInt(personaMinParam, 10) : 1,
-        max: personaMaxParam ? parseInt(personaMaxParam, 10) : 2,
-      });
-    }
-
-    const documentMinParam = searchParams.get("documentMin");
-    const documentMaxParam = searchParams.get("documentMax");
-    if (documentMinParam || documentMaxParam) {
-      setDocumentMinMax({
-        min: documentMinParam ? parseInt(documentMinParam, 10) : 0,
-        max: documentMaxParam ? parseInt(documentMaxParam, 10) : 2,
-      });
-    }
-
-    const parameterSelectionMinParam = searchParams.get(
-      "parameterSelectionMin"
-    );
-    const parameterSelectionMaxParam = searchParams.get(
-      "parameterSelectionMax"
-    );
-    if (parameterSelectionMinParam || parameterSelectionMaxParam) {
-      setParameterSelectionMinMax({
-        min: parameterSelectionMinParam
-          ? parseInt(parameterSelectionMinParam, 10)
-          : 0,
-        max: parameterSelectionMaxParam
-          ? parseInt(parameterSelectionMaxParam, 10)
-          : 5,
-      });
-    }
-
-    // Initialize per-parameter item ranges from URL
-    const parameterItemRanges: Record<string, { min: number; max: number }> =
-      {};
-    for (const [key, value] of searchParams.entries()) {
-      if (key.startsWith("parameterItemMin_")) {
-        const paramId = key.replace("parameterItemMin_", "");
-        const maxKey = `parameterItemMax_${paramId}`;
-        const maxValue = searchParams.get(maxKey);
-        if (!parameterItemRanges[paramId]) {
-          parameterItemRanges[paramId] = { min: 1, max: 2 };
-        }
-        parameterItemRanges[paramId].min = parseInt(value, 10);
-        if (maxValue) {
-          parameterItemRanges[paramId].max = parseInt(maxValue, 10);
-        }
-      } else if (key.startsWith("parameterItemMax_")) {
-        const paramId = key.replace("parameterItemMax_", "");
-        if (!parameterItemRanges[paramId]) {
-          parameterItemRanges[paramId] = { min: 1, max: 2 };
-        }
-        parameterItemRanges[paramId].max = parseInt(value, 10);
-      }
-    }
-    if (Object.keys(parameterItemRanges).length > 0) {
-      setParameterMinMax((prev) => ({ ...prev, ...parameterItemRanges }));
-    }
-
-    // Initialize selections from URL params (only in create mode, edit mode uses server data)
-    if (!isEditMode) {
-      if (personaIdsParam) {
-        const ids = personaIdsParam.split(",").filter(Boolean);
-        if (ids.length > 0) {
-          setSelectedPersonaIds(ids);
-        }
-      }
-
-      if (documentIdsParam) {
-        const ids = documentIdsParam.split(",").filter(Boolean);
-        if (ids.length > 0) {
-          setCurrentDocumentIds(ids);
-        }
-      }
-
-      if (parameterIdsParam) {
-        const ids = parameterIdsParam.split(",").filter(Boolean);
-        if (ids.length > 0) {
-          handleInputChange("parameterIds", ids);
-        }
-      }
-
-      if (parameterItemIdsParam) {
-        const ids = parameterItemIdsParam.split(",").filter(Boolean);
-        if (ids.length > 0) {
-          setCurrentParameterItemIds(ids);
-        }
-      }
-
-      if (departmentIdsParam) {
-        const ids = departmentIdsParam.split(",").filter(Boolean);
-        if (ids.length > 0) {
-          setFormData((prev) => ({ ...prev, departmentIds: ids }));
-          setPreviousDepartmentIds((prev) => (prev.length === 0 ? ids : prev));
-        }
-      }
-    }
-  }, [searchParams, isEditMode, handleInputChange]);
 
   // Load scenario data from V2 response
   useEffect(() => {
@@ -1402,13 +1271,77 @@ export default function Scenario({
       );
       formDataInitializedRef.current = true;
     } else if (!isEditMode && scenarioData && !formDataInitializedRef.current) {
-      // Create mode: use initialFormData (which already has primaryDepartmentId set correctly)
-      // Only set on initial load to prevent overwriting user selections when scenarioData updates
+      // Create mode: initialize from server response (server-driven approach)
+      // Server already parsed URL params and returns selected IDs, search terms, ranges
+      const newData = scenarioData as ScenarioNewOut;
       setFormData({
         ...initialFormData,
         scenarioAgentId: scenarioData.scenario_agent_id || null,
         imageAgentId: scenarioData.image_agent_id || null,
+        parameterIds: newData.selected_parameter_ids || [],
       });
+
+      // Initialize selections from server response (filtered to valid IDs)
+      if (newData.selected_persona_ids) {
+        setSelectedPersonaIds(newData.selected_persona_ids);
+      }
+      if (newData.selected_document_ids) {
+        setCurrentDocumentIds(newData.selected_document_ids);
+      }
+      if (newData.selected_parameter_item_ids) {
+        setCurrentParameterItemIds(newData.selected_parameter_item_ids);
+      }
+
+      // Initialize search terms from server response
+      if (newData.persona_search) {
+        setPersonaSearchTerm(newData.persona_search);
+      }
+      if (newData.document_search) {
+        setDocumentSearchTerm(newData.document_search);
+      }
+      if (newData.parameter_search) {
+        setParameterSearchTerm(newData.parameter_search);
+      }
+
+      // Initialize range values from server response
+      if (
+        newData.persona_min !== undefined ||
+        newData.persona_max !== undefined
+      ) {
+        setPersonaMinMax({
+          min: newData.persona_min ?? 1,
+          max: newData.persona_max ?? 2,
+        });
+      }
+      if (
+        newData.document_min !== undefined ||
+        newData.document_max !== undefined
+      ) {
+        setDocumentMinMax({
+          min: newData.document_min ?? 0,
+          max: newData.document_max ?? 2,
+        });
+      }
+      if (
+        newData.parameter_selection_min !== undefined ||
+        newData.parameter_selection_max !== undefined
+      ) {
+        setParameterSelectionMinMax({
+          min: newData.parameter_selection_min ?? 0,
+          max: newData.parameter_selection_max ?? 5,
+        });
+      }
+
+      // Initialize per-parameter item ranges from server response
+      if (newData.parameter_item_ranges) {
+        setParameterMinMax(
+          newData.parameter_item_ranges as Record<
+            string,
+            { min: number; max: number }
+          >
+        );
+      }
+
       formDataInitializedRef.current = true;
     }
   }, [

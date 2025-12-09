@@ -162,6 +162,23 @@ class ScenarioDetailResponse(BaseModel):
     allowed_ranges: AllowedRanges | None = None
     # Randomized selections (if randomization params provided)
     randomized_selections: RandomizedSelections | None = None
+    # Selected IDs from request (filtered to valid ones) - server-driven approach
+    selected_persona_ids: list[str] | None = None
+    selected_document_ids: list[str] | None = None
+    selected_parameter_ids: list[str] | None = None
+    selected_parameter_item_ids: list[str] | None = None
+    # Search terms from request
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    # Range values from request
+    persona_min: int | None = None
+    persona_max: int | None = None
+    document_min: int | None = None
+    document_max: int | None = None
+    parameter_selection_min: int | None = None
+    parameter_selection_max: int | None = None
+    parameter_item_ranges: dict[str, dict[str, int]] | None = None
 
 
 router = APIRouter()
@@ -1368,6 +1385,47 @@ async def get_scenario_new(
             # Note: This filters valid_parameter_ids, not the filtered lists above
             # We'll need to filter the parameter selection separately if needed
 
+        # Filter selected IDs from request to only include valid ones (server-driven approach)
+        selected_persona_ids: list[str] | None = None
+        selected_document_ids: list[str] | None = None
+        selected_parameter_ids: list[str] | None = None
+        selected_parameter_item_ids: list[str] | None = None
+
+        if request_data.personaIds:
+            # Intersect requested IDs with valid filtered IDs
+            selected_persona_ids = [
+                pid for pid in request_data.personaIds if pid in filtered_valid_persona_ids
+            ]
+
+        if request_data.documentIds:
+            # Intersect requested IDs with valid filtered IDs
+            selected_document_ids = [
+                did for did in request_data.documentIds if did in filtered_valid_document_ids
+            ]
+
+        if request_data.parameterIds:
+            # Intersect requested IDs with valid parameter IDs
+            selected_parameter_ids = [
+                pid for pid in request_data.parameterIds if pid in valid_parameter_ids
+            ]
+
+        if request_data.parameterItemIds:
+            # Intersect requested IDs with valid general parameter item IDs
+            if filtered_valid_general_parameter_item_ids:
+                selected_parameter_item_ids = [
+                    item_id
+                    for item_id in request_data.parameterItemIds
+                    if item_id in filtered_valid_general_parameter_item_ids
+                ]
+            else:
+                # Fallback to valid parameter item IDs if general not available
+                if filtered_valid_parameter_item_ids:
+                    selected_parameter_item_ids = [
+                        item_id
+                        for item_id in request_data.parameterItemIds
+                        if item_id in filtered_valid_parameter_item_ids
+                    ]
+
         response_data = ScenarioDetailResponse(
             # Basic fields (empty defaults)
             name="",
@@ -1420,6 +1478,23 @@ async def get_scenario_new(
             image_agent_id=image_agent_id,
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
+            # Selected IDs from request (filtered to valid ones)
+            selected_persona_ids=selected_persona_ids,
+            selected_document_ids=selected_document_ids,
+            selected_parameter_ids=selected_parameter_ids,
+            selected_parameter_item_ids=selected_parameter_item_ids,
+            # Search terms from request
+            persona_search=request_data.personaSearch,
+            document_search=request_data.documentSearch,
+            parameter_search=request_data.parameterSearch,
+            # Range values from request
+            persona_min=request_data.personaMin,
+            persona_max=request_data.personaMax,
+            document_min=request_data.documentMin,
+            document_max=request_data.documentMax,
+            parameter_selection_min=request_data.parameterSelectionMin,
+            parameter_selection_max=request_data.parameterSelectionMax,
+            parameter_item_ranges=request_data.parameterItemRanges,
         )
 
         # Cache response

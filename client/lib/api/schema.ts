@@ -15444,6 +15444,38 @@ export interface components {
             valid_general_parameter_item_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
+            /** Selected Persona Ids */
+            selected_persona_ids?: string[] | null;
+            /** Selected Document Ids */
+            selected_document_ids?: string[] | null;
+            /** Selected Parameter Ids */
+            selected_parameter_ids?: string[] | null;
+            /** Selected Parameter Item Ids */
+            selected_parameter_item_ids?: string[] | null;
+            /** Persona Search */
+            persona_search?: string | null;
+            /** Document Search */
+            document_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Persona Min */
+            persona_min?: number | null;
+            /** Persona Max */
+            persona_max?: number | null;
+            /** Document Min */
+            document_min?: number | null;
+            /** Document Max */
+            document_max?: number | null;
+            /** Parameter Selection Min */
+            parameter_selection_min?: number | null;
+            /** Parameter Selection Max */
+            parameter_selection_max?: number | null;
+            /** Parameter Item Ranges */
+            parameter_item_ranges?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            } | null;
         };
         /**
          * ContentItemInRequest
