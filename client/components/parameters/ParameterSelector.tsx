@@ -6,14 +6,14 @@
  * 07/21/2025
  */
 "use client";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 
-import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
 
 type ParameterMappingItem = {
   name: string;
@@ -544,52 +544,15 @@ export function ParameterSelector({
               </div>
             );
           } else {
-            // Non-numerical parameter rendering
+            // Non-numerical parameter rendering with card grid
             return (
-              <div key={parameterId} className="space-y-2">
+              <div key={parameterId} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium">
                     {parameter?.name || "Parameter"}
                   </Label>
-                  {selectedItemIds.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => resetParameter(parameterId)}
-                      className="h-6 w-6 p-0 hover:bg-muted"
-                      disabled={disabled}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  )}
                 </div>
 
-                <ParameterItemPicker
-                  mapping={parameterItemMapping}
-                  validIds={itemIds}
-                  selectedIds={selectedItemIds}
-                  onSelect={(ids) => {
-                    // Enforce maxItemsPerParameter limit
-                    let limitedIds = ids;
-                    if (
-                      maxItemsPerParameter !== undefined &&
-                      ids.length > maxItemsPerParameter
-                    ) {
-                      limitedIds = ids.slice(0, maxItemsPerParameter);
-                    }
-                    handleNonNumericalParameterChange(parameterId, limitedIds);
-                  }}
-                  parameterId={parameterId}
-                  parameterName={parameter?.name || ""}
-                  parameterDescription={parameter?.description || ""}
-                  isDefaultParameter={false}
-                  disabled={
-                    disabled ||
-                    (maxItemsPerParameter !== undefined &&
-                      selectedItemIds.length >= maxItemsPerParameter)
-                  }
-                  multiSelect={true}
-                />
                 {maxItemsPerParameter !== undefined && (
                   <p className="text-xs text-muted-foreground">
                     Select up to {maxItemsPerParameter}{" "}
@@ -597,18 +560,66 @@ export function ParameterSelector({
                   </p>
                 )}
 
-                {selectedItemIds.length > 0 && (
-                  <div className="space-y-1">
-                    {selectedItemIds.map((id) => {
-                      const item = parameterItemMapping[id];
-                      return item ? (
-                        <p key={id} className="text-xs text-muted-foreground">
-                          {item.description}
-                        </p>
-                      ) : null;
-                    })}
-                  </div>
-                )}
+                <div className="grid grid-cols-5 gap-3 max-h-[184px] overflow-y-auto py-2 px-2">
+                  {itemIds.map((itemId) => {
+                    const item = parameterItemMapping[itemId];
+                    if (!item) return null;
+                    
+                    const isSelected = selectedItemIds.includes(itemId);
+                    const isDisabled =
+                      disabled ||
+                      (maxItemsPerParameter !== undefined &&
+                        !isSelected &&
+                        selectedItemIds.length >= maxItemsPerParameter);
+                    
+                    return (
+                      <button
+                        key={itemId}
+                        type="button"
+                        onClick={() => {
+                          if (isDisabled) return;
+                          const isCurrentlySelected = selectedItemIds.includes(itemId);
+                          let newIds: string[];
+                          
+                          if (isCurrentlySelected) {
+                            newIds = selectedItemIds.filter((id) => id !== itemId);
+                          } else {
+                            // Enforce maxItemsPerParameter limit
+                            let limitedIds = [...selectedItemIds, itemId];
+                            if (
+                              maxItemsPerParameter !== undefined &&
+                              limitedIds.length > maxItemsPerParameter
+                            ) {
+                              limitedIds = limitedIds.slice(0, maxItemsPerParameter);
+                            }
+                            newIds = limitedIds;
+                          }
+                          handleNonNumericalParameterChange(parameterId, newIds);
+                        }}
+                        disabled={isDisabled}
+                        className={cn(
+                          "relative flex flex-col gap-2 p-3 rounded-lg border bg-card text-card-foreground shadow-sm transition-all text-left",
+                          "hover:shadow-md hover:bg-accent/50",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          "disabled:pointer-events-none disabled:opacity-50",
+                          isSelected && "ring-2 ring-primary bg-accent"
+                        )}
+                      >
+                        <div className="font-medium text-sm line-clamp-1">
+                          {item.name}
+                        </div>
+                        {item.description && (
+                          <div className="text-xs text-muted-foreground line-clamp-2">
+                            {item.description}
+                          </div>
+                        )}
+                        {isSelected && (
+                          <Check className="absolute top-2 right-2 h-3.5 w-3.5 text-primary" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           }

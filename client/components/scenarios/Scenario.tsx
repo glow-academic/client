@@ -19,7 +19,6 @@ import {
   Target,
   Trash2,
   Upload,
-  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -3157,7 +3156,7 @@ export default function Scenario({
               : ""
           }`}
         >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
             <div className="flex items-center space-x-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -3230,17 +3229,11 @@ export default function Scenario({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <GenericPicker
-              items={personaMapping}
-              itemIds={validPersonaIds}
-              selectedIds={selectedPersonaIds}
-              onSelect={handlePersonaSelect}
-              getId={(persona) => (persona as unknown as { id: string }).id}
-              getLabel={(persona) => persona.name || ""}
-              getSearchText={(persona) =>
-                `${persona.name} ${persona.description || ""}`
-              }
-              renderItem={(persona, isSelected) => {
+            <div className="grid grid-cols-2 gap-4 max-h-[272px] overflow-y-auto py-2 px-2">
+              {validPersonaIds.map((personaId) => {
+                const persona = personaMapping[personaId];
+                if (!persona) return null;
+
                 const IconComponent =
                   getPersonaIconComponent(persona.icon) || Brain;
                 const hexColor = persona.color || "#64748b";
@@ -3255,98 +3248,56 @@ export default function Scenario({
                   const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
                   return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
                 };
+
+                const isSelected = selectedPersonaIds.includes(personaId);
+
                 return (
-                  <div className="flex items-center gap-3 w-full">
-                    <div
-                      className="p-2 rounded-lg shadow-lg flex-shrink-0"
-                      style={{
-                        background: generateGradient(hexColor),
-                      }}
-                    >
-                      <IconComponent className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{persona.name}</div>
-                      {persona.description && (
-                        <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                          {persona.description}
-                        </div>
-                      )}
-                    </div>
-                    <Check
-                      className={cn(
-                        "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-                        isSelected ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                  </div>
-                );
-              }}
-              renderButton={(selectedItems) => {
-                if (selectedItems.length === 0) return "Select a persona...";
-                if (selectedItems.length === 1) {
-                  const persona = selectedItems[0];
-                  const IconComponent =
-                    getPersonaIconComponent(persona?.icon || "") || Brain;
-                  const hexColor: string = persona?.color || "#64748b";
-                  const generateGradient = (hex: string) => {
-                    const cleanHex = hex.replace("#", "");
-                    const r = parseInt(cleanHex.substr(0, 2), 16);
-                    const g = parseInt(cleanHex.substr(2, 2), 16);
-                    const b = parseInt(cleanHex.substr(4, 2), 16);
-                    const lighterR = Math.min(255, r + 60);
-                    const lighterG = Math.min(255, g + 60);
-                    const lighterB = Math.min(255, b + 60);
-                    const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                    return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                  };
-                  return (
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <button
+                    key={personaId}
+                    type="button"
+                    onClick={() => {
+                      if (isReadonly) return;
+                      const newIds = isSelected
+                        ? selectedPersonaIds.filter((id) => id !== personaId)
+                        : [...selectedPersonaIds, personaId];
+                      handlePersonaSelect(newIds);
+                    }}
+                    disabled={isReadonly}
+                    className={cn(
+                      "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                      "hover:shadow-md hover:bg-accent/50",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      "disabled:pointer-events-none disabled:opacity-50",
+                      isSelected && "ring-2 ring-primary bg-accent"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
                       <div
-                        className="p-1 rounded-md shadow-sm flex-shrink-0"
+                        className="p-2 rounded-lg shadow-lg flex-shrink-0"
                         style={{
                           background: generateGradient(hexColor),
                         }}
                       >
-                        <IconComponent className="h-3.5 w-3.5 text-white" />
+                        <IconComponent className="h-5 w-5 text-white" />
                       </div>
-                      <span className="truncate">
-                        {persona?.name || "Select a persona..."}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">
+                          {persona.name}
+                        </div>
+                        {persona.description && (
+                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {persona.description}
+                          </div>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      )}
                     </div>
-                  );
-                }
-                return `${selectedItems.length} selected`;
-              }}
-              renderChip={(persona, onRemove) => (
-                <div
-                  key={(persona as unknown as { id: string }).id}
-                  className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
-                >
-                  <span className="truncate">{persona.name}</span>
-                  {!isReadonly && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemove();
-                      }}
-                      className="text-muted-foreground hover:text-destructive flex-shrink-0"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              )}
-              multiSelect={true}
-              hideSelectedChips={false}
-              placeholder="Select a persona..."
-              showLabel={false}
-              description="Choose the persona that will interact with students in this scenario."
-              disabled={isReadonly}
-              buttonClassName="w-full"
-              groupHeading="Personas"
-            />
+                  </button>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
 
@@ -3358,7 +3309,7 @@ export default function Scenario({
               : ""
           }`}
         >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
             <div className="flex items-center space-x-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -3475,7 +3426,7 @@ export default function Scenario({
                   !isEditMode && stepStatus === "pending" ? "opacity-50" : ""
                 }`}
               >
-                <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+                <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
                   <div className="flex items-center space-x-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
