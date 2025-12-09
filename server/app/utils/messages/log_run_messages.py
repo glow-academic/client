@@ -85,7 +85,12 @@ async def log_run_messages(
             str(run_id),
         )
         if result and result.get("message_id"):
-            developer_message_ids.append(uuid.UUID(result["message_id"]))
+            # Convert asyncpg UUID to Python UUID (handle both string and UUID object)
+            message_id = result["message_id"]
+            if isinstance(message_id, uuid.UUID):
+                developer_message_ids.append(message_id)
+            else:
+                developer_message_ids.append(uuid.UUID(str(message_id)))
 
     # Create assistant message if output provided
     if assistant_output and assistant_output.strip():
@@ -104,7 +109,12 @@ async def log_run_messages(
                 str(chat_id) if chat_id else None,
             )
             if sys_dev_result and sys_dev_result.get("system_message_id"):
-                parent_message_id = uuid.UUID(sys_dev_result["system_message_id"])
+                # Convert asyncpg UUID to Python UUID (handle both string and UUID object)
+                system_msg_id = sys_dev_result["system_message_id"]
+                if isinstance(system_msg_id, uuid.UUID):
+                    parent_message_id = system_msg_id
+                else:
+                    parent_message_id = uuid.UUID(str(system_msg_id))
 
         # Create assistant message with branch
         sql_create_assistant = load_sql(

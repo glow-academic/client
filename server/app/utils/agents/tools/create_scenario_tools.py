@@ -27,6 +27,7 @@ def create_scenario_tools(
     images_enabled: bool = False,
     profile_id: str | None = None,
     trace_id: str | None = None,
+    document_templates: list[dict[str, Any]] | None = None,
 ) -> list[Any]:
     """Create all scenario generation function tools.
 
@@ -37,6 +38,8 @@ def create_scenario_tools(
         images_enabled: Whether to include image generation tool
         profile_id: Profile ID for tenant isolation (required if images_enabled)
         trace_id: Trace ID for request identification (optional)
+        document_templates: Optional list of document templates with template_args schemas
+                          If provided and documents_enabled, uses schema for strongly typed function
     """
     tools = []
 
@@ -70,14 +73,44 @@ def create_scenario_tools(
                 "profile_id required for dynamic document storage, skipping tool"
             )
         else:
+            # Extract template schema from document_templates if available
+            template_schema: dict[str, Any] | None = None
+            if document_templates and len(document_templates) > 0:
+                # Use the first template's schema (typically there's only one)
+                first_template = document_templates[0]
+                template_args_raw = first_template.get("template_args")
+                if template_args_raw:
+                    # Parse if it's a string, otherwise use as-is
+                    if isinstance(template_args_raw, str):
+                        import json
+
+                        try:
+                            template_schema = json.loads(template_args_raw)
+                        except json.JSONDecodeError:
+                            logger.warning(
+                                "Failed to parse template_args JSON, falling back to untyped function"
+                            )
+                    elif isinstance(template_args_raw, dict):
+                        template_schema = template_args_raw
+                    else:
+                        logger.warning(
+                            f"Unexpected template_args type: {type(template_args_raw)}, falling back to untyped function"
+                        )
+
             tools.append(
                 create_dynamic_document_function(
                     group_id=group_id,
                     profile_id=profile_id,
                     primary_id=trace_id or (str(group_id) if group_id else None),
+                    template_schema=template_schema,
                 )
             )
-            logger.info("Created dynamic document tool")
+            if template_schema:
+                logger.info(
+                    f"Created strongly typed dynamic document tool with schema: {template_schema.get('name', 'Unknown')}"
+                )
+            else:
+                logger.info("Created dynamic document tool (untyped fallback)")
     else:
         logger.info("Dynamic document tool skipped (documents_enabled=False)")
 
@@ -208,3 +241,4 @@ def _create_scenario_image_generation_function(
             return f"Error: Failed to start image generation: {str(e)}"
 
     return function_tool(generate_image)
+

@@ -317,6 +317,7 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
                 images_enabled=images_enabled,
                 profile_id=str(final_profile_id) if final_profile_id else None,
                 trace_id=trace_id,
+                document_templates=context["document_templates"],
             )
             scenario_tools.append(debug_info_tool)
 

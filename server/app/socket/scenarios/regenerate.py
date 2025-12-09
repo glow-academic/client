@@ -360,6 +360,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 images_enabled=images_enabled,
                 profile_id=str(final_profile_id) if final_profile_id else None,
                 trace_id=primary_id,  # Use scenario_id as trace_id for regeneration
+                document_templates=context["document_templates"],
             )
             scenario_tools.append(debug_info_tool)
 
