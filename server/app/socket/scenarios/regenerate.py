@@ -4,30 +4,22 @@ import json
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner,
+                    ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_pool, get_scenario_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_regeneration_messages import log_regeneration_messages
-from app.utils.scenario.image_generation import (
-    get_image_generation_results,
-    set_image_generation_context,
-)
+from app.utils.messages.log_regeneration_messages import \
+    log_regeneration_messages
+from app.utils.scenario.image_generation import (get_image_generation_results,
+                                                 set_image_generation_context)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -152,10 +144,11 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             previous_run_id = uuid.UUID(previous_run_row["run_id"])
 
-            # Get scenario's current persona/document/parameter IDs
+            # Get scenario's current persona/document/parameter IDs and agent_id
             sql_get_scenario_ids = """
                 SELECT 
                     (SELECT rp.persona_id FROM scenario_personas rp WHERE rp.scenario_id = s.id AND rp.active = true LIMIT 1) as persona_id,
+                    s.scenario_agent_id::text as scenario_agent_id,
                     COALESCE(
                         json_agg(DISTINCT sd.document_id::text) FILTER (WHERE sd.document_id IS NOT NULL),
                         '[]'::json
@@ -168,7 +161,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
                 LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id AND spi.active = true
                 WHERE s.id = $1::uuid
-                GROUP BY s.id
+                GROUP BY s.id, s.scenario_agent_id
             """
             scenario_ids_row = await conn.fetchrow(
                 sql_get_scenario_ids, str(scenario_id)
@@ -200,6 +193,22 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 if scenario_ids_row["parameter_item_ids"]
                 else []
             )
+            scenario_agent_id = (
+                uuid.UUID(scenario_ids_row["scenario_agent_id"])
+                if scenario_ids_row["scenario_agent_id"]
+                else None
+            )
+
+            if not scenario_agent_id:
+                await scenario_regeneration_error(
+                    ScenarioRegenerationErrorPayload(
+                        success=False,
+                        message=f"Scenario {data.scenarioId} has no scenario agent configured",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
 
             # Get context using same SQL as generate_ai
             doc_ids_str = [str(d) for d in document_ids] if document_ids else []
@@ -214,6 +223,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 str(persona_id) if persona_id else None,
                 doc_ids_str,
                 param_ids_str,
+                str(scenario_agent_id),  # agent_id (required)
             )
 
             if not context_row:
@@ -281,12 +291,12 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             }
 
             # Format input items (same as generation)
-            from app.utils.document.format_document_info import format_document_info
+            from app.utils.document.format_document_info import \
+                format_document_info
             from app.utils.personas import format_persona_info
             from app.utils.scenario import format_parameter_item_info
-            from app.utils.scenario.format_document_template_info import (
-                format_document_template_info,
-            )
+            from app.utils.scenario.format_document_template_info import \
+                format_document_template_info
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:

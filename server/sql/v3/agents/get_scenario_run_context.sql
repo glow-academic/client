@@ -1,9 +1,15 @@
 -- Get all data needed to run scenario agent with optimized JOIN
--- Parameters: $1=department_id (uuid), $2=persona_id (uuid, nullable), $3=document_ids[] (uuid array), $4=parameter_item_ids[] (uuid array)
+-- Parameters: $1=department_id (uuid), $2=persona_id (uuid, nullable), $3=document_ids[] (uuid array), $4=parameter_item_ids[] (uuid array), $5=agent_id (uuid, required)
 -- Returns: agent, model, provider, persona, documents, parameter items, and default guest profile data
+-- Uses the provided agent_id directly (UI handles filtering and selection)
 WITH params AS (
     -- Explicitly cast parameters for asyncpg type inference
-    SELECT $1::uuid as department_id, $2::uuid as persona_id, $3::uuid[] as document_ids, $4::uuid[] as parameter_item_ids
+    SELECT 
+        $1::uuid as department_id, 
+        $2::uuid as persona_id, 
+        $3::uuid[] as document_ids, 
+        $4::uuid[] as parameter_item_ids,
+        $5::uuid as agent_id
 ),
 default_guest AS (
     -- Get default guest profile from settings system
@@ -14,22 +20,12 @@ default_guest AS (
     LIMIT 1
 ),
 best_agent AS (
+    -- Use the provided agent_id directly (UI handles filtering and selection)
     SELECT a.id as agent_id
     FROM agents a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN params p
-    WHERE a.role = 'scenario'
+    WHERE a.id = p.agent_id
     AND a.active = true
-    AND (
-        -- Include if agent is linked to the specified department
-        ad.department_id = p.department_id
-        -- OR agent has no department links (cross-department)
-        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
-    )
-    ORDER BY 
-        -- Prioritize department-specific agents over cross-department agents
-        CASE WHEN ad.department_id = p.department_id THEN 0 ELSE 1 END
-    LIMIT 1
 ),
 profile_rate_limit AS (
     -- Get rate limit for the default guest profile

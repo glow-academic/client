@@ -129,7 +129,7 @@ def create_dynamic_document_function(
                 # Create Field annotation
                 if required:
                     param_def = f"{field_name}: {python_type_str} = Field(..., description={repr(field_description)})"
-    else:
+                else:
                     param_def = f"{field_name}: {python_type_str} | None = Field(default=None, description={repr(field_description)})"
                 
                 param_definitions.append(param_def)

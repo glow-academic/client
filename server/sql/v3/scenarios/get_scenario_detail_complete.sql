@@ -994,8 +994,9 @@ user_departments_for_agents AS (
     WHERE pd.active = true
 ),
 valid_agents AS (
-    -- Get agents with roles 'scenario' or 'image'
+    -- Get agents with roles 'scenario' (base + fine-grained types) or 'image'
     -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    -- UI will filter by role based on scenario flags (objectives_enabled, image_enabled, documents_enabled)
     SELECT 
         COALESCE(
             jsonb_object_agg(
@@ -1012,7 +1013,21 @@ valid_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true 
-    AND a.role IN ('scenario', 'image')
+    AND (
+        -- Include all scenario role types (base + fine-grained) for UI filtering
+        a.role IN (
+            'scenario',
+            'scenario-image',
+            'scenario-objectives',
+            'scenario-templates',
+            'scenario-image-objectives',
+            'scenario-image-templates',
+            'scenario-objectives-templates',
+            'scenario-image-objectives-templates'
+        )
+        -- OR image agents
+        OR a.role = 'image'
+    )
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0

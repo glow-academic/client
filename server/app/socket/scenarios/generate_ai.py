@@ -80,11 +80,12 @@ class ScenarioImageGenerationErrorPayload(BaseModel):
 # Pydantic model for client-to-server event
 class GenerateScenarioAIPayload(BaseModel):
     departmentId: str
+    agentId: str  # Required: UI filters and selects appropriate agent based on flags
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
     fieldIds: list[str] | None = None
     profileId: str | None = None
-    objectivesEnabled: bool = True
+    objectivesEnabled: bool = True  # Used for tool creation, not agent selection
 
 
 # Emit helper functions
@@ -196,12 +197,29 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
             )
 
             sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
+            # Agent ID should be provided in payload (UI filters and selects appropriate agent)
+            # For backward compatibility, if not provided, we'll need to find a default agent
+            # But ideally the UI should always provide agent_id
+            agent_id = uuid.UUID(data.agentId) if hasattr(data, 'agentId') and data.agentId else None
+            
+            if not agent_id:
+                await scenario_generation_error(
+                    ScenarioGenerationErrorPayload(
+                        success=False,
+                        message="Agent ID is required for scenario generation",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
+            
             context_row = await conn.fetchrow(
                 sql,
                 str(department_id),
                 str(persona_id) if persona_id else None,
                 doc_ids_str,
                 field_ids_str,
+                str(agent_id),  # agent_id (required)
             )
 
             if not context_row:
@@ -284,6 +302,7 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
                 field_info = format_parameter_item_info(context["parameter_items"])
 
             # Create scenario generation tools
+            # Determine which tools to enable based on agent role and provided flags
             group_id = None
             objectives_enabled = data.objectivesEnabled
             documents_enabled = bool(document_ids and len(document_ids) > 0)

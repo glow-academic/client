@@ -587,11 +587,26 @@ default_image_agent AS (
 ),
 agent_filtered AS (
     -- Filter agents by department access
+    -- Include all scenario role types (base + fine-grained) and image agents
     SELECT a.id, a.name, a.description, a.role
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true 
-    AND a.role IN ('scenario', 'image')
+    AND (
+        -- Include all scenario role types (base + fine-grained)
+        a.role IN (
+            'scenario',
+            'scenario-image',
+            'scenario-objectives',
+            'scenario-templates',
+            'scenario-image-objectives',
+            'scenario-image-templates',
+            'scenario-objectives-templates',
+            'scenario-image-objectives-templates'
+        )
+        -- OR image agents
+        OR a.role = 'image'
+    )
     GROUP BY a.id, a.name, a.description, a.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT id FROM user_departments)) > 0

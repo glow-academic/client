@@ -453,8 +453,16 @@ export default function Scenario({
       socket.on("scenario_generation_error", handleError);
 
       // Emit the event
+      // agentId is required - UI filters and selects appropriate agent based on flags
+      if (!formData.scenarioAgentId) {
+        toast.error("Please select a scenario agent before generating");
+        reject(new Error("Scenario agent ID is required"));
+        return;
+      }
+
       socket.emit("generate_scenario_ai", {
         departmentId: body.departmentId,
+        agentId: formData.scenarioAgentId, // Required: selected agent ID
         personaIds: body.personaIds,
         documentIds: body.documentIds,
         fieldIds: body.fieldIds, // Renamed from parameterItemIds
@@ -1377,10 +1385,71 @@ export default function Scenario({
     }
   }, [scenarioData?.problem_statement_id, isEditMode]);
 
+  // Helper function to compute scenario agent role from flags
+  const getScenarioAgentRole = useCallback(
+    (
+      imageEnabled: boolean,
+      objectivesEnabled: boolean,
+      documentsEnabled: boolean
+    ): string => {
+      // Determine agent role based on flag combinations (matches SQL function logic)
+      if (imageEnabled && objectivesEnabled && documentsEnabled) {
+        return "scenario-image-objectives-templates";
+      } else if (imageEnabled && objectivesEnabled) {
+        return "scenario-image-objectives";
+      } else if (imageEnabled && documentsEnabled) {
+        return "scenario-image-templates";
+      } else if (objectivesEnabled && documentsEnabled) {
+        return "scenario-objectives-templates";
+      } else if (imageEnabled) {
+        return "scenario-image";
+      } else if (objectivesEnabled) {
+        return "scenario-objectives";
+      } else if (documentsEnabled) {
+        return "scenario-templates";
+      } else {
+        return "scenario"; // Base scenario (no special features)
+      }
+    },
+    []
+  );
+
+  // Compute expected agent role from current flags
+  const expectedScenarioRole = useMemo(() => {
+    const documentsEnabled = currentDocumentIds.length > 0;
+    return getScenarioAgentRole(useImage, useObjectives, documentsEnabled);
+  }, [useImage, useObjectives, currentDocumentIds, getScenarioAgentRole]);
+
   // Reset initialization flag when switching between edit/create modes or scenario changes
   useEffect(() => {
     formDataInitializedRef.current = false;
   }, [scenarioId, isEditMode]);
+
+  // Reset agent selection when flags change to incompatible combination
+  useEffect(() => {
+    if (!scenarioData || !agentMapping || !formData.scenarioAgentId) return;
+
+    const agent = agentMapping[formData.scenarioAgentId];
+    const agentRole = agent?.roles?.[0]; // Get first role (should be only one)
+
+    // If current agent doesn't match expected role, clear selection
+    if (
+      agentRole &&
+      agentRole !== expectedScenarioRole &&
+      agentRole !== "scenario"
+    ) {
+      // Only clear if it's not the legacy 'scenario' role (backward compatibility)
+      setFormData((prev) => ({
+        ...prev,
+        scenarioAgentId: null,
+      }));
+    }
+  }, [
+    expectedScenarioRole,
+    scenarioData,
+    agentMapping,
+    formData.scenarioAgentId,
+  ]);
 
   // Auto-select agents when there's only one option (similar to Document.tsx)
   useEffect(() => {
@@ -1389,7 +1458,9 @@ export default function Scenario({
     const scenarioAgentIds =
       scenarioData.valid_agent_ids?.filter((id) => {
         const agent = agentMapping[id];
-        return agent?.roles?.includes("scenario");
+        const agentRole = agent?.roles?.[0];
+        // Filter by expected role OR legacy 'scenario' role (backward compatibility)
+        return agentRole === expectedScenarioRole || agentRole === "scenario";
       }) || [];
 
     const imageAgentIds =
@@ -1418,6 +1489,7 @@ export default function Scenario({
     agentMapping,
     formData.scenarioAgentId,
     formData.imageAgentId,
+    expectedScenarioRole,
   ]);
 
   // Check if form has changes
@@ -2400,10 +2472,16 @@ export default function Scenario({
 
             {/* Agent Selection */}
             {(() => {
-              const scenarioAgentIds =
+              // Filter agents by computed role based on current flags
+              const filteredScenarioAgentIds =
                 scenarioData?.valid_agent_ids?.filter((id) => {
                   const agent = agentMapping[id];
-                  return agent?.roles?.includes("scenario");
+                  const agentRole = agent?.roles?.[0];
+                  // Include agents matching expected role OR legacy 'scenario' role (backward compatibility)
+                  return (
+                    agentRole === expectedScenarioRole ||
+                    agentRole === "scenario"
+                  );
                 }) || [];
 
               const imageAgentIds =
@@ -2413,7 +2491,8 @@ export default function Scenario({
                 }) || [];
 
               // Only show agent pickers if there's more than one option
-              const showScenarioPicker = scenarioAgentIds.length > 1;
+              // Use filtered list for scenario agents
+              const showScenarioPicker = filteredScenarioAgentIds.length > 1;
               const showImagePicker = imageAgentIds.length > 1;
 
               if (!showScenarioPicker && !showImagePicker) {
@@ -2429,7 +2508,7 @@ export default function Scenario({
                       {formData?.scenarioAgentId !== undefined ? (
                         <GenericPicker
                           items={agentMapping}
-                          itemIds={scenarioAgentIds}
+                          itemIds={filteredScenarioAgentIds}
                           selectedIds={
                             formData?.scenarioAgentId
                               ? [formData.scenarioAgentId]
