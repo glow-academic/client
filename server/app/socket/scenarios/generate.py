@@ -836,18 +836,37 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
     return await _create_document_impl(template_args_dict)
 """
                                 
-                                # Execute in local namespace with access to required imports
-                                local_namespace = {
+                                # Execute in custom namespace that includes closure variable
+                                # The key issue is that exec() doesn't preserve closure access to local functions.
+                                # We need to ensure _create_document_impl is accessible when the function executes.
+                                
+                                # Capture _create_document_impl in outer scope
+                                impl_ref = _create_document_impl
+                                
+                                # Modify function code to reference the captured implementation
+                                func_code_with_closure = func_code.replace(
+                                    "return await _create_document_impl(template_args_dict)",
+                                    "return await _impl_ref(template_args_dict)"
+                                )
+                                
+                                import builtins
+
+                                # Create namespace with the captured implementation function
+                                exec_namespace = {
+                                    "__builtins__": builtins,
                                     "Field": Field,
-                                    "_create_document_impl": _create_document_impl,
+                                    "_impl_ref": impl_ref,  # Captured reference to _create_document_impl
                                     "str": str,
                                     "float": float,
                                     "bool": bool,
                                     "list": list,
                                 }
                                 
-                                exec(func_code, globals(), local_namespace)
-                                create_document_func = local_namespace["create_document"]
+                                # Execute function code in the custom namespace
+                                # Using exec_namespace as both globals and locals ensures the function
+                                # has access to _impl_ref when it's called later
+                                exec(func_code_with_closure, exec_namespace, exec_namespace)
+                                create_document_func = exec_namespace["create_document"]
                                 
                                 logger.info(
                                     f"Created dynamic document function with {len(param_names)} individual parameters"
