@@ -484,8 +484,8 @@ from app.socket.connections.stop_chat import stop_chat  # noqa: E402; type: igno
 from app.socket.documents.generate_template import (
     generate_document_template,  # noqa: E402; type: ignore
 )
-from app.socket.scenarios.generate_ai import (
-    generate_scenario_ai,  # noqa: E402; type: ignore
+from app.socket.scenarios.generate import (
+    generate_scenario,  # noqa: E402; type: ignore
 )
 from app.socket.simulations import (
     send_simulation_message,  # type: ignore
@@ -1039,7 +1039,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             voice_transcript_ready,
             voice_user_message,
             # AI generation events
-            generate_scenario_ai,
+            generate_scenario,
             generate_video_outline,
             generate_video,
             generate_document_template,
@@ -1054,7 +1054,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             document_template_generation_error,
             document_template_generation_progress,
         )
-        from app.socket.scenarios.generate_ai import (
+        from app.socket.scenarios.generate import (
             scenario_generation_complete,
             scenario_generation_error,
             scenario_generation_progress,

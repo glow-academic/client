@@ -450,7 +450,7 @@ export default function Scenario({
         return;
       }
 
-      socket.emit("generate_scenario_ai", {
+      socket.emit("generate_scenario", {
         departmentId: body.departmentId,
         agentId: formData.scenarioAgentId, // Required: selected agent ID
         personaIds: body.personaIds,

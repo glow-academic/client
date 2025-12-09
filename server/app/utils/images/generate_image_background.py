@@ -318,7 +318,7 @@ async def _emit_image_complete(
     room: str | None,
 ) -> None:
     """Emit WebSocket event for image generation completion."""
-    from app.socket.scenarios.generate_ai import (
+    from app.socket.scenarios.generate import (
         ScenarioImageGenerationCompletePayload,
         scenario_image_generation_complete,
     )
@@ -347,7 +347,7 @@ async def _emit_image_error(
 ) -> None:
     """Emit WebSocket event for image generation error."""
     from app.main import get_image_generation_storage
-    from app.socket.scenarios.generate_ai import (
+    from app.socket.scenarios.generate import (
         ScenarioImageGenerationErrorPayload,
         scenario_image_generation_error,
     )
