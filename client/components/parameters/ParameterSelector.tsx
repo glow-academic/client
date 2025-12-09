@@ -594,7 +594,7 @@ export function ParameterSelector({
                   />
                 </div>
 
-                <div className="grid grid-cols-5 gap-3 max-h-[184px] overflow-y-auto py-2">
+                <div className="grid grid-cols-5 gap-3 max-h-[184px] overflow-y-auto py-2 -mx-6 px-6">
                   {filteredItemIds.map((itemId) => {
                     const item = parameterItemMapping[itemId];
                     if (!item) return null;

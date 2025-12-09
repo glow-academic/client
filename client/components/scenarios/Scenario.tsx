@@ -8,6 +8,7 @@
 import {
   Brain,
   Check,
+  Eye,
   GripVertical,
   Image,
   Loader2,
@@ -45,6 +46,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -56,10 +64,8 @@ import {
 } from "@/components/ui/tooltip";
 
 // Custom Components
-import {
-  DocumentPicker,
-  type DocumentMappingItem,
-} from "@/components/common/forms/DocumentPicker";
+import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
+import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
@@ -443,6 +449,10 @@ export default function Scenario({
   // Store personaIds separately since it's now in junction table
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [personaSearchTerm, setPersonaSearchTerm] = useState<string>("");
+  const [documentSearchTerm, setDocumentSearchTerm] = useState<string>("");
+  const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
+    null
+  );
   // Store problem statement ID for version selection
   const [selectedProblemStatementId, setSelectedProblemStatementId] = useState<
     string | null
@@ -3412,26 +3422,184 @@ export default function Scenario({
               </Tooltip>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <DocumentPicker
-              mapping={documentMapping}
-              validIds={validDocumentIds}
-              selectedIds={currentDocumentIds}
-              documentDetails={scenarioData?.document_details || []}
-              multiSelect={true}
-              label=""
-              placeholder="Select documents..."
-              description="Choose documents that will be available during this scenario."
-              disabled={isReadonly}
-              readonly={isReadonly}
-              onSelect={(ids) => {
-                // Enforce max 2 documents and deduplicate
-                const uniqueIds = Array.from(new Set(ids));
-                const limitedIds = uniqueIds.slice(0, 2);
-                setCurrentDocumentIds(limitedIds);
-              }}
-            />
+          <CardContent className="space-y-3 px-6">
+            {/* Search bar */}
+            <div className="flex h-9 items-center gap-2 border-b px-0">
+              <Search className="size-4 shrink-0 opacity-50" />
+              <input
+                type="text"
+                placeholder="Search documents..."
+                value={documentSearchTerm}
+                onChange={(e) => setDocumentSearchTerm(e.target.value)}
+                className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+
+            {/* Filtered documents grid */}
+            <div className="grid grid-cols-4 gap-4 max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
+              {useMemo(() => {
+                if (!documentSearchTerm.trim()) {
+                  return validDocumentIds;
+                }
+                const searchLower = documentSearchTerm.toLowerCase();
+                return validDocumentIds.filter((docId) => {
+                  const doc = documentMapping[docId];
+                  if (!doc) return false;
+                  const searchText =
+                    `${doc.name} ${doc.description || ""}`.toLowerCase();
+                  return searchText.includes(searchLower);
+                });
+              }, [validDocumentIds, documentMapping, documentSearchTerm]).map(
+                (docId) => {
+                  const document = documentMapping[docId];
+                  if (!document) return null;
+
+                  const isSelected = currentDocumentIds.includes(docId);
+                  const fullDoc = scenarioData?.document_details?.find(
+                    (d) => d.document_id === docId
+                  );
+
+                  // Create document item for DocumentViewer
+                  const docForViewer = fullDoc
+                    ? {
+                        ...fullDoc,
+                        upload_id:
+                          (fullDoc as { upload_id?: string }).upload_id ||
+                          docId,
+                      }
+                    : {
+                        document_id: docId,
+                        name: document.name || "Document",
+                        updatedAt: new Date().toISOString(),
+                        extension: "",
+                        scenario_ids: [],
+                        can_edit: false,
+                        can_delete: false,
+                        active: true,
+                        department_ids: [],
+                        file_path: document.filePath || "",
+                        mime_type: document.mimeType || "",
+                        parameter_item_ids: [],
+                        upload_id: docId,
+                      };
+
+                  return (
+                    <button
+                      key={docId}
+                      type="button"
+                      onClick={() => {
+                        if (isReadonly) return;
+                        const newIds = isSelected
+                          ? currentDocumentIds.filter((id) => id !== docId)
+                          : [...currentDocumentIds, docId].slice(0, 2); // Max 2 documents
+                        setCurrentDocumentIds(newIds);
+                      }}
+                      disabled={
+                        isReadonly ||
+                        (!isSelected && currentDocumentIds.length >= 2)
+                      }
+                      className={cn(
+                        "relative aspect-square rounded-xl border bg-card text-card-foreground shadow-sm transition-all overflow-hidden",
+                        "hover:shadow-md",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        "disabled:pointer-events-none disabled:opacity-50",
+                        isSelected && "ring-2 ring-primary"
+                      )}
+                    >
+                      {/* Preview button - top left */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewDocumentId(docId);
+                        }}
+                        className="absolute top-2 left-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                      >
+                        <Eye className="h-3.5 w-3.5 text-primary-foreground" />
+                      </button>
+
+                      {/* Check icon - top right */}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
+                      )}
+
+                      {/* Document preview */}
+                      <div className="w-full h-full">
+                        <DocumentViewer
+                          document={docForViewer}
+                          bare={true}
+                          isFormDocument={false}
+                          compact={true}
+                        />
+                      </div>
+
+                      {/* Document name at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1">
+                        <span className="truncate block">{document.name}</span>
+                      </div>
+                    </button>
+                  );
+                }
+              )}
+            </div>
           </CardContent>
+
+          {/* Preview Dialog */}
+          <Dialog
+            open={previewDocumentId !== null}
+            onOpenChange={(open) => !open && setPreviewDocumentId(null)}
+          >
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {previewDocumentId
+                    ? documentMapping[previewDocumentId]?.name
+                    : "Document Preview"}
+                </DialogTitle>
+                <DialogDescription>Preview document content</DialogDescription>
+              </DialogHeader>
+              {previewDocumentId &&
+                (() => {
+                  const docId = previewDocumentId;
+                  const fullDoc = scenarioData?.document_details?.find(
+                    (d) => d.document_id === docId
+                  );
+                  const docForViewer = fullDoc
+                    ? {
+                        ...fullDoc,
+                        upload_id:
+                          (fullDoc as { upload_id?: string }).upload_id ||
+                          docId,
+                      }
+                    : {
+                        document_id: docId,
+                        name: documentMapping[docId]?.name || "Document",
+                        updatedAt: new Date().toISOString(),
+                        extension: "",
+                        scenario_ids: [],
+                        can_edit: false,
+                        can_delete: false,
+                        active: true,
+                        department_ids: [],
+                        file_path: documentMapping[docId]?.filePath || "",
+                        mime_type: documentMapping[docId]?.mimeType || "",
+                        parameter_item_ids: [],
+                        upload_id: docId,
+                      };
+                  return (
+                    <div className="mt-4">
+                      <DocumentViewer
+                        document={docForViewer}
+                        bare={true}
+                        isFormDocument={false}
+                      />
+                    </div>
+                  );
+                })()}
+            </DialogContent>
+          </Dialog>
         </Card>
 
         {/* Individual Parameter Sections */}
