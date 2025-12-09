@@ -4,17 +4,9 @@ import json
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner,
+                    ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_outline_storage, get_pool, get_question_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_outline_tools import create_outline_tools
@@ -26,6 +18,7 @@ from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
 from app.utils.video.format_policy_info import format_policy_info
 from app.utils.video.format_question_info import format_question_info
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -178,7 +171,8 @@ async def _video_outline_impl(
                 room=sid,
             )
 
-            # Get all context data in a single optimized query using SQL file
+            # Get all context data AND create run in single atomic transaction
+            # This validates rate limits and creates run atomically
             document_ids_str = [str(p) for p in document_ids] if document_ids else []
             question_ids_str = [str(q) for q in question_ids] if question_ids else []
             parameter_item_ids_str = (
@@ -186,16 +180,48 @@ async def _video_outline_impl(
             )
             video_id = uuid.UUID(data.videoId) if data.videoId else None
 
-            sql = load_sql("sql/v3/agents/get_outline_run_context.sql")
-            context_row = await conn.fetchrow(
-                sql,
-                str(department_id),
-                document_ids_str if document_ids_str else None,
-                question_ids_str if question_ids_str else None,
-                parameter_item_ids_str if parameter_item_ids_str else None,
-                str(profile_id) if profile_id else None,
-                str(video_id) if video_id else None,
-            )
+            sql = load_sql("sql/v3/agents/get_outline_run_context_and_create_run.sql")
+            try:
+                context_row = await conn.fetchrow(
+                    sql,
+                    str(department_id),
+                    document_ids_str if document_ids_str else None,
+                    question_ids_str if question_ids_str else None,
+                    parameter_item_ids_str if parameter_item_ids_str else None,
+                    str(profile_id) if profile_id else None,
+                    str(video_id) if video_id else None,
+                )
+            except Exception as e:
+                import asyncpg  # type: ignore
+                
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    await video_outline_generation_error(
+                        VideoOutlineGenerationErrorPayload(
+                            success=False,
+                            message=user_msg,
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
+                # Log other errors
+                logger.error(
+                    f"Failed to get context and create run for {sid}: {str(e)}",
+                    exc_info=True,
+                )
+                await video_outline_generation_error(
+                    VideoOutlineGenerationErrorPayload(
+                        success=False,
+                        message=f"Failed to initialize outline generation: {str(e)}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
 
             if not context_row:
                 await video_outline_generation_error(
@@ -381,59 +407,12 @@ async def _video_outline_impl(
                 profile_id if profile_id else context["default_guest_profile_id"]
             )
 
-            # Check rate limit
-            profile_id_uuid = final_profile_id if final_profile_id else None
-            if not profile_id_uuid:
-                await video_outline_generation_error(
-                    VideoOutlineGenerationErrorPayload(
-                        success=False,
-                        message="Profile not found. Please contact support.",
-                        trace_id=trace_id,
-                    ),
-                    room=sid,
-                )
-                return
-
-            req_per_day = context["req_per_day"]
-            runs_today_count = context["runs_today_count"]
-
-            if req_per_day is not None and runs_today_count >= req_per_day:
-                from datetime import timedelta
-                from zoneinfo import ZoneInfo
-
-                earliest_run_created_at = context["earliest_run_created_at"]
-                if earliest_run_created_at:
-                    next_allowed_utc = earliest_run_created_at + timedelta(days=1)
-                    eastern_tz = ZoneInfo("America/New_York")
-                    next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. "
-                        f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
-                        f"{next_allowed_et.strftime('%B %d, %Y')}."
-                    )
-                else:
-                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                await video_outline_generation_error(
-                    VideoOutlineGenerationErrorPayload(
-                        success=False, message=error_message, trace_id=trace_id
-                    ),
-                    room=sid,
-                )
-                return
-
-            # Create model run with all junction records using SQL file
-            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
-            model_run_row = await conn.fetchrow(
-                sql_create_run,
-                str(department_id),
-                context["model_id"],
-                context["agent_id"],
-                "agent",
-                final_profile_id,
-                None,  # key_id
-                str(context["agent_id"]),  # agent_id
-            )
-            model_run_id = uuid.UUID(model_run_row["run_id"])
+            # Rate limit validation and run creation are now handled in SQL
+            # (get_outline_run_context_and_create_run.sql) - both happen atomically
+            # If we get here, rate limit check passed and run was created successfully
+            
+            # Extract run_id from context (created in same transaction)
+            model_run_id = uuid.UUID(context_row["run_id"])
 
             with trace(
                 "Outline Agent",

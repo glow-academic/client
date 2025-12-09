@@ -123,13 +123,46 @@ async def _document_generate_impl(
                 room=sid,
             )
 
-            # Get all context data in a single optimized query using SQL file
-            sql_query = load_sql("sql/v3/agents/get_document_run_context.sql")
-            context_row = await conn.fetchrow(
-                sql_query,
-                str(department_id),
-                str(profile_id) if profile_id else None,
-            )
+            # Get all context data AND create run in single atomic transaction
+            # This validates rate limits and creates run atomically
+            sql_query = load_sql("sql/v3/agents/get_document_run_context_and_create_run.sql")
+            try:
+                context_row = await conn.fetchrow(
+                    sql_query,
+                    str(department_id),
+                    str(profile_id) if profile_id else None,
+                )
+            except Exception as e:
+                import asyncpg  # type: ignore
+                
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    await document_template_generation_error(
+                        DocumentTemplateGenerationErrorPayload(
+                            success=False,
+                            message=user_msg,
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
+                # Log other errors
+                logger.error(
+                    f"Failed to get context and create run for {sid}: {str(e)}",
+                    exc_info=True,
+                )
+                await document_template_generation_error(
+                    DocumentTemplateGenerationErrorPayload(
+                        success=False,
+                        message=f"Failed to initialize document generation: {str(e)}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
 
             if not context_row:
                 await document_template_generation_error(
@@ -157,10 +190,10 @@ async def _document_generate_impl(
                 "base_url": context_row["base_url"],
                 "api_key": context_row["api_key"],
                 "profile_id": context_row["profile_id"],
-                "req_per_day": context_row["req_per_day"],
-                "runs_today_count": context_row["runs_today_count"],
-                "earliest_run_created_at": context_row["earliest_run_created_at"],
             }
+            
+            # Extract run_id from context (created in same transaction)
+            model_run_id = uuid.UUID(context_row["run_id"])
 
             # Clear previous results
             document_results.clear()
@@ -234,59 +267,9 @@ async def _document_generate_impl(
                     }
                 )
 
-            # Check rate limit
-            final_profile_id = profile_id or uuid.UUID(context["profile_id"])
-            if not final_profile_id:
-                await document_template_generation_error(
-                    DocumentTemplateGenerationErrorPayload(
-                        success=False,
-                        message="Profile not found. Please contact support.",
-                        trace_id=trace_id,
-                    ),
-                    room=sid,
-                )
-                return
-
-            req_per_day = context["req_per_day"]
-            runs_today_count = context["runs_today_count"]
-
-            if req_per_day is not None and runs_today_count >= req_per_day:
-                from datetime import timedelta
-                from zoneinfo import ZoneInfo
-
-                earliest_run_created_at = context["earliest_run_created_at"]
-                if earliest_run_created_at:
-                    next_allowed_utc = earliest_run_created_at + timedelta(days=1)
-                    eastern_tz = ZoneInfo("America/New_York")
-                    next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. "
-                        f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
-                        f"{next_allowed_et.strftime('%B %d, %Y')}."
-                    )
-                else:
-                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                await document_template_generation_error(
-                    DocumentTemplateGenerationErrorPayload(
-                        success=False, message=error_message, trace_id=trace_id
-                    ),
-                    room=sid,
-                )
-                return
-
-            # Create model run
-            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
-            model_run_row = await conn.fetchrow(
-                sql_create_run,
-                str(department_id),
-                context["model_id"],
-                context["agent_id"],
-                "agent",
-                str(final_profile_id),
-                None,  # key_id
-                str(context["agent_id"]),  # agent_id
-            )
-            model_run_id = uuid.UUID(model_run_row["run_id"])
+            # Rate limit validation and run creation are now handled in SQL
+            # (get_document_run_context_and_create_run.sql) - both happen atomically
+            # If we get here, rate limit check passed and run was created successfully
 
             # Run document generation with tracing
             with trace(

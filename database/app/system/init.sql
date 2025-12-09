@@ -324,3 +324,21 @@ CREATE TABLE setting_auth_values (
 CREATE INDEX ON setting_auth_values (settings_id);
 CREATE INDEX ON setting_auth_values (auth_id);
 CREATE INDEX ON setting_auth_values (auth_item_id);
+
+-- ============================================================================
+-- UTILITY FUNCTIONS
+-- ============================================================================
+
+-- Function to validate rate limits and raise exception if exceeded
+-- This allows SQL queries to validate rate limits atomically
+CREATE OR REPLACE FUNCTION validate_rate_limit(
+    p_req_per_day INTEGER,
+    p_runs_today_count BIGINT
+) RETURNS BOOLEAN AS $$
+BEGIN
+    IF p_req_per_day IS NOT NULL AND p_runs_today_count >= p_req_per_day THEN
+        RAISE EXCEPTION 'RATE_LIMIT_EXCEEDED: Daily request limit of % reached. Please try again tomorrow.', p_req_per_day;
+    END IF;
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;

@@ -99,9 +99,43 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                 room=sid,
             )
 
-            # Get agent context with API key, model, and other settings from database
-            sql_query = load_sql("sql/v3/agents/get_video_run_context.sql")
-            context_row = await conn.fetchrow(sql_query, str(video_id), None)
+            # Get agent context AND create run in single atomic transaction
+            # This validates rate limits and creates run atomically
+            # Note: Video generation doesn't have profile_id in payload, so we use None (defaults to guest)
+            sql_query = load_sql("sql/v3/agents/get_video_run_context_and_create_run.sql")
+            try:
+                context_row = await conn.fetchrow(sql_query, str(video_id), None)
+            except Exception as e:
+                import asyncpg  # type: ignore
+                
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    await video_generation_error(
+                        VideoGenerationErrorPayload(
+                            success=False,
+                            message=user_msg,
+                            video_id=str(video_id),
+                        ),
+                        room=sid,
+                    )
+                    return
+                # Log other errors
+                logger.error(
+                    f"Failed to get context and create run for {sid}: {str(e)}",
+                    exc_info=True,
+                )
+                await video_generation_error(
+                    VideoGenerationErrorPayload(
+                        success=False,
+                        message=f"Failed to initialize video generation: {str(e)}",
+                        video_id=str(video_id),
+                    ),
+                    room=sid,
+                )
+                return
 
             if not context_row:
                 await video_generation_error(
@@ -116,6 +150,10 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                     room=sid,
                 )
                 return
+            
+            # Extract run_id from context (created in same transaction)
+            model_run_id = uuid.UUID(context_row["run_id"])
+            department_id = context_row.get("department_id")
 
             if not context_row.get("api_key"):
                 agent_name = context_row.get("agent_name", "video agent")
@@ -246,7 +284,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                         f"Created upload record: {upload_id_str}, file_path: {video_filename}"
                     )
 
-                    # Create generation and link to video (no run_id since video generation doesn't create a run)
+                    # Create generation and link to video (with run_id from SQL)
                     sql_create_generation = load_sql(
                         "sql/v3/videos/create_generation_and_link.sql"
                     )
@@ -257,7 +295,24 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                         mime_type,
                         uuid.UUID(upload_id_str),
                         True,  # active
-                        None,  # run_id - video generation doesn't create a run currently
+                        str(model_run_id),  # run_id - now created in SQL
+                    )
+                    
+                    # Emit async pricing event (non-blocking)
+                    # Video generation doesn't use LLM tokens, so we set tokens to 0
+                    # This handles message logging in background
+                    await sio.emit(
+                        "log_run",
+                        {
+                            "runId": str(model_run_id),
+                            "operationType": "video",
+                            "inputTextTokens": 0,  # Video generation doesn't use LLM tokens
+                            "outputTextTokens": 0,  # Video generation doesn't use LLM tokens
+                            "systemPrompt": context_row.get("system_prompt", ""),
+                            "inputItems": [{"role": "user", "content": data.prompt}],  # Simple prompt input
+                            "assistantOutput": f"Video generated: {video_filename}",
+                            "departmentId": str(department_id) if department_id else None,
+                        },
                     )
 
                     if generation_result:

@@ -210,21 +210,55 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 )
                 return
 
-            # Get context using same SQL as generate_ai
+            # Get context AND create run in single atomic transaction
+            # This validates rate limits and creates run atomically
             doc_ids_str = [str(d) for d in document_ids] if document_ids else []
             param_ids_str = (
                 [str(p) for p in parameter_item_ids] if parameter_item_ids else []
             )
 
-            sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
-            context_row = await conn.fetchrow(
-                sql,
-                str(department_id),
-                str(persona_id) if persona_id else None,
-                doc_ids_str,
-                param_ids_str,
-                str(scenario_agent_id),  # agent_id (required)
-            )
+            sql = load_sql("sql/v3/agents/get_scenario_regeneration_run_context_and_create_run.sql")
+            try:
+                context_row = await conn.fetchrow(
+                    sql,
+                    str(department_id),
+                    str(persona_id) if persona_id else None,
+                    doc_ids_str,
+                    param_ids_str,
+                    str(scenario_agent_id),  # agent_id (required)
+                    str(profile_id) if profile_id else None,  # profile_id (nullable)
+                )
+            except Exception as e:
+                import asyncpg  # type: ignore
+                
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    await scenario_regeneration_error(
+                        ScenarioRegenerationErrorPayload(
+                            success=False,
+                            message=user_msg,
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
+                # Log other errors
+                logger.error(
+                    f"Failed to get context and create run for {sid}: {str(e)}",
+                    exc_info=True,
+                )
+                await scenario_regeneration_error(
+                    ScenarioRegenerationErrorPayload(
+                        success=False,
+                        message=f"Failed to initialize scenario regeneration: {str(e)}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
 
             if not context_row:
                 await scenario_regeneration_error(
@@ -450,19 +484,12 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 )
                 return
 
-            # Create new model run
-            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
-            model_run_row = await conn.fetchrow(
-                sql_create_run,
-                str(department_id),
-                context["model_id"],
-                context["agent_id"],
-                "agent",
-                str(final_profile_id),
-                None,  # key_id
-                str(context["agent_id"]),  # agent_id
-            )
-            model_run_id = uuid.UUID(model_run_row["run_id"])
+            # Rate limit validation and run creation are now handled in SQL
+            # (get_scenario_regeneration_run_context_and_create_run.sql) - both happen atomically
+            # If we get here, rate limit check passed and run was created successfully
+            
+            # Extract run_id from context (created in same transaction)
+            model_run_id = uuid.UUID(context_row["run_id"])
 
             # Run the agent
             with trace(
@@ -497,16 +524,22 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             scenario_result = await storage.get_all(storage_key)
 
             usage = result.context_wrapper.usage
+            assistant_output = getattr(result, "final_output", None) or ""
 
-            # Update model run with token usage using SQL file
-            sql_update_tokens = load_sql(
-                "sql/v3/model_runs/update_model_run_tokens.sql"
-            )
-            await conn.execute(
-                sql_update_tokens,
-                str(model_run_id),
-                usage.input_tokens,
-                usage.output_tokens,
+            # Emit async pricing event (non-blocking)
+            # This handles token updates and message logging in background
+            await sio.emit(
+                "log_run",
+                {
+                    "runId": str(model_run_id),
+                    "operationType": "scenario_regeneration",
+                    "inputTextTokens": usage.input_tokens,
+                    "outputTextTokens": usage.output_tokens,
+                    "systemPrompt": context["system_prompt"],
+                    "inputItems": clean_input_items,  # Serialized TResponseInputItem list
+                    "assistantOutput": assistant_output,
+                    "departmentId": str(department_id),
+                },
             )
 
             # Get result values
