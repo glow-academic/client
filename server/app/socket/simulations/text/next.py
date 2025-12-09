@@ -9,7 +9,7 @@ import asyncpg  # type: ignore
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, trace)
 from agents.items import TResponseInputItem
-from app.main import get_grading_storage, get_pool, sio
+from app.main import get_grading_storage, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
 from app.utils.agents.tools.create_safe_field_name import \
@@ -26,6 +26,7 @@ from app.utils.storage.request_storage import build_storage_key
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 # Pydantic models for server-to-client events
@@ -558,7 +559,7 @@ async def _run_grade_agent_inline(
             {"role": "developer", "content": rubric_dev_content},
             {"role": "developer", "content": time_dev_content},
         ]
-        await sio.emit(
+        await internal_sio.emit(
             "log_run",
             {
                 "runId": str(model_run_id),

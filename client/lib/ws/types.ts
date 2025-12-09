@@ -291,21 +291,6 @@ export type ServerToClientEvents = {
 };
 
 export type ClientToServerEvents = {
-  log_run: (payload: {
-    runId: string;
-    operationType: string;
-    inputTextTokens: number;
-    outputTextTokens: number;
-    inputAudioTokens?: number;
-    inputImageTokens?: number;
-    outputAudioTokens?: number;
-    cachedTextTokens?: number;
-    cachedAudioTokens?: number;
-    systemPrompt?: string;
-    inputItems?: string[];
-    assistantOutput?: string;
-    departmentId?: string;
-  }) => void;
   simulation_join: (payload: {
     chat_id: string;
     chat_type?: string;
@@ -317,20 +302,5 @@ export type ClientToServerEvents = {
   simulation_text_end: (payload: {
     chat_id: string;
     chat_type?: string;
-  }) => void;
-  generate_image: (payload: {
-    image_id: string;
-    name: string;
-    prompt: string;
-    agent_id: string;
-    department_id?: string;
-    profile_id?: string;
-    room?: string;
-  }) => void;
-  image_generation_complete: (payload: {
-    image_id: string;
-    file_path: string;
-    mime_type: string;
-    file_size: number;
   }) => void;
 };

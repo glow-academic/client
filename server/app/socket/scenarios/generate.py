@@ -11,7 +11,7 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
 from agents.items import TResponseInputItem
 from app.api.v3.settings.active import (ThemePrimitives, ThemeTokens,
                                         derive_theme_tokens)
-from app.main import UPLOAD_FOLDER, get_pool, sio
+from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
@@ -26,6 +26,7 @@ from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
                       create_model)
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 # Pydantic models for server-to-client events
@@ -555,20 +556,22 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 Returns:
                     Confirmation message
                 """
-                # Emit Socket.IO event for problem statement creation
-                await sio.emit(
+                # Emit to internal bus for problem statement creation
+                await internal_sio.emit(
                     "scenario_tool_problem_statement",
                     {
+                        "sid": sid,
                         "trace_id": trace_id,
                         "title": title,
                         "description": scenario,
                         "scenario_id": data.scenarioId if data.scenarioId else None,
                     },
-                    room=sid,
                 )
 
-                logger.info(f"✓ Emitted problem statement event: title={title}")
-                logger.info(f"✓ Description: {scenario[:100]}...")
+                logger.info(
+                    f"[generate_scenario] Emitted problem statement to internal bus: "
+                    f"title={title}, description_length={len(scenario)}"
+                )
                 return "Set title and description successfully"
 
             scenario_tools.append(function_tool(set_title_description))
@@ -608,18 +611,21 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             f"Objectives count ({len(objectives)}) outside recommended range of 1-3"
                         )
 
-                    # Emit Socket.IO event for objectives creation
-                    await sio.emit(
+                    # Emit to internal bus for objectives creation
+                    await internal_sio.emit(
                         "scenario_tool_objectives",
                         {
+                            "sid": sid,
                             "trace_id": trace_id,
                             "objectives": objectives,
                             "scenario_id": data.scenarioId if data.scenarioId else None,
                         },
-                        room=sid,
                     )
 
-                    logger.info(f"✓ Emitted objectives event: {len(objectives)} objectives")
+                    logger.info(
+                        f"[generate_scenario] Emitted objectives to internal bus: "
+                        f"{len(objectives)} objectives"
+                    )
                     return f"Set {len(objectives)} learning objectives successfully"
 
                 scenario_tools.append(function_tool(set_objectives))
@@ -718,10 +724,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         child_name = f"{parent_name} (Dynamic)"
                         child_description = parent_description or ""
 
-                        # Emit Socket.IO event for document creation completion
-                        await sio.emit(
+                        # Emit to internal bus for document creation completion
+                        await internal_sio.emit(
                             "scenario_tool_document",
                             {
+                                "sid": sid,
                                 "trace_id": trace_id,
                                 "parent_document_id": parent_document_id,
                                 "file_path": file_path,
@@ -733,12 +740,12 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 "document_agent_id": document_agent_id,
                                 "scenario_id": data.scenarioId if data.scenarioId else None,
                             },
-                            room=sid,
                         )
 
                         logger.info(
-                            f"✓ Rendered and saved document: parent={parent_document_id}, "
-                            f"file_path={file_path}, size={file_size} bytes"
+                            f"[generate_scenario] Emitted document to internal bus: "
+                            f"parent={parent_document_id}, file_path={file_path}, "
+                            f"size={file_size} bytes"
                         )
                         return "Dynamic document created successfully. Template rendered and saved."
 
@@ -954,10 +961,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         Returns:
                             Confirmation message
                         """
-                        # Emit Socket.IO event for image creation
-                        await sio.emit(
+                        # Emit to internal bus for image creation
+                        await internal_sio.emit(
                             "scenario_tool_image",
                             {
+                                "sid": sid,
                                 "trace_id": trace_id,
                                 "name": name,
                                 "prompt": prompt,
@@ -966,12 +974,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 "profile_id": str(final_profile_id) if final_profile_id else None,
                                 "scenario_id": data.scenarioId if data.scenarioId else None,
                             },
-                            room=sid,
                         )
 
                         logger.info(
-                            f"✓ Emitted image generation event: name={name}, "
-                            f"prompt_length={len(prompt)}"
+                            f"[generate_scenario] Emitted image to internal bus: "
+                            f"name={name}, prompt_length={len(prompt)}"
                         )
                         return f"Image generation initiated for '{name}'. Image will be created and linked when ready."
 
@@ -1128,9 +1135,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             usage = result.context_wrapper.usage
             assistant_output = getattr(result, "final_output", None) or ""
 
-            # Emit async pricing event (non-blocking)
+            # Emit async pricing event via internal bus (non-blocking)
             # This handles token updates and message logging in background
-            await sio.emit(
+            await internal_sio.emit(
                 "log_run",
                 {
                     "runId": str(model_run_id),

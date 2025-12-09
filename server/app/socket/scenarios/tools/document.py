@@ -3,12 +3,13 @@
 import uuid
 from typing import Any
 
-from app.main import get_pool, sio
+from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 class DocumentToolPayload(BaseModel):
@@ -39,16 +40,27 @@ class DocumentToolErrorPayload(BaseModel):
 
 
 async def document_tool_complete(payload: DocumentToolCompletePayload, room: str) -> None:
+    logger.info(
+        f"[scenario_tool_document_complete] Emitting complete event: "
+        f"room={room}, trace_id={payload.trace_id}, "
+        f"document_id={payload.document_id}, parent_document_id={payload.parent_document_id}"
+    )
     await sio.emit("scenario_tool_document_complete", payload.model_dump(), room=room)
+    logger.info(
+        f"[scenario_tool_document_complete] Emitted to room={room}"
+    )
 
 
 async def document_tool_error(payload: DocumentToolErrorPayload, room: str) -> None:
     await sio.emit("scenario_tool_document_error", payload.model_dump(), room=room)
 
 
-@sio.event  # type: ignore
-async def scenario_tool_document(sid: str, data: dict[str, Any]) -> None:
-    """Handle dynamic document creation event from scenario generation tool."""
+async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:
+    """Internal implementation for dynamic document creation."""
+    logger.info(
+        f"[scenario_tool_document] Handler received event: sid={sid}, "
+        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
+    )
     try:
         validated = DocumentToolPayload(**data)
     except ValidationError as e:
@@ -136,4 +148,22 @@ async def scenario_tool_document(sid: str, data: dict[str, Any]) -> None:
             DocumentToolErrorPayload(success=False, message=str(e), trace_id=trace_id),
             room=sid,
         )
+
+
+@sio.event  # type: ignore
+async def scenario_tool_document(sid: str, data: dict[str, Any]) -> None:
+    """Handle dynamic document creation event from scenario generation tool (client-to-server)."""
+    await _scenario_tool_document_impl(sid, data)
+
+
+@internal_sio.on("scenario_tool_document")
+async def scenario_tool_document_internal(data: dict[str, Any]) -> None:
+    """Handle dynamic document creation event from internal bus (server-to-server)."""
+    sid = data.get("sid")
+    if not sid:
+        logger.error("[scenario_tool_document_internal] Missing 'sid' in payload")
+        return
+    # Remove sid from data before passing to implementation
+    payload = {k: v for k, v in data.items() if k != "sid"}
+    await _scenario_tool_document_impl(sid, payload)
 

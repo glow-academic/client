@@ -3,12 +3,13 @@
 import uuid
 from typing import Any
 
-from app.main import get_pool, sio
+from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 class ObjectivesToolPayload(BaseModel):
@@ -33,16 +34,27 @@ class ObjectivesToolErrorPayload(BaseModel):
 async def objectives_tool_complete(
     payload: ObjectivesToolCompletePayload, room: str
 ) -> None:
+    logger.info(
+        f"[scenario_tool_objectives_complete] Emitting complete event: "
+        f"room={room}, trace_id={payload.trace_id}, "
+        f"objective_ids={payload.objective_ids}"
+    )
     await sio.emit("scenario_tool_objectives_complete", payload.model_dump(), room=room)
+    logger.info(
+        f"[scenario_tool_objectives_complete] Emitted to room={room}"
+    )
 
 
 async def objectives_tool_error(payload: ObjectivesToolErrorPayload, room: str) -> None:
     await sio.emit("scenario_tool_objectives_error", payload.model_dump(), room=room)
 
 
-@sio.event  # type: ignore
-async def scenario_tool_objectives(sid: str, data: dict[str, Any]) -> None:
-    """Handle objectives creation event from scenario generation tool."""
+async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None:
+    """Internal implementation for objectives creation."""
+    logger.info(
+        f"[scenario_tool_objectives] Handler received event: sid={sid}, "
+        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
+    )
     try:
         validated = ObjectivesToolPayload(**data)
     except ValidationError as e:
@@ -130,4 +142,22 @@ async def scenario_tool_objectives(sid: str, data: dict[str, Any]) -> None:
             ObjectivesToolErrorPayload(success=False, message=str(e), trace_id=trace_id),
             room=sid,
         )
+
+
+@sio.event  # type: ignore
+async def scenario_tool_objectives(sid: str, data: dict[str, Any]) -> None:
+    """Handle objectives creation event from scenario generation tool (client-to-server)."""
+    await _scenario_tool_objectives_impl(sid, data)
+
+
+@internal_sio.on("scenario_tool_objectives")
+async def scenario_tool_objectives_internal(data: dict[str, Any]) -> None:
+    """Handle objectives creation event from internal bus (server-to-server)."""
+    sid = data.get("sid")
+    if not sid:
+        logger.error("[scenario_tool_objectives_internal] Missing 'sid' in payload")
+        return
+    # Remove sid from data before passing to implementation
+    payload = {k: v for k, v in data.items() if k != "sid"}
+    await _scenario_tool_objectives_impl(sid, payload)
 

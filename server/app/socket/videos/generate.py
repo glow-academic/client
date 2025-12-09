@@ -4,15 +4,15 @@ import asyncio
 import uuid
 from typing import Any, Literal
 
-from openai import OpenAI
-from pydantic import BaseModel, ValidationError
-
-from app.main import UPLOAD_FOLDER, get_pool, sio
+from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from openai import OpenAI
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 # Pydantic models for server-to-client events
@@ -300,8 +300,8 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                     
                     # Emit async pricing event (non-blocking)
                     # Video generation doesn't use LLM tokens, so we set tokens to 0
-                    # This handles message logging in background
-                    await sio.emit(
+                    # This handles message logging in background via internal bus
+                    await internal_sio.emit(
                         "log_run",
                         {
                             "runId": str(model_run_id),

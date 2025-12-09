@@ -7,7 +7,8 @@ from typing import Any
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from app.main import get_outline_storage, get_pool, get_question_storage, sio
+from app.main import (get_internal_sio, get_outline_storage, get_pool,
+                      get_question_storage, sio)
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_outline_tools import create_outline_tools
 from app.utils.debug_info import DebugContext
@@ -21,6 +22,7 @@ from app.utils.video.format_question_info import format_question_info
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 # Pydantic models for server-to-client events
@@ -437,9 +439,9 @@ async def _video_outline_impl(
             usage = result.context_wrapper.usage
             assistant_output = getattr(result, "final_output", None) or ""
 
-            # Emit async pricing event (non-blocking)
+            # Emit async pricing event via internal bus (non-blocking)
             # This handles token updates and message logging in background
-            await sio.emit(
+            await internal_sio.emit(
                 "log_run",
                 {
                     "runId": str(model_run_id),

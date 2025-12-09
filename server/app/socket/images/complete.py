@@ -2,12 +2,15 @@
 
 from typing import Any
 
-from app.main import get_pool, sio
+from app.main import get_internal_sio, get_pool, sio
+from app.socket.scenarios.tools.image import (ImageToolCompletePayload,
+                                              image_tool_complete)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 class ImageGenerationCompletePayload(BaseModel):
@@ -15,6 +18,8 @@ class ImageGenerationCompletePayload(BaseModel):
     file_path: str
     mime_type: str
     file_size: int
+    room: str | None = None  # For emitting scenario_tool_image_complete to client
+    trace_id: str | None = None  # For scenario tool completion events
 
 
 async def _image_generation_complete_impl(
@@ -25,6 +30,8 @@ async def _image_generation_complete_impl(
     file_path = data.file_path
     mime_type = data.mime_type
     file_size = data.file_size
+    room = data.room
+    trace_id = data.trace_id
 
     pool = get_pool()
     if not pool:
@@ -55,6 +62,22 @@ async def _image_generation_complete_impl(
                 f"✓ Image generation completed: image_id={image_id}, upload_id={upload_id}"
             )
 
+            # If this was triggered from scenario tool, emit completion event to client
+            if room and trace_id:
+                logger.info(
+                    f"[image_generation_complete] Emitting scenario_tool_image_complete: "
+                    f"room={room}, trace_id={trace_id}, image_id={image_id}"
+                )
+                await image_tool_complete(
+                    ImageToolCompletePayload(
+                        success=True,
+                        image_id=image_id,
+                        trace_id=trace_id,
+                        message=f"Image generation completed. Upload ID: {upload_id}",
+                    ),
+                    room=room,
+                )
+
     except Exception as e:
         logger.error(
             f"Error in image generation completion for {image_id}: {e}",
@@ -64,12 +87,30 @@ async def _image_generation_complete_impl(
 
 @sio.event  # type: ignore
 async def image_generation_complete(sid: str, data: dict[str, Any]) -> None:
-    """Wrapper that validates payload before calling actual handler"""
+    """Wrapper that validates payload before calling actual handler (client-to-server)."""
     try:
         payload = ImageGenerationCompletePayload(**data)
         await _image_generation_complete_impl(sid, payload)
     except Exception as e:
         logger.error(
             f"Error in image_generation_complete for {sid}: {str(e)}", exc_info=True
+        )
+
+
+@internal_sio.on("image_generation_complete")
+async def image_generation_complete_internal(data: dict[str, Any]) -> None:
+    """Handle image generation completion event from internal bus (server-to-server)."""
+    # Extract room from payload (it's passed as "room" not "sid")
+    room = data.get("room")
+    if not room:
+        logger.error("[image_generation_complete_internal] Missing 'room' in payload")
+        return
+    
+    try:
+        payload = ImageGenerationCompletePayload(**data)
+        await _image_generation_complete_impl(room, payload)  # Use room as sid for internal calls
+    except Exception as e:
+        logger.error(
+            f"Error in image_generation_complete_internal: {str(e)}", exc_info=True
         )
 

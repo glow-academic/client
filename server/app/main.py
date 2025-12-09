@@ -8,7 +8,7 @@ import os
 import platform
 import sys
 import time
-from collections.abc import AsyncGenerator, AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -80,6 +80,51 @@ logging.basicConfig(
     force=True,  # Override any existing configuration
 )
 logger = logging.getLogger(__name__)
+
+# Internal event bus for server-to-server event handling
+InternalHandler = Callable[[dict[str, Any]], Awaitable[None]]
+
+
+class InternalBus:
+    """Simple in-process event bus for triggering handlers internally."""
+
+    def __init__(self) -> None:
+        self._handlers: dict[str, list[InternalHandler]] = {}
+
+    def on(self, event: str) -> Callable[[InternalHandler], InternalHandler]:
+        """Decorator to register a handler for an event."""
+
+        def decorator(fn: InternalHandler) -> InternalHandler:
+            self._handlers.setdefault(event, []).append(fn)
+            return fn
+
+        return decorator
+
+    async def emit(self, event: str, data: dict[str, Any]) -> None:
+        """Emit an event to all registered handlers (fire-and-forget, async)."""
+        handlers = self._handlers.get(event, [])
+        if not handlers:
+            logger.warning(f"[InternalBus] No handlers registered for event: {event}")
+            return
+
+        for handler in handlers:
+            try:
+                await handler(data)
+            except Exception as e:
+                logger.error(
+                    f"[InternalBus] Error in handler for event '{event}': {e}",
+                    exc_info=True,
+                )
+
+
+# Singleton internal bus instance
+internal_sio = InternalBus()
+
+
+def get_internal_sio() -> InternalBus:
+    """Get the internal event bus instance."""
+    return internal_sio
+
 
 origin = os.getenv("ORIGIN", "http://localhost:3000")
 app_prefix = os.getenv("APP_PREFIX", "").strip("/")
@@ -1076,7 +1121,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         client_to_server_handlers = [
             connect,
             disconnect,
-            log_run,
+            # Note: log_run is internal-only (async background work)
             # Simulation events
             simulation_join,
             simulation_leave,
@@ -1103,13 +1148,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             video_outline,
             video_generate,
             document_generate,
-            generate_image,
-            image_generation_complete,
-            # Scenario tool events
-            scenario_tool_document,
-            scenario_tool_image,
-            scenario_tool_objectives,
-            scenario_tool_problem_statement,
+            # Note: generate_image, image_generation_complete, and scenario_tool_* events
+            # are internal-only (triggered by scenario generation, not called directly by clients)
         ]
 
         # Import server-to-client emit functions (with Pydantic payload models)

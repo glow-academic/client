@@ -3,17 +3,15 @@
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, ValidationError
-
-from app.main import _voice_message_ids, get_pool, sio
-from app.socket.simulations.text.send import (
-    SimulationRunCompletePayload,
-    simulation_run_complete,
-)
+from app.main import _voice_message_ids, get_internal_sio, get_pool, sio
+from app.socket.simulations.text.send import (SimulationRunCompletePayload,
+                                              simulation_run_complete)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 # Pydantic models
@@ -312,8 +310,8 @@ async def _simulation_voice_user_speech_impl(sid: str, data: VoiceUserSpeechPayl
                             # Continue even if linking fails - message might not exist yet
 
                         # Emit async pricing event (non-blocking)
-                        # This handles token updates and message logging in background
-                        await sio.emit(
+                        # This handles token updates and message logging in background via internal bus
+                        await internal_sio.emit(
                             "log_run",
                             {
                                 "runId": str(run_id),

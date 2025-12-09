@@ -6,13 +6,14 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from app.main import IMAGE_FOLDER, get_pool, sio
+from app.main import IMAGE_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 # Try to import litellm, fall back gracefully if not available
 try:
@@ -32,6 +33,7 @@ class GenerateImagePayload(BaseModel):
     department_id: str | None = None
     profile_id: str | None = None
     room: str | None = None
+    trace_id: str | None = None  # For scenario tool completion events
 
 
 async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
@@ -231,10 +233,10 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 f"file_path={file_path}, size={file_size} bytes"
             )
 
-            # Call log_run (similar to scenario generation)
+            # Call log_run via internal bus (similar to scenario generation)
             # Note: Image generation via litellm doesn't provide token counts,
             # so we pass 0 tokens. The run was already created in the SQL query.
-            await sio.emit(
+            await internal_sio.emit(
                 "log_run",
                 {
                     "runId": run_id,
@@ -248,14 +250,16 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 },
             )
 
-            # Emit completion event to trigger completion handler
-            await sio.emit(
+            # Emit completion event to internal bus to trigger completion handler
+            await internal_sio.emit(
                 "image_generation_complete",
                 {
                     "image_id": image_id,
                     "file_path": file_path,
                     "mime_type": mime_type,
                     "file_size": file_size,
+                    "room": room,  # Preserve room for client emission
+                    "trace_id": data.trace_id,  # Preserve trace_id for scenario tool completion
                 },
             )
 
@@ -331,7 +335,7 @@ async def _emit_image_error(
 
 @sio.event  # type: ignore
 async def generate_image(sid: str, data: dict[str, Any]) -> None:
-    """Wrapper that validates payload before calling actual handler"""
+    """Wrapper that validates payload before calling actual handler (client-to-server)."""
     try:
         payload = GenerateImagePayload(**data)
         await _generate_image_impl(sid, payload)
@@ -341,4 +345,24 @@ async def generate_image(sid: str, data: dict[str, Any]) -> None:
         if isinstance(data, dict) and "image_id" in data:
             image_id = data["image_id"]
             room = data.get("room")
+            await _emit_image_error(image_id, room, f"Invalid request: {str(e)}")
+
+
+@internal_sio.on("generate_image")
+async def generate_image_internal(data: dict[str, Any]) -> None:
+    """Handle generate_image event from internal bus (server-to-server)."""
+    # Extract room from payload (it's passed as "room" not "sid")
+    room = data.get("room")
+    if not room:
+        logger.error("[generate_image_internal] Missing 'room' in payload")
+        return
+    
+    try:
+        payload = GenerateImagePayload(**data)
+        await _generate_image_impl(room, payload)  # Use room as sid for internal calls
+    except Exception as e:
+        logger.error(f"Error in generate_image_internal: {str(e)}", exc_info=True)
+        # Try to emit error if we have image_id
+        if isinstance(data, dict) and "image_id" in data:
+            image_id = data["image_id"]
             await _emit_image_error(image_id, room, f"Invalid request: {str(e)}")

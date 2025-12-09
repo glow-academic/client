@@ -3,12 +3,13 @@
 import uuid
 from typing import Any
 
-from app.main import get_pool, sio
+from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 class ProblemStatementToolPayload(BaseModel):
@@ -34,10 +35,18 @@ class ProblemStatementToolErrorPayload(BaseModel):
 async def problem_statement_tool_complete(
     payload: ProblemStatementToolCompletePayload, room: str
 ) -> None:
+    logger.info(
+        f"[scenario_tool_problem_statement_complete] Emitting complete event: "
+        f"room={room}, trace_id={payload.trace_id}, "
+        f"problem_statement_id={payload.problem_statement_id}"
+    )
     await sio.emit(
         "scenario_tool_problem_statement_complete",
         payload.model_dump(),
         room=room,
+    )
+    logger.info(
+        f"[scenario_tool_problem_statement_complete] Emitted to room={room}"
     )
 
 
@@ -47,9 +56,12 @@ async def problem_statement_tool_error(
     await sio.emit("scenario_tool_problem_statement_error", payload.model_dump(), room=room)
 
 
-@sio.event  # type: ignore
-async def scenario_tool_problem_statement(sid: str, data: dict[str, Any]) -> None:
-    """Handle problem statement creation event from scenario generation tool."""
+async def _scenario_tool_problem_statement_impl(sid: str, data: dict[str, Any]) -> None:
+    """Internal implementation for problem statement creation."""
+    logger.info(
+        f"[scenario_tool_problem_statement] Handler received event: sid={sid}, "
+        f"data={data}, trace_id={data.get('trace_id', 'unknown')}"
+    )
     try:
         validated = ProblemStatementToolPayload(**data)
     except ValidationError as e:
@@ -130,4 +142,24 @@ async def scenario_tool_problem_statement(sid: str, data: dict[str, Any]) -> Non
             ),
             room=sid,
         )
+
+
+@sio.event  # type: ignore
+async def scenario_tool_problem_statement(sid: str, data: dict[str, Any]) -> None:
+    """Handle problem statement creation event from scenario generation tool (client-to-server)."""
+    await _scenario_tool_problem_statement_impl(sid, data)
+
+
+@internal_sio.on("scenario_tool_problem_statement")
+async def scenario_tool_problem_statement_internal(data: dict[str, Any]) -> None:
+    """Handle problem statement creation event from internal bus (server-to-server)."""
+    sid = data.get("sid")
+    if not sid:
+        logger.error(
+            "[scenario_tool_problem_statement_internal] Missing 'sid' in payload"
+        )
+        return
+    # Remove sid from data before passing to implementation
+    payload = {k: v for k, v in data.items() if k != "sid"}
+    await _scenario_tool_problem_statement_impl(sid, payload)
 

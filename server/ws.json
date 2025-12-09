@@ -1,22 +1,5 @@
 {
   "clientToServer": {
-    "log_run": {
-      "payload": {
-        "runId": "string",
-        "operationType": "string",
-        "inputTextTokens": "number",
-        "outputTextTokens": "number",
-        "inputAudioTokens": "?number",
-        "inputImageTokens": "?number",
-        "outputAudioTokens": "?number",
-        "cachedTextTokens": "?number",
-        "cachedAudioTokens": "?number",
-        "systemPrompt": "?string",
-        "inputItems": "?string[]",
-        "assistantOutput": "?string",
-        "departmentId": "?string"
-      }
-    },
     "simulation_join": {
       "payload": {
         "chat_id": "string",
@@ -33,25 +16,6 @@
       "payload": {
         "chat_id": "string",
         "chat_type": "?string"
-      }
-    },
-    "generate_image": {
-      "payload": {
-        "image_id": "string",
-        "name": "string",
-        "prompt": "string",
-        "agent_id": "string",
-        "department_id": "?string",
-        "profile_id": "?string",
-        "room": "?string"
-      }
-    },
-    "image_generation_complete": {
-      "payload": {
-        "image_id": "string",
-        "file_path": "string",
-        "mime_type": "string",
-        "file_size": "number"
       }
     }
   },

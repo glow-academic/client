@@ -399,6 +399,16 @@ export default function Scenario({
         trace_id?: string;
         message?: string;
       }) => {
+        // eslint-disable-next-line no-console
+        console.log(
+          "[Scenario] scenario_tool_problem_statement_complete event received:",
+          {
+            success: data.success,
+            problem_statement_id: data.problem_statement_id,
+            trace_id: data.trace_id,
+            message: data.message,
+          }
+        );
         if (data.success) {
           problemStatementId = data.problem_statement_id;
         }
@@ -410,6 +420,16 @@ export default function Scenario({
         trace_id?: string;
         message?: string;
       }) => {
+        // eslint-disable-next-line no-console
+        console.log(
+          "[Scenario] scenario_tool_objectives_complete event received:",
+          {
+            success: data.success,
+            objective_ids: data.objective_ids,
+            trace_id: data.trace_id,
+            message: data.message,
+          }
+        );
         if (data.success) {
           objectiveIds = data.objective_ids;
         }
@@ -491,6 +511,13 @@ export default function Scenario({
         trace_id?: string;
         message?: string;
       }) => {
+        // eslint-disable-next-line no-console
+        console.log("[Scenario] scenario_tool_image_complete event received:", {
+          success: data.success,
+          image_id: data.image_id,
+          trace_id: data.trace_id,
+          message: data.message,
+        });
         if (data.success) {
           imageIds.push(data.image_id);
         }

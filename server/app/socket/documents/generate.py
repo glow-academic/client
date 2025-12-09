@@ -7,7 +7,7 @@ from typing import Any
 
 from agents import Runner, trace
 from agents.items import TResponseInputItem
-from app.main import UPLOAD_FOLDER, get_pool, sio
+from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.build_document_agent import build_document_agent
 from app.utils.agents.tools.create_document_tools import (
     create_document_tools, document_progress, document_results)
@@ -20,6 +20,7 @@ from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 # Pydantic models for server-to-client events
@@ -287,7 +288,7 @@ async def _document_generate_impl(
             # This handles token updates and message logging in background
             usage = run_result.context_wrapper.usage
             assistant_output = getattr(run_result, "final_output", None) or ""
-            await sio.emit(
+            await internal_sio.emit(
                 "log_run",
                 {
                     "runId": str(model_run_id),

@@ -8,27 +8,25 @@ from typing import Any
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
-from app.main import get_hint_storage, get_pool, get_simulation_tool_calls_dict, sio
+from app.main import (get_hint_storage, get_internal_sio, get_pool,
+                      get_simulation_tool_calls_dict, sio)
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.utils.agents.tools.create_persona_tools import (
-    create_persona_tools,
-    find_persona_by_name,
-)
+from app.utils.agents.tools.create_persona_tools import (create_persona_tools,
+                                                         find_persona_by_name)
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import (
-    get_simulation_conversation_history,
-)
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 # Helper functions for incremental JSON parsing
@@ -473,7 +471,7 @@ async def _generate_hints_background_inline(
             input_items_with_dev = input_items + [
                 {"role": "developer", "content": hint_dev_content}
             ]
-            await sio.emit(
+            await internal_sio.emit(
                 "log_run",
                 {
                     "runId": str(model_run_id),
@@ -771,7 +769,8 @@ async def _simulation_text_send_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket.store_active_run import store_active_run
+                    from app.utils.websocket.store_active_run import \
+                        store_active_run
 
                     # Fetch context for the chat
                     sql_context = load_sql(
@@ -2483,9 +2482,8 @@ Tool Usage Instructions:
                             del tool_calls_dict[chat_id_str]
 
                         # Clean up active run
-                        from app.utils.websocket.remove_active_run import (
-                            remove_active_run,
-                        )
+                        from app.utils.websocket.remove_active_run import \
+                            remove_active_run
 
                         await remove_active_run(chat_id_str)
 
@@ -2493,7 +2491,7 @@ Tool Usage Instructions:
                     # This handles token updates and message logging in background
                     # Note: For simulations, assistant output is handled via tool calls, not a single message
                     usage = result.context_wrapper.usage
-                    await sio.emit(
+                    await internal_sio.emit(
                         "log_run",
                         {
                             "runId": str(model_run_id),

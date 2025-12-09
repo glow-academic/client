@@ -5,12 +5,13 @@ import uuid
 from typing import Any
 
 from agents.items import TResponseInputItem
-from app.main import UPLOAD_FOLDER, get_pool, sio
+from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 # Pydantic model for client-to-server event
 class LogRunPayload(BaseModel):
@@ -133,10 +134,21 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
 
 @sio.event  # type: ignore
 async def log_run(sid: str, data: dict[str, Any]) -> None:
-    """Wrapper that validates payload before calling actual handler"""
+    """Wrapper that validates payload before calling actual handler (client-to-server)."""
     try:
         validated = LogRunPayload(**data)
         await _log_run_impl(sid, validated)
     except ValidationError as e:
         logger.error(f"Validation error in log_run for {sid}: {e}")
+
+
+@internal_sio.on("log_run")
+async def log_run_internal(data: dict[str, Any]) -> None:
+    """Handle log_run event from internal bus (server-to-server)."""
+    try:
+        validated = LogRunPayload(**data)
+        # Use empty string as sid for internal calls (not needed for async background work)
+        await _log_run_impl("", validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in log_run_internal: {e}")
 
