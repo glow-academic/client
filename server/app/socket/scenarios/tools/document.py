@@ -27,6 +27,7 @@ class DocumentToolPayload(BaseModel):
 class DocumentToolCompletePayload(BaseModel):
     success: bool
     document_id: str
+    parent_document_id: str
     trace_id: str
     message: str | None = None
 
@@ -118,7 +119,8 @@ async def scenario_tool_document(sid: str, data: dict[str, Any]) -> None:
             await document_tool_complete(
                 DocumentToolCompletePayload(
                     success=True,
-                    document_id=child_document_id,
+                    document_id=str(child_document_id),
+                    parent_document_id=str(parent_document_id),
                     trace_id=trace_id,
                     message="Dynamic document created successfully",
                 ),

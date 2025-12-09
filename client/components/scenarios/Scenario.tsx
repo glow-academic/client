@@ -418,11 +418,70 @@ export default function Scenario({
       const handleDocumentComplete = (data: {
         success: boolean;
         document_id: string;
+        parent_document_id?: string;
         trace_id?: string;
         message?: string;
       }) => {
+        // eslint-disable-next-line no-console
+        console.log(
+          "[Scenario] scenario_tool_document_complete event received:",
+          {
+            success: data.success,
+            document_id: data.document_id,
+            parent_document_id: data.parent_document_id,
+            trace_id: data.trace_id,
+            message: data.message,
+          }
+        );
+
         if (data.success) {
           documentIds.push(data.document_id);
+
+          // If parent_document_id is provided, replace parent with child in currentDocumentIds
+          const parentDocumentId = data.parent_document_id;
+          if (parentDocumentId) {
+            // eslint-disable-next-line no-console
+            console.log("[Scenario] Replacing parent document with child:", {
+              parent_id: parentDocumentId,
+              child_id: data.document_id,
+            });
+            setCurrentDocumentIds((prev) => {
+              // eslint-disable-next-line no-console
+              console.log(
+                "[Scenario] Current document IDs before replacement:",
+                prev
+              );
+              // Replace parent ID with child ID if parent exists in the array
+              const parentIndex = prev.indexOf(parentDocumentId);
+              if (parentIndex !== -1) {
+                const updated = [...prev];
+                updated[parentIndex] = data.document_id;
+                // eslint-disable-next-line no-console
+                console.log(
+                  "[Scenario] Document IDs after replacement:",
+                  updated
+                );
+                return updated;
+              }
+              // If parent not found, just add the child (shouldn't happen, but handle gracefully)
+              // eslint-disable-next-line no-console
+              console.warn(
+                "[Scenario] Parent document ID not found in currentDocumentIds, adding child instead"
+              );
+              return [...prev, data.document_id];
+            });
+          } else {
+            // No parent ID - just add the new document ID
+            // eslint-disable-next-line no-console
+            console.log(
+              "[Scenario] No parent_document_id provided, adding new document:",
+              data.document_id
+            );
+            setCurrentDocumentIds((prev) => [...prev, data.document_id]);
+          }
+        } else {
+          // eslint-disable-next-line no-console
+          console.error("[Scenario] Document completion failed:", data.message);
         }
       };
 
@@ -526,6 +585,11 @@ export default function Scenario({
       socket.on("scenario_tool_objectives_complete", handleObjectivesComplete);
       socket.on("scenario_tool_document_complete", handleDocumentComplete);
       socket.on("scenario_tool_image_complete", handleImageComplete);
+
+      // eslint-disable-next-line no-console
+      console.log(
+        "[Scenario] Registered WebSocket event listeners for scenario generation"
+      );
 
       // Emit the event
       // agentId is required - UI filters and selects appropriate agent based on flags
@@ -2129,9 +2193,9 @@ export default function Scenario({
       }
 
       // Handle generated IDs from tool completion events
+      // Note: Document IDs are already updated in real-time via handleDocumentComplete
+      // This is just for showing success message
       if (result.document_ids && result.document_ids.length > 0) {
-        // Update document IDs with newly generated ones
-        setCurrentDocumentIds((prev) => [...prev, ...result.document_ids]);
         toast.success(
           `Created ${result.document_ids.length} dynamic document(s)`
         );
