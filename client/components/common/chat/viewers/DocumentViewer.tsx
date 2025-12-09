@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isCodeByName } from "@/utils/mime-map";
 
-type DocumentItem = {
+export type DocumentItem = {
   document_id: string;
   name: string;
   updatedAt: string;
@@ -17,7 +17,8 @@ type DocumentItem = {
   active: boolean;
   department_ids: string[] | null;
   upload_id: string | null;
-  parameter_item_ids: string[];
+  parameter_item_ids?: string[]; // Keep for backward compatibility (optional)
+  field_ids?: string[]; // New field name (optional)
 };
 
 import { Download, FileText } from "lucide-react";

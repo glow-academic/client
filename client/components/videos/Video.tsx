@@ -122,7 +122,7 @@ type ParameterMappingItem = {
   persona_parameter: boolean; // Required for ParameterSelector compatibility
 };
 
-type ParameterItemMappingItem = {
+type FieldMappingItem = {
   name: string;
   description: string;
   parameter_id: string;
@@ -130,7 +130,7 @@ type ParameterItemMappingItem = {
 };
 
 type ParameterMapping = Record<string, ParameterMappingItem>;
-type ParameterItemMapping = Record<string, ParameterItemMappingItem>;
+type FieldMapping = Record<string, FieldMappingItem>;
 
 // Local question type for editing (IDs optional for new questions)
 // Types match the API response structure from VideoDetailOut
@@ -438,7 +438,7 @@ export default function Video({
           // Filter available policy parameter items for the new policies
           const newDocumentParameterItemIds: string[] = [];
           documentParameterIds.forEach((paramId) => {
-            const paramItems = Object.entries(parameterItemMapping)
+            const paramItems = Object.entries(fieldMapping)
               .filter(([_itemId, item]) => item.parameter_id === paramId)
               .map(([itemId]) => itemId);
             const validItems = paramItems.filter((itemId) =>
@@ -457,7 +457,7 @@ export default function Video({
           // Update parameters: remove old document parameters, add new ones, keep general video parameters
           const nonDocumentParamIds = currentParameterItemIds.filter(
             (itemId) => {
-              const item = parameterItemMapping[itemId];
+              const item = fieldMapping[itemId];
               if (!item) return true;
               const paramId = item.parameter_id;
               return !documentParameterIds.includes(paramId);
@@ -474,7 +474,7 @@ export default function Video({
         if (targets.includes("parameters")) {
           const newGeneralParamItemIds: string[] = [];
           generalVideoParameterIds.forEach((paramId) => {
-            const paramItems = Object.entries(parameterItemMapping)
+            const paramItems = Object.entries(fieldMapping)
               .filter(([_itemId, item]) => item.parameter_id === paramId)
               .map(([itemId]) => itemId);
             const validItems = paramItems.filter((itemId) =>
@@ -492,7 +492,7 @@ export default function Video({
 
           // Update parameters: keep policy parameters, replace general video parameters
           const policyParamIds = currentParameterItemIds.filter((itemId) => {
-            const item = parameterItemMapping[itemId];
+            const item = fieldMapping[itemId];
             if (!item) return false;
             const paramId = item.parameter_id;
             return documentParameterIds.includes(paramId);
@@ -1305,10 +1305,10 @@ export default function Video({
   }, [(videoData as any)?.parameter_mapping]);
 
   // Parameter item mapping
-  const parameterItemMapping = useMemo((): ParameterItemMapping => {
-    const mapping = ((videoData as any)?.parameter_item_mapping ||
+  const fieldMapping = useMemo((): FieldMapping => {
+    const mapping = ((videoData as any)?.field_mapping ||
       {}) as Record<string, any>;
-    // Convert to ParameterItemMapping format with proper value type (must be string for ParameterSelector)
+    // Convert to FieldMapping format with proper value type (must be string for ParameterSelector)
     return Object.fromEntries(
       Object.entries(mapping).map(([key, item]: [string, any]) => [
         key,
@@ -1319,8 +1319,8 @@ export default function Video({
           parameter_name: item?.parameter_name || "",
         },
       ])
-    ) as ParameterItemMapping;
-  }, [(videoData as any)?.parameter_item_mapping]);
+    ) as FieldMapping;
+  }, [(videoData as any)?.field_mapping]);
 
   // Filter parameters by document_parameter for display next to documents
   const documentParameterIds = useMemo(() => {
@@ -1338,53 +1338,53 @@ export default function Video({
   // Filter parameter item IDs by parameter type
   const documentParameterItemIds = useMemo(() => {
     return currentParameterItemIds.filter((itemId) => {
-      const item = parameterItemMapping[itemId];
+      const item = fieldMapping[itemId];
       if (!item) return false;
       const paramId = item.parameter_id;
       return documentParameterIds.includes(paramId);
     });
-  }, [currentParameterItemIds, parameterItemMapping, documentParameterIds]);
+  }, [currentParameterItemIds, fieldMapping, documentParameterIds]);
 
   const generalVideoParameterItemIds = useMemo(() => {
     return currentParameterItemIds.filter((itemId) => {
-      const item = parameterItemMapping[itemId];
+      const item = fieldMapping[itemId];
       if (!item) return false;
       const paramId = item.parameter_id;
       return generalVideoParameterIds.includes(paramId);
     });
-  }, [currentParameterItemIds, parameterItemMapping, generalVideoParameterIds]);
+  }, [currentParameterItemIds, fieldMapping, generalVideoParameterIds]);
 
   // Filter valid parameter item IDs by parameter type
   const validParameterItemIds = useMemo(() => {
     // Get all parameter item IDs from mapping that belong to video parameters
-    const allVideoParamItemIds = Object.keys(parameterItemMapping).filter(
+    const allVideoParamItemIds = Object.keys(fieldMapping).filter(
       (itemId) => {
-        const item = parameterItemMapping[itemId];
+        const item = fieldMapping[itemId];
         if (!item) return false;
         const paramId = item.parameter_id;
         return Object.keys(parameterMapping).includes(paramId);
       }
     );
     return allVideoParamItemIds;
-  }, [parameterItemMapping, parameterMapping]);
+  }, [fieldMapping, parameterMapping]);
 
   const validDocumentParameterItemIds = useMemo(() => {
     return validParameterItemIds.filter((itemId) => {
-      const item = parameterItemMapping[itemId];
+      const item = fieldMapping[itemId];
       if (!item) return false;
       const paramId = item.parameter_id;
       return documentParameterIds.includes(paramId);
     });
-  }, [validParameterItemIds, parameterItemMapping, documentParameterIds]);
+  }, [validParameterItemIds, fieldMapping, documentParameterIds]);
 
   const validGeneralVideoParameterItemIds = useMemo(() => {
     return validParameterItemIds.filter((itemId) => {
-      const item = parameterItemMapping[itemId];
+      const item = fieldMapping[itemId];
       if (!item) return false;
       const paramId = item.parameter_id;
       return generalVideoParameterIds.includes(paramId);
     });
-  }, [validParameterItemIds, parameterItemMapping, generalVideoParameterIds]);
+  }, [validParameterItemIds, fieldMapping, generalVideoParameterIds]);
 
   // Build parameter mappings filtered by type
   const documentParameterMapping = useMemo(() => {
@@ -2341,14 +2341,14 @@ export default function Video({
             <div className="pt-2">
               <ParameterSelector
                 parameterMapping={documentParameterMapping}
-                parameterItemMapping={parameterItemMapping}
+                fieldMapping={fieldMapping}
                 validParameterItemIds={validDocumentParameterItemIds}
                 selectedParameterItemIds={documentParameterItemIds}
                 onParameterItemIdsChange={(newIds) => {
                   // Remove old document parameter items
                   const nonDocumentParamIds = currentParameterItemIds.filter(
                     (itemId) => {
-                      const item = parameterItemMapping[itemId];
+                      const item = fieldMapping[itemId];
                       if (!item) return true;
                       const paramId = item.parameter_id;
                       return !documentParameterIds.includes(paramId);
@@ -2439,14 +2439,14 @@ export default function Video({
           {Object.keys(generalVideoParameterMapping).length > 0 ? (
             <ParameterSelector
               parameterMapping={generalVideoParameterMapping as any}
-              parameterItemMapping={parameterItemMapping as any}
+              fieldMapping={fieldMapping as any}
               validParameterItemIds={validGeneralVideoParameterItemIds}
               selectedParameterItemIds={generalVideoParameterItemIds}
               onParameterItemIdsChange={(newIds) => {
                 // Remove old general video parameter items
                 const nonGeneralParamIds = currentParameterItemIds.filter(
                   (itemId) => {
-                    const item = parameterItemMapping[itemId];
+                    const item = fieldMapping[itemId];
                     if (!item) return true;
                     const paramId = item.parameter_id;
                     return !generalVideoParameterIds.includes(paramId);

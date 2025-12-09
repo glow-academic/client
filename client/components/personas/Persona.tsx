@@ -523,10 +523,10 @@ export default function Persona({
                         }
                       ).parameter_mapping || {}
                     }
-                    parameterItemMapping={
+                    fieldMapping={
                       (
                         personaData as PersonaDetailOut & {
-                          parameter_item_mapping?: Record<
+                          field_mapping?: Record<
                             string,
                             {
                               name: string;
@@ -537,7 +537,7 @@ export default function Persona({
                             }
                           >;
                         }
-                      ).parameter_item_mapping || {}
+                      ).field_mapping || {}
                     }
                     validParameterItemIds={
                       (

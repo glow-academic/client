@@ -377,7 +377,7 @@ field_conditional_parameters_data AS (
     WHERE fcp.active = true
     GROUP BY fcp.field_id
 ),
-parameter_item_mapping_data AS (
+field_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             pi.id::text,
@@ -632,7 +632,7 @@ SELECT
     (SELECT mapping FROM document_mapping_data) as document_mapping,
     (SELECT mapping FROM parameter_mapping_data) as parameter_mapping,
     (SELECT parameter_ids FROM parameter_mapping_data) as valid_parameter_ids,
-    (SELECT mapping FROM parameter_item_mapping_data) as parameter_item_mapping,
+    (SELECT mapping FROM field_mapping_data) as field_mapping,
     (SELECT parameters_json FROM parameters_structure) as parameters_json,
     (SELECT document_details FROM document_details_data) as document_details,
     (SELECT problem_statement_mapping FROM problem_statement_mapping_data_default) as problem_statement_mapping,

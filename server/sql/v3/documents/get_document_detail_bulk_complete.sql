@@ -89,7 +89,7 @@ SELECT
     ad.department_ids,
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
-    vpi.param_item_mapping as parameter_item_mapping,
+    vpi.param_item_mapping as field_mapping,
     vpi.param_item_ids as valid_parameter_item_ids
 FROM aggregated_data ad
 CROSS JOIN valid_depts vd

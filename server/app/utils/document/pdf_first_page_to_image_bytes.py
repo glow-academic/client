@@ -1,6 +1,5 @@
 """Get first page of PDF as PNG image bytes."""
 
-import base64
 
 
 def pdf_first_page_to_image_bytes(full_path: str) -> bytes | None:
@@ -28,4 +27,3 @@ def pdf_first_page_to_image_bytes(full_path: str) -> bytes | None:
     except Exception:
         # If rendering fails, return None
         return None
-

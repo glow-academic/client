@@ -175,9 +175,6 @@ RubricMapping = dict[str, RubricMappingItem]
 SimulationMapping = dict[str, SimulationMappingItem]
 ParameterMapping = dict[str, ParameterMappingItem]
 FieldMapping = dict[str, FieldMappingItem]
-# Backward compatibility alias
-ParameterItemMapping = FieldMapping
-ParameterItemMappingItem = FieldMappingItem
 CohortMapping = dict[str, CohortMappingItem]
 DocumentMapping = dict[str, DocumentMappingItem]
 StaffMapping = dict[str, StaffMappingItem]

@@ -16,10 +16,10 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
     AttemptHistoryRow,
     DataPoint,
+    FieldMapping,
+    FieldMappingItem,
     Method,
     MetricResponse,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
     ParameterMapping,
     ParameterMappingItem,
     RubricMapping,
@@ -541,7 +541,7 @@ class DashboardBundleResponse(BaseModel):
     simulation_mapping: SimulationMapping
     rubric_mapping: RubricMapping
     parameter_mapping: ParameterMapping
-    parameter_item_mapping: ParameterItemMapping
+    field_mapping: FieldMapping
 
 
 # ==============================================================
@@ -1483,10 +1483,10 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             persona_parameter=param_data.get("persona_parameter", False),
         )
 
-    parameter_item_mapping_raw = data.get("parameterItemMapping", {})
-    parameter_item_mapping: ParameterItemMapping = {}
-    for pi_id, pi_data in parameter_item_mapping_raw.items():
-        parameter_item_mapping[pi_id] = ParameterItemMappingItem(
+    field_mapping_raw = data.get("fieldMapping", {})
+    field_mapping: FieldMapping = {}
+    for pi_id, pi_data in field_mapping_raw.items():
+        field_mapping[pi_id] = FieldMappingItem(
             name=pi_data.get("name", ""),
             description=pi_data.get("description", ""),
             parameter_id=pi_data.get("parameterId", ""),
@@ -1537,7 +1537,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
         simulation_mapping=simulation_mapping,
         rubric_mapping=rubric_mapping,
         parameter_mapping=parameter_mapping,
-        parameter_item_mapping=parameter_item_mapping,
+        field_mapping=field_mapping,
     )
 
 

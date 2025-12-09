@@ -17,10 +17,10 @@ from app.utils.schema import (
     CohortMappingItem,
     DepartmentMapping,
     DepartmentMappingItem,
+    FieldMapping,
+    FieldMappingItem,
     ObjectiveMapping,
     ObjectiveMappingItem,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
     PersonaMapping,
     PersonaMappingItem,
     SimulationMapping,
@@ -49,9 +49,7 @@ class ScenarioItem(BaseModel):
     objective_ids: list[str]  # "scenarioId_idx" composite keys
     persona_ids: list[str]
     parameter_item_ids: list[str]
-    parameter_items: list[
-        ParameterItemMappingItem
-    ]  # Computed: actual parameter item objects
+    parameter_items: list[FieldMappingItem]  # Computed: actual parameter item objects
     simulation_ids: list[str]
     num_simulations: int
     can_edit: bool
@@ -66,7 +64,7 @@ class ScenariosListResponse(BaseModel):
 
     scenarios: list[ScenarioItem]
     objective_mapping: ObjectiveMapping
-    parameter_item_mapping: ParameterItemMapping
+    field_mapping: FieldMapping
     cohort_mapping: CohortMapping
     persona_mapping: PersonaMapping
     simulation_mapping: SimulationMapping
@@ -119,7 +117,7 @@ async def get_scenarios_list(
         # Build response - transform database rows
         scenarios = []
         objective_mapping: ObjectiveMapping = {}
-        parameter_item_mapping: ParameterItemMapping = {}
+        field_mapping: FieldMapping = {}
         cohort_mapping: CohortMapping = {}
         persona_mapping: PersonaMapping = {}
         simulation_mapping: SimulationMapping = {}
@@ -142,15 +140,13 @@ async def get_scenarios_list(
                         )
 
             # Parse parameter_item mapping from JSONB
-            parameter_item_mapping_data = first_row.get("parameter_item_mapping")
-            if isinstance(parameter_item_mapping_data, str):
-                parameter_item_mapping_data = json.loads(parameter_item_mapping_data)
-            if parameter_item_mapping_data and isinstance(
-                parameter_item_mapping_data, dict
-            ):
-                for pid, pdata in parameter_item_mapping_data.items():
+            field_mapping_data = first_row.get("field_mapping")
+            if isinstance(field_mapping_data, str):
+                field_mapping_data = json.loads(field_mapping_data)
+            if field_mapping_data and isinstance(field_mapping_data, dict):
+                for pid, pdata in field_mapping_data.items():
                     if isinstance(pdata, dict):
-                        parameter_item_mapping[pid] = ParameterItemMappingItem(
+                        field_mapping[pid] = FieldMappingItem(
                             name=pdata.get("name", ""),
                             description=pdata.get("description", ""),
                             parameter_id=str(pdata["parameter_id"])
@@ -236,9 +232,7 @@ async def get_scenarios_list(
 
             # Compute parameter_items: map IDs to actual objects from mapping
             parameter_items = [
-                parameter_item_mapping[pid]
-                for pid in parameter_item_ids
-                if pid in parameter_item_mapping
+                field_mapping[pid] for pid in parameter_item_ids if pid in field_mapping
             ]
 
             scenarios.append(
@@ -286,7 +280,7 @@ async def get_scenarios_list(
         response_data = ScenariosListResponse(
             scenarios=scenarios,
             objective_mapping=objective_mapping,
-            parameter_item_mapping=parameter_item_mapping,
+            field_mapping=field_mapping,
             cohort_mapping=cohort_mapping,
             persona_mapping=persona_mapping,
             simulation_mapping=simulation_mapping,

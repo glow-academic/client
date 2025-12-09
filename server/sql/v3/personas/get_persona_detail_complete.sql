@@ -182,7 +182,7 @@ parameter_mapping_data AS (
     array_agg(lp.parameter_id::text ORDER BY lp.parameter_name) as parameter_ids
     FROM linked_parameters lp
 ),
-parameter_item_mapping_data AS (
+field_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             f.id::text,
@@ -190,11 +190,11 @@ parameter_item_mapping_data AS (
                 'name', f.name,
                 'description', COALESCE(f.description, ''),
                 'parameter_id', pf.parameter_id::text,
-                'parameter_name', p.name,
+                'parameter_name', p.name
             )
         ),
         '{}'::jsonb
-    ) as parameter_item_mapping,
+    ) as field_mapping,
     array_agg(f.id::text ORDER BY f.name) as parameter_item_ids
     FROM linked_parameters lp
     JOIN parameter_fields pf ON pf.parameter_id = lp.parameter_id AND pf.active = true
@@ -218,8 +218,8 @@ SELECT
     pr.user_role,
     COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
     COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
-    COALESCE(pimd.parameter_item_mapping, '{}'::jsonb) as parameter_item_mapping,
-    COALESCE(pimd.parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
+    COALESCE(fmd.field_mapping, '{}'::jsonb) as field_mapping,
+    COALESCE(fmd.parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
     COALESCE(pfi.field_ids, ARRAY[]::text[]) as parameter_field_ids
 FROM persona_data p
 CROSS JOIN valid_depts vd
@@ -227,5 +227,5 @@ CROSS JOIN valid_agents va
 CROSS JOIN usage_data u
 CROSS JOIN profile_data pr
 CROSS JOIN parameter_mapping_data pmd
-CROSS JOIN parameter_item_mapping_data pimd
+CROSS JOIN field_mapping_data fmd
 CROSS JOIN persona_field_ids pfi

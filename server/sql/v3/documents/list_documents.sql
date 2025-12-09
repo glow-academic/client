@@ -92,7 +92,7 @@ scenario_mapping_data AS (
                 'persona_id', NULL,
                 'persona_mapping', '{}'::jsonb,
                 'document_mapping', '{}'::jsonb,
-                'parameter_item_mapping', '{}'::jsonb,
+                'field_mapping', '{}'::jsonb,
                 'parameter_item_ids', ARRAY[]::text[],
                 'document_ids', ARRAY[]::text[]
             )
@@ -105,7 +105,7 @@ scenario_mapping_data AS (
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
 ),
-parameter_item_mapping_data AS (
+field_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             f_data.id::text,
@@ -293,13 +293,13 @@ SELECT
     END as can_delete,
     COALESCE(dvpi.valid_parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
     sm.mapping as scenario_mapping,
-    pim.mapping as parameter_item_mapping,
+    fm.mapping as field_mapping,
     dm.mapping as department_mapping,
     pm.mapping as parameter_mapping
 FROM document_data dd
 CROSS JOIN user_profile up
 CROSS JOIN scenario_mapping_data sm
-CROSS JOIN parameter_item_mapping_data pim
+CROSS JOIN field_mapping_data fm
 CROSS JOIN department_mapping_data dm
 CROSS JOIN parameter_mapping_data pm
 LEFT JOIN document_valid_parameter_items dvpi ON dvpi.document_id = dd.document_id

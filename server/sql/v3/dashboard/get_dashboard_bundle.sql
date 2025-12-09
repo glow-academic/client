@@ -1472,7 +1472,7 @@
                   )
             ),
             
-            parameter_item_mapping AS (
+            field_mapping AS (
                 SELECT COALESCE(jsonb_object_agg(
                     f.id::text,
                     jsonb_build_object(
@@ -1929,7 +1929,7 @@
                 'simulationMapping', COALESCE((SELECT mapping FROM simulation_mapping LIMIT 1), '{}'::jsonb),
                 'rubricMapping', COALESCE((SELECT mapping FROM rubric_mapping LIMIT 1), '{}'::jsonb),
                 'parameterMapping', COALESCE((SELECT mapping FROM parameter_mapping LIMIT 1), '{}'::jsonb),
-                'parameterItemMapping', COALESCE((SELECT mapping FROM parameter_item_mapping LIMIT 1), '{}'::jsonb),
+                'fieldMapping', COALESCE((SELECT mapping FROM field_mapping LIMIT 1), '{}'::jsonb),
                 'thresholds', COALESCE((
                     SELECT json_build_object(
                         'success', success_threshold,

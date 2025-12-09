@@ -230,7 +230,7 @@ SELECT
     vd.dept_ids as valid_department_ids,
     COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
     COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
-    vpi.param_item_mapping as parameter_item_mapping,
+    vpi.param_item_mapping as field_mapping,
     vpi.param_item_ids as valid_parameter_item_ids,
     COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
     COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,

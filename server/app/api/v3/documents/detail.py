@@ -18,7 +18,7 @@ from app.utils.schema import (
     AgentMapping,
     AgentMappingItem,
     DepartmentMappingItem,
-    ParameterItemMappingItem,
+    FieldMappingItem,
     ParameterMapping,
     ParameterMappingItem,
 )
@@ -80,7 +80,7 @@ class DocumentDetailResponse(BaseModel):
     department_mapping: dict[str, DepartmentMappingItem]
     parameter_item_ids: list[str]
     valid_parameter_item_ids: list[str]
-    parameter_item_mapping: dict[str, ParameterItemMappingItem]
+    field_mapping: dict[str, FieldMappingItem]
     parameter_mapping: ParameterMapping
     linked_parameter_ids: list[str]
     classify_agent_id: str
@@ -158,15 +158,15 @@ async def get_document_detail(
                             else None,
                         )
 
-        parameter_item_mapping: dict[str, ParameterItemMappingItem] = {}
-        if row.get("parameter_item_mapping"):
-            param_item_data = row["parameter_item_mapping"]
-            if isinstance(param_item_data, str):
-                param_item_data = json.loads(param_item_data)
-            if isinstance(param_item_data, dict):
-                for pid, pdata in param_item_data.items():
+        field_mapping: dict[str, FieldMappingItem] = {}
+        if row.get("field_mapping"):
+            field_data = row["field_mapping"]
+            if isinstance(field_data, str):
+                field_data = json.loads(field_data)
+            if isinstance(field_data, dict):
+                for pid, pdata in field_data.items():
                     if isinstance(pdata, dict):
-                        parameter_item_mapping[pid] = ParameterItemMappingItem(
+                        field_mapping[pid] = FieldMappingItem(
                             name=pdata.get("name", ""),
                             description=pdata.get("description", ""),
                             parameter_id=pdata.get("parameter_id", ""),
@@ -343,7 +343,7 @@ async def get_document_detail(
             department_mapping=department_mapping,
             parameter_item_ids=parameter_item_ids,
             valid_parameter_item_ids=valid_parameter_item_ids,
-            parameter_item_mapping=parameter_item_mapping,
+            field_mapping=field_mapping,
             parameter_mapping=parameter_mapping,
             linked_parameter_ids=linked_parameter_ids,
             classify_agent_id=row.get("classify_agent_id", ""),

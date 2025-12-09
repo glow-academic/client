@@ -4,18 +4,11 @@ import json
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner,
+                    ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
-from app.main import get_dynamic_document_storage, get_pool, get_scenario_storage, sio
+from app.main import (get_dynamic_document_storage, get_pool,
+                      get_scenario_storage, sio)
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
@@ -26,15 +19,13 @@ from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
-from app.utils.scenario.format_document_template_info import (
-    format_document_template_info,
-)
-from app.utils.scenario.image_generation import (
-    get_image_generation_results,
-    set_image_generation_context,
-)
+from app.utils.scenario.format_document_template_info import \
+    format_document_template_info
+from app.utils.scenario.image_generation import (get_image_generation_results,
+                                                 set_image_generation_context)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -91,7 +82,7 @@ class GenerateScenarioAIPayload(BaseModel):
     departmentId: str
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
-    parameterItemIds: list[str] | None = None
+    fieldIds: list[str] | None = None
     profileId: str | None = None
     objectivesEnabled: bool = True
 
@@ -161,9 +152,9 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
         document_ids = (
             [uuid.UUID(d) for d in data.documentIds] if data.documentIds else None
         )
-        parameter_item_ids = (
-            [uuid.UUID(p) for p in data.parameterItemIds]
-            if data.parameterItemIds
+        field_ids = (
+            [uuid.UUID(f) for f in data.fieldIds]
+            if data.fieldIds
             else None
         )
         profile_id = uuid.UUID(data.profileId) if data.profileId else None
@@ -200,8 +191,8 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
 
             # Get all context data in a single optimized query using SQL file
             doc_ids_str = [str(d) for d in document_ids] if document_ids else []
-            param_ids_str = (
-                [str(p) for p in parameter_item_ids] if parameter_item_ids else []
+            field_ids_str = (
+                [str(f) for f in field_ids] if field_ids else []
             )
 
             sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
@@ -210,7 +201,7 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
                 str(department_id),
                 str(persona_id) if persona_id else None,
                 doc_ids_str,
-                param_ids_str,
+                field_ids_str,
             )
 
             if not context_row:
@@ -287,12 +278,10 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
                 document_info = format_document_info(context["documents"], show_images)
 
             # Format parameter item info if parameter items were provided
-            if not parameter_item_ids or len(parameter_item_ids) == 0:
-                parameter_item_info = None
+            if not field_ids or len(field_ids) == 0:
+                field_info = None
             else:
-                parameter_item_info = format_parameter_item_info(
-                    context["parameter_items"]
-                )
+                field_info = format_parameter_item_info(context["parameter_items"])
 
             # Create scenario generation tools
             group_id = None
@@ -366,7 +355,7 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
             input_items: list[TResponseInputItem | None] = [
                 persona_info,
                 document_info,
-                parameter_item_info,
+                field_info,
                 document_template_info,
             ]
 

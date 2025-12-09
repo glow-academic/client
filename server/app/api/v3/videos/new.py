@@ -17,7 +17,7 @@ from app.utils.schema import (
     AgentMappingItem,
     DepartmentMapping,
     DepartmentMappingItem,
-    ParameterItemMapping,
+    FieldMapping,
     ParameterMapping,
     PersonaMapping,
     PersonaMappingItem,
@@ -93,7 +93,7 @@ class VideoDetailResponse(BaseModel):
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
     parameter_mapping: ParameterMapping
-    parameter_item_mapping: ParameterItemMapping
+    field_mapping: FieldMapping
     parameter_item_ids: list[str]
     video_parameter_ids: list[str]
     valid_parameter_ids: list[str]
@@ -247,14 +247,14 @@ async def get_video_new(
                     )
 
         # Parse parameter_item_mapping from JSONB
-        from app.utils.schema import ParameterItemMappingItem
+        from app.utils.schema import FieldMappingItem
 
-        parameter_item_mapping_data = parse_jsonb(result.get("parameter_item_mapping"))
-        parameter_item_mapping: ParameterItemMapping = {}
-        if isinstance(parameter_item_mapping_data, dict):
-            for item_id, idata in parameter_item_mapping_data.items():
+        field_mapping_data = parse_jsonb(result.get("field_mapping"))
+        field_mapping: FieldMapping = {}
+        if isinstance(field_mapping_data, dict):
+            for item_id, idata in field_mapping_data.items():
                 if isinstance(idata, dict):
-                    parameter_item_mapping[item_id] = ParameterItemMappingItem(
+                    field_mapping[item_id] = FieldMappingItem(
                         name=idata.get("name", ""),
                         description=idata.get("description", ""),
                         parameter_id=idata.get("parameter_id", ""),
@@ -352,7 +352,7 @@ async def get_video_new(
             valid_agent_ids=valid_agent_ids,
             # Parameters (empty for new video)
             parameter_mapping=parameter_mapping,
-            parameter_item_mapping=parameter_item_mapping,
+            field_mapping=field_mapping,
             parameter_item_ids=parameter_item_ids,
             video_parameter_ids=video_parameter_ids,
             valid_parameter_ids=valid_parameter_ids,

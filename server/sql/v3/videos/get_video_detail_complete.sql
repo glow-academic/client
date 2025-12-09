@@ -127,7 +127,7 @@ policy_param_item AS (
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' 
     AND EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true)
-    AND f.value = 'policy'
+    AND f.name = 'policy'
     LIMIT 1
 ),
 video_documents_agg AS (
@@ -386,7 +386,7 @@ video_parameter_items_data AS (
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.active = true
 ),
-video_parameter_item_mapping_data AS (
+video_field_mapping_data AS (
     SELECT 
         COALESCE(jsonb_object_agg(
             pi.id::text,
@@ -394,9 +394,9 @@ video_parameter_item_mapping_data AS (
                 'name', pi.name,
                 'description', pi.description,
                 'parameter_id', pi.parameter_id::text,
-                'parameter_name', pi.parameter_name,
+                'parameter_name', pi.parameter_name
             )
-        ), '{}'::jsonb) as parameter_item_mapping
+        ), '{}'::jsonb) as field_mapping
     FROM video_parameter_items_data pi
 ),
 video_selected_parameter_items AS (
@@ -503,7 +503,7 @@ SELECT
     COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     COALESCE((SELECT parameter_mapping FROM video_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,
     COALESCE((SELECT array_agg(id::text) FROM linked_video_parameters), ARRAY[]::text[]) as parameter_ids,
-    COALESCE((SELECT parameter_item_mapping FROM video_parameter_item_mapping_data), '{}'::jsonb) as parameter_item_mapping,
+    COALESCE((SELECT field_mapping FROM video_field_mapping_data), '{}'::jsonb) as field_mapping,
     COALESCE((SELECT parameter_item_ids FROM video_selected_parameter_items), ARRAY[]::text[]) as parameter_item_ids,
     COALESCE((SELECT persona_ids FROM video_personas_data), ARRAY[]::text[]) as persona_ids,
     COALESCE((SELECT persona_mapping FROM video_personas_data), '{}'::jsonb) as persona_mapping,

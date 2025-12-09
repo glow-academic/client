@@ -112,8 +112,8 @@ export default async function NewScenarioPage({
     .get("parameterIds")
     ?.split(",")
     .filter(Boolean);
-  const parameterItemIds = searchParamsObj
-    .get("parameterItemIds")
+  const fieldIds = searchParamsObj  // Renamed from parameterItemIds
+    .get("fieldIds")  // Renamed from parameterItemIds
     ?.split(",")
     .filter(Boolean);
   const personaSearch = searchParamsObj.get("personaSearch") || undefined;
@@ -138,23 +138,23 @@ export default async function NewScenarioPage({
     ? parseInt(searchParamsObj.get("parameterSelectionMax") || "5", 10)
     : undefined;
 
-  // Parse parameter item ranges (format: parameterItemMin_{paramId}, parameterItemMax_{paramId})
-  const parameterItemRanges:
+  // Parse field ranges (format: fieldMin_{paramId}, fieldMax_{paramId})
+  const fieldRanges:  // Renamed from parameterItemRanges
     | Record<string, { min: number; max: number }>
     | undefined = (() => {
     const ranges: Record<string, { min: number; max: number }> = {};
     let hasRanges = false;
     for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("parameterItemMin_")) {
-        const paramId = key.replace("parameterItemMin_", "");
+      if (key.startsWith("fieldMin_")) {  // Renamed from parameterItemMin_
+        const paramId = key.replace("fieldMin_", "");
         const min = parseInt(value, 10);
         if (!isNaN(min)) {
           if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
           ranges[paramId].min = min;
           hasRanges = true;
         }
-      } else if (key.startsWith("parameterItemMax_")) {
-        const paramId = key.replace("parameterItemMax_", "");
+      } else if (key.startsWith("fieldMax_")) {  // Renamed from parameterItemMax_
+        const paramId = key.replace("fieldMax_", "");
         const max = parseInt(value, 10);
         if (!isNaN(max)) {
           if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
@@ -177,7 +177,7 @@ export default async function NewScenarioPage({
       personaIds: personaIds || null,
       documentIds: documentIds || null,
       parameterIds: parameterIds || null,
-      parameterItemIds: parameterItemIds || null,
+      fieldIds: fieldIds || null,  // Renamed from parameterItemIds
       personaSearch: personaSearch || null,
       documentSearch: documentSearch || null,
       parameterSearch: parameterSearch || null,
@@ -187,7 +187,7 @@ export default async function NewScenarioPage({
       documentMax: documentMax || null,
       parameterSelectionMin: parameterSelectionMin || null,
       parameterSelectionMax: parameterSelectionMax || null,
-      parameterItemRanges: parameterItemRanges || null,
+      fieldRanges: fieldRanges || null,  // Renamed from parameterItemRanges
       randomize: randomize || null,
     },
   });

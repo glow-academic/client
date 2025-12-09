@@ -222,11 +222,11 @@ export default function Document({
         : documentDetailDefault?.department_mapping) || {},
     [isEditMode, documentDetail, documentDetailDefault]
   );
-  const parameterItemMapping = useMemo(
+  const fieldMapping = useMemo(
     () =>
       (isEditMode
-        ? documentDetail?.parameter_item_mapping
-        : documentDetailDefault?.parameter_item_mapping) || {},
+        ? documentDetail?.field_mapping
+        : documentDetailDefault?.field_mapping) || {},
     [isEditMode, documentDetail, documentDetailDefault]
   );
   const agentMapping = useMemo(
@@ -268,17 +268,17 @@ export default function Document({
       });
 
       return baseIds.filter((itemId) => {
-        const item = parameterItemMapping[itemId];
+        const item = fieldMapping[itemId];
         return item && deptParameterIds.has(item.parameter_id);
       });
     }
-    return Object.keys(parameterItemMapping);
+    return Object.keys(fieldMapping);
   }, [
     isEditMode,
     documentDetail,
     formData.departmentIds,
     departmentMapping,
-    parameterItemMapping,
+    fieldMapping,
   ]);
 
   // Create mode: Filter valid parameter item IDs based on selected departments
@@ -674,7 +674,7 @@ export default function Document({
 
       documentParameterIds.forEach((paramId) => {
         const itemsForParam = filteredValidParameterItemIds.filter((itemId) => {
-          const item = parameterItemMapping[itemId];
+          const item = fieldMapping[itemId];
           return item && item.parameter_id === paramId;
         });
 
@@ -702,7 +702,7 @@ export default function Document({
     globalDefaultParameterItemIds,
     documentParameterIds,
     filteredValidParameterItemIds,
-    parameterItemMapping,
+    fieldMapping,
     parameterMapping,
   ]);
 
@@ -1356,7 +1356,7 @@ export default function Document({
                 data-testid="document-parameter-selector"
               >
                 <ParameterItemPicker
-                  mapping={parameterItemMapping}
+                  mapping={fieldMapping}
                   validIds={filteredValidParameterItemIds}
                   selectedIds={globalDefaultParameterItemIds}
                   onSelect={(next) => {
@@ -1383,7 +1383,7 @@ export default function Document({
                     documentParameterIds.some((paramId) =>
                       filteredValidParameterItemIds.some(
                         (itemId) =>
-                          parameterItemMapping[itemId]?.parameter_id === paramId
+                          fieldMapping[itemId]?.parameter_id === paramId
                       )
                     )
                   }
@@ -1502,7 +1502,7 @@ export default function Document({
                       )}
                       <TableCell className="max-w-[300px]">
                         <ParameterItemPicker
-                          mapping={parameterItemMapping}
+                          mapping={fieldMapping}
                           validIds={filteredValidParameterItemIds}
                           selectedIds={
                             useDefaultParameterItems
@@ -1544,7 +1544,7 @@ export default function Document({
                             documentParameterIds.some((paramId) =>
                               filteredValidParameterItemIds.some(
                                 (itemId) =>
-                                  parameterItemMapping[itemId]?.parameter_id ===
+                                  fieldMapping[itemId]?.parameter_id ===
                                   paramId
                               )
                             )
@@ -1716,7 +1716,7 @@ export default function Document({
                   parameterMapping={
                     (documentDetail as any).parameter_mapping || {}
                   }
-                  parameterItemMapping={parameterItemMapping}
+                  fieldMapping={fieldMapping}
                   validParameterItemIds={
                     documentDetail.valid_parameter_item_ids || []
                   }
@@ -1874,7 +1874,7 @@ export default function Document({
           <div className="flex flex-col gap-2">
             <Label>Fields</Label>
             <ParameterItemPicker
-              mapping={parameterItemMapping}
+              mapping={fieldMapping}
               selectedIds={
                 isEditMode
                   ? formData.parameterItemIds

@@ -15,8 +15,8 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
     DepartmentMapping,
     DepartmentMappingItem,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
+    FieldMapping,
+    FieldMappingItem,
     ParameterMapping,
     ParameterMappingItem,
     PersonaMapping,
@@ -108,7 +108,7 @@ class PracticeOverviewResponse(BaseModel):
     scenario_mapping: ScenarioMapping
     persona_mapping: PersonaMapping
     parameter_mapping: ParameterMapping
-    parameter_item_mapping: ParameterItemMapping
+    field_mapping: FieldMapping
     department_mapping: DepartmentMapping
     valid_department_ids: list[str]
 
@@ -267,7 +267,7 @@ async def get_practice_overview(
                         persona_ids=persona_ids,
                         persona_mapping={},
                         document_mapping={},
-                        parameter_item_mapping={},
+                        parameter_item_mapping={},  # Field name in ScenarioMappingItem still uses old name
                         parameter_item_ids=[],
                         document_ids=[],
                     )
@@ -286,11 +286,11 @@ async def get_practice_overview(
                     )
 
         # Parse embedded parameter_item mapping
-        parameter_item_mapping: dict[str, ParameterItemMappingItem] = {}
-        if isinstance(parsed_result.get("parameter_item_mapping"), dict):
-            for item_id, item_data in parsed_result["parameter_item_mapping"].items():
+        field_mapping: dict[str, FieldMappingItem] = {}
+        if isinstance(parsed_result.get("field_mapping"), dict):
+            for item_id, item_data in parsed_result["field_mapping"].items():
                 if isinstance(item_data, dict):
-                    parameter_item_mapping[str(item_id)] = ParameterItemMappingItem(
+                    field_mapping[str(item_id)] = FieldMappingItem(
                         name=item_data.get("name", ""),
                         description=item_data.get("description", ""),
                         parameter_id=item_data.get("parameter_id", ""),
@@ -325,7 +325,7 @@ async def get_practice_overview(
             persona_mapping=persona_mapping,  # type: ignore[arg-type]
             scenario_mapping=scenario_mapping,  # type: ignore[arg-type]
             parameter_mapping=parameter_mapping,  # type: ignore[arg-type]
-            parameter_item_mapping=parameter_item_mapping,  # type: ignore[arg-type]
+            field_mapping=field_mapping,  # type: ignore[arg-type]
             department_mapping=department_mapping,  # type: ignore[arg-type]
             valid_department_ids=valid_department_ids,
         )

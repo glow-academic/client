@@ -27,7 +27,7 @@ type GenerateAIScenarioIn = {
   departmentId: string;
   personaIds: string[] | null;
   documentIds: string[] | null;
-  parameterItemIds: string[] | null;
+  fieldIds: string[] | null;
   profileId: string | null;
   userInstructions: string | null;
   objectivesEnabled: boolean;

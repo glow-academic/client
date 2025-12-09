@@ -64,7 +64,9 @@ import {
 } from "@/components/ui/tooltip";
 
 // Custom Components
-import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
+import DocumentViewer, {
+  type DocumentItem,
+} from "@/components/common/chat/viewers/DocumentViewer";
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
@@ -93,9 +95,9 @@ import {
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import {
+  getFieldIdsFromStructure,
   getObjectivesFromMapping,
-  getParameterItemIdsFromStructure,
-  groupParameterItemsByParameterId,
+  groupFieldsByParameterId,
 } from "@/utils/scenario-helpers";
 
 // Component for objective input with autocomplete
@@ -427,7 +429,7 @@ export default function Scenario({
         departmentId: body.departmentId,
         personaIds: body.personaIds,
         documentIds: body.documentIds,
-        parameterItemIds: body.parameterItemIds,
+        fieldIds: body.fieldIds, // Renamed from parameterItemIds
         profileId: body.profileId,
         userInstructions: body.userInstructions,
         objectivesEnabled: body.objectivesEnabled,
@@ -504,9 +506,7 @@ export default function Scenario({
       }>
     >([]);
   const [originalDocumentIds, setOriginalDocumentIds] = useState<string[]>([]);
-  const [originalParameterItemIds, setOriginalParameterItemIds] = useState<
-    string[]
-  >([]);
+  const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
   const [originalObjectives, setOriginalObjectives] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
@@ -526,9 +526,7 @@ export default function Scenario({
 
   // State for junction data (managed separately from scenario)
   const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
-  const [currentParameterItemIds, setCurrentParameterItemIds] = useState<
-    string[]
-  >([]);
+  const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
   const [image, setImage] = useState<{
     id: string;
@@ -562,14 +560,14 @@ export default function Scenario({
         : { min: 0, max: 5 };
     }
   );
-  const [parameterMinMax, setParameterMinMax] = useState<
+  const [fieldMinMax, setFieldMinMax] = useState<
     Record<string, { min: number; max: number }>
   >(() => {
     const ranges = scenarioData?.allowed_ranges;
-    if (!ranges?.parameter_items) return {};
+    if (!ranges?.fields) return {};
     // Convert server format to client format
     const result: Record<string, { min: number; max: number }> = {};
-    Object.entries(ranges.parameter_items).forEach(([paramId, range]) => {
+    Object.entries(ranges.fields).forEach(([paramId, range]) => {
       result[paramId] = { min: range.min, max: range.max };
     });
     return result;
@@ -579,7 +577,7 @@ export default function Scenario({
   type StagedSelections = {
     persona_ids?: string[];
     document_ids?: string[];
-    parameter_item_ids?: string[];
+    field_ids?: string[];
   };
   const [_stagedSelections, setStagedSelections] = useState<
     Record<string, StagedSelections>
@@ -606,8 +604,9 @@ export default function Scenario({
     if (formData.parameterIds && formData.parameterIds.length > 0) {
       params.set("parameterIds", formData.parameterIds.join(","));
     }
-    if (currentParameterItemIds.length > 0) {
-      params.set("parameterItemIds", currentParameterItemIds.join(","));
+    if (currentFieldIds.length > 0) {
+      // Renamed from currentParameterItemIds
+      params.set("fieldIds", currentFieldIds.join(",")); // Renamed from parameterItemIds
     }
 
     // Add search params when non-empty
@@ -650,15 +649,15 @@ export default function Scenario({
     // Include ranges for selected parameters, or for all parameters if randomize=all (server needs ranges for randomized params)
     const selectedParamIds = formData.parameterIds || [];
     const isRandomizing = searchParams.get("randomize") === "all";
-    Object.entries(parameterMinMax).forEach(([paramId, range]) => {
+    Object.entries(fieldMinMax).forEach(([fieldId, range]) => {
       // Include range if:
       // 1. Parameter is selected, OR
       // 2. We're randomizing all (server will randomize parameters and need these ranges)
       // AND range differs from default
-      const shouldInclude = isRandomizing || selectedParamIds.includes(paramId);
+      const shouldInclude = isRandomizing || selectedParamIds.includes(fieldId);
       if (shouldInclude && (range.min !== 1 || range.max !== 2)) {
-        params.set(`parameterItemMin_${paramId}`, range.min.toString());
-        params.set(`parameterItemMax_${paramId}`, range.max.toString());
+        params.set(`fieldMin_${fieldId}`, range.min.toString());
+        params.set(`fieldMax_${fieldId}`, range.max.toString());
       }
     });
 
@@ -671,14 +670,14 @@ export default function Scenario({
     selectedPersonaIds,
     currentDocumentIds,
     formData.parameterIds,
-    currentParameterItemIds,
+    currentFieldIds,
     personaSearchTerm,
     documentSearchTerm,
     parameterSearchTerm,
     personaMinMax,
     documentMinMax,
     parameterSelectionMinMax,
-    parameterMinMax,
+    fieldMinMax,
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
     searchParams,
   ]);
@@ -699,9 +698,9 @@ export default function Scenario({
     () => scenarioData?.parameter_mapping || {},
     [scenarioData]
   );
-  // Backend now includes selected parameter items in parameter_item_mapping with all necessary fields
-  const parameterItemMapping = useMemo(() => {
-    return scenarioData?.parameter_item_mapping || {};
+  // Backend now includes selected fields in field_mapping with all necessary fields
+  const fieldMapping = useMemo(() => {
+    return scenarioData?.field_mapping || {};
   }, [scenarioData]);
   const simulationMapping = useMemo(
     () => scenarioData?.simulation_mapping || {},
@@ -804,22 +803,22 @@ export default function Scenario({
   // Use server-provided filtered valid parameter item IDs
   const validParameterItemIds = useMemo(() => {
     // Use server-provided filtered IDs if available, otherwise fall back to mapping keys
-    if (scenarioData?.valid_parameter_item_ids) {
-      return scenarioData.valid_parameter_item_ids;
+    if (scenarioData?.valid_field_ids) {
+      return scenarioData.valid_field_ids;
     }
     // Fallback for backward compatibility
-    return Object.keys(parameterItemMapping || {});
-  }, [scenarioData?.valid_parameter_item_ids, parameterItemMapping]);
+    return Object.keys(fieldMapping || {});
+  }, [scenarioData?.valid_field_ids, fieldMapping]);
 
   // Use server-provided filtered valid general parameter item IDs
   const validGeneralParameterItemIds = useMemo(() => {
     // Use server-provided filtered IDs if available, otherwise fall back to validParameterItemIds
-    if (scenarioData?.valid_general_parameter_item_ids) {
-      return scenarioData.valid_general_parameter_item_ids;
+    if (scenarioData?.valid_general_field_ids) {
+      return scenarioData.valid_general_field_ids;
     }
     // Fallback for backward compatibility
     return validParameterItemIds;
-  }, [scenarioData?.valid_general_parameter_item_ids, validParameterItemIds]);
+  }, [scenarioData?.valid_general_field_ids, validParameterItemIds]);
 
   const generalParameterMapping = useMemo(() => {
     // Top parameter selection is the source of truth for section 4
@@ -829,8 +828,8 @@ export default function Scenario({
     const conditionalParamIds = new Set<string>();
 
     // Get conditional parameters from currently selected fields
-    currentParameterItemIds.forEach((fieldId) => {
-      const field = parameterItemMapping[fieldId];
+    currentFieldIds.forEach((fieldId) => {
+      const field = fieldMapping[fieldId];
       if (field?.conditional_parameter_ids) {
         field.conditional_parameter_ids.forEach((paramId) =>
           conditionalParamIds.add(paramId)
@@ -872,12 +871,7 @@ export default function Scenario({
       }
     });
     return filtered;
-  }, [
-    parameterMapping,
-    formData.parameterIds,
-    currentParameterItemIds,
-    parameterItemMapping,
-  ]);
+  }, [parameterMapping, formData.parameterIds, currentFieldIds, fieldMapping]);
 
   // Track department changes and manage staged selections
   useEffect(() => {
@@ -914,7 +908,7 @@ export default function Scenario({
           updated[deptId] = {
             persona_ids: selectedPersonaIds,
             document_ids: [...currentDocumentIds],
-            parameter_item_ids: [...currentParameterItemIds],
+            field_ids: [...currentFieldIds],
           };
         });
         return updated;
@@ -959,16 +953,13 @@ export default function Scenario({
             }
 
             // Restore parameter items if valid
-            if (
-              staged.parameter_item_ids &&
-              staged.parameter_item_ids.length > 0
-            ) {
+            if (staged.field_ids && staged.field_ids.length > 0) {
               const validParamSet = new Set(validParameterItemIds);
-              const validParams = staged.parameter_item_ids.filter((id) =>
+              const validParams = staged.field_ids.filter((id) =>
                 validParamSet.has(id)
               );
               if (validParams.length > 0) {
-                setCurrentParameterItemIds((prevParams) => {
+                setCurrentFieldIds((prevParams) => {
                   const combined = new Set([...prevParams, ...validParams]);
                   return Array.from(combined);
                 });
@@ -987,7 +978,7 @@ export default function Scenario({
     previousDepartmentIds,
     selectedPersonaIds,
     currentDocumentIds,
-    currentParameterItemIds,
+    currentFieldIds,
     validPersonaIds,
     validDocumentIds,
     validParameterItemIds,
@@ -1036,14 +1027,14 @@ export default function Scenario({
 
   useEffect(() => {
     // Clear parameter items that are no longer valid
-    if (currentParameterItemIds.length > 0) {
+    if (currentFieldIds.length > 0) {
       const validSet = new Set(validParameterItemIds);
-      const filtered = currentParameterItemIds.filter((id) => validSet.has(id));
-      if (filtered.length !== currentParameterItemIds.length) {
-        setCurrentParameterItemIds(filtered);
+      const filtered = currentFieldIds.filter((id) => validSet.has(id));
+      if (filtered.length !== currentFieldIds.length) {
+        setCurrentFieldIds(filtered);
       }
     }
-  }, [currentParameterItemIds, validParameterItemIds]);
+  }, [currentFieldIds, validParameterItemIds]);
 
   // Handle randomized selections from server response
   useEffect(() => {
@@ -1054,7 +1045,7 @@ export default function Scenario({
         personaIds: randomized.personaIds,
         documentIds: randomized.documentIds,
         parameterIds: randomized.parameterIds,
-        parameterItemIds: randomized.parameterItemIds,
+        fieldIds: randomized.fieldIds,
       });
 
       // Skip if we've already processed this exact randomized selection
@@ -1076,8 +1067,8 @@ export default function Scenario({
       if (randomized.parameterIds) {
         handleInputChange("parameterIds", randomized.parameterIds);
       }
-      if (randomized.parameterItemIds) {
-        setCurrentParameterItemIds(randomized.parameterItemIds);
+      if (randomized.fieldIds) {
+        setCurrentFieldIds(randomized.fieldIds);
       }
 
       // Clear randomization param immediately, but batch with state updates
@@ -1156,14 +1147,14 @@ export default function Scenario({
     selectedPersonaIds,
     currentDocumentIds,
     formData.parameterIds,
-    currentParameterItemIds,
+    currentFieldIds, // Renamed from currentParameterItemIds
     personaSearchTerm,
     documentSearchTerm,
     parameterSearchTerm,
     personaMinMax,
     documentMinMax,
     parameterSelectionMinMax,
-    parameterMinMax,
+    fieldMinMax,
     pathname,
   ]);
 
@@ -1190,9 +1181,7 @@ export default function Scenario({
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
       setCurrentDocumentIds(scenarioData.document_ids);
-      setCurrentParameterItemIds(
-        getParameterItemIdsFromStructure(scenarioData.parameters)
-      );
+      setCurrentFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setCurrentObjectives(
         getObjectivesFromMapping(
           scenarioData.objective_ids,
@@ -1257,9 +1246,7 @@ export default function Scenario({
         parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       setOriginalDocumentIds(scenarioData.document_ids);
-      setOriginalParameterItemIds(
-        getParameterItemIdsFromStructure(scenarioData.parameters)
-      );
+      setOriginalFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setOriginalObjectives(
         getObjectivesFromMapping(
           scenarioData.objective_ids,
@@ -1288,8 +1275,8 @@ export default function Scenario({
       if (newData.selected_document_ids) {
         setCurrentDocumentIds(newData.selected_document_ids);
       }
-      if (newData.selected_parameter_item_ids) {
-        setCurrentParameterItemIds(newData.selected_parameter_item_ids);
+      if (newData.selected_field_ids) {
+        setCurrentFieldIds(newData.selected_field_ids);
       }
 
       // Initialize search terms from server response
@@ -1333,12 +1320,9 @@ export default function Scenario({
       }
 
       // Initialize per-parameter item ranges from server response
-      if (newData.parameter_item_ranges) {
-        setParameterMinMax(
-          newData.parameter_item_ranges as Record<
-            string,
-            { min: number; max: number }
-          >
+      if (newData.field_ranges) {
+        setFieldMinMax(
+          newData.field_ranges as Record<string, { min: number; max: number }>
         );
       }
 
@@ -1426,8 +1410,8 @@ export default function Scenario({
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
         JSON.stringify([...(originalDocumentIds || [])].sort()) ||
-      JSON.stringify([...currentParameterItemIds].sort()) !==
-        JSON.stringify([...(originalParameterItemIds || [])].sort()) ||
+      JSON.stringify([...currentFieldIds].sort()) !==
+        JSON.stringify([...(originalFieldIds || [])].sort()) ||
       JSON.stringify(currentObjectives) !==
         JSON.stringify(originalObjectives || [])
     );
@@ -1439,8 +1423,8 @@ export default function Scenario({
     scenarioData,
     currentDocumentIds,
     originalDocumentIds,
-    currentParameterItemIds,
-    originalParameterItemIds,
+    currentFieldIds, // Renamed from currentParameterItemIds
+    originalFieldIds, // Renamed from originalParameterItemIds
     currentObjectives,
     originalObjectives,
   ]);
@@ -1497,8 +1481,8 @@ export default function Scenario({
           // Handle individual parameter steps (parameter-{paramId})
           if (stepId.startsWith("parameter-")) {
             const paramId = stepId.replace("parameter-", "");
-            const paramItems = currentParameterItemIds.filter(
-              (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+            const paramItems = currentFieldIds.filter(
+              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
             );
             return selectedPersonaIds.length === 0
               ? "pending"
@@ -1512,8 +1496,8 @@ export default function Scenario({
     [
       selectedPersonaIds,
       currentDocumentIds,
-      currentParameterItemIds,
-      parameterItemMapping,
+      currentFieldIds, // Renamed from currentParameterItemIds
+      fieldMapping, // Renamed from parameterItemMapping
       formData.problemStatement,
       formData.parameterIds,
     ]
@@ -1538,13 +1522,13 @@ export default function Scenario({
           max: ranges.parameter_selection.max,
         });
       }
-      if (ranges.parameter_items) {
+      if (ranges.fields) {
         // Convert server format to client format
         const converted: Record<string, { min: number; max: number }> = {};
-        Object.entries(ranges.parameter_items).forEach(([paramId, range]) => {
-          converted[paramId] = { min: range.min, max: range.max };
+        Object.entries(ranges.fields).forEach(([fieldId, range]) => {
+          converted[fieldId] = { min: range.min, max: range.max };
         });
-        setParameterMinMax(converted);
+        setFieldMinMax(converted);
       }
     }
   }, [scenarioData?.allowed_ranges]);
@@ -1605,16 +1589,16 @@ export default function Scenario({
   // Parameter actions - Server-side randomization per parameter
   const handleRandomizeParameterClient = (paramId: string) => {
     // Clear existing parameter item selections for this parameter
-    const currentParamItems = currentParameterItemIds.filter(
-      (itemId) => parameterItemMapping[itemId]?.parameter_id !== paramId
+    const filteredFieldIds = currentFieldIds.filter(
+      (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
     );
     // Update URL with cleared selections and randomize param
     updateUrlParams({
-      parameterItemIds: currentParamItems.length > 0 ? currentParamItems : null,
+      fieldIds: filteredFieldIds.length > 0 ? filteredFieldIds : null,
       randomize: `parameter_${paramId}`,
     });
     // Update local state
-    setCurrentParameterItemIds(currentParamItems);
+    setCurrentFieldIds(filteredFieldIds);
     // Trigger page refresh to get randomized results from server
     router.refresh();
   };
@@ -1622,16 +1606,15 @@ export default function Scenario({
   const handleResetParameter = (paramId: string) => {
     try {
       // Remove this parameter's items from URL params
-      const currentParamItems = currentParameterItemIds.filter(
-        (itemId) => parameterItemMapping[itemId]?.parameter_id !== paramId
+      const currentParamItems = currentFieldIds.filter(
+        (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
       );
       updateUrlParams({
-        parameterItemIds:
-          currentParamItems.length > 0 ? currentParamItems : null,
+        fieldIds: currentParamItems.length > 0 ? currentParamItems : null,
         randomize: null,
       });
       // Update local state
-      setCurrentParameterItemIds(currentParamItems);
+      setCurrentFieldIds(currentParamItems);
       router.refresh();
       toast.success(
         `${generalParameterMapping[paramId]?.name || "Parameter"} reset`
@@ -1733,7 +1716,7 @@ export default function Scenario({
         personaIds: null,
         documentIds: null,
         parameterIds: null,
-        parameterItemIds: null,
+        fieldIds: null,
       };
 
       // Set randomize=all and keep range params (min/max values)
@@ -1760,7 +1743,7 @@ export default function Scenario({
         personaIds: null,
         documentIds: null,
         parameterIds: null,
-        parameterItemIds: null,
+        fieldIds: null,
         personaSearch: null,
         documentSearch: null,
         parameterSearch: null,
@@ -1769,7 +1752,7 @@ export default function Scenario({
       // Also reset local state
       setSelectedPersonaIds([]);
       setCurrentDocumentIds([]);
-      setCurrentParameterItemIds([]);
+      setCurrentFieldIds([]);
       handleInputChange("parameterIds", []);
       // Trigger page refresh to get reset results from server
       router.refresh();
@@ -1977,8 +1960,7 @@ export default function Scenario({
         departmentId,
         personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds.length > 0 ? currentDocumentIds : null,
-        parameterItemIds:
-          currentParameterItemIds.length > 0 ? currentParameterItemIds : null,
+        fieldIds: currentFieldIds.length > 0 ? currentFieldIds : null,
         profileId: effectiveProfile?.id || null,
         userInstructions: userInstructions || null,
         objectivesEnabled: true, // Always enabled - controlled by simulation page
@@ -2052,9 +2034,9 @@ export default function Scenario({
               persona_ids: selectedPersonaIds,
               document_ids: updatedDocumentIds, // Use updated IDs with child documents
               objective_ids: currentObjectives.filter((obj) => obj.trim()),
-              parameters: groupParameterItemsByParameterId(
-                currentParameterItemIds,
-                parameterItemMapping
+              parameters: groupFieldsByParameterId(
+                currentFieldIds, // Renamed from currentParameterItemIds
+                fieldMapping // Renamed from parameterItemMapping
               ),
               documents_enabled: useDocuments,
               document_vision_enabled: documentVisionEnabled,
@@ -2108,9 +2090,9 @@ export default function Scenario({
       );
 
       // Prepare payload for V2 API
-      const parametersDict = groupParameterItemsByParameterId(
-        currentParameterItemIds,
-        parameterItemMapping
+      const parametersDict = groupFieldsByParameterId(
+        currentFieldIds, // Renamed from currentParameterItemIds
+        fieldMapping // Renamed from parameterItemMapping
       );
       const payload: {
         name: string;
@@ -2861,12 +2843,14 @@ export default function Scenario({
                   );
 
                   // Create document item for DocumentViewer
-                  const docForViewer = fullDoc
-                    ? {
+                  const docForViewer: DocumentItem = fullDoc
+                    ? ({
                         ...fullDoc,
                         upload_id: fullDoc.upload_id ?? null,
-                      }
-                    : {
+                        parameter_item_ids: [],
+                        field_ids: [],
+                      } as DocumentItem)
+                    : ({
                         document_id: docId,
                         name: document.name || "Document",
                         updatedAt: new Date().toISOString(),
@@ -2876,11 +2860,10 @@ export default function Scenario({
                         can_delete: false,
                         active: true,
                         department_ids: [],
-                        file_path: document.filePath || "",
-                        mime_type: document.mimeType || "",
+                        field_ids: [],
                         parameter_item_ids: [],
                         upload_id: null,
-                      };
+                      } as DocumentItem);
 
                   return (
                     <button
@@ -2978,12 +2961,14 @@ export default function Scenario({
                   const fullDoc = scenarioData?.document_details?.find(
                     (d) => d.document_id === docId
                   );
-                  const docForViewer = fullDoc
-                    ? {
+                  const docForViewer: DocumentItem = fullDoc
+                    ? ({
                         ...fullDoc,
                         upload_id: fullDoc.upload_id ?? null,
-                      }
-                    : {
+                        parameter_item_ids: [],
+                        field_ids: [],
+                      } as DocumentItem)
+                    : ({
                         document_id: docId,
                         name: documentMapping[docId]?.name || "Document",
                         updatedAt: new Date().toISOString(),
@@ -2993,11 +2978,10 @@ export default function Scenario({
                         can_delete: false,
                         active: true,
                         department_ids: [],
-                        file_path: documentMapping[docId]?.filePath || "",
-                        mime_type: documentMapping[docId]?.mimeType || "",
+                        field_ids: [],
                         parameter_item_ids: [],
                         upload_id: null,
-                      };
+                      } as DocumentItem);
                   return (
                     <div className="mt-4">
                       <DocumentViewer
@@ -3160,11 +3144,11 @@ export default function Scenario({
 
                             // When unselecting a parameter, also remove all its parameter items (fields)
                             if (isSelected) {
-                              setCurrentParameterItemIds((prev) =>
+                              setCurrentFieldIds((prev) =>
                                 prev.filter(
                                   (itemId) =>
-                                    parameterItemMapping[itemId]
-                                      ?.parameter_id !== paramId
+                                    fieldMapping[itemId]?.parameter_id !==
+                                    paramId
                                 )
                               );
                             }
@@ -3210,12 +3194,11 @@ export default function Scenario({
             const stepId = `parameter-${paramId}`;
             const stepStatus = getStepStatus(stepId);
             const validItemsForParam = validGeneralParameterItemIds.filter(
-              (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
             );
-            const selectedItemsForParam = currentParameterItemIds.filter(
-              (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+            const selectedItemsForParam = currentFieldIds.filter(
+              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
             );
-            const paramMinMax = parameterMinMax[paramId] || { min: 1, max: 2 };
 
             return (
               <Card
@@ -3253,14 +3236,14 @@ export default function Scenario({
                       min={1}
                       max={Math.min(5, validItemsForParam.length)}
                       value={[
-                        paramMinMax.min,
+                        fieldMinMax[paramId]?.min ?? 1,
                         Math.min(
                           Math.min(5, validItemsForParam.length),
-                          paramMinMax.max
+                          fieldMinMax[paramId]?.max ?? 2
                         ),
                       ]}
                       onValueChange={([min, max]) =>
-                        setParameterMinMax((prev) => ({
+                        setFieldMinMax((prev) => ({
                           ...prev,
                           [paramId]: {
                             min,
@@ -3310,20 +3293,16 @@ export default function Scenario({
                   <div className="[&_label.text-sm.font-medium]:hidden">
                     <ParameterSelector
                       parameterMapping={{ [paramId]: param }}
-                      parameterItemMapping={parameterItemMapping}
+                      fieldMapping={fieldMapping}
                       validParameterItemIds={validItemsForParam}
                       selectedParameterItemIds={selectedItemsForParam}
                       onParameterItemIdsChange={(newIds) => {
                         // Update only this parameter's items
-                        const otherParamItems = currentParameterItemIds.filter(
+                        const otherFieldIds = currentFieldIds.filter(
                           (itemId) =>
-                            parameterItemMapping[itemId]?.parameter_id !==
-                            paramId
+                            fieldMapping[itemId]?.parameter_id !== paramId
                         );
-                        setCurrentParameterItemIds([
-                          ...otherParamItems,
-                          ...newIds,
-                        ]);
+                        setCurrentFieldIds([...otherFieldIds, ...newIds]);
                       }}
                       disabled={isReadonly}
                     />

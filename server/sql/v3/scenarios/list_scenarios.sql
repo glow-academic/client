@@ -142,7 +142,7 @@ all_parameter_item_ids AS (
     SELECT DISTINCT unnest(parameter_item_ids) as parameter_item_id
     FROM scenario_data
 ),
-parameter_item_mapping_data AS (
+field_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             f.id::text,
@@ -264,14 +264,14 @@ department_mapping_data AS (
 SELECT 
     sd.*,
     om.mapping as objective_mapping,
-    pim.mapping as parameter_item_mapping,
+    fm.mapping as field_mapping,
     cm.mapping as cohort_mapping,
     pm.mapping as persona_mapping,
     sm.mapping as simulation_mapping,
     dm.mapping as department_mapping
 FROM scenario_data sd
 CROSS JOIN objective_mapping_data om
-CROSS JOIN parameter_item_mapping_data pim
+CROSS JOIN field_mapping_data fm
 CROSS JOIN cohort_mapping_data cm
 CROSS JOIN persona_mapping_data pm
 CROSS JOIN simulation_mapping_data sm

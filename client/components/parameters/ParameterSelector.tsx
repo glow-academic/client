@@ -23,14 +23,14 @@ type ParameterMappingItem = {
   persona_parameter: boolean;
 };
 
-type ParameterItemMappingItem = {
+type FieldMappingItem = {
   name: string;
   description: string;
   parameter_id: string;
   parameter_name: string;
 };
 
-type ParameterItemMapping = Record<string, ParameterItemMappingItem>;
+type FieldMapping = Record<string, FieldMappingItem>;
 type ParameterMapping = Record<string, ParameterMappingItem>;
 
 // Component for slider with precisely aligned labels
@@ -206,7 +206,7 @@ function SliderLabelContainer({
 
 interface ParameterSelectorProps {
   parameterMapping: ParameterMapping;
-  parameterItemMapping: ParameterItemMapping;
+  fieldMapping: FieldMapping;
   validParameterItemIds: string[];
   selectedParameterItemIds: string[];
   onParameterItemIdsChange: (parameterItemIds: string[]) => void;
@@ -216,7 +216,7 @@ interface ParameterSelectorProps {
 
 export function ParameterSelector({
   parameterMapping,
-  parameterItemMapping,
+  fieldMapping,
   validParameterItemIds,
   selectedParameterItemIds,
   onParameterItemIdsChange,
@@ -253,7 +253,7 @@ export function ParameterSelector({
   const parameterItemsByParameter = useMemo(() => {
     const grouped: Record<string, string[]> = {};
     validParameterItemIds.forEach((itemId) => {
-      const item = parameterItemMapping[itemId];
+      const item = fieldMapping[itemId];
       if (item) {
         const parameterId = item.parameter_id;
         if (!grouped[parameterId]) {
@@ -263,7 +263,7 @@ export function ParameterSelector({
       }
     });
     return grouped;
-  }, [validParameterItemIds, parameterItemMapping]);
+  }, [validParameterItemIds, fieldMapping]);
 
   // Separate parameters into numerical and non-numerical
   // Use all parameters from parameterMapping (not just those with fields) so we can see parameters with 0 fields
@@ -291,7 +291,7 @@ export function ParameterSelector({
   const selectedItemsByParameter = useMemo(() => {
     const grouped: Record<string, string[]> = {};
     selectedParameterItemIds.forEach((itemId) => {
-      const item = parameterItemMapping[itemId];
+      const item = fieldMapping[itemId];
       if (item) {
         const parameterId = item.parameter_id;
         if (!grouped[parameterId]) {
@@ -301,14 +301,14 @@ export function ParameterSelector({
       }
     });
     return grouped;
-  }, [selectedParameterItemIds, parameterItemMapping]);
+  }, [selectedParameterItemIds, fieldMapping]);
 
   const handleNonNumericalParameterChange = (
     parameterId: string,
     newIds: string[],
   ) => {
     const currentItems = selectedParameterItemIds.filter(
-      (id) => parameterItemMapping[id]?.parameter_id !== parameterId,
+      (id) => fieldMapping[id]?.parameter_id !== parameterId,
     );
 
     // Limit to maxItemsPerParameter if specified
@@ -333,7 +333,7 @@ export function ParameterSelector({
     newIds: string[],
   ) => {
     const currentItems = selectedParameterItemIds.filter(
-      (id) => parameterItemMapping[id]?.parameter_id !== parameterId,
+      (id) => fieldMapping[id]?.parameter_id !== parameterId,
     );
 
     // Accept all IDs (for range selection, multiple items within range)
@@ -369,7 +369,7 @@ export function ParameterSelector({
     // Get all values from selected items and find min/max
     const values = selectedItemIds
       .map((itemId) => {
-        const item = parameterItemMapping[itemId];
+        const item = fieldMapping[itemId];
         return item ? extractNumericValue(item.name) : NaN;
       })
       .filter((v) => !isNaN(v));
@@ -390,7 +390,7 @@ export function ParameterSelector({
     const itemIds = parameterItemsByParameter[parameterId] || [];
     const values = itemIds
       .map((itemId) => {
-        const item = parameterItemMapping[itemId];
+        const item = fieldMapping[itemId];
         return item ? extractNumericValue(item.name) : NaN;
       })
       .filter((v) => !isNaN(v));
@@ -419,7 +419,7 @@ export function ParameterSelector({
     const matchingItemIds: string[] = [];
 
     for (const itemId of itemIds) {
-      const item = parameterItemMapping[itemId];
+      const item = fieldMapping[itemId];
       if (item) {
         const itemValue = parseFloat(item.value);
         if (
@@ -514,7 +514,7 @@ export function ParameterSelector({
                       // Sort selected items by their numerical values to get start and end
                       const sortedItems = selectedItemIds
                         .map((id) => {
-                          const item = parameterItemMapping[id];
+                          const item = fieldMapping[id];
                           if (!item) return null;
                           const value = extractNumericValue(item.name);
                           return {
@@ -528,7 +528,7 @@ export function ParameterSelector({
                             item,
                           ): item is {
                             id: string;
-                            item: (typeof parameterItemMapping)[string];
+                            item: (typeof fieldMapping)[string];
                             value: number;
                           } => item !== null,
                         )
@@ -578,12 +578,12 @@ export function ParameterSelector({
               }
               const searchLower = searchTerm.toLowerCase();
               return itemIds.filter((itemId) => {
-                const item = parameterItemMapping[itemId];
+                const item = fieldMapping[itemId];
                 if (!item) return false;
                 const searchText = `${item.name} ${item.description || ""}`.toLowerCase();
                 return searchText.includes(searchLower);
               });
-            }, [itemIds, parameterItemMapping, searchTerm]);
+            }, [itemIds, fieldMapping, searchTerm]);
             
             return (
               <div key={parameterId} className="space-y-3">
@@ -624,7 +624,7 @@ export function ParameterSelector({
                   className="grid grid-cols-5 gap-3 max-h-[184px] overflow-y-auto py-2 -mx-6 px-6"
                 >
                   {filteredItemIds.map((itemId) => {
-                    const item = parameterItemMapping[itemId];
+                    const item = fieldMapping[itemId];
                     if (!item) return null;
                     
                     const isSelected = selectedItemIds.includes(itemId);

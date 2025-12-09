@@ -10748,12 +10748,12 @@
           "parameter_selection": {
             "$ref": "#/components/schemas/RangeMinMax"
           },
-          "parameter_items": {
+          "fields": {
             "additionalProperties": {
               "$ref": "#/components/schemas/RangeMinMax"
             },
             "type": "object",
-            "title": "Parameter Items"
+            "title": "Fields"
           }
         },
         "type": "object",
@@ -10761,7 +10761,7 @@
           "persona",
           "document",
           "parameter_selection",
-          "parameter_items"
+          "fields"
         ],
         "title": "AllowedRanges",
         "description": "Allowed min/max ranges for each section."
@@ -15903,12 +15903,12 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           }
         },
         "type": "object",
@@ -15923,7 +15923,7 @@
           "simulation_mapping",
           "rubric_mapping",
           "parameter_mapping",
-          "parameter_item_mapping"
+          "field_mapping"
         ],
         "title": "DashboardBundleResponse",
         "description": "Complete dashboard bundle with all metrics, history, insights, and mappings."
@@ -17431,12 +17431,12 @@
             "type": "array",
             "title": "Valid Parameter Item Ids"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           }
         },
         "type": "object",
@@ -17448,7 +17448,7 @@
           "department_mapping",
           "parameter_item_ids",
           "valid_parameter_item_ids",
-          "parameter_item_mapping"
+          "field_mapping"
         ],
         "title": "DocumentDetailBulkResponse",
         "description": "Bulk document detail response."
@@ -17537,12 +17537,12 @@
             ],
             "title": "Upload Id"
           },
-          "parameter_item_ids": {
+          "field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Parameter Item Ids"
+            "title": "Field Ids"
           }
         },
         "type": "object",
@@ -17559,7 +17559,7 @@
           "file_path",
           "mime_type",
           "upload_id",
-          "parameter_item_ids"
+          "field_ids"
         ],
         "title": "DocumentDetailItem",
         "description": "Document detail for preview."
@@ -17695,12 +17695,12 @@
             "type": "array",
             "title": "Valid Parameter Item Ids"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "parameter_mapping": {
             "additionalProperties": {
@@ -17826,7 +17826,7 @@
           "department_mapping",
           "parameter_item_ids",
           "valid_parameter_item_ids",
-          "parameter_item_mapping",
+          "field_mapping",
           "parameter_mapping",
           "linked_parameter_ids",
           "classify_agent_id",
@@ -18052,12 +18052,12 @@
             "type": "object",
             "title": "Scenario Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
@@ -18112,7 +18112,7 @@
         "required": [
           "documents",
           "scenario_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "department_mapping",
           "parameter_mapping",
           "scenario_options",
@@ -22786,25 +22786,25 @@
       },
       "ParameterDetail": {
         "properties": {
-          "parameter_item_ids": {
+          "field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Parameter Item Ids"
+            "title": "Field Ids"
           },
-          "valid_parameter_item_ids": {
+          "valid_field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Parameter Item Ids"
+            "title": "Valid Field Ids"
           }
         },
         "type": "object",
         "required": [
-          "parameter_item_ids",
-          "valid_parameter_item_ids"
+          "field_ids",
+          "valid_field_ids"
         ],
         "title": "ParameterDetail",
         "description": "Parameter detail structure."
@@ -23857,12 +23857,12 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
@@ -23891,7 +23891,7 @@
           "scenario_mapping",
           "persona_mapping",
           "parameter_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "department_mapping",
           "valid_department_ids"
         ],
@@ -26540,7 +26540,7 @@
             ],
             "title": "Parameterids"
           },
-          "parameterItemIds": {
+          "fieldIds": {
             "anyOf": [
               {
                 "items": {
@@ -26552,7 +26552,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameteritemids"
+            "title": "Fieldids"
           }
         },
         "type": "object",
@@ -28365,7 +28365,7 @@
             ],
             "title": "Parameterids"
           },
-          "parameterItemIds": {
+          "fieldIds": {
             "anyOf": [
               {
                 "items": {
@@ -28377,7 +28377,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameteritemids"
+            "title": "Fieldids"
           },
           "personaSearch": {
             "anyOf": [
@@ -28478,7 +28478,7 @@
             ],
             "title": "Parameterselectionmax"
           },
-          "parameterItemRanges": {
+          "fieldRanges": {
             "anyOf": [
               {
                 "additionalProperties": {
@@ -28493,7 +28493,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameteritemranges"
+            "title": "Fieldranges"
           },
           "randomize": {
             "anyOf": [
@@ -28808,7 +28808,7 @@
             ],
             "title": "Parameterids"
           },
-          "parameterItemIds": {
+          "fieldIds": {
             "anyOf": [
               {
                 "items": {
@@ -28820,7 +28820,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameteritemids"
+            "title": "Fieldids"
           },
           "personaSearch": {
             "anyOf": [
@@ -28921,7 +28921,7 @@
             ],
             "title": "Parameterselectionmax"
           },
-          "parameterItemRanges": {
+          "fieldRanges": {
             "anyOf": [
               {
                 "additionalProperties": {
@@ -28936,7 +28936,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameteritemranges"
+            "title": "Fieldranges"
           },
           "randomize": {
             "anyOf": [
@@ -29192,12 +29192,12 @@
             "type": "object",
             "title": "Objective Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "cohort_mapping": {
             "additionalProperties": {
@@ -29262,7 +29262,7 @@
         "required": [
           "scenarios",
           "objective_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "cohort_mapping",
           "persona_mapping",
           "simulation_mapping",
@@ -36905,12 +36905,12 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "linked_parameter_ids": {
             "items": {
@@ -36965,7 +36965,7 @@
           "agent_mapping",
           "department_mapping",
           "parameter_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "linked_parameter_ids",
           "parameter_field_ids",
           "valid_parameter_item_ids",
@@ -37307,12 +37307,12 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "valid_parameter_ids": {
             "items": {
@@ -37360,7 +37360,7 @@
           "agent_mapping",
           "department_mapping",
           "parameter_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "valid_parameter_ids",
           "valid_parameter_item_ids",
           "debug_info"
@@ -38389,12 +38389,12 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "simulation_mapping": {
             "additionalProperties": {
@@ -38474,7 +38474,7 @@
             "type": "array",
             "title": "Valid Agent Ids"
           },
-          "valid_parameter_item_ids": {
+          "valid_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -38486,9 +38486,9 @@
                 "type": "null"
               }
             ],
-            "title": "Valid Parameter Item Ids"
+            "title": "Valid Field Ids"
           },
-          "valid_general_parameter_item_ids": {
+          "valid_general_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -38500,7 +38500,7 @@
                 "type": "null"
               }
             ],
-            "title": "Valid General Parameter Item Ids"
+            "title": "Valid General Field Ids"
           },
           "allowed_ranges": {
             "anyOf": [
@@ -38552,7 +38552,7 @@
           "can_duplicate",
           "can_delete",
           "parameter_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "simulation_mapping",
           "persona_mapping",
           "document_mapping",
@@ -38911,12 +38911,12 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "simulation_mapping": {
             "additionalProperties": true,
@@ -38992,7 +38992,7 @@
             "type": "array",
             "title": "Valid Agent Ids"
           },
-          "valid_parameter_item_ids": {
+          "valid_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -39004,9 +39004,9 @@
                 "type": "null"
               }
             ],
-            "title": "Valid Parameter Item Ids"
+            "title": "Valid Field Ids"
           },
-          "valid_general_parameter_item_ids": {
+          "valid_general_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -39018,7 +39018,7 @@
                 "type": "null"
               }
             ],
-            "title": "Valid General Parameter Item Ids"
+            "title": "Valid General Field Ids"
           },
           "allowed_ranges": {
             "anyOf": [
@@ -39082,7 +39082,7 @@
             ],
             "title": "Selected Parameter Ids"
           },
-          "selected_parameter_item_ids": {
+          "selected_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -39094,7 +39094,7 @@
                 "type": "null"
               }
             ],
-            "title": "Selected Parameter Item Ids"
+            "title": "Selected Field Ids"
           },
           "persona_search": {
             "anyOf": [
@@ -39195,7 +39195,7 @@
             ],
             "title": "Parameter Selection Max"
           },
-          "parameter_item_ranges": {
+          "field_ranges": {
             "anyOf": [
               {
                 "additionalProperties": {
@@ -39210,7 +39210,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameter Item Ranges"
+            "title": "Field Ranges"
           }
         },
         "type": "object",
@@ -39240,7 +39240,7 @@
           "can_duplicate",
           "can_delete",
           "parameter_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "simulation_mapping",
           "persona_mapping",
           "document_mapping",
@@ -39755,12 +39755,12 @@
             "type": "object",
             "title": "Department Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "agent_mapping": {
             "additionalProperties": {
@@ -39807,7 +39807,7 @@
           "video_mapping",
           "rubric_mapping",
           "department_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "agent_mapping",
           "valid_agent_ids"
         ],
@@ -40275,12 +40275,12 @@
             "type": "object",
             "title": "Department Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           }
         },
         "type": "object",
@@ -40312,7 +40312,7 @@
           "video_mapping",
           "rubric_mapping",
           "department_mapping",
-          "parameter_item_mapping"
+          "field_mapping"
         ],
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."
@@ -40712,12 +40712,12 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "parameter_item_ids": {
             "items": {
@@ -40792,7 +40792,7 @@
           "agent_mapping",
           "valid_agent_ids",
           "parameter_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "parameter_item_ids",
           "video_parameter_ids",
           "valid_parameter_ids",
@@ -41087,12 +41087,12 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "parameter_item_mapping": {
+          "field_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/FieldMappingItem"
             },
             "type": "object",
-            "title": "Parameter Item Mapping"
+            "title": "Field Mapping"
           },
           "parameter_item_ids": {
             "items": {
@@ -41168,7 +41168,7 @@
           "agent_mapping",
           "valid_agent_ids",
           "parameter_mapping",
-          "parameter_item_mapping",
+          "field_mapping",
           "parameter_item_ids",
           "video_parameter_ids",
           "valid_parameter_ids",

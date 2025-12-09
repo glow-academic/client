@@ -15,7 +15,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
     DepartmentMappingItem,
-    ParameterItemMappingItem,
+    FieldMappingItem,
     ParameterMappingItem,
     ScenarioMappingItem,
 )
@@ -52,7 +52,7 @@ class DocumentsListResponse(BaseModel):
 
     documents: list[DocumentItem]
     scenario_mapping: dict[str, ScenarioMappingItem]
-    parameter_item_mapping: dict[str, ParameterItemMappingItem]
+    field_mapping: dict[str, FieldMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
     parameter_mapping: dict[str, ParameterMappingItem]
     # UI-ready facet options (precomputed on server)
@@ -112,7 +112,7 @@ async def get_documents_list(
 
         documents: list[DocumentItem] = []
         scenario_mapping: dict[str, ScenarioMappingItem] = {}
-        parameter_item_mapping: dict[str, ParameterItemMappingItem] = {}
+        field_mapping: dict[str, FieldMappingItem] = {}
         department_mapping: dict[str, DepartmentMappingItem] = {}
         parameter_mapping: dict[str, ParameterMappingItem] = {}
 
@@ -133,19 +133,19 @@ async def get_documents_list(
                             persona_ids=[],
                             persona_mapping={},
                             document_mapping={},
-                            parameter_item_mapping={},
+                            parameter_item_mapping={},  # Field name in ScenarioMappingItem still uses old name
                             parameter_item_ids=[],
                             document_ids=[],
                         )
 
-            # Parse parameter_item mapping from JSONB (replicate v2 logic)
-            param_item_mapping_data = first_row.get("parameter_item_mapping")
-            if isinstance(param_item_mapping_data, str):
-                param_item_mapping_data = json.loads(param_item_mapping_data)
-            if param_item_mapping_data and isinstance(param_item_mapping_data, dict):
-                for pid, pdata in param_item_mapping_data.items():
+            # Parse field mapping from JSONB (replicate v2 logic)
+            field_mapping_data = first_row.get("field_mapping")
+            if isinstance(field_mapping_data, str):
+                field_mapping_data = json.loads(field_mapping_data)
+            if field_mapping_data and isinstance(field_mapping_data, dict):
+                for pid, pdata in field_mapping_data.items():
                     if isinstance(pdata, dict):
-                        parameter_item_mapping[pid] = ParameterItemMappingItem(
+                        field_mapping[pid] = FieldMappingItem(
                             name=pdata.get("name", ""),
                             description=pdata.get("description", ""),
                             parameter_id=str(pdata.get("parameter_id", ""))
@@ -254,7 +254,7 @@ async def get_documents_list(
         response_data = DocumentsListResponse(
             documents=documents,
             scenario_mapping=scenario_mapping,
-            parameter_item_mapping=parameter_item_mapping,
+            field_mapping=field_mapping,
             department_mapping=department_mapping,
             parameter_mapping=parameter_mapping,
             scenario_options=scenario_options,

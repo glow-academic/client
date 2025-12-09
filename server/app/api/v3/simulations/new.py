@@ -16,8 +16,8 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
     DepartmentMapping,
     DepartmentMappingItem,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
+    FieldMapping,
+    FieldMappingItem,
     ParameterMapping,
     ParameterMappingItem,
     RubricMapping,
@@ -121,7 +121,7 @@ class SimulationDetailResponse(BaseModel):
     video_mapping: dict[str, dict[str, Any]]  # Video mapping
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
-    parameter_item_mapping: ParameterItemMapping
+    field_mapping: FieldMapping
 
 
 router = APIRouter()
@@ -293,13 +293,13 @@ async def get_simulation_new(
                                     description=ddata.get("description", ""),
                                 )
 
-                    param_item_mapping = {}
-                    if sdata.get("parameter_item_mapping") and isinstance(
-                        sdata["parameter_item_mapping"], dict
+                    field_mapping = {}
+                    if sdata.get("field_mapping") and isinstance(
+                        sdata["field_mapping"], dict
                     ):
-                        for piid, pidata in sdata["parameter_item_mapping"].items():
+                        for piid, pidata in sdata["field_mapping"].items():
                             if isinstance(pidata, dict):
-                                param_item_mapping[piid] = ParameterItemMappingItem(
+                                field_mapping[piid] = FieldMappingItem(
                                     name=pidata.get("name", ""),
                                     description=pidata.get("description", ""),
                                     parameter_id=pidata.get("parameter_id", ""),
@@ -322,7 +322,7 @@ async def get_simulation_new(
                         persona_ids=persona_ids,
                         persona_mapping=persona_mapping,
                         document_mapping=document_mapping,
-                        parameter_item_mapping=param_item_mapping,
+                        parameter_item_mapping=field_mapping,
                         parameter_item_ids=sdata.get("parameter_item_ids", []),
                         document_ids=sdata.get("document_ids", []),
                     )
@@ -364,12 +364,12 @@ async def get_simulation_new(
                     )
 
         # Parse parameter_item mapping
-        parameter_item_mapping: ParameterItemMapping = {}
-        parameter_item_mapping_data = parse_jsonb(result.get("parameter_item_mapping"))
-        if isinstance(parameter_item_mapping_data, dict):
-            for piid, pidata in parameter_item_mapping_data.items():
+        field_mapping: FieldMapping = {}
+        field_mapping_data = parse_jsonb(result.get("field_mapping"))
+        if isinstance(field_mapping_data, dict):
+            for piid, pidata in field_mapping_data.items():
                 if isinstance(pidata, dict):
-                    parameter_item_mapping[piid] = ParameterItemMappingItem(
+                    field_mapping[piid] = FieldMappingItem(
                         name=pidata.get("name", ""),
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
@@ -443,7 +443,7 @@ async def get_simulation_new(
             video_mapping=video_mapping,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
-            parameter_item_mapping=parameter_item_mapping,
+            field_mapping=field_mapping,
         )
 
         # Cache response

@@ -687,7 +687,7 @@ parameter_item_data AS (
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
     ORDER BY p.name, f.name
 ),
-parameter_item_mapping_data AS (
+field_mapping_data AS (
     SELECT 
         COALESCE(jsonb_object_agg(
             pi.id::text,
@@ -703,7 +703,7 @@ parameter_item_mapping_data AS (
                     '[]'::jsonb
                 )
             )
-        ), '{}'::jsonb) as parameter_item_mapping
+        ), '{}'::jsonb) as field_mapping
     FROM parameter_item_data pi
 ),
 -- Conditional parameters mapping (for easy lookup)
@@ -717,7 +717,7 @@ conditional_parameters_mapping AS (
     ) as mapping
     FROM field_conditional_parameters_data fcpd
 ),
-scenario_parameter_items_mapping_data AS (
+scenario_field_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             f.id::text,
@@ -729,30 +729,30 @@ scenario_parameter_items_mapping_data AS (
             )
         ),
         '{}'::jsonb
-    ) as parameter_item_mapping
+    ) as field_mapping
     FROM scenario_fields sf
     JOIN fields f ON f.id = sf.field_id
     JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE sf.scenario_id = $1 AND sf.active = true AND p.active = true
 ),
-enhanced_parameter_item_mapping_data AS (
+enhanced_field_mapping_data AS (
     SELECT 
         COALESCE(
             (
                 SELECT jsonb_object_agg(key, value)
                 FROM (
                     SELECT key, value 
-                    FROM jsonb_each(pimd.parameter_item_mapping)
+                    FROM jsonb_each(fmd.field_mapping)
                     UNION ALL
                     SELECT key, value 
-                    FROM jsonb_each(spimd.parameter_item_mapping)
+                    FROM jsonb_each(sfmd.field_mapping)
                 ) combined
             ),
             '{}'::jsonb
-        ) as parameter_item_mapping
-    FROM parameter_item_mapping_data pimd
-    CROSS JOIN scenario_parameter_items_mapping_data spimd
+        ) as field_mapping
+    FROM field_mapping_data fmd
+    CROSS JOIN scenario_field_mapping_data sfmd
 ),
 department_persona_ids AS (
     SELECT 
@@ -977,7 +977,7 @@ SELECT
     COALESCE(edmd.document_mapping, vdd.document_mapping) as document_mapping,
     smd.simulation_mapping,
     COALESCE(epmd.parameter_mapping, pmd.parameter_mapping) as parameter_mapping,
-    COALESCE(epimd.parameter_item_mapping, pimd.parameter_item_mapping) as parameter_item_mapping,
+    COALESCE(efmd.field_mapping, fmd.field_mapping) as field_mapping,
     COALESCE(edmdept.department_mapping, dmd.department_mapping) as department_mapping,
     ddd.document_details,
     COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
@@ -1035,9 +1035,9 @@ CROSS JOIN simulation_mapping_data smd
 CROSS JOIN parameter_mapping_data pmd
 CROSS JOIN scenario_parameters_mapping_data spmd
 CROSS JOIN enhanced_parameter_mapping_data epmd
-CROSS JOIN parameter_item_mapping_data pimd
-CROSS JOIN scenario_parameter_items_mapping_data spimd
-CROSS JOIN enhanced_parameter_item_mapping_data epimd
+CROSS JOIN field_mapping_data fmd
+CROSS JOIN scenario_field_mapping_data sfmd
+CROSS JOIN enhanced_field_mapping_data efmd
 CROSS JOIN department_mapping_data dmd
 CROSS JOIN scenario_departments_mapping_data sdmdept
 CROSS JOIN enhanced_department_mapping_data edmdept

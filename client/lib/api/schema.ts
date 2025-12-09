@@ -4857,8 +4857,8 @@ export interface components {
             persona: components["schemas"]["RangeMinMax"];
             document: components["schemas"]["RangeMinMax"];
             parameter_selection: components["schemas"]["RangeMinMax"];
-            /** Parameter Items */
-            parameter_items: {
+            /** Fields */
+            fields: {
                 [key: string]: components["schemas"]["RangeMinMax"];
             };
         };
@@ -6834,8 +6834,8 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
         };
@@ -7478,8 +7478,8 @@ export interface components {
             parameter_item_ids: string[];
             /** Valid Parameter Item Ids */
             valid_parameter_item_ids: string[];
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
         };
@@ -7512,8 +7512,8 @@ export interface components {
             mime_type: string | null;
             /** Upload Id */
             upload_id: string | null;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
         };
         /**
          * DocumentDetailRequest
@@ -7566,8 +7566,8 @@ export interface components {
             parameter_item_ids: string[];
             /** Valid Parameter Item Ids */
             valid_parameter_item_ids: string[];
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Parameter Mapping */
@@ -7678,8 +7678,8 @@ export interface components {
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Department Mapping */
@@ -9553,10 +9553,10 @@ export interface components {
          * @description Parameter detail structure.
          */
         ParameterDetail: {
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+            /** Valid Field Ids */
+            valid_field_ids: string[];
         };
         /** ParameterDetailRequest */
         ParameterDetailRequest: {
@@ -9993,8 +9993,8 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Department Mapping */
@@ -10955,8 +10955,8 @@ export interface components {
             documentIds?: string[] | null;
             /** Parameterids */
             parameterIds?: string[] | null;
-            /** Parameteritemids */
-            parameterItemIds?: string[] | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
         };
         /**
          * RangeMinMax
@@ -11612,8 +11612,8 @@ export interface components {
             documentIds?: string[] | null;
             /** Parameterids */
             parameterIds?: string[] | null;
-            /** Parameteritemids */
-            parameterItemIds?: string[] | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
             /** Personasearch */
             personaSearch?: string | null;
             /** Documentsearch */
@@ -11632,8 +11632,8 @@ export interface components {
             parameterSelectionMin?: number | null;
             /** Parameterselectionmax */
             parameterSelectionMax?: number | null;
-            /** Parameteritemranges */
-            parameterItemRanges?: {
+            /** Fieldranges */
+            fieldRanges?: {
                 [key: string]: {
                     [key: string]: number;
                 };
@@ -11748,8 +11748,8 @@ export interface components {
             documentIds?: string[] | null;
             /** Parameterids */
             parameterIds?: string[] | null;
-            /** Parameteritemids */
-            parameterItemIds?: string[] | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
             /** Personasearch */
             personaSearch?: string | null;
             /** Documentsearch */
@@ -11768,8 +11768,8 @@ export interface components {
             parameterSelectionMin?: number | null;
             /** Parameterselectionmax */
             parameterSelectionMax?: number | null;
-            /** Parameteritemranges */
-            parameterItemRanges?: {
+            /** Fieldranges */
+            fieldRanges?: {
                 [key: string]: {
                     [key: string]: number;
                 };
@@ -11872,8 +11872,8 @@ export interface components {
             objective_mapping: {
                 [key: string]: components["schemas"]["ObjectiveMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Cohort Mapping */
@@ -14730,8 +14730,8 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Linked Parameter Ids */
@@ -14856,8 +14856,8 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Valid Parameter Ids */
@@ -15224,8 +15224,8 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Simulation Mapping */
@@ -15266,10 +15266,10 @@ export interface components {
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids?: string[] | null;
-            /** Valid General Parameter Item Ids */
-            valid_general_parameter_item_ids?: string[] | null;
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Valid General Field Ids */
+            valid_general_field_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
         };
@@ -15396,8 +15396,8 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Simulation Mapping */
@@ -15438,10 +15438,10 @@ export interface components {
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids?: string[] | null;
-            /** Valid General Parameter Item Ids */
-            valid_general_parameter_item_ids?: string[] | null;
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Valid General Field Ids */
+            valid_general_field_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
             /** Selected Persona Ids */
@@ -15450,8 +15450,8 @@ export interface components {
             selected_document_ids?: string[] | null;
             /** Selected Parameter Ids */
             selected_parameter_ids?: string[] | null;
-            /** Selected Parameter Item Ids */
-            selected_parameter_item_ids?: string[] | null;
+            /** Selected Field Ids */
+            selected_field_ids?: string[] | null;
             /** Persona Search */
             persona_search?: string | null;
             /** Document Search */
@@ -15470,8 +15470,8 @@ export interface components {
             parameter_selection_min?: number | null;
             /** Parameter Selection Max */
             parameter_selection_max?: number | null;
-            /** Parameter Item Ranges */
-            parameter_item_ranges?: {
+            /** Field Ranges */
+            field_ranges?: {
                 [key: string]: {
                     [key: string]: number;
                 };
@@ -15655,8 +15655,8 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Agent Mapping */
@@ -15841,8 +15841,8 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
         };
@@ -15993,8 +15993,8 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Parameter Item Ids */
@@ -16133,8 +16133,8 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
             };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
+            /** Field Mapping */
+            field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
             /** Parameter Item Ids */

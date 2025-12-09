@@ -161,7 +161,7 @@ scenario_mapping_data AS (
                 'persona_id', NULL,
                 'persona_mapping', '{}'::jsonb,
                 'document_mapping', '{}'::jsonb,
-                'parameter_item_mapping', '{}'::jsonb,
+                'field_mapping', '{}'::jsonb,
                 'parameter_item_ids', ARRAY[]::text[],
                 'document_ids', ARRAY[]::text[]
             )

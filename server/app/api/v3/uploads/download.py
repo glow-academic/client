@@ -6,16 +6,18 @@ import urllib.parse
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import FileResponse, Response
+
 from app.api.v3.settings.active import ThemeTokens
 from app.main import AUDIO_FOLDER, UPLOAD_FOLDER, get_db
-from app.utils.document.pdf_first_page_to_image_bytes import \
-    pdf_first_page_to_image_bytes
+from app.utils.document.pdf_first_page_to_image_bytes import (
+    pdf_first_page_to_image_bytes,
+)
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.jinja_renderer import render_template
 from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse, Response
 
 router = APIRouter()
 
@@ -65,9 +67,8 @@ async def download_upload(
             # If preview generation fails, fallback to original file
 
         # Handle template HTML processing
-        is_html = (
-            content_type == "text/html"
-            or result["file_path"].lower().endswith(".html")
+        is_html = content_type == "text/html" or result["file_path"].lower().endswith(
+            ".html"
         )
         if is_html:
             # Check if upload is associated with a template document
@@ -117,9 +118,7 @@ async def download_upload(
                                     defaults[f"_{field_name}_item_template"] = (
                                         item_defaults
                                     )
-                                elif (
-                                    item_field.get("type") == "string" and placeholder
-                                ):
+                                elif item_field.get("type") == "string" and placeholder:
                                     defaults[f"_{field_name}_item_template"] = (
                                         placeholder
                                     )

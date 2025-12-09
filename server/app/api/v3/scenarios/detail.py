@@ -5,22 +5,33 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              DocumentMapping, DocumentMappingItem,
-                              ObjectiveMapping, ObjectiveMappingItem,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              PersonaMapping, PersonaMappingItem,
-                              SimulationMapping, SimulationMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    DocumentMapping,
+    DocumentMappingItem,
+    FieldMapping,
+    FieldMappingItem,
+    ObjectiveMapping,
+    ObjectiveMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -34,7 +45,7 @@ class ScenarioDetailRequest(BaseModel):
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
     parameterIds: list[str] | None = None
-    parameterItemIds: list[str] | None = None
+    fieldIds: list[str] | None = None  # Renamed from parameterItemIds for readability
     # Search parameters
     personaSearch: str | None = None
     documentSearch: str | None = None
@@ -46,8 +57,10 @@ class ScenarioDetailRequest(BaseModel):
     documentMax: int | None = None
     parameterSelectionMin: int | None = None
     parameterSelectionMax: int | None = None
-    # Per-parameter item ranges (dict: {paramId: {"min": int, "max": int}})
-    parameterItemRanges: dict[str, dict[str, int]] | None = None
+    # Per-parameter field ranges (dict: {paramId: {"min": int, "max": int}})
+    fieldRanges: dict[str, dict[str, int]] | None = (
+        None  # Renamed from parameterItemRanges
+    )
     # Randomization parameter (single param: "all", "persona", "document", "parameters", or "parameter_{field_id}")
     randomize: str | None = None
 
@@ -55,8 +68,8 @@ class ScenarioDetailRequest(BaseModel):
 class ParameterDetail(BaseModel):
     """Parameter detail structure."""
 
-    parameter_item_ids: list[str]
-    valid_parameter_item_ids: list[str]
+    field_ids: list[str]  # Renamed from parameter_item_ids for readability
+    valid_field_ids: list[str]  # Renamed from valid_parameter_item_ids
 
 
 class DocumentDetailItem(BaseModel):
@@ -74,7 +87,7 @@ class DocumentDetailItem(BaseModel):
     file_path: str | None
     mime_type: str | None
     upload_id: str | None
-    parameter_item_ids: list[str]
+    field_ids: list[str]  # Renamed from parameter_item_ids for readability
 
 
 class ProblemStatementInfo(BaseModel):
@@ -105,7 +118,9 @@ class AllowedRanges(BaseModel):
     persona: RangeMinMax
     document: RangeMinMax
     parameter_selection: RangeMinMax
-    parameter_items: dict[str, RangeMinMax]  # {paramId: {"min": 1, "max": 2}}
+    fields: dict[
+        str, RangeMinMax
+    ]  # Renamed from parameter_items - {paramId: {"min": 1, "max": 2}}
 
 
 class RandomizedSelections(BaseModel):
@@ -114,7 +129,7 @@ class RandomizedSelections(BaseModel):
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
     parameterIds: list[str] | None = None
-    parameterItemIds: list[str] | None = None
+    fieldIds: list[str] | None = None  # Renamed from parameterItemIds
 
 
 class ScenarioDetailResponse(BaseModel):
@@ -164,7 +179,7 @@ class ScenarioDetailResponse(BaseModel):
 
     # Mappings
     parameter_mapping: ParameterMapping
-    parameter_item_mapping: ParameterItemMapping
+    field_mapping: FieldMapping
     simulation_mapping: SimulationMapping
     persona_mapping: PersonaMapping
     document_mapping: DocumentMapping
@@ -182,8 +197,12 @@ class ScenarioDetailResponse(BaseModel):
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
     # Filtered valid IDs (replacing client-side filtering)
-    valid_parameter_item_ids: list[str] | None = None  # Filtered based on departments
-    valid_general_parameter_item_ids: list[str] | None = None  # Filtered based on personas/documents/parameters
+    valid_field_ids: list[str] | None = (
+        None  # Renamed from valid_parameter_item_ids - filtered based on departments
+    )
+    valid_general_field_ids: list[str] | None = (
+        None  # Renamed from valid_general_parameter_item_ids - filtered based on personas/documents/parameters
+    )
     # Allowed ranges (computed from filtered IDs, capped at 5)
     allowed_ranges: AllowedRanges | None = None
     # Randomized selections (if randomization params provided)
@@ -197,6 +216,7 @@ router = APIRouter()
 # For now, we'll duplicate them here to avoid circular imports
 # TODO: Extract to shared utility module if needed
 
+
 def filter_valid_persona_ids(
     base_ids: list[str],
     selected_dept_ids: list[str] | None,
@@ -205,7 +225,7 @@ def filter_valid_persona_ids(
     selected_persona_ids: list[str] | None,
     department_mapping: DepartmentMapping,
     persona_mapping: PersonaMapping,
-    parameter_item_mapping: ParameterItemMapping,
+    field_mapping: FieldMapping,
 ) -> list[str]:
     """Filter valid persona IDs based on selections."""
     if selected_dept_ids is None:
@@ -284,7 +304,9 @@ def filter_valid_persona_ids(
             if not selected_field_id:
                 continue
 
-            selected_field = parameter_item_mapping.get(selected_field_id)
+            selected_field = field_mapping.get(
+                selected_field_id
+            )  # Renamed from parameter_item_mapping
             if not selected_field or not selected_field.parameter_id:
                 continue
 
@@ -304,10 +326,11 @@ def filter_valid_document_ids(
     selected_param_ids: list[str] | None,
     selected_field_ids: list[str] | None,
     selected_doc_ids: list[str] | None,
-    selected_param_item_ids: list[str] | None,
+    selected_field_ids_for_docs: list[str]
+    | None,  # Renamed from selected_param_item_ids (different from selected_field_ids above)
     department_mapping: DepartmentMapping,
     document_mapping: DocumentMapping,
-    parameter_item_mapping: ParameterItemMapping,
+    field_mapping: FieldMapping,
     parameter_mapping: ParameterMapping,
     document_details: list[DocumentDetailItem],
 ) -> list[str]:
@@ -320,8 +343,8 @@ def filter_valid_document_ids(
         selected_field_ids = []
     if selected_doc_ids is None:
         selected_doc_ids = []
-    if selected_param_item_ids is None:
-        selected_param_item_ids = []
+    if selected_field_ids_for_docs is None:
+        selected_field_ids_for_docs = []
 
     selected_doc_id_set = set(selected_doc_ids)
 
@@ -348,27 +371,27 @@ def filter_valid_document_ids(
 
         dept_filtered_ids = list(set(filtered) | selected_doc_id_set)
 
-    current_doc_param_item_ids = [
+    current_doc_field_ids = [
         item_id
-        for item_id in selected_param_item_ids
+        for item_id in selected_field_ids_for_docs  # Renamed from selected_param_item_ids
         if (
-            item_id in parameter_item_mapping
-            and parameter_item_mapping[item_id].parameter_id in parameter_mapping
+            item_id in field_mapping  # Renamed from parameter_item_mapping
+            and field_mapping[item_id].parameter_id in parameter_mapping
             and parameter_mapping[
-                parameter_item_mapping[item_id].parameter_id
+                field_mapping[item_id].parameter_id
             ].document_parameter
         )
     ]
 
-    if len(current_doc_param_item_ids) > 0:
+    if len(current_doc_field_ids) > 0:
         if document_details and len(document_details) > 0:
             docs_with_selected_params: set[str] = set()
             for doc in document_details:
-                if doc.parameter_item_ids:
-                    doc_param_items_set = set(doc.parameter_item_ids)
+                if doc.field_ids:  # Renamed from parameter_item_ids
+                    doc_field_items_set = set(doc.field_ids)
                     has_all_selected_params = all(
-                        param_id in doc_param_items_set
-                        for param_id in current_doc_param_item_ids
+                        param_id in doc_field_items_set
+                        for param_id in current_doc_field_ids
                     )
                     if has_all_selected_params:
                         docs_with_selected_params.add(doc.document_id)
@@ -377,7 +400,8 @@ def filter_valid_document_ids(
                 dept_filtered_ids = [
                     doc_id
                     for doc_id in dept_filtered_ids
-                    if doc_id in docs_with_selected_params or doc_id in selected_doc_id_set
+                    if doc_id in docs_with_selected_params
+                    or doc_id in selected_doc_id_set
                 ]
 
     dept_filtered = dept_filtered_ids
@@ -418,12 +442,14 @@ def filter_valid_document_ids(
         if doc_mapping_item and doc_mapping_item.field_ids:
             doc_field_ids = doc_mapping_item.field_ids
 
-        # Get fields from document_details (parameter_item_ids is actually field_ids)
+        # Get fields from document_details (field_ids)
         doc_details = next(
             (d for d in document_details if d.document_id == doc_id), None
         )
         doc_details_field_ids = (
-            doc_details.parameter_item_ids if doc_details else []
+            doc_details.field_ids
+            if doc_details
+            else []  # Renamed from parameter_item_ids
         )
 
         all_doc_field_ids = list(set(doc_field_ids + doc_details_field_ids))
@@ -438,7 +464,9 @@ def filter_valid_document_ids(
             if not selected_field_id:
                 continue
 
-            selected_field = parameter_item_mapping.get(selected_field_id)
+            selected_field = field_mapping.get(
+                selected_field_id
+            )  # Renamed from parameter_item_mapping
             if not selected_field or not selected_field.parameter_id:
                 continue
 
@@ -452,64 +480,65 @@ def filter_valid_document_ids(
     return result
 
 
-def filter_valid_parameter_item_ids(
+def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
     mapping_ids: list[str],
     selected_dept_ids: list[str] | None,
-    selected_param_item_ids: list[str] | None,
+    selected_field_ids: list[str] | None,  # Renamed from selected_param_item_ids
     department_mapping: DepartmentMapping,
 ) -> list[str]:
-    """Filter valid parameter item IDs based on departments."""
+    """Filter valid field IDs based on departments."""
     if selected_dept_ids is None:
         selected_dept_ids = []
-    if selected_param_item_ids is None:
-        selected_param_item_ids = []
+    if selected_field_ids is None:
+        selected_field_ids = []
 
-    selected_param_item_id_set = set(selected_param_item_ids)
+    selected_field_id_set = set(selected_field_ids)
 
     if len(selected_dept_ids) == 0:
-        return list(set(mapping_ids) | selected_param_item_id_set)
+        return list(set(mapping_ids) | selected_field_id_set)
 
-    all_dept_parameter_item_ids: set[str] = set()
+    all_dept_field_ids: set[str] = set()
     for dept_data in department_mapping.values():
-        if dept_data.parameter_item_ids is not None:
-            all_dept_parameter_item_ids.update(dept_data.parameter_item_ids)
+        if dept_data.field_ids is not None:  # Renamed from parameter_item_ids
+            all_dept_field_ids.update(dept_data.field_ids)
 
-    selected_dept_parameter_item_ids: set[str] = set()
+    selected_dept_field_ids: set[str] = set()
     for dept_id in selected_dept_ids:
         dept_data = department_mapping.get(dept_id)
-        if dept_data and dept_data.parameter_item_ids is not None:
-            selected_dept_parameter_item_ids.update(dept_data.parameter_item_ids)
+        if (
+            dept_data and dept_data.field_ids is not None
+        ):  # Renamed from parameter_item_ids
+            selected_dept_field_ids.update(dept_data.field_ids)
 
     filtered = [
         item_id
         for item_id in mapping_ids
-        if item_id in selected_dept_parameter_item_ids
-        or item_id not in all_dept_parameter_item_ids
+        if item_id in selected_dept_field_ids or item_id not in all_dept_field_ids
     ]
 
-    return list(set(filtered) | selected_param_item_id_set)
+    return list(set(filtered) | selected_field_id_set)
 
 
-def filter_valid_general_parameter_item_ids(
-    valid_parameter_item_ids: list[str],
+def filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
+    valid_field_ids: list[str],  # Renamed from valid_parameter_item_ids
     selected_param_ids: list[str] | None,
     selected_persona_ids: list[str] | None,
     selected_doc_ids: list[str] | None,
-    selected_param_item_ids: list[str] | None,
+    selected_field_ids: list[str] | None,  # Renamed from selected_param_item_ids
     persona_mapping: PersonaMapping,
     document_mapping: DocumentMapping,
-    parameter_item_mapping: ParameterItemMapping,
+    field_mapping: FieldMapping,
     document_details: list[DocumentDetailItem],
 ) -> list[str]:
-    """Filter valid general parameter item IDs based on selected personas, documents, and parameters."""
+    """Filter valid general field IDs based on selected personas, documents, and parameters."""
     if selected_param_ids is None:
         selected_param_ids = []
     if selected_persona_ids is None:
         selected_persona_ids = []
     if selected_doc_ids is None:
         selected_doc_ids = []
-    if selected_param_item_ids is None:
-        selected_param_item_ids = []
+    if selected_field_ids is None:
+        selected_field_ids = []
 
     has_selected_personas = len(selected_persona_ids) > 0
     has_selected_documents = len(selected_doc_ids) > 0
@@ -522,7 +551,9 @@ def filter_valid_general_parameter_item_ids(
         if persona and persona.field_ids:
             for field_id in persona.field_ids:
                 persona_fields.add(field_id)
-                field = parameter_item_mapping.get(field_id)
+                field = field_mapping.get(
+                    field_id
+                )  # Renamed from parameter_item_mapping
                 if field and field.parameter_id:
                     persona_parameter_ids.add(field.parameter_id)
 
@@ -533,31 +564,35 @@ def filter_valid_general_parameter_item_ids(
         if doc and doc.field_ids:
             for field_id in doc.field_ids:
                 document_fields.add(field_id)
-                field = parameter_item_mapping.get(field_id)
+                field = field_mapping.get(
+                    field_id
+                )  # Renamed from parameter_item_mapping
                 if field and field.parameter_id:
                     document_parameter_ids.add(field.parameter_id)
 
         doc_details = next(
             (d for d in document_details if d.document_id == doc_id), None
         )
-        if doc_details and doc_details.parameter_item_ids:
-            for field_id in doc_details.parameter_item_ids:
+        if doc_details and doc_details.field_ids:  # Renamed from parameter_item_ids
+            for field_id in doc_details.field_ids:
                 document_fields.add(field_id)
-                field = parameter_item_mapping.get(field_id)
+                field = field_mapping.get(
+                    field_id
+                )  # Renamed from parameter_item_mapping
                 if field and field.parameter_id:
                     document_parameter_ids.add(field.parameter_id)
 
     selected_entity_parameter_ids = persona_parameter_ids | document_parameter_ids
 
     conditional_param_ids: set[str] = set()
-    for field_id in selected_param_item_ids:
-        field = parameter_item_mapping.get(field_id)
+    for field_id in selected_field_ids:  # Renamed from selected_param_item_ids
+        field = field_mapping.get(field_id)  # Renamed from parameter_item_mapping
         if field and field.conditional_parameter_ids:
             conditional_param_ids.update(field.conditional_parameter_ids)
 
     result = []
-    for field_id in valid_parameter_item_ids:
-        field = parameter_item_mapping.get(field_id)
+    for field_id in valid_field_ids:  # Renamed from valid_parameter_item_ids
+        field = field_mapping.get(field_id)  # Renamed from parameter_item_mapping
         if not field:
             continue
 
@@ -583,15 +618,19 @@ def filter_valid_general_parameter_item_ids(
                 if field_param_id not in selected_param_ids:
                     if field_param_id in conditional_param_ids:
                         triggers_conditional = any(
-                            selected_field_id in parameter_item_mapping
-                            and parameter_item_mapping[selected_field_id].conditional_parameter_ids is not None
+                            selected_field_id in field_mapping
+                            and field_mapping[
+                                selected_field_id
+                            ].conditional_parameter_ids
+                            is not None
                             and field_param_id
-                            in (parameter_item_mapping[
-                                selected_field_id
-                            ].conditional_parameter_ids or [])
-                            and parameter_item_mapping[
-                                selected_field_id
-                            ].parameter_id
+                            in (
+                                field_mapping[
+                                    selected_field_id
+                                ].conditional_parameter_ids
+                                or []
+                            )
+                            and field_mapping[selected_field_id].parameter_id
                             in selected_param_ids
                             for selected_field_id in selected_param_item_ids
                         )
@@ -614,7 +653,9 @@ def filter_valid_general_parameter_item_ids(
                     result.append(field_id)
                 continue
 
-            has_fields_from_this_parameter = field_param_id in selected_entity_parameter_ids
+            has_fields_from_this_parameter = (
+                field_param_id in selected_entity_parameter_ids
+            )
 
             if not has_fields_from_this_parameter:
                 result.append(field_id)
@@ -728,17 +769,20 @@ async def get_scenario_detail(
         if isinstance(params_data, dict):
             for param_id, param_detail in params_data.items():
                 if isinstance(param_detail, dict):
-                    param_item_ids = param_detail.get("parameter_item_ids", [])
-                    valid_param_item_ids = param_detail.get(
-                        "valid_parameter_item_ids", []
+                    field_ids = param_detail.get(
+                        "parameter_item_ids", []
+                    )  # Database column name (keeping as-is)
+                    valid_field_ids = param_detail.get(
+                        "valid_parameter_item_ids",
+                        [],  # Database column name (keeping as-is)
                     )
-                    if not isinstance(param_item_ids, list):
-                        param_item_ids = []
-                    if not isinstance(valid_param_item_ids, list):
-                        valid_param_item_ids = []
+                    if not isinstance(field_ids, list):
+                        field_ids = []
+                    if not isinstance(valid_field_ids, list):
+                        valid_field_ids = []
                     parameters_dict[param_id] = ParameterDetail(
-                        parameter_item_ids=param_item_ids,
-                        valid_parameter_item_ids=valid_param_item_ids,
+                        field_ids=field_ids,  # Renamed from parameter_item_ids
+                        valid_field_ids=valid_field_ids,  # Renamed from valid_parameter_item_ids
                     )
 
         # Parse mappings
@@ -831,13 +875,13 @@ async def get_scenario_detail(
                         video_parameter=pdata.get("video_parameter", False),
                     )
 
-        param_item_full_mapping: ParameterItemMapping = {}
-        param_item_mapping_data = parse_jsonb(scenario.get("parameter_item_mapping"))
-        if isinstance(param_item_mapping_data, dict):
-            for piid, pidata in param_item_mapping_data.items():
+        field_mapping: FieldMapping = {}
+        field_mapping_data = parse_jsonb(scenario.get("field_mapping"))
+        if isinstance(field_mapping_data, dict):
+            for piid, pidata in field_mapping_data.items():
                 if isinstance(pidata, dict):
                     conditional_parameter_ids = pidata.get("conditional_parameter_ids")
-                    param_item_full_mapping[piid] = ParameterItemMappingItem(
+                    field_mapping[piid] = FieldMappingItem(
                         name=pidata.get("name", ""),
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
@@ -868,7 +912,9 @@ async def get_scenario_detail(
                         persona_ids=to_str_list(ddata.get("persona_ids")),
                         document_ids=to_str_list(ddata.get("document_ids")),
                         parameter_ids=to_str_list(ddata.get("parameter_ids")),
-                        parameter_item_ids=to_str_list(ddata.get("parameter_item_ids")),
+                        parameter_item_ids=to_str_list(
+                            ddata.get("parameter_item_ids")
+                        ),  # Database column name (keeping as-is)
                     )
 
         problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
@@ -917,7 +963,9 @@ async def get_scenario_detail(
                             file_path=doc.get("file_path") or None,
                             mime_type=doc.get("mime_type") or None,
                             upload_id=doc.get("upload_id") or None,
-                            parameter_item_ids=doc.get("parameter_item_ids", []),
+                            field_ids=doc.get(
+                                "parameter_item_ids", []
+                            ),  # Database column name (keeping as-is), renamed to field_ids in model
                         )
                     )
 
@@ -1006,12 +1054,16 @@ async def get_scenario_detail(
         # Apply filtering based on request parameters
         filtered_valid_persona_ids = valid_persona_ids
         filtered_valid_document_ids = valid_document_ids
-        filtered_valid_parameter_item_ids: list[str] | None = None
-        filtered_valid_general_parameter_item_ids: list[str] | None = None
+        filtered_valid_field_ids: list[str] | None = (
+            None  # Renamed from filtered_valid_parameter_item_ids
+        )
+        filtered_valid_general_field_ids: list[str] | None = (
+            None  # Renamed from filtered_valid_general_parameter_item_ids
+        )
         allowed_ranges: AllowedRanges | None = None
         randomized_selections: RandomizedSelections | None = None
 
-        # Always compute filtered_valid_general_parameter_item_ids if randomize is present
+        # Always compute filtered_valid_general_field_ids if randomize is present
         # (needed for randomization even when no filter params are provided)
         needs_filtering = (
             request_data.departmentIds is not None
@@ -1029,11 +1081,11 @@ async def get_scenario_detail(
                 base_ids=valid_persona_ids,
                 selected_dept_ids=request_data.departmentIds,
                 selected_param_ids=request_data.parameterIds,
-                selected_field_ids=request_data.parameterItemIds,
+                selected_field_ids=request_data.fieldIds,  # Renamed from parameterItemIds
                 selected_persona_ids=request_data.personaIds,
                 department_mapping=department_mapping,
                 persona_mapping=persona_mapping,
-                parameter_item_mapping=param_item_full_mapping,
+                field_mapping=field_mapping,  # Renamed from param_item_full_mapping
             )
 
             # Filter valid document IDs
@@ -1041,53 +1093,57 @@ async def get_scenario_detail(
                 base_ids=valid_document_ids,
                 selected_dept_ids=request_data.departmentIds,
                 selected_param_ids=request_data.parameterIds,
-                selected_field_ids=request_data.parameterItemIds,
+                selected_field_ids=request_data.fieldIds,  # Renamed from parameterItemIds
                 selected_doc_ids=request_data.documentIds,
-                selected_param_item_ids=request_data.parameterItemIds,
+                selected_field_ids_for_docs=request_data.fieldIds,  # Renamed from parameterItemIds
                 department_mapping=department_mapping,
                 document_mapping=document_mapping,
-                parameter_item_mapping=param_item_full_mapping,
+                field_mapping=field_mapping,  # Renamed from param_item_full_mapping
                 parameter_mapping=parameter_mapping,
                 document_details=document_details,
             )
 
-            # Filter valid parameter item IDs
-            mapping_ids = list(param_item_full_mapping.keys())
-            filtered_valid_parameter_item_ids = filter_valid_parameter_item_ids(
+            # Filter valid field IDs
+            mapping_ids = list(
+                field_mapping.keys()
+            )  # Renamed from param_item_full_mapping
+            filtered_valid_field_ids = filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
                 mapping_ids=mapping_ids,
                 selected_dept_ids=request_data.departmentIds,
-                selected_param_item_ids=request_data.parameterItemIds,
+                selected_field_ids=request_data.fieldIds,  # Renamed from parameterItemIds
                 department_mapping=department_mapping,
             )
 
-            # Filter valid general parameter item IDs
-            filtered_valid_general_parameter_item_ids = (
-                filter_valid_general_parameter_item_ids(
-                    valid_parameter_item_ids=filtered_valid_parameter_item_ids,
-                    selected_param_ids=request_data.parameterIds,
-                    selected_persona_ids=request_data.personaIds,
-                    selected_doc_ids=request_data.documentIds,
-                    selected_param_item_ids=request_data.parameterItemIds,
-                    persona_mapping=persona_mapping,
-                    document_mapping=document_mapping,
-                    parameter_item_mapping=param_item_full_mapping,
-                    document_details=document_details,
-                )
+            # Filter valid general field IDs
+            filtered_valid_general_field_ids = filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
+                valid_field_ids=filtered_valid_field_ids,  # Renamed from valid_parameter_item_ids
+                selected_param_ids=request_data.parameterIds,
+                selected_persona_ids=request_data.personaIds,
+                selected_doc_ids=request_data.documentIds,
+                selected_field_ids=request_data.fieldIds,  # Renamed from parameterItemIds
+                persona_mapping=persona_mapping,
+                document_mapping=document_mapping,
+                field_mapping=field_mapping,  # Renamed from param_item_full_mapping
+                document_details=document_details,
             )
         elif request_data.randomize:
-            # When randomize is present but no filter params, still need filtered_valid_general_parameter_item_ids
+            # When randomize is present but no filter params, still need filtered_valid_general_field_ids
             # Initialize with base values (no filtering applied)
-            mapping_ids = list(param_item_full_mapping.keys())
-            filtered_valid_parameter_item_ids = mapping_ids
-            filtered_valid_general_parameter_item_ids = filter_valid_general_parameter_item_ids(
-                valid_parameter_item_ids=filtered_valid_parameter_item_ids,
+            mapping_ids = list(
+                field_mapping.keys()
+            )  # Renamed from param_item_full_mapping
+            filtered_valid_field_ids = (
+                mapping_ids  # Renamed from filtered_valid_parameter_item_ids
+            )
+            filtered_valid_general_field_ids = filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
+                valid_field_ids=filtered_valid_field_ids,  # Renamed from valid_parameter_item_ids
                 selected_param_ids=None,
                 selected_persona_ids=None,
                 selected_doc_ids=None,
-                selected_param_item_ids=None,
+                selected_field_ids=None,  # Renamed from selected_param_item_ids
                 persona_mapping=persona_mapping,
                 document_mapping=document_mapping,
-                parameter_item_mapping=param_item_full_mapping,
+                field_mapping=field_mapping,  # Renamed from param_item_full_mapping
                 document_details=document_details,
             )
 
@@ -1097,12 +1153,16 @@ async def get_scenario_detail(
         max_valid_parameters = min(5, len(valid_parameter_ids))
 
         # Default ranges
-        persona_min = request_data.personaMin if request_data.personaMin is not None else 1
+        persona_min = (
+            request_data.personaMin if request_data.personaMin is not None else 1
+        )
         persona_max = min(
             request_data.personaMax if request_data.personaMax is not None else 2,
             max_valid_personas,
         )
-        document_min = request_data.documentMin if request_data.documentMin is not None else 0
+        document_min = (
+            request_data.documentMin if request_data.documentMin is not None else 0
+        )
         document_max = min(
             request_data.documentMax if request_data.documentMax is not None else 2,
             max_valid_documents,
@@ -1119,27 +1179,36 @@ async def get_scenario_detail(
             max_valid_parameters,
         )
 
-        # Per-parameter item ranges
-        parameter_items_ranges: dict[str, dict[str, int]] = {}
-        if filtered_valid_general_parameter_item_ids:
+        # Per-parameter field ranges
+        field_ranges_dict: dict[
+            str, dict[str, int]
+        ] = {}  # Renamed from parameter_items_ranges
+        if (
+            filtered_valid_general_field_ids
+        ):  # Renamed from filtered_valid_general_parameter_item_ids
             for param_id in parameter_mapping.keys():
                 valid_items_for_param = [
                     item_id
-                    for item_id in filtered_valid_general_parameter_item_ids
-                    if item_id in param_item_full_mapping
-                    and param_item_full_mapping[item_id].parameter_id == param_id
+                    for item_id in filtered_valid_general_field_ids  # Renamed from filtered_valid_general_parameter_item_ids
+                    if item_id in field_mapping  # Renamed from param_item_full_mapping
+                    and field_mapping[item_id].parameter_id == param_id
                 ]
                 max_valid_items = min(5, len(valid_items_for_param))
 
-                if request_data.parameterItemRanges and param_id in request_data.parameterItemRanges:
-                    param_range = request_data.parameterItemRanges[param_id]
+                if (
+                    request_data.fieldRanges and param_id in request_data.fieldRanges
+                ):  # Renamed from parameterItemRanges
+                    param_range = request_data.fieldRanges[param_id]
                     param_min = param_range.get("min", 1)
                     param_max = min(param_range.get("max", 2), max_valid_items)
                 else:
                     param_min = 1
                     param_max = min(2, max_valid_items)
 
-                parameter_items_ranges[param_id] = {"min": param_min, "max": param_max}
+                field_ranges_dict[param_id] = {
+                    "min": param_min,
+                    "max": param_max,
+                }  # Renamed from parameter_items_ranges
 
         allowed_ranges = AllowedRanges(
             persona=RangeMinMax(min=persona_min, max=persona_max),
@@ -1148,9 +1217,9 @@ async def get_scenario_detail(
                 min=parameter_selection_min,
                 max=parameter_selection_max,
             ),
-            parameter_items={
+            fields={  # Renamed from parameter_items
                 param_id: RangeMinMax(min=range_dict["min"], max=range_dict["max"])
-                for param_id, range_dict in parameter_items_ranges.items()
+                for param_id, range_dict in field_ranges_dict.items()  # Renamed from parameter_items_ranges
             },
         )
 
@@ -1160,11 +1229,13 @@ async def get_scenario_detail(
         randomized_persona_ids: list[str] | None = None
         randomized_document_ids: list[str] | None = None
         randomized_parameter_ids: list[str] | None = None
-        randomized_parameter_item_ids: list[str] | None = None
+        randomized_field_ids: list[str] | None = (
+            None  # Renamed from randomized_parameter_item_ids
+        )
 
         if request_data.randomize:
             randomize_value = request_data.randomize.strip().lower()
-            
+
             # Parse randomize value and apply randomization accordingly
             if randomize_value == "all":
                 # Randomize personas
@@ -1181,7 +1252,7 @@ async def get_scenario_detail(
                     randomized_persona_ids = shuffled[:count]
                 except (ValueError, IndexError):
                     pass
-                
+
                 # Randomize documents
                 try:
                     min_val = document_min
@@ -1196,7 +1267,7 @@ async def get_scenario_detail(
                     randomized_document_ids = shuffled[:count]
                 except (ValueError, IndexError):
                     pass
-                
+
                 # Randomize parameters
                 try:
                     min_val = parameter_selection_min
@@ -1211,31 +1282,42 @@ async def get_scenario_detail(
                     randomized_parameter_ids = shuffled[:count]
                 except (ValueError, IndexError):
                     pass
-                
-                # Randomize all parameter items
+
+                # Randomize all fields
                 # Only randomize items for parameters that were randomized (or selected if no randomization)
-                if filtered_valid_general_parameter_item_ids:
+                if (
+                    filtered_valid_general_field_ids
+                ):  # Renamed from filtered_valid_general_parameter_item_ids
                     randomized_items: list[str] = []
                     # Use randomized parameter IDs if available, otherwise use selected parameter IDs
-                    params_to_randomize = randomized_parameter_ids if randomized_parameter_ids else (request_data.parameterIds or [])
+                    params_to_randomize = (
+                        randomized_parameter_ids
+                        if randomized_parameter_ids
+                        else (request_data.parameterIds or [])
+                    )
                     for param_id in params_to_randomize:
-                        if param_id in parameter_items_ranges:
-                            param_range = parameter_items_ranges[param_id]
+                        if (
+                            param_id in field_ranges_dict
+                        ):  # Renamed from parameter_items_ranges
+                            param_range = field_ranges_dict[param_id]
                             try:
                                 min_val = param_range["min"]
                                 max_val = param_range["max"]
                                 valid_items_for_param = [
                                     item_id
-                                    for item_id in filtered_valid_general_parameter_item_ids
-                                    if item_id in param_item_full_mapping
-                                    and param_item_full_mapping[item_id].parameter_id == param_id
+                                    for item_id in filtered_valid_general_field_ids  # Renamed from filtered_valid_general_parameter_item_ids
+                                    if item_id
+                                    in field_mapping  # Renamed from param_item_full_mapping
+                                    and field_mapping[item_id].parameter_id == param_id
                                 ]
                                 if valid_items_for_param:
                                     max_valid_items = min(5, len(valid_items_for_param))
                                     capped_max = min(max_val, max_valid_items)
                                     count = min(
                                         capped_max,
-                                        max(min_val, random.randint(min_val, capped_max)),
+                                        max(
+                                            min_val, random.randint(min_val, capped_max)
+                                        ),
                                     )
                                     shuffled = valid_items_for_param.copy()
                                     random.shuffle(shuffled)
@@ -1243,8 +1325,8 @@ async def get_scenario_detail(
                             except (ValueError, IndexError):
                                 pass
                     if randomized_items:
-                        randomized_parameter_item_ids = randomized_items
-            
+                        randomized_field_ids = randomized_items  # Renamed from randomized_parameter_item_ids
+
             elif randomize_value == "persona":
                 # Randomize personas only
                 try:
@@ -1260,7 +1342,7 @@ async def get_scenario_detail(
                     randomized_persona_ids = shuffled[:count]
                 except (ValueError, IndexError):
                     pass
-            
+
             elif randomize_value == "document":
                 # Randomize documents only
                 try:
@@ -1276,7 +1358,7 @@ async def get_scenario_detail(
                     randomized_document_ids = shuffled[:count]
                 except (ValueError, IndexError):
                     pass
-            
+
             elif randomize_value == "parameters":
                 # Randomize parameters only
                 try:
@@ -1292,20 +1374,23 @@ async def get_scenario_detail(
                     randomized_parameter_ids = shuffled[:count]
                 except (ValueError, IndexError):
                     pass
-            
+
             elif randomize_value.startswith("parameter_"):
-                # Randomize items for specific parameter (format: "parameter_{field_id}")
+                # Randomize fields for specific parameter (format: "parameter_{field_id}")
                 param_id = randomize_value.replace("parameter_", "")
-                if filtered_valid_general_parameter_item_ids and param_id in parameter_items_ranges:
-                    param_range = parameter_items_ranges[param_id]
+                if (
+                    filtered_valid_general_field_ids and param_id in field_ranges_dict
+                ):  # Renamed from filtered_valid_general_parameter_item_ids and parameter_items_ranges
+                    param_range = field_ranges_dict[param_id]
                     try:
                         min_val = param_range["min"]
                         max_val = param_range["max"]
                         valid_items_for_param = [
                             item_id
-                            for item_id in filtered_valid_general_parameter_item_ids
-                            if item_id in param_item_full_mapping
-                            and param_item_full_mapping[item_id].parameter_id == param_id
+                            for item_id in filtered_valid_general_field_ids  # Renamed from filtered_valid_general_parameter_item_ids
+                            if item_id
+                            in field_mapping  # Renamed from param_item_full_mapping
+                            and field_mapping[item_id].parameter_id == param_id
                         ]
                         if valid_items_for_param:
                             max_valid_items = min(5, len(valid_items_for_param))
@@ -1316,7 +1401,9 @@ async def get_scenario_detail(
                             )
                             shuffled = valid_items_for_param.copy()
                             random.shuffle(shuffled)
-                            randomized_parameter_item_ids = shuffled[:count]
+                            randomized_field_ids = shuffled[
+                                :count
+                            ]  # Renamed from randomized_parameter_item_ids
                     except (ValueError, IndexError):
                         pass
 
@@ -1324,13 +1411,14 @@ async def get_scenario_detail(
             randomized_persona_ids is not None
             or randomized_document_ids is not None
             or randomized_parameter_ids is not None
-            or randomized_parameter_item_ids is not None
+            or randomized_field_ids
+            is not None  # Renamed from randomized_parameter_item_ids
         ):
             randomized_selections = RandomizedSelections(
                 personaIds=randomized_persona_ids,
                 documentIds=randomized_document_ids,
                 parameterIds=randomized_parameter_ids,
-                parameterItemIds=randomized_parameter_item_ids,
+                fieldIds=randomized_field_ids,  # Renamed from parameterItemIds
             )
 
         # Apply search filtering if search terms provided
@@ -1383,8 +1471,8 @@ async def get_scenario_detail(
             valid_persona_ids=filtered_valid_persona_ids,
             document_ids=document_ids,
             valid_document_ids=filtered_valid_document_ids,
-            valid_parameter_item_ids=filtered_valid_parameter_item_ids,
-            valid_general_parameter_item_ids=filtered_valid_general_parameter_item_ids,
+            valid_field_ids=filtered_valid_field_ids,  # Renamed from valid_parameter_item_ids
+            valid_general_field_ids=filtered_valid_general_field_ids,  # Renamed from valid_general_parameter_item_ids
             allowed_ranges=allowed_ranges,
             randomized_selections=randomized_selections,
             scenario_images=scenario_images,
@@ -1398,7 +1486,7 @@ async def get_scenario_detail(
             can_duplicate=can_duplicate,
             can_delete=can_delete,
             parameter_mapping=parameter_mapping,
-            parameter_item_mapping=param_item_full_mapping,
+            field_mapping=field_mapping,  # Renamed from parameter_item_mapping
             simulation_mapping=simulation_mapping,
             persona_mapping=persona_mapping,
             document_mapping=document_mapping,

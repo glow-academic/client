@@ -154,7 +154,7 @@ scenario_mapping_data AS (
                 'persona_ids', COALESCE(spa.persona_ids, ARRAY[]::text[]),
                 'persona_mapping', pm.mapping,
                 'document_mapping', '{}'::jsonb,
-                'parameter_item_mapping', '{}'::jsonb,
+                'field_mapping', '{}'::jsonb,
                 'parameter_item_ids', ARRAY[]::text[],
                 'document_ids', ARRAY[]::text[]
             )

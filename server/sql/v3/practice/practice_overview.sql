@@ -444,7 +444,7 @@ parameter_item_data AS (
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                   WHERE fd2.field_id = f.id AND fd2.active = true))
 ),
-parameter_item_mapping_data AS (
+field_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             pi.id::text,
@@ -502,7 +502,7 @@ SELECT json_build_object(
     'persona_mapping', COALESCE((SELECT mapping FROM persona_mapping_data LIMIT 1), '{}'::jsonb),
     'scenario_mapping', COALESCE((SELECT mapping FROM scenario_mapping_data LIMIT 1), '{}'::jsonb),
     'parameter_mapping', COALESCE((SELECT mapping FROM parameter_mapping_data LIMIT 1), '{}'::jsonb),
-    'parameter_item_mapping', COALESCE((SELECT mapping FROM parameter_item_mapping_data LIMIT 1), '{}'::jsonb),
+    'field_mapping', COALESCE((SELECT mapping FROM field_mapping_data LIMIT 1), '{}'::jsonb),
     'department_mapping', COALESCE((SELECT mapping FROM department_mapping_data LIMIT 1), '{}'::jsonb),
     'valid_department_ids', COALESCE((SELECT valid_department_ids FROM valid_department_ids_data LIMIT 1), ARRAY[]::text[])
 ) AS result

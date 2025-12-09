@@ -145,9 +145,7 @@ async def get_simulations_list(
                             persona_ids=sdata.get("persona_ids", []),
                             persona_mapping=persona_mapping_parsed,
                             document_mapping=sdata.get("document_mapping", {}),
-                            parameter_item_mapping=sdata.get(
-                                "parameter_item_mapping", {}
-                            ),
+                            parameter_item_mapping=sdata.get("field_mapping", {}),
                             parameter_item_ids=sdata.get("parameter_item_ids", []),
                             document_ids=sdata.get("document_ids", []),
                         )

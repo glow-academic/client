@@ -504,7 +504,7 @@ user_context AS (
             ) as parameter_items_list
             FROM parameter_items_data pid
         ),
-        parameter_item_mapping_data AS (
+        field_mapping_data AS (
             SELECT COALESCE(
                 jsonb_object_agg(
                     pid.id::text,
@@ -516,7 +516,7 @@ user_context AS (
                     )
                 ),
                 '{}'::jsonb
-            ) as parameter_item_mapping
+            ) as field_mapping
             FROM parameter_items_data pid
         ),
         scenario_persona_data AS (
@@ -595,7 +595,7 @@ user_context AS (
                             WHERE dmb.id = ANY(sdd.document_ids)),
                             '{}'::jsonb
                         ),
-                        'parameter_item_mapping', COALESCE(
+                        'field_mapping', COALESCE(
                             (SELECT jsonb_object_agg(
                                 pid.id::text,
                                 jsonb_build_object(
@@ -749,7 +749,7 @@ user_context AS (
             rmd.rubric_mapping,
             dmd.department_mapping,
             pmd.parameter_mapping,
-            pimd.parameter_item_mapping,
+            fmd.field_mapping,
             -- Parameter items list
             pild.parameter_items_list,
             -- Agent mapping
@@ -764,7 +764,7 @@ user_context AS (
         LEFT JOIN valid_videos vv ON true
         LEFT JOIN rubric_mapping_data rmd ON true
         LEFT JOIN parameter_mapping_data pmd ON true
-        LEFT JOIN parameter_item_mapping_data pimd ON true
+        LEFT JOIN field_mapping_data fmd ON true
         LEFT JOIN parameter_items_list_data pild ON true
         LEFT JOIN scenario_mapping_complete smc ON true
         LEFT JOIN video_mapping_data vmd ON true

@@ -13,7 +13,7 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import DepartmentMappingItem, ParameterItemMappingItem
+from app.utils.schema import DepartmentMappingItem, FieldMappingItem
 from app.utils.sql_helper import load_sql
 
 
@@ -34,7 +34,7 @@ class DocumentDetailBulkResponse(BaseModel):
     department_mapping: dict[str, DepartmentMappingItem]
     parameter_item_ids: list[str]
     valid_parameter_item_ids: list[str]
-    parameter_item_mapping: dict[str, ParameterItemMappingItem]
+    field_mapping: dict[str, FieldMappingItem]
 
 
 router = APIRouter()
@@ -110,15 +110,15 @@ async def get_document_detail_bulk(
                             else None,
                         )
 
-        parameter_item_mapping: dict[str, ParameterItemMappingItem] = {}
-        if row.get("parameter_item_mapping"):
-            param_item_data = row["parameter_item_mapping"]
-            if isinstance(param_item_data, str):
-                param_item_data = json.loads(param_item_data)
-            if isinstance(param_item_data, dict):
-                for pid, pdata in param_item_data.items():
+        field_mapping: dict[str, FieldMappingItem] = {}
+        if row.get("field_mapping"):
+            field_data = row["field_mapping"]
+            if isinstance(field_data, str):
+                field_data = json.loads(field_data)
+            if isinstance(field_data, dict):
+                for pid, pdata in field_data.items():
                     if isinstance(pdata, dict):
-                        parameter_item_mapping[pid] = ParameterItemMappingItem(
+                        field_mapping[pid] = FieldMappingItem(
                             name=pdata.get("name", ""),
                             description=pdata.get("description", ""),
                             parameter_id=pdata.get("parameter_id", ""),
@@ -144,7 +144,7 @@ async def get_document_detail_bulk(
             department_mapping=department_mapping,
             parameter_item_ids=[],  # Not included in bulk query
             valid_parameter_item_ids=valid_parameter_item_ids,
-            parameter_item_mapping=parameter_item_mapping,
+            field_mapping=field_mapping,
         )
 
         # Cache response

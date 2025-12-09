@@ -5,8 +5,8 @@
 
 // ParameterDetail type (matches v3 API structure from scenarios/detail)
 export interface ParameterDetail {
-  parameter_item_ids: string[];
-  valid_parameter_item_ids: string[];
+  field_ids: string[]; // Renamed from parameter_item_ids for readability
+  valid_field_ids: string[]; // Renamed from valid_parameter_item_ids
 }
 
 // Type definitions (merged from scenario.ts)
@@ -21,27 +21,27 @@ export interface Model {
 }
 
 /**
- * Extract flat parameter item IDs from v2 parameters structure
- * The v2 API returns parameters grouped by parameter_id with nested item IDs
+ * Extract flat field IDs from parameters structure
+ * The API returns parameters grouped by parameter_id with nested field IDs
  */
-export function getParameterItemIdsFromStructure(
-  parameters: Record<string, ParameterDetail>,
+export function getFieldIdsFromStructure( // Renamed from getParameterItemIdsFromStructure
+  parameters: Record<string, ParameterDetail>
 ): string[] {
-  return Object.values(parameters).flatMap((p) => p.parameter_item_ids);
+  return Object.values(parameters).flatMap((p) => p.field_ids); // Renamed from parameter_item_ids
 }
 
 /**
- * Group parameter item IDs by parameter ID for v2 API submission
- * This is needed when creating/updating scenarios via the v2 API
+ * Group field IDs by parameter ID for API submission
+ * This is needed when creating/updating scenarios via the API
  */
-export function groupParameterItemsByParameterId(
-  parameterItemIds: string[],
-  parameterItemMapping: Record<string, { parameter_id: string }>,
+export function groupFieldsByParameterId( // Renamed from groupParameterItemsByParameterId
+  fieldIds: string[], // Renamed from parameterItemIds
+  fieldMapping: Record<string, { parameter_id: string }> // Renamed from parameterItemMapping
 ): Record<string, string[]> {
   const grouped: Record<string, string[]> = {};
 
-  for (const itemId of parameterItemIds) {
-    const item = parameterItemMapping[itemId];
+  for (const itemId of fieldIds) {
+    const item = fieldMapping[itemId];
     if (item) {
       const parameterId = item.parameter_id;
       if (!grouped[parameterId]) {
@@ -60,22 +60,23 @@ export function groupParameterItemsByParameterId(
  */
 export function getObjectivesFromMapping(
   objectiveIds: string[],
-  objectiveMapping: Record<string, { name: string }>,
+  objectiveMapping: Record<string, { name: string }>
 ): string[] {
   return objectiveIds.map((id) => objectiveMapping[id]?.name || "");
 }
 
 /**
- * Get all valid parameter item IDs from the parameters structure
- * This includes all available parameter items across all parameters
+ * Get all valid field IDs from the parameters structure
+ * This includes all available fields across all parameters
  */
-export function getAllValidParameterItemIds(
-  parameters: Record<string, ParameterDetail>,
+export function getAllValidFieldIds( // Renamed from getAllValidParameterItemIds
+  parameters: Record<string, ParameterDetail>
 ): string[] {
   const allIds = new Set<string>();
 
   for (const param of Object.values(parameters)) {
-    for (const itemId of param.valid_parameter_item_ids) {
+    for (const itemId of param.valid_field_ids) {
+      // Renamed from valid_parameter_item_ids
       allIds.add(itemId);
     }
   }

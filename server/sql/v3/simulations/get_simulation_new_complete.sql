@@ -189,7 +189,7 @@ WITH user_departments AS (
             GROUP BY p.id, p.name, p.description,  p.document_parameter, p.persona_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
-                COUNT(fd.field_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
+                COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(udi.ids)) > 0
                 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                               JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
                               WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
@@ -235,7 +235,7 @@ WITH user_departments AS (
             ) as parameter_items_list
             FROM parameter_items_data pid
         ),
-        parameter_item_mapping_data AS (
+        field_mapping_data AS (
             SELECT COALESCE(
                 jsonb_object_agg(
                     pid.id::text,
@@ -247,7 +247,7 @@ WITH user_departments AS (
                     )
                 ),
                 '{}'::jsonb
-            ) as parameter_item_mapping
+            ) as field_mapping
             FROM parameter_items_data pid
         ),
         scenario_persona_data AS (
@@ -326,7 +326,7 @@ WITH user_departments AS (
                             WHERE dmb.id = ANY(sdd.document_ids)),
                             '{}'::jsonb
                         ),
-                        'parameter_item_mapping', COALESCE(
+                        'field_mapping', COALESCE(
                             (SELECT jsonb_object_agg(
                                 pid.id::text,
                                 jsonb_build_object(
@@ -434,7 +434,7 @@ WITH user_departments AS (
             rmd.rubric_mapping,
             dmd.department_mapping,
             pmd.parameter_mapping,
-            pimd.parameter_item_mapping,
+            fmd.field_mapping,
             pild.parameter_items_list,
             pdi.department_id as primary_department_id
         FROM simulation_base sb
@@ -446,7 +446,7 @@ WITH user_departments AS (
         LEFT JOIN valid_videos vv ON true
         LEFT JOIN rubric_mapping_data rmd ON true
         LEFT JOIN parameter_mapping_data pmd ON true
-        LEFT JOIN parameter_item_mapping_data pimd ON true
+        LEFT JOIN field_mapping_data fmd ON true
         LEFT JOIN parameter_items_list_data pild ON true
         LEFT JOIN scenario_mapping_complete smc ON true
         LEFT JOIN video_mapping_data vmd ON true

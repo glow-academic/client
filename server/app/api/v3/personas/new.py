@@ -17,7 +17,7 @@ from app.utils.schema import (
     AgentMappingItem,
     DepartmentMapping,
     DepartmentMappingItem,
-    ParameterItemMapping,
+    FieldMapping,
     ParameterMapping,
 )
 from app.utils.sql_helper import load_sql
@@ -69,7 +69,7 @@ class PersonaDetailResponse(BaseModel):
     agent_mapping: AgentMapping
     department_mapping: DepartmentMapping
     parameter_mapping: ParameterMapping
-    parameter_item_mapping: ParameterItemMapping
+    field_mapping: FieldMapping
 
     # Parameter fields
     valid_parameter_ids: list[str]
@@ -204,14 +204,14 @@ async def get_persona_new(
                     )
 
         # Parse parameter item mapping
-        parameter_item_mapping_data = parse_jsonb(result.get("parameter_item_mapping"))
-        parameter_item_mapping: ParameterItemMapping = {}
-        if isinstance(parameter_item_mapping_data, dict):
-            for item_id, idata in parameter_item_mapping_data.items():
+        field_mapping_data = parse_jsonb(result.get("field_mapping"))
+        field_mapping: FieldMapping = {}
+        if isinstance(field_mapping_data, dict):
+            for item_id, idata in field_mapping_data.items():
                 if isinstance(idata, dict):
-                    from app.utils.schema import ParameterItemMappingItem
+                    from app.utils.schema import FieldMappingItem
 
-                    parameter_item_mapping[item_id] = ParameterItemMappingItem(
+                    field_mapping[item_id] = FieldMappingItem(
                         name=idata.get("name", ""),
                         description=idata.get("description", ""),
                         parameter_id=idata.get("parameter_id", ""),
@@ -319,7 +319,7 @@ async def get_persona_new(
             agent_mapping=agent_mapping,
             department_mapping=department_mapping,
             parameter_mapping=parameter_mapping,
-            parameter_item_mapping=parameter_item_mapping,
+            field_mapping=field_mapping,
             # Parameter fields
             valid_parameter_ids=valid_parameter_ids,
             valid_parameter_item_ids=valid_parameter_item_ids,
