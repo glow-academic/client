@@ -15,6 +15,7 @@ import {
   PlusCircle,
   Power,
   RotateCcw,
+  Search,
   Shuffle,
   Target,
   Trash2,
@@ -441,6 +442,7 @@ export default function Scenario({
 
   // Store personaIds separately since it's now in junction table
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
+  const [personaSearchTerm, setPersonaSearchTerm] = useState<string>("");
   // Store problem statement ID for version selection
   const [selectedProblemStatementId, setSelectedProblemStatementId] = useState<
     string | null
@@ -3228,75 +3230,102 @@ export default function Scenario({
               </Tooltip>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 max-h-[272px] overflow-y-auto py-2 px-2">
-              {validPersonaIds.map((personaId) => {
-                const persona = personaMapping[personaId];
-                if (!persona) return null;
+          <CardContent className="space-y-3 px-6">
+            {/* Search bar */}
+            <div className="flex h-9 items-center gap-2 border-b px-0">
+              <Search className="size-4 shrink-0 opacity-50" />
+              <input
+                type="text"
+                placeholder="Search personas..."
+                value={personaSearchTerm}
+                onChange={(e) => setPersonaSearchTerm(e.target.value)}
+                className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
 
-                const IconComponent =
-                  getPersonaIconComponent(persona.icon) || Brain;
-                const hexColor = persona.color || "#64748b";
-                const generateGradient = (hex: string) => {
-                  const cleanHex = hex.replace("#", "");
-                  const r = parseInt(cleanHex.substr(0, 2), 16);
-                  const g = parseInt(cleanHex.substr(2, 2), 16);
-                  const b = parseInt(cleanHex.substr(4, 2), 16);
-                  const lighterR = Math.min(255, r + 60);
-                  const lighterG = Math.min(255, g + 60);
-                  const lighterB = Math.min(255, b + 60);
-                  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                  return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                };
+            {/* Filtered personas grid */}
+            <div className="grid grid-cols-2 gap-4 max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
+              {useMemo(() => {
+                if (!personaSearchTerm.trim()) {
+                  return validPersonaIds;
+                }
+                const searchLower = personaSearchTerm.toLowerCase();
+                return validPersonaIds.filter((personaId) => {
+                  const persona = personaMapping[personaId];
+                  if (!persona) return false;
+                  const searchText =
+                    `${persona.name} ${persona.description || ""}`.toLowerCase();
+                  return searchText.includes(searchLower);
+                });
+              }, [validPersonaIds, personaMapping, personaSearchTerm]).map(
+                (personaId) => {
+                  const persona = personaMapping[personaId];
+                  if (!persona) return null;
 
-                const isSelected = selectedPersonaIds.includes(personaId);
+                  const IconComponent =
+                    getPersonaIconComponent(persona.icon) || Brain;
+                  const hexColor = persona.color || "#64748b";
+                  const generateGradient = (hex: string) => {
+                    const cleanHex = hex.replace("#", "");
+                    const r = parseInt(cleanHex.substr(0, 2), 16);
+                    const g = parseInt(cleanHex.substr(2, 2), 16);
+                    const b = parseInt(cleanHex.substr(4, 2), 16);
+                    const lighterR = Math.min(255, r + 60);
+                    const lighterG = Math.min(255, g + 60);
+                    const lighterB = Math.min(255, b + 60);
+                    const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                    return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
+                  };
 
-                return (
-                  <button
-                    key={personaId}
-                    type="button"
-                    onClick={() => {
-                      if (isReadonly) return;
-                      const newIds = isSelected
-                        ? selectedPersonaIds.filter((id) => id !== personaId)
-                        : [...selectedPersonaIds, personaId];
-                      handlePersonaSelect(newIds);
-                    }}
-                    disabled={isReadonly}
-                    className={cn(
-                      "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                      "hover:shadow-md hover:bg-accent/50",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      "disabled:pointer-events-none disabled:opacity-50",
-                      isSelected && "ring-2 ring-primary bg-accent"
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="p-2 rounded-lg shadow-lg flex-shrink-0"
-                        style={{
-                          background: generateGradient(hexColor),
-                        }}
-                      >
-                        <IconComponent className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">
-                          {persona.name}
+                  const isSelected = selectedPersonaIds.includes(personaId);
+
+                  return (
+                    <button
+                      key={personaId}
+                      type="button"
+                      onClick={() => {
+                        if (isReadonly) return;
+                        const newIds = isSelected
+                          ? selectedPersonaIds.filter((id) => id !== personaId)
+                          : [...selectedPersonaIds, personaId];
+                        handlePersonaSelect(newIds);
+                      }}
+                      disabled={isReadonly}
+                      className={cn(
+                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                        "hover:shadow-md hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        "disabled:pointer-events-none disabled:opacity-50",
+                        isSelected && "ring-2 ring-primary bg-accent"
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                          style={{
+                            background: generateGradient(hexColor),
+                          }}
+                        >
+                          <IconComponent className="h-5 w-5 text-white" />
                         </div>
-                        {persona.description && (
-                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {persona.description}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">
+                            {persona.name}
                           </div>
+                          {persona.description && (
+                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {persona.description}
+                            </div>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                         )}
                       </div>
-                      {isSelected && (
-                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                }
+              )}
             </div>
           </CardContent>
         </Card>
@@ -3506,7 +3535,7 @@ export default function Scenario({
                     </Tooltip>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-6">
                   <div className="[&_label.text-sm.font-medium]:hidden">
                     <ParameterSelector
                       parameterMapping={{ [paramId]: param }}

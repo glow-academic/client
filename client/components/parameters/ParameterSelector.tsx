@@ -6,7 +6,7 @@
  * 07/21/2025
  */
 "use client";
-import { Check, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -223,6 +223,9 @@ export function ParameterSelector({
   disabled = false,
   maxItemsPerParameter,
 }: ParameterSelectorProps) {
+  // Search state per parameter
+  const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
+  
   // Group valid parameter items by parameter (from mapping)
   const parameterItemsByParameter = useMemo(() => {
     const grouped: Record<string, string[]> = {};
@@ -545,6 +548,20 @@ export function ParameterSelector({
             );
           } else {
             // Non-numerical parameter rendering with card grid
+            const searchTerm = searchTerms[parameterId] || "";
+            const filteredItemIds = useMemo(() => {
+              if (!searchTerm.trim()) {
+                return itemIds;
+              }
+              const searchLower = searchTerm.toLowerCase();
+              return itemIds.filter((itemId) => {
+                const item = parameterItemMapping[itemId];
+                if (!item) return false;
+                const searchText = `${item.name} ${item.description || ""}`.toLowerCase();
+                return searchText.includes(searchLower);
+              });
+            }, [itemIds, parameterItemMapping, searchTerm]);
+            
             return (
               <div key={parameterId} className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -560,8 +577,25 @@ export function ParameterSelector({
                   </p>
                 )}
 
-                <div className="grid grid-cols-5 gap-3 max-h-[184px] overflow-y-auto py-2 px-2">
-                  {itemIds.map((itemId) => {
+                {/* Search bar */}
+                <div className="flex h-9 items-center gap-2 border-b px-0">
+                  <Search className="size-4 shrink-0 opacity-50" />
+                  <input
+                    type="text"
+                    placeholder={`Search ${parameter?.name?.toLowerCase() || "items"}...`}
+                    value={searchTerm}
+                    onChange={(e) =>
+                      setSearchTerms((prev) => ({
+                        ...prev,
+                        [parameterId]: e.target.value,
+                      }))
+                    }
+                    className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-5 gap-3 max-h-[184px] overflow-y-auto py-2">
+                  {filteredItemIds.map((itemId) => {
                     const item = parameterItemMapping[itemId];
                     if (!item) return null;
                     
