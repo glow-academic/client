@@ -7,16 +7,25 @@ export async function GET(
 ) {
   try {
     const { upload_id } = await params;
-    const response = await fetch(
+    // Extract preview query parameter
+    const { searchParams } = new URL(request.url);
+    const preview = searchParams.get("preview") === "true";
+    
+    // Build URL with preview parameter if present
+    const url = new URL(
       `${INTERNAL_HTTP_BASE}/api/v3/uploads/download/${upload_id}`,
-      {
+    );
+    if (preview) {
+      url.searchParams.set("preview", "true");
+    }
+    
+    const response = await fetch(url.toString(), {
         method: "GET",
         headers: {
           // Forward any auth headers if needed
           Cookie: request.headers.get("cookie") || "",
         },
-      },
-    );
+    });
 
     if (!response.ok) {
       const errorText = await response.text();

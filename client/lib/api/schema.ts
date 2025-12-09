@@ -4656,7 +4656,7 @@ export interface paths {
         };
         /**
          * Download Upload
-         * @description Download an upload by ID.
+         * @description Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.
          */
         get: operations["download_upload_api_v3_uploads_download__upload_id__get"];
         put?: never;
@@ -23331,7 +23331,10 @@ export interface operations {
     };
     download_upload_api_v3_uploads_download__upload_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Return preview image for PDFs */
+                preview?: boolean;
+            };
             header?: never;
             path: {
                 upload_id: string;

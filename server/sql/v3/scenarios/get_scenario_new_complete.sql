@@ -409,14 +409,18 @@ document_details_data AS (
                     'document_id', d.id::text,
                     'name', d.name,
                     'updatedAt', d.updated_at::text,
-                    'extension', CASE WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$') ELSE NULL END,
+                    'extension', CASE 
+                        WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$')
+                        WHEN template_u.file_path IS NOT NULL THEN SUBSTRING(template_u.file_path FROM '\\.([^\\.]+)$')
+                        ELSE NULL 
+                    END,
                     'scenario_ids', '[]'::jsonb,
                     'can_edit', true,
                     'can_delete', true,
                     'active', d.active,
-                    'file_path', u.file_path,
-                    'mime_type', u.mime_type,
-                    'upload_id', u.id::text,
+                    'file_path', COALESCE(u.file_path, template_u.file_path),
+                    'mime_type', COALESCE(u.mime_type, template_u.mime_type),
+                    'upload_id', COALESCE(u.id::text, template_u.id::text),
                     'parameter_item_ids', COALESCE((
                         SELECT jsonb_agg(df.field_id::text)
                         FROM document_fields df
@@ -427,6 +431,9 @@ document_details_data AS (
             FROM documents d
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
             LEFT JOIN uploads u ON u.id = du.upload_id
+            LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+            LEFT JOIN templates t ON t.id = dt.template_id
+            LEFT JOIN uploads template_u ON template_u.id = t.upload_id
             WHERE d.id IN (SELECT id FROM document_data)
             AND d.active = true
         ),

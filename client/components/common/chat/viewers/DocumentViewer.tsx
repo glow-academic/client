@@ -1,7 +1,6 @@
 "use client";
 import Markdown from "@/components/common/chat/markdown/Markdown";
 import CodeViewer from "@/components/common/chat/viewers/CodeViewer";
-import HtmlViewer from "@/components/common/chat/viewers/HtmlViewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,6 +53,7 @@ export default function DocumentViewer({
   const [type, setType] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [iframeLoading, setIframeLoading] = useState(true);
 
   // Load document
   useEffect(() => {
@@ -61,30 +61,29 @@ export default function DocumentViewer({
       try {
         setLoading(true);
         setError(null);
+        setIframeLoading(true);
 
-        // Call the API route directly or use blob URL for form documents
-        let response;
+        // Build URL with preview parameter for compact mode
+        let url = "";
         if (isFormDocument && document.upload_id) {
           // For form documents, use upload_id
-          response = await fetch(
-            `/api/uploads/download/${document.upload_id}`,
-            {
-              method: "GET",
-              credentials: "include",
-            },
-          );
+          url = `/api/uploads/download/${document.upload_id}`;
         } else if (document.upload_id) {
           // Use upload_id for download
-          response = await fetch(
-            `/api/uploads/download/${document.upload_id}`,
-            {
-              method: "GET",
-              credentials: "include",
-            },
-          );
+          url = `/api/uploads/download/${document.upload_id}`;
         } else {
           throw new Error("Document upload_id is required");
         }
+
+        // Add preview parameter for compact mode (backend will only generate previews for PDFs)
+        if (compact) {
+          url += "?preview=true";
+        }
+
+        const response = await fetch(url, {
+          method: "GET",
+          credentials: "include",
+        });
 
         if (!response.ok) {
           // Try to get error details from JSON response
@@ -121,7 +120,13 @@ export default function DocumentViewer({
     };
 
     loadDocument();
-  }, [document.document_id, document.file_path, document.name, isFormDocument]);
+  }, [
+    document.document_id,
+    document.name,
+    document.upload_id,
+    isFormDocument,
+    compact,
+  ]);
 
   const typeInfo = getDocumentIconInfo();
 
@@ -142,6 +147,27 @@ export default function DocumentViewer({
           <p className="text-sm text-muted-foreground">
             Failed to load document
           </p>
+        </div>
+      );
+    }
+
+    // PDF preview image (when compact mode returns PNG preview)
+    if (
+      compact &&
+      type?.includes("image/png") &&
+      document.name?.toLowerCase().endsWith(".pdf")
+    ) {
+      return (
+        <div className="w-full h-full">
+          <Image
+            src={content ?? ""}
+            alt={document.name ?? ""}
+            className="w-full h-full object-contain"
+            width={0}
+            height={0}
+            sizes="100vw"
+            unoptimized
+          />
         </div>
       );
     }
@@ -195,12 +221,70 @@ export default function DocumentViewer({
       );
     }
 
+    // HTML viewer - show rendered HTML only (no tabs), similar to TemplatePreview
+    if (type?.includes("text/html") || document.name?.endsWith(".html")) {
+      // Sanitize HTML content for security
+      const sanitizeHtml = (html: string): string => {
+        return html
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+          .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
+          .replace(/on\w+\s*=/gi, "data-removed=")
+          .replace(/javascript:/gi, "data-removed:")
+          .replace(/vbscript:/gi, "data-removed:");
+      };
+      const safeHtml = content ? sanitizeHtml(content) : "";
+
+      if (compact) {
+        // Compact mode: show simplified HTML preview (scaled down)
+        return (
+          <div className="w-full h-full relative overflow-hidden">
+            <iframe
+              sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin"
+              className="w-full h-full border-0 rounded-md"
+              srcDoc={safeHtml}
+              title={document.name ?? ""}
+              style={{
+                transform: "scale(0.25)",
+                transformOrigin: "top left",
+                width: "400%",
+                height: "400%",
+              }}
+            />
+          </div>
+        );
+      }
+
+      // Non-compact: show rendered HTML only (no tabs), like TemplatePreview
+      return (
+        <div className="w-full h-full relative min-h-[500px]">
+          {iframeLoading && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/70">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          )}
+          <iframe
+            sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin"
+            className="w-full h-full border-0 rounded-md"
+            srcDoc={safeHtml}
+            title={document.name ?? ""}
+            onLoad={() => setIframeLoading(false)}
+            style={{
+              minWidth: "800px",
+              minHeight: "500px",
+              ...(iframeLoading
+                ? { visibility: "hidden" }
+                : { visibility: "visible" }),
+            }}
+          />
+        </div>
+      );
+    }
+
     // For compact view, show all text-based files as simple text/markdown
     if (
       compact &&
       (type?.startsWith("text/") ||
         isCodeByName(document.name) ||
-        document.name?.endsWith(".html") ||
         document.name?.endsWith(".md"))
     ) {
       return (
@@ -234,15 +318,6 @@ export default function DocumentViewer({
       return (
         <div className="w-full h-full flex flex-col">
           <CodeViewer name={document.name} value={content ?? ""} />
-        </div>
-      );
-    }
-
-    // HTML viewer with tabs for rendered and source (non-compact only)
-    if (type?.includes("text/html") || document.name?.endsWith(".html")) {
-      return (
-        <div className="w-full h-full flex flex-col">
-          <HtmlViewer name={document.name} content={content ?? ""} />
         </div>
       );
     }

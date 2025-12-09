@@ -10283,7 +10283,7 @@
           "uploads"
         ],
         "summary": "Download Upload",
-        "description": "Download an upload by ID.",
+        "description": "Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.",
         "operationId": "download_upload_api_v3_uploads_download__upload_id__get",
         "parameters": [
           {
@@ -10294,6 +10294,18 @@
               "type": "string",
               "title": "Upload Id"
             }
+          },
+          {
+            "name": "preview",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Return preview image for PDFs",
+              "default": false,
+              "title": "Preview"
+            },
+            "description": "Return preview image for PDFs"
           }
         ],
         "responses": {
