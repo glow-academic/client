@@ -3283,7 +3283,7 @@ export default function Scenario({
             </div>
 
             {/* Filtered personas grid */}
-            <div className="grid grid-cols-2 gap-4 max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
+            <div className="grid grid-cols-2 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
               {useMemo(() => {
                 if (!personaSearchTerm.trim()) {
                   return validPersonaIds;
@@ -3467,7 +3467,7 @@ export default function Scenario({
             </div>
 
             {/* Filtered documents grid */}
-            <div className="grid grid-cols-4 gap-4 max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
+            <div className="grid grid-cols-3 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
               {useMemo(() => {
                 if (!documentSearchTerm.trim()) {
                   return validDocumentIds;
@@ -3766,7 +3766,7 @@ export default function Scenario({
                   </div>
 
                   {/* Filtered parameters grid */}
-                  <div className="grid grid-cols-4 gap-4 max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
+                  <div className="grid grid-cols-4 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
                     {filteredParameterIds.map((paramId) => {
                       const param = parameterMapping[paramId];
                       if (!param) return null;
@@ -3786,6 +3786,17 @@ export default function Scenario({
                               ? currentIds.filter((id) => id !== paramId)
                               : [...currentIds, paramId];
                             handleInputChange("parameterIds", newIds);
+
+                            // When unselecting a parameter, also remove all its parameter items (fields)
+                            if (isSelected) {
+                              setCurrentParameterItemIds((prev) =>
+                                prev.filter(
+                                  (itemId) =>
+                                    parameterItemMapping[itemId]
+                                      ?.parameter_id !== paramId
+                                )
+                              );
+                            }
                           }}
                           disabled={isReadonly}
                           className={cn(
