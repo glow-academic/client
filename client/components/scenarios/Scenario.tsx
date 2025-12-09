@@ -1216,7 +1216,7 @@ export default function Scenario({
 
   const generalParameterMapping = useMemo(() => {
     // Top parameter selection is the source of truth for section 4
-    // Show all selected parameters (or all if empty), regardless of whether they have fields
+    // Show all selected parameters (or none if empty), regardless of whether they have fields
     // This allows debugging - parameters with 0 fields will still be visible
     const selectedParamIds = formData.parameterIds || [];
     const conditionalParamIds = new Set<string>();
@@ -1231,13 +1231,20 @@ export default function Scenario({
       }
     });
 
-    // If no parameters selected, include all parameters (empty means "all")
+    // If no parameters selected, show no parameters (empty means "none")
     if (selectedParamIds.length === 0) {
+      // Only include conditional parameters if any fields are selected
+      if (conditionalParamIds.size === 0) {
+        return {};
+      }
+      // Include conditional parameters even if no parameters explicitly selected
       const filtered: typeof parameterMapping = {};
       Object.keys(parameterMapping).forEach((paramId) => {
-        const param = parameterMapping[paramId];
-        if (param) {
-          filtered[paramId] = param;
+        if (conditionalParamIds.has(paramId)) {
+          const param = parameterMapping[paramId];
+          if (param) {
+            filtered[paramId] = param;
+          }
         }
       });
       return filtered;
@@ -1688,7 +1695,7 @@ export default function Scenario({
         case "parameters":
           return selectedPersonaIds.length === 0
             ? "pending"
-            : currentParameterItemIds.length > 0
+            : (formData.parameterIds || []).length > 0
               ? "completed"
               : "active";
         case "content":
@@ -1715,6 +1722,7 @@ export default function Scenario({
       currentParameterItemIds,
       parameterItemMapping,
       formData.problemStatement,
+      formData.parameterIds,
     ]
   );
 
@@ -1805,6 +1813,12 @@ export default function Scenario({
           "Select key documents or reference materials to ground scenario responses.",
         status: getStepStatus("documents"),
         optional: true,
+      },
+      {
+        id: "parameters",
+        title: "Parameters",
+        description: "Select which parameters to include in the scenario.",
+        status: getStepStatus("parameters"),
       },
     ];
 
@@ -2952,38 +2966,6 @@ export default function Scenario({
               </div>
             ) : null}
 
-            {/* Parameter Selection */}
-            {scenarioData?.valid_parameter_ids &&
-            scenarioData.valid_parameter_ids.length > 0 ? (
-              <div className="space-y-2">
-                <Label htmlFor="parameters">Parameters</Label>
-                {formData?.parameterIds !== undefined ? (
-                  <GenericPicker
-                    items={parameterMapping}
-                    itemIds={Array.from(
-                      new Set([
-                        ...(scenarioData.valid_parameter_ids || []),
-                        ...(formData.parameterIds || []),
-                      ])
-                    )}
-                    selectedIds={formData.parameterIds || []}
-                    onSelect={(ids) => handleInputChange("parameterIds", ids)}
-                    getId={(item) => (item as unknown as { id: string }).id}
-                    getLabel={(item) => item.name || ""}
-                    getSearchText={(item) =>
-                      `${item.name} ${item.description || ""}`
-                    }
-                    placeholder="All Parameters"
-                    disabled={isReadonly}
-                    multiSelect={true}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                    groupHeading="Parameters"
-                  />
-                ) : null}
-              </div>
-            ) : null}
-
             {/* Agent Selection */}
             {(() => {
               const scenarioAgentIds =
@@ -3603,10 +3585,78 @@ export default function Scenario({
           </Dialog>
         </Card>
 
+        {/* Step 4: Parameters */}
+        <Card
+          className={`transition-all ${!isEditMode && getStepStatus("parameters") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("parameters") === "pending"
+              ? "opacity-50"
+              : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("parameters") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("parameters") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("parameters") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "4"
+                )}
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">
+                  {steps[3]?.title || ""}
+                </CardTitle>
+                <CardDescription>{steps[3]?.description || ""}</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-4">
+            {/* Parameter Selection */}
+            {scenarioData?.valid_parameter_ids &&
+            scenarioData.valid_parameter_ids.length > 0 ? (
+              <div className="space-y-2">
+                <Label htmlFor="parameters">Parameters</Label>
+                {formData?.parameterIds !== undefined ? (
+                  <GenericPicker
+                    items={parameterMapping}
+                    itemIds={Array.from(
+                      new Set([
+                        ...(scenarioData.valid_parameter_ids || []),
+                        ...(formData.parameterIds || []),
+                      ])
+                    )}
+                    selectedIds={formData.parameterIds || []}
+                    onSelect={(ids) => handleInputChange("parameterIds", ids)}
+                    getId={(item) => (item as unknown as { id: string }).id}
+                    getLabel={(item) => item.name || ""}
+                    getSearchText={(item) =>
+                      `${item.name} ${item.description || ""}`
+                    }
+                    placeholder="Select Parameters"
+                    disabled={isReadonly}
+                    multiSelect={true}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
+                    groupHeading="Parameters"
+                  />
+                ) : null}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+
         {/* Individual Parameter Sections */}
         {Object.entries(generalParameterMapping).map(
           ([paramId, param], index) => {
-            const stepIndex = 3 + index; // After basic (0), persona (1), documents (2)
+            const stepIndex = 4 + index; // After basic (0), persona (1), documents (2), parameters (3)
             const stepId = `parameter-${paramId}`;
             const stepStatus = getStepStatus(stepId);
             const validItemsForParam = validGeneralParameterItemIds.filter(
@@ -3734,340 +3784,366 @@ export default function Scenario({
           }
         )}
 
-        {/* Step 5: Content */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("content") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("content") === "completed"
-                    ? "bg-green-500 text-white"
-                    : getStepStatus("content") === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                }`}
-              >
-                {getStepStatus("content") === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  "5"
-                )}
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-lg">
-                  {steps[4]?.title || ""}
-                </CardTitle>
-                <CardDescription>{steps[4]?.description || ""}</CardDescription>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {Object.keys(problemStatementMapping).length > 0 && (
+        {/* Content Step */}
+        {(() => {
+          const contentStepIndex = steps.findIndex(
+            (step) => step.id === "content"
+          );
+          const contentStepNumber =
+            contentStepIndex >= 0 ? contentStepIndex + 1 : steps.length;
+          return (
+            <Card
+              className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""} ${
+                !isEditMode && getStepStatus("content") === "pending"
+                  ? "opacity-50"
+                  : ""
+              }`}
+            >
+              <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      getStepStatus("content") === "completed"
+                        ? "bg-green-500 text-white"
+                        : getStepStatus("content") === "active"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                    }`}
+                  >
+                    {getStepStatus("content") === "completed" ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      String(contentStepNumber)
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">
+                      {contentStepIndex >= 0
+                        ? steps[contentStepIndex]?.title || ""
+                        : ""}
+                    </CardTitle>
+                    <CardDescription>
+                      {contentStepIndex >= 0
+                        ? steps[contentStepIndex]?.description || ""
+                        : ""}
+                    </CardDescription>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
-                  <GenericPicker
-                    items={problemStatementMapping}
-                    itemIds={Object.keys(problemStatementMapping)}
-                    selectedIds={
-                      selectedProblemStatementId
-                        ? [selectedProblemStatementId]
-                        : []
-                    }
-                    onSelect={(ids) => {
-                      const id = ids[0] || null;
-                      setSelectedProblemStatementId(id);
-                      if (id && problemStatementMapping[id]) {
-                        handleInputChange(
-                          "problemStatement",
-                          problemStatementMapping[id].problem_statement
-                        );
-                      }
-                    }}
-                    getId={(item) => (item as unknown as { id: string }).id}
-                    getLabel={(item) => {
-                      const date = new Date(item.updated_at);
-                      return `Version ${date.toLocaleDateString()}`;
-                    }}
-                    getSearchText={(item) => {
-                      const date = new Date(item.updated_at);
-                      const preview = item.problem_statement.substring(0, 100);
-                      return `${date.toLocaleDateString()} ${preview}`;
-                    }}
-                    renderButton={(selectedItems) => {
-                      if (selectedItems.length === 0) {
-                        return "New Problem Statement";
-                      }
-                      const problemStatement = selectedItems[0];
-                      const date = problemStatement?.updated_at
-                        ? new Date(problemStatement.updated_at)
-                        : new Date();
-                      return `Version ${date.toLocaleDateString()}`;
-                    }}
-                    renderItem={(item, isSelected) => {
-                      const date = new Date(item.updated_at);
-                      const preview = item.problem_statement.substring(0, 100);
-                      return (
-                        <div className="flex flex-col items-start py-3 w-full">
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-2">
-                              <Check
-                                className={cn(
-                                  "h-4 w-4",
-                                  isSelected ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <span className="font-medium">
-                                {date.toLocaleDateString()}{" "}
-                                {date.toLocaleTimeString()}
+                  {Object.keys(problemStatementMapping).length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <GenericPicker
+                        items={problemStatementMapping}
+                        itemIds={Object.keys(problemStatementMapping)}
+                        selectedIds={
+                          selectedProblemStatementId
+                            ? [selectedProblemStatementId]
+                            : []
+                        }
+                        onSelect={(ids) => {
+                          const id = ids[0] || null;
+                          setSelectedProblemStatementId(id);
+                          if (id && problemStatementMapping[id]) {
+                            handleInputChange(
+                              "problemStatement",
+                              problemStatementMapping[id].problem_statement
+                            );
+                          }
+                        }}
+                        getId={(item) => (item as unknown as { id: string }).id}
+                        getLabel={(item) => {
+                          const date = new Date(item.updated_at);
+                          return `Version ${date.toLocaleDateString()}`;
+                        }}
+                        getSearchText={(item) => {
+                          const date = new Date(item.updated_at);
+                          const preview = item.problem_statement.substring(
+                            0,
+                            100
+                          );
+                          return `${date.toLocaleDateString()} ${preview}`;
+                        }}
+                        renderButton={(selectedItems) => {
+                          if (selectedItems.length === 0) {
+                            return "New Problem Statement";
+                          }
+                          const problemStatement = selectedItems[0];
+                          const date = problemStatement?.updated_at
+                            ? new Date(problemStatement.updated_at)
+                            : new Date();
+                          return `Version ${date.toLocaleDateString()}`;
+                        }}
+                        renderItem={(item, isSelected) => {
+                          const date = new Date(item.updated_at);
+                          const preview = item.problem_statement.substring(
+                            0,
+                            100
+                          );
+                          return (
+                            <div className="flex flex-col items-start py-3 w-full">
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <Check
+                                    className={cn(
+                                      "h-4 w-4",
+                                      isSelected ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <span className="font-medium">
+                                    {date.toLocaleDateString()}{" "}
+                                    {date.toLocaleTimeString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                {preview}
+                                {item.problem_statement.length > 100
+                                  ? "..."
+                                  : ""}
                               </span>
                             </div>
-                          </div>
-                          <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {preview}
-                            {item.problem_statement.length > 100 ? "..." : ""}
-                          </span>
-                        </div>
-                      );
-                    }}
-                    disabled={isReadonly}
-                    multiSelect={false}
-                    hideSelectedChips={true}
-                    buttonClassName="h-9 justify-between"
-                    groupHeading="Version History"
-                    placeholder="Select problem statement version..."
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedProblemStatementId(null);
-                      handleInputChange("problemStatement", "");
-                    }}
-                    disabled={isReadonly}
-                    className="h-9"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    New
-                  </Button>
-                </div>
-              )}
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={isUploadingImage || isReadonly}
-                className="hidden"
-              />
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => {
-                  if (
-                    formData.problemStatement &&
-                    formData.problemStatement.trim()
-                  ) {
-                    setShowRegenerationDialog(true);
-                  } else {
-                    handleGenerateScenario(undefined, true);
-                  }
-                }}
-                disabled={isSubmitting || isGeneratingScenario || isReadonly}
-              >
-                {isGeneratingScenario ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {formData.problemStatement
-                      ? "Regenerating..."
-                      : "Generating..."}
-                  </>
-                ) : formData.problemStatement ? (
-                  "Regenerate"
-                ) : (
-                  "Generate"
-                )}
-              </Button>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleResetContent}
-                    disabled={isReadonly}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset</TooltipContent>
-              </Tooltip>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Image Preview or Upload Card */}
-            {useImage && (
-              <div className="mb-4 w-1/4">
-                {image ? (
-                  <ImagePreviewCard
-                    image={image}
-                    onRemove={() => setImage(null)}
-                    showActions={!isReadonly}
-                  />
-                ) : (
-                  <div
-                    onClick={() => {
-                      if (!isReadonly && !isUploadingImage) {
-                        imageInputRef.current?.click();
-                      }
-                    }}
-                    className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground hover:bg-muted/50 transition-colors bg-muted/20"
-                  >
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground text-center px-4">
-                      Click to upload image
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="space-y-2">
-              <Textarea
-                id="description"
-                data-testid="input-scenario-problem-statement"
-                value={formData.problemStatement || ""}
-                onChange={(e) => {
-                  handleInputChange("problemStatement", e.target.value);
-                  // Clear selected version when user manually edits
-                  if (selectedProblemStatementId) {
-                    setSelectedProblemStatementId(null);
-                  }
-                }}
-                placeholder="Enter a custom problem statement or leave blank to auto-generate..."
-                className="min-h-[120px]"
-                disabled={isReadonly}
-              />
-            </div>
-
-            {/* Use Image and Use Objectives Switches */}
-            <div className="space-y-4 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="use-image"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Image
-                      className="h-3.5 w-3.5 text-muted-foreground"
-                      aria-label="Image icon"
-                    />
-                    Use Image
-                  </Label>
-                  <Switch
-                    id="use-image"
-                    checked={useImage}
-                    onCheckedChange={(checked) => {
-                      setUseImage(checked);
-                      if (!checked) {
-                        setImage(null);
-                      }
-                    }}
-                    disabled={isReadonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Use scenario background image
-                </p>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="use-objectives"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                    Use Objectives
-                  </Label>
-                  <Switch
-                    id="use-objectives"
-                    checked={useObjectives}
-                    onCheckedChange={(checked) => {
-                      setUseObjectives(checked);
-                      if (checked) {
-                        // Ensure at least one objective when enabled
-                        if (currentObjectives.length === 0) {
-                          setCurrentObjectives([""]);
-                        }
-                      } else {
-                        // Clear objectives when disabled
-                        setCurrentObjectives([]);
-                      }
-                    }}
-                    disabled={isReadonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Use learning objectives
-                </p>
-              </div>
-            </div>
-
-            {/* Objectives List - Only visible when useObjectives is true */}
-            {useObjectives && (
-              <div className="space-y-2">
-                {currentObjectives.length === 0 && (
-                  <div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={addObjective}
-                      disabled={isReadonly}
-                      size="sm"
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-                    </Button>
-                  </div>
-                )}
-                {currentObjectives.map((objective, index) => (
-                  <ObjectiveInputWithAutocomplete
-                    key={`objective-${index}`}
-                    index={index}
-                    value={objective || ""}
-                    onChange={(value) => updateObjective(index, value)}
-                    placeholder={`Learning objective ${index + 1}`}
-                    suggestions={objectivesHistory}
-                    disabled={isReadonly}
-                    draggedObjectiveIndex={draggedObjectiveIndex}
-                    onDragStart={(e) => handleDragStartObjective(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDropObjective(e, index)}
-                    onRemove={() => removeObjective(index)}
-                    totalObjectives={currentObjectives.length}
-                    useObjectives={useObjectives}
-                  />
-                ))}
-
-                {currentObjectives.length < 3 &&
-                  currentObjectives.length > 0 && (
-                    <div>
+                          );
+                        }}
+                        disabled={isReadonly}
+                        multiSelect={false}
+                        hideSelectedChips={true}
+                        buttonClassName="h-9 justify-between"
+                        groupHeading="Version History"
+                        placeholder="Select problem statement version..."
+                      />
                       <Button
                         type="button"
-                        variant="secondary"
-                        onClick={addObjective}
-                        disabled={isReadonly}
                         size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedProblemStatementId(null);
+                          handleInputChange("problemStatement", "");
+                        }}
+                        disabled={isReadonly}
+                        className="h-9"
                       >
-                        <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                        <Plus className="mr-2 h-4 w-4" />
+                        New
                       </Button>
                     </div>
                   )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploadingImage || isReadonly}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      if (
+                        formData.problemStatement &&
+                        formData.problemStatement.trim()
+                      ) {
+                        setShowRegenerationDialog(true);
+                      } else {
+                        handleGenerateScenario(undefined, true);
+                      }
+                    }}
+                    disabled={
+                      isSubmitting || isGeneratingScenario || isReadonly
+                    }
+                  >
+                    {isGeneratingScenario ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {formData.problemStatement
+                          ? "Regenerating..."
+                          : "Generating..."}
+                      </>
+                    ) : formData.problemStatement ? (
+                      "Regenerate"
+                    ) : (
+                      "Generate"
+                    )}
+                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleResetContent}
+                        disabled={isReadonly}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reset</TooltipContent>
+                  </Tooltip>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Image Preview or Upload Card */}
+                {useImage && (
+                  <div className="mb-4 w-1/4">
+                    {image ? (
+                      <ImagePreviewCard
+                        image={image}
+                        onRemove={() => setImage(null)}
+                        showActions={!isReadonly}
+                      />
+                    ) : (
+                      <div
+                        onClick={() => {
+                          if (!isReadonly && !isUploadingImage) {
+                            imageInputRef.current?.click();
+                          }
+                        }}
+                        className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground hover:bg-muted/50 transition-colors bg-muted/20"
+                      >
+                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground text-center px-4">
+                          Click to upload image
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Textarea
+                    id="description"
+                    data-testid="input-scenario-problem-statement"
+                    value={formData.problemStatement || ""}
+                    onChange={(e) => {
+                      handleInputChange("problemStatement", e.target.value);
+                      // Clear selected version when user manually edits
+                      if (selectedProblemStatementId) {
+                        setSelectedProblemStatementId(null);
+                      }
+                    }}
+                    placeholder="Enter a custom problem statement or leave blank to auto-generate..."
+                    className="min-h-[120px]"
+                    disabled={isReadonly}
+                  />
+                </div>
+
+                {/* Use Image and Use Objectives Switches */}
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="use-image"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Image
+                          className="h-3.5 w-3.5 text-muted-foreground"
+                          aria-label="Image icon"
+                        />
+                        Use Image
+                      </Label>
+                      <Switch
+                        id="use-image"
+                        checked={useImage}
+                        onCheckedChange={(checked) => {
+                          setUseImage(checked);
+                          if (!checked) {
+                            setImage(null);
+                          }
+                        }}
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Use scenario background image
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="use-objectives"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                        Use Objectives
+                      </Label>
+                      <Switch
+                        id="use-objectives"
+                        checked={useObjectives}
+                        onCheckedChange={(checked) => {
+                          setUseObjectives(checked);
+                          if (checked) {
+                            // Ensure at least one objective when enabled
+                            if (currentObjectives.length === 0) {
+                              setCurrentObjectives([""]);
+                            }
+                          } else {
+                            // Clear objectives when disabled
+                            setCurrentObjectives([]);
+                          }
+                        }}
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Use learning objectives
+                    </p>
+                  </div>
+                </div>
+
+                {/* Objectives List - Only visible when useObjectives is true */}
+                {useObjectives && (
+                  <div className="space-y-2">
+                    {currentObjectives.length === 0 && (
+                      <div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={addObjective}
+                          disabled={isReadonly}
+                          size="sm"
+                        >
+                          <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                        </Button>
+                      </div>
+                    )}
+                    {currentObjectives.map((objective, index) => (
+                      <ObjectiveInputWithAutocomplete
+                        key={`objective-${index}`}
+                        index={index}
+                        value={objective || ""}
+                        onChange={(value) => updateObjective(index, value)}
+                        placeholder={`Learning objective ${index + 1}`}
+                        suggestions={objectivesHistory}
+                        disabled={isReadonly}
+                        draggedObjectiveIndex={draggedObjectiveIndex}
+                        onDragStart={(e) => handleDragStartObjective(e, index)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDropObjective(e, index)}
+                        onRemove={() => removeObjective(index)}
+                        totalObjectives={currentObjectives.length}
+                        useObjectives={useObjectives}
+                      />
+                    ))}
+
+                    {currentObjectives.length < 3 &&
+                      currentObjectives.length > 0 && (
+                        <div>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={addObjective}
+                            disabled={isReadonly}
+                            size="sm"
+                          >
+                            <PlusCircle className="h-4 w-4 mr-2" /> Add
+                            objective
+                          </Button>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
       </div>
 
       {/* Action Buttons */}

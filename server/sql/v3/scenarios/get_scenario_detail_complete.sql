@@ -261,8 +261,21 @@ valid_personas_filtered AS (
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.color, p.icon, imc.image_model
     HAVING 
-        COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
-        OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        (
+            COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
+            OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        )
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM persona_fields pf
+            JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+            JOIN parameters param ON param.id = pfield.parameter_id
+            WHERE pf.persona_id = p.id
+            AND pf.active = true
+            AND pfield.active = true
+            AND param.active = true
+            AND param.video_parameter = true
+        )
 ),
 persona_data AS (
     SELECT 
@@ -367,8 +380,21 @@ valid_documents_filtered AS (
     WHERE d.active = true
     GROUP BY d.id, d.name, u.file_path, u.mime_type
     HAVING 
-        COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY(ud.dept_ids)) > 0
-        OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        (
+            COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY(ud.dept_ids)) > 0
+            OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        )
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM document_fields df
+            JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+            JOIN parameters param ON param.id = pfield.parameter_id
+            WHERE df.document_id = d.id
+            AND df.active = true
+            AND pfield.active = true
+            AND param.active = true
+            AND param.video_parameter = true
+        )
 ),
 document_data AS (
     SELECT 

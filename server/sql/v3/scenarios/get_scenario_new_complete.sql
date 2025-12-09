@@ -104,8 +104,21 @@ persona_data AS (
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.color, p.icon, imc.image_model
     HAVING 
-        COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        (
+            COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
+            OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        )
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM persona_fields pf
+            JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+            JOIN parameters param ON param.id = pfield.parameter_id
+            WHERE pf.persona_id = p.id
+            AND pf.active = true
+            AND pfield.active = true
+            AND param.active = true
+            AND param.video_parameter = true
+        )
     ORDER BY p.name
 ),
 -- Persona parameter relationships: direct (parameter_personas) and via fields (persona_fields → parameter_fields)
@@ -196,8 +209,21 @@ document_data AS (
     WHERE d.active = true
     GROUP BY d.id, d.name
     HAVING 
-        COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        (
+            COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT id FROM user_departments)) > 0
+            OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        )
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM document_fields df
+            JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+            JOIN parameters param ON param.id = pfield.parameter_id
+            WHERE df.document_id = d.id
+            AND df.active = true
+            AND pfield.active = true
+            AND param.active = true
+            AND param.video_parameter = true
+        )
     ORDER BY d.name
 ),
 -- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
