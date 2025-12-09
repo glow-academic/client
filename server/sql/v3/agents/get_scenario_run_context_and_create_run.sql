@@ -55,7 +55,7 @@ runs_today AS (
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
--- Get default settings (for key lookup via setting_provider_keys)
+-- Get active settings for profile (for key lookup and theme tokens)
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
@@ -67,10 +67,31 @@ default_settings AS (
       )
     LIMIT 1
 ),
+profile_primary_department AS (
+    -- Get profile's primary department ID (only for authenticated users)
+    SELECT pd.department_id
+    FROM final_profile fp
+    JOIN profile_departments pd ON pd.profile_id = fp.final_profile_id
+    WHERE fp.final_profile_id IS NOT NULL
+      AND pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
+),
+dept_specific_settings AS (
+    -- Get department-specific settings (if primary_department_id exists)
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    WHERE s.active = true 
+      AND sd.active = true
+    LIMIT 1
+),
 active_settings AS (
-    -- Use default settings, fall back to any active settings
+    -- Prefer department-specific, then default, then any active
     SELECT 
         COALESCE(
+            (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
             (SELECT id FROM settings WHERE active = true LIMIT 1)
         ) as settings_id
@@ -123,19 +144,25 @@ context_data AS (
         ) as documents,
         
         -- Document templates data (aggregated as JSON array for template documents)
+        -- Includes all parent document info needed for child creation
         COALESCE(
             (SELECT json_agg(
                 json_build_object(
                     'document_id', d.id::text,
                     'document_name', d.name,
+                    'document_description', COALESCE(d.description, ''),
+                    'classify_agent_id', d.classify_agent_id::text,
+                    'document_agent_id', d.document_agent_id::text,
                     'template_args', t.args,
-                    'template_upload_id', t.upload_id::text
+                    'template_upload_id', t.upload_id::text,
+                    'template_file_path', u.file_path
                 )
                 ORDER BY array_position(p.document_ids, d.id)
             )
             FROM documents d
             INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
             INNER JOIN templates t ON t.id = dt.template_id
+            INNER JOIN uploads u ON u.id = t.upload_id
             WHERE d.id = ANY(p.document_ids)
               AND d.template = true
             ),
@@ -170,7 +197,23 @@ context_data AS (
         rt.earliest_run_created_at,
         
         -- Final profile ID
-        fp.final_profile_id
+        fp.final_profile_id,
+        
+        -- Theme tokens from settings (for Jinja2 rendering)
+        s.primary_color,
+        s.accent,
+        s.background,
+        s.surface,
+        s.success,
+        s.warning,
+        s.error,
+        s.sidebar_background,
+        s.sidebar_primary,
+        s.chart1,
+        s.chart2,
+        s.chart3,
+        s.chart4,
+        s.chart5
 
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
@@ -193,9 +236,9 @@ context_data AS (
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
     LEFT JOIN providers p_prov ON p_prov.id = m.provider_id
-    CROSS JOIN active_settings act_s
+    CROSS JOIN active_settings act_s_key
     LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
-        AND spk.settings_id = act_s.settings_id 
+        AND spk.settings_id = act_s_key.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
     LEFT JOIN personas pers ON pers.id = p.persona_id
@@ -203,6 +246,8 @@ context_data AS (
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     CROSS JOIN final_profile fp
+    CROSS JOIN active_settings act_s
+    JOIN settings s ON s.id = act_s.settings_id
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
@@ -256,6 +301,21 @@ SELECT
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
+    -- Theme tokens (for Jinja2 rendering)
+    cd.primary_color,
+    cd.accent,
+    cd.background,
+    cd.surface,
+    cd.success,
+    cd.warning,
+    cd.error,
+    cd.sidebar_background,
+    cd.sidebar_primary,
+    cd.chart1,
+    cd.chart2,
+    cd.chart3,
+    cd.chart4,
+    cd.chart5,
     -- Run ID (created in same transaction)
     cr.id::text as run_id
 FROM context_data cd

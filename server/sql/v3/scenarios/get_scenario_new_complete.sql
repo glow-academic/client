@@ -610,9 +610,9 @@ has_template_documents AS (
 -- Determine expected agent role based on flags
 expected_agent_role AS (
     SELECT get_scenario_agent_role(
-        COALESCE($2::boolean, false) as image_enabled,
-        COALESCE($3::boolean, false) as objectives_enabled,
-        (SELECT has_templates FROM has_template_documents) as documents_enabled
+        COALESCE($2::boolean, false),
+        COALESCE($3::boolean, false),
+        (SELECT has_templates FROM has_template_documents)
     ) as role
 ),
 agent_filtered AS (

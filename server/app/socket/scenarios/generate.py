@@ -1,6 +1,7 @@
 """Handler for generate_scenario WebSocket event."""
 
 import json
+import os
 import uuid
 from typing import Any, Type
 
@@ -8,12 +9,15 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
                     ToolsToFinalOutputResult, function_tool, gen_trace_id,
                     trace)
 from agents.items import TResponseInputItem
-from app.main import get_pool, sio
+from app.api.v3.settings.active import (ThemePrimitives, ThemeTokens,
+                                        derive_theme_tokens)
+from app.main import UPLOAD_FOLDER, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
 from app.utils.documents.create_dynamic_document import create_dynamic_document
+from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
@@ -451,6 +455,23 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 "req_per_day": context_row["req_per_day"],
                 "runs_today_count": context_row["runs_today_count"],
                 "earliest_run_created_at": context_row["earliest_run_created_at"],
+                # Theme tokens for Jinja2 rendering
+                "theme_primitives": {
+                    "primary": context_row.get("primary_color") or "#000000",
+                    "accent": context_row.get("accent") or "#000000",
+                    "background": context_row.get("background") or "#ffffff",
+                    "surface": context_row.get("surface") or "#ffffff",
+                    "success": context_row.get("success") or "#10b981",
+                    "warning": context_row.get("warning") or "#f59e0b",
+                    "error": context_row.get("error") or "#ef4444",
+                    "sidebarBackground": context_row.get("sidebar_background") or "#ffffff",
+                    "sidebarPrimary": context_row.get("sidebar_primary") or "#000000",
+                    "chart1": context_row.get("chart1") or "#8884d8",
+                    "chart2": context_row.get("chart2") or "#82ca9d",
+                    "chart3": context_row.get("chart3") or "#ffc658",
+                    "chart4": context_row.get("chart4") or "#ff7300",
+                    "chart5": context_row.get("chart5") or "#0088fe",
+                },
             }
 
             # Format persona info if persona was provided
@@ -657,29 +678,82 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         # Use the first available template (typically there will be only one)
                         parent_template = document_templates[0]
                         parent_document_id = parent_template.get("document_id", "")
+                        template_file_path = parent_template.get("template_file_path", "")
+                        parent_name = parent_template.get("document_name", "")
+                        parent_description = parent_template.get("document_description", "")
+                        classify_agent_id = parent_template.get("classify_agent_id", "")
+                        document_agent_id = parent_template.get("document_agent_id", "")
 
                         if not parent_document_id:
                             return "Error: Could not determine parent template document ID."
 
-                        # Emit Socket.IO event for document creation
+                        if not template_file_path:
+                            return "Error: Parent template document has no template file."
+
+                        # Read template HTML file (no SQL needed - file_path already in context)
+                        full_template_path = UPLOAD_FOLDER / template_file_path
+
+                        if not full_template_path.exists():
+                            return f"Error: Template file not found at {template_file_path}"
+
+                        with open(full_template_path, encoding="utf-8") as f:
+                            template_html = f.read()
+
+                        # Derive theme tokens from primitives (already in context)
+                        theme_primitives = ThemePrimitives(**context["theme_primitives"])
+                        theme_tokens = derive_theme_tokens(theme_primitives)
+
+                        # Render template HTML with Jinja2
+                        try:
+                            rendered_html = render_template(
+                                html=template_html,
+                                context=template_args_dict,
+                                theme_tokens=theme_tokens,
+                            )
+                        except Exception as e:
+                            error_msg = f"Error rendering template: {str(e)}"
+                            logger.error(f"Template rendering failed: {error_msg}", exc_info=True)
+                            return error_msg
+
+                        # Save rendered HTML to file
+                        upload_uuid = uuid.uuid4()
+                        file_path = f"{upload_uuid}.html"
+                        full_path = UPLOAD_FOLDER / file_path
+
+                        # Ensure uploads directory exists
+                        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+                        # Write rendered HTML to file
+                        with open(full_path, "w", encoding="utf-8") as f:
+                            f.write(rendered_html)
+
+                        file_size = len(rendered_html.encode("utf-8"))
+                        child_name = f"{parent_name} (Dynamic)"
+                        child_description = parent_description or ""
+
+                        # Emit Socket.IO event for document creation completion
                         await sio.emit(
                             "scenario_tool_document",
                             {
                                 "trace_id": trace_id,
                                 "parent_document_id": parent_document_id,
-                                "template_args": template_args_dict,
+                                "file_path": file_path,
+                                "mime_type": "text/html",
+                                "file_size": file_size,
+                                "child_name": child_name,
+                                "child_description": child_description,
+                                "classify_agent_id": classify_agent_id,
+                                "document_agent_id": document_agent_id,
                                 "scenario_id": None,  # Optional, can be linked later
-                                "department_id": str(department_id) if department_id else None,
-                                "profile_id": str(final_profile_id) if final_profile_id else None,
                             },
                             room=sid,
                         )
 
                         logger.info(
-                            f"✓ Emitted document creation event: parent={parent_document_id}, "
-                            f"args={list(template_args_dict.keys())}"
+                            f"✓ Rendered and saved document: parent={parent_document_id}, "
+                            f"file_path={file_path}, size={file_size} bytes"
                         )
-                        return "Dynamic document creation initiated. Child document will be created with provided template values."
+                        return "Dynamic document created successfully. Template rendered and saved."
 
                     # If we have a template schema, create a function with individual parameters
                     if template_schema:
