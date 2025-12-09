@@ -330,7 +330,7 @@ export default function Practice({
                 ? ""
                 : String(effectiveProfile?.id || "");
 
-            // Standard mode - use create_practice_scenario WebSocket event
+            // Standard mode - use simulation_text_practice WebSocket event
             // Store toast ID so it can be dismissed when simulation starts
             const practiceToastId = toast.loading(
               "Creating practice scenario...",

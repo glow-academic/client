@@ -33,11 +33,11 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 import VoiceWaveform from "./VoiceWaveform";
-// Note: After ws.json is regenerated with start_voice_response, import and use:
+// Note: After ws.json is regenerated with simulation_voice_start_response, import and use:
 // import type { ServerToClientEvents } from "@/lib/ws/types";
 // type EventPayload<T extends keyof ServerToClientEvents> =
 //   ServerToClientEvents[T] extends (payload: infer P) => unknown ? P : never;
-// type StartVoiceResponsePayload = EventPayload<"start_voice_response">;
+// type StartVoiceResponsePayload = EventPayload<"simulation_voice_start_response">;
 import {
   RealtimeAgent,
   RealtimeSession,
@@ -106,7 +106,7 @@ export default function AttemptInput({
   // Track which Realtime items we've already forwarded to the server
   const processedItemIdsRef = useRef<Set<string>>(new Set());
   // Use strongly typed tool context map from WebSocket event payload
-  // Fallback type until ws.json is regenerated with start_voice_response
+  // Fallback type until ws.json is regenerated with simulation_voice_start_response
   type ToolContextMap = Record<
     string,
     {
@@ -162,7 +162,7 @@ export default function AttemptInput({
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
-      | React.MouseEvent<HTMLButtonElement>,
+      | React.MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
@@ -215,7 +215,7 @@ export default function AttemptInput({
   // TUS upload helper for audio files
   const uploadAudioWithTus = async (
     blob: Blob,
-    metadata: Record<string, string> = {},
+    metadata: Record<string, string> = {}
   ): Promise<string> => {
     return new Promise<string>((resolve, reject) => {
       let tusUploadInstance: tus.Upload | null = null;
@@ -246,7 +246,7 @@ export default function AttemptInput({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({}),
-              },
+              }
             );
 
             const json = await res.json();
@@ -324,26 +324,28 @@ export default function AttemptInput({
         message: string;
       }>((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error("Timeout waiting for stop_voice response"));
+          reject(
+            new Error("Timeout waiting for simulation_voice_stop response")
+          );
         }, 5000);
 
-        socket.once("stop_voice_response", (data) => {
+        socket.once("simulation_voice_stop_response", (data) => {
           clearTimeout(timeout);
           // eslint-disable-next-line no-console
-          console.log("[Voice] Received stop_voice_response:", data);
+          console.log("[Voice] Received simulation_voice_stop_response:", data);
           resolve(data);
         });
 
-        socket.once("stop_voice_error", (data) => {
+        socket.once("simulation_voice_stop_error", (data) => {
           clearTimeout(timeout);
           // eslint-disable-next-line no-console
-          console.error("[Voice] Received stop_voice_error:", data);
+          console.error("[Voice] Received simulation_voice_stop_error:", data);
           reject(new Error(data.message || "Failed to stop voice session"));
         });
 
-        socket.emit("stop_voice", { chat_id: currentChat.id });
+        socket.emit("simulation_voice_stop", { chat_id: currentChat.id });
         // eslint-disable-next-line no-console
-        console.log("[Voice] Emitted stop_voice event");
+        console.log("[Voice] Emitted simulation_voice_stop event");
       });
 
       if (!stopResponse.success) {
@@ -376,10 +378,10 @@ export default function AttemptInput({
     try {
       // Start voice session on server - this will return ephemeral key + tools + config
       // eslint-disable-next-line no-console
-      console.log("[Voice] Emitting start_voice event:", {
+      console.log("[Voice] Emitting simulation_voice_start event:", {
         chat_id: currentChat.id,
       });
-      socket.emit("start_voice", { chat_id: currentChat.id });
+      socket.emit("simulation_voice_start", { chat_id: currentChat.id });
 
       // Wait for server response with ephemeral key, tools, instructions, config, and tool context map
       // Type definition (will use auto-generated types after ws.json regeneration)
@@ -406,14 +408,14 @@ export default function AttemptInput({
             reject(new Error("Timeout waiting for voice session start"));
           }, 10000);
 
-          socket.once("start_voice_response", (data) => {
+          socket.once("simulation_voice_start_response", (data) => {
             clearTimeout(timeout);
             // eslint-disable-next-line no-console
             console.log("[Voice] ===== FULL SERVER RESPONSE =====");
             // eslint-disable-next-line no-console
             console.log(
-              "[Voice] Received start_voice_response (FULL):",
-              JSON.stringify(data, null, 2),
+              "[Voice] Received simulation_voice_start_response (FULL):",
+              JSON.stringify(data, null, 2)
             );
             // eslint-disable-next-line no-console
             console.log("[Voice] Response summary:", {
@@ -435,18 +437,21 @@ export default function AttemptInput({
               resolve(data);
             } else {
               reject(
-                new Error(data.message || "Failed to start voice session"),
+                new Error(data.message || "Failed to start voice session")
               );
             }
           });
 
-          socket.once("start_voice_error", (data) => {
+          socket.once("simulation_voice_start_error", (data) => {
             clearTimeout(timeout);
             // eslint-disable-next-line no-console
-            console.error("[Voice] Received start_voice_error:", data);
+            console.error(
+              "[Voice] Received simulation_voice_start_error:",
+              data
+            );
             reject(new Error(data.message || "Failed to start voice session"));
           });
-        },
+        }
       );
 
       // Store tool context map for later use
@@ -454,7 +459,7 @@ export default function AttemptInput({
       // eslint-disable-next-line no-console
       console.log(
         "[Voice] Stored tool context map:",
-        toolContextMapRef.current,
+        toolContextMapRef.current
       );
 
       // Convert server tools to RealtimeAgent tools
@@ -477,7 +482,7 @@ export default function AttemptInput({
           // eslint-disable-next-line no-console
           console.log(
             `[Voice] Parsed parameters for ${toolDef.name}:`,
-            paramsJson,
+            paramsJson
           );
 
           // Convert JSON schema to zod schema
@@ -525,7 +530,7 @@ export default function AttemptInput({
               message: z
                 .string()
                 .describe(
-                  `Respond as the persona. This is the message that will be said.`,
+                  `Respond as the persona. This is the message that will be said.`
                 ),
             });
           }
@@ -534,13 +539,13 @@ export default function AttemptInput({
           // eslint-disable-next-line no-console
           console.warn(
             `Failed to parse parameters for tool ${toolDef.name}:`,
-            error,
+            error
           );
           parametersSchema = z.object({
             message: z
               .string()
               .describe(
-                `Respond as the persona. This is the message that will be said.`,
+                `Respond as the persona. This is the message that will be said.`
               ),
           });
         }
@@ -554,7 +559,7 @@ export default function AttemptInput({
           async execute(args) {
             // The tool's execute function is called by RealtimeSession
             // The actual forwarding to server happens in session.on("agent_tool_start") handler
-            // Just return a confirmation - streaming is handled via transport events (voice_tool_call_delta/done)
+            // Just return a confirmation - streaming is handled via transport events (simulation_voice_assistant_delta/done)
             // eslint-disable-next-line no-console
             console.log(`[Voice] ===== TOOL EXECUTE CALLED =====`, {
               tool_name: toolDef.name,
@@ -691,17 +696,17 @@ export default function AttemptInput({
         .then((actualConfig) => {
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] ===== ACTUAL SESSION CONFIG (what gets sent to API) =====",
+            "[Voice] ===== ACTUAL SESSION CONFIG (what gets sent to API) ====="
           );
           // eslint-disable-next-line no-console
           console.log(
             "[Voice] Actual session config:",
-            JSON.stringify(actualConfig, null, 2),
+            JSON.stringify(actualConfig, null, 2)
           );
           // eslint-disable-next-line no-console
           console.log(
             "[Voice] Config tools count:",
-            actualConfig.tools?.length || 0,
+            actualConfig.tools?.length || 0
           );
           // eslint-disable-next-line no-console
           console.log(
@@ -720,12 +725,12 @@ export default function AttemptInput({
                     "server_label" in t ? t.server_label : undefined,
                 };
               }
-            }) || [],
+            }) || []
           );
           // eslint-disable-next-line no-console
           console.log(
             "[Voice] Config instructions:",
-            actualConfig.instructions,
+            actualConfig.instructions
           );
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END ACTUAL SESSION CONFIG =====");
@@ -762,7 +767,7 @@ export default function AttemptInput({
           console.log("[Voice] Transport event data:", event);
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSPORT EVENT =====");
-        },
+        }
       );
 
       // Listen for speech started event and transport to server
@@ -786,22 +791,25 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport event",
+              "[Voice] Missing socket or chat_id, cannot transport event"
             );
             return;
           }
 
           // Transport event to server (AttemptMessages will handle optimistic UI)
-          socket.emit("voice_speech_started", {
+          socket.emit("simulation_voice_speech_start", {
             chat_id: currentChat.id,
             item_id: evt.item_id,
           });
 
           // eslint-disable-next-line no-console
-          console.log("[Voice] Transported voice_speech_started to server:", {
-            chat_id: currentChat.id,
-            item_id: evt.item_id,
-          });
+          console.log(
+            "[Voice] Transported simulation_voice_speech_start to server:",
+            {
+              chat_id: currentChat.id,
+              item_id: evt.item_id,
+            }
+          );
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END SPEECH STARTED =====");
 
@@ -818,7 +826,7 @@ export default function AttemptInput({
                   userMediaStreamRef.current,
                   {
                     mimeType: "audio/webm;codecs=opus",
-                  },
+                  }
                 );
 
                 userRecorderRef.current.ondataavailable = (e) => {
@@ -833,17 +841,17 @@ export default function AttemptInput({
               // eslint-disable-next-line no-console
               console.log(
                 "[Voice] Started user audio recording for item:",
-                evt.item_id,
+                evt.item_id
               );
             } catch (err) {
               // eslint-disable-next-line no-console
               console.error(
                 "[Voice] Failed to start user audio recording:",
-                err,
+                err
               );
             }
           })();
-        },
+        }
       );
 
       // Listen for tool call argument deltas and forward to server
@@ -869,13 +877,13 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot forward delta event",
+              "[Voice] Missing socket or chat_id, cannot forward delta event"
             );
             return;
           }
 
           // Forward delta event to server
-          socket.emit("voice_tool_call_delta", {
+          socket.emit("simulation_voice_assistant_delta", {
             chat_id: currentChat.id,
             call_id: evt.call_id,
             item_id: evt.item_id,
@@ -887,7 +895,7 @@ export default function AttemptInput({
           console.log("[Voice] Forwarded tool call delta to server");
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TOOL CALL DELTA =====");
-        },
+        }
       );
 
       // Listen for tool call argument completion and forward to server
@@ -913,13 +921,13 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot forward done event",
+              "[Voice] Missing socket or chat_id, cannot forward done event"
             );
             return;
           }
 
           // Forward done event to server
-          socket.emit("voice_tool_call_done", {
+          socket.emit("simulation_voice_assistant_done", {
             chat_id: currentChat.id,
             call_id: evt.call_id,
             item_id: evt.item_id,
@@ -931,7 +939,7 @@ export default function AttemptInput({
           console.log("[Voice] Forwarded tool call done to server");
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TOOL CALL DONE =====");
-        },
+        }
       );
 
       // Listen for speech stopped event to stop user audio recording
@@ -968,7 +976,7 @@ export default function AttemptInput({
                 if (!socket || !currentChat?.id) {
                   // eslint-disable-next-line no-console
                   console.warn(
-                    "[Voice] Missing socket or chat_id, cannot upload user audio",
+                    "[Voice] Missing socket or chat_id, cannot upload user audio"
                   );
                   return;
                 }
@@ -997,7 +1005,7 @@ export default function AttemptInput({
             // eslint-disable-next-line no-console
             console.error("[Voice] Error stopping user audio recorder:", err);
           }
-        },
+        }
       );
 
       // Listen for audio transcription completion events
@@ -1012,7 +1020,7 @@ export default function AttemptInput({
         }) => {
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] ===== INPUT AUDIO TRANSCRIPTION COMPLETED =====",
+            "[Voice] ===== INPUT AUDIO TRANSCRIPTION COMPLETED ====="
           );
           // eslint-disable-next-line no-console
           console.log("[Voice] Transcription event:", {
@@ -1032,7 +1040,7 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport transcript",
+              "[Voice] Missing socket or chat_id, cannot transport transcript"
             );
             return;
           }
@@ -1042,10 +1050,10 @@ export default function AttemptInput({
 
           // Transport transcript to server
           // This will:
-          // 1. Update optimistic UI (via voice_transcript_ready event)
+          // 1. Update optimistic UI (via simulation_voice_user_transcript_done event)
           // 2. Create the real user message (via simulation_new_message event)
           // 3. Link audio upload to message if upload_id is available
-          socket.emit("voice_transcript_ready", {
+          socket.emit("simulation_voice_user_transcript_done", {
             chat_id: currentChat.id,
             item_id: evt.item_id,
             transcript: transcript,
@@ -1058,14 +1066,17 @@ export default function AttemptInput({
           }
 
           // eslint-disable-next-line no-console
-          console.log("[Voice] Transported voice_transcript_ready to server:", {
-            chat_id: currentChat.id,
-            item_id: evt.item_id,
-            transcript: transcript.substring(0, 100),
-          });
+          console.log(
+            "[Voice] Transported simulation_voice_user_transcript_done to server:",
+            {
+              chat_id: currentChat.id,
+              item_id: evt.item_id,
+              transcript: transcript.substring(0, 100),
+            }
+          );
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSCRIPTION COMPLETED =====");
-        },
+        }
       );
 
       // Listen for audio transcription delta events (streaming partials)
@@ -1090,13 +1101,13 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport delta event",
+              "[Voice] Missing socket or chat_id, cannot transport delta event"
             );
             return;
           }
 
           // Transport delta event to server (AttemptMessages will handle optimistic UI updates)
-          socket.emit("voice_transcript_delta", {
+          socket.emit("simulation_voice_user_transcript_delta", {
             chat_id: currentChat.id,
             item_id: evt.item_id,
             delta: evt.delta,
@@ -1104,14 +1115,17 @@ export default function AttemptInput({
           });
 
           // eslint-disable-next-line no-console
-          console.log("[Voice] Transported voice_transcript_delta to server:", {
-            chat_id: currentChat.id,
-            item_id: evt.item_id,
-            delta: evt.delta.substring(0, 50),
-          });
+          console.log(
+            "[Voice] Transported simulation_voice_user_transcript_delta to server:",
+            {
+              chat_id: currentChat.id,
+              item_id: evt.item_id,
+              delta: evt.delta.substring(0, 50),
+            }
+          );
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSCRIPTION DELTA =====");
-        },
+        }
       );
 
       // Listen for tool calls using agent_tool_start event
@@ -1145,7 +1159,7 @@ export default function AttemptInput({
               // eslint-disable-next-line no-console
               console.warn(
                 "[Voice] Failed to parse toolCall.arguments as JSON:",
-                e,
+                e
               );
               actualArguments = args as Record<string, unknown>;
             }
@@ -1169,30 +1183,33 @@ export default function AttemptInput({
           if (!content) {
             // eslint-disable-next-line no-console
             console.error(
-              `[Voice] No content in arguments for debug_info tool`,
+              `[Voice] No content in arguments for debug_info tool`
             );
             return;
           }
 
           // Emit debug_info event to server
-          socket.emit("voice_debug_info", {
+          socket.emit("simulation_voice_debug_info", {
             chat_id: currentChat.id,
             content: content,
           });
           // eslint-disable-next-line no-console
-          console.log("[Voice] Emitted voice_debug_info to server:", {
-            chat_id: currentChat.id,
-            content: content.substring(0, 100),
-          });
+          console.log(
+            "[Voice] Emitted simulation_voice_debug_info to server:",
+            {
+              chat_id: currentChat.id,
+              content: content.substring(0, 100),
+            }
+          );
           return;
         }
 
         // Handle speak tool - now handled via transport events (response.function_call_arguments.delta/done)
-        // The transport events are forwarded to voice_tool_call_delta/voice_tool_call_done handlers
+        // The transport events are forwarded to simulation_voice_assistant_delta/simulation_voice_assistant_done handlers
         if (toolDef.name === "speak") {
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] speak tool detected - streaming handled via transport events",
+            "[Voice] speak tool detected - streaming handled via transport events"
           );
           return;
         }
@@ -1211,14 +1228,14 @@ export default function AttemptInput({
             result,
             rawResult,
           });
-        },
+        }
       );
 
       session.on("audio_interrupted", () => {
         // eslint-disable-next-line no-console
         console.log("[Voice] RealtimeSession audio_interrupted event");
         // Notify server of interruption
-        socket.emit("voice_interrupted", {
+        socket.emit("simulation_voice_assistant_interrupted", {
           chat_id: currentChat.id,
         });
       });
@@ -1275,7 +1292,7 @@ export default function AttemptInput({
           };
 
           // Send usage data to backend for run creation and token tracking
-          socket.emit("voice_response_done", {
+          socket.emit("simulation_voice_speech_done", {
             chat_id: currentChat.id,
             event_id: evt.event_id,
             response_id: evt.response.id,
@@ -1300,7 +1317,7 @@ export default function AttemptInput({
               output_tokens: evt.response.usage.output_tokens,
             },
           });
-        },
+        }
       );
 
       // Unify *all* user messages (typed or microphone transcripts)
@@ -1348,7 +1365,7 @@ export default function AttemptInput({
           if (!finalText) return;
           if (!socket || !currentChat?.id) return;
 
-          socket.emit("voice_user_message", {
+          socket.emit("simulation_voice_user_text", {
             chat_id: currentChat.id,
             message: finalText,
           });
@@ -1394,7 +1411,7 @@ export default function AttemptInput({
         console.log(
           "[Voice] Resetting history with",
           responseData.history.length,
-          "items",
+          "items"
         );
         // eslint-disable-next-line no-console
         console.log("[Voice] History items:", responseData.history);
@@ -1417,14 +1434,14 @@ export default function AttemptInput({
             await navigator.mediaDevices.getUserMedia({ audio: true });
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] Got microphone stream for waveform visualization",
+            "[Voice] Got microphone stream for waveform visualization"
           );
         }
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn(
           "[Voice] Failed to get microphone stream for visualization:",
-          err,
+          err
         );
         // Continue anyway - waveform will just not show audio levels
       }
@@ -1436,7 +1453,7 @@ export default function AttemptInput({
         // eslint-disable-next-line no-console
         console.warn(
           "[Voice] mute(false) failed (transport might not support mute):",
-          e,
+          e
         );
       }
       setIsMicMuted(false);
@@ -1524,7 +1541,7 @@ export default function AttemptInput({
         const maxTextareaHeight = 128; // max-h-32 = 8rem = 128px
         const actualTextareaHeight = Math.min(
           textarea.scrollHeight,
-          maxTextareaHeight,
+          maxTextareaHeight
         );
         const totalHeight = actualTextareaHeight + 24; // Add padding (0px top + 8px bottom + 24px for button area)
         const clampedHeight = Math.min(Math.max(totalHeight, 60), 160); // Clamp between 60px and 160px
@@ -1651,7 +1668,7 @@ export default function AttemptInput({
                 value={newMessage}
                 onChange={(e) =>
                   pastePrevention.handleChange(e, (value) =>
-                    setNewMessage(sanitizeInputLength(value)),
+                    setNewMessage(sanitizeInputLength(value))
                   )
                 }
                 placeholder={

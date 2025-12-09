@@ -187,7 +187,7 @@ export function ProfileProviderClient({
     // Clean up existing socket if profile changes
     if (socketRef.current) {
       roomsToCleanup.forEach((roomId) => {
-        socketRef.current?.emit("leave_chat", {
+        socketRef.current?.emit("simulation_leave", {
           chat_id: roomId,
           chat_type: "any",
         });
@@ -258,7 +258,7 @@ export function ProfileProviderClient({
       );
 
       socket.on(
-        "create_practice_scenario_error",
+        "simulation_text_practice_error",
         (data: { success: boolean; message: string }) => {
           setStartingSimulationId(null);
           toast.error(data.message);
@@ -273,7 +273,7 @@ export function ProfileProviderClient({
       if (socketRef.current) {
         // Leave all rooms before disconnecting using captured rooms
         roomsToCleanup.forEach((roomId) => {
-          socketRef.current?.emit("leave_chat", {
+          socketRef.current?.emit("simulation_leave", {
             chat_id: roomId,
             chat_type: "any",
           });
@@ -381,7 +381,7 @@ export function ProfileProviderClient({
       };
 
       setStartingSimulationId(data.simulation_id);
-      socketRef.current.emit("start_simulation", payload);
+      socketRef.current.emit("simulation_text_start", payload);
     },
     [isConnected],
   );
@@ -428,7 +428,7 @@ export function ProfileProviderClient({
       if (data.simulation_id) {
         setStartingSimulationId(data.simulation_id);
       }
-      socketRef.current.emit("create_practice_scenario", payload);
+      socketRef.current.emit("simulation_text_practice", payload);
     },
     [isConnected],
   );

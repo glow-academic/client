@@ -569,7 +569,7 @@ export default function AttemptMessages({
             }
 
             // If no content match found, check for voice optimistic messages that might not have content yet
-            // This handles race conditions where simulation_new_message arrives before voice_transcript_ready
+            // This handles race conditions where simulation_new_message arrives before simulation_voice_user_transcript_done
             if (!foundMatch) {
               // Look for any voice optimistic message that hasn't been replaced
               // Prefer ones with empty content (speech started but transcript not ready yet)
@@ -840,9 +840,15 @@ export default function AttemptMessages({
     socket.on("simulation_message_token", handleSimulationMessageToken);
     socket.on("simulation_message_complete", handleSimulationMessageComplete);
     socket.on("simulation_new_message", handleSimulationNewMessage);
-    socket.on("voice_speech_started", handleVoiceSpeechStarted);
-    socket.on("voice_transcript_delta", handleVoiceTranscriptDelta);
-    socket.on("voice_transcript_ready", handleVoiceTranscriptReady);
+    socket.on("simulation_voice_speech_start", handleVoiceSpeechStarted);
+    socket.on(
+      "simulation_voice_user_transcript_delta",
+      handleVoiceTranscriptDelta
+    );
+    socket.on(
+      "simulation_voice_user_transcript_done",
+      handleVoiceTranscriptReady
+    );
 
     return () => {
       socket.off("simulation_message_token", handleSimulationMessageToken);
@@ -851,9 +857,15 @@ export default function AttemptMessages({
         handleSimulationMessageComplete
       );
       socket.off("simulation_new_message", handleSimulationNewMessage);
-      socket.off("voice_speech_started", handleVoiceSpeechStarted);
-      socket.off("voice_transcript_delta", handleVoiceTranscriptDelta);
-      socket.off("voice_transcript_ready", handleVoiceTranscriptReady);
+      socket.off("simulation_voice_speech_start", handleVoiceSpeechStarted);
+      socket.off(
+        "simulation_voice_user_transcript_delta",
+        handleVoiceTranscriptDelta
+      );
+      socket.off(
+        "simulation_voice_user_transcript_done",
+        handleVoiceTranscriptReady
+      );
     };
   }, [socket, targetChatId]);
 

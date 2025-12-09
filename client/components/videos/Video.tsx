@@ -74,15 +74,12 @@ import {
 import { cn } from "@/lib/utils";
 
 // Custom Components
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   DocumentMappingItem,
   DocumentPicker,
 } from "@/components/common/forms/DocumentPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { Brain, Check, X } from "lucide-react";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -90,6 +87,8 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { Brain } from "lucide-react";
 
 // Types and API functions
 import type {
@@ -655,7 +654,7 @@ export default function Video({
         socket.on("video_outline_generation_complete", handleComplete);
         socket.on("video_outline_generation_error", handleError);
 
-        socket.emit("generate_video_outline", {
+        socket.emit("video_outline", {
           departmentId: body.departmentId,
           documentIds: body.documentIds,
           questionIds: body.questionIds,
@@ -820,7 +819,7 @@ export default function Video({
         socket.on("video_generation_complete", handleComplete);
         socket.on("video_generation_error", handleError);
 
-        socket.emit("generate_video", {
+        socket.emit("video_generate", {
           videoId: body.videoId,
           prompt: body.prompt,
           imageReferenceId: body.imageReferenceId,
@@ -1306,8 +1305,10 @@ export default function Video({
 
   // Parameter item mapping
   const fieldMapping = useMemo((): FieldMapping => {
-    const mapping = ((videoData as any)?.field_mapping ||
-      {}) as Record<string, any>;
+    const mapping = ((videoData as any)?.field_mapping || {}) as Record<
+      string,
+      any
+    >;
     // Convert to FieldMapping format with proper value type (must be string for ParameterSelector)
     return Object.fromEntries(
       Object.entries(mapping).map(([key, item]: [string, any]) => [
@@ -1357,14 +1358,12 @@ export default function Video({
   // Filter valid parameter item IDs by parameter type
   const validParameterItemIds = useMemo(() => {
     // Get all parameter item IDs from mapping that belong to video parameters
-    const allVideoParamItemIds = Object.keys(fieldMapping).filter(
-      (itemId) => {
-        const item = fieldMapping[itemId];
-        if (!item) return false;
-        const paramId = item.parameter_id;
-        return Object.keys(parameterMapping).includes(paramId);
-      }
-    );
+    const allVideoParamItemIds = Object.keys(fieldMapping).filter((itemId) => {
+      const item = fieldMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return Object.keys(parameterMapping).includes(paramId);
+    });
     return allVideoParamItemIds;
   }, [fieldMapping, parameterMapping]);
 
@@ -2009,7 +2008,9 @@ export default function Video({
                     onSelect={(ids) => handleInputChange("departmentIds", ids)}
                     getId={(dept) => (dept as unknown as { id: string }).id}
                     getLabel={(dept) => dept.name || ""}
-                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                    getSearchText={(dept) =>
+                      `${dept.name} ${dept.description || ""}`
+                    }
                     placeholder="All Departments"
                     disabled={isReadonly}
                     multiSelect={true}
@@ -2033,7 +2034,9 @@ export default function Video({
                     onSelect={(ids) => handleInputChange("parameterIds", ids)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
-                    getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                    getSearchText={(item) =>
+                      `${item.name} ${item.description || ""}`
+                    }
                     placeholder="Select parameters..."
                     disabled={isReadonly}
                     multiSelect={true}
@@ -2057,9 +2060,12 @@ export default function Video({
                   onSelect={(ids) => handleInputChange("personaIds", ids)}
                   getId={(persona) => (persona as unknown as { id: string }).id}
                   getLabel={(persona) => persona.name || ""}
-                  getSearchText={(persona) => `${persona.name} ${persona.description || ""}`}
+                  getSearchText={(persona) =>
+                    `${persona.name} ${persona.description || ""}`
+                  }
                   renderItem={(persona, isSelected) => {
-                    const IconComponent = getPersonaIconComponent(persona.icon) || Brain;
+                    const IconComponent =
+                      getPersonaIconComponent(persona.icon) || Brain;
                     const hexColor = persona.color || "#64748b";
                     const generateGradient = (hex: string) => {
                       const cleanHex = hex.replace("#", "");
@@ -2083,7 +2089,9 @@ export default function Video({
                           <IconComponent className="h-4 w-4 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{persona.name}</div>
+                          <div className="font-medium truncate">
+                            {persona.name}
+                          </div>
                           {persona.description && (
                             <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
                               {persona.description}
@@ -2093,7 +2101,7 @@ export default function Video({
                         <Check
                           className={cn(
                             "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-                            isSelected ? "opacity-100" : "opacity-0",
+                            isSelected ? "opacity-100" : "opacity-0"
                           )}
                         />
                       </div>
@@ -2103,7 +2111,8 @@ export default function Video({
                     if (selectedItems.length === 0) return placeholder;
                     if (selectedItems.length === 1) {
                       const persona = selectedItems[0];
-                      const IconComponent = getPersonaIconComponent(persona?.icon) || Brain;
+                      const IconComponent =
+                        getPersonaIconComponent(persona?.icon) || Brain;
                       const hexColor = persona?.color || "#64748b";
                       const generateGradient = (hex: string) => {
                         const cleanHex = hex.replace("#", "");
@@ -2126,7 +2135,9 @@ export default function Video({
                           >
                             <IconComponent className="h-3.5 w-3.5 text-white" />
                           </div>
-                          <span className="truncate">{persona?.name || placeholder}</span>
+                          <span className="truncate">
+                            {persona?.name || placeholder}
+                          </span>
                         </div>
                       );
                     }
@@ -2194,10 +2205,14 @@ export default function Video({
                     }
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
-                    getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                    getSearchText={(item) =>
+                      `${item.name} ${item.description || ""}`
+                    }
                     renderPreview={(item) => (
                       <div className="grid gap-2">
-                        <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                        <h4 className="font-medium leading-none">
+                          {item.name || "No agent selected"}
+                        </h4>
                         <div className="text-sm text-muted-foreground">
                           {item.description || "No description available"}
                         </div>

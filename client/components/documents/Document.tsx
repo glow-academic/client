@@ -1052,7 +1052,7 @@ export default function Document({
           socket.on("document_template_generation_complete", handleComplete);
           socket.on("document_template_generation_error", handleError);
 
-          socket.emit("generate_document_template", {
+          socket.emit("document_generate", {
             departmentId: body.departmentId,
             profileId: body.profileId,
             documentId: body.documentId,

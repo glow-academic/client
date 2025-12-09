@@ -477,34 +477,52 @@ async def transaction(
 
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.socket.connections import leave_chat  # type: ignore
-from app.socket.connections.connect import connect  # type: ignore
-from app.socket.connections.disconnect import disconnect  # type: ignore
-from app.socket.connections.join_chat import join_chat  # type: ignore
-from app.socket.connections.stop_chat import \
-    stop_chat  # noqa: E402; type: ignore
-from app.socket.documents.generate_template import \
-    generate_document_template  # noqa: E402; type: ignore
-from app.socket.pricing.log import log_run  # noqa: E402; type: ignore
+from app.socket.connect import connect  # type: ignore
+from app.socket.disconnect import disconnect  # type: ignore
+from app.socket.documents.generate import \
+    document_generate  # noqa: E402; type: ignore
+from app.socket.log import log_run  # type: ignore
 from app.socket.scenarios.generate import \
     generate_scenario  # noqa: E402; type: ignore
-from app.socket.simulations import send_simulation_message  # type: ignore
-from app.socket.simulations import start_simulation  # type: ignore
-from app.socket.simulations.continue_chat import \
-    continue_simulation  # noqa: E402; type: ignore
-from app.socket.simulations.create_practice_scenario import \
-    create_practice_scenario  # noqa: E402; type: ignore
-from app.socket.simulations.stop import \
-    stop_simulation  # noqa: E402; type: ignore
-from app.socket.videos.generate_outline import \
-    generate_video_outline  # noqa: E402; type: ignore
-from app.socket.videos.generate_video import \
-    generate_video  # noqa: E402; type: ignore
-from app.socket.voice import start_voice  # noqa: E402; type: ignore
-from app.socket.voice import (stop_voice, voice_interrupted,
-                              voice_response_done, voice_speech_started,
-                              voice_transcript_delta, voice_transcript_ready,
-                              voice_user_message)
+from app.socket.simulations import simulation_join  # type: ignore
+from app.socket.simulations import simulation_leave
+from app.socket.simulations.text.end import \
+    simulation_text_end  # noqa: E402; type: ignore
+from app.socket.simulations.text.next import \
+    simulation_text_next  # noqa: E402; type: ignore
+from app.socket.simulations.text.practice import \
+    simulation_text_practice  # noqa: E402; type: ignore
+from app.socket.simulations.text.send import \
+    simulation_text_send  # noqa: E402; type: ignore
+from app.socket.simulations.text.start import \
+    simulation_text_start  # noqa: E402; type: ignore
+from app.socket.simulations.text.stop import \
+    simulation_text_stop  # noqa: E402; type: ignore
+from app.socket.simulations.voice.assistant.delta import \
+    simulation_voice_assistant_delta  # noqa: E402; type: ignore
+from app.socket.simulations.voice.assistant.done import \
+    simulation_voice_assistant_done  # noqa: E402; type: ignore
+from app.socket.simulations.voice.assistant.interrupted import \
+    simulation_voice_assistant_interrupted  # noqa: E402; type: ignore
+from app.socket.simulations.voice.debug import \
+    simulation_voice_debug_info  # noqa: E402; type: ignore
+from app.socket.simulations.voice.start import \
+    simulation_voice_start  # noqa: E402; type: ignore
+from app.socket.simulations.voice.stop import \
+    simulation_voice_stop  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.speech.done import \
+    simulation_voice_speech_done  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.speech.start import \
+    simulation_voice_speech_start  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.text import \
+    simulation_voice_user_text  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.transcript.delta import \
+    simulation_voice_user_transcript_delta  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.transcript.done import \
+    simulation_voice_user_transcript_done  # noqa: E402; type: ignore
+from app.socket.videos.generate import \
+    video_generate  # noqa: E402; type: ignore
+from app.socket.videos.outline import video_outline  # noqa: E402; type: ignore
 
 
 # Create a combined lifespan to manage both session managers
@@ -1014,85 +1032,92 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         client_to_server_handlers = [
             connect,
             disconnect,
-            send_simulation_message,
-            start_simulation,
-            create_practice_scenario,  # type: ignore[name-defined]
-            stop_simulation,
-            continue_simulation,  # type: ignore[name-defined]
-            join_chat,
-            leave_chat,
-            stop_chat,
-            start_voice,
-            stop_voice,
-            voice_interrupted,
-            voice_response_done,
-            voice_speech_started,
-            voice_transcript_delta,
-            voice_transcript_ready,
-            voice_user_message,
+            log_run,
+            # Simulation events
+            simulation_join,
+            simulation_leave,
+            simulation_text_send,
+            simulation_text_start,
+            simulation_text_practice,
+            simulation_text_stop,
+            simulation_text_next,
+            simulation_text_end,
+            # Voice events
+            simulation_voice_start,
+            simulation_voice_stop,
+            simulation_voice_debug_info,
+            simulation_voice_user_text,
+            simulation_voice_user_transcript_delta,
+            simulation_voice_user_transcript_done,
+            simulation_voice_speech_start,
+            simulation_voice_speech_done,
+            simulation_voice_assistant_interrupted,
+            simulation_voice_assistant_delta,
+            simulation_voice_assistant_done,
             # AI generation events
             generate_scenario,
-            generate_video_outline,
-            generate_video,
-            # Pricing events (async logging and token updates)
-            log_run,
-            generate_document_template,
+            video_outline,
+            video_generate,
+            document_generate,
         ]
 
         # Import server-to-client emit functions (with Pydantic payload models)
-        from app.socket.connections.connect import connection_confirmed
-        from app.socket.connections.join_chat import joined_chat
-        from app.socket.connections.stop_chat import chat_stopped
-        from app.socket.documents.generate_template import (
+        from app.socket.connect import connection_confirmed
+        from app.socket.documents.generate import (
             document_template_generation_complete,
             document_template_generation_error,
             document_template_generation_progress)
         from app.socket.scenarios.generate import (
             scenario_generation_complete, scenario_generation_error,
             scenario_generation_progress)
-        from app.socket.simulations.continue_chat import (
-            continue_simulation_error, end_all_completed, end_all_started,
-            end_chat_started, simulation_continued,
-            simulation_grading_progress)
-        from app.socket.simulations.create_practice_scenario import \
-            create_practice_scenario_error
-        from app.socket.simulations.send_message import (
+        from app.socket.simulations.join import simulation_joined
+        from app.socket.simulations.text.end import simulation_text_ended
+        from app.socket.simulations.text.next import (
+            end_all_completed, end_all_started, end_chat_started,
+            simulation_continued, simulation_grading_progress,
+            simulation_text_next_error)
+        from app.socket.simulations.text.practice import \
+            simulation_text_practice_error
+        from app.socket.simulations.text.send import (
             hint_generation_progress, message_sent,
-            send_simulation_message_error, simulation_message_complete,
-            simulation_message_error, simulation_message_token,
-            simulation_new_message)
-        from app.socket.simulations.start import simulation_started
-        from app.socket.simulations.start import \
-            start_simulation_error as simulation_error_start
-        from app.socket.simulations.stop import (simulation_message_cancelled,
-                                                 simulation_stopped,
-                                                 stop_simulation_error)
-        from app.socket.videos.generate_outline import (
+            simulation_message_complete, simulation_message_error,
+            simulation_message_token, simulation_new_message,
+            simulation_text_send_error)
+        from app.socket.simulations.text.start import simulation_started
+        from app.socket.simulations.text.start import \
+            simulation_text_start_error as simulation_error_start
+        from app.socket.simulations.text.stop import (
+            simulation_message_cancelled, simulation_stopped,
+            simulation_text_stop_error)
+        from app.socket.simulations.voice.assistant.delta import \
+            voice_tool_call_error
+        from app.socket.simulations.voice.start import (
+            simulation_voice_start_error, simulation_voice_start_response)
+        from app.socket.simulations.voice.stop import (
+            simulation_voice_stop_error, simulation_voice_stop_response)
+        from app.socket.simulations.voice.user.speech.start import \
+            simulation_voice_speech_start_emit
+        from app.socket.simulations.voice.user.text import \
+            simulation_voice_user_text_error
+        from app.socket.simulations.voice.user.transcript.delta import \
+            simulation_voice_user_transcript_delta_emit
+        from app.socket.simulations.voice.user.transcript.done import \
+            simulation_voice_user_transcript_done_emit
+        from app.socket.videos.generate import (video_generation_complete,
+                                                video_generation_error,
+                                                video_generation_progress)
+        from app.socket.videos.outline import (
             video_outline_generation_complete, video_outline_generation_error,
             video_outline_generation_progress)
-        from app.socket.videos.generate_video import (
-            video_generation_complete, video_generation_error,
-            video_generation_progress)
-        from app.socket.voice.speech_started import voice_speech_started_emit
-        from app.socket.voice.start_voice import (start_voice_error,
-                                                  start_voice_response)
-        from app.socket.voice.stop_voice import (stop_voice_error,
-                                                 stop_voice_response)
-        from app.socket.voice.tool_call_delta import voice_tool_call_error
-        from app.socket.voice.transcript_delta import \
-            voice_transcript_delta_emit
-        from app.socket.voice.transcript_ready import \
-            voice_transcript_ready_emit
-        from app.socket.voice.user_message import voice_user_message_error
 
         # Collect all unique emit functions (use one instance of each event name)
         server_to_client_stubs = [
-            # Simulation events
-            simulation_error_start,  # start_simulation_error
-            stop_simulation_error,
-            send_simulation_message_error,
-            continue_simulation_error,
-            create_practice_scenario_error,
+            # Simulation text events
+            simulation_error_start,  # simulation_text_start_error
+            simulation_text_stop_error,
+            simulation_text_send_error,
+            simulation_text_next_error,
+            simulation_text_practice_error,
             simulation_started,
             simulation_message_cancelled,
             simulation_stopped,
@@ -1109,8 +1134,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             end_all_completed,
             # Connection events
             connection_confirmed,
-            joined_chat,
-            chat_stopped,
+            simulation_joined,
+            simulation_text_ended,
             # AI generation events
             scenario_generation_progress,
             scenario_generation_complete,
@@ -1125,15 +1150,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             document_template_generation_complete,
             document_template_generation_error,
             # Voice events
-            start_voice_response,
-            start_voice_error,
-            stop_voice_response,
-            stop_voice_error,
-            voice_speech_started_emit,
+            simulation_voice_start_response,
+            simulation_voice_start_error,
+            simulation_voice_stop_response,
+            simulation_voice_stop_error,
+            simulation_voice_speech_start_emit,
             voice_tool_call_error,
-            voice_transcript_delta_emit,
-            voice_transcript_ready_emit,
-            voice_user_message_error,
+            simulation_voice_user_transcript_delta_emit,
+            simulation_voice_user_transcript_done_emit,
+            simulation_voice_user_text_error,
         ]
 
         contract = build_socket_contract(

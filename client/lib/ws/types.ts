@@ -4,23 +4,23 @@
  */
 
 export type ServerToClientEvents = {
-  start_simulation_error: (payload: {
+  simulation_text_start_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
-  stop_simulation_error: (payload: {
+  simulation_text_stop_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
-  send_simulation_message_error: (payload: {
+  simulation_text_send_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
-  continue_simulation_error: (payload: {
+  simulation_text_next_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
-  create_practice_scenario_error: (payload: {
+  simulation_text_practice_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
@@ -132,11 +132,11 @@ export type ServerToClientEvents = {
     guest_id?: string;
     server_time: number;
   }) => void;
-  joined_chat: (payload: {
+  simulation_joined: (payload: {
     chat_id: string;
     chat_type: string;
   }) => void;
-  chat_stopped: (payload: {
+  simulation_text_ended: (payload: {
     chat_id: string;
     chat_type: string;
   }) => void;
@@ -219,7 +219,7 @@ export type ServerToClientEvents = {
     message: string;
     trace_id?: string;
   }) => void;
-  start_voice_response: (payload: {
+  simulation_voice_start_response: (payload: {
     success: boolean;
     message: string;
     ephemeral_key: string;
@@ -232,19 +232,19 @@ export type ServerToClientEvents = {
     transcription_prompt?: string;
     history?: string[];
   }) => void;
-  start_voice_error: (payload: {
+  simulation_voice_start_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
-  stop_voice_response: (payload: {
+  simulation_voice_stop_response: (payload: {
     success: boolean;
     message: string;
   }) => void;
-  stop_voice_error: (payload: {
+  simulation_voice_stop_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
-  voice_speech_started_emit: (payload: {
+  simulation_voice_speech_start_emit: (payload: {
     chat_id: string;
     item_id: string;
   }) => void;
@@ -252,122 +252,25 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
-  voice_transcript_delta_emit: (payload: {
+  simulation_voice_user_transcript_delta_emit: (payload: {
     chat_id: string;
     item_id: string;
     delta: string;
     content_index: number;
   }) => void;
-  voice_transcript_ready_emit: (payload: {
+  simulation_voice_user_transcript_done_emit: (payload: {
     chat_id: string;
     item_id: string;
     transcript: string;
     upload_id?: string;
   }) => void;
-  voice_user_message_error: (payload: {
+  simulation_voice_user_text_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
 };
 
 export type ClientToServerEvents = {
-  send_simulation_message: (payload: {
-    chat_id: string;
-    message?: string;
-    is_retry?: boolean;
-  }) => void;
-  start_simulation: (payload: {
-    simulation_id: string;
-    profile_id?: string;
-    scenario_id?: string;
-    infinite?: boolean;
-    infinite_time_limit?: number;
-  }) => void;
-  create_practice_scenario: (payload: {
-    persona_id?: string;
-    parameter_item_ids?: string[];
-    department_id?: string;
-    infinite_mode?: boolean;
-    infinite_time_limit?: number;
-    simulation_id?: string;
-    profile_id?: string;
-  }) => void;
-  stop_simulation: (payload: {
-    chat_id: string;
-  }) => void;
-  continue_simulation: (payload: {
-    chat_id: string;
-    attempt_id: string;
-    end_all?: boolean;
-    previous_chat_id?: string;
-    previous_chat_map: Record<string, string | null>;
-  }) => void;
-  join_chat: (payload: {
-    chat_id: string;
-    chat_type?: string;
-  }) => void;
-  leave_chat: (payload: {
-    chat_id: string;
-    chat_type?: string;
-  }) => void;
-  stop_chat: (payload: {
-    chat_id: string;
-    chat_type?: string;
-  }) => void;
-  start_voice: (payload: {
-    chat_id: string;
-  }) => void;
-  stop_voice: (payload: {
-    chat_id: string;
-  }) => void;
-  voice_interrupted: (payload: {
-    chat_id: string;
-  }) => void;
-  voice_response_done: (payload: {
-    chat_id: string;
-    event_id: string;
-    response_id: string;
-    conversation_id: string;
-    usage: Record<string, unknown>;
-  }) => void;
-  voice_speech_started: (payload: {
-    chat_id: string;
-    item_id: string;
-  }) => void;
-  voice_transcript_delta: (payload: {
-    chat_id: string;
-    item_id: string;
-    delta: string;
-    content_index: number;
-  }) => void;
-  voice_transcript_ready: (payload: {
-    chat_id: string;
-    item_id: string;
-    transcript: string;
-    upload_id?: string;
-  }) => void;
-  voice_user_message: (payload: {
-    chat_id: string;
-    message: string;
-    transcription_id?: string;
-  }) => void;
-  generate_video_outline: (payload: {
-    departmentId: string;
-    documentIds?: string[];
-    questionIds?: string[];
-    parameterItemIds?: string[];
-    existingQuestions?: { question_id: string | null; question_text: string; allow_multiple: boolean; times: number | null; options: string | null }[];
-    profileId?: string;
-    videoId?: string;
-    videoLengthSeconds?: number;
-    useQuestions?: boolean;
-    personaIds?: string[];
-  }) => void;
-  generate_video: (payload: {
-    videoId: string;
-    prompt: string;
-    imageReferenceId?: string;
-  }) => void;
   log_run: (payload: {
     runId: string;
     operationType: string;
@@ -383,12 +286,16 @@ export type ClientToServerEvents = {
     assistantOutput?: string;
     departmentId?: string;
   }) => void;
-  generate_document_template: (payload: {
-    departmentId: string;
-    profileId?: string;
-    documentId?: string;
-    documentName?: string;
-    documentDescription?: string;
-    fieldIds?: string[];
+  simulation_join: (payload: {
+    chat_id: string;
+    chat_type?: string;
+  }) => void;
+  simulation_leave: (payload: {
+    chat_id: string;
+    chat_type?: string;
+  }) => void;
+  simulation_text_end: (payload: {
+    chat_id: string;
+    chat_type?: string;
   }) => void;
 };

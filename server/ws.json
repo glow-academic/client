@@ -1,138 +1,5 @@
 {
   "clientToServer": {
-    "send_simulation_message": {
-      "payload": {
-        "chat_id": "string",
-        "message": "?string",
-        "is_retry": "?boolean"
-      }
-    },
-    "start_simulation": {
-      "payload": {
-        "simulation_id": "string",
-        "profile_id": "?string",
-        "scenario_id": "?string",
-        "infinite": "?boolean",
-        "infinite_time_limit": "?number"
-      }
-    },
-    "create_practice_scenario": {
-      "payload": {
-        "persona_id": "?string",
-        "parameter_item_ids": "?string[]",
-        "department_id": "?string",
-        "infinite_mode": "?boolean",
-        "infinite_time_limit": "?number",
-        "simulation_id": "?string",
-        "profile_id": "?string"
-      }
-    },
-    "stop_simulation": {
-      "payload": {
-        "chat_id": "string"
-      }
-    },
-    "continue_simulation": {
-      "payload": {
-        "chat_id": "string",
-        "attempt_id": "string",
-        "end_all": "?boolean",
-        "previous_chat_id": "?string",
-        "previous_chat_map": "object{string:string|null}"
-      }
-    },
-    "join_chat": {
-      "payload": {
-        "chat_id": "string",
-        "chat_type": "?string"
-      }
-    },
-    "leave_chat": {
-      "payload": {
-        "chat_id": "string",
-        "chat_type": "?string"
-      }
-    },
-    "stop_chat": {
-      "payload": {
-        "chat_id": "string",
-        "chat_type": "?string"
-      }
-    },
-    "start_voice": {
-      "payload": {
-        "chat_id": "string"
-      }
-    },
-    "stop_voice": {
-      "payload": {
-        "chat_id": "string"
-      }
-    },
-    "voice_interrupted": {
-      "payload": {
-        "chat_id": "string"
-      }
-    },
-    "voice_response_done": {
-      "payload": {
-        "chat_id": "string",
-        "event_id": "string",
-        "response_id": "string",
-        "conversation_id": "string",
-        "usage": "object"
-      }
-    },
-    "voice_speech_started": {
-      "payload": {
-        "chat_id": "string",
-        "item_id": "string"
-      }
-    },
-    "voice_transcript_delta": {
-      "payload": {
-        "chat_id": "string",
-        "item_id": "string",
-        "delta": "string",
-        "content_index": "number"
-      }
-    },
-    "voice_transcript_ready": {
-      "payload": {
-        "chat_id": "string",
-        "item_id": "string",
-        "transcript": "string",
-        "upload_id": "?string"
-      }
-    },
-    "voice_user_message": {
-      "payload": {
-        "chat_id": "string",
-        "message": "string",
-        "transcription_id": "?string"
-      }
-    },
-    "generate_video_outline": {
-      "payload": {
-        "departmentId": "string",
-        "documentIds": "?string[]",
-        "questionIds": "?string[]",
-        "parameterItemIds": "?string[]",
-        "existingQuestions": "?object{question_id:string|null,question_text:string,allow_multiple:boolean,times:number|null,options:string|null}[]",
-        "profileId": "?string",
-        "videoId": "?string",
-        "videoLengthSeconds": "?number",
-        "useQuestions": "?boolean",
-        "personaIds": "?string[]"
-      }
-    },
-    "generate_video": {
-      "payload": {
-        "videoId": "string",
-        "prompt": "string",
-        "imageReferenceId": "?string"
-      }
-    },
     "log_run": {
       "payload": {
         "runId": "string",
@@ -150,43 +17,51 @@
         "departmentId": "?string"
       }
     },
-    "generate_document_template": {
+    "simulation_join": {
       "payload": {
-        "departmentId": "string",
-        "profileId": "?string",
-        "documentId": "?string",
-        "documentName": "?string",
-        "documentDescription": "?string",
-        "fieldIds": "?string[]"
+        "chat_id": "string",
+        "chat_type": "?string"
+      }
+    },
+    "simulation_leave": {
+      "payload": {
+        "chat_id": "string",
+        "chat_type": "?string"
+      }
+    },
+    "simulation_text_end": {
+      "payload": {
+        "chat_id": "string",
+        "chat_type": "?string"
       }
     }
   },
   "serverToClient": {
-    "start_simulation_error": {
+    "simulation_text_start_error": {
       "payload": {
         "success": "boolean",
         "message": "string"
       }
     },
-    "stop_simulation_error": {
+    "simulation_text_stop_error": {
       "payload": {
         "success": "boolean",
         "message": "string"
       }
     },
-    "send_simulation_message_error": {
+    "simulation_text_send_error": {
       "payload": {
         "success": "boolean",
         "message": "string"
       }
     },
-    "continue_simulation_error": {
+    "simulation_text_next_error": {
       "payload": {
         "success": "boolean",
         "message": "string"
       }
     },
-    "create_practice_scenario_error": {
+    "simulation_text_practice_error": {
       "payload": {
         "success": "boolean",
         "message": "string"
@@ -330,13 +205,13 @@
         "server_time": "number"
       }
     },
-    "joined_chat": {
+    "simulation_joined": {
       "payload": {
         "chat_id": "string",
         "chat_type": "string"
       }
     },
-    "chat_stopped": {
+    "simulation_text_ended": {
       "payload": {
         "chat_id": "string",
         "chat_type": "string"
@@ -445,7 +320,7 @@
         "trace_id": "?string"
       }
     },
-    "start_voice_response": {
+    "simulation_voice_start_response": {
       "payload": {
         "success": "boolean",
         "message": "string",
@@ -460,25 +335,25 @@
         "history": "?string[]"
       }
     },
-    "start_voice_error": {
+    "simulation_voice_start_error": {
       "payload": {
         "success": "boolean",
         "message": "string"
       }
     },
-    "stop_voice_response": {
+    "simulation_voice_stop_response": {
       "payload": {
         "success": "boolean",
         "message": "string"
       }
     },
-    "stop_voice_error": {
+    "simulation_voice_stop_error": {
       "payload": {
         "success": "boolean",
         "message": "string"
       }
     },
-    "voice_speech_started_emit": {
+    "simulation_voice_speech_start_emit": {
       "payload": {
         "chat_id": "string",
         "item_id": "string"
@@ -490,7 +365,7 @@
         "message": "string"
       }
     },
-    "voice_transcript_delta_emit": {
+    "simulation_voice_user_transcript_delta_emit": {
       "payload": {
         "chat_id": "string",
         "item_id": "string",
@@ -498,7 +373,7 @@
         "content_index": "number"
       }
     },
-    "voice_transcript_ready_emit": {
+    "simulation_voice_user_transcript_done_emit": {
       "payload": {
         "chat_id": "string",
         "item_id": "string",
@@ -506,7 +381,7 @@
         "upload_id": "?string"
       }
     },
-    "voice_user_message_error": {
+    "simulation_voice_user_text_error": {
       "payload": {
         "success": "boolean",
         "message": "string"

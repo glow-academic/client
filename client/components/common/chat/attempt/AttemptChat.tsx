@@ -649,13 +649,13 @@ export default function AttemptChat({
     if (currentRoomRef.current === currentChat.id) return;
 
     if (currentRoomRef.current) {
-      socket.emit("leave_chat", {
+      socket.emit("simulation_leave", {
         chat_id: currentRoomRef.current,
         chat_type: "simulation",
       });
     }
 
-    socket.emit("join_chat", {
+    socket.emit("simulation_join", {
       chat_id: currentChat.id,
       chat_type: "simulation",
     });
@@ -664,7 +664,7 @@ export default function AttemptChat({
 
     return () => {
       if (currentRoomRef.current && socket) {
-        socket.emit("leave_chat", {
+        socket.emit("simulation_leave", {
           chat_id: currentRoomRef.current,
           chat_type: "simulation",
         });
@@ -689,7 +689,7 @@ export default function AttemptChat({
       setIsSendingMessage(true);
 
       try {
-        socket.emit("send_simulation_message", {
+        socket.emit("simulation_text_send", {
           chat_id: currentChat.id,
           message: message,
           is_retry: isRetry ?? false,
@@ -709,7 +709,7 @@ export default function AttemptChat({
     setIsStoppingMessage(true);
 
     try {
-      socket.emit("stop_simulation", {
+      socket.emit("simulation_text_stop", {
         chat_id: currentChat.id,
       });
     } catch (error) {
@@ -1252,11 +1252,11 @@ export default function AttemptChat({
     socket.on("simulation_continued", handleSimulationContinued);
     socket.on("end_all_completed", handleEndAllCompleted);
     socket.on(
-      "send_simulation_message_error",
+      "simulation_text_send_error",
       handleSendSimulationMessageError,
     );
-    socket.on("stop_simulation_error", handleStopSimulationError);
-    socket.on("continue_simulation_error", handleContinueSimulationError);
+    socket.on("simulation_text_stop_error", handleStopSimulationError);
+    socket.on("simulation_text_next_error", handleContinueSimulationError);
     socket.on("simulation_grading_progress", handleSimulationGradingProgress);
     socket.on("hint_generation_progress", handleHintGenerationProgress);
 
@@ -1277,11 +1277,11 @@ export default function AttemptChat({
       socket.off("simulation_continued", handleSimulationContinued);
       socket.off("end_all_completed", handleEndAllCompleted);
       socket.off(
-        "send_simulation_message_error",
+        "simulation_text_send_error",
         handleSendSimulationMessageError,
       );
-      socket.off("stop_simulation_error", handleStopSimulationError);
-      socket.off("continue_simulation_error", handleContinueSimulationError);
+      socket.off("simulation_text_stop_error", handleStopSimulationError);
+      socket.off("simulation_text_next_error", handleContinueSimulationError);
       socket.off(
         "simulation_grading_progress",
         handleSimulationGradingProgress,

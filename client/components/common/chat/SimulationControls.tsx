@@ -114,7 +114,7 @@ export function SimulationControls({
         if (previousChatId) {
           continueData.previous_chat_id = previousChatId;
         }
-        socket.emit("continue_simulation", continueData);
+        socket.emit("simulation_text_next", continueData);
       } catch (error) {
         toast.error(`Failed to end chat: ${error}`);
         setEndChatLoading(false);
@@ -148,7 +148,7 @@ export function SimulationControls({
         if (previousChatMap) {
           continueData.previous_chat_map = previousChatMap;
         }
-        socket.emit("continue_simulation", continueData);
+        socket.emit("simulation_text_next", continueData);
       } catch (error) {
         toast.error(`Failed to end all chats: ${error}`);
         // Only reset on error - success/completion handled by WebSocket events
@@ -255,7 +255,7 @@ export function SimulationControls({
     };
 
     socket.on("simulation_continued", handleSimulationContinued);
-    socket.on("continue_simulation_error", handleSimulationError);
+    socket.on("simulation_text_next_error", handleSimulationError);
     socket.on("end_all_started", handleEndAllStarted);
     socket.on("end_chat_started", handleEndChatStarted);
     socket.on("end_all_completed", handleEndAllCompleted);
@@ -263,7 +263,7 @@ export function SimulationControls({
 
     return () => {
       socket.off("simulation_continued", handleSimulationContinued);
-      socket.off("continue_simulation_error", handleSimulationError);
+      socket.off("simulation_text_next_error", handleSimulationError);
       socket.off("end_all_started", handleEndAllStarted);
       socket.off("end_chat_started", handleEndChatStarted);
       socket.off("end_all_completed", handleEndAllCompleted);
