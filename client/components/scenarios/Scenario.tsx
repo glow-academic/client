@@ -1727,6 +1727,50 @@ export default function Scenario({
     });
   }, [generalParameterMapping]);
 
+  // Dynamically update max values when valid IDs change (cap at 5)
+  useEffect(() => {
+    const maxValidPersonas = Math.min(5, validPersonaIds.length);
+    setPersonaMinMax((prev) => ({
+      ...prev,
+      max: Math.min(prev.max, maxValidPersonas),
+    }));
+  }, [validPersonaIds.length]);
+
+  useEffect(() => {
+    const maxValidDocuments = Math.min(5, validDocumentIds.length);
+    setDocumentMinMax((prev) => ({
+      ...prev,
+      max: Math.min(prev.max, maxValidDocuments),
+    }));
+  }, [validDocumentIds.length]);
+
+  // Dynamically update parameter max values when valid items change
+  useEffect(() => {
+    Object.entries(generalParameterMapping).forEach(([paramId]) => {
+      const validItemsForParam = validGeneralParameterItemIds.filter(
+        (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+      );
+      const maxValidItems = Math.min(5, validItemsForParam.length);
+      setParameterMinMax((prev) => {
+        const current = prev[paramId];
+        if (current) {
+          return {
+            ...prev,
+            [paramId]: {
+              ...current,
+              max: Math.min(current.max, maxValidItems),
+            },
+          };
+        }
+        return prev;
+      });
+    });
+  }, [
+    validGeneralParameterItemIds,
+    generalParameterMapping,
+    parameterItemMapping,
+  ]);
+
   // Dynamic steps array based on available parameters
   const steps: Step[] = useMemo(() => {
     const baseSteps: Step[] = [
@@ -1881,6 +1925,421 @@ export default function Scenario({
       toast.success("Documents reset");
     } catch {
       toast.error("Failed to reset documents");
+    }
+  };
+
+  // Helper function to calculate valid document IDs given selected parameter items
+  const calculateValidDocumentIds = (
+    selectedParamItemIdsForCalc: string[] = []
+  ): string[] => {
+    const baseIds = scenarioData?.valid_document_ids || [];
+    const selectedDeptIds = formData.departmentIds || [];
+    const selectedDocIds = new Set(currentDocumentIds);
+
+    let deptFilteredIds: string[];
+    if (selectedDeptIds.length === 0) {
+      deptFilteredIds = Array.from(new Set([...baseIds, ...selectedDocIds]));
+    } else {
+      const allDeptDocumentIds = new Set<string>();
+      Object.values(departmentMapping).forEach((deptData) => {
+        if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
+          deptData.document_ids.forEach((id) => allDeptDocumentIds.add(id));
+        }
+      });
+
+      const selectedDeptDocumentIds = new Set<string>();
+      selectedDeptIds.forEach((deptId) => {
+        const deptData = departmentMapping[deptId];
+        if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
+          deptData.document_ids.forEach((id) =>
+            selectedDeptDocumentIds.add(id)
+          );
+        }
+      });
+
+      const filtered = baseIds.filter((id) => {
+        const inSelectedDepts = selectedDeptDocumentIds.has(id);
+        const isCrossDept = !allDeptDocumentIds.has(id);
+        return inSelectedDepts || isCrossDept;
+      });
+
+      deptFilteredIds = Array.from(new Set([...filtered, ...selectedDocIds]));
+    }
+
+    // Filter by document parameter items
+    const currentDocParamItemIds = selectedParamItemIdsForCalc.filter(
+      (itemId) => {
+        const item = parameterItemMapping[itemId];
+        if (!item) return false;
+        const paramId = item.parameter_id;
+        const param = parameterMapping[paramId];
+        return param?.document_parameter === true;
+      }
+    );
+
+    if (currentDocParamItemIds.length > 0) {
+      if (
+        scenarioData?.document_details &&
+        scenarioData.document_details.length > 0
+      ) {
+        const docsWithSelectedParams = new Set<string>();
+        scenarioData.document_details.forEach((doc) => {
+          if (doc.parameter_item_ids) {
+            const docParamItemsSet = new Set(doc.parameter_item_ids);
+            const hasAllSelectedParams = currentDocParamItemIds.every(
+              (paramId) => docParamItemsSet.has(paramId)
+            );
+            if (hasAllSelectedParams) {
+              docsWithSelectedParams.add(doc.document_id);
+            }
+          }
+        });
+
+        if (docsWithSelectedParams.size > 0) {
+          deptFilteredIds = deptFilteredIds.filter(
+            (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id)
+          );
+        }
+      }
+    }
+
+    // Apply parameter-based filtering
+    const selectedParamIds = formData.parameterIds || [];
+    let paramFiltered = deptFilteredIds;
+    if (selectedParamIds.length > 0) {
+      paramFiltered = deptFilteredIds.filter((docId) => {
+        const doc = documentMapping[docId];
+        if (!doc) return true;
+        const docParamIds = doc.parameter_ids || [];
+        if (docParamIds.length === 0) return true;
+        return selectedParamIds.some((paramId) =>
+          docParamIds.includes(paramId)
+        );
+      });
+    }
+
+    // Apply field-based filtering based on selected personas
+    const selectedFieldIds = Array.isArray(selectedParamItemIdsForCalc)
+      ? selectedParamItemIdsForCalc
+      : [];
+    if (selectedFieldIds.length === 0) {
+      return paramFiltered;
+    }
+
+    const selectedDocIdsForFilter = new Set(currentDocumentIds);
+
+    return paramFiltered.filter((docId) => {
+      if (selectedDocIdsForFilter.has(docId)) {
+        return true;
+      }
+
+      const doc = documentMapping[docId];
+      const docFieldIds = Array.isArray(doc?.field_ids) ? doc.field_ids : [];
+
+      const docDetails = scenarioData?.document_details?.find(
+        (d) => d.document_id === docId
+      );
+      const docDetailsFieldIds = Array.isArray(docDetails?.parameter_item_ids)
+        ? docDetails.parameter_item_ids
+        : [];
+
+      const allDocFieldIds = Array.from(
+        new Set([...docFieldIds, ...docDetailsFieldIds])
+      );
+
+      if (allDocFieldIds.length === 0 && selectedFieldIds.length > 0) {
+        return false;
+      }
+
+      const docFieldSet = new Set(allDocFieldIds);
+
+      for (const selectedFieldId of selectedFieldIds) {
+        if (!selectedFieldId) continue;
+        const selectedField = parameterItemMapping[selectedFieldId];
+        if (!selectedField?.parameter_id) continue;
+        if (!docFieldSet.has(selectedFieldId)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  // Helper function to calculate valid general parameter item IDs given selected personas and documents
+  const calculateValidGeneralParameterItemIds = (
+    selectedPersonaIdsForCalc: string[],
+    selectedDocumentIdsForCalc: string[],
+    selectedParamItemIdsForCalc: string[] = []
+  ): string[] => {
+    const selectedParamIds = formData.parameterIds || [];
+    const hasSelectedPersonas = selectedPersonaIdsForCalc.length > 0;
+    const hasSelectedDocuments = selectedDocumentIdsForCalc.length > 0;
+    const hasSelections = hasSelectedPersonas || hasSelectedDocuments;
+
+    // Get all fields linked to selected personas
+    const personaFields = new Set<string>();
+    const personaParameterIds = new Set<string>();
+    selectedPersonaIdsForCalc.forEach((personaId) => {
+      const persona = personaMapping[personaId];
+      if (persona?.field_ids) {
+        persona.field_ids.forEach((fieldId) => {
+          personaFields.add(fieldId);
+          const field = parameterItemMapping[fieldId];
+          if (field?.parameter_id) {
+            personaParameterIds.add(field.parameter_id);
+          }
+        });
+      }
+    });
+
+    // Get all fields linked to selected documents
+    const documentFields = new Set<string>();
+    const documentParameterIds = new Set<string>();
+    selectedDocumentIdsForCalc.forEach((docId) => {
+      const doc = documentMapping[docId];
+      if (doc?.field_ids) {
+        doc.field_ids.forEach((fieldId) => {
+          documentFields.add(fieldId);
+          const field = parameterItemMapping[fieldId];
+          if (field?.parameter_id) {
+            documentParameterIds.add(field.parameter_id);
+          }
+        });
+      }
+      const docDetails = scenarioData?.document_details?.find(
+        (d) => d.document_id === docId
+      );
+      if (docDetails?.parameter_item_ids) {
+        docDetails.parameter_item_ids.forEach((fieldId) => {
+          documentFields.add(fieldId);
+          const field = parameterItemMapping[fieldId];
+          if (field?.parameter_id) {
+            documentParameterIds.add(field.parameter_id);
+          }
+        });
+      }
+    });
+
+    const selectedEntityParameterIds = new Set([
+      ...personaParameterIds,
+      ...documentParameterIds,
+    ]);
+
+    // Get conditional parameters from selected fields
+    const conditionalParamIds = new Set<string>();
+    selectedParamItemIdsForCalc.forEach((fieldId) => {
+      const field = parameterItemMapping[fieldId];
+      if (field?.conditional_parameter_ids) {
+        field.conditional_parameter_ids.forEach((paramId) =>
+          conditionalParamIds.add(paramId)
+        );
+      }
+    });
+
+    // Filter validParameterItemIds (base valid items)
+    const baseValidItems = validParameterItemIds;
+
+    return baseValidItems.filter((fieldId) => {
+      const field = parameterItemMapping[fieldId];
+      if (!field) return false;
+
+      const fieldParamId = field.parameter_id;
+
+      if (fieldId === fieldParamId) {
+        return false;
+      }
+
+      if (hasSelections) {
+        const hasPersonaFields = personaFields.size > 0;
+        const hasDocumentFields = documentFields.size > 0;
+        const hasAnyFields = hasPersonaFields || hasDocumentFields;
+
+        if (!hasAnyFields) {
+          if (selectedParamIds.length === 0) {
+            return true;
+          }
+          return selectedParamIds.includes(fieldParamId);
+        }
+
+        if (selectedParamIds.length > 0) {
+          if (!selectedParamIds.includes(fieldParamId)) {
+            if (conditionalParamIds.has(fieldParamId)) {
+              const triggersConditional = selectedParamItemIdsForCalc.some(
+                (selectedFieldId) => {
+                  const selectedField = parameterItemMapping[selectedFieldId];
+                  return (
+                    selectedField?.conditional_parameter_ids?.includes(
+                      fieldParamId
+                    ) && selectedParamIds.includes(selectedField.parameter_id)
+                  );
+                }
+              );
+              if (triggersConditional) {
+                return true;
+              }
+            }
+            return false;
+          }
+
+          const hasFieldsFromThisParameter =
+            selectedEntityParameterIds.has(fieldParamId);
+
+          if (!hasFieldsFromThisParameter) {
+            return true;
+          }
+
+          const isLinkedToPersona = personaFields.has(fieldId);
+          const isLinkedToDocument = documentFields.has(fieldId);
+
+          if (isLinkedToPersona || isLinkedToDocument) {
+            return true;
+          }
+
+          return false;
+        }
+
+        const hasFieldsFromThisParameter =
+          selectedEntityParameterIds.has(fieldParamId);
+
+        if (!hasFieldsFromThisParameter) {
+          return true;
+        }
+
+        if (personaFields.has(fieldId)) {
+          return true;
+        }
+
+        if (documentFields.has(fieldId)) {
+          return true;
+        }
+
+        if (conditionalParamIds.has(fieldParamId)) {
+          return true;
+        }
+
+        return false;
+      }
+
+      if (selectedParamIds.length === 0) {
+        return true;
+      }
+
+      if (selectedParamIds.includes(fieldParamId)) {
+        return true;
+      }
+
+      if (conditionalParamIds.has(fieldParamId)) {
+        return true;
+      }
+
+      return false;
+    });
+  };
+
+  // Randomize all: personas, documents, and all parameters (sequential)
+  const handleRandomizeAll = () => {
+    try {
+      // Step 1: Randomize personas (based on current state)
+      const validPersonaIdsList = validPersonaIds;
+      let randomizedPersonaIds: string[] = [];
+      if (validPersonaIdsList.length > 0) {
+        const { min, max } = personaMinMax;
+        const cappedMax = Math.min(5, max);
+        const count = Math.min(
+          cappedMax,
+          Math.max(min, Math.floor(Math.random() * (cappedMax - min + 1)) + min)
+        );
+        const shuffled = [...validPersonaIdsList].sort(
+          () => Math.random() - 0.5
+        );
+        randomizedPersonaIds = shuffled.slice(
+          0,
+          Math.min(count, validPersonaIdsList.length)
+        );
+      }
+
+      // Step 2: Calculate valid documents (based on empty parameter items since we're randomizing),
+      // then randomize documents
+      // Note: Documents don't directly depend on personas, but they do depend on parameter items
+      // Since we're randomizing everything, we start with empty parameter items for document calculation
+      const validDocIdsForRandomization = calculateValidDocumentIds([]);
+      let randomizedDocumentIds: string[] = [];
+      if (validDocIdsForRandomization.length > 0) {
+        const { min, max } = documentMinMax;
+        const cappedMax = Math.min(5, max);
+        const count = Math.min(
+          cappedMax,
+          Math.max(min, Math.floor(Math.random() * (cappedMax - min + 1)) + min)
+        );
+        const shuffled = [...validDocIdsForRandomization].sort(
+          () => Math.random() - 0.5
+        );
+        const selected = shuffled.slice(
+          0,
+          Math.min(count, validDocIdsForRandomization.length)
+        );
+        randomizedDocumentIds = selected.slice(0, 2); // Enforce max 2 documents
+      }
+
+      // Step 3: Calculate valid parameter items with new personas + documents (and empty parameter items),
+      // then randomize all parameters
+      const validParamItemsWithNewSelections =
+        calculateValidGeneralParameterItemIds(
+          randomizedPersonaIds,
+          randomizedDocumentIds,
+          [] // Start with empty parameter items for calculation
+        );
+
+      const allRandomizedParamItems: string[] = [];
+      Object.keys(generalParameterMapping).forEach((paramId) => {
+        const validItemsForParam = validParamItemsWithNewSelections.filter(
+          (itemId) => parameterItemMapping[itemId]?.parameter_id === paramId
+        );
+        if (validItemsForParam.length > 0) {
+          const { min, max } = parameterMinMax[paramId] || { min: 1, max: 2 };
+          const cappedMax = Math.min(5, max);
+          const count = Math.min(
+            cappedMax,
+            Math.max(
+              min,
+              Math.floor(Math.random() * (cappedMax - min + 1)) + min
+            )
+          );
+          const shuffled = [...validItemsForParam].sort(
+            () => Math.random() - 0.5
+          );
+          const selected = shuffled.slice(
+            0,
+            Math.min(count, validItemsForParam.length)
+          );
+          allRandomizedParamItems.push(...selected);
+        }
+      });
+
+      // Step 4: Update all states at once (React will batch these)
+      setSelectedPersonaIds(randomizedPersonaIds);
+      setCurrentDocumentIds(randomizedDocumentIds);
+      setCurrentParameterItemIds(allRandomizedParamItems);
+
+      toast.success("All selections randomized");
+    } catch {
+      toast.error("Failed to randomize all selections");
+    }
+  };
+
+  // Reset all: personas, documents, and all parameters
+  const handleResetAll = () => {
+    try {
+      // Reset personas
+      setSelectedPersonaIds([]);
+      // Reset documents
+      setCurrentDocumentIds([]);
+      // Reset all parameters (clear all parameter items)
+      setCurrentParameterItemIds([]);
+      toast.success("All selections reset");
+    } catch {
+      toast.error("Failed to reset all selections");
     }
   };
 
@@ -2419,6 +2878,34 @@ export default function Scenario({
                     : "Click to edit"}
                 </p>
               </div>
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRandomizeAll}
+                      disabled={isReadonly}
+                    >
+                      <Shuffle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Randomize All</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleResetAll}
+                      disabled={isReadonly}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reset All</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </CardContent>
           <CardContent className="pt-0 space-y-4">
@@ -2698,9 +3185,18 @@ export default function Scenario({
               <RangeSlider
                 min={1}
                 max={Math.min(5, validPersonaIds.length)}
-                value={[personaMinMax.min, Math.min(5, personaMinMax.max)]}
+                value={[
+                  personaMinMax.min,
+                  Math.min(
+                    Math.min(5, validPersonaIds.length),
+                    personaMinMax.max
+                  ),
+                ]}
                 onValueChange={([min, max]) =>
-                  setPersonaMinMax({ min, max: Math.min(5, max) })
+                  setPersonaMinMax({
+                    min,
+                    max: Math.min(Math.min(5, validPersonaIds.length), max),
+                  })
                 }
                 disabled={isReadonly}
                 className="w-[200px]"
@@ -2892,9 +3388,18 @@ export default function Scenario({
               <RangeSlider
                 min={0}
                 max={Math.min(5, validDocumentIds.length)}
-                value={[documentMinMax.min, Math.min(5, documentMinMax.max)]}
+                value={[
+                  documentMinMax.min,
+                  Math.min(
+                    Math.min(5, validDocumentIds.length),
+                    documentMinMax.max
+                  ),
+                ]}
                 onValueChange={([min, max]) =>
-                  setDocumentMinMax({ min, max: Math.min(5, max) })
+                  setDocumentMinMax({
+                    min,
+                    max: Math.min(Math.min(5, validDocumentIds.length), max),
+                  })
                 }
                 disabled={isReadonly}
                 className="w-[200px]"
@@ -2998,11 +3503,23 @@ export default function Scenario({
                     <RangeSlider
                       min={1}
                       max={Math.min(5, validItemsForParam.length)}
-                      value={[paramMinMax.min, Math.min(5, paramMinMax.max)]}
+                      value={[
+                        paramMinMax.min,
+                        Math.min(
+                          Math.min(5, validItemsForParam.length),
+                          paramMinMax.max
+                        ),
+                      ]}
                       onValueChange={([min, max]) =>
                         setParameterMinMax((prev) => ({
                           ...prev,
-                          [paramId]: { min, max: Math.min(5, max) },
+                          [paramId]: {
+                            min,
+                            max: Math.min(
+                              Math.min(5, validItemsForParam.length),
+                              max
+                            ),
+                          },
                         }))
                       }
                       disabled={isReadonly}
@@ -3039,24 +3556,27 @@ export default function Scenario({
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ParameterSelector
-                    parameterMapping={{ [paramId]: param }}
-                    parameterItemMapping={parameterItemMapping}
-                    validParameterItemIds={validItemsForParam}
-                    selectedParameterItemIds={selectedItemsForParam}
-                    onParameterItemIdsChange={(newIds) => {
-                      // Update only this parameter's items
-                      const otherParamItems = currentParameterItemIds.filter(
-                        (itemId) =>
-                          parameterItemMapping[itemId]?.parameter_id !== paramId
-                      );
-                      setCurrentParameterItemIds([
-                        ...otherParamItems,
-                        ...newIds,
-                      ]);
-                    }}
-                    disabled={isReadonly}
-                  />
+                  <div className="[&_label.text-sm.font-medium]:hidden">
+                    <ParameterSelector
+                      parameterMapping={{ [paramId]: param }}
+                      parameterItemMapping={parameterItemMapping}
+                      validParameterItemIds={validItemsForParam}
+                      selectedParameterItemIds={selectedItemsForParam}
+                      onParameterItemIdsChange={(newIds) => {
+                        // Update only this parameter's items
+                        const otherParamItems = currentParameterItemIds.filter(
+                          (itemId) =>
+                            parameterItemMapping[itemId]?.parameter_id !==
+                            paramId
+                        );
+                        setCurrentParameterItemIds([
+                          ...otherParamItems,
+                          ...newIds,
+                        ]);
+                      }}
+                      disabled={isReadonly}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             );
