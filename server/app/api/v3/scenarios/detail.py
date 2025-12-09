@@ -5,33 +5,45 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    DocumentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ObjectiveMapping,
-    ObjectiveMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-)
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              DocumentMapping, DocumentMappingItem,
+                              FieldMapping, FieldMappingItem, ObjectiveMapping,
+                              ObjectiveMappingItem, ParameterMapping,
+                              ParameterMappingItem, PersonaMapping,
+                              PersonaMappingItem, SimulationMapping,
+                              SimulationMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
+
+def preserve_order_union(
+    base_items: list[str],
+    additional_items: list[str],
+) -> list[str]:
+    """
+    Union two lists while preserving order from base_items, then appending any additional items.
+    This replaces set() operations that lose order from SQL queries.
+    """
+    seen = set()
+    result = []
+    # First, add base_items in order
+    for item in base_items:
+        if item not in seen:
+            result.append(item)
+            seen.add(item)
+    # Then add additional items not already in result
+    for item in additional_items:
+        if item not in seen:
+            result.append(item)
+            seen.add(item)
+    return result
 
 
 # Inline request/response schemas
@@ -240,7 +252,7 @@ def filter_valid_persona_ids(
     selected_persona_id_set = set(selected_persona_ids)
 
     if len(selected_dept_ids) == 0:
-        return list(set(base_ids) | selected_persona_id_set)
+        return preserve_order_union(base_ids, selected_persona_ids)
 
     all_dept_persona_ids: set[str] = set()
     for dept_data in department_mapping.values():
@@ -259,7 +271,8 @@ def filter_valid_persona_ids(
         if pid in selected_dept_persona_ids or pid not in all_dept_persona_ids
     ]
 
-    dept_filtered = list(set(filtered) | selected_persona_id_set)
+    # Preserve order from filtered list, then add selected items
+    dept_filtered = preserve_order_union(filtered, selected_persona_ids)
 
     param_filtered = dept_filtered
     if len(selected_param_ids) > 0:
@@ -349,7 +362,7 @@ def filter_valid_document_ids(
     selected_doc_id_set = set(selected_doc_ids)
 
     if len(selected_dept_ids) == 0:
-        dept_filtered_ids = list(set(base_ids) | selected_doc_id_set)
+        dept_filtered_ids = preserve_order_union(base_ids, selected_doc_ids)
     else:
         all_dept_document_ids: set[str] = set()
         for dept_data in department_mapping.values():
@@ -369,7 +382,8 @@ def filter_valid_document_ids(
             or doc_id not in all_dept_document_ids
         ]
 
-        dept_filtered_ids = list(set(filtered) | selected_doc_id_set)
+        # Preserve order from filtered list, then add selected items
+        dept_filtered_ids = preserve_order_union(filtered, selected_doc_ids)
 
     current_doc_field_ids = [
         item_id
@@ -495,7 +509,7 @@ def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
     selected_field_id_set = set(selected_field_ids)
 
     if len(selected_dept_ids) == 0:
-        return list(set(mapping_ids) | selected_field_id_set)
+        return preserve_order_union(mapping_ids, selected_field_ids)
 
     all_dept_field_ids: set[str] = set()
     for dept_data in department_mapping.values():
@@ -516,7 +530,8 @@ def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
         if item_id in selected_dept_field_ids or item_id not in all_dept_field_ids
     ]
 
-    return list(set(filtered) | selected_field_id_set)
+    # Preserve order from filtered list, then add selected items
+    return preserve_order_union(filtered, selected_field_ids)
 
 
 def filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids

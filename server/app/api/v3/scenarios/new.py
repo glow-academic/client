@@ -30,6 +30,29 @@ from app.utils.schema import (
 from app.utils.sql_helper import load_sql
 
 
+def preserve_order_union(
+    base_items: list[str],
+    additional_items: list[str],
+) -> list[str]:
+    """
+    Union two lists while preserving order from base_items, then appending any additional items.
+    This replaces set() operations that lose order from SQL queries.
+    """
+    seen = set()
+    result = []
+    # First, add base_items in order
+    for item in base_items:
+        if item not in seen:
+            result.append(item)
+            seen.add(item)
+    # Then add additional items not already in result
+    for item in additional_items:
+        if item not in seen:
+            result.append(item)
+            seen.add(item)
+    return result
+
+
 # Inline request/response schemas
 class ScenarioNewRequest(BaseModel):
     """Request to get default scenario details."""
@@ -241,9 +264,9 @@ def filter_valid_persona_ids(
     # Always include currently selected personas (for edit mode - ensures selected items are visible)
     selected_persona_id_set = set(selected_persona_ids)
 
-    # If no departments selected, return all valid IDs plus selected ones
+    # If no departments selected, return all valid IDs plus selected ones (preserving order)
     if len(selected_dept_ids) == 0:
-        return list(set(base_ids) | selected_persona_id_set)
+        return preserve_order_union(base_ids, selected_persona_ids)
 
     # Get union of persona_ids from ALL departments (to identify cross-department items)
     all_dept_persona_ids: set[str] = set()
@@ -268,7 +291,8 @@ def filter_valid_persona_ids(
         if pid in selected_dept_persona_ids or pid not in all_dept_persona_ids
     ]
 
-    dept_filtered = list(set(filtered) | selected_persona_id_set)
+    # Preserve order from filtered list, then add selected items
+    dept_filtered = preserve_order_union(filtered, selected_persona_ids)
 
     # Apply parameter-based filtering
     param_filtered = dept_filtered
@@ -368,9 +392,9 @@ def filter_valid_document_ids(
     # Always include currently selected documents (for edit mode - ensures selected items are visible)
     selected_doc_id_set = set(selected_doc_ids)
 
-    # If no departments selected, start with all valid IDs plus selected ones
+    # If no departments selected, start with all valid IDs plus selected ones (preserving order)
     if len(selected_dept_ids) == 0:
-        dept_filtered_ids = list(set(base_ids) | selected_doc_id_set)
+        dept_filtered_ids = preserve_order_union(base_ids, selected_doc_ids)
     else:
         # Get union of document_ids from ALL departments (to identify cross-department items)
         all_dept_document_ids: set[str] = set()
@@ -396,7 +420,8 @@ def filter_valid_document_ids(
             or doc_id not in all_dept_document_ids
         ]
 
-        dept_filtered_ids = list(set(filtered) | selected_doc_id_set)
+        # Preserve order from filtered list, then add selected items
+        dept_filtered_ids = preserve_order_union(filtered, selected_doc_ids)
 
     # Filter by selected document fields if any are selected
     # Compute documentFieldIds inline to avoid dependency order issue
@@ -539,9 +564,9 @@ def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
     # Always include currently selected fields (for edit mode - ensures selected items are visible)
     selected_field_id_set = set(selected_field_ids)
 
-    # If no departments selected, return all mapping IDs plus selected ones
+    # If no departments selected, return all mapping IDs plus selected ones (preserving order)
     if len(selected_dept_ids) == 0:
-        return list(set(mapping_ids) | selected_field_id_set)
+        return preserve_order_union(mapping_ids, selected_field_ids)
 
     # Get union of field_ids from ALL departments (to identify cross-department items)
     all_dept_field_ids: set[str] = set()
@@ -568,7 +593,8 @@ def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
         if item_id in selected_dept_field_ids or item_id not in all_dept_field_ids
     ]
 
-    return list(set(filtered) | selected_field_id_set)
+    # Preserve order from filtered list, then add selected items
+    return preserve_order_union(filtered, selected_field_ids)
 
 
 def filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
