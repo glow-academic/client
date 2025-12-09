@@ -535,7 +535,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             primary_id = trace_id or (str(group_id) if group_id else None)
 
             # 1. Title and Description Tool (always included)
-            async def set_title_and_description(
+            async def set_title_description(
                 title: str = Field(
                     description="Short, descriptive title for the scenario (5-10 words)"
                 ),
@@ -575,7 +575,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 logger.info(f"✓ Description: {scenario[:100]}...")
                 return "Set title and description successfully"
 
-            scenario_tools.append(function_tool(set_title_and_description))
+            scenario_tools.append(function_tool(set_title_description))
             logger.info("Created title and description tool")
 
             # 2. Objectives Tool (if enabled)

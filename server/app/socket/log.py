@@ -12,11 +12,6 @@ from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
-# TEMPORARY: Feature flag for saving OpenAI messages as JSON files
-# TODO: Remove this feature flag after testing
-SAVE_RUN_MESSAGES_JSON = True
-
-
 # Pydantic model for client-to-server event
 class LogRunPayload(BaseModel):
     runId: str
@@ -85,49 +80,48 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                 f"tokens={data.inputTextTokens}+{data.outputTextTokens}"
             )
 
-            # TEMPORARY: Save OpenAI messages as JSON file if feature flag is enabled
-            if SAVE_RUN_MESSAGES_JSON:
-                try:
-                    messages: list[dict[str, str]] = []
+            # Always save OpenAI messages as JSON file
+            try:
+                messages: list[dict[str, str]] = []
 
-                    # Add system message if provided
-                    if data.systemPrompt:
-                        messages.append({"role": "system", "content": data.systemPrompt})
+                # Add system message if provided
+                if data.systemPrompt:
+                    messages.append({"role": "system", "content": data.systemPrompt})
 
-                    # Add developer messages from inputItems
-                    if data.inputItems:
-                        for item in data.inputItems:
-                            if (
-                                item
-                                and isinstance(item, dict)
-                                and item.get("role") == "developer"
-                            ):
-                                content = item.get("content", "")
-                                if isinstance(content, str) and content.strip():
-                                    messages.append(
-                                        {"role": "developer", "content": content.strip()}
-                                    )
+                # Add developer messages from inputItems
+                if data.inputItems:
+                    for item in data.inputItems:
+                        if (
+                            item
+                            and isinstance(item, dict)
+                            and item.get("role") == "developer"
+                        ):
+                            content = item.get("content", "")
+                            if isinstance(content, str) and content.strip():
+                                messages.append(
+                                    {"role": "developer", "content": content.strip()}
+                                )
 
-                    # Add assistant message if provided
-                    if data.assistantOutput and data.assistantOutput.strip():
-                        messages.append(
-                            {"role": "assistant", "content": data.assistantOutput.strip()}
-                        )
-
-                    # Save to JSON file
-                    if messages:
-                        json_file_path = UPLOAD_FOLDER / f"{run_id}.json"
-                        with open(json_file_path, "w", encoding="utf-8") as f:
-                            json.dump(messages, f, indent=2, ensure_ascii=False)
-                        logger.info(
-                            f"Saved OpenAI messages to {json_file_path} ({len(messages)} messages)"
-                        )
-                except Exception as json_error:
-                    # Log error but don't fail the request
-                    logger.error(
-                        f"Failed to save JSON file for run_id={run_id}: {str(json_error)}",
-                        exc_info=True,
+                # Add assistant message if provided
+                if data.assistantOutput and data.assistantOutput.strip():
+                    messages.append(
+                        {"role": "assistant", "content": data.assistantOutput.strip()}
                     )
+
+                # Save to JSON file
+                if messages:
+                    json_file_path = UPLOAD_FOLDER / f"{run_id}.json"
+                    with open(json_file_path, "w", encoding="utf-8") as f:
+                        json.dump(messages, f, indent=2, ensure_ascii=False)
+                    logger.info(
+                        f"Saved OpenAI messages to {json_file_path} ({len(messages)} messages)"
+                    )
+            except Exception as json_error:
+                # Log error but don't fail the request
+                logger.error(
+                    f"Failed to save JSON file for run_id={run_id}: {str(json_error)}",
+                    exc_info=True,
+                )
 
     except Exception as e:
         logger.error(

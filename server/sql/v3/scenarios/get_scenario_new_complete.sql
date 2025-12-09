@@ -547,13 +547,45 @@ resolved_department_for_agents AS (
         (SELECT id FROM first_user_department)
     ) as department_id
 ),
+-- Check if any provided documentIds are templates
+has_template_documents AS (
+    SELECT 
+        CASE 
+            WHEN $4::uuid[] IS NOT NULL AND array_length($4::uuid[], 1) > 0 THEN
+                EXISTS (
+                    SELECT 1 
+                    FROM documents d
+                    WHERE d.id = ANY($4::uuid[])
+                    AND (
+                        d.template = true
+                        OR EXISTS (
+                            SELECT 1 
+                            FROM document_templates dt 
+                            WHERE dt.document_id = d.id 
+                            AND dt.active = true
+                        )
+                    )
+                )
+            ELSE false
+        END as has_templates
+),
+-- Determine expected agent role based on flags
+expected_agent_role AS (
+    SELECT get_scenario_agent_role(
+        COALESCE($2::boolean, false),
+        COALESCE($3::boolean, false),
+        (SELECT has_templates FROM has_template_documents)
+    ) as role
+),
 default_scenario_agent AS (
-    -- Get best scenario agent for the resolved department
+    -- Get best scenario agent for the resolved department based on expected role
+    -- Only match the expected role (no fallback to base scenario - base scenario only when expected role IS 'scenario')
     SELECT a.id::text as agent_id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
-    WHERE a.role = 'scenario'
+    CROSS JOIN expected_agent_role ear
+    WHERE a.role = ear.role  -- Only match the expected role
     AND a.active = true
     AND (
         -- Include if agent is linked to the resolved department
@@ -585,48 +617,17 @@ default_image_agent AS (
         CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
     LIMIT 1
 ),
--- Check if any provided documentIds are templates
-has_template_documents AS (
-    SELECT 
-        CASE 
-            WHEN $4::uuid[] IS NOT NULL AND array_length($4::uuid[], 1) > 0 THEN
-                EXISTS (
-                    SELECT 1 
-                    FROM documents d
-                    WHERE d.id = ANY($4::uuid[])
-                    AND (
-                        d.template = true
-                        OR EXISTS (
-                            SELECT 1 
-                            FROM document_templates dt 
-                            WHERE dt.document_id = d.id 
-                            AND dt.active = true
-                        )
-                    )
-                )
-            ELSE false
-        END as has_templates
-),
--- Determine expected agent role based on flags
-expected_agent_role AS (
-    SELECT get_scenario_agent_role(
-        COALESCE($2::boolean, false),
-        COALESCE($3::boolean, false),
-        (SELECT has_templates FROM has_template_documents)
-    ) as role
-),
 agent_filtered AS (
     -- Filter agents by department access and expected role
-    -- Include agents matching expected role OR base 'scenario' role (backward compatibility)
+    -- Include agents matching expected role (or image agents if image is enabled)
     SELECT a.id, a.name, a.description, a.role
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN expected_agent_role ear
     WHERE a.active = true 
     AND (
-        -- Match expected role OR base scenario role (backward compatibility)
+        -- Match expected role only (no fallback to base scenario)
         a.role = ear.role
-        OR a.role = 'scenario'
         -- OR image agents (if image is enabled)
         OR (ear.role::text LIKE '%image%' AND a.role = 'image')
     )
