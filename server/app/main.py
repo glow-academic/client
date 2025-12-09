@@ -556,6 +556,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 handler.setFormatter(compact_formatter)
                 uvicorn_logger.addHandler(handler)
 
+        # Configure Socket.IO loggers to prevent propagation to root logger
+        # This prevents duplicate log entries (Socket.IO logs + root logger formatted logs)
+        for logger_name in ["socketio", "engineio", "socketio.server", "engineio.server"]:
+            socketio_logger = logging.getLogger(logger_name)
+            socketio_logger.propagate = False  # Prevent double logging
+            # Update existing handlers or add new one
+            if socketio_logger.handlers:
+                for handler in socketio_logger.handlers:
+                    handler.setFormatter(compact_formatter)
+            else:
+                handler = logging.StreamHandler()
+                handler.setFormatter(compact_formatter)
+                socketio_logger.addHandler(handler)
+
         # Initialize Redis client for HTTP caching and socket ownership management
         global redis_client
         redis_url = os.getenv("REDIS_URL")
@@ -636,6 +650,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
             setup_db_logger(pool)
             logger.info("Database logger initialized")
+
+            # Add DBLogHandler to Socket.IO loggers so they write to database
+            from app.utils.logging.db_logger import DBLogHandler  # noqa: E402
+
+            for logger_name in ["socketio", "engineio", "socketio.server", "engineio.server"]:
+                socketio_logger = logging.getLogger(logger_name)
+                # Only add DBLogHandler if not already present
+                if not any(isinstance(h, DBLogHandler) for h in socketio_logger.handlers):
+                    db_handler = DBLogHandler()
+                    db_handler.setLevel(logging.DEBUG)
+                    socketio_logger.addHandler(db_handler)
 
             # Sync Keycloak identity providers from database
             try:
