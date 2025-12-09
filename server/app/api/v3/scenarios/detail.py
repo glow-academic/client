@@ -75,6 +75,9 @@ class ScenarioDetailRequest(BaseModel):
     )
     # Randomization parameter (single param: "all", "persona", "document", "parameters", or "parameter_{field_id}")
     randomize: str | None = None
+    # Agent filtering parameters
+    useImage: bool | None = None
+    useObjectives: bool | None = None
 
 
 class ParameterDetail(BaseModel):
@@ -732,12 +735,26 @@ async def get_scenario_detail(
     try:
         # Load SQL string (persona query is now merged into main query)
         sql_query = load_sql("sql/v3/scenarios/get_scenario_detail_complete.sql")
-        sql_params = (request_data.scenarioId, request_data.profileId)
+        
+        # Convert documentIds to UUID array if provided
+        document_ids_uuid = None
+        if request_data.documentIds:
+            import uuid as uuid_lib
+            try:
+                document_ids_uuid = [uuid_lib.UUID(did) for did in request_data.documentIds]
+            except (ValueError, TypeError):
+                document_ids_uuid = None
+        
+        sql_params = (
+            request_data.scenarioId,
+            request_data.profileId,
+            request_data.useImage,
+            request_data.useObjectives,
+            document_ids_uuid,
+        )
 
         # Execute query
-        scenario = await conn.fetchrow(
-            sql_query, request_data.scenarioId, request_data.profileId
-        )
+        scenario = await conn.fetchrow(sql_query, *sql_params)
         if not scenario:
             # Check if scenario exists but user doesn't have department access
             scenario_exists_check = await conn.fetchval(

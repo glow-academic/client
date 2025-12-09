@@ -28505,6 +28505,28 @@
               }
             ],
             "title": "Randomize"
+          },
+          "useImage": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useimage"
+          },
+          "useObjectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useobjectives"
           }
         },
         "type": "object",
@@ -28948,6 +28970,28 @@
               }
             ],
             "title": "Randomize"
+          },
+          "useImage": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useimage"
+          },
+          "useObjectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useobjectives"
           }
         },
         "type": "object",

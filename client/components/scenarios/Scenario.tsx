@@ -81,8 +81,6 @@ import type {
   CreateScenarioOut,
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
-  RandomizeScenarioIn,
-  RandomizeScenarioOut,
   ScenarioDetailOut,
   ScenarioNewOut,
   UpdateScenarioIn,
@@ -251,12 +249,6 @@ export interface ScenarioProps {
   updateScenarioAction?: (
     input: UpdateScenarioIn
   ) => Promise<UpdateScenarioOut>;
-  generateAIScenarioAction?: (
-    input: GenerateAIScenarioIn
-  ) => Promise<GenerateAIScenarioOut>;
-  randomizeScenarioAction?: (
-    input: RandomizeScenarioIn
-  ) => Promise<RandomizeScenarioOut>;
 }
 
 type StepStatus = "pending" | "active" | "completed";
@@ -276,8 +268,6 @@ export default function Scenario({
   scenarioDetailDefault: serverScenarioDetailDefault,
   createScenarioAction,
   updateScenarioAction,
-  generateAIScenarioAction: _generateAIScenarioAction,
-  randomizeScenarioAction: _randomizeScenarioAction,
 }: ScenarioProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -468,7 +458,6 @@ export default function Scenario({
         fieldIds: body.fieldIds, // Renamed from parameterItemIds
         profileId: body.profileId,
         userInstructions: body.userInstructions,
-        objectivesEnabled: body.objectivesEnabled,
       });
     });
   };

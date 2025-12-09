@@ -585,29 +585,52 @@ default_image_agent AS (
         CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
     LIMIT 1
 ),
+-- Check if any provided documentIds are templates
+has_template_documents AS (
+    SELECT 
+        CASE 
+            WHEN $4::uuid[] IS NOT NULL AND array_length($4::uuid[], 1) > 0 THEN
+                EXISTS (
+                    SELECT 1 
+                    FROM documents d
+                    WHERE d.id = ANY($4::uuid[])
+                    AND (
+                        d.template = true
+                        OR EXISTS (
+                            SELECT 1 
+                            FROM document_templates dt 
+                            WHERE dt.document_id = d.id 
+                            AND dt.active = true
+                        )
+                    )
+                )
+            ELSE false
+        END as has_templates
+),
+-- Determine expected agent role based on flags
+expected_agent_role AS (
+    SELECT get_scenario_agent_role(
+        COALESCE($2::boolean, false) as image_enabled,
+        COALESCE($3::boolean, false) as objectives_enabled,
+        (SELECT has_templates FROM has_template_documents) as documents_enabled
+    ) as role
+),
 agent_filtered AS (
-    -- Filter agents by department access
-    -- Include all scenario role types (base + fine-grained) and image agents
+    -- Filter agents by department access and expected role
+    -- Include agents matching expected role OR base 'scenario' role (backward compatibility)
     SELECT a.id, a.name, a.description, a.role
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN expected_agent_role ear
     WHERE a.active = true 
     AND (
-        -- Include all scenario role types (base + fine-grained)
-        a.role IN (
-            'scenario',
-            'scenario-image',
-            'scenario-objectives',
-            'scenario-templates',
-            'scenario-image-objectives',
-            'scenario-image-templates',
-            'scenario-objectives-templates',
-            'scenario-image-objectives-templates'
-        )
-        -- OR image agents
-        OR a.role = 'image'
+        -- Match expected role OR base scenario role (backward compatibility)
+        a.role = ear.role
+        OR a.role = 'scenario'
+        -- OR image agents (if image is enabled)
+        OR (ear.role::text LIKE '%image%' AND a.role = 'image')
     )
-    GROUP BY a.id, a.name, a.description, a.role
+    GROUP BY a.id, a.name, a.description, a.role, ear.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)

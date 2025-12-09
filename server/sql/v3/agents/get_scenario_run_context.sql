@@ -70,6 +70,7 @@ SELECT
     -- Agent data (via department_agents junction for 'scenario' role)
     a.id::text as agent_id,
     a.name as agent_name,
+    a.role::text as agent_role,
     COALESCE(pr_prompt.system_prompt, '') as system_prompt,
     COALESCE(mtl.temperature, 0.0) as temperature,
     mrl.reasoning_level as reasoning,

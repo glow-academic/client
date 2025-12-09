@@ -85,7 +85,6 @@ class GenerateScenarioAIPayload(BaseModel):
     documentIds: list[str] | None = None
     fieldIds: list[str] | None = None
     profileId: str | None = None
-    objectivesEnabled: bool = True  # Used for tool creation, not agent selection
 
 
 # Emit helper functions
@@ -250,9 +249,12 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
                 else context_row["document_templates"]
             )
 
+            agent_role = context_row.get("agent_role", "scenario")
+            
             context = {
                 "agent_id": context_row["agent_id"],
                 "agent_name": context_row["agent_name"],
+                "agent_role": agent_role,
                 "system_prompt": context_row["system_prompt"],
                 "temperature": float(context_row["temperature"])
                 if context_row["temperature"] is not None
@@ -302,11 +304,38 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
                 field_info = format_parameter_item_info(context["parameter_items"])
 
             # Create scenario generation tools
-            # Determine which tools to enable based on agent role and provided flags
+            # Determine which tools to enable based on agent role
             group_id = None
-            objectives_enabled = data.objectivesEnabled
-            documents_enabled = bool(document_ids and len(document_ids) > 0)
-            images_enabled = True  # Enable image generation by default
+            
+            # Determine tool availability based on agent role
+            # Base 'scenario' role supports all tools (backward compatibility)
+            # Fine-grained roles indicate specific capabilities
+            agent_role_str = str(agent_role).lower()
+            objectives_enabled = (
+                agent_role_str == "scenario"  # Base role supports all
+                or "objectives" in agent_role_str
+            )
+            images_enabled = (
+                agent_role_str == "scenario"  # Base role supports all
+                or "image" in agent_role_str
+            )
+            # Documents enabled if agent supports templates AND template documents exist
+            has_template_documents = bool(
+                context["document_templates"]
+                and len(context["document_templates"]) > 0
+            )
+            documents_enabled = (
+                has_template_documents
+                and (
+                    agent_role_str == "scenario"  # Base role supports all
+                    or "templates" in agent_role_str
+                )
+            )
+            
+            logger.info(
+                f"Agent role: {agent_role}, objectives_enabled: {objectives_enabled}, "
+                f"images_enabled: {images_enabled}, documents_enabled: {documents_enabled}"
+            )
 
             # Use default guest profile from context if no profile_id provided
             final_profile_id = (
@@ -339,12 +368,6 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
                 document_templates=context["document_templates"],
             )
             scenario_tools.append(debug_info_tool)
-
-            # Check if template documents are available (require create_document if so)
-            has_template_documents = bool(
-                context["document_templates"]
-                and len(context["document_templates"]) > 0
-            )
 
             # Create tool use behavior to check when all required tools are called
             def tool_use_behavior(

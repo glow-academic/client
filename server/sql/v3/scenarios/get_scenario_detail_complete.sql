@@ -1,5 +1,5 @@
 -- Get scenario detail with departments, problem statements, and access control
--- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid or "guest-profile-id")
+-- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid or "guest-profile-id"), $3 = use_image (bool, nullable), $4 = use_objectives (bool, nullable), $5 = document_ids (uuid[], nullable)
 
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
@@ -993,10 +993,39 @@ user_departments_for_agents AS (
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
     WHERE pd.active = true
 ),
+-- Check if any provided documentIds are templates
+has_template_documents AS (
+    SELECT 
+        CASE 
+            WHEN $5::uuid[] IS NOT NULL AND array_length($5::uuid[], 1) > 0 THEN
+                EXISTS (
+                    SELECT 1 
+                    FROM documents d
+                    WHERE d.id = ANY($5::uuid[])
+                    AND (
+                        d.template = true
+                        OR EXISTS (
+                            SELECT 1 
+                            FROM document_templates dt 
+                            WHERE dt.document_id = d.id 
+                            AND dt.active = true
+                        )
+                    )
+                )
+            ELSE false
+        END as has_templates
+),
+-- Determine expected agent role based on flags
+expected_agent_role AS (
+    SELECT get_scenario_agent_role(
+        COALESCE($3::boolean, false) as image_enabled,
+        COALESCE($4::boolean, false) as objectives_enabled,
+        (SELECT has_templates FROM has_template_documents) as documents_enabled
+    ) as role
+),
 valid_agents AS (
-    -- Get agents with roles 'scenario' (base + fine-grained types) or 'image'
-    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
-    -- UI will filter by role based on scenario flags (objectives_enabled, image_enabled, documents_enabled)
+    -- Filter agents by department access and expected role
+    -- Include agents matching expected role OR base 'scenario' role (backward compatibility)
     SELECT 
         COALESCE(
             jsonb_object_agg(
@@ -1012,23 +1041,16 @@ valid_agents AS (
         array_agg(a.id::text ORDER BY a.name) as agent_ids
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN expected_agent_role ear
     WHERE a.active = true 
     AND (
-        -- Include all scenario role types (base + fine-grained) for UI filtering
-        a.role IN (
-            'scenario',
-            'scenario-image',
-            'scenario-objectives',
-            'scenario-templates',
-            'scenario-image-objectives',
-            'scenario-image-templates',
-            'scenario-objectives-templates',
-            'scenario-image-objectives-templates'
-        )
-        -- OR image agents
-        OR a.role = 'image'
+        -- Match expected role OR base scenario role (backward compatibility)
+        a.role = ear.role
+        OR a.role = 'scenario'
+        -- OR image agents (if image is enabled)
+        OR (ear.role::text LIKE '%image%' AND a.role = 'image')
     )
-    GROUP BY a.id
+    GROUP BY a.id, ear.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)

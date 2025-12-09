@@ -11640,6 +11640,10 @@ export interface components {
             } | null;
             /** Randomize */
             randomize?: string | null;
+            /** Useimage */
+            useImage?: boolean | null;
+            /** Useobjectives */
+            useObjectives?: boolean | null;
         };
         /** ScenarioDocumentItem */
         ScenarioDocumentItem: {
@@ -11776,6 +11780,10 @@ export interface components {
             } | null;
             /** Randomize */
             randomize?: string | null;
+            /** Useimage */
+            useImage?: boolean | null;
+            /** Useobjectives */
+            useObjectives?: boolean | null;
         };
         /**
          * ScenarioOverviewRequest
