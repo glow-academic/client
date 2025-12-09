@@ -1010,14 +1010,19 @@ async def get_scenario_new(
         allowed_ranges: AllowedRanges | None = None
         randomized_selections: RandomizedSelections | None = None
 
-        # Only apply filtering if filter parameters are provided
-        if (
+        # Always compute filtered_valid_general_parameter_item_ids if randomize is present
+        # (needed for randomization even when no filter params are provided)
+        needs_filtering = (
             request_data.departmentIds is not None
             or request_data.personaIds is not None
             or request_data.documentIds is not None
             or request_data.parameterIds is not None
             or request_data.parameterItemIds is not None
-        ):
+            or request_data.randomize is not None
+        )
+
+        # Only apply filtering if filter parameters are provided or randomize is present
+        if needs_filtering:
             # Filter valid persona IDs
             filtered_valid_persona_ids = filter_valid_persona_ids(
                 base_ids=valid_persona_ids,
@@ -1067,6 +1072,22 @@ async def get_scenario_new(
                     parameter_item_mapping=parameter_item_mapping,
                     document_details=document_details,
                 )
+            )
+        elif request_data.randomize:
+            # When randomize is present but no filter params, still need filtered_valid_general_parameter_item_ids
+            # Initialize with base values (no filtering applied)
+            mapping_ids = list(parameter_item_mapping.keys())
+            filtered_valid_parameter_item_ids = mapping_ids
+            filtered_valid_general_parameter_item_ids = filter_valid_general_parameter_item_ids(
+                valid_parameter_item_ids=filtered_valid_parameter_item_ids,
+                selected_param_ids=None,
+                selected_persona_ids=None,
+                selected_doc_ids=None,
+                selected_param_item_ids=None,
+                persona_mapping=persona_mapping,
+                document_mapping=document_mapping,
+                parameter_item_mapping=parameter_item_mapping,
+                document_details=document_details,
             )
 
         # Compute allowed ranges from filtered IDs (cap max at 5)
@@ -1191,9 +1212,12 @@ async def get_scenario_new(
                     pass
                 
                 # Randomize all parameter items
+                # Only randomize items for parameters that were randomized (or selected if no randomization)
                 if filtered_valid_general_parameter_item_ids:
                     randomized_items: list[str] = []
-                    for param_id in parameter_mapping.keys():
+                    # Use randomized parameter IDs if available, otherwise use selected parameter IDs
+                    params_to_randomize = randomized_parameter_ids if randomized_parameter_ids else (request_data.parameterIds or [])
+                    for param_id in params_to_randomize:
                         if param_id in parameter_items_ranges:
                             param_range = parameter_items_ranges[param_id]
                             try:

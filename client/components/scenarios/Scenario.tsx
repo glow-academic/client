@@ -647,8 +647,16 @@ export default function Scenario({
       );
     }
     // Per-parameter item ranges (default: min=1, max=2 for each)
+    // Include ranges for selected parameters, or for all parameters if randomize=all (server needs ranges for randomized params)
+    const selectedParamIds = formData.parameterIds || [];
+    const isRandomizing = searchParams.get("randomize") === "all";
     Object.entries(parameterMinMax).forEach(([paramId, range]) => {
-      if (range.min !== 1 || range.max !== 2) {
+      // Include range if:
+      // 1. Parameter is selected, OR
+      // 2. We're randomizing all (server will randomize parameters and need these ranges)
+      // AND range differs from default
+      const shouldInclude = isRandomizing || selectedParamIds.includes(paramId);
+      if (shouldInclude && (range.min !== 1 || range.max !== 2)) {
         params.set(`parameterItemMin_${paramId}`, range.min.toString());
         params.set(`parameterItemMax_${paramId}`, range.max.toString());
       }
@@ -671,6 +679,8 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     parameterMinMax,
+    // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
+    searchParams,
   ]);
 
   // Extract mappings from V2 response
