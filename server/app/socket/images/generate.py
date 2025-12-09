@@ -5,12 +5,11 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from pydantic import BaseModel
-
 from app.main import UPLOAD_FOLDER, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
@@ -26,7 +25,12 @@ except ImportError:
 
 class GenerateImagePayload(BaseModel):
     image_id: str
-    storage_key: str
+    name: str
+    prompt: str
+    agent_id: str
+    department_id: str | None = None
+    profile_id: str | None = None
+    room: str | None = None
 
 
 async def get_agent_model_info(
@@ -74,45 +78,34 @@ async def get_agent_model_info(
 async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
     """Handle image generation request via WebSocket."""
     image_id = data.image_id
-    storage_key = data.storage_key
+    name = data.name
+    prompt = data.prompt
+    agent_id = data.agent_id
+    department_id = data.department_id
+    profile_id = data.profile_id
+    room = data.room
 
     pool = get_pool()
     if not pool:
         logger.error(f"Database pool not available for image {image_id}")
-        await _emit_image_error(image_id, storage_key, "Database pool not available")
+        await _emit_image_error(image_id, room, "Database pool not available")
         return
 
     try:
-        # Get context from storage
-        from app.main import get_image_generation_storage
-
-        storage = get_image_generation_storage()
-        name = await storage.get(storage_key, "name")
-        prompt = await storage.get(storage_key, "prompt")
-        agent_id = await storage.get(storage_key, "agent_id")
-        department_id = await storage.get(storage_key, "department_id")
-        profile_id = await storage.get(storage_key, "profile_id")
-        room = await storage.get(storage_key, "room")
-
-        if not name or not prompt or not agent_id:
-            await _emit_image_error(
-                image_id, storage_key, "Missing required context for image generation"
-            )
-            return
 
         async with pool.acquire() as conn:
             # Get agent's model info
             model_info = await get_agent_model_info(conn, agent_id)
             if not model_info:
                 await _emit_image_error(
-                    image_id, storage_key, f"Agent {agent_id} not found or inactive"
+                    image_id, room, f"Agent {agent_id} not found or inactive"
                 )
                 return
 
             api_key = model_info["api_key"]
             if not api_key:
                 await _emit_image_error(
-                    image_id, storage_key, f"API key not found for agent {agent_id}"
+                    image_id, room, f"API key not found for agent {agent_id}"
                 )
                 return
 
@@ -121,7 +114,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 decrypted_api_key = decrypt_api_key(api_key)
             except Exception as e:
                 await _emit_image_error(
-                    image_id, storage_key, f"Failed to decrypt API key: {str(e)}"
+                    image_id, room, f"Failed to decrypt API key: {str(e)}"
                 )
                 return
 
@@ -147,7 +140,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             # Generate image using litellm
             if not LITELLM_AVAILABLE:
                 await _emit_image_error(
-                    image_id, storage_key, "litellm is not available"
+                    image_id, room, "litellm is not available"
                 )
                 return
 
@@ -178,7 +171,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
                 if not image_url and not image_bytes:
                     await _emit_image_error(
-                        image_id, storage_key, "No image data returned from litellm"
+                        image_id, room, "No image data returned from litellm"
                     )
                     return
 
@@ -201,7 +194,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
                 if not image_bytes:
                     await _emit_image_error(
-                        image_id, storage_key, "Failed to get image bytes"
+                        image_id, room, "Failed to get image bytes"
                     )
                     return
 
@@ -210,7 +203,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                     f"Image generation failed for {image_id}: {e}", exc_info=True
                 )
                 await _emit_image_error(
-                    image_id, storage_key, f"Image generation failed: {str(e)}"
+                    image_id, room, f"Image generation failed: {str(e)}"
                 )
                 return
 
@@ -256,7 +249,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
             if not upload_row:
                 await _emit_image_error(
-                    image_id, storage_key, "Failed to create upload record"
+                    image_id, room, "Failed to create upload record"
                 )
                 # Clean up file
                 try:
@@ -300,21 +293,12 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 room=room,
             )
 
-            # Clean up storage
-            await storage.delete(storage_key, "image_id")
-            await storage.delete(storage_key, "name")
-            await storage.delete(storage_key, "prompt")
-            await storage.delete(storage_key, "agent_id")
-            await storage.delete(storage_key, "department_id")
-            await storage.delete(storage_key, "profile_id")
-            await storage.delete(storage_key, "room")
-
     except Exception as e:
         logger.error(
             f"Error in image generation for {image_id}: {e}",
             exc_info=True,
         )
-        await _emit_image_error(image_id, storage_key, f"Unexpected error: {str(e)}")
+        await _emit_image_error(image_id, room, f"Unexpected error: {str(e)}")
 
 
 async def _emit_image_progress(
@@ -326,8 +310,7 @@ async def _emit_image_progress(
     """Emit WebSocket event for image generation progress."""
     from app.socket.scenarios.generate import (
         ScenarioImageGenerationProgressPayload,
-        scenario_image_generation_progress,
-    )
+        scenario_image_generation_progress)
 
     if not room:
         logger.warning(
@@ -354,8 +337,7 @@ async def _emit_image_complete(
     """Emit WebSocket event for image generation completion."""
     from app.socket.scenarios.generate import (
         ScenarioImageGenerationCompletePayload,
-        scenario_image_generation_complete,
-    )
+        scenario_image_generation_complete)
 
     if not room:
         logger.warning(
@@ -376,19 +358,12 @@ async def _emit_image_complete(
 
 async def _emit_image_error(
     image_id: str,
-    storage_key: str,
+    room: str | None,
     error_message: str,
 ) -> None:
     """Emit WebSocket event for image generation error."""
-    from app.main import get_image_generation_storage
     from app.socket.scenarios.generate import (
-        ScenarioImageGenerationErrorPayload,
-        scenario_image_generation_error,
-    )
-
-    # Get room from storage
-    storage = get_image_generation_storage()
-    room = await storage.get(storage_key, "room")
+        ScenarioImageGenerationErrorPayload, scenario_image_generation_error)
 
     if not room:
         logger.warning(
@@ -427,5 +402,5 @@ async def generate_image(sid: str, data: dict[str, Any]) -> None:
         # Try to emit error if we have image_id
         if isinstance(data, dict) and "image_id" in data:
             image_id = data["image_id"]
-            storage_key = data.get("storage_key", "")
-            await _emit_image_error(image_id, storage_key, f"Invalid request: {str(e)}")
+            room = data.get("room")
+            await _emit_image_error(image_id, room, f"Invalid request: {str(e)}")

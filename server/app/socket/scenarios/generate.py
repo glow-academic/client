@@ -8,9 +8,7 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
                     ToolsToFinalOutputResult, function_tool, gen_trace_id,
                     trace)
 from agents.items import TResponseInputItem
-from app.main import (get_dynamic_document_storage,
-                      get_image_generation_storage, get_pool,
-                      get_scenario_storage, sio)
+from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
@@ -21,10 +19,7 @@ from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.scenario.format_document_template_info import \
     format_document_template_info
-from app.utils.scenario.image_generation import (get_image_generation_results,
-                                                 set_image_generation_context)
 from app.utils.sql_helper import load_sql
-from app.utils.storage.request_storage import build_storage_key
 from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
                       create_model)
 
@@ -523,15 +518,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 primary_id=trace_id,
             )
 
-            # Set image generation context before creating tools (async)
-            if images_enabled and final_profile_id:
-                await set_image_generation_context(
-                    agent_id=context["agent_id"],
-                    profile_id=str(final_profile_id),
-                    primary_id=trace_id,
-                    department_id=str(department_id) if department_id else None,
-                )
-
             # Create scenario generation tools inline
             scenario_tools: list[Tool] = []
             primary_id = trace_id or (str(group_id) if group_id else None)
@@ -561,23 +547,20 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 Returns:
                     Confirmation message
                 """
-                if not final_profile_id or not primary_id:
-                    logger.error("profile_id and primary_id required for storage")
-                    return "Error: Storage configuration missing"
-
-                storage = get_scenario_storage()
-                storage_key = build_storage_key(
-                    operation_type="scenario_generation",
-                    profile_id=str(final_profile_id),
-                    primary_id=primary_id,
+                # Emit Socket.IO event for problem statement creation
+                await sio.emit(
+                    "scenario_tool_problem_statement",
+                    {
+                        "trace_id": trace_id,
+                        "title": title,
+                        "description": scenario,
+                        "scenario_id": None,  # Optional, can be linked later
+                    },
+                    room=sid,
                 )
 
-                await storage.set(storage_key, "title", title)
-                await storage.set(storage_key, "description", scenario)
-                await storage.set(storage_key, "title_description_progress", True)
-
-                logger.info(f"✓ Set title: {title}")
-                logger.info(f"✓ Set description: {scenario[:100]}...")
+                logger.info(f"✓ Emitted problem statement event: title={title}")
+                logger.info(f"✓ Description: {scenario[:100]}...")
                 return "Set title and description successfully"
 
             scenario_tools.append(function_tool(set_title_and_description))
@@ -609,10 +592,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     Returns:
                         Confirmation message
                     """
-                    if not final_profile_id or not primary_id:
-                        logger.error("profile_id and primary_id required for storage")
-                        return "Error: Storage configuration missing"
-
                     # Limit to maximum 3 objectives
                     objectives = objectives[:3]
 
@@ -621,17 +600,18 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             f"Objectives count ({len(objectives)}) outside recommended range of 1-3"
                         )
 
-                    storage = get_scenario_storage()
-                    storage_key = build_storage_key(
-                        operation_type="scenario_generation",
-                        profile_id=str(final_profile_id),
-                        primary_id=primary_id,
+                    # Emit Socket.IO event for objectives creation
+                    await sio.emit(
+                        "scenario_tool_objectives",
+                        {
+                            "trace_id": trace_id,
+                            "objectives": objectives,
+                            "scenario_id": None,  # Optional, can be linked later
+                        },
+                        room=sid,
                     )
 
-                    await storage.set(storage_key, "objectives", objectives)
-                    await storage.set(storage_key, "objectives_progress", True)
-
-                    logger.info(f"✓ Set {len(objectives)} objectives: {objectives}")
+                    logger.info(f"✓ Emitted objectives event: {len(objectives)} objectives")
                     return f"Set {len(objectives)} learning objectives successfully"
 
                 scenario_tools.append(function_tool(set_objectives))
@@ -671,49 +651,35 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     # Core implementation function that processes template args
                     async def _create_document_impl(template_args_dict: dict[str, Any]) -> str:
                         """Internal implementation that processes template args dict."""
-                        if not final_profile_id or not primary_id:
-                            return "Error: Storage configuration missing"
-
-                        storage = get_dynamic_document_storage()
-                        storage_key = build_storage_key(
-                            operation_type="dynamic_document",
-                            profile_id=str(final_profile_id),
-                            primary_id=primary_id,
-                        )
-
-                        # Get available templates from storage
-                        templates = await storage.get(storage_key, "templates")
-                        if not templates:
+                        if not document_templates or len(document_templates) == 0:
                             return "Error: No template documents are available for dynamic creation."
 
                         # Use the first available template (typically there will be only one)
-                        parent_template = templates[0]
+                        parent_template = document_templates[0]
                         parent_document_id = parent_template.get("document_id", "")
 
                         if not parent_document_id:
                             return "Error: Could not determine parent template document ID."
 
-                        # Get existing dynamic documents list or create new one
-                        dynamic_documents = await storage.get(storage_key, "dynamic_documents")
-                        if not dynamic_documents:
-                            dynamic_documents = []
-
-                        # Append new document request
-                        dynamic_documents.append(
+                        # Emit Socket.IO event for document creation
+                        await sio.emit(
+                            "scenario_tool_document",
                             {
+                                "trace_id": trace_id,
                                 "parent_document_id": parent_document_id,
                                 "template_args": template_args_dict,
-                            }
+                                "scenario_id": None,  # Optional, can be linked later
+                                "department_id": str(department_id) if department_id else None,
+                                "profile_id": str(final_profile_id) if final_profile_id else None,
+                            },
+                            room=sid,
                         )
-
-                        # Store updated list
-                        await storage.set(storage_key, "dynamic_documents", dynamic_documents)
 
                         logger.info(
-                            f"✓ Queued dynamic document creation: parent={parent_document_id}, "
+                            f"✓ Emitted document creation event: parent={parent_document_id}, "
                             f"args={list(template_args_dict.keys())}"
                         )
-                        return "Queued dynamic document creation. Child document will be created after scenario generation with provided template values."
+                        return "Dynamic document creation initiated. Child document will be created with provided template values."
 
                     # If we have a template schema, create a function with individual parameters
                     if template_schema:
@@ -908,76 +874,26 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         Returns:
                             Confirmation message
                         """
-                        # Get storage instance
-                        storage = get_image_generation_storage()
-
-                        # Build storage key
-                        storage_key = build_storage_key(
-                            operation_type="image_generation",
-                            profile_id=str(final_profile_id),
-                            primary_id=trace_id,
+                        # Emit Socket.IO event for image creation
+                        await sio.emit(
+                            "scenario_tool_image",
+                            {
+                                "trace_id": trace_id,
+                                "name": name,
+                                "prompt": prompt,
+                                "agent_id": str(context["agent_id"]),
+                                "department_id": str(department_id) if department_id else None,
+                                "profile_id": str(final_profile_id) if final_profile_id else None,
+                                "scenario_id": None,  # Optional, can be linked later
+                            },
+                            room=sid,
                         )
 
-                        # Get context from storage
-                        agent_id = await storage.get(storage_key, "agent_id")
-                        department_id_stored = await storage.get(storage_key, "department_id")
-                        context_profile_id = await storage.get(storage_key, "profile_id")
-                        room = await storage.get(storage_key, "room")
-
-                        if not agent_id:
-                            return "Error: Image generation context not set. Cannot generate image."
-
-                        # Create image record immediately with completed=false
-                        pool = get_pool()
-                        if not pool:
-                            return "Error: Database pool not available. Cannot create image record."
-
-                        try:
-                            async with pool.acquire() as conn:
-                                # Create image record
-                                sql_insert_image = load_sql("sql/v3/images/insert_image_complete.sql")
-                                image_row = await conn.fetchrow(sql_insert_image, name)
-
-                                if not image_row:
-                                    return "Error: Failed to create image record."
-
-                                image_id = image_row["id"]
-
-                                # Store image generation context for background task
-                                image_context_key = f"{storage_key}:image:{image_id}"
-                                await storage.set(image_context_key, "image_id", image_id)
-                                await storage.set(image_context_key, "name", name)
-                                await storage.set(image_context_key, "prompt", prompt)
-                                await storage.set(image_context_key, "agent_id", agent_id)
-                                await storage.set(image_context_key, "department_id", department_id_stored)
-                                await storage.set(image_context_key, "profile_id", context_profile_id)
-                                if room:
-                                    await storage.set(image_context_key, "room", room)
-
-                                # Emit WebSocket event for background image generation
-                                await sio.emit(
-                                    "generate_image",
-                                    {
-                                        "image_id": image_id,
-                                        "storage_key": image_context_key,
-                                    },
-                                )
-
-                                # Track image_id in images list
-                                images = await storage.get(storage_key, "images")
-                                if not images:
-                                    images = []
-                                images.append(image_id)
-                                await storage.set(storage_key, "images", images)
-
-                                logger.info(
-                                    f"✓ Started image generation: name={name}, image_id={image_id}, "
-                                    f"prompt_length={len(prompt)}"
-                                )
-                                return f"Image generation started for '{name}'. Image ID: {image_id}"
-                        except Exception as e:
-                            logger.error(f"Error creating image record: {e}", exc_info=True)
-                            return f"Error: Failed to start image generation: {str(e)}"
+                        logger.info(
+                            f"✓ Emitted image generation event: name={name}, "
+                            f"prompt_length={len(prompt)}"
+                        )
+                        return f"Image generation initiated for '{name}'. Image will be created and linked when ready."
 
                     scenario_tools.append(function_tool(generate_image))
                     logger.info("Created image generation tool")
@@ -1130,15 +1046,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
-            # Extract results from request-scoped storage
-            storage = get_scenario_storage()
-            storage_key = build_storage_key(
-                operation_type="scenario_generation",
-                profile_id=str(final_profile_id),
-                primary_id=trace_id,
-            )
-            scenario_result = await storage.get_all(storage_key)
-
             usage = result.context_wrapper.usage
             assistant_output = getattr(result, "final_output", None) or ""
 
@@ -1158,88 +1065,18 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 },
             )
 
-            # Get result values
-            title = scenario_result.get("title", "")
-            description = scenario_result.get("description", "")
-            objectives = (
-                scenario_result.get("objectives", []) if objectives_enabled else []
-            )
-
-            # Limit objectives to maximum 3
-            limited_objectives = objectives[:3] if objectives else []
-
-            # Process dynamic documents if any were created
-            dynamic_document_mapping: dict[str, str] | None = None
-            if final_profile_id:
-                storage = get_dynamic_document_storage()
-                storage_key = build_storage_key(
-                    operation_type="dynamic_document",
-                    profile_id=str(final_profile_id),
-                    primary_id=trace_id,
-                )
-                dynamic_document_result = await storage.get_all(storage_key)
-                dynamic_documents = dynamic_document_result.get("dynamic_documents")
-                if dynamic_documents:
-                    dynamic_document_mapping = {}
-                    for doc_request in dynamic_documents:
-                        try:
-                            parent_id = uuid.UUID(doc_request["parent_document_id"])
-                            template_args = doc_request["template_args"]
-
-                            # Create child document
-                            # http_request is optional and only used for theme settings
-                            child_id = await create_dynamic_document(
-                                conn=conn,
-                                parent_document_id=parent_id,
-                                template_args=template_args,
-                                department_id=department_id,
-                                profile_id=profile_id,
-                                http_request=None,  # WebSocket doesn't have HTTP request
-                            )
-
-                            dynamic_document_mapping[str(parent_id)] = str(child_id)
-                            logger.info(
-                                f"Created dynamic child document {child_id} from parent {parent_id}"
-                            )
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to create dynamic document from parent {doc_request.get('parent_document_id')}: {e}",
-                                exc_info=True,
-                            )
-                            # Continue with other documents even if one fails
-
-                    # Clear dynamic document results after processing
-                    await storage.delete(storage_key, "dynamic_documents")
-
-            # Retrieve image_ids from storage (images are generated in background)
-            generated_image_ids: list[str] = []
-            if final_profile_id:
-                image_results = await get_image_generation_results(
-                    profile_id=str(final_profile_id),
-                    primary_id=trace_id,
-                )
-                # image_results["images"] contains list of image_ids (strings)
-                image_ids = image_results.get("images", [])
-                if image_ids:
-                    generated_image_ids = image_ids
-                    logger.info(
-                        f"Retrieved {len(generated_image_ids)} image IDs from storage "
-                        f"(generation in progress in background)"
-                    )
-                    # Don't clear storage - background tasks will clean up individual image contexts
-
             # Emit completion event
+            # Note: Individual tool completion events are emitted separately by tool handlers
+            # Client should listen to scenario_tool_*_complete events for actual data
             await scenario_generation_complete(
                 ScenarioGenerationCompletePayload(
                     success=True,
-                    message="Scenario generated successfully",
-                    title=title,
-                    description=description,
-                    objectives=limited_objectives,
-                    dynamic_document_mapping=dynamic_document_mapping,
-                    generated_image_ids=generated_image_ids
-                    if generated_image_ids
-                    else None,
+                    message="Scenario generation completed. Check tool completion events for created resources.",
+                    title="",  # Will be available via scenario_tool_problem_statement_complete
+                    description="",  # Will be available via scenario_tool_problem_statement_complete
+                    objectives=[],  # Will be available via scenario_tool_objectives_complete
+                    dynamic_document_mapping=None,  # Will be available via scenario_tool_document_complete
+                    generated_image_ids=None,  # Will be available via scenario_tool_image_complete
                     trace_id=trace_id,
                 ),
                 room=sid,
