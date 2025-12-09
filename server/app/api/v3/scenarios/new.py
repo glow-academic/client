@@ -84,6 +84,10 @@ class ScenarioNewRequest(BaseModel):
     # Agent filtering parameters
     useImage: bool | None = None
     useObjectives: bool | None = None
+    # URL parameters for linking generated resources
+    imageIds: list[str] | None = None
+    objectiveIds: list[str] | None = None
+    problemStatementIds: list[str] | None = None
 
 
 class ParameterDetail(BaseModel):

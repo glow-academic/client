@@ -39,11 +39,6 @@ class ScenarioGenerationProgressPayload(BaseModel):
 class ScenarioGenerationCompletePayload(BaseModel):
     success: bool
     message: str
-    title: str
-    description: str
-    objectives: list[str]
-    dynamic_document_mapping: dict[str, str] | None = None
-    generated_image_ids: list[str] | None = None
     trace_id: str | None = None
 
 
@@ -83,6 +78,7 @@ class GenerateScenarioAIPayload(BaseModel):
     documentIds: list[str] | None = None
     fieldIds: list[str] | None = None
     profileId: str | None = None
+    scenarioId: str | None = None  # Optional scenario ID to link generated resources
 
 
 # Emit helper functions
@@ -566,7 +562,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         "trace_id": trace_id,
                         "title": title,
                         "description": scenario,
-                        "scenario_id": None,  # Optional, can be linked later
+                        "scenario_id": data.scenarioId if data.scenarioId else None,
                     },
                     room=sid,
                 )
@@ -618,7 +614,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         {
                             "trace_id": trace_id,
                             "objectives": objectives,
-                            "scenario_id": None,  # Optional, can be linked later
+                            "scenario_id": data.scenarioId if data.scenarioId else None,
                         },
                         room=sid,
                     )
@@ -735,7 +731,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 "child_description": child_description,
                                 "classify_agent_id": classify_agent_id,
                                 "document_agent_id": document_agent_id,
-                                "scenario_id": None,  # Optional, can be linked later
+                                "scenario_id": data.scenarioId if data.scenarioId else None,
                             },
                             room=sid,
                         )
@@ -968,7 +964,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 "agent_id": str(context["agent_id"]),
                                 "department_id": str(department_id) if department_id else None,
                                 "profile_id": str(final_profile_id) if final_profile_id else None,
-                                "scenario_id": None,  # Optional, can be linked later
+                                "scenario_id": data.scenarioId if data.scenarioId else None,
                             },
                             room=sid,
                         )
@@ -1155,11 +1151,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 ScenarioGenerationCompletePayload(
                     success=True,
                     message="Scenario generation completed. Check tool completion events for created resources.",
-                    title="",  # Will be available via scenario_tool_problem_statement_complete
-                    description="",  # Will be available via scenario_tool_problem_statement_complete
-                    objectives=[],  # Will be available via scenario_tool_objectives_complete
-                    dynamic_document_mapping=None,  # Will be available via scenario_tool_document_complete
-                    generated_image_ids=None,  # Will be available via scenario_tool_image_complete
                     trace_id=trace_id,
                 ),
                 room=sid,

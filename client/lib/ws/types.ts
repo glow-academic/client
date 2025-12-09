@@ -149,11 +149,6 @@ export type ServerToClientEvents = {
   scenario_generation_complete: (payload: {
     success: boolean;
     message: string;
-    title: string;
-    description: string;
-    objectives: string[];
-    dynamic_document_mapping: Record<string, string>;
-    generated_image_ids?: string[];
     trace_id?: string;
   }) => void;
   scenario_generation_error: (payload: {

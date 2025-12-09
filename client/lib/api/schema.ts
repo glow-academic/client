@@ -11644,6 +11644,12 @@ export interface components {
             useImage?: boolean | null;
             /** Useobjectives */
             useObjectives?: boolean | null;
+            /** Imageids */
+            imageIds?: string[] | null;
+            /** Objectiveids */
+            objectiveIds?: string[] | null;
+            /** Problemstatementids */
+            problemStatementIds?: string[] | null;
         };
         /** ScenarioDocumentItem */
         ScenarioDocumentItem: {
@@ -11784,6 +11790,12 @@ export interface components {
             useImage?: boolean | null;
             /** Useobjectives */
             useObjectives?: boolean | null;
+            /** Imageids */
+            imageIds?: string[] | null;
+            /** Objectiveids */
+            objectiveIds?: string[] | null;
+            /** Problemstatementids */
+            problemStatementIds?: string[] | null;
         };
         /**
          * ScenarioOverviewRequest

@@ -39,6 +39,10 @@ type GenerateAIScenarioOut = {
   description: string;
   objectives: string[];
   dynamic_document_mapping: Record<string, string> | null;
+  problem_statement_id: string | null;
+  objective_ids: string[];
+  document_ids: string[];
+  image_ids: string[];
 };
 type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
 type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
@@ -69,6 +73,9 @@ const getScenario = async (
     randomizeDocuments?: string;
     randomizeParameters?: string;
     randomizeParameterItems?: Record<string, string>;
+    imageIds?: string[];
+    objectiveIds?: string[];
+    problemStatementIds?: string[];
   },
 ): Promise<ScenarioDetailOut> => {
   return api.post(
@@ -171,6 +178,10 @@ export default async function EditScenarioPage({
   const documentIds = searchParamsObj.get("documentIds")?.split(",").filter(Boolean);
   const parameterIds = searchParamsObj.get("parameterIds")?.split(",").filter(Boolean);
   const parameterItemIds = searchParamsObj.get("parameterItemIds")?.split(",").filter(Boolean);
+  // Extract URL parameters for linking generated resources
+  const imageIds = searchParamsObj.get("imageIds")?.split(",").filter(Boolean);
+  const objectiveIds = searchParamsObj.get("objectiveIds")?.split(",").filter(Boolean);
+  const problemStatementIds = searchParamsObj.get("problemStatementIds")?.split(",").filter(Boolean);
   const personaSearch = searchParamsObj.get("personaSearch") || undefined;
   const documentSearch = searchParamsObj.get("documentSearch") || undefined;
   const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;

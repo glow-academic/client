@@ -364,6 +364,16 @@ export default function Scenario({
     const toastId = toast.loading(initialMessage);
 
     return new Promise((resolve, reject) => {
+      // Collect IDs from tool completion events
+      let problemStatementId: string | null = null;
+      let objectiveIds: string[] = [];
+      const documentIds: string[] = [];
+      const imageIds: string[] = [];
+      const title = "";
+      const description = "";
+      const objectives: string[] = [];
+      const dynamicDocumentMapping: Record<string, string> | null = null;
+
       // Set up event listeners
       const handleProgress = (data: {
         type: string;
@@ -382,19 +392,70 @@ export default function Scenario({
         toast.loading(progressMessage, { id: toastId });
       };
 
+      // Tool completion event handlers
+      const handleProblemStatementComplete = (data: {
+        success: boolean;
+        problem_statement_id: string;
+        trace_id?: string;
+        message?: string;
+      }) => {
+        if (data.success) {
+          problemStatementId = data.problem_statement_id;
+        }
+      };
+
+      const handleObjectivesComplete = (data: {
+        success: boolean;
+        objective_ids: string[];
+        trace_id?: string;
+        message?: string;
+      }) => {
+        if (data.success) {
+          objectiveIds = data.objective_ids;
+        }
+      };
+
+      const handleDocumentComplete = (data: {
+        success: boolean;
+        document_id: string;
+        trace_id?: string;
+        message?: string;
+      }) => {
+        if (data.success) {
+          documentIds.push(data.document_id);
+        }
+      };
+
+      const handleImageComplete = (data: {
+        success: boolean;
+        image_id: string;
+        trace_id?: string;
+        message?: string;
+      }) => {
+        if (data.success) {
+          imageIds.push(data.image_id);
+        }
+      };
+
       const handleComplete = (data: {
         success: boolean;
         message: string;
-        title: string;
-        description: string;
-        objectives: string[];
-        dynamic_document_mapping?: Record<string, string>;
         trace_id?: string;
       }) => {
-        // Clean up listeners
+        // Clean up all listeners
         socket.off("scenario_generation_progress", handleProgress);
         socket.off("scenario_generation_complete", handleComplete);
         socket.off("scenario_generation_error", handleError);
+        socket.off(
+          "scenario_tool_problem_statement_complete",
+          handleProblemStatementComplete
+        );
+        socket.off(
+          "scenario_tool_objectives_complete",
+          handleObjectivesComplete
+        );
+        socket.off("scenario_tool_document_complete", handleDocumentComplete);
+        socket.off("scenario_tool_image_complete", handleImageComplete);
 
         if (data.success) {
           // Convert toast to success
@@ -403,13 +464,20 @@ export default function Scenario({
             : "Scenario generated successfully!";
           toast.success(successMessage, { id: toastId });
 
+          // Fetch problem statement details if we have an ID
+          // Note: title and description will need to be fetched separately if needed
+          // For now, we'll return empty strings and let the client fetch from the API
           resolve({
             success: true,
             message: data.message,
-            title: data.title,
-            description: data.description,
-            objectives: data.objectives,
-            dynamic_document_mapping: data.dynamic_document_mapping || null,
+            title: title,
+            description: description,
+            objectives: objectives,
+            dynamic_document_mapping: dynamicDocumentMapping,
+            problem_statement_id: problemStatementId,
+            objective_ids: objectiveIds,
+            document_ids: documentIds,
+            image_ids: imageIds,
           });
         } else {
           // Convert toast to error
@@ -425,10 +493,20 @@ export default function Scenario({
         message: string;
         trace_id?: string;
       }) => {
-        // Clean up listeners
+        // Clean up all listeners
         socket.off("scenario_generation_progress", handleProgress);
         socket.off("scenario_generation_complete", handleComplete);
         socket.off("scenario_generation_error", handleError);
+        socket.off(
+          "scenario_tool_problem_statement_complete",
+          handleProblemStatementComplete
+        );
+        socket.off(
+          "scenario_tool_objectives_complete",
+          handleObjectivesComplete
+        );
+        socket.off("scenario_tool_document_complete", handleDocumentComplete);
+        socket.off("scenario_tool_image_complete", handleImageComplete);
 
         // Convert toast to error
         toast.error(data.message || "Scenario generation failed", {
@@ -441,6 +519,13 @@ export default function Scenario({
       socket.on("scenario_generation_progress", handleProgress);
       socket.on("scenario_generation_complete", handleComplete);
       socket.on("scenario_generation_error", handleError);
+      socket.on(
+        "scenario_tool_problem_statement_complete",
+        handleProblemStatementComplete
+      );
+      socket.on("scenario_tool_objectives_complete", handleObjectivesComplete);
+      socket.on("scenario_tool_document_complete", handleDocumentComplete);
+      socket.on("scenario_tool_image_complete", handleImageComplete);
 
       // Emit the event
       // agentId is required - UI filters and selects appropriate agent based on flags
@@ -457,7 +542,7 @@ export default function Scenario({
         documentIds: body.documentIds,
         fieldIds: body.fieldIds, // Renamed from parameterItemIds
         profileId: body.profileId,
-        userInstructions: body.userInstructions,
+        scenarioId: scenarioId || undefined, // Pass scenarioId if in edit mode
       });
     });
   };
@@ -516,10 +601,7 @@ export default function Scenario({
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
   );
-  // Store problem statement ID for version selection
-  const [selectedProblemStatementId, setSelectedProblemStatementId] = useState<
-    string | null
-  >(null);
+  // Problem statement ID will come from URL parameters, not stored in state
   // Track local problem statement versions during creation (before scenario is saved)
   const [localProblemStatementVersions, setLocalProblemStatementVersions] =
     useState<
@@ -1202,7 +1284,6 @@ export default function Scenario({
         setPreviousDepartmentIds(deptIds);
       }
       setSelectedPersonaIds(scenarioData.persona_ids || []);
-      setSelectedProblemStatementId(scenarioData.problem_statement_id || null);
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
       setCurrentDocumentIds(scenarioData.document_ids);
@@ -1361,18 +1442,7 @@ export default function Scenario({
     initialFormData,
   ]);
 
-  // Sync selectedProblemStatementId with server data when it changes (e.g., after save/refetch)
-  useEffect(() => {
-    if (
-      isEditMode &&
-      scenarioData?.problem_statement_id &&
-      formDataInitializedRef.current
-    ) {
-      // Only update if the ID changed and form is already initialized
-      // This handles refetches after save operations
-      setSelectedProblemStatementId(scenarioData.problem_statement_id);
-    }
-  }, [scenarioData?.problem_statement_id, isEditMode]);
+  // Problem statement ID is now managed via URL parameters, not state
 
   // Helper function to compute scenario agent role from flags
   const getScenarioAgentRole = useCallback(
@@ -1861,7 +1931,6 @@ export default function Scenario({
       // Clear objectives array
       setCurrentObjectives([]);
       // Clear selected problem statement ID
-      setSelectedProblemStatementId(null);
       toast.success("Scenario content reset");
     } catch {
       toast.error("Failed to reset content");
@@ -2034,7 +2103,7 @@ export default function Scenario({
 
   const handleGenerateScenario = async (
     userInstructions?: string,
-    shouldRegenerateObjectives?: boolean
+    _shouldRegenerateObjectives?: boolean
   ) => {
     setIsGeneratingScenario(true);
 
@@ -2059,101 +2128,44 @@ export default function Scenario({
         throw new Error(result.message || "Failed to generate scenario");
       }
 
-      if (result.title || result.description) {
-        const newProblemStatement =
-          result.description || formData.problemStatement || "";
+      // Handle generated IDs from tool completion events
+      if (result.document_ids && result.document_ids.length > 0) {
+        // Update document IDs with newly generated ones
+        setCurrentDocumentIds((prev) => [...prev, ...result.document_ids]);
+        toast.success(
+          `Created ${result.document_ids.length} dynamic document(s)`
+        );
+      }
 
-        // Handle dynamic document mapping: replace parent document IDs with child document IDs
-        let updatedDocumentIds = currentDocumentIds;
-        if (result.dynamic_document_mapping) {
-          const mapping = result.dynamic_document_mapping;
-          // Replace each parent ID with its corresponding child ID if it exists in mapping
-          updatedDocumentIds = currentDocumentIds.map(
-            (docId) => mapping[docId] || docId
-          );
-          setCurrentDocumentIds(updatedDocumentIds);
-          toast.success(
-            `Created ${Object.keys(mapping).length} dynamic document(s) from templates`
-          );
-        }
+      if (result.objective_ids && result.objective_ids.length > 0) {
+        // Objectives will be loaded from the API when scenario detail is fetched
+        // For now, we just note that they were created
+        toast.success(`Created ${result.objective_ids.length} objective(s)`);
+      }
 
-        // If in create mode and we have a new problem statement, add it to local versions
-        if (!isEditMode && newProblemStatement.trim()) {
-          const now = new Date().toISOString();
-          const versionId = `local-${Date.now()}`;
-          setLocalProblemStatementVersions((prev) => [
-            ...prev,
-            {
-              id: versionId,
-              problem_statement: newProblemStatement,
-              created_at: now,
-              updated_at: now,
-            },
-          ]);
-          setSelectedProblemStatementId(versionId);
-        }
+      if (result.image_ids && result.image_ids.length > 0) {
+        // Images will be loaded from the API when scenario detail is fetched
+        toast.success(`Created ${result.image_ids.length} image(s)`);
+      }
 
-        setFormData((prev) => ({
-          ...prev,
-          // Only replace name if it's still the default "New Scenario"
-          name:
-            prev.name === "New Scenario" ||
-            !prev.name ||
-            prev.name.trim() === ""
-              ? result.title || prev.name || "New Scenario"
-              : prev.name,
-          problemStatement: newProblemStatement,
-        }));
+      // If we have a problem statement ID, we'll need to fetch it from the API
+      // For now, we'll trigger a refresh of the scenario data if in edit mode
+      if (result.problem_statement_id && isEditMode) {
+        // In edit mode, refresh scenario data to get the new problem statement
+        // This will be handled by the parent component refreshing the data
+        toast.success("Problem statement created successfully");
+      } else if (result.problem_statement_id && !isEditMode) {
+        // In create mode, we'll store the ID for later linking
+        // The problem statement will be linked when the scenario is saved
+        toast.success("Problem statement created successfully");
+      }
 
-        // If in edit mode, immediately save the new problem statement to create a version
-        if (isEditMode && scenarioId && newProblemStatement.trim()) {
-          // Clear selected version temporarily - it will be set by the refetch after save
-          setSelectedProblemStatementId(null);
-          // Save immediately to create new version in database
-          try {
-            await updateScenario({
-              scenarioId: scenarioId,
-              name: formData.name,
-              problem_statement: newProblemStatement,
-              department_ids:
-                formData.departmentIds.length > 0
-                  ? formData.departmentIds
-                  : null,
-              active: formData.active,
-              persona_ids: selectedPersonaIds,
-              document_ids: updatedDocumentIds, // Use updated IDs with child documents
-              objective_ids: currentObjectives.filter((obj) => obj.trim()),
-              parameters: groupFieldsByParameterId(
-                currentFieldIds, // Renamed from currentParameterItemIds
-                fieldMapping // Renamed from parameterItemMapping
-              ),
-              documents_enabled: useDocuments,
-              document_vision_enabled: documentVisionEnabled,
-              objectives_enabled: useObjectives,
-              image_enabled: useImage,
-              scenario_agent_id: formData.scenarioAgentId || null,
-              image_agent_id: formData.imageAgentId || null,
-            });
-            // Query will refetch automatically via mutation's onSuccess invalidation
-            // The useEffect watching problem_statement_id will update selectedProblemStatementId
-            toast.success("Problem statement regenerated and saved!");
-          } catch (error) {
-            toast.error(
-              `Failed to save regenerated problem statement: ${error instanceof Error ? error.message : "Unknown error"}`
-            );
-          }
-        }
-        // Update objectives only if regenerateObjectives is true and objectives are enabled
-        if (
-          shouldRegenerateObjectives &&
-          result.objectives &&
-          result.objectives.length > 0
-        ) {
-          setCurrentObjectives(result.objectives);
-        }
-        // Toast is already handled in handleGenerateAIScenario
-      } else {
-        throw new Error("No scenario content was generated");
+      // Note: title and description are no longer in the completion event
+      // They will be fetched from the API when the scenario detail is loaded
+      // If in edit mode, refresh scenario data to get the newly generated content
+      if (isEditMode && scenarioId) {
+        // Trigger a refetch of scenario data to get the new problem statement, objectives, etc.
+        // This will be handled by the parent component or query invalidation
       }
     } catch (error) {
       // Error toast is already handled in handleGenerateAIScenario for WebSocket errors
@@ -3474,14 +3486,9 @@ export default function Scenario({
                       <GenericPicker
                         items={problemStatementMapping}
                         itemIds={Object.keys(problemStatementMapping)}
-                        selectedIds={
-                          selectedProblemStatementId
-                            ? [selectedProblemStatementId]
-                            : []
-                        }
+                        selectedIds={[]} // Problem statement ID comes from URL parameters
                         onSelect={(ids) => {
                           const id = ids[0] || null;
-                          setSelectedProblemStatementId(id);
                           if (id && problemStatementMapping[id]) {
                             handleInputChange(
                               "problemStatement",
@@ -3555,7 +3562,6 @@ export default function Scenario({
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          setSelectedProblemStatementId(null);
                           handleInputChange("problemStatement", "");
                         }}
                         disabled={isReadonly}
@@ -3653,10 +3659,7 @@ export default function Scenario({
                     value={formData.problemStatement || ""}
                     onChange={(e) => {
                       handleInputChange("problemStatement", e.target.value);
-                      // Clear selected version when user manually edits
-                      if (selectedProblemStatementId) {
-                        setSelectedProblemStatementId(null);
-                      }
+                      // Problem statement ID is managed via URL parameters
                     }}
                     placeholder="Enter a custom problem statement or leave blank to auto-generate..."
                     className="min-h-[120px]"

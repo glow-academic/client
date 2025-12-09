@@ -116,6 +116,10 @@ export default async function NewScenarioPage({
     .get("fieldIds")  // Renamed from parameterItemIds
     ?.split(",")
     .filter(Boolean);
+  // Extract URL parameters for linking generated resources
+  const imageIds = searchParamsObj.get("imageIds")?.split(",").filter(Boolean);
+  const objectiveIds = searchParamsObj.get("objectiveIds")?.split(",").filter(Boolean);
+  const problemStatementIds = searchParamsObj.get("problemStatementIds")?.split(",").filter(Boolean);
   const personaSearch = searchParamsObj.get("personaSearch") || undefined;
   const documentSearch = searchParamsObj.get("documentSearch") || undefined;
   const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
@@ -189,6 +193,9 @@ export default async function NewScenarioPage({
       parameterSelectionMax: parameterSelectionMax || null,
       fieldRanges: fieldRanges || null,  // Renamed from parameterItemRanges
       randomize: randomize || null,
+      imageIds: imageIds || null,
+      objectiveIds: objectiveIds || null,
+      problemStatementIds: problemStatementIds || null,
     },
   });
 
