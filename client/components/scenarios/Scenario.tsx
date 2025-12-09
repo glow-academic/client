@@ -1793,14 +1793,16 @@ export default function Scenario({
       },
       {
         id: "persona",
-        title: "Select Persona Type",
-        description: "Choose the type of persona for this scenario",
+        title: "Personas",
+        description:
+          "Define the personality, background, or behavior of the participants in the scenario.",
         status: getStepStatus("persona"),
       },
       {
         id: "documents",
-        title: "Choose Documents",
-        description: "Select 1-2 relevant documents for this scenario",
+        title: "Documents",
+        description:
+          "Select key documents or reference materials to ground scenario responses.",
         status: getStepStatus("documents"),
         optional: true,
       },
@@ -2711,8 +2713,7 @@ export default function Scenario({
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
-        upload_ids:
-          image?.upload_id || image?.id ? [image.upload_id || image.id] : null,
+        upload_ids: image?.upload_id ? [image.upload_id] : null,
         image_names: image?.name ? [image.name] : null,
         parameters: parametersDict,
         scenario_agent_id: formData.scenarioAgentId || null,
@@ -3192,7 +3193,7 @@ export default function Scenario({
                 <CardDescription>{steps[1]?.description || ""}</CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <RangeSlider
                 min={1}
                 max={Math.min(5, validPersonaIds.length)}
@@ -3210,34 +3211,36 @@ export default function Scenario({
                   })
                 }
                 disabled={isReadonly}
-                className="w-[200px]"
+                className="w-[200px] mr-4"
               />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleRandomizePersonaClient}
-                    disabled={isReadonly}
-                  >
-                    <Shuffle className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Randomize</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleResetPersona}
-                    disabled={isReadonly}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset</TooltipContent>
-              </Tooltip>
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRandomizePersonaClient}
+                      disabled={isReadonly}
+                    >
+                      <Shuffle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Randomize</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleResetPersona}
+                      disabled={isReadonly}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reset</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 px-6">
@@ -3374,7 +3377,7 @@ export default function Scenario({
                 <CardDescription>{steps[2]?.description || ""}</CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <RangeSlider
                 min={0}
                 max={Math.min(5, validDocumentIds.length)}
@@ -3392,34 +3395,36 @@ export default function Scenario({
                   })
                 }
                 disabled={isReadonly}
-                className="w-[200px]"
+                className="w-[200px] mr-4"
               />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleRandomizeDocumentsClient}
-                    disabled={isReadonly}
-                  >
-                    <Shuffle className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Randomize</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleResetDocuments}
-                    disabled={isReadonly}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset</TooltipContent>
-              </Tooltip>
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRandomizeDocumentsClient}
+                      disabled={isReadonly}
+                    >
+                      <Shuffle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Randomize</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleResetDocuments}
+                      disabled={isReadonly}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reset</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 px-6">
@@ -3463,9 +3468,7 @@ export default function Scenario({
                   const docForViewer = fullDoc
                     ? {
                         ...fullDoc,
-                        upload_id:
-                          (fullDoc as { upload_id?: string }).upload_id ||
-                          docId,
+                        upload_id: fullDoc.upload_id ?? null,
                       }
                     : {
                         document_id: docId,
@@ -3480,7 +3483,7 @@ export default function Scenario({
                         file_path: document.filePath || "",
                         mime_type: document.mimeType || "",
                         parameter_item_ids: [],
-                        upload_id: docId,
+                        upload_id: null,
                       };
 
                   return (
@@ -3569,9 +3572,7 @@ export default function Scenario({
                   const docForViewer = fullDoc
                     ? {
                         ...fullDoc,
-                        upload_id:
-                          (fullDoc as { upload_id?: string }).upload_id ||
-                          docId,
+                        upload_id: fullDoc.upload_id ?? null,
                       }
                     : {
                         document_id: docId,
@@ -3586,7 +3587,7 @@ export default function Scenario({
                         file_path: documentMapping[docId]?.filePath || "",
                         mime_type: documentMapping[docId]?.mimeType || "",
                         parameter_item_ids: [],
-                        upload_id: docId,
+                        upload_id: null,
                       };
                   return (
                     <div className="mt-4">
@@ -3647,7 +3648,7 @@ export default function Scenario({
                       </CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center">
                     <RangeSlider
                       min={1}
                       max={Math.min(5, validItemsForParam.length)}
@@ -3671,36 +3672,38 @@ export default function Scenario({
                         }))
                       }
                       disabled={isReadonly}
-                      className="w-[200px]"
+                      className="w-[200px] mr-4"
                     />
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            handleRandomizeParameterClient(paramId)
-                          }
-                          disabled={isReadonly}
-                        >
-                          <Shuffle className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Randomize</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleResetParameter(paramId)}
-                          disabled={isReadonly}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Reset</TooltipContent>
-                    </Tooltip>
+                    <div className="flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              handleRandomizeParameterClient(paramId)
+                            }
+                            disabled={isReadonly}
+                          >
+                            <Shuffle className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Randomize</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleResetParameter(paramId)}
+                            disabled={isReadonly}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Reset</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="px-6">

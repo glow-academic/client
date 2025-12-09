@@ -58,6 +58,7 @@ class DocumentDetailItem(BaseModel):
     department_ids: list[str] | None
     file_path: str | None
     mime_type: str | None
+    upload_id: str | None
     parameter_item_ids: list[str]
 
 
@@ -351,6 +352,7 @@ async def get_scenario_new(
                             else None,
                             file_path=doc.get("file_path") or None,
                             mime_type=doc.get("mime_type") or None,
+                            upload_id=doc.get("upload_id") or None,
                             parameter_item_ids=doc.get("parameter_item_ids", []),
                         )
                     )

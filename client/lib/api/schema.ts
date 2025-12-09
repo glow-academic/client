@@ -7497,6 +7497,8 @@ export interface components {
             file_path: string | null;
             /** Mime Type */
             mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
             /** Parameter Item Ids */
             parameter_item_ids: string[];
         };

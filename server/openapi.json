@@ -17485,6 +17485,17 @@
             ],
             "title": "Mime Type"
           },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
           "parameter_item_ids": {
             "items": {
               "type": "string"
@@ -17506,6 +17517,7 @@
           "department_ids",
           "file_path",
           "mime_type",
+          "upload_id",
           "parameter_item_ids"
         ],
         "title": "DocumentDetailItem",

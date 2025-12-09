@@ -509,6 +509,7 @@ document_details_data AS (
                     'active', d.active,
                     'file_path', u.file_path,
                     'mime_type', u.mime_type,
+                    'upload_id', u.id::text,
                     'parameter_item_ids', COALESCE((
                         SELECT jsonb_agg(df.field_id::text)
                         FROM document_fields df

@@ -226,6 +226,29 @@ export function ParameterSelector({
   // Search state per parameter
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
   
+  // Refs to track scroll containers for each parameter
+  const scrollContainerRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
+  // Preserve scroll position when selectedParameterItemIds changes
+  useEffect(() => {
+    // Store scroll positions before potential re-render
+    const scrollPositions: Record<string, number> = {};
+    Object.entries(scrollContainerRefs.current).forEach(([paramId, container]) => {
+      if (container) {
+        scrollPositions[paramId] = container.scrollTop;
+      }
+    });
+    
+    // Restore scroll positions after render
+    requestAnimationFrame(() => {
+      Object.entries(scrollContainerRefs.current).forEach(([paramId, container]) => {
+        if (container && scrollPositions[paramId] !== undefined) {
+          container.scrollTop = scrollPositions[paramId];
+        }
+      });
+    });
+  }, [selectedParameterItemIds]);
+  
   // Group valid parameter items by parameter (from mapping)
   const parameterItemsByParameter = useMemo(() => {
     const grouped: Record<string, string[]> = {};
@@ -594,7 +617,12 @@ export function ParameterSelector({
                   />
                 </div>
 
-                <div className="grid grid-cols-5 gap-3 max-h-[184px] overflow-y-auto py-2 -mx-6 px-6">
+                <div 
+                  ref={(el) => {
+                    scrollContainerRefs.current[parameterId] = el;
+                  }}
+                  className="grid grid-cols-5 gap-3 max-h-[184px] overflow-y-auto py-2 -mx-6 px-6"
+                >
                   {filteredItemIds.map((itemId) => {
                     const item = parameterItemMapping[itemId];
                     if (!item) return null;
@@ -610,8 +638,10 @@ export function ParameterSelector({
                       <button
                         key={itemId}
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
                           if (isDisabled) return;
+                          // Prevent default to avoid any scroll behavior
+                          e.preventDefault();
                           const isCurrentlySelected = selectedItemIds.includes(itemId);
                           let newIds: string[];
                           
