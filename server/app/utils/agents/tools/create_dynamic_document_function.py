@@ -129,7 +129,7 @@ def create_dynamic_document_function(
                 # Create Field annotation
                 if required:
                     param_def = f"{field_name}: {python_type_str} = Field(..., description={repr(field_description)})"
-                else:
+    else:
                     param_def = f"{field_name}: {python_type_str} | None = Field(default=None, description={repr(field_description)})"
                 
                 param_definitions.append(param_def)
@@ -138,14 +138,15 @@ def create_dynamic_document_function(
             params_str = ", ".join(param_definitions)
             
             # Create function body that collects parameters into dict
-            collect_dict_code = "template_args_dict = {\n"
+            # Indent with 4 spaces to match function body indentation
+            collect_dict_code = "    template_args_dict = {\n"
             for field_name in param_names:
-                collect_dict_code += f"    {repr(field_name)}: {field_name},\n"
-            collect_dict_code += "}\n"
+                collect_dict_code += f"        {repr(field_name)}: {field_name},\n"
+            collect_dict_code += "    }\n"
             
             # Remove None values for optional fields
-            collect_dict_code += "# Remove None values for optional fields\n"
-            collect_dict_code += "template_args_dict = {k: v for k, v in template_args_dict.items() if v is not None}\n"
+            collect_dict_code += "    # Remove None values for optional fields\n"
+            collect_dict_code += "    template_args_dict = {k: v for k, v in template_args_dict.items() if v is not None}\n"
             
             func_code = f"""async def create_document({params_str}) -> str:
     \"\"\"Create a dynamic child document from the available template document.
@@ -157,12 +158,12 @@ def create_dynamic_document_function(
     Provide the template argument values as specified by the template schema.
 
     Args:
-        {chr(10).join(f'{name}: Template argument value' for name in param_names)}
+        {chr(10).join(f'        {name}: Template argument value' for name in param_names)}
 
     Returns:
         Confirmation message
     \"\"\"
-    {collect_dict_code}
+{collect_dict_code}
     return await _create_document_impl(template_args_dict)
 """
             

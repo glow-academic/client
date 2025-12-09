@@ -384,8 +384,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 # Check which tools have been called
                 completed_tools = []
                 for result in tool_results:
-                    # Access name attribute dynamically since type checker doesn't see it
-                    tool_name = getattr(result, "name", None)  # type: ignore[misc]
+                    # FunctionToolResult has tool_name attribute (see hint agent example)
+                    tool_name = getattr(result, "tool_name", None)  # type: ignore[misc]
                     if tool_name and isinstance(tool_name, str):
                         # Normalize tool names (handle variations like set_title_and_description -> title_description)
                         normalized_name = tool_name

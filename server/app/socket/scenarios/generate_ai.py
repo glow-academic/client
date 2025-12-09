@@ -340,27 +340,70 @@ async def _generate_scenario_ai_impl(sid: str, data: GenerateScenarioAIPayload) 
 
                 # Check which tools have been called
                 completed_tools = []
-                for result in tool_results:
-                    # Access name attribute dynamically since type checker doesn't see it
-                    tool_name = getattr(result, "name", None)  # type: ignore[misc]
+                logger.info(f"tool_use_behavior called with {len(tool_results)} tool results")
+                
+                for idx, result in enumerate(tool_results):
+                    logger.info(f"Tool result {idx}: type={type(result)}")
+                    logger.info(f"Tool result {idx} dir: {[x for x in dir(result) if not x.startswith('_')]}")
+                    
+                    # Try multiple ways to get tool name (FunctionToolResult structure may vary)
+                    tool_name = None
+                    
+                    # Try direct attribute access (like hint agent)
+                    if hasattr(result, "tool_name"):
+                        tool_name = result.tool_name  # type: ignore[attr-defined]
+                        logger.info(f"Tool result {idx}: Found tool_name via hasattr: {tool_name}")
+                    # Try getattr as fallback
+                    else:
+                        tool_name = getattr(result, "tool_name", None)  # type: ignore[misc]
+                        if tool_name:
+                            logger.info(f"Tool result {idx}: Found tool_name via getattr: {tool_name}")
+                        else:
+                            tool_name = getattr(result, "name", None)  # type: ignore[misc]
+                            if tool_name:
+                                logger.info(f"Tool result {idx}: Found name via getattr: {tool_name}")
+                    
+                    # Try to get tool name from tool object if result has one
+                    if not tool_name:
+                        tool_obj = getattr(result, "tool", None)  # type: ignore[misc]
+                        if tool_obj:
+                            tool_name = getattr(tool_obj, "name", None)  # type: ignore[misc]
+                            if tool_name:
+                                logger.info(f"Tool result {idx}: Found tool.name: {tool_name}")
+                    
                     if tool_name and isinstance(tool_name, str):
+                        logger.info(f"Tool result {idx}: Processing tool_name={tool_name}")
                         # Normalize tool names (handle variations like set_title_and_description -> title_description)
                         normalized_name = tool_name
                         if "title" in tool_name.lower() and "description" in tool_name.lower():
                             normalized_name = "title_description"
                         elif "objective" in tool_name.lower():
                             normalized_name = "objectives"
-                        elif "create_document" in tool_name.lower() or "create" in tool_name.lower() and "document" in tool_name.lower():
+                        elif "create_document" in tool_name.lower() or ("create" in tool_name.lower() and "document" in tool_name.lower()):
                             normalized_name = "create_document"
                         completed_tools.append(normalized_name)
+                        logger.info(f"Tool result {idx}: Normalized to {normalized_name}")
+                    else:
+                        logger.warning(f"Tool result {idx}: Could not extract tool name. tool_name={tool_name}, type={type(tool_name)}")
+                        # Log the actual result object for debugging
+                        logger.info(f"Tool result {idx} repr: {repr(result)}")
 
                 # Check if all required tools have been completed
                 all_completed = all(tool in completed_tools for tool in required_tools)
 
                 logger.info(
                     f"Tool use behavior check: required={required_tools}, "
-                    f"completed={completed_tools}, all_completed={all_completed}"
+                    f"completed={completed_tools}, all_completed={all_completed}, "
+                    f"tool_results_count={len(tool_results)}"
                 )
+                
+                # If no tools detected but we have results, log what we got
+                if len(tool_results) > 0 and len(completed_tools) == 0:
+                    logger.warning(
+                        f"Tool results present ({len(tool_results)}) but no tool names extracted. "
+                        f"First result type: {type(tool_results[0])}, "
+                        f"First result dir: {[x for x in dir(tool_results[0]) if not x.startswith('_')][:10]}"
+                    )
 
                 return ToolsToFinalOutputResult(is_final_output=all_completed)
 
