@@ -6,31 +6,24 @@ from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner,
+                    ToolsToFinalOutputResult, trace)
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_grading_storage, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
-from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
+from app.utils.agents.tools.create_safe_field_name import \
+    create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import (
-    get_simulation_conversation_history,
-)
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -543,17 +536,6 @@ async def _run_grade_agent_inline(
         )
         model_run_id = uuid.UUID(model_run_row["run_id"])
 
-        # Log system and developer messages for this run
-        rubric_dev_content = rubric_input["content"]
-        time_dev_content = time_message["content"]
-        await log_run_messages(
-            conn=conn,
-            run_id=model_run_id,
-            system_prompt=agent["system_prompt"],
-            developer_message_contents=[rubric_dev_content, time_dev_content],
-            department_id=department_id,
-        )
-
         # Run the grading
         logger.info("Running grading agent...")
         with trace(
@@ -565,26 +547,29 @@ async def _run_grade_agent_inline(
                 context=DebugContext(conn=conn, run_id=model_run_id),
             )
 
-        # Log assistant message (model output)
-        assistant_output = getattr(result, "final_output", None) or ""
-        if assistant_output:
-            await log_run_messages(
-                conn=conn,
-                run_id=model_run_id,
-                system_prompt=None,  # Already logged
-                assistant_output=assistant_output,
-                department_id=department_id,
-            )
-
+        # Emit async pricing event (non-blocking)
+        # This handles token updates and message logging in background
         usage = result.context_wrapper.usage
-
-        # Update model run with token usage using SQL file
-        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
-        await conn.execute(
-            sql_update_tokens,
-            str(model_run_id),
-            usage.input_tokens,
-            usage.output_tokens,
+        assistant_output = getattr(result, "final_output", None) or ""
+        rubric_dev_content = rubric_input["content"]
+        time_dev_content = time_message["content"]
+        # Create input_items with developer messages for logging
+        input_items_with_dev = input_items + [
+            {"role": "developer", "content": rubric_dev_content},
+            {"role": "developer", "content": time_dev_content},
+        ]
+        await sio.emit(
+            "log_run",
+            {
+                "runId": str(model_run_id),
+                "operationType": "simulation_grade",
+                "inputTextTokens": usage.input_tokens,
+                "outputTextTokens": usage.output_tokens,
+                "systemPrompt": agent["system_prompt"],
+                "inputItems": input_items_with_dev,  # Serialized TResponseInputItem list
+                "assistantOutput": assistant_output,
+                "departmentId": str(department_id),
+            },
         )
 
         # Extract results from request-scoped storage

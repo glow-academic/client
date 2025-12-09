@@ -7,23 +7,17 @@ from typing import Any
 
 from agents import Runner, trace
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
 from app.main import UPLOAD_FOLDER, get_pool, sio
 from app.utils.agents.build_document_agent import build_document_agent
 from app.utils.agents.tools.create_document_tools import (
-    create_document_tools,
-    document_progress,
-    document_results,
-)
+    create_document_tools, document_progress, document_results)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.debug_info import DebugContext
-from app.utils.document.format_document_template_context import (
-    format_document_template_context,
-)
+from app.utils.document.format_document_template_context import \
+    format_document_template_context
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -294,15 +288,6 @@ async def _generate_document_template_impl(
             )
             model_run_id = uuid.UUID(model_run_row["run_id"])
 
-            # Log system and developer messages for this run
-            await log_run_messages(
-                conn=conn,
-                run_id=model_run_id,
-                system_prompt=context["system_prompt"],
-                input_items=input_items,
-                department_id=department_id,
-            )
-
             # Run document generation with tracing
             with trace(
                 "Document Agent",
@@ -315,27 +300,22 @@ async def _generate_document_template_impl(
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
-            # Log assistant message (model output)
-            assistant_output = getattr(run_result, "final_output", None) or ""
-            if assistant_output:
-                await log_run_messages(
-                    conn=conn,
-                    run_id=model_run_id,
-                    system_prompt=None,  # Already logged
-                    assistant_output=assistant_output,
-                    department_id=department_id,
-                )
-
-            # Update token counts
+            # Emit async pricing event (non-blocking)
+            # This handles token updates and message logging in background
             usage = run_result.context_wrapper.usage
-            sql_update_tokens = load_sql(
-                "sql/v3/model_runs/update_model_run_tokens.sql"
-            )
-            await conn.execute(
-                sql_update_tokens,
-                str(model_run_id),
-                usage.input_tokens,
-                usage.output_tokens,
+            assistant_output = getattr(run_result, "final_output", None) or ""
+            await sio.emit(
+                "log_run",
+                {
+                    "runId": str(model_run_id),
+                    "operationType": "document",
+                    "inputTextTokens": usage.input_tokens,
+                    "outputTextTokens": usage.output_tokens,
+                    "systemPrompt": context["system_prompt"],
+                    "inputItems": input_items,  # Serialized TResponseInputItem list
+                    "assistantOutput": assistant_output,
+                    "departmentId": str(department_id),
+                },
             )
 
             # Extract results from document_results (populated by tool calls)

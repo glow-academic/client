@@ -339,7 +339,8 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import \
+            PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:16")
         _test_container.start()
@@ -480,38 +481,30 @@ from app.socket.connections import leave_chat  # type: ignore
 from app.socket.connections.connect import connect  # type: ignore
 from app.socket.connections.disconnect import disconnect  # type: ignore
 from app.socket.connections.join_chat import join_chat  # type: ignore
-from app.socket.connections.stop_chat import stop_chat  # noqa: E402; type: ignore
-from app.socket.documents.generate_template import (
-    generate_document_template,  # noqa: E402; type: ignore
-)
-from app.socket.scenarios.generate import (
-    generate_scenario,  # noqa: E402; type: ignore
-)
-from app.socket.simulations import (
-    send_simulation_message,  # type: ignore
-    start_simulation,  # type: ignore
-)
-from app.socket.simulations.continue_chat import (
-    continue_simulation,  # noqa: E402; type: ignore
-)
-from app.socket.simulations.create_practice_scenario import (
-    create_practice_scenario,  # noqa: E402; type: ignore
-)
-from app.socket.simulations.stop import stop_simulation  # noqa: E402; type: ignore
-from app.socket.videos.generate_outline import (
-    generate_video_outline,  # noqa: E402; type: ignore
-)
-from app.socket.videos.generate_video import generate_video  # noqa: E402; type: ignore
-from app.socket.voice import (
-    start_voice,  # noqa: E402; type: ignore
-    stop_voice,
-    voice_interrupted,
-    voice_response_done,
-    voice_speech_started,
-    voice_transcript_delta,
-    voice_transcript_ready,
-    voice_user_message,
-)
+from app.socket.connections.stop_chat import \
+    stop_chat  # noqa: E402; type: ignore
+from app.socket.documents.generate_template import \
+    generate_document_template  # noqa: E402; type: ignore
+from app.socket.pricing.log import log_run  # noqa: E402; type: ignore
+from app.socket.scenarios.generate import \
+    generate_scenario  # noqa: E402; type: ignore
+from app.socket.simulations import send_simulation_message  # type: ignore
+from app.socket.simulations import start_simulation  # type: ignore
+from app.socket.simulations.continue_chat import \
+    continue_simulation  # noqa: E402; type: ignore
+from app.socket.simulations.create_practice_scenario import \
+    create_practice_scenario  # noqa: E402; type: ignore
+from app.socket.simulations.stop import \
+    stop_simulation  # noqa: E402; type: ignore
+from app.socket.videos.generate_outline import \
+    generate_video_outline  # noqa: E402; type: ignore
+from app.socket.videos.generate_video import \
+    generate_video  # noqa: E402; type: ignore
+from app.socket.voice import start_voice  # noqa: E402; type: ignore
+from app.socket.voice import (stop_voice, voice_interrupted,
+                              voice_response_done, voice_speech_started,
+                              voice_transcript_delta, voice_transcript_ready,
+                              voice_user_message)
 
 
 # Create a combined lifespan to manage both session managers
@@ -838,7 +831,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
                         # Sync all active identity providers from database
                         async with pool.acquire() as conn:
-                            from app.utils.auth.decrypt_api_key import decrypt_api_key
+                            from app.utils.auth.decrypt_api_key import \
+                                decrypt_api_key
 
                             providers_query = """
                                 SELECT id, slug, provider_id, name 
@@ -960,9 +954,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Initialize metrics collector
         from app.utils.metrics.collector import (  # noqa: E402
-            initialize_metrics,
-            snapshot_metrics,
-        )
+            initialize_metrics, snapshot_metrics)
 
         if pool:
             await initialize_metrics(pool, redis_client)
@@ -1042,6 +1034,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             generate_scenario,
             generate_video_outline,
             generate_video,
+            # Pricing events (async logging and token updates)
+            log_run,
             generate_document_template,
         ]
 
@@ -1052,58 +1046,43 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.documents.generate_template import (
             document_template_generation_complete,
             document_template_generation_error,
-            document_template_generation_progress,
-        )
+            document_template_generation_progress)
         from app.socket.scenarios.generate import (
-            scenario_generation_complete,
-            scenario_generation_error,
-            scenario_generation_progress,
-        )
+            scenario_generation_complete, scenario_generation_error,
+            scenario_generation_progress)
         from app.socket.simulations.continue_chat import (
-            continue_simulation_error,
-            end_all_completed,
-            end_all_started,
-            end_chat_started,
-            simulation_continued,
-            simulation_grading_progress,
-        )
-        from app.socket.simulations.create_practice_scenario import (
-            create_practice_scenario_error,
-        )
+            continue_simulation_error, end_all_completed, end_all_started,
+            end_chat_started, simulation_continued,
+            simulation_grading_progress)
+        from app.socket.simulations.create_practice_scenario import \
+            create_practice_scenario_error
         from app.socket.simulations.send_message import (
-            hint_generation_progress,
-            message_sent,
-            send_simulation_message_error,
-            simulation_message_complete,
-            simulation_message_error,
-            simulation_message_token,
-            simulation_new_message,
-        )
+            hint_generation_progress, message_sent,
+            send_simulation_message_error, simulation_message_complete,
+            simulation_message_error, simulation_message_token,
+            simulation_new_message)
         from app.socket.simulations.start import simulation_started
-        from app.socket.simulations.start import (
-            start_simulation_error as simulation_error_start,
-        )
-        from app.socket.simulations.stop import (
-            simulation_message_cancelled,
-            simulation_stopped,
-            stop_simulation_error,
-        )
+        from app.socket.simulations.start import \
+            start_simulation_error as simulation_error_start
+        from app.socket.simulations.stop import (simulation_message_cancelled,
+                                                 simulation_stopped,
+                                                 stop_simulation_error)
         from app.socket.videos.generate_outline import (
-            video_outline_generation_complete,
-            video_outline_generation_error,
-            video_outline_generation_progress,
-        )
+            video_outline_generation_complete, video_outline_generation_error,
+            video_outline_generation_progress)
         from app.socket.videos.generate_video import (
-            video_generation_complete,
-            video_generation_error,
-            video_generation_progress,
-        )
+            video_generation_complete, video_generation_error,
+            video_generation_progress)
         from app.socket.voice.speech_started import voice_speech_started_emit
-        from app.socket.voice.start_voice import start_voice_error, start_voice_response
-        from app.socket.voice.stop_voice import stop_voice_error, stop_voice_response
+        from app.socket.voice.start_voice import (start_voice_error,
+                                                  start_voice_response)
+        from app.socket.voice.stop_voice import (stop_voice_error,
+                                                 stop_voice_response)
         from app.socket.voice.tool_call_delta import voice_tool_call_error
-        from app.socket.voice.transcript_delta import voice_transcript_delta_emit
-        from app.socket.voice.transcript_ready import voice_transcript_ready_emit
+        from app.socket.voice.transcript_delta import \
+            voice_transcript_delta_emit
+        from app.socket.voice.transcript_ready import \
+            voice_transcript_ready_emit
         from app.socket.voice.user_message import voice_user_message_error
 
         # Collect all unique emit functions (use one instance of each event name)
@@ -1200,11 +1179,9 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
-        from app.utils.logging.db_logger import (
-            get_logger,
-            resolve_profile_id,
-            set_profile_id,
-        )
+        from app.utils.logging.db_logger import (get_logger,
+                                                 resolve_profile_id,
+                                                 set_profile_id)
         from app.utils.metrics.collector import record_error, record_request
 
         logger = get_logger(__name__)

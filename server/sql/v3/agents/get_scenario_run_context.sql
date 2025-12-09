@@ -188,3 +188,5 @@ LEFT JOIN personas pers ON pers.id = p.persona_id
 CROSS JOIN default_guest dg
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
+-- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
+WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE

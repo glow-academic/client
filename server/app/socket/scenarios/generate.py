@@ -17,7 +17,6 @@ from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
 from app.utils.documents.create_dynamic_document import create_dynamic_document
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.scenario.format_document_template_info import \
@@ -335,10 +334,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 [str(f) for f in field_ids] if field_ids else []
             )
 
-            sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
+            sql = load_sql("sql/v3/agents/get_scenario_run_context_and_create_run.sql")
             # Agent ID should be provided in payload (UI filters and selects appropriate agent)
-            # For backward compatibility, if not provided, we'll need to find a default agent
-            # But ideally the UI should always provide agent_id
             agent_id = uuid.UUID(data.agentId) if hasattr(data, 'agentId') and data.agentId else None
             
             if not agent_id:
@@ -352,14 +349,49 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 )
                 return
             
-            context_row = await conn.fetchrow(
-                sql,
-                str(department_id),
-                str(persona_id) if persona_id else None,
-                doc_ids_str,
-                field_ids_str,
-                str(agent_id),  # agent_id (required)
-            )
+            try:
+                # Get context AND create run in single atomic transaction
+                # This validates rate limits and creates run atomically
+                context_row = await conn.fetchrow(
+                    sql,
+                    str(department_id),
+                    str(persona_id) if persona_id else None,
+                    doc_ids_str,
+                    field_ids_str,
+                    str(agent_id),  # agent_id (required)
+                    str(profile_id) if profile_id else None,  # profile_id (nullable)
+                )
+            except Exception as e:
+                import asyncpg  # type: ignore
+                
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    await scenario_generation_error(
+                        ScenarioGenerationErrorPayload(
+                            success=False,
+                            message=user_msg,
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
+                # Log run creation failures for debugging
+                logger.error(
+                    f"Failed to get context and create run for {sid}: {str(e)}",
+                    exc_info=True,
+                )
+                await scenario_generation_error(
+                    ScenarioGenerationErrorPayload(
+                        success=False,
+                        message=f"Failed to initialize scenario generation: {str(e)}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
 
             if not context_row:
                 await scenario_generation_error(
@@ -390,6 +422,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             )
 
             agent_role = context_row.get("agent_role", "scenario")
+            
+            # Extract run_id from context (created in same transaction)
+            model_run_id = uuid.UUID(context_row["run_id"])
             
             context = {
                 "agent_id": context_row["agent_id"],
@@ -1079,56 +1114,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 )
                 return
 
-            req_per_day = context["req_per_day"]
-            runs_today_count = context["runs_today_count"]
+            # Rate limit validation and run creation are now handled in SQL
+            # (get_scenario_run_context_and_create_run.sql) - both happen atomically
+            # If we get here, rate limit check passed and run was created successfully
 
-            if req_per_day is not None and runs_today_count >= req_per_day:
-                from datetime import timedelta
-                from zoneinfo import ZoneInfo
-
-                earliest_run_created_at = context["earliest_run_created_at"]
-                if earliest_run_created_at:
-                    next_allowed_utc = earliest_run_created_at + timedelta(days=1)
-                    eastern_tz = ZoneInfo("America/New_York")
-                    next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. "
-                        f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
-                        f"{next_allowed_et.strftime('%B %d, %Y')}."
-                    )
-                else:
-                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                await scenario_generation_error(
-                    ScenarioGenerationErrorPayload(
-                        success=False, message=error_message, trace_id=trace_id
-                    ),
-                    room=sid,
-                )
-                return
-
-            # Create model run with all junction records using SQL file
-            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
-            model_run_row = await conn.fetchrow(
-                sql_create_run,
-                str(department_id),
-                context["model_id"],
-                context["agent_id"],
-                "agent",
-                final_profile_id,
-                None,  # key_id
-                str(context["agent_id"]),  # agent_id
-            )
-            model_run_id = uuid.UUID(model_run_row["run_id"])
-
-            # Log system and developer messages for this run
-            await log_run_messages(
-                conn=conn,
-                run_id=model_run_id,
-                system_prompt=context["system_prompt"],
-                input_items=clean_input_items,
-                department_id=department_id,
-            )
-
+            # Run agent (message logging and token updates happen async via pricing endpoint)
             with trace(
                 "Scenario Agent",
                 group_id=str(group_id) if group_id else None,
@@ -1138,17 +1128,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     agent_instance,
                     input=clean_input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
-                )
-
-            # Log assistant message (model output)
-            assistant_output = getattr(result, "final_output", None) or ""
-            if assistant_output:
-                await log_run_messages(
-                    conn=conn,
-                    run_id=model_run_id,
-                    system_prompt=None,  # Already logged
-                    assistant_output=assistant_output,
-                    department_id=department_id,
                 )
 
             # Extract results from request-scoped storage
@@ -1161,16 +1140,22 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             scenario_result = await storage.get_all(storage_key)
 
             usage = result.context_wrapper.usage
+            assistant_output = getattr(result, "final_output", None) or ""
 
-            # Update model run with token usage using SQL file
-            sql_update_tokens = load_sql(
-                "sql/v3/model_runs/update_model_run_tokens.sql"
-            )
-            await conn.execute(
-                sql_update_tokens,
-                str(model_run_id),
-                usage.input_tokens,
-                usage.output_tokens,
+            # Emit async pricing event (non-blocking)
+            # This handles token updates and message logging in background
+            await sio.emit(
+                "log_run",
+                {
+                    "runId": str(model_run_id),
+                    "operationType": "scenario",
+                    "inputTextTokens": usage.input_tokens,
+                    "outputTextTokens": usage.output_tokens,
+                    "systemPrompt": context["system_prompt"],
+                    "inputItems": clean_input_items,  # Serialized TResponseInputItem list
+                    "assistantOutput": assistant_output,
+                    "departmentId": str(department_id),
+                },
             )
 
             # Get result values

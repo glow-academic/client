@@ -261,9 +261,6 @@ async def _voice_response_done_impl(sid: str, data: VoiceResponseDonePayload) ->
                 sql_link_message = load_sql(
                     "sql/v3/simulations/link_message_to_run.sql"
                 )
-                sql_update_tokens = load_sql(
-                    "sql/v3/model_runs/update_model_run_tokens_audio_text_image.sql"
-                )
 
                 runs_created = 0
                 for message_id_str in message_ids:
@@ -314,17 +311,25 @@ async def _voice_response_done_impl(sid: str, data: VoiceResponseDonePayload) ->
                             )
                             # Continue even if linking fails - message might not exist yet
 
-                        # Update run with token usage
-                        await conn.execute(
-                            sql_update_tokens,
-                            str(run_id),
-                            input_text_tokens,
-                            input_audio_tokens,
-                            input_image_tokens,
-                            output_text_tokens,
-                            output_audio_tokens,
-                            cached_text_tokens if cached_text_tokens > 0 else None,
-                            cached_audio_tokens if cached_audio_tokens > 0 else None,
+                        # Emit async pricing event (non-blocking)
+                        # This handles token updates and message logging in background
+                        await sio.emit(
+                            "log_run",
+                            {
+                                "runId": str(run_id),
+                                "operationType": "voice",
+                                "inputTextTokens": input_text_tokens,
+                                "outputTextTokens": output_text_tokens,
+                                "inputAudioTokens": input_audio_tokens,
+                                "inputImageTokens": input_image_tokens,
+                                "outputAudioTokens": output_audio_tokens,
+                                "cachedTextTokens": cached_text_tokens if cached_text_tokens > 0 else None,
+                                "cachedAudioTokens": cached_audio_tokens if cached_audio_tokens > 0 else None,
+                                "systemPrompt": None,  # Voice doesn't use system prompts
+                                "inputItems": None,  # Voice messages are handled separately
+                                "assistantOutput": None,  # Voice responses are handled separately
+                                "departmentId": str(department_id_uuid),
+                            },
                         )
 
                         runs_created += 1

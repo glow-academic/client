@@ -368,6 +368,21 @@ export type ClientToServerEvents = {
     prompt: string;
     imageReferenceId?: string;
   }) => void;
+  log_run: (payload: {
+    runId: string;
+    operationType: string;
+    inputTextTokens: number;
+    outputTextTokens: number;
+    inputAudioTokens?: number;
+    inputImageTokens?: number;
+    outputAudioTokens?: number;
+    cachedTextTokens?: number;
+    cachedAudioTokens?: number;
+    systemPrompt?: string;
+    inputItems?: string[];
+    assistantOutput?: string;
+    departmentId?: string;
+  }) => void;
   generate_document_template: (payload: {
     departmentId: string;
     profileId?: string;

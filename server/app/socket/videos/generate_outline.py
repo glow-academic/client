@@ -21,7 +21,6 @@ from app.utils.agents.tools.create_outline_tools import create_outline_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
@@ -436,15 +435,6 @@ async def _generate_video_outline_impl(
             )
             model_run_id = uuid.UUID(model_run_row["run_id"])
 
-            # Log system and developer messages for this run
-            await log_run_messages(
-                conn=conn,
-                run_id=model_run_id,
-                system_prompt=context["system_prompt"],
-                input_items=clean_input_items,
-                department_id=department_id,
-            )
-
             with trace(
                 "Outline Agent",
                 group_id=str(group_id) if group_id else None,
@@ -454,17 +444,6 @@ async def _generate_video_outline_impl(
                     agent_instance,
                     input=clean_input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
-                )
-
-            # Log assistant message (model output)
-            assistant_output = getattr(result, "final_output", None) or ""
-            if assistant_output:
-                await log_run_messages(
-                    conn=conn,
-                    run_id=model_run_id,
-                    system_prompt=None,  # Already logged
-                    assistant_output=assistant_output,
-                    department_id=department_id,
                 )
 
             # Extract results from request-scoped storage
@@ -477,16 +456,22 @@ async def _generate_video_outline_impl(
             outline_result = await outline_storage.get_all(outline_storage_key)
 
             usage = result.context_wrapper.usage
+            assistant_output = getattr(result, "final_output", None) or ""
 
-            # Update model run with token usage using SQL file
-            sql_update_tokens = load_sql(
-                "sql/v3/model_runs/update_model_run_tokens.sql"
-            )
-            await conn.execute(
-                sql_update_tokens,
-                str(model_run_id),
-                usage.input_tokens,
-                usage.output_tokens,
+            # Emit async pricing event (non-blocking)
+            # This handles token updates and message logging in background
+            await sio.emit(
+                "log_run",
+                {
+                    "runId": str(model_run_id),
+                    "operationType": "video_outline",
+                    "inputTextTokens": usage.input_tokens,
+                    "outputTextTokens": usage.output_tokens,
+                    "systemPrompt": context["system_prompt"],
+                    "inputItems": clean_input_items,  # Serialized TResponseInputItem list
+                    "assistantOutput": assistant_output,
+                    "departmentId": str(department_id),
+                },
             )
 
             # Get result values
