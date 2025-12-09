@@ -4849,6 +4849,19 @@ export interface components {
              */
             previousChats: components["schemas"]["PreviousChat"][];
         };
+        /**
+         * AllowedRanges
+         * @description Allowed min/max ranges for each section.
+         */
+        AllowedRanges: {
+            persona: components["schemas"]["RangeMinMax"];
+            document: components["schemas"]["RangeMinMax"];
+            parameter_selection: components["schemas"]["RangeMinMax"];
+            /** Parameter Items */
+            parameter_items: {
+                [key: string]: components["schemas"]["RangeMinMax"];
+            };
+        };
         /** AttemptFullRequest */
         AttemptFullRequest: {
             /** Attemptid */
@@ -10932,6 +10945,30 @@ export interface components {
             documentIds: string[];
         };
         /**
+         * RandomizedSelections
+         * @description Randomized selections returned from server.
+         */
+        RandomizedSelections: {
+            /** Personaids */
+            personaIds?: string[] | null;
+            /** Documentids */
+            documentIds?: string[] | null;
+            /** Parameterids */
+            parameterIds?: string[] | null;
+            /** Parameteritemids */
+            parameterItemIds?: string[] | null;
+        };
+        /**
+         * RangeMinMax
+         * @description Min/max range values.
+         */
+        RangeMinMax: {
+            /** Min */
+            min: number;
+            /** Max */
+            max: number;
+        };
+        /**
          * ReasoningMappingItem
          * @description Reasoning mapping item - extends MappingItem
          */
@@ -11567,6 +11604,42 @@ export interface components {
             scenarioId: string;
             /** Profileid */
             profileId: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Personaids */
+            personaIds?: string[] | null;
+            /** Documentids */
+            documentIds?: string[] | null;
+            /** Parameterids */
+            parameterIds?: string[] | null;
+            /** Parameteritemids */
+            parameterItemIds?: string[] | null;
+            /** Personasearch */
+            personaSearch?: string | null;
+            /** Documentsearch */
+            documentSearch?: string | null;
+            /** Parametersearch */
+            parameterSearch?: string | null;
+            /** Personamin */
+            personaMin?: number | null;
+            /** Personamax */
+            personaMax?: number | null;
+            /** Documentmin */
+            documentMin?: number | null;
+            /** Documentmax */
+            documentMax?: number | null;
+            /** Parameterselectionmin */
+            parameterSelectionMin?: number | null;
+            /** Parameterselectionmax */
+            parameterSelectionMax?: number | null;
+            /** Parameteritemranges */
+            parameterItemRanges?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            } | null;
+            /** Randomize */
+            randomize?: string | null;
         };
         /** ScenarioDocumentItem */
         ScenarioDocumentItem: {
@@ -11667,6 +11740,42 @@ export interface components {
         ScenarioNewRequest: {
             /** Profileid */
             profileId: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Personaids */
+            personaIds?: string[] | null;
+            /** Documentids */
+            documentIds?: string[] | null;
+            /** Parameterids */
+            parameterIds?: string[] | null;
+            /** Parameteritemids */
+            parameterItemIds?: string[] | null;
+            /** Personasearch */
+            personaSearch?: string | null;
+            /** Documentsearch */
+            documentSearch?: string | null;
+            /** Parametersearch */
+            parameterSearch?: string | null;
+            /** Personamin */
+            personaMin?: number | null;
+            /** Personamax */
+            personaMax?: number | null;
+            /** Documentmin */
+            documentMin?: number | null;
+            /** Documentmax */
+            documentMax?: number | null;
+            /** Parameterselectionmin */
+            parameterSelectionMin?: number | null;
+            /** Parameterselectionmax */
+            parameterSelectionMax?: number | null;
+            /** Parameteritemranges */
+            parameterItemRanges?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            } | null;
+            /** Randomize */
+            randomize?: string | null;
         };
         /**
          * ScenarioOverviewRequest
@@ -15157,6 +15266,12 @@ export interface components {
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
+            /** Valid Parameter Item Ids */
+            valid_parameter_item_ids?: string[] | null;
+            /** Valid General Parameter Item Ids */
+            valid_general_parameter_item_ids?: string[] | null;
+            allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
+            randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
         };
         /**
          * ScenarioItem
@@ -15323,6 +15438,12 @@ export interface components {
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
+            /** Valid Parameter Item Ids */
+            valid_parameter_item_ids?: string[] | null;
+            /** Valid General Parameter Item Ids */
+            valid_general_parameter_item_ids?: string[] | null;
+            allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
+            randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
         };
         /**
          * ContentItemInRequest

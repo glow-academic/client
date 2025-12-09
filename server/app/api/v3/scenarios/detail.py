@@ -5,33 +5,22 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    DocumentMappingItem,
-    ObjectiveMapping,
-    ObjectiveMappingItem,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-)
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              DocumentMapping, DocumentMappingItem,
+                              ObjectiveMapping, ObjectiveMappingItem,
+                              ParameterItemMapping, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem,
+                              PersonaMapping, PersonaMappingItem,
+                              SimulationMapping, SimulationMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -40,6 +29,27 @@ class ScenarioDetailRequest(BaseModel):
 
     scenarioId: str
     profileId: str
+    # Filter parameters (optional)
+    departmentIds: list[str] | None = None
+    personaIds: list[str] | None = None
+    documentIds: list[str] | None = None
+    parameterIds: list[str] | None = None
+    parameterItemIds: list[str] | None = None
+    # Search parameters
+    personaSearch: str | None = None
+    documentSearch: str | None = None
+    parameterSearch: str | None = None
+    # Range parameters
+    personaMin: int | None = None
+    personaMax: int | None = None
+    documentMin: int | None = None
+    documentMax: int | None = None
+    parameterSelectionMin: int | None = None
+    parameterSelectionMax: int | None = None
+    # Per-parameter item ranges (dict: {paramId: {"min": int, "max": int}})
+    parameterItemRanges: dict[str, dict[str, int]] | None = None
+    # Randomization parameter (single param: "all", "persona", "document", "parameters", or "parameter_{field_id}")
+    randomize: str | None = None
 
 
 class ParameterDetail(BaseModel):
@@ -80,6 +90,31 @@ class ObjectiveWithDepartments(BaseModel):
 
     objective: str
     department_ids: list[str]
+
+
+class RangeMinMax(BaseModel):
+    """Min/max range values."""
+
+    min: int
+    max: int
+
+
+class AllowedRanges(BaseModel):
+    """Allowed min/max ranges for each section."""
+
+    persona: RangeMinMax
+    document: RangeMinMax
+    parameter_selection: RangeMinMax
+    parameter_items: dict[str, RangeMinMax]  # {paramId: {"min": 1, "max": 2}}
+
+
+class RandomizedSelections(BaseModel):
+    """Randomized selections returned from server."""
+
+    personaIds: list[str] | None = None
+    documentIds: list[str] | None = None
+    parameterIds: list[str] | None = None
+    parameterItemIds: list[str] | None = None
 
 
 class ScenarioDetailResponse(BaseModel):
@@ -146,9 +181,472 @@ class ScenarioDetailResponse(BaseModel):
     image_agent_id: str
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
+    # Filtered valid IDs (replacing client-side filtering)
+    valid_parameter_item_ids: list[str] | None = None  # Filtered based on departments
+    valid_general_parameter_item_ids: list[str] | None = None  # Filtered based on personas/documents/parameters
+    # Allowed ranges (computed from filtered IDs, capped at 5)
+    allowed_ranges: AllowedRanges | None = None
+    # Randomized selections (if randomization params provided)
+    randomized_selections: RandomizedSelections | None = None
 
 
 router = APIRouter()
+
+
+# Import filtering functions from new.py (shared logic)
+# For now, we'll duplicate them here to avoid circular imports
+# TODO: Extract to shared utility module if needed
+
+def filter_valid_persona_ids(
+    base_ids: list[str],
+    selected_dept_ids: list[str] | None,
+    selected_param_ids: list[str] | None,
+    selected_field_ids: list[str] | None,
+    selected_persona_ids: list[str] | None,
+    department_mapping: DepartmentMapping,
+    persona_mapping: PersonaMapping,
+    parameter_item_mapping: ParameterItemMapping,
+) -> list[str]:
+    """Filter valid persona IDs based on selections."""
+    if selected_dept_ids is None:
+        selected_dept_ids = []
+    if selected_param_ids is None:
+        selected_param_ids = []
+    if selected_field_ids is None:
+        selected_field_ids = []
+    if selected_persona_ids is None:
+        selected_persona_ids = []
+
+    selected_persona_id_set = set(selected_persona_ids)
+
+    if len(selected_dept_ids) == 0:
+        return list(set(base_ids) | selected_persona_id_set)
+
+    all_dept_persona_ids: set[str] = set()
+    for dept_data in department_mapping.values():
+        if dept_data.persona_ids is not None:
+            all_dept_persona_ids.update(dept_data.persona_ids)
+
+    selected_dept_persona_ids: set[str] = set()
+    for dept_id in selected_dept_ids:
+        dept_data = department_mapping.get(dept_id)
+        if dept_data and dept_data.persona_ids is not None:
+            selected_dept_persona_ids.update(dept_data.persona_ids)
+
+    filtered = [
+        pid
+        for pid in base_ids
+        if pid in selected_dept_persona_ids or pid not in all_dept_persona_ids
+    ]
+
+    dept_filtered = list(set(filtered) | selected_persona_id_set)
+
+    param_filtered = dept_filtered
+    if len(selected_param_ids) > 0:
+        param_filtered = [
+            persona_id
+            for persona_id in dept_filtered
+            if persona_id in selected_persona_id_set
+            or (
+                persona_id in persona_mapping
+                and (
+                    not persona_mapping[persona_id].parameter_ids
+                    or len(persona_mapping[persona_id].parameter_ids or []) == 0
+                    or any(
+                        param_id in (persona_mapping[persona_id].parameter_ids or [])
+                        for param_id in selected_param_ids
+                    )
+                )
+            )
+        ]
+
+    if len(selected_field_ids) == 0:
+        return param_filtered
+
+    selected_persona_id_set_for_filter = set(selected_persona_ids)
+
+    result = []
+    for persona_id in param_filtered:
+        if persona_id in selected_persona_id_set_for_filter:
+            result.append(persona_id)
+            continue
+
+        persona = persona_mapping.get(persona_id)
+        if not persona:
+            result.append(persona_id)
+            continue
+
+        persona_field_ids = persona.field_ids or []
+        persona_field_set = set(persona_field_ids)
+
+        has_all_fields = True
+        for selected_field_id in selected_field_ids:
+            if not selected_field_id:
+                continue
+
+            selected_field = parameter_item_mapping.get(selected_field_id)
+            if not selected_field or not selected_field.parameter_id:
+                continue
+
+            if selected_field_id not in persona_field_set:
+                has_all_fields = False
+                break
+
+        if has_all_fields:
+            result.append(persona_id)
+
+    return result
+
+
+def filter_valid_document_ids(
+    base_ids: list[str],
+    selected_dept_ids: list[str] | None,
+    selected_param_ids: list[str] | None,
+    selected_field_ids: list[str] | None,
+    selected_doc_ids: list[str] | None,
+    selected_param_item_ids: list[str] | None,
+    department_mapping: DepartmentMapping,
+    document_mapping: DocumentMapping,
+    parameter_item_mapping: ParameterItemMapping,
+    parameter_mapping: ParameterMapping,
+    document_details: list[DocumentDetailItem],
+) -> list[str]:
+    """Filter valid document IDs based on selections."""
+    if selected_dept_ids is None:
+        selected_dept_ids = []
+    if selected_param_ids is None:
+        selected_param_ids = []
+    if selected_field_ids is None:
+        selected_field_ids = []
+    if selected_doc_ids is None:
+        selected_doc_ids = []
+    if selected_param_item_ids is None:
+        selected_param_item_ids = []
+
+    selected_doc_id_set = set(selected_doc_ids)
+
+    if len(selected_dept_ids) == 0:
+        dept_filtered_ids = list(set(base_ids) | selected_doc_id_set)
+    else:
+        all_dept_document_ids: set[str] = set()
+        for dept_data in department_mapping.values():
+            if dept_data.document_ids is not None:
+                all_dept_document_ids.update(dept_data.document_ids)
+
+        selected_dept_document_ids: set[str] = set()
+        for dept_id in selected_dept_ids:
+            dept_data = department_mapping.get(dept_id)
+            if dept_data and dept_data.document_ids is not None:
+                selected_dept_document_ids.update(dept_data.document_ids)
+
+        filtered = [
+            doc_id
+            for doc_id in base_ids
+            if doc_id in selected_dept_document_ids
+            or doc_id not in all_dept_document_ids
+        ]
+
+        dept_filtered_ids = list(set(filtered) | selected_doc_id_set)
+
+    current_doc_param_item_ids = [
+        item_id
+        for item_id in selected_param_item_ids
+        if (
+            item_id in parameter_item_mapping
+            and parameter_item_mapping[item_id].parameter_id in parameter_mapping
+            and parameter_mapping[
+                parameter_item_mapping[item_id].parameter_id
+            ].document_parameter
+        )
+    ]
+
+    if len(current_doc_param_item_ids) > 0:
+        if document_details and len(document_details) > 0:
+            docs_with_selected_params: set[str] = set()
+            for doc in document_details:
+                if doc.parameter_item_ids:
+                    doc_param_items_set = set(doc.parameter_item_ids)
+                    has_all_selected_params = all(
+                        param_id in doc_param_items_set
+                        for param_id in current_doc_param_item_ids
+                    )
+                    if has_all_selected_params:
+                        docs_with_selected_params.add(doc.document_id)
+
+            if len(docs_with_selected_params) > 0:
+                dept_filtered_ids = [
+                    doc_id
+                    for doc_id in dept_filtered_ids
+                    if doc_id in docs_with_selected_params or doc_id in selected_doc_id_set
+                ]
+
+    dept_filtered = dept_filtered_ids
+
+    param_filtered = dept_filtered
+    if len(selected_param_ids) > 0:
+        param_filtered = [
+            doc_id
+            for doc_id in dept_filtered
+            if doc_id in selected_doc_id_set
+            or (
+                doc_id in document_mapping
+                and (
+                    not document_mapping[doc_id].parameter_ids
+                    or len(document_mapping[doc_id].parameter_ids or []) == 0
+                    or any(
+                        param_id in (document_mapping[doc_id].parameter_ids or [])
+                        for param_id in selected_param_ids
+                    )
+                )
+            )
+        ]
+
+    if len(selected_field_ids) == 0:
+        return param_filtered
+
+    selected_doc_ids_for_filter = set(selected_doc_ids)
+
+    result = []
+    for doc_id in param_filtered:
+        if doc_id in selected_doc_ids_for_filter:
+            result.append(doc_id)
+            continue
+
+        # Get fields from documentMapping (not document_details)
+        doc_mapping_item = document_mapping.get(doc_id)
+        doc_field_ids: list[str] = []
+        if doc_mapping_item and doc_mapping_item.field_ids:
+            doc_field_ids = doc_mapping_item.field_ids
+
+        # Get fields from document_details (parameter_item_ids is actually field_ids)
+        doc_details = next(
+            (d for d in document_details if d.document_id == doc_id), None
+        )
+        doc_details_field_ids = (
+            doc_details.parameter_item_ids if doc_details else []
+        )
+
+        all_doc_field_ids = list(set(doc_field_ids + doc_details_field_ids))
+
+        if len(all_doc_field_ids) == 0 and len(selected_field_ids) > 0:
+            continue
+
+        doc_field_set = set(all_doc_field_ids)
+
+        has_all_fields = True
+        for selected_field_id in selected_field_ids:
+            if not selected_field_id:
+                continue
+
+            selected_field = parameter_item_mapping.get(selected_field_id)
+            if not selected_field or not selected_field.parameter_id:
+                continue
+
+            if selected_field_id not in doc_field_set:
+                has_all_fields = False
+                break
+
+        if has_all_fields:
+            result.append(doc_id)
+
+    return result
+
+
+def filter_valid_parameter_item_ids(
+    mapping_ids: list[str],
+    selected_dept_ids: list[str] | None,
+    selected_param_item_ids: list[str] | None,
+    department_mapping: DepartmentMapping,
+) -> list[str]:
+    """Filter valid parameter item IDs based on departments."""
+    if selected_dept_ids is None:
+        selected_dept_ids = []
+    if selected_param_item_ids is None:
+        selected_param_item_ids = []
+
+    selected_param_item_id_set = set(selected_param_item_ids)
+
+    if len(selected_dept_ids) == 0:
+        return list(set(mapping_ids) | selected_param_item_id_set)
+
+    all_dept_parameter_item_ids: set[str] = set()
+    for dept_data in department_mapping.values():
+        if dept_data.parameter_item_ids is not None:
+            all_dept_parameter_item_ids.update(dept_data.parameter_item_ids)
+
+    selected_dept_parameter_item_ids: set[str] = set()
+    for dept_id in selected_dept_ids:
+        dept_data = department_mapping.get(dept_id)
+        if dept_data and dept_data.parameter_item_ids is not None:
+            selected_dept_parameter_item_ids.update(dept_data.parameter_item_ids)
+
+    filtered = [
+        item_id
+        for item_id in mapping_ids
+        if item_id in selected_dept_parameter_item_ids
+        or item_id not in all_dept_parameter_item_ids
+    ]
+
+    return list(set(filtered) | selected_param_item_id_set)
+
+
+def filter_valid_general_parameter_item_ids(
+    valid_parameter_item_ids: list[str],
+    selected_param_ids: list[str] | None,
+    selected_persona_ids: list[str] | None,
+    selected_doc_ids: list[str] | None,
+    selected_param_item_ids: list[str] | None,
+    persona_mapping: PersonaMapping,
+    document_mapping: DocumentMapping,
+    parameter_item_mapping: ParameterItemMapping,
+    document_details: list[DocumentDetailItem],
+) -> list[str]:
+    """Filter valid general parameter item IDs based on selected personas, documents, and parameters."""
+    if selected_param_ids is None:
+        selected_param_ids = []
+    if selected_persona_ids is None:
+        selected_persona_ids = []
+    if selected_doc_ids is None:
+        selected_doc_ids = []
+    if selected_param_item_ids is None:
+        selected_param_item_ids = []
+
+    has_selected_personas = len(selected_persona_ids) > 0
+    has_selected_documents = len(selected_doc_ids) > 0
+    has_selections = has_selected_personas or has_selected_documents
+
+    persona_fields: set[str] = set()
+    persona_parameter_ids: set[str] = set()
+    for persona_id in selected_persona_ids:
+        persona = persona_mapping.get(persona_id)
+        if persona and persona.field_ids:
+            for field_id in persona.field_ids:
+                persona_fields.add(field_id)
+                field = parameter_item_mapping.get(field_id)
+                if field and field.parameter_id:
+                    persona_parameter_ids.add(field.parameter_id)
+
+    document_fields: set[str] = set()
+    document_parameter_ids: set[str] = set()
+    for doc_id in selected_doc_ids:
+        doc = document_mapping.get(doc_id)
+        if doc and doc.field_ids:
+            for field_id in doc.field_ids:
+                document_fields.add(field_id)
+                field = parameter_item_mapping.get(field_id)
+                if field and field.parameter_id:
+                    document_parameter_ids.add(field.parameter_id)
+
+        doc_details = next(
+            (d for d in document_details if d.document_id == doc_id), None
+        )
+        if doc_details and doc_details.parameter_item_ids:
+            for field_id in doc_details.parameter_item_ids:
+                document_fields.add(field_id)
+                field = parameter_item_mapping.get(field_id)
+                if field and field.parameter_id:
+                    document_parameter_ids.add(field.parameter_id)
+
+    selected_entity_parameter_ids = persona_parameter_ids | document_parameter_ids
+
+    conditional_param_ids: set[str] = set()
+    for field_id in selected_param_item_ids:
+        field = parameter_item_mapping.get(field_id)
+        if field and field.conditional_parameter_ids:
+            conditional_param_ids.update(field.conditional_parameter_ids)
+
+    result = []
+    for field_id in valid_parameter_item_ids:
+        field = parameter_item_mapping.get(field_id)
+        if not field:
+            continue
+
+        field_param_id = field.parameter_id
+
+        if field_id == field_param_id:
+            continue
+
+        if has_selections:
+            has_persona_fields = len(persona_fields) > 0
+            has_document_fields = len(document_fields) > 0
+            has_any_fields = has_persona_fields or has_document_fields
+
+            if not has_any_fields:
+                if len(selected_param_ids) == 0:
+                    result.append(field_id)
+                    continue
+                if field_param_id in selected_param_ids:
+                    result.append(field_id)
+                continue
+
+            if len(selected_param_ids) > 0:
+                if field_param_id not in selected_param_ids:
+                    if field_param_id in conditional_param_ids:
+                        triggers_conditional = any(
+                            selected_field_id in parameter_item_mapping
+                            and parameter_item_mapping[selected_field_id].conditional_parameter_ids is not None
+                            and field_param_id
+                            in (parameter_item_mapping[
+                                selected_field_id
+                            ].conditional_parameter_ids or [])
+                            and parameter_item_mapping[
+                                selected_field_id
+                            ].parameter_id
+                            in selected_param_ids
+                            for selected_field_id in selected_param_item_ids
+                        )
+                        if triggers_conditional:
+                            result.append(field_id)
+                    continue
+
+                has_fields_from_this_parameter = (
+                    field_param_id in selected_entity_parameter_ids
+                )
+
+                if not has_fields_from_this_parameter:
+                    result.append(field_id)
+                    continue
+
+                is_linked_to_persona = field_id in persona_fields
+                is_linked_to_document = field_id in document_fields
+
+                if is_linked_to_persona or is_linked_to_document:
+                    result.append(field_id)
+                continue
+
+            has_fields_from_this_parameter = field_param_id in selected_entity_parameter_ids
+
+            if not has_fields_from_this_parameter:
+                result.append(field_id)
+                continue
+
+            if field_id in persona_fields:
+                result.append(field_id)
+                continue
+
+            if field_id in document_fields:
+                result.append(field_id)
+                continue
+
+            if field_param_id in conditional_param_ids:
+                result.append(field_id)
+                continue
+
+            continue
+
+        if len(selected_param_ids) == 0:
+            result.append(field_id)
+            continue
+
+        if field_param_id in selected_param_ids:
+            result.append(field_id)
+            continue
+
+        if field_param_id in conditional_param_ids:
+            result.append(field_id)
+            continue
+
+    return result
 
 
 @router.post("/detail", response_model=ScenarioDetailResponse)
@@ -505,6 +1003,343 @@ async def get_scenario_detail(
         # valid_parameter_ids are all keys in parameter_mapping
         valid_parameter_ids = list(parameter_mapping.keys())
 
+        # Apply filtering based on request parameters
+        filtered_valid_persona_ids = valid_persona_ids
+        filtered_valid_document_ids = valid_document_ids
+        filtered_valid_parameter_item_ids: list[str] | None = None
+        filtered_valid_general_parameter_item_ids: list[str] | None = None
+        allowed_ranges: AllowedRanges | None = None
+        randomized_selections: RandomizedSelections | None = None
+
+        # Only apply filtering if filter parameters are provided
+        if (
+            request_data.departmentIds is not None
+            or request_data.personaIds is not None
+            or request_data.documentIds is not None
+            or request_data.parameterIds is not None
+            or request_data.parameterItemIds is not None
+        ):
+            # Filter valid persona IDs
+            filtered_valid_persona_ids = filter_valid_persona_ids(
+                base_ids=valid_persona_ids,
+                selected_dept_ids=request_data.departmentIds,
+                selected_param_ids=request_data.parameterIds,
+                selected_field_ids=request_data.parameterItemIds,
+                selected_persona_ids=request_data.personaIds,
+                department_mapping=department_mapping,
+                persona_mapping=persona_mapping,
+                parameter_item_mapping=param_item_full_mapping,
+            )
+
+            # Filter valid document IDs
+            filtered_valid_document_ids = filter_valid_document_ids(
+                base_ids=valid_document_ids,
+                selected_dept_ids=request_data.departmentIds,
+                selected_param_ids=request_data.parameterIds,
+                selected_field_ids=request_data.parameterItemIds,
+                selected_doc_ids=request_data.documentIds,
+                selected_param_item_ids=request_data.parameterItemIds,
+                department_mapping=department_mapping,
+                document_mapping=document_mapping,
+                parameter_item_mapping=param_item_full_mapping,
+                parameter_mapping=parameter_mapping,
+                document_details=document_details,
+            )
+
+            # Filter valid parameter item IDs
+            mapping_ids = list(param_item_full_mapping.keys())
+            filtered_valid_parameter_item_ids = filter_valid_parameter_item_ids(
+                mapping_ids=mapping_ids,
+                selected_dept_ids=request_data.departmentIds,
+                selected_param_item_ids=request_data.parameterItemIds,
+                department_mapping=department_mapping,
+            )
+
+            # Filter valid general parameter item IDs
+            filtered_valid_general_parameter_item_ids = (
+                filter_valid_general_parameter_item_ids(
+                    valid_parameter_item_ids=filtered_valid_parameter_item_ids,
+                    selected_param_ids=request_data.parameterIds,
+                    selected_persona_ids=request_data.personaIds,
+                    selected_doc_ids=request_data.documentIds,
+                    selected_param_item_ids=request_data.parameterItemIds,
+                    persona_mapping=persona_mapping,
+                    document_mapping=document_mapping,
+                    parameter_item_mapping=param_item_full_mapping,
+                    document_details=document_details,
+                )
+            )
+
+        # Compute allowed ranges from filtered IDs (cap max at 5)
+        max_valid_personas = min(5, len(filtered_valid_persona_ids))
+        max_valid_documents = min(5, len(filtered_valid_document_ids))
+        max_valid_parameters = min(5, len(valid_parameter_ids))
+
+        # Default ranges
+        persona_min = request_data.personaMin if request_data.personaMin is not None else 1
+        persona_max = min(
+            request_data.personaMax if request_data.personaMax is not None else 2,
+            max_valid_personas,
+        )
+        document_min = request_data.documentMin if request_data.documentMin is not None else 0
+        document_max = min(
+            request_data.documentMax if request_data.documentMax is not None else 2,
+            max_valid_documents,
+        )
+        parameter_selection_min = (
+            request_data.parameterSelectionMin
+            if request_data.parameterSelectionMin is not None
+            else 0
+        )
+        parameter_selection_max = min(
+            request_data.parameterSelectionMax
+            if request_data.parameterSelectionMax is not None
+            else 5,
+            max_valid_parameters,
+        )
+
+        # Per-parameter item ranges
+        parameter_items_ranges: dict[str, dict[str, int]] = {}
+        if filtered_valid_general_parameter_item_ids:
+            for param_id in parameter_mapping.keys():
+                valid_items_for_param = [
+                    item_id
+                    for item_id in filtered_valid_general_parameter_item_ids
+                    if item_id in param_item_full_mapping
+                    and param_item_full_mapping[item_id].parameter_id == param_id
+                ]
+                max_valid_items = min(5, len(valid_items_for_param))
+
+                if request_data.parameterItemRanges and param_id in request_data.parameterItemRanges:
+                    param_range = request_data.parameterItemRanges[param_id]
+                    param_min = param_range.get("min", 1)
+                    param_max = min(param_range.get("max", 2), max_valid_items)
+                else:
+                    param_min = 1
+                    param_max = min(2, max_valid_items)
+
+                parameter_items_ranges[param_id] = {"min": param_min, "max": param_max}
+
+        allowed_ranges = AllowedRanges(
+            persona=RangeMinMax(min=persona_min, max=persona_max),
+            document=RangeMinMax(min=document_min, max=document_max),
+            parameter_selection=RangeMinMax(
+                min=parameter_selection_min,
+                max=parameter_selection_max,
+            ),
+            parameter_items={
+                param_id: RangeMinMax(min=range_dict["min"], max=range_dict["max"])
+                for param_id, range_dict in parameter_items_ranges.items()
+            },
+        )
+
+        # Handle randomization if requested
+        import random
+
+        randomized_persona_ids: list[str] | None = None
+        randomized_document_ids: list[str] | None = None
+        randomized_parameter_ids: list[str] | None = None
+        randomized_parameter_item_ids: list[str] | None = None
+
+        if request_data.randomize:
+            randomize_value = request_data.randomize.strip().lower()
+            
+            # Parse randomize value and apply randomization accordingly
+            if randomize_value == "all":
+                # Randomize personas
+                try:
+                    min_val = persona_min
+                    max_val = persona_max
+                    capped_max = min(max_val, max_valid_personas)
+                    count = min(
+                        capped_max,
+                        max(min_val, random.randint(min_val, capped_max)),
+                    )
+                    shuffled = filtered_valid_persona_ids.copy()
+                    random.shuffle(shuffled)
+                    randomized_persona_ids = shuffled[:count]
+                except (ValueError, IndexError):
+                    pass
+                
+                # Randomize documents
+                try:
+                    min_val = document_min
+                    max_val = document_max
+                    capped_max = min(max_val, max_valid_documents)
+                    count = min(
+                        capped_max,
+                        max(min_val, random.randint(min_val, capped_max)),
+                    )
+                    shuffled = filtered_valid_document_ids.copy()
+                    random.shuffle(shuffled)
+                    randomized_document_ids = shuffled[:count]
+                except (ValueError, IndexError):
+                    pass
+                
+                # Randomize parameters
+                try:
+                    min_val = parameter_selection_min
+                    max_val = parameter_selection_max
+                    capped_max = min(max_val, max_valid_parameters)
+                    count = min(
+                        capped_max,
+                        max(min_val, random.randint(min_val, capped_max)),
+                    )
+                    shuffled = valid_parameter_ids.copy()
+                    random.shuffle(shuffled)
+                    randomized_parameter_ids = shuffled[:count]
+                except (ValueError, IndexError):
+                    pass
+                
+                # Randomize all parameter items
+                if filtered_valid_general_parameter_item_ids:
+                    randomized_items: list[str] = []
+                    for param_id in parameter_mapping.keys():
+                        if param_id in parameter_items_ranges:
+                            param_range = parameter_items_ranges[param_id]
+                            try:
+                                min_val = param_range["min"]
+                                max_val = param_range["max"]
+                                valid_items_for_param = [
+                                    item_id
+                                    for item_id in filtered_valid_general_parameter_item_ids
+                                    if item_id in param_item_full_mapping
+                                    and param_item_full_mapping[item_id].parameter_id == param_id
+                                ]
+                                if valid_items_for_param:
+                                    max_valid_items = min(5, len(valid_items_for_param))
+                                    capped_max = min(max_val, max_valid_items)
+                                    count = min(
+                                        capped_max,
+                                        max(min_val, random.randint(min_val, capped_max)),
+                                    )
+                                    shuffled = valid_items_for_param.copy()
+                                    random.shuffle(shuffled)
+                                    randomized_items.extend(shuffled[:count])
+                            except (ValueError, IndexError):
+                                pass
+                    if randomized_items:
+                        randomized_parameter_item_ids = randomized_items
+            
+            elif randomize_value == "persona":
+                # Randomize personas only
+                try:
+                    min_val = persona_min
+                    max_val = persona_max
+                    capped_max = min(max_val, max_valid_personas)
+                    count = min(
+                        capped_max,
+                        max(min_val, random.randint(min_val, capped_max)),
+                    )
+                    shuffled = filtered_valid_persona_ids.copy()
+                    random.shuffle(shuffled)
+                    randomized_persona_ids = shuffled[:count]
+                except (ValueError, IndexError):
+                    pass
+            
+            elif randomize_value == "document":
+                # Randomize documents only
+                try:
+                    min_val = document_min
+                    max_val = document_max
+                    capped_max = min(max_val, max_valid_documents)
+                    count = min(
+                        capped_max,
+                        max(min_val, random.randint(min_val, capped_max)),
+                    )
+                    shuffled = filtered_valid_document_ids.copy()
+                    random.shuffle(shuffled)
+                    randomized_document_ids = shuffled[:count]
+                except (ValueError, IndexError):
+                    pass
+            
+            elif randomize_value == "parameters":
+                # Randomize parameters only
+                try:
+                    min_val = parameter_selection_min
+                    max_val = parameter_selection_max
+                    capped_max = min(max_val, max_valid_parameters)
+                    count = min(
+                        capped_max,
+                        max(min_val, random.randint(min_val, capped_max)),
+                    )
+                    shuffled = valid_parameter_ids.copy()
+                    random.shuffle(shuffled)
+                    randomized_parameter_ids = shuffled[:count]
+                except (ValueError, IndexError):
+                    pass
+            
+            elif randomize_value.startswith("parameter_"):
+                # Randomize items for specific parameter (format: "parameter_{field_id}")
+                param_id = randomize_value.replace("parameter_", "")
+                if filtered_valid_general_parameter_item_ids and param_id in parameter_items_ranges:
+                    param_range = parameter_items_ranges[param_id]
+                    try:
+                        min_val = param_range["min"]
+                        max_val = param_range["max"]
+                        valid_items_for_param = [
+                            item_id
+                            for item_id in filtered_valid_general_parameter_item_ids
+                            if item_id in param_item_full_mapping
+                            and param_item_full_mapping[item_id].parameter_id == param_id
+                        ]
+                        if valid_items_for_param:
+                            max_valid_items = min(5, len(valid_items_for_param))
+                            capped_max = min(max_val, max_valid_items)
+                            count = min(
+                                capped_max,
+                                max(min_val, random.randint(min_val, capped_max)),
+                            )
+                            shuffled = valid_items_for_param.copy()
+                            random.shuffle(shuffled)
+                            randomized_parameter_item_ids = shuffled[:count]
+                    except (ValueError, IndexError):
+                        pass
+
+        if (
+            randomized_persona_ids is not None
+            or randomized_document_ids is not None
+            or randomized_parameter_ids is not None
+            or randomized_parameter_item_ids is not None
+        ):
+            randomized_selections = RandomizedSelections(
+                personaIds=randomized_persona_ids,
+                documentIds=randomized_document_ids,
+                parameterIds=randomized_parameter_ids,
+                parameterItemIds=randomized_parameter_item_ids,
+            )
+
+        # Apply search filtering if search terms provided
+        if request_data.personaSearch:
+            search_lower = request_data.personaSearch.lower()
+            filtered_valid_persona_ids = [
+                pid
+                for pid in filtered_valid_persona_ids
+                if pid in persona_mapping
+                and (
+                    search_lower in persona_mapping[pid].name.lower()
+                    or (
+                        persona_mapping[pid].description
+                        and search_lower in persona_mapping[pid].description.lower()
+                    )
+                )
+            ]
+
+        if request_data.documentSearch:
+            search_lower = request_data.documentSearch.lower()
+            filtered_valid_document_ids = [
+                did
+                for did in filtered_valid_document_ids
+                if did in document_mapping
+                and (
+                    search_lower in document_mapping[did].name.lower()
+                    or (
+                        document_mapping[did].description
+                        and search_lower in document_mapping[did].description.lower()
+                    )
+                )
+            ]
+
         response_data = ScenarioDetailResponse(
             name=scenario["name"],
             problem_statement=scenario["problem_statement"],
@@ -521,9 +1356,13 @@ async def get_scenario_detail(
             department_ids=department_ids,
             valid_department_ids=dept_ids,
             persona_ids=persona_ids,
-            valid_persona_ids=valid_persona_ids,
+            valid_persona_ids=filtered_valid_persona_ids,
             document_ids=document_ids,
-            valid_document_ids=valid_document_ids,
+            valid_document_ids=filtered_valid_document_ids,
+            valid_parameter_item_ids=filtered_valid_parameter_item_ids,
+            valid_general_parameter_item_ids=filtered_valid_general_parameter_item_ids,
+            allowed_ranges=allowed_ranges,
+            randomized_selections=randomized_selections,
             scenario_images=scenario_images,
             objective_ids=objective_ids,
             valid_objectives=[],

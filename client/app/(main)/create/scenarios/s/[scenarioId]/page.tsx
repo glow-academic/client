@@ -49,10 +49,37 @@ type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 const getScenario = async (
   scenarioId: string,
   profileId: string,
+  filterParams?: {
+    departmentIds?: string[];
+    personaIds?: string[];
+    documentIds?: string[];
+    parameterIds?: string[];
+    parameterItemIds?: string[];
+    personaSearch?: string;
+    documentSearch?: string;
+    parameterSearch?: string;
+    personaMin?: number;
+    personaMax?: number;
+    documentMin?: number;
+    documentMax?: number;
+    parameterSelectionMin?: number;
+    parameterSelectionMax?: number;
+    parameterItemRanges?: Record<string, { min: number; max: number }>;
+    randomizePersonas?: string;
+    randomizeDocuments?: string;
+    randomizeParameters?: string;
+    randomizeParameterItems?: Record<string, string>;
+  },
 ): Promise<ScenarioDetailOut> => {
   return api.post(
     "/scenarios/detail",
-    { body: { scenarioId, profileId } },
+    {
+      body: {
+        scenarioId,
+        profileId,
+        ...(filterParams || {}),
+      },
+    },
     {
       cache: "no-store",
       headers: {
@@ -116,16 +143,109 @@ async function randomizeScenario(
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditScenarioPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ scenarioId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { scenarioId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch scenario detail (always fresh - source of truth)
+  // Parse search params
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Extract filter params
+  const departmentIds = searchParamsObj.get("departmentIds")?.split(",").filter(Boolean);
+  const personaIds = searchParamsObj.get("personaIds")?.split(",").filter(Boolean);
+  const documentIds = searchParamsObj.get("documentIds")?.split(",").filter(Boolean);
+  const parameterIds = searchParamsObj.get("parameterIds")?.split(",").filter(Boolean);
+  const parameterItemIds = searchParamsObj.get("parameterItemIds")?.split(",").filter(Boolean);
+  const personaSearch = searchParamsObj.get("personaSearch") || undefined;
+  const documentSearch = searchParamsObj.get("documentSearch") || undefined;
+  const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
+  const personaMin = searchParamsObj.get("personaMin") ? parseInt(searchParamsObj.get("personaMin") || "1", 10) : undefined;
+  const personaMax = searchParamsObj.get("personaMax") ? parseInt(searchParamsObj.get("personaMax") || "2", 10) : undefined;
+  const documentMin = searchParamsObj.get("documentMin") ? parseInt(searchParamsObj.get("documentMin") || "0", 10) : undefined;
+  const documentMax = searchParamsObj.get("documentMax") ? parseInt(searchParamsObj.get("documentMax") || "2", 10) : undefined;
+  const parameterSelectionMin = searchParamsObj.get("parameterSelectionMin") ? parseInt(searchParamsObj.get("parameterSelectionMin") || "0", 10) : undefined;
+  const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax") ? parseInt(searchParamsObj.get("parameterSelectionMax") || "5", 10) : undefined;
+  
+  // Parse parameter item ranges
+  const parameterItemRanges: Record<string, { min: number; max: number }> | undefined = (() => {
+    const ranges: Record<string, { min: number; max: number }> = {};
+    let hasRanges = false;
+    for (const [key, value] of searchParamsObj.entries()) {
+      if (key.startsWith("parameterItemMin_")) {
+        const paramId = key.replace("parameterItemMin_", "");
+        const min = parseInt(value, 10);
+        if (!isNaN(min)) {
+          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
+          ranges[paramId].min = min;
+          hasRanges = true;
+        }
+      } else if (key.startsWith("parameterItemMax_")) {
+        const paramId = key.replace("parameterItemMax_", "");
+        const max = parseInt(value, 10);
+        if (!isNaN(max)) {
+          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
+          ranges[paramId].max = max;
+          hasRanges = true;
+        }
+      }
+    }
+    return hasRanges ? ranges : undefined;
+  })();
+
+  // Parse randomization params
+  const randomizePersonas = searchParamsObj.get("randomizePersonas") || undefined;
+  const randomizeDocuments = searchParamsObj.get("randomizeDocuments") || undefined;
+  const randomizeParameters = searchParamsObj.get("randomizeParameters") || undefined;
+  
+  const randomizeParameterItems: Record<string, string> | undefined = (() => {
+    const items: Record<string, string> = {};
+    for (const [key, value] of searchParamsObj.entries()) {
+      if (key.startsWith("randomizeParameterItems_")) {
+        const paramId = key.replace("randomizeParameterItems_", "");
+        items[paramId] = value;
+      }
+    }
+    return Object.keys(items).length > 0 ? items : undefined;
+  })();
+
+  // Fetch scenario detail (always fresh - source of truth) with filter params
   try {
-    const scenarioDetail = await getScenario(scenarioId, profileId);
+    const scenarioDetail = await getScenario(scenarioId, profileId, {
+      departmentIds: departmentIds || undefined,
+      personaIds: personaIds || undefined,
+      documentIds: documentIds || undefined,
+      parameterIds: parameterIds || undefined,
+      parameterItemIds: parameterItemIds || undefined,
+      personaSearch,
+      documentSearch,
+      parameterSearch,
+      personaMin,
+      personaMax,
+      documentMin,
+      documentMax,
+      parameterSelectionMin,
+      parameterSelectionMax,
+      parameterItemRanges,
+      randomizePersonas,
+      randomizeDocuments,
+      randomizeParameters,
+      randomizeParameterItems,
+    });
 
     return (
       <div

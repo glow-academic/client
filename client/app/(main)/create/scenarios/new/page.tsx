@@ -29,7 +29,7 @@ type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getScenarioDefault = async (
-  input: ScenarioNewIn,
+  input: ScenarioNewIn
 ): Promise<ScenarioNewOut> => {
   return api.post("/scenarios/new", input, {
     cache: "no-store",
@@ -41,7 +41,7 @@ const getScenarioDefault = async (
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createScenario(
-  input: CreateScenarioIn,
+  input: CreateScenarioIn
 ): Promise<CreateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -49,7 +49,7 @@ async function createScenario(
 }
 
 async function updateScenario(
-  input: UpdateScenarioIn,
+  input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -59,7 +59,7 @@ async function updateScenario(
 // generateAIScenario removed - component now uses WebSocket directly
 
 async function randomizeScenario(
-  input: RandomizeScenarioIn,
+  input: RandomizeScenarioIn
 ): Promise<RandomizeScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -67,9 +67,6 @@ async function randomizeScenario(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
   return {
     title: "New Scenario",
     description:
@@ -77,13 +74,122 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function NewScenarioPage() {
+export default async function NewScenarioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch default scenario detail server-side
+  // Parse search params
+  const params = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Extract filter params
+  const departmentIds = searchParamsObj
+    .get("departmentIds")
+    ?.split(",")
+    .filter(Boolean);
+  const personaIds = searchParamsObj
+    .get("personaIds")
+    ?.split(",")
+    .filter(Boolean);
+  const documentIds = searchParamsObj
+    .get("documentIds")
+    ?.split(",")
+    .filter(Boolean);
+  const parameterIds = searchParamsObj
+    .get("parameterIds")
+    ?.split(",")
+    .filter(Boolean);
+  const parameterItemIds = searchParamsObj
+    .get("parameterItemIds")
+    ?.split(",")
+    .filter(Boolean);
+  const personaSearch = searchParamsObj.get("personaSearch") || undefined;
+  const documentSearch = searchParamsObj.get("documentSearch") || undefined;
+  const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
+  const personaMin = searchParamsObj.get("personaMin")
+    ? parseInt(searchParamsObj.get("personaMin") || "1", 10)
+    : undefined;
+  const personaMax = searchParamsObj.get("personaMax")
+    ? parseInt(searchParamsObj.get("personaMax") || "2", 10)
+    : undefined;
+  const documentMin = searchParamsObj.get("documentMin")
+    ? parseInt(searchParamsObj.get("documentMin") || "0", 10)
+    : undefined;
+  const documentMax = searchParamsObj.get("documentMax")
+    ? parseInt(searchParamsObj.get("documentMax") || "2", 10)
+    : undefined;
+  const parameterSelectionMin = searchParamsObj.get("parameterSelectionMin")
+    ? parseInt(searchParamsObj.get("parameterSelectionMin") || "0", 10)
+    : undefined;
+  const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
+    ? parseInt(searchParamsObj.get("parameterSelectionMax") || "5", 10)
+    : undefined;
+
+  // Parse parameter item ranges (format: parameterItemMin_{paramId}, parameterItemMax_{paramId})
+  const parameterItemRanges:
+    | Record<string, { min: number; max: number }>
+    | undefined = (() => {
+    const ranges: Record<string, { min: number; max: number }> = {};
+    let hasRanges = false;
+    for (const [key, value] of searchParamsObj.entries()) {
+      if (key.startsWith("parameterItemMin_")) {
+        const paramId = key.replace("parameterItemMin_", "");
+        const min = parseInt(value, 10);
+        if (!isNaN(min)) {
+          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
+          ranges[paramId].min = min;
+          hasRanges = true;
+        }
+      } else if (key.startsWith("parameterItemMax_")) {
+        const paramId = key.replace("parameterItemMax_", "");
+        const max = parseInt(value, 10);
+        if (!isNaN(max)) {
+          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
+          ranges[paramId].max = max;
+          hasRanges = true;
+        }
+      }
+    }
+    return hasRanges ? ranges : undefined;
+  })();
+
+  // Parse randomization param (single param: "all", "persona", "document", "parameters", or "parameter_{field_id}")
+  const randomize = searchParamsObj.get("randomize") || undefined;
+
+  // Fetch default scenario detail server-side with filter params
   const scenarioDetailDefault = await getScenarioDefault({
-    body: { profileId },
+    body: {
+      profileId,
+      departmentIds: departmentIds || null,
+      personaIds: personaIds || null,
+      documentIds: documentIds || null,
+      parameterIds: parameterIds || null,
+      parameterItemIds: parameterItemIds || null,
+      personaSearch: personaSearch || null,
+      documentSearch: documentSearch || null,
+      parameterSearch: parameterSearch || null,
+      personaMin: personaMin || null,
+      personaMax: personaMax || null,
+      documentMin: documentMin || null,
+      documentMax: documentMax || null,
+      parameterSelectionMin: parameterSelectionMin || null,
+      parameterSelectionMax: parameterSelectionMax || null,
+      parameterItemRanges: parameterItemRanges || null,
+      randomize: randomize || null,
+    },
   });
 
   return (

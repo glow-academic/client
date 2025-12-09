@@ -10737,6 +10737,35 @@
         ],
         "title": "AllSimulationScenarioItem"
       },
+      "AllowedRanges": {
+        "properties": {
+          "persona": {
+            "$ref": "#/components/schemas/RangeMinMax"
+          },
+          "document": {
+            "$ref": "#/components/schemas/RangeMinMax"
+          },
+          "parameter_selection": {
+            "$ref": "#/components/schemas/RangeMinMax"
+          },
+          "parameter_items": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RangeMinMax"
+            },
+            "type": "object",
+            "title": "Parameter Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona",
+          "document",
+          "parameter_selection",
+          "parameter_items"
+        ],
+        "title": "AllowedRanges",
+        "description": "Allowed min/max ranges for each section."
+      },
       "AttemptFullRequest": {
         "properties": {
           "attemptId": {
@@ -26467,6 +26496,88 @@
         "title": "RandomizeVideoResponse",
         "description": "Response for video randomization."
       },
+      "RandomizedSelections": {
+        "properties": {
+          "personaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaids"
+          },
+          "documentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentids"
+          },
+          "parameterIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterids"
+          },
+          "parameterItemIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameteritemids"
+          }
+        },
+        "type": "object",
+        "title": "RandomizedSelections",
+        "description": "Randomized selections returned from server."
+      },
+      "RangeMinMax": {
+        "properties": {
+          "min": {
+            "type": "integer",
+            "title": "Min"
+          },
+          "max": {
+            "type": "integer",
+            "title": "Max"
+          }
+        },
+        "type": "object",
+        "required": [
+          "min",
+          "max"
+        ],
+        "title": "RangeMinMax",
+        "description": "Min/max range values."
+      },
       "ReasoningMappingItem": {
         "properties": {
           "name": {
@@ -28197,6 +28308,203 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "personaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaids"
+          },
+          "documentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentids"
+          },
+          "parameterIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterids"
+          },
+          "parameterItemIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameteritemids"
+          },
+          "personaSearch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personasearch"
+          },
+          "documentSearch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentsearch"
+          },
+          "parameterSearch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parametersearch"
+          },
+          "personaMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personamin"
+          },
+          "personaMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personamax"
+          },
+          "documentMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentmin"
+          },
+          "documentMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentmax"
+          },
+          "parameterSelectionMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterselectionmin"
+          },
+          "parameterSelectionMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterselectionmax"
+          },
+          "parameterItemRanges": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameteritemranges"
+          },
+          "randomize": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Randomize"
           }
         },
         "type": "object",
@@ -28443,6 +28751,203 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "personaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaids"
+          },
+          "documentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentids"
+          },
+          "parameterIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterids"
+          },
+          "parameterItemIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameteritemids"
+          },
+          "personaSearch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personasearch"
+          },
+          "documentSearch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentsearch"
+          },
+          "parameterSearch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parametersearch"
+          },
+          "personaMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personamin"
+          },
+          "personaMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personamax"
+          },
+          "documentMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentmin"
+          },
+          "documentMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentmax"
+          },
+          "parameterSelectionMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterselectionmin"
+          },
+          "parameterSelectionMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterselectionmax"
+          },
+          "parameterItemRanges": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameteritemranges"
+          },
+          "randomize": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Randomize"
           }
         },
         "type": "object",
@@ -37968,6 +38473,54 @@
             },
             "type": "array",
             "title": "Valid Agent Ids"
+          },
+          "valid_parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Item Ids"
+          },
+          "valid_general_parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid General Parameter Item Ids"
+          },
+          "allowed_ranges": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AllowedRanges"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "randomized_selections": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RandomizedSelections"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -38438,6 +38991,54 @@
             },
             "type": "array",
             "title": "Valid Agent Ids"
+          },
+          "valid_parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Item Ids"
+          },
+          "valid_general_parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid General Parameter Item Ids"
+          },
+          "allowed_ranges": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AllowedRanges"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "randomized_selections": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RandomizedSelections"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
