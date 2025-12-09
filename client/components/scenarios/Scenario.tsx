@@ -450,6 +450,7 @@ export default function Scenario({
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [personaSearchTerm, setPersonaSearchTerm] = useState<string>("");
   const [documentSearchTerm, setDocumentSearchTerm] = useState<string>("");
+  const [parameterSearchTerm, setParameterSearchTerm] = useState<string>("");
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
   );
@@ -505,6 +506,10 @@ export default function Scenario({
   // Min/max state for randomization (max capped at 5)
   const [personaMinMax, setPersonaMinMax] = useState({ min: 1, max: 2 });
   const [documentMinMax, setDocumentMinMax] = useState({ min: 0, max: 2 });
+  const [parameterSelectionMinMax, setParameterSelectionMinMax] = useState({
+    min: 0,
+    max: 5,
+  });
   const [parameterMinMax, setParameterMinMax] = useState<
     Record<string, { min: number; max: number }>
   >({});
@@ -1763,6 +1768,17 @@ export default function Scenario({
     }));
   }, [validDocumentIds.length]);
 
+  useEffect(() => {
+    const maxValidParameters = Math.min(
+      5,
+      scenarioData?.valid_parameter_ids?.length || 0
+    );
+    setParameterSelectionMinMax((prev) => ({
+      ...prev,
+      max: Math.min(prev.max, maxValidParameters),
+    }));
+  }, [scenarioData?.valid_parameter_ids?.length]);
+
   // Dynamically update parameter max values when valid items change
   useEffect(() => {
     Object.entries(generalParameterMapping).forEach(([paramId]) => {
@@ -1952,6 +1968,34 @@ export default function Scenario({
       toast.success("Documents reset");
     } catch {
       toast.error("Failed to reset documents");
+    }
+  };
+
+  // Parameters actions - Client-side randomization
+  const handleRandomizeParametersClient = () => {
+    const validIds = scenarioData?.valid_parameter_ids || [];
+    if (validIds.length === 0) {
+      toast.error("No valid parameters available to randomize");
+      return;
+    }
+    const { min, max } = parameterSelectionMinMax;
+    const cappedMax = Math.min(validIds.length, max);
+    const count = Math.min(
+      cappedMax,
+      Math.max(min, Math.floor(Math.random() * (cappedMax - min + 1)) + min)
+    );
+    const shuffled = [...validIds].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(count, validIds.length));
+    handleInputChange("parameterIds", selected);
+    toast.success(`Randomized ${selected.length} parameter(s)`);
+  };
+
+  const handleResetParameters = () => {
+    try {
+      handleInputChange("parameterIds", []);
+      toast.success("Parameters reset");
+    } catch {
+      toast.error("Failed to reset parameters");
     }
   };
 
@@ -3593,7 +3637,7 @@ export default function Scenario({
               : ""
           }`}
         >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
             <div className="flex items-center space-x-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -3617,39 +3661,151 @@ export default function Scenario({
                 <CardDescription>{steps[3]?.description || ""}</CardDescription>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="pt-0 space-y-4">
-            {/* Parameter Selection */}
-            {scenarioData?.valid_parameter_ids &&
-            scenarioData.valid_parameter_ids.length > 0 ? (
-              <div className="space-y-2">
-                <Label htmlFor="parameters">Parameters</Label>
-                {formData?.parameterIds !== undefined ? (
-                  <GenericPicker
-                    items={parameterMapping}
-                    itemIds={Array.from(
-                      new Set([
-                        ...(scenarioData.valid_parameter_ids || []),
-                        ...(formData.parameterIds || []),
-                      ])
-                    )}
-                    selectedIds={formData.parameterIds || []}
-                    onSelect={(ids) => handleInputChange("parameterIds", ids)}
-                    getId={(item) => (item as unknown as { id: string }).id}
-                    getLabel={(item) => item.name || ""}
-                    getSearchText={(item) =>
-                      `${item.name} ${item.description || ""}`
+            <div className="flex items-center">
+              {scenarioData?.valid_parameter_ids &&
+              scenarioData.valid_parameter_ids.length > 0 ? (
+                <>
+                  <RangeSlider
+                    min={0}
+                    max={Math.min(5, scenarioData.valid_parameter_ids.length)}
+                    value={[
+                      parameterSelectionMinMax.min,
+                      Math.min(
+                        Math.min(5, scenarioData.valid_parameter_ids.length),
+                        parameterSelectionMinMax.max
+                      ),
+                    ]}
+                    onValueChange={([min, max]) =>
+                      setParameterSelectionMinMax({
+                        min,
+                        max: Math.min(
+                          Math.min(5, scenarioData.valid_parameter_ids.length),
+                          max
+                        ),
+                      })
                     }
-                    placeholder="Select Parameters"
                     disabled={isReadonly}
-                    multiSelect={true}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                    groupHeading="Parameters"
+                    className="w-[200px] mr-4"
                   />
-                ) : null}
-              </div>
-            ) : null}
+                  <div className="flex items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleRandomizeParametersClient}
+                          disabled={isReadonly}
+                        >
+                          <Shuffle className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Randomize</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleResetParameters}
+                          disabled={isReadonly}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Reset</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3 px-6">
+            {(() => {
+              const validParamIds = scenarioData?.valid_parameter_ids || [];
+
+              if (validParamIds.length === 0) {
+                return null;
+              }
+
+              // Filter parameters based on search term
+              const filteredParameterIds = !parameterSearchTerm.trim()
+                ? validParamIds
+                : validParamIds.filter((paramId) => {
+                    const param = parameterMapping[paramId];
+                    if (!param) return false;
+                    const searchLower = parameterSearchTerm.toLowerCase();
+                    const searchText =
+                      `${param.name} ${param.description || ""}`.toLowerCase();
+                    return searchText.includes(searchLower);
+                  });
+
+              return (
+                <>
+                  {/* Search bar */}
+                  <div className="flex h-9 items-center gap-2 border-b px-0">
+                    <Search className="size-4 shrink-0 opacity-50" />
+                    <input
+                      type="text"
+                      placeholder="Search parameters..."
+                      value={parameterSearchTerm}
+                      onChange={(e) => setParameterSearchTerm(e.target.value)}
+                      className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+
+                  {/* Filtered parameters grid */}
+                  <div className="grid grid-cols-4 gap-4 max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
+                    {filteredParameterIds.map((paramId) => {
+                      const param = parameterMapping[paramId];
+                      if (!param) return null;
+
+                      const isSelected = (formData.parameterIds || []).includes(
+                        paramId
+                      );
+
+                      return (
+                        <button
+                          key={paramId}
+                          type="button"
+                          onClick={() => {
+                            if (isReadonly) return;
+                            const currentIds = formData.parameterIds || [];
+                            const newIds = isSelected
+                              ? currentIds.filter((id) => id !== paramId)
+                              : [...currentIds, paramId];
+                            handleInputChange("parameterIds", newIds);
+                          }}
+                          disabled={isReadonly}
+                          className={cn(
+                            "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                            "hover:shadow-md hover:bg-accent/50",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                            "disabled:pointer-events-none disabled:opacity-50",
+                            isSelected && "ring-2 ring-primary bg-accent"
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm">
+                                {param.name}
+                              </div>
+                              {param.description && (
+                                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                  {param.description}
+                                </div>
+                              )}
+                            </div>
+                            {isSelected && (
+                              <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
 
