@@ -236,11 +236,12 @@ export default function DocumentViewer({
 
       if (compact) {
         // Compact mode: show simplified HTML preview (scaled down)
+        // Use pointer-events-none to allow clicks to pass through to parent button
         return (
-          <div className="w-full h-full relative overflow-hidden">
+          <div className="w-full h-full relative overflow-hidden pointer-events-none">
             <iframe
               sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin"
-              className="w-full h-full border-0 rounded-md"
+              className="w-full h-full border-0 rounded-md pointer-events-none"
               srcDoc={safeHtml}
               title={document.name ?? ""}
               style={{
@@ -248,6 +249,7 @@ export default function DocumentViewer({
                 transformOrigin: "top left",
                 width: "400%",
                 height: "400%",
+                pointerEvents: "none",
               }}
             />
           </div>
