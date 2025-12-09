@@ -1,16 +1,20 @@
 """Handler for log_run WebSocket event - async pricing and logging."""
 
+import json
 import uuid
 from typing import Any
 
 from agents.items import TResponseInputItem
-from app.main import get_pool, sio
+from app.main import UPLOAD_FOLDER, get_pool, sio
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+
+# TEMPORARY: Feature flag for saving OpenAI messages as JSON files
+# TODO: Remove this feature flag after testing
+SAVE_RUN_MESSAGES_JSON = True
 
 
 # Pydantic model for client-to-server event
@@ -40,6 +44,17 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
         run_id = uuid.UUID(data.runId)
         department_id = uuid.UUID(data.departmentId) if data.departmentId else None
 
+        # Extract developer message contents from inputItems
+        developer_contents: list[str] = []
+        if data.inputItems:
+            for item in data.inputItems:
+                if item and isinstance(item, dict) and item.get("role") == "developer":
+                    content = item.get("content", "")
+                    if isinstance(content, str):
+                        stripped = content.strip()
+                        if stripped:
+                            developer_contents.append(stripped)
+
         # Get connection pool
         pool = get_pool()
         if not pool:
@@ -47,68 +62,21 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
             return
 
         async with pool.acquire() as conn:
-            # Determine which SQL file to use based on token types
-            has_audio_or_image = (
-                data.inputAudioTokens is not None
-                or data.inputImageTokens is not None
-                or data.outputAudioTokens is not None
-                or data.cachedAudioTokens is not None
-            )
-
-            if has_audio_or_image:
-                # Use audio/text/image token SQL file
-                sql_update_tokens = load_sql(
-                    "sql/v3/model_runs/update_model_run_tokens_audio_text_image.sql"
-                )
-                await conn.execute(
-                    sql_update_tokens,
-                    str(run_id),
-                    data.inputTextTokens,
-                    data.inputAudioTokens or 0,
-                    data.inputImageTokens or 0,
-                    data.outputTextTokens,
-                    data.outputAudioTokens or 0,
-                    data.cachedTextTokens or 0,
-                    data.cachedAudioTokens or 0,
-                )
-                logger.info(
-                    f"Updated tokens (audio/image): input_text={data.inputTextTokens}, "
-                    f"input_audio={data.inputAudioTokens or 0}, "
-                    f"input_image={data.inputImageTokens or 0}, "
-                    f"output_text={data.outputTextTokens}, "
-                    f"output_audio={data.outputAudioTokens or 0}, "
-                    f"cached_text={data.cachedTextTokens or 0}, "
-                    f"cached_audio={data.cachedAudioTokens or 0}"
-                )
-            else:
-                # Use text-only token SQL file
-                sql_update_tokens = load_sql(
-                    "sql/v3/model_runs/update_model_run_tokens.sql"
-                )
-                await conn.execute(
-                    sql_update_tokens,
-                    str(run_id),
-                    data.inputTextTokens,
-                    data.outputTextTokens,
-                )
-                logger.info(
-                    f"Updated tokens (text-only): input={data.inputTextTokens}, "
-                    f"output={data.outputTextTokens}"
-                )
-
-            # Log all messages in single transaction
-            # Convert input_items back to TResponseInputItem format
-            input_items: list[TResponseInputItem] | None = None
-            if data.inputItems:
-                input_items = data.inputItems  # type: ignore[assignment]
-
-            await log_run_messages(
-                conn=conn,
-                run_id=run_id,
-                system_prompt=data.systemPrompt,
-                input_items=input_items,
-                assistant_output=data.assistantOutput,
-                department_id=department_id,
+            # Use consolidated SQL file that handles everything in one transaction
+            sql_log_run = load_sql("sql/v3/model_runs/log_run_complete.sql")
+            await conn.execute(
+                sql_log_run,
+                str(run_id),
+                str(department_id) if department_id else None,
+                data.inputTextTokens,
+                data.inputAudioTokens or 0,
+                data.inputImageTokens or 0,
+                data.outputTextTokens,
+                data.outputAudioTokens or 0,
+                data.cachedTextTokens or 0,
+                data.cachedAudioTokens or 0,
+                developer_contents if developer_contents else None,
+                data.assistantOutput,
             )
 
             logger.info(
@@ -116,6 +84,50 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                 f"operation={data.operationType}, "
                 f"tokens={data.inputTextTokens}+{data.outputTextTokens}"
             )
+
+            # TEMPORARY: Save OpenAI messages as JSON file if feature flag is enabled
+            if SAVE_RUN_MESSAGES_JSON:
+                try:
+                    messages: list[dict[str, str]] = []
+
+                    # Add system message if provided
+                    if data.systemPrompt:
+                        messages.append({"role": "system", "content": data.systemPrompt})
+
+                    # Add developer messages from inputItems
+                    if data.inputItems:
+                        for item in data.inputItems:
+                            if (
+                                item
+                                and isinstance(item, dict)
+                                and item.get("role") == "developer"
+                            ):
+                                content = item.get("content", "")
+                                if isinstance(content, str) and content.strip():
+                                    messages.append(
+                                        {"role": "developer", "content": content.strip()}
+                                    )
+
+                    # Add assistant message if provided
+                    if data.assistantOutput and data.assistantOutput.strip():
+                        messages.append(
+                            {"role": "assistant", "content": data.assistantOutput.strip()}
+                        )
+
+                    # Save to JSON file
+                    if messages:
+                        json_file_path = UPLOAD_FOLDER / f"{run_id}.json"
+                        with open(json_file_path, "w", encoding="utf-8") as f:
+                            json.dump(messages, f, indent=2, ensure_ascii=False)
+                        logger.info(
+                            f"Saved OpenAI messages to {json_file_path} ({len(messages)} messages)"
+                        )
+                except Exception as json_error:
+                    # Log error but don't fail the request
+                    logger.error(
+                        f"Failed to save JSON file for run_id={run_id}: {str(json_error)}",
+                        exc_info=True,
+                    )
 
     except Exception as e:
         logger.error(
