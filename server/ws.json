@@ -334,6 +334,39 @@
         "trace_id": "?string"
       }
     },
+    "document_tool_complete": {
+      "payload": {
+        "success": "boolean",
+        "document_id": "string",
+        "parent_document_id": "string",
+        "trace_id": "string",
+        "message": "?string"
+      }
+    },
+    "problem_statement_tool_complete": {
+      "payload": {
+        "success": "boolean",
+        "problem_statement_id": "string",
+        "trace_id": "string",
+        "message": "?string"
+      }
+    },
+    "objectives_tool_complete": {
+      "payload": {
+        "success": "boolean",
+        "objective_ids": "string[]",
+        "trace_id": "string",
+        "message": "?string"
+      }
+    },
+    "image_tool_complete": {
+      "payload": {
+        "success": "boolean",
+        "image_id": "string",
+        "trace_id": "string",
+        "message": "?string"
+      }
+    },
     "simulation_voice_start_response": {
       "payload": {
         "success": "boolean",

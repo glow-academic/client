@@ -214,6 +214,31 @@ export type ServerToClientEvents = {
     message: string;
     trace_id?: string;
   }) => void;
+  document_tool_complete: (payload: {
+    success: boolean;
+    document_id: string;
+    parent_document_id: string;
+    trace_id: string;
+    message?: string;
+  }) => void;
+  problem_statement_tool_complete: (payload: {
+    success: boolean;
+    problem_statement_id: string;
+    trace_id: string;
+    message?: string;
+  }) => void;
+  objectives_tool_complete: (payload: {
+    success: boolean;
+    objective_ids: string[];
+    trace_id: string;
+    message?: string;
+  }) => void;
+  image_tool_complete: (payload: {
+    success: boolean;
+    image_id: string;
+    trace_id: string;
+    message?: string;
+  }) => void;
   simulation_voice_start_response: (payload: {
     success: boolean;
     message: string;

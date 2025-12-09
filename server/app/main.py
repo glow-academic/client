@@ -1121,6 +1121,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.scenarios.generate import (
             scenario_generation_complete, scenario_generation_error,
             scenario_generation_progress)
+        from app.socket.scenarios.tools.document import document_tool_complete
+        from app.socket.scenarios.tools.image import image_tool_complete
+        from app.socket.scenarios.tools.objectives import \
+            objectives_tool_complete
+        from app.socket.scenarios.tools.statement import \
+            problem_statement_tool_complete
         from app.socket.simulations.join import simulation_joined
         from app.socket.simulations.text.end import simulation_text_ended
         from app.socket.simulations.text.next import (
@@ -1200,6 +1206,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             document_template_generation_progress,
             document_template_generation_complete,
             document_template_generation_error,
+            # Scenario tool completion events
+            document_tool_complete,  # scenario_tool_document_complete
+            problem_statement_tool_complete,  # scenario_tool_problem_statement_complete
+            objectives_tool_complete,  # scenario_tool_objectives_complete
+            image_tool_complete,  # scenario_tool_image_complete
             # Voice events
             simulation_voice_start_response,
             simulation_voice_start_error,
