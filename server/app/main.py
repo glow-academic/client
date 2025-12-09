@@ -59,6 +59,10 @@ UPLOAD_FOLDER.mkdir(
 AUDIO_FOLDER = UPLOAD_FOLDER / "audio"
 AUDIO_FOLDER.mkdir(parents=True, exist_ok=True)
 
+# Directory for storing image uploads
+IMAGE_FOLDER = UPLOAD_FOLDER / "image"
+IMAGE_FOLDER.mkdir(parents=True, exist_ok=True)
+
 # Directory for storing tus uploads in progress
 TUS_UPLOADS_DIR = UPLOAD_FOLDER / "tus_uploads"
 TUS_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
@@ -481,6 +485,10 @@ from app.socket.connect import connect  # type: ignore
 from app.socket.disconnect import disconnect  # type: ignore
 from app.socket.documents.generate import \
     document_generate  # noqa: E402; type: ignore
+from app.socket.images.complete import \
+    image_generation_complete  # noqa: E402; type: ignore
+from app.socket.images.generate import \
+    generate_image  # noqa: E402; type: ignore
 from app.socket.log import log_run  # type: ignore
 from app.socket.scenarios.generate import \
     generate_scenario  # noqa: E402; type: ignore
@@ -523,6 +531,9 @@ from app.socket.simulations.voice.user.transcript import \
 from app.socket.videos.generate import \
     video_generate  # noqa: E402; type: ignore
 from app.socket.videos.outline import video_outline  # noqa: E402; type: ignore
+
+# Export IMAGE_FOLDER for use in other modules
+__all__ = ["IMAGE_FOLDER"]
 
 
 # Create a combined lifespan to manage both session managers
@@ -1059,6 +1070,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             video_outline,
             video_generate,
             document_generate,
+            generate_image,
+            image_generation_complete,
         ]
 
         # Import server-to-client emit functions (with Pydantic payload models)

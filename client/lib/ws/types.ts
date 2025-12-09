@@ -298,4 +298,19 @@ export type ClientToServerEvents = {
     chat_id: string;
     chat_type?: string;
   }) => void;
+  generate_image: (payload: {
+    image_id: string;
+    name: string;
+    prompt: string;
+    agent_id: string;
+    department_id?: string;
+    profile_id?: string;
+    room?: string;
+  }) => void;
+  image_generation_complete: (payload: {
+    image_id: string;
+    file_path: string;
+    mime_type: string;
+    file_size: number;
+  }) => void;
 };

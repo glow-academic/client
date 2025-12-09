@@ -1,11 +1,12 @@
 """WebSocket handler for generate_image event."""
 
 import os
+import re
 import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from app.main import UPLOAD_FOLDER, get_pool, sio
+from app.main import IMAGE_FOLDER, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -33,48 +34,6 @@ class GenerateImagePayload(BaseModel):
     room: str | None = None
 
 
-async def get_agent_model_info(
-    conn: asyncpg.Connection,
-    agent_id: str,
-) -> dict[str, Any] | None:
-    """Get agent's model information for image generation.
-
-    Args:
-        conn: Database connection
-        agent_id: Agent ID
-
-    Returns:
-        Dict with api_key, base_url, model_name, provider, or None if not found
-    """
-    sql_query = """
-    SELECT 
-        m.value as model_name,
-        COALESCE(p.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
-        k.key as api_key
-    FROM agents a
-    INNER JOIN models m ON m.id = a.model_id
-    LEFT JOIN providers p ON p.id = m.provider_id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p.id AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    WHERE a.id = $1::uuid
-      AND a.active = true
-    LIMIT 1
-    """
-
-    row = await conn.fetchrow(sql_query, agent_id)
-    if not row:
-        return None
-
-    return {
-        "model_name": row["model_name"],
-        "provider": row["provider"] or "",
-        "base_url": row["base_url"] or None,
-        "api_key": row["api_key"],
-    }
-
-
 async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
     """Handle image generation request via WebSocket."""
     image_id = data.image_id
@@ -91,18 +50,42 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
         await _emit_image_error(image_id, room, "Database pool not available")
         return
 
-    try:
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
 
+    try:
         async with pool.acquire() as conn:
-            # Get agent's model info
-            model_info = await get_agent_model_info(conn, agent_id)
-            if not model_info:
+            # Load SQL query at top (DHH style - one SQL file per route)
+            sql = load_sql("sql/v3/images/get_image_generation_context_and_create_upload.sql")
+            
+            # Get context + create run atomically
+            sql_query = sql
+            sql_params = (
+                image_id,
+                agent_id,
+                profile_id,
+                department_id,
+            )
+            
+            try:
+                context_row = await conn.fetchrow(sql, *sql_params)
+            except Exception as e:
+                logger.error(
+                    f"Failed to get context and create run for image {image_id}: {str(e)}",
+                    exc_info=True,
+                )
+                await _emit_image_error(
+                    image_id, room, f"Failed to initialize image generation: {str(e)}"
+                )
+                return
+            
+            if not context_row:
                 await _emit_image_error(
                     image_id, room, f"Agent {agent_id} not found or inactive"
                 )
                 return
 
-            api_key = model_info["api_key"]
+            api_key = context_row["api_key"]
             if not api_key:
                 await _emit_image_error(
                     image_id, room, f"API key not found for agent {agent_id}"
@@ -118,9 +101,10 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 )
                 return
 
-            model_name = model_info["model_name"]
-            base_url = model_info["base_url"]
-            provider = model_info["provider"]
+            model_name = context_row["model_name"]
+            base_url = context_row["base_url"]
+            provider = context_row["provider"]
+            run_id = context_row["run_id"]
 
             # Determine image model
             image_model = model_name
@@ -129,7 +113,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
             logger.info(
                 f"Image generation started: image_id={image_id}, "
-                f"model={image_model}, provider={provider}"
+                f"model={image_model}, provider={provider}, run_id={run_id}"
             )
 
             # Emit progress event
@@ -207,23 +191,34 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 )
                 return
 
-            # Determine file extension
+            # Determine file extension and mime type
             file_ext = ".png"
+            mime_type = "image/png"
             if len(image_bytes) > 0:
                 if image_bytes.startswith(b"\x89PNG"):
                     file_ext = ".png"
+                    mime_type = "image/png"
                 elif image_bytes.startswith(b"\xff\xd8"):
                     file_ext = ".jpg"
+                    mime_type = "image/jpeg"
                 elif image_bytes.startswith(b"GIF"):
                     file_ext = ".gif"
+                    mime_type = "image/gif"
 
-            # Generate UUID filename
+            # Create deduplicated filename from image name
+            # Sanitize name: remove special chars, replace spaces with underscores, lowercase
+            safe_name = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", name)
+            safe_name = re.sub(r"_+", "_", safe_name).strip("_")
+            safe_name = safe_name.lower() or "image"
+            
+            # Append UUID for deduplication
             upload_uuid = uuid.uuid4()
-            file_path = f"{upload_uuid}{file_ext}"
-            full_path = UPLOAD_FOLDER / file_path
+            file_name = f"{safe_name}_{upload_uuid}{file_ext}"
+            file_path = f"image/{file_name}"
+            full_path = IMAGE_FOLDER / file_name
 
-            # Ensure uploads directory exists
-            UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+            # Ensure image directory exists
+            IMAGE_FOLDER.mkdir(parents=True, exist_ok=True)
 
             # Save image bytes to file
             with open(full_path, "wb") as f:
@@ -231,66 +226,37 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
             file_size = len(image_bytes)
 
-            # Determine mime type
-            mime_type = "image/png"
-            if file_ext == ".jpg" or file_ext == ".jpeg":
-                mime_type = "image/jpeg"
-            elif file_ext == ".gif":
-                mime_type = "image/gif"
-
-            # Create upload record
-            sql_insert_upload = load_sql("sql/v3/uploads/insert_upload.sql")
-            upload_row = await conn.fetchrow(
-                sql_insert_upload,
-                file_path,
-                mime_type,
-                file_size,
-            )
-
-            if not upload_row:
-                await _emit_image_error(
-                    image_id, room, "Failed to create upload record"
-                )
-                # Clean up file
-                try:
-                    os.remove(full_path)
-                except Exception:
-                    pass
-                return
-
-            upload_id_str = str(upload_row["id"])
-
-            # Link image to upload via junction table
-            sql_insert_image_upload = load_sql(
-                "sql/v3/images/insert_image_upload_complete.sql"
-            )
-            image_upload_row = await conn.fetchrow(
-                sql_insert_image_upload,
-                image_id,
-                upload_id_str,
-            )
-
-            if not image_upload_row:
-                logger.warning(
-                    f"Failed to create image_uploads junction record for image {image_id}, upload {upload_id_str}"
-                )
-                # Don't fail - upload exists, can be linked later
-
-            # Update image record: completed=true
-            sql_update_image = load_sql("sql/v3/images/update_image_completed.sql")
-            await conn.execute(sql_update_image, image_id, True)
-
             logger.info(
-                f"✓ Image generation completed: image_id={image_id}, "
-                f"upload_id={upload_id_str}, file_path={file_path}, size={file_size} bytes"
+                f"✓ Image generated: image_id={image_id}, "
+                f"file_path={file_path}, size={file_size} bytes"
             )
 
-            # Emit WebSocket completion event
-            await _emit_image_complete(
-                image_id=image_id,
-                upload_id=upload_id_str,
-                name=name,
-                room=room,
+            # Call log_run (similar to scenario generation)
+            # Note: Image generation via litellm doesn't provide token counts,
+            # so we pass 0 tokens. The run was already created in the SQL query.
+            await sio.emit(
+                "log_run",
+                {
+                    "runId": run_id,
+                    "operationType": "image",
+                    "inputTextTokens": 0,  # Image generation doesn't use text tokens
+                    "outputTextTokens": 0,  # Image generation doesn't output text
+                    "systemPrompt": None,
+                    "inputItems": None,
+                    "assistantOutput": None,
+                    "departmentId": str(department_id) if department_id else None,
+                },
+            )
+
+            # Emit completion event to trigger completion handler
+            await sio.emit(
+                "image_generation_complete",
+                {
+                    "image_id": image_id,
+                    "file_path": file_path,
+                    "mime_type": mime_type,
+                    "file_size": file_size,
+                },
             )
 
     except Exception as e:
@@ -323,34 +289,6 @@ async def _emit_image_progress(
             type=progress_type,
             message=message,
             image_id=image_id,
-        ),
-        room=room,
-    )
-
-
-async def _emit_image_complete(
-    image_id: str,
-    upload_id: str,
-    name: str,
-    room: str | None,
-) -> None:
-    """Emit WebSocket event for image generation completion."""
-    from app.socket.scenarios.generate import (
-        ScenarioImageGenerationCompletePayload,
-        scenario_image_generation_complete)
-
-    if not room:
-        logger.warning(
-            f"No room specified for image {image_id}, cannot emit WebSocket event"
-        )
-        return
-
-    await scenario_image_generation_complete(
-        ScenarioImageGenerationCompletePayload(
-            success=True,
-            image_id=image_id,
-            upload_id=upload_id,
-            name=name,
         ),
         room=room,
     )
