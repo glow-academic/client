@@ -510,16 +510,16 @@ from app.socket.simulations.voice.start import \
     simulation_voice_start  # noqa: E402; type: ignore
 from app.socket.simulations.voice.stop import \
     simulation_voice_stop  # noqa: E402; type: ignore
-from app.socket.simulations.voice.user.speech.done import \
-    simulation_voice_speech_done  # noqa: E402; type: ignore
-from app.socket.simulations.voice.user.speech.start import \
-    simulation_voice_speech_start  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.delta import \
+    simulation_voice_user_delta  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.speech import \
+    simulation_voice_user_speech  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.start import \
+    simulation_voice_user_start  # noqa: E402; type: ignore
 from app.socket.simulations.voice.user.text import \
     simulation_voice_user_text  # noqa: E402; type: ignore
-from app.socket.simulations.voice.user.transcript.delta import \
-    simulation_voice_user_transcript_delta  # noqa: E402; type: ignore
-from app.socket.simulations.voice.user.transcript.done import \
-    simulation_voice_user_transcript_done  # noqa: E402; type: ignore
+from app.socket.simulations.voice.user.transcript import \
+    simulation_voice_user_transcript  # noqa: E402; type: ignore
 from app.socket.videos.generate import \
     video_generate  # noqa: E402; type: ignore
 from app.socket.videos.outline import video_outline  # noqa: E402; type: ignore
@@ -1047,10 +1047,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             simulation_voice_stop,
             simulation_voice_debug_info,
             simulation_voice_user_text,
-            simulation_voice_user_transcript_delta,
-            simulation_voice_user_transcript_done,
-            simulation_voice_speech_start,
-            simulation_voice_speech_done,
+            simulation_voice_user_delta,
+            simulation_voice_user_transcript,
+            simulation_voice_user_start,
+            simulation_voice_user_speech,
             simulation_voice_assistant_interrupted,
             simulation_voice_assistant_delta,
             simulation_voice_assistant_done,
@@ -1095,14 +1095,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             simulation_voice_start_error, simulation_voice_start_response)
         from app.socket.simulations.voice.stop import (
             simulation_voice_stop_error, simulation_voice_stop_response)
-        from app.socket.simulations.voice.user.speech.start import \
-            simulation_voice_speech_start_emit
+        from app.socket.simulations.voice.user.delta import \
+            simulation_voice_user_delta_emit
+        from app.socket.simulations.voice.user.start import \
+            simulation_voice_user_start_emit
         from app.socket.simulations.voice.user.text import \
             simulation_voice_user_text_error
-        from app.socket.simulations.voice.user.transcript.delta import \
-            simulation_voice_user_transcript_delta_emit
-        from app.socket.simulations.voice.user.transcript.done import \
-            simulation_voice_user_transcript_done_emit
+        from app.socket.simulations.voice.user.transcript import \
+            simulation_voice_user_transcript_emit
         from app.socket.videos.generate import (video_generation_complete,
                                                 video_generation_error,
                                                 video_generation_progress)
@@ -1154,11 +1154,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             simulation_voice_start_error,
             simulation_voice_stop_response,
             simulation_voice_stop_error,
-            simulation_voice_speech_start_emit,
-            voice_tool_call_error,
-            simulation_voice_user_transcript_delta_emit,
-            simulation_voice_user_transcript_done_emit,
+            simulation_voice_user_start_emit,
+            simulation_voice_user_delta_emit,
+            simulation_voice_user_transcript_emit,
             simulation_voice_user_text_error,
+            voice_tool_call_error,
         ]
 
         contract = build_socket_contract(

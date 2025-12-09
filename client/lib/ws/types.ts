@@ -244,27 +244,27 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
-  simulation_voice_speech_start_emit: (payload: {
+  simulation_voice_user_start_emit: (payload: {
     chat_id: string;
     item_id: string;
   }) => void;
-  voice_tool_call_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_voice_user_transcript_delta_emit: (payload: {
+  simulation_voice_user_delta_emit: (payload: {
     chat_id: string;
     item_id: string;
     delta: string;
     content_index: number;
   }) => void;
-  simulation_voice_user_transcript_done_emit: (payload: {
+  simulation_voice_user_transcript_emit: (payload: {
     chat_id: string;
     item_id: string;
     transcript: string;
     upload_id?: string;
   }) => void;
   simulation_voice_user_text_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  voice_tool_call_error: (payload: {
     success: boolean;
     message: string;
   }) => void;

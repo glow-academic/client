@@ -1,4 +1,4 @@
-"""Handler for simulation_voice_speech_start WebSocket event."""
+"""Handler for simulation_voice_user_start WebSocket event."""
 
 import datetime
 from typing import Any
@@ -12,22 +12,22 @@ logger = get_logger(__name__)
 
 
 # Pydantic models
-class VoiceSpeechStartedPayload(BaseModel):
-    """Client-to-server payload for simulation_voice_speech_start."""
+class VoiceUserStartPayload(BaseModel):
+    """Client-to-server payload for simulation_voice_user_start."""
 
     chat_id: str
     item_id: str
 
 
 # Emit helper functions
-async def simulation_voice_speech_start_emit(
-    payload: VoiceSpeechStartedPayload, room: str
+async def simulation_voice_user_start_emit(
+    payload: VoiceUserStartPayload, room: str
 ) -> None:
-    """Emit simulation_voice_speech_start event to room (server-to-client)."""
-    await sio.emit("simulation_voice_speech_start", payload.model_dump(), room=room)
+    """Emit simulation_voice_user_start event to room (server-to-client)."""
+    await sio.emit("simulation_voice_user_start", payload.model_dump(), room=room)
 
 
-async def _simulation_voice_speech_start_impl(sid: str, data: VoiceSpeechStartedPayload) -> None:
+async def _simulation_voice_user_start_impl(sid: str, data: VoiceUserStartPayload) -> None:
     """Handle speech started event from Realtime API.
 
     This event is emitted when the user starts speaking. We relay it back
@@ -35,12 +35,12 @@ async def _simulation_voice_speech_start_impl(sid: str, data: VoiceSpeechStarted
     """
     try:
         logger.info(
-            f"Received simulation_voice_speech_start from {sid}: chat_id={data.chat_id}, item_id={data.item_id}"
+            f"Received simulation_voice_user_start from {sid}: chat_id={data.chat_id}, item_id={data.item_id}"
         )
 
         chat_id = data.chat_id
         if not chat_id:
-            logger.warning(f"Missing chat_id in simulation_voice_speech_start from {sid}")
+            logger.warning(f"Missing chat_id in simulation_voice_user_start from {sid}")
             return
 
         # Store timestamp for this speech event (for message ordering)
@@ -70,21 +70,21 @@ async def _simulation_voice_speech_start_impl(sid: str, data: VoiceSpeechStarted
 
         # Relay the event back to the room so AttemptMessages can listen for it
         room = f"simulation_{chat_id}"
-        await simulation_voice_speech_start_emit(data, room)
+        await simulation_voice_user_start_emit(data, room)
 
         logger.info(
-            f"Relayed simulation_voice_speech_start to room {room}: item_id={data.item_id}"
+            f"Relayed simulation_voice_user_start to room {room}: item_id={data.item_id}"
         )
 
     except Exception as e:
-        logger.error(f"Error handling simulation_voice_speech_start: {e}", exc_info=True)
+        logger.error(f"Error handling simulation_voice_user_start: {e}", exc_info=True)
 
 
 @sio.event  # type: ignore
-async def simulation_voice_speech_start(sid: str, data: dict[str, Any]) -> None:
+async def simulation_voice_user_start(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler."""
     try:
-        validated = VoiceSpeechStartedPayload(**data)
-        await _simulation_voice_speech_start_impl(sid, validated)
+        validated = VoiceUserStartPayload(**data)
+        await _simulation_voice_user_start_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_speech_start for {sid}: {e}")
+        logger.error(f"Validation error in simulation_voice_user_start for {sid}: {e}")

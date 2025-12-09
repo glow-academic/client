@@ -1,4 +1,4 @@
-"""Handler for simulation_voice_speech_done WebSocket event."""
+"""Handler for simulation_voice_user_speech WebSocket event."""
 
 import uuid
 from typing import Any
@@ -17,8 +17,8 @@ logger = get_logger(__name__)
 
 
 # Pydantic models
-class VoiceResponseDonePayload(BaseModel):
-    """Client-to-server payload for simulation_voice_speech_done."""
+class VoiceUserSpeechPayload(BaseModel):
+    """Client-to-server payload for simulation_voice_user_speech."""
 
     chat_id: str
     event_id: str
@@ -27,7 +27,7 @@ class VoiceResponseDonePayload(BaseModel):
     usage: dict[str, Any]
 
 
-async def _simulation_voice_speech_done_impl(sid: str, data: VoiceResponseDonePayload) -> None:
+async def _simulation_voice_user_speech_impl(sid: str, data: VoiceUserSpeechPayload) -> None:
     """Handle response.done event from Realtime API.
 
     Creates runs for accumulated message IDs and tracks token usage with separate
@@ -35,13 +35,13 @@ async def _simulation_voice_speech_done_impl(sid: str, data: VoiceResponseDonePa
     """
     try:
         logger.info(
-            f"Received simulation_voice_speech_done from {sid} for chat {data.chat_id}, "
+            f"Received simulation_voice_user_speech from {sid} for chat {data.chat_id}, "
             f"response_id={data.response_id}, event_id={data.event_id}"
         )
 
         chat_id = data.chat_id
         if not chat_id:
-            logger.warning(f"Missing chat_id in simulation_voice_speech_done from {sid}")
+            logger.warning(f"Missing chat_id in simulation_voice_user_speech from {sid}")
             return
 
         chat_id_uuid = uuid.UUID(chat_id)
@@ -373,7 +373,7 @@ async def _simulation_voice_speech_done_impl(sid: str, data: VoiceResponseDonePa
         )
 
     except Exception as e:
-        logger.error(f"Error in simulation_voice_speech_done for {sid}: {str(e)}", exc_info=True)
+        logger.error(f"Error in simulation_voice_user_speech for {sid}: {str(e)}", exc_info=True)
         # Clear accumulator on error to prevent stale data
         if chat_id in _voice_message_ids:
             del _voice_message_ids[chat_id]
@@ -393,10 +393,10 @@ async def _simulation_voice_speech_done_impl(sid: str, data: VoiceResponseDonePa
 
 
 @sio.event  # type: ignore
-async def simulation_voice_speech_done(sid: str, data: dict[str, Any]) -> None:
+async def simulation_voice_user_speech(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler."""
     try:
-        validated = VoiceResponseDonePayload(**data)
-        await _simulation_voice_speech_done_impl(sid, validated)
+        validated = VoiceUserSpeechPayload(**data)
+        await _simulation_voice_user_speech_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_speech_done for {sid}: {e}")
+        logger.error(f"Validation error in simulation_voice_user_speech for {sid}: {e}")

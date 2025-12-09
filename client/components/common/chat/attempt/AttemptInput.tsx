@@ -797,14 +797,14 @@ export default function AttemptInput({
           }
 
           // Transport event to server (AttemptMessages will handle optimistic UI)
-          socket.emit("simulation_voice_speech_start", {
+          socket.emit("simulation_voice_user_start", {
             chat_id: currentChat.id,
             item_id: evt.item_id,
           });
 
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] Transported simulation_voice_speech_start to server:",
+            "[Voice] Transported simulation_voice_user_start to server:",
             {
               chat_id: currentChat.id,
               item_id: evt.item_id,
@@ -1050,10 +1050,10 @@ export default function AttemptInput({
 
           // Transport transcript to server
           // This will:
-          // 1. Update optimistic UI (via simulation_voice_user_transcript_done event)
+          // 1. Update optimistic UI (via simulation_voice_user_transcript event)
           // 2. Create the real user message (via simulation_new_message event)
           // 3. Link audio upload to message if upload_id is available
-          socket.emit("simulation_voice_user_transcript_done", {
+          socket.emit("simulation_voice_user_transcript", {
             chat_id: currentChat.id,
             item_id: evt.item_id,
             transcript: transcript,
@@ -1067,7 +1067,7 @@ export default function AttemptInput({
 
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] Transported simulation_voice_user_transcript_done to server:",
+            "[Voice] Transported simulation_voice_user_transcript to server:",
             {
               chat_id: currentChat.id,
               item_id: evt.item_id,
@@ -1107,7 +1107,7 @@ export default function AttemptInput({
           }
 
           // Transport delta event to server (AttemptMessages will handle optimistic UI updates)
-          socket.emit("simulation_voice_user_transcript_delta", {
+          socket.emit("simulation_voice_user_delta", {
             chat_id: currentChat.id,
             item_id: evt.item_id,
             delta: evt.delta,
@@ -1116,7 +1116,7 @@ export default function AttemptInput({
 
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] Transported simulation_voice_user_transcript_delta to server:",
+            "[Voice] Transported simulation_voice_user_delta to server:",
             {
               chat_id: currentChat.id,
               item_id: evt.item_id,
@@ -1292,7 +1292,7 @@ export default function AttemptInput({
           };
 
           // Send usage data to backend for run creation and token tracking
-          socket.emit("simulation_voice_speech_done", {
+          socket.emit("simulation_voice_user_speech", {
             chat_id: currentChat.id,
             event_id: evt.event_id,
             response_id: evt.response.id,

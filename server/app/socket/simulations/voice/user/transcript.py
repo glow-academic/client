@@ -1,4 +1,4 @@
-"""Handler for simulation_voice_user_transcript_done WebSocket event."""
+"""Handler for simulation_voice_user_transcript WebSocket event."""
 
 import uuid
 from typing import Any
@@ -13,8 +13,8 @@ logger = get_logger(__name__)
 
 
 # Pydantic models
-class VoiceTranscriptReadyPayload(BaseModel):
-    """Client-to-server payload for simulation_voice_user_transcript_done."""
+class VoiceUserTranscriptPayload(BaseModel):
+    """Client-to-server payload for simulation_voice_user_transcript."""
 
     chat_id: str
     item_id: str
@@ -23,15 +23,15 @@ class VoiceTranscriptReadyPayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_voice_user_transcript_done_emit(
-    payload: VoiceTranscriptReadyPayload, room: str
+async def simulation_voice_user_transcript_emit(
+    payload: VoiceUserTranscriptPayload, room: str
 ) -> None:
-    """Emit simulation_voice_user_transcript_done event to room (server-to-client)."""
-    await sio.emit("simulation_voice_user_transcript_done", payload.model_dump(), room=room)
+    """Emit simulation_voice_user_transcript event to room (server-to-client)."""
+    await sio.emit("simulation_voice_user_transcript", payload.model_dump(), room=room)
 
 
-async def _simulation_voice_user_transcript_done_impl(
-    sid: str, data: VoiceTranscriptReadyPayload
+async def _simulation_voice_user_transcript_impl(
+    sid: str, data: VoiceUserTranscriptPayload
 ) -> None:
     """Handle transcript ready event from Realtime API.
 
@@ -41,24 +41,24 @@ async def _simulation_voice_user_transcript_done_impl(
     """
     try:
         logger.info(
-            f"Received simulation_voice_user_transcript_done from {sid}: chat_id={data.chat_id}, "
+            f"Received simulation_voice_user_transcript from {sid}: chat_id={data.chat_id}, "
             f"transcript_length={len(data.transcript)}, item_id={data.item_id}"
         )
 
         chat_id = data.chat_id
         if not chat_id:
-            logger.warning(f"Missing chat_id in simulation_voice_user_transcript_done from {sid}")
+            logger.warning(f"Missing chat_id in simulation_voice_user_transcript from {sid}")
             return
 
         transcript = data.transcript
         if not transcript or not transcript.strip():
-            logger.warning(f"Empty transcript in simulation_voice_user_transcript_done from {sid}")
+            logger.warning(f"Empty transcript in simulation_voice_user_transcript from {sid}")
             return
 
         room = f"simulation_{chat_id}"
 
         # First, relay the event for UI updates (so optimistic message shows transcript immediately)
-        await simulation_voice_user_transcript_done_emit(data, room)
+        await simulation_voice_user_transcript_emit(data, room)
 
         # Then create the actual user message in the database
         chat_id_uuid = uuid.UUID(chat_id)
@@ -174,7 +174,7 @@ async def _simulation_voice_user_transcript_done_impl(
                     )
                 except ValueError as e:
                     logger.warning(
-                        f"Invalid upload_id format {data.upload_id} in simulation_voice_user_transcript_done: {e}"
+                        f"Invalid upload_id format {data.upload_id} in simulation_voice_user_transcript: {e}"
                     )
                 except Exception as e:
                     logger.error(
@@ -214,20 +214,20 @@ async def _simulation_voice_user_transcript_done_impl(
             )
 
             logger.info(
-                f"Created user message {user_message['id']} for chat {chat_id} via simulation_voice_user_transcript_done"
+                f"Created user message {user_message['id']} for chat {chat_id} via simulation_voice_user_transcript"
             )
 
     except ValueError as e:
-        logger.error(f"Invalid UUID format in simulation_voice_user_transcript_done for {sid}: {e}")
+        logger.error(f"Invalid UUID format in simulation_voice_user_transcript for {sid}: {e}")
     except Exception as e:
-        logger.error(f"Error handling simulation_voice_user_transcript_done: {e}", exc_info=True)
+        logger.error(f"Error handling simulation_voice_user_transcript: {e}", exc_info=True)
 
 
 @sio.event  # type: ignore
-async def simulation_voice_user_transcript_done(sid: str, data: dict[str, Any]) -> None:
+async def simulation_voice_user_transcript(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler."""
     try:
-        validated = VoiceTranscriptReadyPayload(**data)
-        await _simulation_voice_user_transcript_done_impl(sid, validated)
+        validated = VoiceUserTranscriptPayload(**data)
+        await _simulation_voice_user_transcript_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_user_transcript_done for {sid}: {e}")
+        logger.error(f"Validation error in simulation_voice_user_transcript for {sid}: {e}")
