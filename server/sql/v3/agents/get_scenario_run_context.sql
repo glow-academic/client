@@ -84,6 +84,11 @@ SELECT
     COALESCE(p_prov.value::text, '') as provider,
     COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
+    -- Custom model (if any) - indicated by presence of base_url in model_endpoints
+    CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
+    -- Provider data (provider enum is now on models table, no separate providers table)
+    NULL::text as provider_id,
+    COALESCE(p_prov.value::text, '') as provider_name,
     
     -- Persona data (nullable)
     pers.id::text as persona_id,
