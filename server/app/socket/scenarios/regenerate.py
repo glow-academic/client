@@ -364,6 +364,12 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             )
             scenario_tools.append(debug_info_tool)
 
+            # Check if template documents are available (require create_document if so)
+            has_template_documents = bool(
+                context["document_templates"]
+                and len(context["document_templates"]) > 0
+            )
+
             # Create tool use behavior
             def tool_use_behavior(
                 tool_context: RunContextWrapper[Any],
@@ -372,13 +378,34 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 required_tools = ["title_description"]
                 if objectives_enabled:
                     required_tools.append("objectives")
+                if has_template_documents:
+                    required_tools.append("create_document")
 
-                # Note: Progress checking happens synchronously, but storage is async
-                # For now, we'll check progress after tool execution completes
-                # This is a limitation of the current tool_use_behavior pattern
-                completed_required = True  # Will be checked after execution
+                # Check which tools have been called
+                completed_tools = []
+                for result in tool_results:
+                    # Access name attribute dynamically since type checker doesn't see it
+                    tool_name = getattr(result, "name", None)  # type: ignore[misc]
+                    if tool_name and isinstance(tool_name, str):
+                        # Normalize tool names (handle variations like set_title_and_description -> title_description)
+                        normalized_name = tool_name
+                        if "title" in tool_name.lower() and "description" in tool_name.lower():
+                            normalized_name = "title_description"
+                        elif "objective" in tool_name.lower():
+                            normalized_name = "objectives"
+                        elif "create_document" in tool_name.lower() or ("create" in tool_name.lower() and "document" in tool_name.lower()):
+                            normalized_name = "create_document"
+                        completed_tools.append(normalized_name)
 
-                return ToolsToFinalOutputResult(is_final_output=completed_required)
+                # Check if all required tools have been completed
+                all_completed = all(tool in completed_tools for tool in required_tools)
+
+                logger.info(
+                    f"Tool use behavior check: required={required_tools}, "
+                    f"completed={completed_tools}, all_completed={all_completed}"
+                )
+
+                return ToolsToFinalOutputResult(is_final_output=all_completed)
 
             scenario_agent_generic = GenericAgent(
                 agent_name=context["agent_name"],
