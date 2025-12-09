@@ -1956,8 +1956,8 @@ export default function Scenario({
     );
     const shuffled = [...validIds].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, Math.min(count, validIds.length));
-    // Enforce max 2 documents limit
-    const limitedSelected = selected.slice(0, 2);
+    // Enforce max documents limit from range slider
+    const limitedSelected = selected.slice(0, documentMinMax.max);
     setCurrentDocumentIds(limitedSelected);
     toast.success(`Randomized ${limitedSelected.length} document(s)`);
   };
@@ -2350,7 +2350,7 @@ export default function Scenario({
           0,
           Math.min(count, validDocIdsForRandomization.length)
         );
-        randomizedDocumentIds = selected.slice(0, 2); // Enforce max 2 documents
+        randomizedDocumentIds = selected.slice(0, documentMinMax.max); // Enforce max documents limit from range slider
       }
 
       // Step 3: Calculate valid parameter items with new personas + documents (and empty parameter items),
@@ -3520,12 +3520,16 @@ export default function Scenario({
                         if (isReadonly) return;
                         const newIds = isSelected
                           ? currentDocumentIds.filter((id) => id !== docId)
-                          : [...currentDocumentIds, docId].slice(0, 2); // Max 2 documents
+                          : [...currentDocumentIds, docId].slice(
+                              0,
+                              documentMinMax.max
+                            ); // Max documents from range slider
                         setCurrentDocumentIds(newIds);
                       }}
                       disabled={
                         isReadonly ||
-                        (!isSelected && currentDocumentIds.length >= 2)
+                        (!isSelected &&
+                          currentDocumentIds.length >= documentMinMax.max)
                       }
                       className={cn(
                         "relative aspect-square rounded-xl border bg-card text-card-foreground shadow-sm transition-all overflow-hidden",
@@ -3536,16 +3540,24 @@ export default function Scenario({
                       )}
                     >
                       {/* Preview button - top left */}
-                      <button
-                        type="button"
+                      <div
                         onClick={(e) => {
                           e.stopPropagation();
                           setPreviewDocumentId(docId);
                         }}
-                        className="absolute top-2 left-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        className="absolute top-2 left-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setPreviewDocumentId(docId);
+                          }
+                        }}
                       >
                         <Eye className="h-3.5 w-3.5 text-primary-foreground" />
-                      </button>
+                      </div>
 
                       {/* Check icon - top right */}
                       {isSelected && (
