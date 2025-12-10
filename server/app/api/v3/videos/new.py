@@ -605,7 +605,9 @@ async def get_video_new(
                         "uploadId": v.get("uploadId", ""),
                         "parameter_ids": [str(p) for p in parameter_ids] if isinstance(parameter_ids, list) else [],
                         "field_ids": [str(f) for f in field_ids] if isinstance(field_ids, list) else [],
+                        "parent_document_id": v.get("parent_document_id"),
                     }
+                    parent_document_id = v.get("parent_document_id")
                     document_mapping[k] = DocumentMappingItem(
                         name=v.get("name", ""),
                         description=v.get("description", ""),
@@ -613,6 +615,7 @@ async def get_video_new(
                         mime_type=v.get("mimeType", ""),
                         parameter_ids=v.get("parameter_ids", []),
                         field_ids=v.get("field_ids", []),
+                        parent_document_id=str(parent_document_id) if parent_document_id else None,
                     )
 
         # Parse valid_document_ids

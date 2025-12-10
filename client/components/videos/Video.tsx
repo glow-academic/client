@@ -2300,7 +2300,7 @@ export default function Video({
 
       {/* Step 4: Parameters */}
       <ParameterSection
-        validParameterIds={formData.parameterIds || []}
+        validParameterIds={videoData?.valid_parameter_ids || []}
         parameterMapping={parameterMapping}
         selectedParameterIds={formData.parameterIds || []}
         searchTerm=""
