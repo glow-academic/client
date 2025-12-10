@@ -754,6 +754,9 @@ export default function Scenario({
   const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
   const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
+  const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
+    string | null
+  >(null);
   const [currentProblemStatementIds, setCurrentProblemStatementIds] = useState<
     string[]
   >([]);
@@ -1313,6 +1316,23 @@ export default function Scenario({
       }
     }
   }, [currentDocumentIds, validDocumentIds]);
+
+  // Initialize/update scenarioPreviewDocumentId when currentDocumentIds changes
+  useEffect(() => {
+    if (currentDocumentIds.length > 0) {
+      // If current preview is not in the selected documents, or no preview is set, select the first one
+      const firstDocId = currentDocumentIds[0];
+      if (
+        !scenarioPreviewDocumentId ||
+        (firstDocId && !currentDocumentIds.includes(scenarioPreviewDocumentId))
+      ) {
+        setScenarioPreviewDocumentId(firstDocId || null);
+      }
+    } else {
+      // No documents selected, clear preview
+      setScenarioPreviewDocumentId(null);
+    }
+  }, [currentDocumentIds, scenarioPreviewDocumentId]);
 
   // Note: Document/persona parameter syncing removed - parameters are now selected independently
   // Filtering happens automatically via validGeneralParameterItemIds based on selected personas/documents
@@ -3995,229 +4015,362 @@ export default function Scenario({
                   </div>
                 )}
 
-                {/* Image Preview Section - Always shown to prevent layout shift */}
-                <div className="w-[70%] space-y-4">
-                  {/* ImagePicker - top right (only show when useImage is true) */}
-                  {useImage && Object.keys(imageMapping).length > 0 && (
-                    <div className="flex items-center justify-between">
-                      <div></div>
-                      <GenericPicker
-                        items={imageMapping}
-                        itemIds={Object.keys(imageMapping)}
-                        selectedIds={image ? [image.id] : []}
-                        onSelect={(ids) => {
-                          const imageId = ids[0] || null;
-                          if (imageId && imageMapping[imageId]) {
-                            const selectedImage = imageMapping[
-                              imageId
-                            ] as ImageMappingItem;
-                            setImage({
-                              id: selectedImage.upload_id || selectedImage.id,
-                              name: selectedImage.name,
-                              upload_id:
-                                selectedImage.upload_id || selectedImage.id,
-                            });
-                          }
-                        }}
-                        getId={(item) => {
-                          const imgItem = item as unknown as ImageMappingItem;
-                          return imgItem.id;
-                        }}
-                        getLabel={(item) => {
-                          const imgItem = item as unknown as ImageMappingItem;
-                          const date = new Date(imgItem.updated_at);
-                          return `${imgItem.name} - ${date.toLocaleDateString()}`;
-                        }}
-                        getSearchText={(item) => {
-                          const imgItem = item as unknown as ImageMappingItem;
-                          const date = new Date(imgItem.updated_at);
-                          return `${imgItem.name} ${date.toLocaleDateString()}`;
-                        }}
-                        renderButton={(selectedItems) => {
-                          if (selectedItems.length === 0) {
-                            return "Select image...";
-                          }
-                          const selectedImage =
-                            selectedItems[0] as unknown as ImageMappingItem;
-                          return selectedImage?.name || "Select image...";
-                        }}
-                        renderItem={(item, isSelected) => {
-                          const imgItem = item as unknown as ImageMappingItem;
-                          const date = new Date(imgItem.updated_at);
-                          return (
-                            <div className="flex flex-col items-start py-3 w-full">
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2">
-                                  <Check
-                                    className={cn(
-                                      "h-4 w-4",
-                                      isSelected ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <span className="font-medium">
-                                    {imgItem.name}
-                                  </span>
+                {/* Documents and Image Preview Section - Split layout */}
+                <div className="flex gap-4">
+                  {/* Image Preview Section - Left (70% or full width) */}
+                  <div
+                    className={
+                      currentDocumentIds.length > 0
+                        ? "w-[70%] space-y-4"
+                        : "w-full space-y-4"
+                    }
+                  >
+                    {/* ImagePicker - top right (only show when useImage is true) */}
+                    {useImage && Object.keys(imageMapping).length > 0 && (
+                      <div className="flex items-center justify-between">
+                        <div></div>
+                        <GenericPicker
+                          items={imageMapping}
+                          itemIds={Object.keys(imageMapping)}
+                          selectedIds={image ? [image.id] : []}
+                          onSelect={(ids) => {
+                            const imageId = ids[0] || null;
+                            if (imageId && imageMapping[imageId]) {
+                              const selectedImage = imageMapping[
+                                imageId
+                              ] as ImageMappingItem;
+                              setImage({
+                                id: selectedImage.upload_id || selectedImage.id,
+                                name: selectedImage.name,
+                                upload_id:
+                                  selectedImage.upload_id || selectedImage.id,
+                              });
+                            }
+                          }}
+                          getId={(item) => {
+                            const imgItem = item as unknown as ImageMappingItem;
+                            return imgItem.id;
+                          }}
+                          getLabel={(item) => {
+                            const imgItem = item as unknown as ImageMappingItem;
+                            const date = new Date(imgItem.updated_at);
+                            return `${imgItem.name} - ${date.toLocaleDateString()}`;
+                          }}
+                          getSearchText={(item) => {
+                            const imgItem = item as unknown as ImageMappingItem;
+                            const date = new Date(imgItem.updated_at);
+                            return `${imgItem.name} ${date.toLocaleDateString()}`;
+                          }}
+                          renderButton={(selectedItems) => {
+                            if (selectedItems.length === 0) {
+                              return "Select image...";
+                            }
+                            const selectedImage =
+                              selectedItems[0] as unknown as ImageMappingItem;
+                            return selectedImage?.name || "Select image...";
+                          }}
+                          renderItem={(item, isSelected) => {
+                            const imgItem = item as unknown as ImageMappingItem;
+                            const date = new Date(imgItem.updated_at);
+                            return (
+                              <div className="flex flex-col items-start py-3 w-full">
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <Check
+                                      className={cn(
+                                        "h-4 w-4",
+                                        isSelected ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="font-medium">
+                                      {imgItem.name}
+                                    </span>
+                                  </div>
                                 </div>
+                                <span className="text-xs text-muted-foreground mt-1">
+                                  {date.toLocaleDateString()}{" "}
+                                  {date.toLocaleTimeString()}
+                                </span>
                               </div>
-                              <span className="text-xs text-muted-foreground mt-1">
-                                {date.toLocaleDateString()}{" "}
-                                {date.toLocaleTimeString()}
-                              </span>
-                            </div>
-                          );
-                        }}
-                        disabled={isReadonly}
-                        multiSelect={false}
-                        hideSelectedChips={true}
-                        buttonClassName="h-8 justify-between"
-                        groupHeading="Images"
-                        placeholder="Select image..."
-                      />
-                    </div>
-                  )}
-
-                  {/* Combined Image and Chat Preview Container - Fixed height, always visible */}
-                  <div className="relative border rounded-lg overflow-hidden min-h-[400px]">
-                    {/* Background Image - when image exists and useImage is true */}
-                    {useImage && image && (
-                      <div className="absolute inset-0 w-full h-full">
-                        <ImageViewer
-                          imageId={image.id}
-                          name={image.name}
-                          bare={true}
+                            );
+                          }}
+                          disabled={isReadonly}
+                          multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="h-8 justify-between"
+                          groupHeading="Images"
+                          placeholder="Select image..."
                         />
                       </div>
                     )}
 
-                    {/* Upload Area - when useImage is true but no image */}
-                    {useImage && !image && (
-                      <div
-                        onClick={() => {
-                          if (!isReadonly && !isUploadingImage) {
-                            imageInputRef.current?.click();
-                          }
-                        }}
-                        className="absolute inset-0 w-full h-full flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
-                      >
-                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground text-center px-4">
-                          Click to upload image or leave blank to auto generate
-                        </p>
-                      </div>
-                    )}
+                    {/* Combined Image and Chat Preview Container - Fixed height, always visible */}
+                    <div className="relative border rounded-lg overflow-hidden min-h-[400px]">
+                      {/* Background Image - when image exists and useImage is true */}
+                      {useImage && image && (
+                        <div className="absolute inset-0 w-full h-full">
+                          <ImageViewer
+                            imageId={image.id}
+                            name={image.name}
+                            bare={true}
+                          />
+                        </div>
+                      )}
 
-                    {/* Background when useImage is false */}
-                    {!useImage && (
-                      <div className="absolute inset-0 w-full h-full bg-muted/20" />
-                    )}
+                      {/* Upload Area - when useImage is true but no image */}
+                      {useImage && !image && (
+                        <div
+                          onClick={() => {
+                            if (!isReadonly && !isUploadingImage) {
+                              imageInputRef.current?.click();
+                            }
+                          }}
+                          className="absolute inset-0 w-full h-full flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
+                        >
+                          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground text-center px-4">
+                            Click to upload image or leave blank to auto
+                            generate
+                          </p>
+                        </div>
+                      )}
 
-                    {/* Chat Preview Overlay - Only show when useImage is false OR image is uploaded */}
-                    {(!useImage || (useImage && image)) && (
-                      <div className="relative z-10 p-4 h-full min-h-[400px] flex flex-col justify-start">
-                        <div className="space-y-3">
-                          {/* TA/User message */}
-                          <div className="flex justify-end mb-3">
-                            <div className="max-w-[80%]">
-                              <div className="bg-primary text-primary-foreground rounded-lg p-3 shadow-lg">
-                                <p className="text-sm">
-                                  Hi, how can I help you?
-                                </p>
-                              </div>
-                            </div>
-                          </div>
+                      {/* Background when useImage is false */}
+                      {!useImage && (
+                        <div className="absolute inset-0 w-full h-full bg-muted/20" />
+                      )}
 
-                          {/* Assistant messages - one per selected persona */}
-                          {selectedPersonaIds.map((personaId) => {
-                            const persona = personaMapping[personaId];
-                            if (!persona) return null;
-
-                            const IconComponent =
-                              getPersonaIconComponent(persona.icon) ||
-                              MessageSquare;
-                            const hexColor = persona.color || "#64748b";
-                            const buttonStyle = {
-                              background: generateGradientFromHex(hexColor),
-                            };
-
-                            return (
-                              <div
-                                key={personaId}
-                                className="flex justify-start mb-3"
-                              >
-                                <div className="max-w-[80%] flex items-stretch gap-2">
-                                  {/* Persona icon button */}
-                                  <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="secondary"
-                                          size="sm"
-                                          aria-label={persona.name}
-                                          className="flex-1 p-0 rounded-md shadow-md"
-                                          style={buttonStyle}
-                                          tabIndex={-1}
-                                        >
-                                          <IconComponent className="h-4 w-4 text-white" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>{persona.name}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </div>
-                                  {/* Message content */}
-                                  <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
-                                    <p className="text-sm">
-                                      I'd be happy to help you with that. Let me
-                                      provide some guidance...
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-
-                          {/* Show placeholder if no personas selected */}
-                          {selectedPersonaIds.length === 0 && (
-                            <div className="flex justify-start mb-3">
-                              <div className="max-w-[80%] flex items-stretch gap-2">
-                                <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="flex-1 p-0 rounded-md shadow-md"
-                                    tabIndex={-1}
-                                  >
-                                    <MessageSquare className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                                <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
-                                  <p className="text-sm text-muted-foreground italic">
-                                    Select personas to see preview messages
+                      {/* Chat Preview Overlay - Only show when useImage is false OR image is uploaded */}
+                      {(!useImage || (useImage && image)) && (
+                        <div className="relative z-10 p-4 h-full min-h-[400px] flex flex-col justify-start">
+                          <div className="space-y-3">
+                            {/* TA/User message */}
+                            <div className="flex justify-end mb-3">
+                              <div className="max-w-[80%]">
+                                <div className="bg-primary text-primary-foreground rounded-lg p-3 shadow-lg">
+                                  <p className="text-sm">
+                                    Hi, how can I help you?
                                   </p>
                                 </div>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
-                    {/* Image actions overlay - when image exists and useImage is true */}
-                    {useImage && image && !isReadonly && (
-                      <div className="absolute top-2 right-2 z-20">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setImage(null)}
-                          className="h-8 w-8 p-0 bg-background/90 backdrop-blur-sm shadow-md"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                            {/* Assistant messages - one per selected persona */}
+                            {selectedPersonaIds.map((personaId) => {
+                              const persona = personaMapping[personaId];
+                              if (!persona) return null;
+
+                              const IconComponent =
+                                getPersonaIconComponent(persona.icon) ||
+                                MessageSquare;
+                              const hexColor = persona.color || "#64748b";
+                              const buttonStyle = {
+                                background: generateGradientFromHex(hexColor),
+                              };
+
+                              return (
+                                <div
+                                  key={personaId}
+                                  className="flex justify-start mb-3"
+                                >
+                                  <div className="max-w-[80%] flex items-stretch gap-2">
+                                    {/* Persona icon button */}
+                                    <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            aria-label={persona.name}
+                                            className="flex-1 p-0 rounded-md shadow-md"
+                                            style={buttonStyle}
+                                            tabIndex={-1}
+                                          >
+                                            <IconComponent className="h-4 w-4 text-white" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{persona.name}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                    {/* Message content */}
+                                    <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
+                                      <p className="text-sm">
+                                        I'd be happy to help you with that. Let
+                                        me provide some guidance...
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {/* Show placeholder if no personas selected */}
+                            {selectedPersonaIds.length === 0 && (
+                              <div className="flex justify-start mb-3">
+                                <div className="max-w-[80%] flex items-stretch gap-2">
+                                  <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      className="flex-1 p-0 rounded-md shadow-md"
+                                      tabIndex={-1}
+                                    >
+                                      <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                  <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
+                                    <p className="text-sm text-muted-foreground italic">
+                                      Select personas to see preview messages
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Image actions overlay - when image exists and useImage is true */}
+                      {useImage && image && !isReadonly && (
+                        <div className="absolute top-2 right-2 z-20">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setImage(null)}
+                            className="h-8 w-8 p-0 bg-background/90 backdrop-blur-sm shadow-md"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Documents Preview Section - 30% right */}
+                  {currentDocumentIds.length > 0 && (
+                    <div className="w-[30%] space-y-4 flex flex-col">
+                      {/* DocumentPicker - top right */}
+                      <div className="flex items-center justify-between">
+                        <div></div>
+                        <GenericPicker
+                          items={documentMapping}
+                          itemIds={currentDocumentIds}
+                          selectedIds={
+                            scenarioPreviewDocumentId
+                              ? [scenarioPreviewDocumentId]
+                              : []
+                          }
+                          onSelect={(ids) => {
+                            const docId = ids[0] || null;
+                            if (docId) {
+                              setScenarioPreviewDocumentId(docId);
+                            }
+                          }}
+                          getId={(item) => {
+                            // GenericPicker adds 'id' property when items is Record<string, T>
+                            const itemWithId = item as DocumentMappingItem & {
+                              id: string;
+                            };
+                            return itemWithId.id || "";
+                          }}
+                          getLabel={(item) => {
+                            const docItem = item as DocumentMappingItem;
+                            return docItem?.name || "Document";
+                          }}
+                          getSearchText={(item) => {
+                            const docItem = item as DocumentMappingItem;
+                            return `${docItem?.name || ""} ${docItem?.description || ""}`;
+                          }}
+                          renderButton={(selectedItems) => {
+                            if (selectedItems.length === 0) {
+                              return "Select document...";
+                            }
+                            const selectedDoc =
+                              selectedItems[0] as DocumentMappingItem;
+                            return selectedDoc?.name || "Select document...";
+                          }}
+                          renderItem={(item, isSelected) => {
+                            const docItem = item as DocumentMappingItem;
+                            return (
+                              <div className="flex flex-col items-start py-3 w-full">
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <Check
+                                      className={cn(
+                                        "h-4 w-4",
+                                        isSelected ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="font-medium">
+                                      {docItem.name}
+                                    </span>
+                                  </div>
+                                </div>
+                                {docItem.description && (
+                                  <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    {docItem.description}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }}
+                          disabled={isReadonly}
+                          multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="h-8 justify-between"
+                          groupHeading="Documents"
+                          placeholder="Select document..."
+                        />
+                      </div>
+
+                      {/* Document Preview Container - Matches messages section height */}
+                      {scenarioPreviewDocumentId && (
+                        <div className="relative border rounded-lg overflow-hidden h-[400px] flex-1">
+                          {(() => {
+                            const docId = scenarioPreviewDocumentId;
+                            const fullDoc =
+                              scenarioData?.document_details?.find(
+                                (d) => d.document_id === docId
+                              );
+                            const docForViewer: DocumentItem = fullDoc
+                              ? ({
+                                  ...fullDoc,
+                                  upload_id: fullDoc.upload_id ?? null,
+                                  parameter_item_ids: [],
+                                  field_ids: [],
+                                } as DocumentItem)
+                              : ({
+                                  document_id: docId,
+                                  name:
+                                    documentMapping[docId]?.name || "Document",
+                                  updatedAt: new Date().toISOString(),
+                                  extension: "",
+                                  scenario_ids: [],
+                                  can_edit: false,
+                                  can_delete: false,
+                                  active: true,
+                                  department_ids: [],
+                                  field_ids: [],
+                                  parameter_item_ids: [],
+                                  upload_id: null,
+                                } as DocumentItem);
+                            return (
+                              <div className="h-full overflow-auto">
+                                <DocumentViewer
+                                  document={docForViewer}
+                                  bare={true}
+                                  isFormDocument={false}
+                                />
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
