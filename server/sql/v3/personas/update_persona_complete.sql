@@ -1,5 +1,5 @@
 -- Update persona with agents and department links in a single transaction
--- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=text_agent_id (nullable), $9=voice_agent_id (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id"), $12=parameter_ids (nullable text array)
+-- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=text_agent_id (nullable), $9=voice_agent_id (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id"), $12=parameter_ids (nullable text array), $13=example_ids (nullable text array)
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -151,5 +151,55 @@ backfill_persona_fields AS (
     ON CONFLICT (persona_id, field_id) DO UPDATE SET
         active = TRUE,
         updated_at = NOW()
+),
+replace_examples AS (
+    -- Delete all existing example links
+    DELETE FROM persona_examples 
+    WHERE persona_id = $1::uuid
+),
+examples_with_index AS (
+    -- Prepare examples with their index
+    SELECT 
+        ex_text,
+        ROW_NUMBER() OVER () - 1 as idx
+    FROM UNNEST($13::text[]) as ex_text
+    WHERE EXISTS (SELECT 1 FROM update_persona)
+      AND COALESCE(array_length($13::text[], 1), 0) > 0
+),
+existing_examples AS (
+    -- Find existing examples by text
+    SELECT id as example_id, example
+    FROM examples
+    WHERE example = ANY(SELECT ex_text FROM examples_with_index)
+),
+new_examples AS (
+    -- Create new examples that don't exist yet
+    INSERT INTO examples (example, created_at, updated_at)
+    SELECT DISTINCT
+        ewi.ex_text,
+        NOW(),
+        NOW()
+    FROM examples_with_index ewi
+    WHERE NOT EXISTS (
+        SELECT 1 FROM existing_examples ee WHERE ee.example = ewi.ex_text
+    )
+    RETURNING id as example_id, example
+),
+all_examples AS (
+    -- Combine existing and new examples
+    SELECT example_id, example FROM existing_examples
+    UNION ALL
+    SELECT example_id, example FROM new_examples
+),
+insert_examples AS (
+    -- Link examples to persona via junction table
+    INSERT INTO persona_examples (persona_id, example_id, idx, created_at)
+    SELECT 
+        $1::uuid,
+        ae.example_id,
+        ewi.idx,
+        NOW()
+    FROM examples_with_index ewi
+    JOIN all_examples ae ON ae.example = ewi.ex_text
 )
 SELECT persona_id FROM update_persona

@@ -17,6 +17,8 @@ from app.utils.schema import (
     AgentMappingItem,
     DepartmentMapping,
     DepartmentMappingItem,
+    ExampleMapping,
+    ExampleMappingItem,
     FieldMapping,
     ParameterMapping,
 )
@@ -36,6 +38,13 @@ class DebugInfoItem(BaseModel):
 
     timestamp: str
     message: str
+
+
+class ExampleWithDepartments(BaseModel):
+    """Example with department associations for history."""
+
+    example: str
+    department_ids: list[str] | None = None
 
 
 class PersonaDetailResponse(BaseModel):
@@ -71,11 +80,16 @@ class PersonaDetailResponse(BaseModel):
     department_mapping: DepartmentMapping
     parameter_mapping: ParameterMapping
     field_mapping: FieldMapping
+    example_mapping: ExampleMapping
 
     # Parameter fields
     linked_parameter_ids: list[str]
     parameter_field_ids: list[str]
     valid_parameter_item_ids: list[str]
+
+    # Examples
+    example_ids: list[str]
+    examples_history: list[ExampleWithDepartments]
 
     # Debug info
     debug_info: list[DebugInfoItem]
@@ -230,6 +244,42 @@ async def get_persona_detail(
         else:
             valid_parameter_item_ids = []
 
+        # Parse example mapping
+        example_mapping: ExampleMapping = {}
+        example_mapping_data = parse_jsonb(result.get("example_mapping"))
+        if isinstance(example_mapping_data, dict):
+            for example_id, edata in example_mapping_data.items():
+                if isinstance(edata, dict):
+                    example_mapping[example_id] = ExampleMappingItem(
+                        name=edata.get("name", ""),
+                        description=edata.get("description", ""),
+                    )
+
+        # Parse example arrays
+        example_ids = result.get("example_ids", [])
+        if example_ids:
+            example_ids = [str(e) for e in example_ids]
+        else:
+            example_ids = []
+
+        # Parse examples history
+        examples_history: list[ExampleWithDepartments] = []
+        examples_history_data = parse_jsonb(result.get("examples_history"))
+        if isinstance(examples_history_data, list):
+            for ex_item in examples_history_data:
+                if isinstance(ex_item, dict):
+                    dept_ids = ex_item.get("department_ids")
+                    if dept_ids:
+                        dept_ids = [str(d) for d in dept_ids]
+                    else:
+                        dept_ids = None
+                    examples_history.append(
+                        ExampleWithDepartments(
+                            example=ex_item.get("example", ""),
+                            department_ids=dept_ids,
+                        )
+                    )
+
         # Parse department_ids for permissions logic
         raw_department_ids = result.get("department_ids")
         department_ids: list[str] | None = None
@@ -357,9 +407,12 @@ async def get_persona_detail(
             department_mapping=department_mapping,
             parameter_mapping=parameter_mapping,
             field_mapping=field_mapping,
+            example_mapping=example_mapping,
             linked_parameter_ids=linked_parameter_ids,
             parameter_field_ids=parameter_field_ids,
             valid_parameter_item_ids=valid_parameter_item_ids,
+            example_ids=example_ids,
+            examples_history=examples_history,
             debug_info=debug_info,
         )
 

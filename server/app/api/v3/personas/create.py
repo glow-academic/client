@@ -26,6 +26,7 @@ class CreatePersonaRequest(BaseModel):
     text_agent_id: str | None
     voice_agent_id: str | None
     parameter_ids: list[str] | None
+    example_ids: list[str] | None
     profileId: str  # Required for auditing/access control
 
 
@@ -90,6 +91,9 @@ async def create_persona(
             # Ensure parameter_ids is always an array (empty array if None)
             param_ids = request.parameter_ids if request.parameter_ids else []
 
+            # Ensure example_ids is always an array (empty array if None)
+            example_ids = request.example_ids if request.example_ids else []
+
             # Convert description None to empty string
             description = request.description if request.description is not None else ""
 
@@ -116,6 +120,7 @@ async def create_persona(
                 dept_ids,  # Always pass array (empty array if no departments)
                 request.profileId,
                 param_ids,  # Always pass array (empty array if no parameters)
+                example_ids,  # Always pass array (empty array if no examples)
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

@@ -1,5 +1,5 @@
 -- Create persona with agents and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=active, $4=color, $5=icon, $6=instructions, $7=text_agent_id (nullable), $8=voice_agent_id (nullable), $9=department_ids (nullable text array), $10=profile_id (uuid or "guest-profile-id"), $11=parameter_ids (nullable text array)
+-- Parameters: $1=name, $2=description, $3=active, $4=color, $5=icon, $6=instructions, $7=text_agent_id (nullable), $8=voice_agent_id (nullable), $9=department_ids (nullable text array), $10=profile_id (uuid or "guest-profile-id"), $11=parameter_ids (nullable text array), $12=example_ids (nullable text array)
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -121,5 +121,50 @@ backfill_persona_fields AS (
     ON CONFLICT (persona_id, field_id) DO UPDATE SET
         active = TRUE,
         updated_at = NOW()
+),
+examples_with_index AS (
+    -- Prepare examples with their index (skip composite IDs - filtered in Python)
+    SELECT 
+        ex_text,
+        ROW_NUMBER() OVER () - 1 as idx
+    FROM UNNEST($12::text[]) as ex_text
+    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+),
+existing_examples AS (
+    -- Find existing examples by text
+    SELECT id as example_id, example
+    FROM examples
+    WHERE example = ANY(SELECT ex_text FROM examples_with_index)
+),
+new_examples AS (
+    -- Create new examples that don't exist yet
+    INSERT INTO examples (example, created_at, updated_at)
+    SELECT DISTINCT
+        ewi.ex_text,
+        NOW(),
+        NOW()
+    FROM examples_with_index ewi
+    WHERE NOT EXISTS (
+        SELECT 1 FROM existing_examples ee WHERE ee.example = ewi.ex_text
+    )
+    RETURNING id as example_id, example
+),
+all_examples AS (
+    -- Combine existing and new examples
+    SELECT example_id, example FROM existing_examples
+    UNION ALL
+    SELECT example_id, example FROM new_examples
+),
+link_examples AS (
+    -- Link examples to persona via junction table
+    INSERT INTO persona_examples (persona_id, example_id, idx, created_at)
+    SELECT 
+        np.persona_id::uuid,
+        ae.example_id,
+        ewi.idx,
+        NOW()
+    FROM new_persona np
+    CROSS JOIN examples_with_index ewi
+    JOIN all_examples ae ON ae.example = ewi.ex_text
 )
 SELECT persona_id FROM new_persona

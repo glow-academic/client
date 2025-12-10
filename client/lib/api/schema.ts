@@ -6426,6 +6426,8 @@ export interface components {
             voice_agent_id: string | null;
             /** Parameter Ids */
             parameter_ids: string[] | null;
+            /** Example Ids */
+            example_ids: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -8146,6 +8148,26 @@ export interface components {
             agent_options: {
                 [key: string]: string;
             }[];
+        };
+        /**
+         * ExampleMappingItem
+         * @description Example mapping item - extends MappingItem
+         */
+        ExampleMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * ExampleWithDepartments
+         * @description Example with department associations for history.
+         */
+        ExampleWithDepartments: {
+            /** Example */
+            example: string;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * ExportRequest
@@ -13357,6 +13379,8 @@ export interface components {
             voice_agent_id: string | null;
             /** Parameter Ids */
             parameter_ids: string[] | null;
+            /** Example Ids */
+            example_ids: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -14764,12 +14788,20 @@ export interface components {
             field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
             };
+            /** Example Mapping */
+            example_mapping: {
+                [key: string]: components["schemas"]["ExampleMappingItem"];
+            };
             /** Linked Parameter Ids */
             linked_parameter_ids: string[];
             /** Parameter Field Ids */
             parameter_field_ids: string[];
             /** Valid Parameter Item Ids */
             valid_parameter_item_ids: string[];
+            /** Example Ids */
+            example_ids: string[];
+            /** Examples History */
+            examples_history: components["schemas"]["ExampleWithDepartments"][];
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__detail__DebugInfoItem"][];
         };

@@ -1526,6 +1526,17 @@ export default function Scenario({
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
       setCurrentDocumentIds(scenarioData.document_ids);
+      // Extract template document IDs from document_mapping (documents with parent_document_id)
+      const templateDocIds = Object.entries(scenarioData.document_mapping || {})
+        .filter(
+          ([_, doc]) =>
+            doc &&
+            typeof doc === "object" &&
+            "parent_document_id" in doc &&
+            doc.parent_document_id
+        )
+        .map(([docId]) => docId);
+      setCurrentTemplateDocumentIds(templateDocIds);
       setCurrentFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setCurrentObjectives(
         getObjectivesFromMapping(
@@ -1591,6 +1602,19 @@ export default function Scenario({
         parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       setOriginalDocumentIds(scenarioData.document_ids);
+      // Extract template document IDs from document_mapping for original tracking
+      const originalTemplateDocIds = Object.entries(
+        scenarioData.document_mapping || {}
+      )
+        .filter(
+          ([_, doc]) =>
+            doc &&
+            typeof doc === "object" &&
+            "parent_document_id" in doc &&
+            doc.parent_document_id
+        )
+        .map(([docId]) => docId);
+      setOriginalTemplateDocumentIds(originalTemplateDocIds);
       setOriginalFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setOriginalObjectives(
         getObjectivesFromMapping(
@@ -4365,7 +4389,7 @@ export default function Scenario({
                 </div>
 
                 {/* Use Objectives and Use Image Switches */}
-                <div className="space-y-4 pt-2 border-t">
+                <div className="space-y-4 pt-2">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Label

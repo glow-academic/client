@@ -7,7 +7,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -52,7 +52,143 @@ import {
   getPersonaIconComponent,
   PERSONA_ICON_MAP,
 } from "@/utils/persona-icons";
-import { Check, ChevronsUpDown, FileText, Mic, Power } from "lucide-react";
+import { Check, ChevronsUpDown, FileText, GripVertical, Mic, PlusCircle, Power, Trash2 } from "lucide-react";
+
+// Component for example input with autocomplete
+function ExampleInputWithAutocomplete({
+  index,
+  value,
+  onChange,
+  placeholder,
+  suggestions,
+  disabled,
+  draggedExampleIndex,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onRemove,
+  totalExamples,
+}: {
+  index: number;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  suggestions: string[];
+  disabled: boolean;
+  draggedExampleIndex: number | null;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onRemove: () => void;
+  totalExamples: number;
+}) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Filter suggestions based on current input value (completing the sentence)
+  const filteredSuggestions = useMemo(() => {
+    if (!value.trim() || !suggestions.length) return [];
+
+    const valueLower = value.toLowerCase().trim();
+
+    // Filter suggestions that start with or contain the typed text
+    // Exclude exact matches (case-insensitive) to avoid distraction
+    const matching = suggestions
+      .filter((s) => {
+        const sLower = s.toLowerCase().trim();
+        // Skip exact matches
+        if (sLower === valueLower) return false;
+        // Include if starts with or contains the typed text
+        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
+      })
+      .slice(0, 5); // Show top 5 matches
+
+    return matching;
+  }, [suggestions, value]);
+
+  const handleSelect = (suggestion: string) => {
+    onChange(suggestion);
+    setShowSuggestions(false);
+    inputRef.current?.focus();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+    setShowSuggestions(true);
+  };
+
+  const handleFocus = () => {
+    if (value && filteredSuggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleBlur = () => {
+    // Delay hiding suggestions to allow clicks
+    setTimeout(() => setShowSuggestions(false), 200);
+  };
+
+  return (
+    <div
+      className={`flex flex-col gap-2 ${
+        draggedExampleIndex === index ? "opacity-50" : ""
+      }`}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      <div className="flex items-center gap-2">
+        <div
+          draggable={!disabled}
+          onDragStart={onDragStart}
+          className="cursor-grab active:cursor-grabbing shrink-0"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1 relative">
+          <Input
+            ref={inputRef}
+            value={value}
+            onChange={handleInputChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            placeholder={placeholder}
+            className="flex-1"
+            disabled={disabled}
+            onDragStart={(e) => e.preventDefault()} // Prevent dragging from input
+          />
+          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
+              <div className="p-1">
+                {filteredSuggestions.map((suggestion, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleSelect(suggestion)}
+                    onMouseDown={(e) => e.preventDefault()} // Prevent input blur
+                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        {totalExamples > 1 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={onRemove}
+            className="h-8 w-8 shrink-0"
+            disabled={disabled}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface FormData {
   name?: string;
@@ -123,6 +259,8 @@ export default function Persona({
   const [formData, setFormData] = useState<FormData>();
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [currentExamples, setCurrentExamples] = useState<string[]>([]);
+  const [draggedExampleIndex, setDraggedExampleIndex] = useState<number | null>(null);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -205,9 +343,76 @@ export default function Persona({
     return "text";
   }, [personaData]);
 
+  // Extract examples from example_mapping
+  const exampleMapping = useMemo(() => {
+    return (personaData as PersonaDetailOut & { example_mapping?: Record<string, { name: string }> })?.example_mapping || {};
+  }, [personaData]);
+
+  // Extract examples from example_ids and example_mapping
+  const getExamplesFromMapping = useCallback((exampleIds: string[], mapping: Record<string, { name: string }>): string[] => {
+    return exampleIds.map((id) => mapping[id]?.name || "");
+  }, []);
+
+  // Filter examples_history based on selected departments
+  const examplesHistory = useMemo(() => {
+    const rawHistory = (personaData as PersonaDetailOut & { examples_history?: Array<{ example: string; department_ids?: string[] }> })?.examples_history || [];
+    const selectedDeptIds = formData?.departmentIds || [];
+
+    // Convert to array of strings for autocomplete
+    const examples: string[] = [];
+
+    // If no departments selected, return all examples
+    if (selectedDeptIds.length === 0) {
+      rawHistory.forEach((ex) => {
+        if (typeof ex === "string") {
+          examples.push(ex);
+        } else if (ex && typeof ex === "object") {
+          const exWithDept = ex as {
+            example: string;
+            department_ids?: string[];
+          };
+          if ("example" in exWithDept) {
+            examples.push(exWithDept.example);
+          }
+        }
+      });
+      return examples;
+    }
+
+    // Filter examples that:
+    // 1. Have department_ids that intersect with selected departments
+    // 2. Are cross-department (empty department_ids array)
+    rawHistory.forEach((ex) => {
+      // Handle both new format (object with department_ids) and legacy format (string)
+      if (typeof ex === "string") {
+        examples.push(ex); // Legacy format - include all
+      } else if (ex && typeof ex === "object") {
+        const exWithDept = ex as {
+          example: string;
+          department_ids?: string[];
+        };
+        if ("example" in exWithDept) {
+          const exDeptIds = exWithDept.department_ids || [];
+          // Include if cross-department (empty) or intersects with selected departments
+          if (
+            exDeptIds.length === 0 ||
+            exDeptIds.some((deptId) => selectedDeptIds.includes(deptId))
+          ) {
+            examples.push(exWithDept.example);
+          }
+        }
+      }
+    });
+
+    return examples;
+  }, [personaData, formData?.departmentIds]);
+
   useEffect(() => {
     if (personaData && isEditMode) {
       const deptIds = personaData.department_ids || [];
+      const exampleIds = (personaData as PersonaDetailOut & { example_ids?: string[] })?.example_ids || [];
+      const examples = getExamplesFromMapping(exampleIds, exampleMapping);
+      
       setFormData({
         name: personaData.name,
         description: personaData.description || "",
@@ -229,6 +434,7 @@ export default function Persona({
           (personaData as PersonaDetailOut & { parameter_field_ids?: string[] })
             .parameter_field_ids || [],
       });
+      setCurrentExamples(examples);
     } else if (!isEditMode && personaData) {
       // For create mode, use defaults from the API response
       setFormData({
@@ -242,8 +448,9 @@ export default function Persona({
         parameterIds: [],
         parameterFieldIds: [],
       });
+      setCurrentExamples([]);
     }
-  }, [personaData, isEditMode, initialFormData, simulationTypeFromAgents]);
+  }, [personaData, isEditMode, initialFormData, simulationTypeFromAgents, exampleMapping, getExamplesFromMapping]);
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
@@ -351,6 +558,7 @@ export default function Persona({
             active: formData.active ?? true,
             department_ids: finalDepartmentIds,
             parameter_ids: formData.parameterIds || [],
+            example_ids: currentExamples.filter((ex) => ex.trim()),
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
           {
@@ -383,6 +591,47 @@ export default function Persona({
   const _suggestedIcons = useMemo(() => {
     return personaData?.suggested_icons || [];
   }, [personaData?.suggested_icons]);
+
+  // Example handlers
+  const addExample = () => {
+    if (currentExamples.length >= 10) {
+      toast.error("Maximum 10 examples allowed");
+      return;
+    }
+    setCurrentExamples((prev) => [...prev, ""]);
+  };
+
+  const removeExample = (index: number) => {
+    setCurrentExamples((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateExample = (index: number, value: string) => {
+    setCurrentExamples((prev) => {
+      const newExamples = [...prev];
+      newExamples[index] = value;
+      return newExamples;
+    });
+  };
+
+  const handleDragStartExample = (e: React.DragEvent, index: number) => {
+    setDraggedExampleIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverExample = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropExample = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedExampleIndex === null) return;
+    const newExamples = [...currentExamples];
+    const [removed] = newExamples.splice(draggedExampleIndex, 1);
+    newExamples.splice(targetIndex, 0, removed || "");
+    setCurrentExamples(newExamples);
+    setDraggedExampleIndex(null);
+  };
 
   return (
     <TooltipProvider>
@@ -460,6 +709,56 @@ export default function Persona({
                   disabled={isReadonly}
                 />
               ) : null}
+            </div>
+
+            {/* Examples List */}
+            <div className="space-y-2">
+              <Label>Example Messages</Label>
+              {currentExamples.length === 0 && (
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addExample}
+                    disabled={isReadonly}
+                    size="sm"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" /> Add example
+                  </Button>
+                </div>
+              )}
+              {currentExamples.map((example, index) => (
+                <ExampleInputWithAutocomplete
+                  key={`example-${index}`}
+                  index={index}
+                  value={example || ""}
+                  onChange={(value) => updateExample(index, value)}
+                  placeholder={`Example message ${index + 1}`}
+                  suggestions={examplesHistory}
+                  disabled={isReadonly}
+                  draggedExampleIndex={draggedExampleIndex}
+                  onDragStart={(e) => handleDragStartExample(e, index)}
+                  onDragOver={handleDragOverExample}
+                  onDrop={(e) => handleDropExample(e, index)}
+                  onRemove={() => removeExample(index)}
+                  totalExamples={currentExamples.length}
+                />
+              ))}
+
+              {currentExamples.length < 10 &&
+                currentExamples.length > 0 && (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={addExample}
+                      disabled={isReadonly}
+                      size="sm"
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" /> Add example
+                    </Button>
+                  </div>
+                )}
             </div>
 
             {/* Department Selection */}

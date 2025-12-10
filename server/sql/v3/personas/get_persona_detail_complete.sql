@@ -207,6 +207,64 @@ persona_field_ids AS (
     -- Note: persona_fields table may not exist, so we return empty array for now
     -- When the table exists, this can be updated to query from it
     SELECT ARRAY[]::text[] as field_ids
+),
+persona_examples_data AS (
+    SELECT 
+        COALESCE(ARRAY_AGG(e.id::text ORDER BY pe.idx), ARRAY[]::text[]) as example_ids,
+        COALESCE(jsonb_object_agg(
+            e.id::text,
+            jsonb_build_object('name', e.example, 'description', e.example)
+        ) FILTER (WHERE e.example IS NOT NULL), '{}'::jsonb) as example_mapping
+    FROM persona_examples pe
+    JOIN examples e ON e.id = pe.example_id
+    WHERE pe.persona_id = $1
+),
+accessible_personas AS (
+    -- Get personas accessible to the user (for examples history)
+    SELECT DISTINCT p.id as persona_id
+    FROM personas p
+    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+    CROSS JOIN user_profile up
+    WHERE (
+        up.role = 'superadmin'
+        OR pd.department_id IN (SELECT department_id FROM user_departments)
+        OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+    )
+),
+examples_with_departments AS (
+    -- Get examples with their department associations for history
+    SELECT 
+        e.example,
+        COALESCE(
+            ARRAY_AGG(DISTINCT pd.department_id::text) FILTER (
+                WHERE pd.department_id IS NOT NULL
+            ),
+            ARRAY[]::text[]
+        ) as department_ids
+    FROM persona_examples pe
+    JOIN examples e ON e.id = pe.example_id
+    JOIN accessible_personas ap ON ap.persona_id = pe.persona_id
+    LEFT JOIN persona_departments pd ON pd.persona_id = pe.persona_id AND pd.active = true
+    WHERE e.example IS NOT NULL AND e.example != ''
+    GROUP BY e.example
+),
+examples_history_data AS (
+    SELECT COALESCE(
+        (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'example', example,
+                    'department_ids', department_ids
+                )
+            )
+            FROM (
+                SELECT example, department_ids
+                FROM examples_with_departments
+                ORDER BY example
+            ) sorted
+        ),
+        '[]'::jsonb
+    ) as examples_history
 )
 SELECT 
     p.*,
@@ -220,7 +278,10 @@ SELECT
     COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
     COALESCE(fmd.field_mapping, '{}'::jsonb) as field_mapping,
     COALESCE(fmd.parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
-    COALESCE(pfi.field_ids, ARRAY[]::text[]) as parameter_field_ids
+    COALESCE(pfi.field_ids, ARRAY[]::text[]) as parameter_field_ids,
+    COALESCE(ped.example_ids, ARRAY[]::text[]) as example_ids,
+    COALESCE(ped.example_mapping, '{}'::jsonb) as example_mapping,
+    COALESCE(ehd.examples_history, '[]'::jsonb) as examples_history
 FROM persona_data p
 CROSS JOIN valid_depts vd
 CROSS JOIN valid_agents va
@@ -229,3 +290,5 @@ CROSS JOIN profile_data pr
 CROSS JOIN parameter_mapping_data pmd
 CROSS JOIN field_mapping_data fmd
 CROSS JOIN persona_field_ids pfi
+CROSS JOIN persona_examples_data ped
+CROSS JOIN examples_history_data ehd
