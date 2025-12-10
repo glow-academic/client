@@ -5,23 +5,7 @@
  * 05/20/2025
  */
 "use client";
-import {
-  Brain,
-  Check,
-  Eye,
-  GripVertical,
-  Image,
-  Loader2,
-  MessageSquare,
-  PlusCircle,
-  Power,
-  RotateCcw,
-  Search,
-  Shuffle,
-  Target,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { Loader2, RotateCcw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -38,64 +22,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 // Custom Components
-import DocumentViewer, {
-  type DocumentItem,
-} from "@/components/common/chat/viewers/DocumentViewer";
-import ImageViewer from "@/components/common/chat/viewers/ImageViewer";
+import { BasicInfoSection } from "@/components/common/forms/BasicInfoSection";
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { RangeSlider } from "@/components/common/forms/RangeSlider";
-import { ParameterSelector } from "@/components/parameters/ParameterSelector";
-import { cn } from "@/lib/utils";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
-
-// Utility function to generate gradient from hex color (same as AttemptMessages)
-const generateGradientFromHex = (hexColor: string): string => {
-  // Remove # if present
-  const cleanHex = hexColor.replace("#", "");
-
-  // Convert to RGB
-  const r = parseInt(cleanHex.substr(0, 2), 16);
-  const g = parseInt(cleanHex.substr(2, 2), 16);
-  const b = parseInt(cleanHex.substr(4, 2), 16);
-
-  // Create a lighter variant for the gradient (brighter like simulation cards)
-  const lighterR = Math.min(255, r + 60);
-  const lighterG = Math.min(255, g + 60);
-  const lighterB = Math.min(255, b + 60);
-
-  // Convert back to hex
-  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-
-  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
-};
+import { DocumentSection } from "@/components/common/forms/DocumentSection";
+import { ParameterItemSection } from "@/components/common/forms/ParameterItemSection";
+import { ParameterSection } from "@/components/common/forms/ParameterSection";
+import { PersonaSection } from "@/components/common/forms/PersonaSection";
+import { ContentSection } from "@/components/scenarios/ContentSection";
 
 // Types and API functions
 import type {
@@ -119,144 +59,6 @@ import {
   getObjectivesFromMapping,
   groupFieldsByParameterId,
 } from "@/utils/scenario-helpers";
-
-// Component for objective input with autocomplete
-function ObjectiveInputWithAutocomplete({
-  index,
-  value,
-  onChange,
-  placeholder,
-  suggestions,
-  disabled,
-  draggedObjectiveIndex,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onRemove,
-  totalObjectives,
-  useObjectives,
-}: {
-  index: number;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  suggestions: string[];
-  disabled: boolean;
-  draggedObjectiveIndex: number | null;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onRemove: () => void;
-  totalObjectives: number;
-  useObjectives: boolean;
-}) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Filter suggestions based on current input value (completing the sentence)
-  const filteredSuggestions = useMemo(() => {
-    if (!value.trim() || !suggestions.length) return [];
-
-    const valueLower = value.toLowerCase().trim();
-
-    // Filter suggestions that start with or contain the typed text
-    // Exclude exact matches (case-insensitive) to avoid distraction
-    const matching = suggestions
-      .filter((s) => {
-        const sLower = s.toLowerCase().trim();
-        // Skip exact matches
-        if (sLower === valueLower) return false;
-        // Include if starts with or contains the typed text
-        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
-      })
-      .slice(0, 5); // Show top 5 matches
-
-    return matching;
-  }, [suggestions, value]);
-
-  const handleSelect = (suggestion: string) => {
-    onChange(suggestion);
-    setShowSuggestions(false);
-    inputRef.current?.focus();
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setShowSuggestions(true);
-  };
-
-  const handleFocus = () => {
-    if (value && filteredSuggestions.length > 0) {
-      setShowSuggestions(true);
-    }
-  };
-
-  const handleBlur = () => {
-    // Delay hiding suggestions to allow clicks
-    setTimeout(() => setShowSuggestions(false), 200);
-  };
-
-  return (
-    <div
-      className={`flex flex-col gap-2 ${
-        draggedObjectiveIndex === index ? "opacity-50" : ""
-      }`}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-    >
-      <div className="flex items-center gap-2">
-        <div
-          draggable={!disabled}
-          onDragStart={onDragStart}
-          className="cursor-grab active:cursor-grabbing shrink-0"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <div className="flex-1 relative">
-          <Input
-            ref={inputRef}
-            value={value}
-            onChange={handleInputChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            placeholder={placeholder}
-            className="flex-1"
-            disabled={disabled}
-            onDragStart={(e) => e.preventDefault()} // Prevent dragging from input
-          />
-          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
-              <div className="p-1">
-                {filteredSuggestions.map((suggestion, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleSelect(suggestion)}
-                    onMouseDown={(e) => e.preventDefault()} // Prevent input blur
-                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
-                  >
-                    {suggestion}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        {!(useObjectives && totalObjectives === 1) && (
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onRemove}
-            className="h-8 w-8 shrink-0"
-            disabled={disabled}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -2238,6 +2040,15 @@ export default function Scenario({
     }
   };
 
+  const handleProblemStatementVersionSelect = (id: string) => {
+    if (id && problemStatementMapping[id]) {
+      handleInputChange(
+        "problemStatement",
+        problemStatementMapping[id].problem_statement
+      );
+    }
+  };
+
   // Objective handlers
   const addObjective = () => {
     if (currentObjectives.length >= 3) {
@@ -2283,6 +2094,16 @@ export default function Scenario({
       return next;
     });
     setDraggedObjectiveIndex(null);
+  };
+
+  const handleImageSelect = (
+    image: {
+      id: string;
+      name: string;
+      upload_id: string;
+    } | null
+  ) => {
+    setImage(image);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2681,939 +2502,114 @@ export default function Scenario({
       )}
 
       <div className="space-y-6">
-        {/* Step 1: Basic Information - Subtle inline name editor */}
-        <Card className="transition-all">
-          <CardContent className="pt-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-green-500 text-white shrink-0">
-                <Check className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  data-testid="input-scenario-title"
-                  value={formData.name || ""}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  onFocus={(e) => {
-                    if (e.target.value === "New Scenario") {
-                      e.target.select();
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // If empty on blur, revert to "New Scenario"
-                    if (!e.target.value || e.target.value.trim() === "") {
-                      handleInputChange("name", "New Scenario");
-                    }
-                  }}
-                  className="w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
-                  placeholder="New Scenario"
-                  disabled={isReadonly}
-                />
-                <p className="text-xs text-muted-foreground mt-1 px-2">
-                  {formData.name === "New Scenario" || !formData.name
-                    ? "Click to edit • Name will be auto-generated if unchanged"
-                    : "Click to edit"}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleRandomizeAll}
-                      disabled={isReadonly}
-                    >
-                      <Shuffle className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Randomize All</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleResetAll}
-                      disabled={isReadonly}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reset All</TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          </CardContent>
-          <CardContent className="pt-0 space-y-4">
-            {/* Department Selection */}
-            {scenarioData?.valid_department_ids &&
-            scenarioData.valid_department_ids.length > 1 ? (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                {formData?.departmentIds !== undefined ? (
-                  <GenericPicker
-                    items={departmentMapping}
-                    itemIds={Array.from(
-                      new Set([
-                        ...(scenarioData?.valid_department_ids || []),
-                        ...(formData.departmentIds || []),
-                      ])
-                    )}
-                    selectedIds={formData.departmentIds || []}
-                    onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                    getId={(dept) => (dept as unknown as { id: string }).id}
-                    getLabel={(dept) => dept.name || ""}
-                    getSearchText={(dept) =>
-                      `${dept.name} ${dept.description || ""}`
-                    }
-                    placeholder="All Departments"
-                    disabled={isReadonly}
-                    multiSelect={true}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                  />
-                ) : null}
-              </div>
-            ) : null}
-
-            {/* Agent Selection */}
-            {(() => {
-              // Filter agents by computed role based on current flags
-              const filteredScenarioAgentIds =
-                scenarioData?.valid_agent_ids?.filter((id) => {
-                  const agent = agentMapping[id];
-                  const agentRole = agent?.roles?.[0];
-                  // Include agents matching expected role OR legacy 'scenario' role (backward compatibility)
-                  return (
-                    agentRole === expectedScenarioRole ||
-                    agentRole === "scenario"
-                  );
-                }) || [];
-
-              const imageAgentIds =
-                scenarioData?.valid_agent_ids?.filter((id) => {
-                  const agent = agentMapping[id];
-                  return agent?.roles?.includes("image");
-                }) || [];
-
-              // Only show agent pickers if there's more than one option
-              // Use filtered list for scenario agents
-              const showScenarioPicker = filteredScenarioAgentIds.length > 1;
-              const showImagePicker = imageAgentIds.length > 1;
-
-              if (!showScenarioPicker && !showImagePicker) {
-                return null;
-              }
-
-              return (
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                  {/* Scenario Agent Selection */}
-                  {showScenarioPicker && (
-                    <div className="space-y-2">
-                      <Label htmlFor="scenarioAgentId">Scenario Agent</Label>
-                      {formData?.scenarioAgentId !== undefined ? (
-                        <GenericPicker
-                          items={agentMapping}
-                          itemIds={filteredScenarioAgentIds}
-                          selectedIds={
-                            formData?.scenarioAgentId
-                              ? [formData.scenarioAgentId]
-                              : []
-                          }
-                          onSelect={(ids) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              scenarioAgentId: ids[0] || null,
-                            }))
-                          }
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
-                          getLabel={(item) => item.name || ""}
-                          getSearchText={(item) =>
-                            `${item.name} ${item.description || ""}`
-                          }
-                          renderPreview={(item) => (
-                            <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">
-                                {item.name || "No agent selected"}
-                              </h4>
-                              <div className="text-sm text-muted-foreground">
-                                {item.description || "No description available"}
-                              </div>
-                            </div>
-                          )}
-                          renderItem={(item, _isSelected) => (
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="flex-1 min-w-0">
-                                  <div className="truncate">{item.name}</div>
-                                  {item.description && (
-                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                      {item.description}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          placeholder="Select scenario agent"
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="w-full"
-                          groupHeading="Agents"
-                        />
-                      ) : null}
-                    </div>
-                  )}
-
-                  {/* Image Agent Selection */}
-                  {showImagePicker && (
-                    <div className="space-y-2">
-                      <Label htmlFor="imageAgentId">Image Agent</Label>
-                      {formData?.imageAgentId !== undefined ? (
-                        <GenericPicker
-                          items={agentMapping}
-                          itemIds={imageAgentIds}
-                          selectedIds={
-                            formData?.imageAgentId
-                              ? [formData.imageAgentId]
-                              : []
-                          }
-                          onSelect={(ids) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              imageAgentId: ids[0] || null,
-                            }))
-                          }
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
-                          getLabel={(item) => item.name || ""}
-                          getSearchText={(item) =>
-                            `${item.name} ${item.description || ""}`
-                          }
-                          renderPreview={(item) => (
-                            <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">
-                                {item.name || "No agent selected"}
-                              </h4>
-                              <div className="text-sm text-muted-foreground">
-                                {item.description || "No description available"}
-                              </div>
-                            </div>
-                          )}
-                          renderItem={(item, _isSelected) => (
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="flex-1 min-w-0">
-                                  <div className="truncate">{item.name}</div>
-                                  {item.description && (
-                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                      {item.description}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          placeholder="Select image agent"
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="w-full"
-                          groupHeading="Agents"
-                        />
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* Active Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="active"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                  <Switch
-                    id="active"
-                    data-testid="switch-scenario-active"
-                    checked={formData.active ?? true}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("active", checked)
-                    }
-                    disabled={isReadonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Inactive scenarios will not be available for other simulations
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Step 1: Basic Information */}
+        <BasicInfoSection
+          name={formData.name || ""}
+          departmentIds={formData.departmentIds || []}
+          validDepartmentIds={scenarioData?.valid_department_ids || []}
+          departmentMapping={departmentMapping}
+          scenarioAgentId={formData.scenarioAgentId}
+          imageAgentId={formData.imageAgentId}
+          validAgentIds={scenarioData?.valid_agent_ids || []}
+          agentMapping={agentMapping}
+          expectedScenarioRole={expectedScenarioRole}
+          active={formData.active ?? true}
+          onNameChange={(name) => handleInputChange("name", name)}
+          onDepartmentIdsChange={(ids) =>
+            handleInputChange("departmentIds", ids)
+          }
+          onScenarioAgentIdChange={(id) =>
+            setFormData((prev) => ({ ...prev, scenarioAgentId: id }))
+          }
+          onImageAgentIdChange={(id) =>
+            setFormData((prev) => ({ ...prev, imageAgentId: id }))
+          }
+          onActiveChange={(active) => handleInputChange("active", active)}
+          onRandomizeAll={handleRandomizeAll}
+          onResetAll={handleResetAll}
+          isReadonly={isReadonly}
+          isSuperadmin={isSuperadmin}
+        />
         {/* Step 2: Persona Selection */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("persona") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("persona") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("persona") === "completed"
-                    ? "bg-green-500 text-white"
-                    : getStepStatus("persona") === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                }`}
-              >
-                {getStepStatus("persona") === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  "2"
-                )}
-              </div>
-              <div>
-                <CardTitle className="text-lg">
-                  {steps[1]?.title || ""}
-                </CardTitle>
-                <CardDescription>{steps[1]?.description || ""}</CardDescription>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <RangeSlider
-                min={1}
-                max={Math.min(5, validPersonaIds.length)}
-                value={[
-                  personaMinMax.min ?? 1,
-                  Math.min(
-                    Math.min(5, validPersonaIds.length),
-                    personaMinMax.max ?? 2
-                  ),
-                ]}
-                onValueChange={([min, max]) =>
-                  setPersonaMinMax({
-                    min: min ?? 1,
-                    max: Math.min(
-                      Math.min(5, validPersonaIds.length),
-                      max ?? 2
-                    ),
-                  })
-                }
-                disabled={isReadonly}
-                className="w-[200px] mr-4"
-              />
-              <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleRandomizePersonaClient}
-                      disabled={isReadonly}
-                    >
-                      <Shuffle className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Randomize</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleResetPersona}
-                      disabled={isReadonly}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reset</TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3 px-6">
-            {/* Search bar */}
-            <div className="flex h-9 items-center gap-2 border-b px-0">
-              <Search className="size-4 shrink-0 opacity-50" />
-              <input
-                type="text"
-                placeholder="Search personas..."
-                value={personaSearchTerm}
-                onChange={(e) => setPersonaSearchTerm(e.target.value)}
-                className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-
-            {/* Filtered personas grid */}
-            <div className="grid grid-cols-2 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
-              {useMemo(() => {
-                if (!personaSearchTerm.trim()) {
-                  return validPersonaIds;
-                }
-                const searchLower = personaSearchTerm.toLowerCase();
-                return validPersonaIds.filter((personaId) => {
-                  const persona = personaMapping[personaId];
-                  if (!persona) return false;
-                  const searchText =
-                    `${persona.name} ${persona.description || ""}`.toLowerCase();
-                  return searchText.includes(searchLower);
-                });
-              }, [validPersonaIds, personaMapping, personaSearchTerm]).map(
-                (personaId) => {
-                  const persona = personaMapping[personaId];
-                  if (!persona) return null;
-
-                  const IconComponent =
-                    getPersonaIconComponent(persona.icon) || Brain;
-                  const hexColor = persona.color || "#64748b";
-                  const generateGradient = (hex: string) => {
-                    const cleanHex = hex.replace("#", "");
-                    const r = parseInt(cleanHex.substr(0, 2), 16);
-                    const g = parseInt(cleanHex.substr(2, 2), 16);
-                    const b = parseInt(cleanHex.substr(4, 2), 16);
-                    const lighterR = Math.min(255, r + 60);
-                    const lighterG = Math.min(255, g + 60);
-                    const lighterB = Math.min(255, b + 60);
-                    const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                    return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                  };
-
-                  const isSelected = selectedPersonaIds.includes(personaId);
-
-                  return (
-                    <button
-                      key={personaId}
-                      type="button"
-                      onClick={() => {
-                        if (isReadonly) return;
-                        const newIds = isSelected
-                          ? selectedPersonaIds.filter((id) => id !== personaId)
-                          : [...selectedPersonaIds, personaId];
-                        handlePersonaSelect(newIds);
-                      }}
-                      disabled={isReadonly}
-                      className={cn(
-                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                        "hover:shadow-md hover:bg-accent/50",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="p-2 rounded-lg shadow-lg flex-shrink-0"
-                          style={{
-                            background: generateGradient(hexColor),
-                          }}
-                        >
-                          <IconComponent className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">
-                            {persona.name}
-                          </div>
-                          {persona.description && (
-                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {persona.description}
-                            </div>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                        )}
-                      </div>
-                    </button>
-                  );
-                }
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <PersonaSection
+          validPersonaIds={validPersonaIds}
+          personaMapping={personaMapping}
+          selectedPersonaIds={selectedPersonaIds}
+          searchTerm={personaSearchTerm}
+          minMax={personaMinMax}
+          onPersonaIdsChange={handlePersonaSelect}
+          onSearchTermChange={setPersonaSearchTerm}
+          onMinMaxChange={setPersonaMinMax}
+          onRandomize={handleRandomizePersonaClient}
+          onReset={handleResetPersona}
+          stepStatus={getStepStatus("persona")}
+          stepTitle={steps[1]?.title || ""}
+          stepDescription={steps[1]?.description || ""}
+          stepNumber={2}
+          isReadonly={isReadonly}
+          isEditMode={isEditMode}
+        />
 
         {/* Step 3: Documents */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("documents") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("documents") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("documents") === "completed"
-                    ? "bg-green-500 text-white"
-                    : getStepStatus("documents") === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                }`}
-              >
-                {getStepStatus("documents") === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  "3"
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">
-                    {steps[2]?.title || ""}
-                  </CardTitle>
-                </div>
-                <CardDescription>{steps[2]?.description || ""}</CardDescription>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <RangeSlider
-                min={0}
-                max={Math.min(5, validDocumentIds.length)}
-                value={[
-                  documentMinMax.min ?? 0,
-                  Math.min(
-                    Math.min(5, validDocumentIds.length),
-                    documentMinMax.max ?? 2
-                  ),
-                ]}
-                onValueChange={([min, max]) =>
-                  setDocumentMinMax({
-                    min: min ?? 0,
-                    max: Math.min(
-                      Math.min(5, validDocumentIds.length),
-                      max ?? 2
-                    ),
-                  })
-                }
-                disabled={isReadonly}
-                className="w-[200px] mr-4"
-              />
-              <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleRandomizeDocumentsClient}
-                      disabled={isReadonly}
-                    >
-                      <Shuffle className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Randomize</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleResetDocuments}
-                      disabled={isReadonly}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reset</TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3 px-6">
-            {/* Search bar */}
-            <div className="flex h-9 items-center gap-2 border-b px-0">
-              <Search className="size-4 shrink-0 opacity-50" />
-              <input
-                type="text"
-                placeholder="Search documents..."
-                value={documentSearchTerm}
-                onChange={(e) => setDocumentSearchTerm(e.target.value)}
-                className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-
-            {/* Filtered documents grid */}
-            <div className="grid grid-cols-3 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
-              {useMemo(() => {
-                if (!documentSearchTerm.trim()) {
-                  return validDocumentIds;
-                }
-                const searchLower = documentSearchTerm.toLowerCase();
-                return validDocumentIds.filter((docId) => {
-                  const doc = documentMapping[docId];
-                  if (!doc) return false;
-                  const searchText =
-                    `${doc.name} ${doc.description || ""}`.toLowerCase();
-                  return searchText.includes(searchLower);
-                });
-              }, [validDocumentIds, documentMapping, documentSearchTerm]).map(
-                (docId) => {
-                  const document = documentMapping[docId];
-                  if (!document) return null;
-
-                  const isSelected = currentDocumentIds.includes(docId);
-                  const fullDoc = scenarioData?.document_details?.find(
-                    (d) => d.document_id === docId
-                  );
-
-                  // Create document item for DocumentViewer
-                  const docForViewer: DocumentItem = fullDoc
-                    ? ({
-                        ...fullDoc,
-                        upload_id: fullDoc.upload_id ?? null,
-                        parameter_item_ids: [],
-                        field_ids: [],
-                      } as DocumentItem)
-                    : ({
-                        document_id: docId,
-                        name: document.name || "Document",
-                        updatedAt: new Date().toISOString(),
-                        extension: "",
-                        scenario_ids: [],
-                        can_edit: false,
-                        can_delete: false,
-                        active: true,
-                        department_ids: [],
-                        field_ids: [],
-                        parameter_item_ids: [],
-                        upload_id: null,
-                      } as DocumentItem);
-
-                  return (
-                    <button
-                      key={docId}
-                      type="button"
-                      onClick={() => {
-                        if (isReadonly) return;
-                        const newIds = isSelected
-                          ? currentDocumentIds.filter((id) => id !== docId)
-                          : [...currentDocumentIds, docId].slice(
-                              0,
-                              documentMinMax.max
-                            ); // Max documents from range slider
-                        setCurrentDocumentIds(newIds);
-                      }}
-                      disabled={
-                        isReadonly ||
-                        (!isSelected &&
-                          currentDocumentIds.length >=
-                            (documentMinMax.max ?? 2))
-                      }
-                      className={cn(
-                        "relative aspect-square rounded-xl border bg-card text-card-foreground shadow-sm transition-all overflow-hidden",
-                        "hover:shadow-md",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary"
-                      )}
-                    >
-                      {/* Preview button - top left */}
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPreviewDocumentId(docId);
-                        }}
-                        className="absolute top-2 left-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer"
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setPreviewDocumentId(docId);
-                          }
-                        }}
-                      >
-                        <Eye className="h-3.5 w-3.5 text-primary-foreground" />
-                      </div>
-
-                      {/* Check icon - top right */}
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                          <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                        </div>
-                      )}
-
-                      {/* Document preview */}
-                      <div className="w-full h-full">
-                        <DocumentViewer
-                          document={docForViewer}
-                          bare={true}
-                          isFormDocument={false}
-                          compact={true}
-                        />
-                      </div>
-
-                      {/* Document name at bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1">
-                        <span className="truncate block">{document.name}</span>
-                      </div>
-                    </button>
-                  );
-                }
-              )}
-            </div>
-          </CardContent>
-
-          {/* Preview Dialog */}
-          <Dialog
-            open={previewDocumentId !== null}
-            onOpenChange={(open) => !open && setPreviewDocumentId(null)}
-          >
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {previewDocumentId
-                    ? documentMapping[previewDocumentId]?.name
-                    : "Document Preview"}
-                </DialogTitle>
-                <DialogDescription>Preview document content</DialogDescription>
-              </DialogHeader>
-              {previewDocumentId &&
-                (() => {
-                  const docId = previewDocumentId;
-                  const fullDoc = scenarioData?.document_details?.find(
-                    (d) => d.document_id === docId
-                  );
-                  const docForViewer: DocumentItem = fullDoc
-                    ? ({
-                        ...fullDoc,
-                        upload_id: fullDoc.upload_id ?? null,
-                        parameter_item_ids: [],
-                        field_ids: [],
-                      } as DocumentItem)
-                    : ({
-                        document_id: docId,
-                        name: documentMapping[docId]?.name || "Document",
-                        updatedAt: new Date().toISOString(),
-                        extension: "",
-                        scenario_ids: [],
-                        can_edit: false,
-                        can_delete: false,
-                        active: true,
-                        department_ids: [],
-                        field_ids: [],
-                        parameter_item_ids: [],
-                        upload_id: null,
-                      } as DocumentItem);
-                  return (
-                    <div className="mt-4">
-                      <DocumentViewer
-                        document={docForViewer}
-                        bare={true}
-                        isFormDocument={false}
-                      />
-                    </div>
-                  );
-                })()}
-            </DialogContent>
-          </Dialog>
-        </Card>
+        <DocumentSection
+          validDocumentIds={validDocumentIds}
+          documentMapping={documentMapping}
+          selectedDocumentIds={currentDocumentIds}
+          templateDocumentIds={currentTemplateDocumentIds}
+          {...(scenarioData?.document_details
+            ? {
+                documentDetails: scenarioData.document_details as Array<{
+                  document_id: string;
+                  upload_id?: string | null;
+                  [key: string]: unknown;
+                }>,
+              }
+            : {})}
+          searchTerm={documentSearchTerm}
+          minMax={documentMinMax}
+          previewDocumentId={previewDocumentId}
+          onDocumentIdsChange={setCurrentDocumentIds}
+          onTemplateDocumentIdsChange={setCurrentTemplateDocumentIds}
+          onSearchTermChange={setDocumentSearchTerm}
+          onMinMaxChange={setDocumentMinMax}
+          onPreviewDocument={setPreviewDocumentId}
+          onRandomize={handleRandomizeDocumentsClient}
+          onReset={handleResetDocuments}
+          stepStatus={getStepStatus("documents")}
+          stepTitle={steps[2]?.title || ""}
+          stepDescription={steps[2]?.description || ""}
+          stepNumber={3}
+          isReadonly={isReadonly}
+          isEditMode={isEditMode}
+        />
 
         {/* Step 4: Parameters */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("parameters") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("parameters") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("parameters") === "completed"
-                    ? "bg-green-500 text-white"
-                    : getStepStatus("parameters") === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                }`}
-              >
-                {getStepStatus("parameters") === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  "4"
-                )}
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-lg">
-                  {steps[3]?.title || ""}
-                </CardTitle>
-                <CardDescription>{steps[3]?.description || ""}</CardDescription>
-              </div>
-            </div>
-            <div className="flex items-center">
-              {scenarioData?.valid_parameter_ids &&
-              scenarioData.valid_parameter_ids.length > 0 ? (
-                <>
-                  <RangeSlider
-                    min={0}
-                    max={Math.min(5, scenarioData.valid_parameter_ids.length)}
-                    value={[
-                      parameterSelectionMinMax.min ?? 0,
-                      Math.min(
-                        Math.min(5, scenarioData.valid_parameter_ids.length),
-                        parameterSelectionMinMax.max ?? 5
-                      ),
-                    ]}
-                    onValueChange={([min, max]) =>
-                      setParameterSelectionMinMax({
-                        min: min ?? 0,
-                        max: Math.min(
-                          Math.min(5, scenarioData.valid_parameter_ids.length),
-                          max ?? 5
-                        ),
-                      })
-                    }
-                    disabled={isReadonly}
-                    className="w-[200px] mr-4"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleRandomizeParametersClient}
-                          disabled={isReadonly}
-                        >
-                          <Shuffle className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Randomize</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleResetParameters}
-                          disabled={isReadonly}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Reset</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3 px-6">
-            {(() => {
-              const validParamIds = scenarioData?.valid_parameter_ids || [];
-
-              if (validParamIds.length === 0) {
-                return null;
-              }
-
-              // Filter parameters based on search term
-              const filteredParameterIds = !parameterSearchTerm.trim()
-                ? validParamIds
-                : validParamIds.filter((paramId) => {
-                    const param = parameterMapping[paramId];
-                    if (!param) return false;
-                    const searchLower = parameterSearchTerm.toLowerCase();
-                    const searchText =
-                      `${param.name} ${param.description || ""}`.toLowerCase();
-                    return searchText.includes(searchLower);
-                  });
-
-              return (
-                <>
-                  {/* Search bar */}
-                  <div className="flex h-9 items-center gap-2 border-b px-0">
-                    <Search className="size-4 shrink-0 opacity-50" />
-                    <input
-                      type="text"
-                      placeholder="Search parameters..."
-                      value={parameterSearchTerm}
-                      onChange={(e) => setParameterSearchTerm(e.target.value)}
-                      className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  </div>
-
-                  {/* Filtered parameters grid */}
-                  <div className="grid grid-cols-4 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
-                    {filteredParameterIds.map((paramId) => {
-                      const param = parameterMapping[paramId];
-                      if (!param) return null;
-
-                      const isSelected = (formData.parameterIds || []).includes(
-                        paramId
-                      );
-
-                      return (
-                        <button
-                          key={paramId}
-                          type="button"
-                          onClick={() => {
-                            if (isReadonly) return;
-                            const currentIds = formData.parameterIds || [];
-                            const newIds = isSelected
-                              ? currentIds.filter((id) => id !== paramId)
-                              : [...currentIds, paramId];
-                            handleInputChange("parameterIds", newIds);
-
-                            // When unselecting a parameter, also remove all its parameter items (fields)
-                            if (isSelected) {
-                              setCurrentFieldIds((prev) =>
-                                prev.filter(
-                                  (itemId) =>
-                                    fieldMapping[itemId]?.parameter_id !==
-                                    paramId
-                                )
-                              );
-                            }
-                          }}
-                          disabled={isReadonly}
-                          className={cn(
-                            "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                            "hover:shadow-md hover:bg-accent/50",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                            "disabled:pointer-events-none disabled:opacity-50",
-                            isSelected && "ring-2 ring-primary bg-accent"
-                          )}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm">
-                                {param.name}
-                              </div>
-                              {param.description && (
-                                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                  {param.description}
-                                </div>
-                              )}
-                            </div>
-                            {isSelected && (
-                              <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              );
-            })()}
-          </CardContent>
-        </Card>
+        <ParameterSection
+          validParameterIds={scenarioData?.valid_parameter_ids || []}
+          parameterMapping={parameterMapping}
+          selectedParameterIds={formData.parameterIds || []}
+          searchTerm={parameterSearchTerm}
+          minMax={parameterSelectionMinMax}
+          onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
+          onSearchTermChange={setParameterSearchTerm}
+          onMinMaxChange={setParameterSelectionMinMax}
+          onRandomize={handleRandomizeParametersClient}
+          onReset={handleResetParameters}
+          onParameterUnselect={(paramId) => {
+            // When unselecting a parameter, also remove all its parameter items (fields)
+            setCurrentFieldIds((prev) =>
+              prev.filter(
+                (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+              )
+            );
+          }}
+          stepStatus={getStepStatus("parameters")}
+          stepTitle={steps[3]?.title || ""}
+          stepDescription={steps[3]?.description || ""}
+          stepNumber={4}
+          isReadonly={isReadonly}
+          isEditMode={isEditMode}
+        />
 
         {/* Individual Parameter Sections */}
         {Object.entries(generalParameterMapping).map(
@@ -3629,114 +2625,34 @@ export default function Scenario({
             );
 
             return (
-              <Card
+              <ParameterItemSection
                 key={paramId}
-                className={`transition-all ${!isEditMode && stepStatus === "active" ? "ring-2 ring-primary" : ""} ${
-                  !isEditMode && stepStatus === "pending" ? "opacity-50" : ""
-                }`}
-              >
-                <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        stepStatus === "completed"
-                          ? "bg-green-500 text-white"
-                          : stepStatus === "active"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                      }`}
-                    >
-                      {stepStatus === "completed" ? (
-                        <Check className="w-4 h-4" />
-                      ) : (
-                        String(stepIndex + 1)
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{param.name}</CardTitle>
-                      <CardDescription>
-                        {param.description || ""}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <RangeSlider
-                      min={1}
-                      max={Math.min(5, validItemsForParam.length)}
-                      value={[
-                        fieldMinMax[paramId]?.min ?? 1,
-                        Math.min(
-                          Math.min(5, validItemsForParam.length),
-                          fieldMinMax[paramId]?.max ?? 2
-                        ),
-                      ]}
-                      onValueChange={([min, max]) =>
-                        setFieldMinMax((prev) => ({
-                          ...prev,
-                          [paramId]: {
-                            min,
-                            max: Math.min(
-                              Math.min(5, validItemsForParam.length),
-                              max
-                            ),
-                          },
-                        }))
-                      }
-                      disabled={isReadonly}
-                      className="w-[200px] mr-4"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              handleRandomizeParameterClient(paramId)
-                            }
-                            disabled={isReadonly}
-                          >
-                            <Shuffle className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Randomize</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleResetParameter(paramId)}
-                            disabled={isReadonly}
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Reset</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-6">
-                  <div className="[&_label.text-sm.font-medium]:hidden">
-                    <ParameterSelector
-                      parameterMapping={{ [paramId]: param }}
-                      fieldMapping={fieldMapping}
-                      validParameterItemIds={validItemsForParam}
-                      selectedParameterItemIds={selectedItemsForParam}
-                      onParameterItemIdsChange={(newIds) => {
-                        // Update only this parameter's items
-                        const otherFieldIds = currentFieldIds.filter(
-                          (itemId) =>
-                            fieldMapping[itemId]?.parameter_id !== paramId
-                        );
-                        setCurrentFieldIds([...otherFieldIds, ...newIds]);
-                      }}
-                      disabled={isReadonly}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                parameterId={paramId}
+                parameter={param}
+                validFieldIds={validItemsForParam}
+                fieldMapping={fieldMapping}
+                selectedFieldIds={selectedItemsForParam}
+                minMax={fieldMinMax[paramId] || { min: 1, max: 2 }}
+                onFieldIdsChange={(newIds) => {
+                  // Update only this parameter's items
+                  const otherFieldIds = currentFieldIds.filter(
+                    (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+                  );
+                  setCurrentFieldIds([...otherFieldIds, ...newIds]);
+                }}
+                onMinMaxChange={(minMax) =>
+                  setFieldMinMax((prev) => ({
+                    ...prev,
+                    [paramId]: minMax,
+                  }))
+                }
+                onRandomize={() => handleRandomizeParameterClient(paramId)}
+                onReset={() => handleResetParameter(paramId)}
+                stepStatus={stepStatus}
+                stepNumber={stepIndex + 1}
+                isReadonly={isReadonly}
+                isEditMode={isEditMode}
+              />
             );
           }
         )}
@@ -3749,709 +2665,97 @@ export default function Scenario({
           const contentStepNumber =
             contentStepIndex >= 0 ? contentStepIndex + 1 : steps.length;
           return (
-            <Card
-              className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""} ${
-                !isEditMode && getStepStatus("content") === "pending"
-                  ? "opacity-50"
+            <ContentSection
+              problemStatement={formData.problemStatement || ""}
+              problemStatementMapping={problemStatementMapping}
+              currentProblemStatementIds={currentProblemStatementIds}
+              hasProblemStatementChanges={hasProblemStatementChanges}
+              originalProblemStatement={
+                originalFormData?.problemStatement || ""
+              }
+              useObjectives={useObjectives}
+              objectives={currentObjectives}
+              objectivesHistory={objectivesHistory}
+              useImage={useImage}
+              image={image}
+              imageMapping={imageMapping}
+              isUploadingImage={isUploadingImage}
+              allPreviewDocumentIds={allPreviewDocumentIds}
+              documentMapping={documentMapping}
+              scenarioPreviewDocumentId={scenarioPreviewDocumentId}
+              {...(scenarioData?.document_details
+                ? {
+                    documentDetails: scenarioData.document_details as Array<{
+                      document_id: string;
+                      upload_id?: string | null;
+                      [key: string]: unknown;
+                    }>,
+                  }
+                : {})}
+              templateDocumentIds={currentTemplateDocumentIds}
+              selectedPersonaIds={selectedPersonaIds}
+              personaMapping={personaMapping}
+              onProblemStatementChange={(value) =>
+                handleInputChange("problemStatement", value)
+              }
+              onProblemStatementVersionSelect={
+                handleProblemStatementVersionSelect
+              }
+              onResetProblemStatement={() =>
+                handleInputChange(
+                  "problemStatement",
+                  originalFormData?.problemStatement || ""
+                )
+              }
+              onUseObjectivesChange={(enabled) => {
+                setUseObjectives(enabled);
+                if (enabled) {
+                  if (currentObjectives.length === 0) {
+                    setCurrentObjectives([""]);
+                  }
+                } else {
+                  setCurrentObjectives([]);
+                }
+              }}
+              onObjectivesChange={setCurrentObjectives}
+              onAddObjective={addObjective}
+              onRemoveObjective={removeObjective}
+              onUpdateObjective={updateObjective}
+              onDragStartObjective={handleDragStartObjective}
+              onDragOverObjective={handleDragOver}
+              onDropObjective={handleDropObjective}
+              onUseImageChange={(enabled) => {
+                setUseImage(enabled);
+                if (!enabled) {
+                  setImage(null);
+                }
+              }}
+              onImageSelect={handleImageSelect}
+              onImageUpload={handleImageUpload}
+              onImageRemove={() => setImage(null)}
+              onScenarioPreviewDocumentChange={setScenarioPreviewDocumentId}
+              onGenerate={handleGenerateScenario}
+              onResetContent={handleResetContent}
+              onShowRegenerationDialog={() => setShowRegenerationDialog(true)}
+              stepStatus={getStepStatus("content")}
+              stepTitle={
+                contentStepIndex >= 0
+                  ? steps[contentStepIndex]?.title || ""
                   : ""
-              }`}
-            >
-              <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      getStepStatus("content") === "completed"
-                        ? "bg-green-500 text-white"
-                        : getStepStatus("content") === "active"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                    }`}
-                  >
-                    {getStepStatus("content") === "completed" ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      String(contentStepNumber)
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">
-                      {contentStepIndex >= 0
-                        ? steps[contentStepIndex]?.title || ""
-                        : ""}
-                    </CardTitle>
-                    <CardDescription>
-                      {contentStepIndex >= 0
-                        ? steps[contentStepIndex]?.description || ""
-                        : ""}
-                    </CardDescription>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={isUploadingImage || isReadonly}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      if (
-                        formData.problemStatement &&
-                        formData.problemStatement.trim()
-                      ) {
-                        setShowRegenerationDialog(true);
-                      } else {
-                        handleGenerateScenario(undefined, true);
-                      }
-                    }}
-                    disabled={
-                      isSubmitting || isGeneratingScenario || isReadonly
-                    }
-                  >
-                    {isGeneratingScenario ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {formData.problemStatement
-                          ? "Regenerating..."
-                          : "Generating..."}
-                      </>
-                    ) : formData.problemStatement ? (
-                      "Regenerate"
-                    ) : (
-                      "Generate"
-                    )}
-                  </Button>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleResetContent}
-                        disabled={isReadonly}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Reset</TooltipContent>
-                  </Tooltip>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Problem Statement */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div></div>
-                    {Object.keys(problemStatementMapping).length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <GenericPicker
-                          items={problemStatementMapping}
-                          itemIds={Object.keys(problemStatementMapping)}
-                          selectedIds={[]} // Problem statement ID comes from URL parameters
-                          onSelect={(ids) => {
-                            const id = ids[0] || null;
-                            if (id && problemStatementMapping[id]) {
-                              handleInputChange(
-                                "problemStatement",
-                                problemStatementMapping[id].problem_statement
-                              );
-                            }
-                          }}
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
-                          getLabel={(item) => {
-                            const date = new Date(item.updated_at);
-                            return `Version ${date.toLocaleDateString()}`;
-                          }}
-                          getSearchText={(item) => {
-                            const date = new Date(item.updated_at);
-                            const preview = item.problem_statement.substring(
-                              0,
-                              100
-                            );
-                            return `${date.toLocaleDateString()} ${preview}`;
-                          }}
-                          renderButton={(selectedItems) => {
-                            if (selectedItems.length === 0) {
-                              return "New Problem Statement";
-                            }
-                            const problemStatement = selectedItems[0];
-                            const date = problemStatement?.updated_at
-                              ? new Date(problemStatement.updated_at)
-                              : new Date();
-                            return `Version ${date.toLocaleDateString()}`;
-                          }}
-                          renderItem={(item, isSelected) => {
-                            const date = new Date(item.updated_at);
-                            const preview = item.problem_statement.substring(
-                              0,
-                              100
-                            );
-                            return (
-                              <div className="flex flex-col items-start py-3 w-full">
-                                <div className="flex items-center justify-between w-full">
-                                  <div className="flex items-center gap-2">
-                                    <Check
-                                      className={cn(
-                                        "h-4 w-4",
-                                        isSelected ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    <span className="font-medium">
-                                      {date.toLocaleDateString()}{" "}
-                                      {date.toLocaleTimeString()}
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                  {preview}
-                                  {item.problem_statement.length > 100
-                                    ? "..."
-                                    : ""}
-                                </span>
-                              </div>
-                            );
-                          }}
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="h-8 justify-between"
-                          groupHeading="Version History"
-                          placeholder="Select problem statement version..."
-                        />
-                        {hasProblemStatementChanges && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                  handleInputChange(
-                                    "problemStatement",
-                                    originalFormData?.problemStatement || ""
-                                  );
-                                }}
-                                className="h-8 w-8 p-0"
-                                data-testid="btn-reset-problem-statement"
-                              >
-                                <RotateCcw className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Reset to saved problem statement</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <Textarea
-                    id="description"
-                    data-testid="input-scenario-problem-statement"
-                    value={formData.problemStatement || ""}
-                    onChange={(e) => {
-                      handleInputChange("problemStatement", e.target.value);
-                      // Problem statement ID is managed via URL parameters
-                    }}
-                    placeholder="Enter a custom problem statement or leave blank to auto-generate..."
-                    className="min-h-[120px]"
-                    disabled={isReadonly}
-                  />
-                </div>
-
-                {/* Objectives List - Only visible when useObjectives is true */}
-                {useObjectives && (
-                  <div className="space-y-2">
-                    {currentObjectives.length === 0 && (
-                      <div>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={addObjective}
-                          disabled={isReadonly}
-                          size="sm"
-                        >
-                          <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-                        </Button>
-                      </div>
-                    )}
-                    {currentObjectives.map((objective, index) => (
-                      <ObjectiveInputWithAutocomplete
-                        key={`objective-${index}`}
-                        index={index}
-                        value={objective || ""}
-                        onChange={(value) => updateObjective(index, value)}
-                        placeholder={`Learning objective ${index + 1}`}
-                        suggestions={objectivesHistory}
-                        disabled={isReadonly}
-                        draggedObjectiveIndex={draggedObjectiveIndex}
-                        onDragStart={(e) => handleDragStartObjective(e, index)}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDropObjective(e, index)}
-                        onRemove={() => removeObjective(index)}
-                        totalObjectives={currentObjectives.length}
-                        useObjectives={useObjectives}
-                      />
-                    ))}
-
-                    {currentObjectives.length < 3 &&
-                      currentObjectives.length > 0 && (
-                        <div>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={addObjective}
-                            disabled={isReadonly}
-                            size="sm"
-                          >
-                            <PlusCircle className="h-4 w-4 mr-2" /> Add
-                            objective
-                          </Button>
-                        </div>
-                      )}
-                  </div>
-                )}
-
-                {/* Documents and Image Preview Section - Split layout */}
-                <div className="flex gap-4">
-                  {/* Image Preview Section - Left (70% or full width) */}
-                  <div
-                    className={
-                      currentDocumentIds.length > 0
-                        ? "w-[70%] space-y-4"
-                        : "w-full space-y-4"
-                    }
-                  >
-                    {/* ImagePicker - top right (only show when useImage is true) */}
-                    {useImage && Object.keys(imageMapping).length > 0 && (
-                      <div className="flex items-center justify-between">
-                        <div></div>
-                        <GenericPicker
-                          items={imageMapping}
-                          itemIds={Object.keys(imageMapping)}
-                          selectedIds={image ? [image.id] : []}
-                          onSelect={(ids) => {
-                            const imageId = ids[0] || null;
-                            if (imageId && imageMapping[imageId]) {
-                              const selectedImage = imageMapping[
-                                imageId
-                              ] as ImageMappingItem;
-                              setImage({
-                                id: selectedImage.upload_id || selectedImage.id,
-                                name: selectedImage.name,
-                                upload_id:
-                                  selectedImage.upload_id || selectedImage.id,
-                              });
-                            }
-                          }}
-                          getId={(item) => {
-                            const imgItem = item as unknown as ImageMappingItem;
-                            return imgItem.id;
-                          }}
-                          getLabel={(item) => {
-                            const imgItem = item as unknown as ImageMappingItem;
-                            const date = new Date(imgItem.updated_at);
-                            return `${imgItem.name} - ${date.toLocaleDateString()}`;
-                          }}
-                          getSearchText={(item) => {
-                            const imgItem = item as unknown as ImageMappingItem;
-                            const date = new Date(imgItem.updated_at);
-                            return `${imgItem.name} ${date.toLocaleDateString()}`;
-                          }}
-                          renderButton={(selectedItems) => {
-                            if (selectedItems.length === 0) {
-                              return "Select image...";
-                            }
-                            const selectedImage =
-                              selectedItems[0] as unknown as ImageMappingItem;
-                            return selectedImage?.name || "Select image...";
-                          }}
-                          renderItem={(item, isSelected) => {
-                            const imgItem = item as unknown as ImageMappingItem;
-                            const date = new Date(imgItem.updated_at);
-                            return (
-                              <div className="flex flex-col items-start py-3 w-full">
-                                <div className="flex items-center justify-between w-full">
-                                  <div className="flex items-center gap-2">
-                                    <Check
-                                      className={cn(
-                                        "h-4 w-4",
-                                        isSelected ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    <span className="font-medium">
-                                      {imgItem.name}
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className="text-xs text-muted-foreground mt-1">
-                                  {date.toLocaleDateString()}{" "}
-                                  {date.toLocaleTimeString()}
-                                </span>
-                              </div>
-                            );
-                          }}
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="h-8 justify-between"
-                          groupHeading="Images"
-                          placeholder="Select image..."
-                        />
-                      </div>
-                    )}
-
-                    {/* Combined Image and Chat Preview Container - Fixed height, always visible */}
-                    <div className="relative border rounded-lg overflow-hidden min-h-[400px]">
-                      {/* Background Image - when image exists and useImage is true */}
-                      {useImage && image && (
-                        <div className="absolute inset-0 w-full h-full">
-                          <ImageViewer
-                            imageId={image.id}
-                            name={image.name}
-                            bare={true}
-                          />
-                        </div>
-                      )}
-
-                      {/* Upload Area - when useImage is true but no image */}
-                      {useImage && !image && (
-                        <div
-                          onClick={() => {
-                            if (!isReadonly && !isUploadingImage) {
-                              imageInputRef.current?.click();
-                            }
-                          }}
-                          className="absolute inset-0 w-full h-full flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
-                        >
-                          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground text-center px-4">
-                            Click to upload image or leave blank to auto
-                            generate
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Background when useImage is false */}
-                      {!useImage && (
-                        <div className="absolute inset-0 w-full h-full bg-muted/20" />
-                      )}
-
-                      {/* Chat Preview Overlay - Only show when useImage is false OR image is uploaded */}
-                      {(!useImage || (useImage && image)) && (
-                        <div className="relative z-10 p-4 h-full min-h-[400px] flex flex-col justify-start">
-                          <div className="space-y-3">
-                            {/* TA/User message */}
-                            <div className="flex justify-end mb-3">
-                              <div className="max-w-[80%]">
-                                <div className="bg-primary text-primary-foreground rounded-lg p-3 shadow-lg">
-                                  <p className="text-sm">
-                                    Hi, how can I help you?
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Assistant messages - one per selected persona */}
-                            {selectedPersonaIds.map((personaId) => {
-                              const persona = personaMapping[personaId];
-                              if (!persona) return null;
-
-                              const IconComponent =
-                                getPersonaIconComponent(persona.icon) ||
-                                MessageSquare;
-                              const hexColor = persona.color || "#64748b";
-                              const buttonStyle = {
-                                background: generateGradientFromHex(hexColor),
-                              };
-
-                              return (
-                                <div
-                                  key={personaId}
-                                  className="flex justify-start mb-3"
-                                >
-                                  <div className="max-w-[80%] flex items-stretch gap-2">
-                                    {/* Persona icon button */}
-                                    <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            aria-label={persona.name}
-                                            className="flex-1 p-0 rounded-md shadow-md"
-                                            style={buttonStyle}
-                                            tabIndex={-1}
-                                          >
-                                            <IconComponent className="h-4 w-4 text-white" />
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>{persona.name}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </div>
-                                    {/* Message content */}
-                                    <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
-                                      <p className="text-sm">
-                                        I'd be happy to help you with that. Let
-                                        me provide some guidance...
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-
-                            {/* Show placeholder if no personas selected */}
-                            {selectedPersonaIds.length === 0 && (
-                              <div className="flex justify-start mb-3">
-                                <div className="max-w-[80%] flex items-stretch gap-2">
-                                  <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      className="flex-1 p-0 rounded-md shadow-md"
-                                      tabIndex={-1}
-                                    >
-                                      <MessageSquare className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                  <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
-                                    <p className="text-sm text-muted-foreground italic">
-                                      Select personas to see preview messages
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Image actions overlay - when image exists and useImage is true */}
-                      {useImage && image && !isReadonly && (
-                        <div className="absolute top-2 right-2 z-20">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setImage(null)}
-                            className="h-8 w-8 p-0 bg-background/90 backdrop-blur-sm shadow-md"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Documents Preview Section - 30% right */}
-                  {allPreviewDocumentIds.length > 0 && (
-                    <div className="w-[30%] space-y-4 flex flex-col h-[400px]">
-                      {/* DocumentPicker - top right (only show when multiple documents, full width) */}
-                      {allPreviewDocumentIds.length > 1 && (
-                        <GenericPicker
-                          items={documentMapping}
-                          itemIds={allPreviewDocumentIds}
-                          selectedIds={
-                            scenarioPreviewDocumentId
-                              ? [scenarioPreviewDocumentId]
-                              : []
-                          }
-                          onSelect={(ids) => {
-                            const docId = ids[0] || null;
-                            if (docId) {
-                              setScenarioPreviewDocumentId(docId);
-                            }
-                          }}
-                          getId={(item) => {
-                            // GenericPicker adds 'id' property when items is Record<string, T>
-                            const itemWithId = item as DocumentMappingItem & {
-                              id: string;
-                            };
-                            return itemWithId.id || "";
-                          }}
-                          getLabel={(item) => {
-                            const docItem = item as DocumentMappingItem;
-                            return docItem?.name || "Document";
-                          }}
-                          getSearchText={(item) => {
-                            const docItem = item as DocumentMappingItem;
-                            return `${docItem?.name || ""} ${docItem?.description || ""}`;
-                          }}
-                          renderButton={(selectedItems) => {
-                            if (selectedItems.length === 0) {
-                              return "Select document...";
-                            }
-                            const selectedDoc =
-                              selectedItems[0] as DocumentMappingItem;
-                            return selectedDoc?.name || "Select document...";
-                          }}
-                          renderItem={(item, isSelected) => {
-                            const docItem = item as DocumentMappingItem;
-                            const itemWithId = item as DocumentMappingItem & {
-                              id: string;
-                            };
-                            const docId = itemWithId.id || "";
-                            const isTemplateDocument =
-                              currentTemplateDocumentIds.includes(docId);
-                            return (
-                              <div className="flex flex-col items-start py-3 w-full">
-                                <div className="flex items-center justify-between w-full">
-                                  <div className="flex items-center gap-2">
-                                    <Check
-                                      className={cn(
-                                        "h-4 w-4",
-                                        isSelected ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    <span className="font-medium">
-                                      {docItem.name}
-                                    </span>
-                                    {isTemplateDocument && (
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-xs"
-                                      >
-                                        Template
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                                {docItem.description && (
-                                  <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                    {docItem.description}
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          }}
-                          disabled={isReadonly}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="h-8 justify-between w-full"
-                          groupHeading="Documents"
-                          placeholder="Select document..."
-                        />
-                      )}
-
-                      {/* Document Preview Container - Matches messages section height */}
-                      {scenarioPreviewDocumentId && (
-                        <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
-                          {(() => {
-                            const docId = scenarioPreviewDocumentId;
-                            const fullDoc =
-                              scenarioData?.document_details?.find(
-                                (d) => d.document_id === docId
-                              );
-                            const docForViewer: DocumentItem = fullDoc
-                              ? ({
-                                  ...fullDoc,
-                                  upload_id: fullDoc.upload_id ?? null,
-                                  parameter_item_ids: [],
-                                  field_ids: [],
-                                } as DocumentItem)
-                              : ({
-                                  document_id: docId,
-                                  name:
-                                    documentMapping[docId]?.name || "Document",
-                                  updatedAt: new Date().toISOString(),
-                                  extension: "",
-                                  scenario_ids: [],
-                                  can_edit: false,
-                                  can_delete: false,
-                                  active: true,
-                                  department_ids: [],
-                                  field_ids: [],
-                                  parameter_item_ids: [],
-                                  upload_id: null,
-                                } as DocumentItem);
-                            return (
-                              <div className="h-full overflow-auto [&>div]:!min-h-0 [&>div]:h-full [&_iframe]:!min-h-0 [&_iframe]:h-full">
-                                <DocumentViewer
-                                  document={docForViewer}
-                                  bare={true}
-                                  isFormDocument={false}
-                                />
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Use Objectives and Use Image Switches */}
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="use-objectives"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                        Use Objectives
-                      </Label>
-                      <Switch
-                        id="use-objectives"
-                        checked={useObjectives}
-                        onCheckedChange={(checked) => {
-                          setUseObjectives(checked);
-                          if (checked) {
-                            // Ensure at least one objective when enabled
-                            if (currentObjectives.length === 0) {
-                              setCurrentObjectives([""]);
-                            }
-                          } else {
-                            // Clear objectives when disabled
-                            setCurrentObjectives([]);
-                          }
-                        }}
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Use learning objectives
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="use-image"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Image
-                          className="h-3.5 w-3.5 text-muted-foreground"
-                          aria-label="Image icon"
-                        />
-                        Use Image
-                      </Label>
-                      <Switch
-                        id="use-image"
-                        checked={useImage}
-                        onCheckedChange={(checked) => {
-                          setUseImage(checked);
-                          if (!checked) {
-                            setImage(null);
-                          }
-                        }}
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Use scenario background image
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              }
+              stepDescription={
+                contentStepIndex >= 0
+                  ? steps[contentStepIndex]?.description || ""
+                  : ""
+              }
+              stepNumber={contentStepNumber}
+              isReadonly={isReadonly}
+              isGeneratingScenario={isGeneratingScenario}
+              isSubmitting={isSubmitting}
+              draggedObjectiveIndex={draggedObjectiveIndex}
+              imageInputRef={imageInputRef as React.RefObject<HTMLInputElement>}
+              isEditMode={isEditMode}
+            />
           );
         })()}
       </div>
