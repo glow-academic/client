@@ -53,6 +53,29 @@ def preserve_order_union(
     return result
 
 
+def preserve_order_union_selected_first(
+    selected_items: list[str],
+    base_items: list[str],
+) -> list[str]:
+    """
+    Union two lists while preserving order from selected_items first, then appending base_items.
+    This ensures selected items always appear first in the result.
+    """
+    seen = set()
+    result = []
+    # First, add selected_items in order
+    for item in selected_items:
+        if item not in seen:
+            result.append(item)
+            seen.add(item)
+    # Then add base_items not already in result (preserving base order)
+    for item in base_items:
+        if item not in seen:
+            result.append(item)
+            seen.add(item)
+    return result
+
+
 # Inline request/response schemas
 class ScenarioNewRequest(BaseModel):
     """Request to get default scenario details."""
@@ -271,9 +294,9 @@ def filter_valid_persona_ids(
     # Always include currently selected personas (for edit mode - ensures selected items are visible)
     selected_persona_id_set = set(selected_persona_ids)
 
-    # If no departments selected, return all valid IDs plus selected ones (preserving order)
+    # If no departments selected, return selected ones first, then all valid IDs (preserving order)
     if len(selected_dept_ids) == 0:
-        return preserve_order_union(base_ids, selected_persona_ids)
+        return preserve_order_union_selected_first(selected_persona_ids, base_ids)
 
     # Get union of persona_ids from ALL departments (to identify cross-department items)
     all_dept_persona_ids: set[str] = set()
@@ -298,8 +321,8 @@ def filter_valid_persona_ids(
         if pid in selected_dept_persona_ids or pid not in all_dept_persona_ids
     ]
 
-    # Preserve order from filtered list, then add selected items
-    dept_filtered = preserve_order_union(filtered, selected_persona_ids)
+    # Preserve order: selected items first, then filtered items
+    dept_filtered = preserve_order_union_selected_first(selected_persona_ids, filtered)
 
     # Apply parameter-based filtering
     param_filtered = dept_filtered
@@ -399,9 +422,9 @@ def filter_valid_document_ids(
     # Always include currently selected documents (for edit mode - ensures selected items are visible)
     selected_doc_id_set = set(selected_doc_ids)
 
-    # If no departments selected, start with all valid IDs plus selected ones (preserving order)
+    # If no departments selected, start with selected ones first, then all valid IDs (preserving order)
     if len(selected_dept_ids) == 0:
-        dept_filtered_ids = preserve_order_union(base_ids, selected_doc_ids)
+        dept_filtered_ids = preserve_order_union_selected_first(selected_doc_ids, base_ids)
     else:
         # Get union of document_ids from ALL departments (to identify cross-department items)
         all_dept_document_ids: set[str] = set()
@@ -427,8 +450,8 @@ def filter_valid_document_ids(
             or doc_id not in all_dept_document_ids
         ]
 
-        # Preserve order from filtered list, then add selected items
-        dept_filtered_ids = preserve_order_union(filtered, selected_doc_ids)
+        # Preserve order: selected items first, then filtered items
+        dept_filtered_ids = preserve_order_union_selected_first(selected_doc_ids, filtered)
 
     # Filter by selected document fields if any are selected
     # Compute documentFieldIds inline to avoid dependency order issue
@@ -571,9 +594,9 @@ def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
     # Always include currently selected fields (for edit mode - ensures selected items are visible)
     selected_field_id_set = set(selected_field_ids)
 
-    # If no departments selected, return all mapping IDs plus selected ones (preserving order)
+    # If no departments selected, return selected ones first, then all mapping IDs (preserving order)
     if len(selected_dept_ids) == 0:
-        return preserve_order_union(mapping_ids, selected_field_ids)
+        return preserve_order_union_selected_first(selected_field_ids, mapping_ids)
 
     # Get union of field_ids from ALL departments (to identify cross-department items)
     all_dept_field_ids: set[str] = set()
@@ -600,8 +623,8 @@ def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
         if item_id in selected_dept_field_ids or item_id not in all_dept_field_ids
     ]
 
-    # Preserve order from filtered list, then add selected items
-    return preserve_order_union(filtered, selected_field_ids)
+    # Preserve order: selected items first, then filtered items
+    return preserve_order_union_selected_first(selected_field_ids, filtered)
 
 
 def filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
@@ -682,8 +705,13 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
     # 2. If personas/documents are selected: only show fields linked to those OR matching selected parameters
     # 3. If no personas/documents selected: show fields matching selected parameters (or all if empty)
     # 4. Always include conditional parameters and unlinked fields
-    result = []
+    # Build result with selected fields first, then filtered fields
+    selected_field_id_set = set(selected_field_ids)
+    filtered_result = []
     for field_id in valid_field_ids:  # Renamed from valid_parameter_item_ids
+        # Skip selected fields - they'll be prepended
+        if field_id in selected_field_id_set:
+            continue
         field = field_mapping.get(field_id)
         if not field:
             continue
@@ -706,10 +734,10 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
             if not has_any_fields:
                 # No fields from selected entities - show all fields matching selected parameters (unbounded)
                 if len(selected_param_ids) == 0:
-                    result.append(field_id)  # No parameter selection = show all
+                    filtered_result.append(field_id)  # No parameter selection = show all
                     continue
                 if field_param_id in selected_param_ids:
-                    result.append(field_id)
+                    filtered_result.append(field_id)
                 continue
 
             # If parameters are selected, only show fields matching those parameters
@@ -735,10 +763,10 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
                             )
                             and field_mapping[selected_field_id].parameter_id
                             in selected_param_ids
-                            for selected_field_id in selected_param_item_ids
+                            for selected_field_id in selected_field_ids
                         )
                         if triggers_conditional:
-                            result.append(field_id)
+                            filtered_result.append(field_id)
                     continue
 
                 # Field matches selected parameters - now check restrictions based on entities
@@ -749,7 +777,7 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
 
                 # If entities DON'T have fields from this parameter, it's unbounded (show all fields)
                 if not has_fields_from_this_parameter:
-                    result.append(
+                    filtered_result.append(
                         field_id
                     )  # Unbounded - show all fields for this parameter
                     continue
@@ -761,7 +789,7 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
 
                 # Show field if it's linked to selected entities
                 if is_linked_to_persona or is_linked_to_document:
-                    result.append(field_id)
+                    filtered_result.append(field_id)
                 # Field is not linked to selected entities - don't show it
                 continue
 
@@ -773,7 +801,7 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
 
             # If entities DON'T have fields from this parameter, it's unbounded (show all fields)
             if not has_fields_from_this_parameter:
-                result.append(
+                filtered_result.append(
                     field_id
                 )  # Unbounded - show all fields for this parameter
                 continue
@@ -781,17 +809,17 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
             # Entities HAVE fields from this parameter - only show linked fields
             # Include fields linked to selected personas
             if field_id in persona_fields:
-                result.append(field_id)
+                filtered_result.append(field_id)
                 continue
 
             # Include fields linked to selected documents
             if field_id in document_fields:
-                result.append(field_id)
+                filtered_result.append(field_id)
                 continue
 
             # Include conditional parameters
             if field_param_id in conditional_param_ids:
-                result.append(field_id)
+                filtered_result.append(field_id)
                 continue
 
             # Don't include unlinked fields when entities have fields from this parameter
@@ -801,22 +829,23 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
         # Top parameter selection is the source of truth
         if len(selected_param_ids) == 0:
             # Empty = "all parameters" - show all fields
-            result.append(field_id)
+            filtered_result.append(field_id)
             continue
 
         # Parameters are selected - only show fields for selected parameters
         if field_param_id in selected_param_ids:
-            result.append(field_id)
+            filtered_result.append(field_id)
             continue
 
         # Include conditional parameters only if they're triggered by selected fields
         if field_param_id in conditional_param_ids:
-            result.append(field_id)
+            filtered_result.append(field_id)
             continue
 
         # Don't show other fields when parameters are selected (source of truth)
 
-    return result
+    # Return selected fields first, then filtered fields
+    return preserve_order_union_selected_first(selected_field_ids, filtered_result)
 
 
 @router.post("/new", response_model=ScenarioDetailResponse)
@@ -1088,6 +1117,13 @@ async def get_scenario_new(
         # Parse scenario_parameter_ids and valid_parameter_ids
         scenario_parameter_ids: list[str] = []  # Empty for new scenario
         valid_parameter_ids = list(parameter_mapping.keys())
+        
+        # Reorder valid_parameter_ids to put selected parameters first
+        if request_data.parameterIds:
+            selected_param_set = set(request_data.parameterIds)
+            selected_params = [pid for pid in request_data.parameterIds if pid in valid_parameter_ids]
+            other_params = [pid for pid in valid_parameter_ids if pid not in selected_param_set]
+            valid_parameter_ids = selected_params + other_params
 
         # Parse agent_mapping
         agent_mapping: AgentMapping = {}

@@ -275,7 +275,9 @@ link_system AS (
 -- Process developer messages from array (preserve order for parent selection)
 developer_contents_array AS (
     SELECT 
-        unnest($10::text[]) WITH ORDINALITY AS t(content, idx)
+        t.content,
+        t.idx
+    FROM unnest($10::text[]) WITH ORDINALITY AS t(content, idx)
     WHERE $10 IS NOT NULL AND array_length($10::text[], 1) > 0
 ),
 developer_contents_filtered AS (
