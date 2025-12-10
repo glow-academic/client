@@ -1,5 +1,5 @@
 -- Get scenario detail with departments, problem statements, and access control
--- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid or "guest-profile-id"), $3 = use_image (bool, nullable), $4 = use_objectives (bool, nullable), $5 = document_ids (uuid[], nullable), $6 = problem_statement_ids (uuid[], nullable)
+-- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid or "guest-profile-id"), $3 = use_image (bool, nullable), $4 = use_objectives (bool, nullable), $5 = document_ids (uuid[], nullable), $6 = problem_statement_ids (uuid[], nullable), $7 = template_document_ids (uuid[], nullable)
 
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
@@ -527,6 +527,12 @@ valid_documents_data AS (
                      FROM document_fields df
                      WHERE df.document_id = d.id AND df.active = true),
                     '[]'::jsonb
+                ),
+                'parent_document_id', (
+                    SELECT dt.parent_id::text
+                    FROM document_tree dt
+                    WHERE dt.child_id = d.id AND dt.active = true
+                    LIMIT 1
                 )
             )
         ), '{}'::jsonb) as document_mapping

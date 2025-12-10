@@ -108,6 +108,10 @@ export default async function NewScenarioPage({
     .get("documentIds")
     ?.split(",")
     .filter(Boolean);
+  const templateDocumentIds = searchParamsObj
+    .get("templateDocumentIds")
+    ?.split(",")
+    .filter(Boolean);
   const parameterIds = searchParamsObj
     .get("parameterIds")
     ?.split(",")
@@ -180,6 +184,7 @@ export default async function NewScenarioPage({
       departmentIds: departmentIds || null,
       personaIds: personaIds || null,
       documentIds: documentIds || null,
+      templateDocumentIds: templateDocumentIds || null,
       parameterIds: parameterIds || null,
       fieldIds: fieldIds || null,  // Renamed from parameterItemIds
       personaSearch: personaSearch || null,

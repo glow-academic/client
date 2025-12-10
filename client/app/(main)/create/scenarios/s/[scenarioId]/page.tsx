@@ -57,6 +57,7 @@ const getScenario = async (
     departmentIds?: string[];
     personaIds?: string[];
     documentIds?: string[];
+    templateDocumentIds?: string[];
     parameterIds?: string[];
     parameterItemIds?: string[];
     personaSearch?: string;
@@ -176,6 +177,7 @@ export default async function EditScenarioPage({
   const departmentIds = searchParamsObj.get("departmentIds")?.split(",").filter(Boolean);
   const personaIds = searchParamsObj.get("personaIds")?.split(",").filter(Boolean);
   const documentIds = searchParamsObj.get("documentIds")?.split(",").filter(Boolean);
+  const templateDocumentIds = searchParamsObj.get("templateDocumentIds")?.split(",").filter(Boolean);
   const parameterIds = searchParamsObj.get("parameterIds")?.split(",").filter(Boolean);
   const parameterItemIds = searchParamsObj.get("parameterItemIds")?.split(",").filter(Boolean);
   // Extract URL parameters for linking generated resources
@@ -240,6 +242,7 @@ export default async function EditScenarioPage({
       departmentIds: departmentIds || undefined,
       personaIds: personaIds || undefined,
       documentIds: documentIds || undefined,
+      templateDocumentIds: templateDocumentIds || undefined,
       parameterIds: parameterIds || undefined,
       parameterItemIds: parameterItemIds || undefined,
       personaSearch,

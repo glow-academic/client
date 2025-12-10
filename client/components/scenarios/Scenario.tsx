@@ -38,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -485,41 +486,26 @@ export default function Scenario({
         if (data.success) {
           documentIds.push(data.document_id);
 
-          // If parent_document_id is provided, replace parent with child in currentDocumentIds
+          // If parent_document_id is provided, add template document to currentTemplateDocumentIds
+          // Keep parent document in currentDocumentIds (don't replace)
           const parentDocumentId = data.parent_document_id;
           if (parentDocumentId) {
             // eslint-disable-next-line no-console
-            console.log("[Scenario] Replacing parent document with child:", {
+            console.log("[Scenario] Adding template document:", {
               parent_id: parentDocumentId,
-              child_id: data.document_id,
+              template_id: data.document_id,
             });
-            setCurrentDocumentIds((prev) => {
-              // eslint-disable-next-line no-console
-              console.log(
-                "[Scenario] Current document IDs before replacement:",
-                prev
-              );
-              // Replace parent ID with child ID if parent exists in the array
-              const parentIndex = prev.indexOf(parentDocumentId);
-              if (parentIndex !== -1) {
-                const updated = [...prev];
-                updated[parentIndex] = data.document_id;
-                // eslint-disable-next-line no-console
-                console.log(
-                  "[Scenario] Document IDs after replacement:",
-                  updated
-                );
-                return updated;
+            // Add template document to templateDocumentIds
+            setCurrentTemplateDocumentIds((prev) => {
+              if (prev.includes(data.document_id)) {
+                return prev;
               }
-              // If parent not found, just add the child (shouldn't happen, but handle gracefully)
-              // eslint-disable-next-line no-console
-              console.warn(
-                "[Scenario] Parent document ID not found in currentDocumentIds, adding child instead"
-              );
               return [...prev, data.document_id];
             });
+            // Keep parent document in currentDocumentIds (don't replace)
+            // Parent document stays in currentDocumentIds for selection box
           } else {
-            // No parent ID - just add the new document ID
+            // No parent ID - just add the new document ID to regular documents
             // eslint-disable-next-line no-console
             console.log(
               "[Scenario] No parent_document_id provided, adding new document:",
@@ -732,6 +718,8 @@ export default function Scenario({
       }>
     >([]);
   const [originalDocumentIds, setOriginalDocumentIds] = useState<string[]>([]);
+  const [originalTemplateDocumentIds, setOriginalTemplateDocumentIds] =
+    useState<string[]>([]);
   const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
   const [originalObjectives, setOriginalObjectives] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -754,6 +742,9 @@ export default function Scenario({
   const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
   const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
+  const [currentTemplateDocumentIds, setCurrentTemplateDocumentIds] = useState<
+    string[]
+  >([]);
   const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
     string | null
   >(null);
@@ -833,6 +824,9 @@ export default function Scenario({
     if (currentDocumentIds.length > 0) {
       params.set("documentIds", currentDocumentIds.join(","));
     }
+    if (currentTemplateDocumentIds.length > 0) {
+      params.set("templateDocumentIds", currentTemplateDocumentIds.join(","));
+    }
     if (formData.parameterIds && formData.parameterIds.length > 0) {
       params.set("parameterIds", formData.parameterIds.join(","));
     }
@@ -904,6 +898,7 @@ export default function Scenario({
     formData.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
+    currentTemplateDocumentIds,
     formData.parameterIds,
     currentFieldIds,
     currentProblemStatementIds,
@@ -971,6 +966,30 @@ export default function Scenario({
     // Simple merge: server versions + local versions (local takes precedence if same ID)
     return { ...serverMapping, ...localMapping };
   }, [scenarioData?.problem_statement_mapping, localProblemStatementVersions]);
+  // Combine currentDocumentIds and currentTemplateDocumentIds for preview
+  // Filter out parent documents if their template document exists
+  const allPreviewDocumentIds = useMemo(() => {
+    const combined = [...currentDocumentIds, ...currentTemplateDocumentIds];
+    const templateDocSet = new Set(currentTemplateDocumentIds);
+    // Filter out parent documents that have template documents
+    const filtered = combined.filter((docId) => {
+      const doc = documentMapping[docId];
+      // If this document has a parent and the parent's template exists, exclude parent
+      if (doc?.parent_document_id) {
+        // This is a template document, include it
+        return true;
+      }
+      // Check if this document is a parent that has a template
+      const hasTemplate = Array.from(templateDocSet).some((templateId) => {
+        const templateDoc = documentMapping[templateId];
+        return templateDoc?.parent_document_id === docId;
+      });
+      // Exclude parent if template exists
+      return !hasTemplate;
+    });
+    return filtered;
+  }, [currentDocumentIds, currentTemplateDocumentIds, documentMapping]);
+
   // Extract image mapping from scenario_images array
   type ImageMappingItem = {
     id: string;
@@ -1471,6 +1490,7 @@ export default function Scenario({
     formData.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
+    currentTemplateDocumentIds,
     formData.parameterIds,
     currentFieldIds, // Renamed from currentParameterItemIds
     currentProblemStatementIds,
@@ -1600,6 +1620,9 @@ export default function Scenario({
       if (newData.selected_document_ids) {
         setCurrentDocumentIds(newData.selected_document_ids);
       }
+      if (newData.selected_template_document_ids) {
+        setCurrentTemplateDocumentIds(newData.selected_template_document_ids);
+      }
       if (newData.selected_field_ids) {
         setCurrentFieldIds(newData.selected_field_ids);
       }
@@ -1611,6 +1634,15 @@ export default function Scenario({
         .filter(Boolean);
       if (problemStatementIdsFromUrl && problemStatementIdsFromUrl.length > 0) {
         setCurrentProblemStatementIds(problemStatementIdsFromUrl);
+      }
+
+      // Initialize template document IDs from URL params
+      const templateDocumentIdsFromUrl = searchParams
+        .get("templateDocumentIds")
+        ?.split(",")
+        .filter(Boolean);
+      if (templateDocumentIdsFromUrl && templateDocumentIdsFromUrl.length > 0) {
+        setCurrentTemplateDocumentIds(templateDocumentIdsFromUrl);
       }
 
       // Initialize search terms from server response
@@ -1798,6 +1830,8 @@ export default function Scenario({
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
         JSON.stringify([...(originalDocumentIds || [])].sort()) ||
+      JSON.stringify([...currentTemplateDocumentIds].sort()) !==
+        JSON.stringify([...(originalTemplateDocumentIds || [])].sort()) ||
       JSON.stringify([...currentFieldIds].sort()) !==
         JSON.stringify([...(originalFieldIds || [])].sort()) ||
       JSON.stringify(currentObjectives) !==
@@ -1811,6 +1845,8 @@ export default function Scenario({
     scenarioData,
     currentDocumentIds,
     originalDocumentIds,
+    currentTemplateDocumentIds,
+    originalTemplateDocumentIds,
     currentFieldIds, // Renamed from currentParameterItemIds
     originalFieldIds, // Renamed from originalParameterItemIds
     currentObjectives,
@@ -2458,6 +2494,7 @@ export default function Scenario({
         active: boolean;
         persona_ids: string[] | null;
         document_ids: string[];
+        template_document_ids?: string[] | null;
         objective_ids: string[];
         upload_ids: string[] | null;
         image_names: string[] | null;
@@ -2472,6 +2509,10 @@ export default function Scenario({
         active: formData.active ?? true,
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
+        template_document_ids:
+          currentTemplateDocumentIds.length > 0
+            ? currentTemplateDocumentIds
+            : null,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
         upload_ids: image?.upload_id ? [image.upload_id] : null,
         image_names: image?.name ? [image.name] : null,
@@ -3776,69 +3817,6 @@ export default function Scenario({
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Use Objectives and Use Image Switches */}
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="use-objectives"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                        Use Objectives
-                      </Label>
-                      <Switch
-                        id="use-objectives"
-                        checked={useObjectives}
-                        onCheckedChange={(checked) => {
-                          setUseObjectives(checked);
-                          if (checked) {
-                            // Ensure at least one objective when enabled
-                            if (currentObjectives.length === 0) {
-                              setCurrentObjectives([""]);
-                            }
-                          } else {
-                            // Clear objectives when disabled
-                            setCurrentObjectives([]);
-                          }
-                        }}
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Use learning objectives
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="use-image"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Image
-                          className="h-3.5 w-3.5 text-muted-foreground"
-                          aria-label="Image icon"
-                        />
-                        Use Image
-                      </Label>
-                      <Switch
-                        id="use-image"
-                        checked={useImage}
-                        onCheckedChange={(checked) => {
-                          setUseImage(checked);
-                          if (!checked) {
-                            setImage(null);
-                          }
-                        }}
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Use scenario background image
-                    </p>
-                  </div>
-                </div>
-
                 {/* Problem Statement */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -4250,13 +4228,13 @@ export default function Scenario({
                   </div>
 
                   {/* Documents Preview Section - 30% right */}
-                  {currentDocumentIds.length > 0 && (
+                  {allPreviewDocumentIds.length > 0 && (
                     <div className="w-[30%] space-y-4 flex flex-col h-[400px]">
                       {/* DocumentPicker - top right (only show when multiple documents, full width) */}
-                      {currentDocumentIds.length > 1 && (
+                      {allPreviewDocumentIds.length > 1 && (
                         <GenericPicker
                           items={documentMapping}
-                          itemIds={currentDocumentIds}
+                          itemIds={allPreviewDocumentIds}
                           selectedIds={
                             scenarioPreviewDocumentId
                               ? [scenarioPreviewDocumentId]
@@ -4293,6 +4271,12 @@ export default function Scenario({
                           }}
                           renderItem={(item, isSelected) => {
                             const docItem = item as DocumentMappingItem;
+                            const itemWithId = item as DocumentMappingItem & {
+                              id: string;
+                            };
+                            const docId = itemWithId.id || "";
+                            const isTemplateDocument =
+                              currentTemplateDocumentIds.includes(docId);
                             return (
                               <div className="flex flex-col items-start py-3 w-full">
                                 <div className="flex items-center justify-between w-full">
@@ -4306,6 +4290,14 @@ export default function Scenario({
                                     <span className="font-medium">
                                       {docItem.name}
                                     </span>
+                                    {isTemplateDocument && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
+                                        Template
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
                                 {docItem.description && (
@@ -4370,6 +4362,69 @@ export default function Scenario({
                       )}
                     </div>
                   )}
+                </div>
+
+                {/* Use Objectives and Use Image Switches */}
+                <div className="space-y-4 pt-2 border-t">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="use-objectives"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                        Use Objectives
+                      </Label>
+                      <Switch
+                        id="use-objectives"
+                        checked={useObjectives}
+                        onCheckedChange={(checked) => {
+                          setUseObjectives(checked);
+                          if (checked) {
+                            // Ensure at least one objective when enabled
+                            if (currentObjectives.length === 0) {
+                              setCurrentObjectives([""]);
+                            }
+                          } else {
+                            // Clear objectives when disabled
+                            setCurrentObjectives([]);
+                          }
+                        }}
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Use learning objectives
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="use-image"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Image
+                          className="h-3.5 w-3.5 text-muted-foreground"
+                          aria-label="Image icon"
+                        />
+                        Use Image
+                      </Label>
+                      <Switch
+                        id="use-image"
+                        checked={useImage}
+                        onCheckedChange={(checked) => {
+                          setUseImage(checked);
+                          if (!checked) {
+                            setImage(null);
+                          }
+                        }}
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Use scenario background image
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

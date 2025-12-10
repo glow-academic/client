@@ -1,5 +1,6 @@
 """Scenario update endpoint - v3 API following DHH principles."""
 
+import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -24,6 +25,7 @@ class UpdateScenarioRequest(BaseModel):
     active: bool
     persona_ids: list[str] | None
     document_ids: list[str]
+    template_document_ids: list[str] | None = None
     objective_ids: list[str]
     upload_ids: list[str] | None = None
     image_names: list[str] | None = None
@@ -81,6 +83,7 @@ async def update_scenario(
         department_ids = request.department_ids or []
         persona_ids = request.persona_ids or []
         document_ids = request.document_ids or []
+        template_document_ids = request.template_document_ids or []
         objective_ids = filtered_objective_ids or []
         upload_ids = request.upload_ids or []
         image_names = request.image_names or []
@@ -118,6 +121,7 @@ async def update_scenario(
             department_ids if department_ids else None,
             persona_ids if persona_ids else None,
             document_ids,
+            template_document_ids if template_document_ids else None,
             objective_ids,
             parameter_item_ids,
             upload_images_json,

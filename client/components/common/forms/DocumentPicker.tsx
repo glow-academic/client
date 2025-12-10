@@ -59,6 +59,7 @@ export interface DocumentMappingItem extends MappingItem {
   mimeType?: string;
   parameter_ids?: string[] | null;
   field_ids?: string[] | null;
+  parent_document_id?: string | null;
 }
 
 export interface DocumentPickerProps<

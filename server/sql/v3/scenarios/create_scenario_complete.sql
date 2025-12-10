@@ -3,11 +3,11 @@
 --            $7=problem_statement (text), $8=problem_statement_name (text, nullable - defaults to scenario name),
 --            $9=problem_statement_versions (text array, nullable),
 --            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
---            $12=document_ids (text array), $13=objective_ids (text array), 
---            $14=parameter_item_ids (text array, flattened from parameters dict),
---            $15=upload_images_json (JSONB string with upload images array),
---            $16=run_id (uuid, nullable - for linking AI-generated problem_statements and objectives to runs),
---            $17=parameter_ids (text array, nullable)
+--            $12=document_ids (text array), $13=template_document_ids (text array, nullable), $14=objective_ids (text array), 
+--            $15=parameter_item_ids (text array, flattened from parameters dict),
+--            $16=upload_images_json (JSONB string with upload images array),
+--            $17=run_id (uuid, nullable - for linking AI-generated problem_statements and objectives to runs),
+--            $18=parameter_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
@@ -49,8 +49,8 @@ link_scenario_parameters AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($17::text[]) as param_id
-    WHERE COALESCE(array_length($17::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($18::text[]) as param_id
+    WHERE COALESCE(array_length($18::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -117,7 +117,7 @@ link_personas AS (
         updated_at = NOW()
 ),
 link_documents AS (
-    -- Link documents
+    -- Link documents (both regular and template documents)
     INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)
     SELECT 
         ns.scenario_id::uuid,
@@ -126,8 +126,13 @@ link_documents AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($12::text[]) as doc_id
-    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+    CROSS JOIN (
+        SELECT doc_id FROM UNNEST($12::text[]) as doc_id
+        UNION ALL
+        SELECT doc_id FROM UNNEST(COALESCE($13::text[], ARRAY[]::text[])) as doc_id
+    ) all_docs
+    WHERE COALESCE(array_length($12::text[], 1), 0) > 0 
+       OR COALESCE(array_length($13::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -137,8 +142,8 @@ objectives_with_index AS (
     SELECT 
         obj_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($13::text[]) as obj_text
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    FROM UNNEST($14::text[]) as obj_text
+    WHERE COALESCE(array_length($14::text[], 1), 0) > 0
 ),
 existing_objectives AS (
     -- Find existing objectives by text
@@ -187,8 +192,8 @@ link_parameters AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($14::text[]) as field_id
-    WHERE COALESCE(array_length($14::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($15::text[]) as field_id
+    WHERE COALESCE(array_length($15::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, field_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -201,8 +206,8 @@ create_images AS (
         NOW(),
         NOW(),
         true
-    FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
-    WHERE jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+    FROM jsonb_array_elements(COALESCE($16::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($16::jsonb, '[]'::jsonb)) > 0
       AND NOT EXISTS (
           SELECT 1 FROM images i
           JOIN image_uploads iu ON iu.image_id = i.id
@@ -250,7 +255,7 @@ link_images AS (
         NOW()
     FROM new_scenario ns
     CROSS JOIN all_images ai
-    WHERE jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+    WHERE jsonb_array_length(COALESCE($16::jsonb, '[]'::jsonb)) > 0
     ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -260,11 +265,11 @@ link_problem_statements_to_runs AS (
     INSERT INTO problem_statement_runs (problem_statement_id, run_id, created_at, updated_at)
     SELECT DISTINCT
         cps.problem_statement_id,
-        $16::uuid,
+        $17::uuid,
         NOW(),
         NOW()
     FROM create_problem_statements cps
-    WHERE $16::uuid IS NOT NULL
+    WHERE $17::uuid IS NOT NULL
     ON CONFLICT (problem_statement_id, run_id) DO NOTHING
 ),
 link_objectives_to_runs AS (

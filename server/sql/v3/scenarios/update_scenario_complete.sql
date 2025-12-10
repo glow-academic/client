@@ -3,10 +3,10 @@
 --            $6=objectives_enabled, $7=image_enabled, $8=problem_statement (text),
 --            $9=problem_statement_name (text, nullable - defaults to scenario name),
 --            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
---            $12=document_ids (text array), $13=objective_ids (text array),
---            $14=parameter_item_ids (text array, flattened from parameters dict),
---            $15=upload_images_json (JSONB string with upload images array), $16=scenario_agent_id (nullable uuid), $17=image_agent_id (nullable uuid),
---            $18=parameter_ids (text array, nullable)
+--            $12=document_ids (text array), $13=template_document_ids (text array, nullable), $14=objective_ids (text array),
+--            $15=parameter_item_ids (text array, flattened from parameters dict),
+--            $16=upload_images_json (JSONB string with upload images array), $17=scenario_agent_id (nullable uuid), $18=image_agent_id (nullable uuid),
+--            $19=parameter_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Returns: scenario_id, name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
@@ -26,8 +26,8 @@ update_scenario AS (
         document_vision_enabled = $5,
         objectives_enabled = $6,
         image_enabled = $7,
-        scenario_agent_id = COALESCE($16::uuid, scenario_agent_id),
-        image_agent_id = COALESCE($17::uuid, image_agent_id),
+        scenario_agent_id = COALESCE($17::uuid, scenario_agent_id),
+        image_agent_id = COALESCE($18::uuid, image_agent_id),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM scenario_exists)
     RETURNING id::text as scenario_id, name
@@ -112,7 +112,7 @@ replace_documents AS (
     WHERE scenario_id = $1::uuid
 ),
 insert_documents AS (
-    -- Insert new document links
+    -- Insert new document links (both regular and template documents)
     INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)
     SELECT 
         $1::uuid,
@@ -120,9 +120,14 @@ insert_documents AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($12::text[]) as doc_id
+    FROM (
+        SELECT doc_id FROM UNNEST($12::text[]) as doc_id
+        UNION ALL
+        SELECT doc_id FROM UNNEST(COALESCE($13::text[], ARRAY[]::text[])) as doc_id
+    ) all_docs
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($13::text[], 1), 0) > 0
+      AND (COALESCE(array_length($12::text[], 1), 0) > 0 
+           OR COALESCE(array_length($13::text[], 1), 0) > 0)
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -137,9 +142,9 @@ objectives_with_index AS (
     SELECT 
         obj_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($13::text[]) as obj_text
+    FROM UNNEST($14::text[]) as obj_text
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($13::text[], 1), 0) > 0
+      AND COALESCE(array_length($14::text[], 1), 0) > 0
 ),
 existing_objectives AS (
     -- Find existing objectives by text
@@ -191,9 +196,9 @@ insert_parameters AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($14::text[]) as field_id
+    FROM UNNEST($15::text[]) as field_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($14::text[], 1), 0) > 0
+      AND COALESCE(array_length($15::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, field_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -211,9 +216,9 @@ create_images AS (
         NOW(),
         NOW(),
         true
-    FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    FROM jsonb_array_elements(COALESCE($16::jsonb, '[]'::jsonb)) as img
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+      AND jsonb_array_length(COALESCE($16::jsonb, '[]'::jsonb)) > 0
       AND NOT EXISTS (
           SELECT 1 FROM images i
           JOIN image_uploads iu ON iu.image_id = i.id
@@ -233,7 +238,7 @@ link_image_uploads AS (
     FROM create_images ci
     CROSS JOIN jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+      AND jsonb_array_length(COALESCE($16::jsonb, '[]'::jsonb)) > 0
     ON CONFLICT (image_id, upload_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -241,7 +246,7 @@ link_image_uploads AS (
 get_images AS (
     -- Get existing images via image_uploads junction table
     SELECT i.id as image_id
-    FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    FROM jsonb_array_elements(COALESCE($16::jsonb, '[]'::jsonb)) as img
     JOIN image_uploads iu ON iu.upload_id = (img->>'upload_id')::uuid
     JOIN images i ON i.id = iu.image_id AND i.name = img->>'name'
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
@@ -263,7 +268,7 @@ link_images AS (
         NOW()
     FROM all_images ai
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+      AND jsonb_array_length(COALESCE($16::jsonb, '[]'::jsonb)) > 0
     ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -275,8 +280,8 @@ deactivate_scenario_parameters AS (
     WHERE scenario_id = $1::uuid
     AND active = true
     AND (
-        COALESCE(array_length($18::text[], 1), 0) = 0
-        OR parameter_id NOT IN (SELECT unnest($18::text[])::uuid)
+        COALESCE(array_length($19::text[], 1), 0) = 0
+        OR parameter_id NOT IN (SELECT unnest($19::text[])::uuid)
     )
 ),
 link_scenario_parameters AS (
@@ -288,8 +293,8 @@ link_scenario_parameters AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($18::text[]) as param_id
-    WHERE COALESCE(array_length($18::text[], 1), 0) > 0
+    FROM UNNEST($19::text[]) as param_id
+    WHERE COALESCE(array_length($19::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

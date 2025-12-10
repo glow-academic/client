@@ -15187,6 +15187,20 @@
             "type": "array",
             "title": "Document Ids"
           },
+          "template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Document Ids"
+          },
           "objective_ids": {
             "items": {
               "type": "string"
@@ -18012,6 +18026,17 @@
               }
             ],
             "title": "Field Ids"
+          },
+          "parent_document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Document Id"
           }
         },
         "type": "object",
@@ -28351,6 +28376,20 @@
             ],
             "title": "Documentids"
           },
+          "templateDocumentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templatedocumentids"
+          },
           "parameterIds": {
             "anyOf": [
               {
@@ -28857,6 +28896,20 @@
               }
             ],
             "title": "Documentids"
+          },
+          "templateDocumentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templatedocumentids"
           },
           "parameterIds": {
             "anyOf": [
@@ -33414,6 +33467,20 @@
             },
             "type": "array",
             "title": "Document Ids"
+          },
+          "template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Document Ids"
           },
           "objective_ids": {
             "items": {
@@ -39195,6 +39262,20 @@
               }
             ],
             "title": "Selected Document Ids"
+          },
+          "selected_template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Template Document Ids"
           },
           "selected_parameter_ids": {
             "anyOf": [

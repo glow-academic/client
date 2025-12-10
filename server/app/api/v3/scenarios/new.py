@@ -76,6 +76,7 @@ class ScenarioNewRequest(BaseModel):
     departmentIds: list[str] | None = None
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
+    templateDocumentIds: list[str] | None = None
     parameterIds: list[str] | None = None
     fieldIds: list[str] | None = None  # Renamed from parameterItemIds for readability
     # Search parameters
@@ -226,6 +227,7 @@ class ScenarioDetailResponse(BaseModel):
     # Selected IDs from request (filtered to valid ones) - server-driven approach
     selected_persona_ids: list[str] | None = None
     selected_document_ids: list[str] | None = None
+    selected_template_document_ids: list[str] | None = None
     selected_parameter_ids: list[str] | None = None
     selected_field_ids: list[str] | None = (
         None  # Renamed from selected_parameter_item_ids
@@ -876,6 +878,15 @@ async def get_scenario_new(
             except (ValueError, TypeError):
                 document_ids_uuid = None
         
+        # Convert templateDocumentIds to UUID array if provided
+        template_document_ids_uuid = None
+        if request_data.templateDocumentIds:
+            import uuid as uuid_lib
+            try:
+                template_document_ids_uuid = [uuid_lib.UUID(did) for did in request_data.templateDocumentIds]
+            except (ValueError, TypeError):
+                template_document_ids_uuid = None
+        
         # Convert problemStatementIds to UUID array if provided
         problem_statement_ids_uuid = None
         if request_data.problemStatementIds:
@@ -891,6 +902,7 @@ async def get_scenario_new(
             request_data.useObjectives,
             document_ids_uuid,
             problem_statement_ids_uuid,
+            template_document_ids_uuid,
         )
 
         # Execute query
@@ -940,6 +952,7 @@ async def get_scenario_new(
                 if isinstance(ddata, dict):
                     parameter_ids = ddata.get("parameter_ids")
                     field_ids = ddata.get("field_ids")
+                    parent_document_id = ddata.get("parent_document_id")
                     document_mapping[did] = DocumentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
@@ -949,6 +962,7 @@ async def get_scenario_new(
                         field_ids=[str(f) for f in field_ids]
                         if isinstance(field_ids, list)
                         else None,
+                        parent_document_id=str(parent_document_id) if parent_document_id else None,
                     )
 
         parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
@@ -1664,6 +1678,7 @@ async def get_scenario_new(
             # Selected IDs from request (filtered to valid ones)
             selected_persona_ids=selected_persona_ids,
             selected_document_ids=selected_document_ids,
+            selected_template_document_ids=result.get("selected_template_document_ids") or [],
             selected_parameter_ids=selected_parameter_ids,
             selected_field_ids=selected_field_ids,  # Renamed from selected_parameter_item_ids
             # Search terms from request

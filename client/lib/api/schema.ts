@@ -6587,6 +6587,8 @@ export interface components {
             persona_ids: string[] | null;
             /** Document Ids */
             document_ids: string[];
+            /** Template Document Ids */
+            template_document_ids?: string[] | null;
             /** Objective Ids */
             objective_ids: string[];
             /** Upload Ids */
@@ -7658,6 +7660,8 @@ export interface components {
             parameter_ids?: string[] | null;
             /** Field Ids */
             field_ids?: string[] | null;
+            /** Parent Document Id */
+            parent_document_id?: string | null;
         };
         /**
          * DocumentsListRequest
@@ -11610,6 +11614,8 @@ export interface components {
             personaIds?: string[] | null;
             /** Documentids */
             documentIds?: string[] | null;
+            /** Templatedocumentids */
+            templateDocumentIds?: string[] | null;
             /** Parameterids */
             parameterIds?: string[] | null;
             /** Fieldids */
@@ -11756,6 +11762,8 @@ export interface components {
             personaIds?: string[] | null;
             /** Documentids */
             documentIds?: string[] | null;
+            /** Templatedocumentids */
+            templateDocumentIds?: string[] | null;
             /** Parameterids */
             parameterIds?: string[] | null;
             /** Fieldids */
@@ -13510,6 +13518,8 @@ export interface components {
             persona_ids: string[] | null;
             /** Document Ids */
             document_ids: string[];
+            /** Template Document Ids */
+            template_document_ids?: string[] | null;
             /** Objective Ids */
             objective_ids: string[];
             /** Upload Ids */
@@ -15468,6 +15478,8 @@ export interface components {
             selected_persona_ids?: string[] | null;
             /** Selected Document Ids */
             selected_document_ids?: string[] | null;
+            /** Selected Template Document Ids */
+            selected_template_document_ids?: string[] | null;
             /** Selected Parameter Ids */
             selected_parameter_ids?: string[] | null;
             /** Selected Field Ids */

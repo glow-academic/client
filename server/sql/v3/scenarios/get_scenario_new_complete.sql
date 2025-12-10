@@ -247,6 +247,28 @@ document_data AS (
         AND param.active = true
         AND param.video_parameter = true
     )
+    UNION
+    -- Include provided templateDocumentIds even if they don't match department filters
+    SELECT DISTINCT
+        d.id,
+        d.name,
+        ''::text as description
+    FROM documents d
+    WHERE d.active = true
+    AND $6::uuid[] IS NOT NULL
+    AND array_length($6::uuid[], 1) > 0
+    AND d.id = ANY($6::uuid[])
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM document_fields df
+        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+        JOIN parameters param ON param.id = pfield.parameter_id
+        WHERE df.document_id = d.id
+        AND df.active = true
+        AND pfield.active = true
+        AND param.active = true
+        AND param.video_parameter = true
+    )
     ORDER BY name
 ),
 -- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
@@ -302,6 +324,12 @@ document_mapping_data AS (
                      FROM document_fields df
                      WHERE df.document_id = d.id AND df.active = true),
                     '[]'::jsonb
+                ),
+                'parent_document_id', (
+                    SELECT dt.parent_id::text
+                    FROM document_tree dt
+                    WHERE dt.child_id = d.id AND dt.active = true
+                    LIMIT 1
                 )
             )
         ),
@@ -727,5 +755,16 @@ SELECT
     COALESCE((SELECT agent_id FROM default_scenario_agent), '') as scenario_agent_id,
     COALESCE((SELECT agent_id FROM default_image_agent), '') as image_agent_id,
     COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
-    COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids
+    COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids,
+    -- Selected template document IDs (filtered to valid ones)
+    COALESCE(
+        (SELECT array_agg(d.id::text)
+         FROM documents d
+         WHERE d.active = true
+         AND $6::uuid[] IS NOT NULL
+         AND array_length($6::uuid[], 1) > 0
+         AND d.id = ANY($6::uuid[])
+         AND d.id IN (SELECT id FROM document_data)),
+        ARRAY[]::text[]
+    ) as selected_template_document_ids
 
