@@ -12,7 +12,7 @@ import {
   GripVertical,
   Image,
   Loader2,
-  Plus,
+  MessageSquare,
   PlusCircle,
   Power,
   RotateCcw,
@@ -67,13 +67,34 @@ import {
 import DocumentViewer, {
   type DocumentItem,
 } from "@/components/common/chat/viewers/DocumentViewer";
+import ImageViewer from "@/components/common/chat/viewers/ImageViewer";
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
+
+// Utility function to generate gradient from hex color (same as AttemptMessages)
+const generateGradientFromHex = (hexColor: string): string => {
+  // Remove # if present
+  const cleanHex = hexColor.replace("#", "");
+
+  // Convert to RGB
+  const r = parseInt(cleanHex.substr(0, 2), 16);
+  const g = parseInt(cleanHex.substr(2, 2), 16);
+  const b = parseInt(cleanHex.substr(4, 2), 16);
+
+  // Create a lighter variant for the gradient (brighter like simulation cards)
+  const lighterR = Math.min(255, r + 60);
+  const lighterG = Math.min(255, g + 60);
+  const lighterB = Math.min(255, b + 60);
+
+  // Convert back to hex
+  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+
+  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+};
 
 // Types and API functions
 import type {
@@ -947,6 +968,65 @@ export default function Scenario({
     // Simple merge: server versions + local versions (local takes precedence if same ID)
     return { ...serverMapping, ...localMapping };
   }, [scenarioData?.problem_statement_mapping, localProblemStatementVersions]);
+  // Extract image mapping from scenario_images array
+  type ImageMappingItem = {
+    id: string;
+    name: string;
+    upload_id?: string;
+    file_path?: string;
+    mime_type?: string;
+    created_at: string;
+    updated_at: string;
+  };
+  const imageMapping = useMemo((): Record<string, ImageMappingItem> => {
+    const scenarioImages = (
+      scenarioData as ScenarioDetailOut & {
+        scenario_images?: Array<{
+          id?: string;
+          name?: string;
+          upload_id?: string;
+          file_path?: string;
+          mime_type?: string;
+          created_at?: string;
+          updated_at?: string;
+        }>;
+      }
+    )?.scenario_images;
+
+    if (!scenarioImages || !Array.isArray(scenarioImages)) {
+      return {};
+    }
+
+    const mapping: Record<string, ImageMappingItem> = {};
+
+    scenarioImages.forEach((img) => {
+      const imgTyped = img as {
+        id?: string;
+        name?: string;
+        upload_id?: string;
+        file_path?: string;
+        mime_type?: string;
+        created_at?: string;
+        updated_at?: string;
+      };
+      const imageId = imgTyped.upload_id || imgTyped.id;
+      if (imageId) {
+        const uploadId = imgTyped.upload_id || imgTyped.id;
+        const imageItem: ImageMappingItem = {
+          id: imageId,
+          name: imgTyped.name || "Untitled Image",
+          ...(uploadId ? { upload_id: uploadId } : {}),
+          ...(imgTyped.file_path ? { file_path: imgTyped.file_path } : {}),
+          ...(imgTyped.mime_type ? { mime_type: imgTyped.mime_type } : {}),
+          created_at: imgTyped.created_at || new Date().toISOString(),
+          updated_at: imgTyped.updated_at || new Date().toISOString(),
+        };
+        mapping[imageId] = imageItem;
+      }
+    });
+
+    return mapping;
+  }, [scenarioData]);
   // Filter objectives_history based on selected departments
   const objectivesHistory = useMemo(() => {
     const rawHistory = scenarioData?.objectives_history || [];
@@ -1715,6 +1795,18 @@ export default function Scenario({
     originalFieldIds, // Renamed from originalParameterItemIds
     currentObjectives,
     originalObjectives,
+  ]);
+
+  // Check if problem statement has changes (for reset button)
+  const hasProblemStatementChanges = useMemo(() => {
+    if (!isEditMode) return false;
+    const current = formData?.problemStatement || "";
+    const original = originalFormData?.problemStatement || "";
+    return current !== original;
+  }, [
+    isEditMode,
+    formData?.problemStatement,
+    originalFormData?.problemStatement,
   ]);
 
   // Use server-computed readonly flag from V2 API
@@ -3610,97 +3702,6 @@ export default function Scenario({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {Object.keys(problemStatementMapping).length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <GenericPicker
-                        items={problemStatementMapping}
-                        itemIds={Object.keys(problemStatementMapping)}
-                        selectedIds={[]} // Problem statement ID comes from URL parameters
-                        onSelect={(ids) => {
-                          const id = ids[0] || null;
-                          if (id && problemStatementMapping[id]) {
-                            handleInputChange(
-                              "problemStatement",
-                              problemStatementMapping[id].problem_statement
-                            );
-                          }
-                        }}
-                        getId={(item) => (item as unknown as { id: string }).id}
-                        getLabel={(item) => {
-                          const date = new Date(item.updated_at);
-                          return `Version ${date.toLocaleDateString()}`;
-                        }}
-                        getSearchText={(item) => {
-                          const date = new Date(item.updated_at);
-                          const preview = item.problem_statement.substring(
-                            0,
-                            100
-                          );
-                          return `${date.toLocaleDateString()} ${preview}`;
-                        }}
-                        renderButton={(selectedItems) => {
-                          if (selectedItems.length === 0) {
-                            return "New Problem Statement";
-                          }
-                          const problemStatement = selectedItems[0];
-                          const date = problemStatement?.updated_at
-                            ? new Date(problemStatement.updated_at)
-                            : new Date();
-                          return `Version ${date.toLocaleDateString()}`;
-                        }}
-                        renderItem={(item, isSelected) => {
-                          const date = new Date(item.updated_at);
-                          const preview = item.problem_statement.substring(
-                            0,
-                            100
-                          );
-                          return (
-                            <div className="flex flex-col items-start py-3 w-full">
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2">
-                                  <Check
-                                    className={cn(
-                                      "h-4 w-4",
-                                      isSelected ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <span className="font-medium">
-                                    {date.toLocaleDateString()}{" "}
-                                    {date.toLocaleTimeString()}
-                                  </span>
-                                </div>
-                              </div>
-                              <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                {preview}
-                                {item.problem_statement.length > 100
-                                  ? "..."
-                                  : ""}
-                              </span>
-                            </div>
-                          );
-                        }}
-                        disabled={isReadonly}
-                        multiSelect={false}
-                        hideSelectedChips={true}
-                        buttonClassName="h-9 justify-between"
-                        groupHeading="Version History"
-                        placeholder="Select problem statement version..."
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          handleInputChange("problemStatement", "");
-                        }}
-                        disabled={isReadonly}
-                        className="h-9"
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        New
-                      </Button>
-                    </div>
-                  )}
                   <input
                     ref={imageInputRef}
                     type="file"
@@ -3755,77 +3756,8 @@ export default function Scenario({
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Image Preview or Upload Card */}
-                {useImage && (
-                  <div className="mb-4 w-1/4">
-                    {image ? (
-                      <ImagePreviewCard
-                        image={image}
-                        onRemove={() => setImage(null)}
-                        showActions={!isReadonly}
-                      />
-                    ) : (
-                      <div
-                        onClick={() => {
-                          if (!isReadonly && !isUploadingImage) {
-                            imageInputRef.current?.click();
-                          }
-                        }}
-                        className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground hover:bg-muted/50 transition-colors bg-muted/20"
-                      >
-                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground text-center px-4">
-                          Click to upload image
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <Textarea
-                    id="description"
-                    data-testid="input-scenario-problem-statement"
-                    value={formData.problemStatement || ""}
-                    onChange={(e) => {
-                      handleInputChange("problemStatement", e.target.value);
-                      // Problem statement ID is managed via URL parameters
-                    }}
-                    placeholder="Enter a custom problem statement or leave blank to auto-generate..."
-                    className="min-h-[120px]"
-                    disabled={isReadonly}
-                  />
-                </div>
-
-                {/* Use Image and Use Objectives Switches */}
+                {/* Use Objectives and Use Image Switches */}
                 <div className="space-y-4 pt-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="use-image"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Image
-                          className="h-3.5 w-3.5 text-muted-foreground"
-                          aria-label="Image icon"
-                        />
-                        Use Image
-                      </Label>
-                      <Switch
-                        id="use-image"
-                        checked={useImage}
-                        onCheckedChange={(checked) => {
-                          setUseImage(checked);
-                          if (!checked) {
-                            setImage(null);
-                          }
-                        }}
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Use scenario background image
-                    </p>
-                  </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Label
@@ -3857,6 +3789,157 @@ export default function Scenario({
                       Use learning objectives
                     </p>
                   </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="use-image"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Image
+                          className="h-3.5 w-3.5 text-muted-foreground"
+                          aria-label="Image icon"
+                        />
+                        Use Image
+                      </Label>
+                      <Switch
+                        id="use-image"
+                        checked={useImage}
+                        onCheckedChange={(checked) => {
+                          setUseImage(checked);
+                          if (!checked) {
+                            setImage(null);
+                          }
+                        }}
+                        disabled={isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Use scenario background image
+                    </p>
+                  </div>
+                </div>
+
+                {/* Problem Statement */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div></div>
+                    {Object.keys(problemStatementMapping).length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <GenericPicker
+                          items={problemStatementMapping}
+                          itemIds={Object.keys(problemStatementMapping)}
+                          selectedIds={[]} // Problem statement ID comes from URL parameters
+                          onSelect={(ids) => {
+                            const id = ids[0] || null;
+                            if (id && problemStatementMapping[id]) {
+                              handleInputChange(
+                                "problemStatement",
+                                problemStatementMapping[id].problem_statement
+                              );
+                            }
+                          }}
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
+                          getLabel={(item) => {
+                            const date = new Date(item.updated_at);
+                            return `Version ${date.toLocaleDateString()}`;
+                          }}
+                          getSearchText={(item) => {
+                            const date = new Date(item.updated_at);
+                            const preview = item.problem_statement.substring(
+                              0,
+                              100
+                            );
+                            return `${date.toLocaleDateString()} ${preview}`;
+                          }}
+                          renderButton={(selectedItems) => {
+                            if (selectedItems.length === 0) {
+                              return "New Problem Statement";
+                            }
+                            const problemStatement = selectedItems[0];
+                            const date = problemStatement?.updated_at
+                              ? new Date(problemStatement.updated_at)
+                              : new Date();
+                            return `Version ${date.toLocaleDateString()}`;
+                          }}
+                          renderItem={(item, isSelected) => {
+                            const date = new Date(item.updated_at);
+                            const preview = item.problem_statement.substring(
+                              0,
+                              100
+                            );
+                            return (
+                              <div className="flex flex-col items-start py-3 w-full">
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <Check
+                                      className={cn(
+                                        "h-4 w-4",
+                                        isSelected ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="font-medium">
+                                      {date.toLocaleDateString()}{" "}
+                                      {date.toLocaleTimeString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                  {preview}
+                                  {item.problem_statement.length > 100
+                                    ? "..."
+                                    : ""}
+                                </span>
+                              </div>
+                            );
+                          }}
+                          disabled={isReadonly}
+                          multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="h-8 justify-between"
+                          groupHeading="Version History"
+                          placeholder="Select problem statement version..."
+                        />
+                        {hasProblemStatementChanges && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  handleInputChange(
+                                    "problemStatement",
+                                    originalFormData?.problemStatement || ""
+                                  );
+                                }}
+                                className="h-8 w-8 p-0"
+                                data-testid="btn-reset-problem-statement"
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Reset to saved problem statement</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Textarea
+                    id="description"
+                    data-testid="input-scenario-problem-statement"
+                    value={formData.problemStatement || ""}
+                    onChange={(e) => {
+                      handleInputChange("problemStatement", e.target.value);
+                      // Problem statement ID is managed via URL parameters
+                    }}
+                    placeholder="Enter a custom problem statement or leave blank to auto-generate..."
+                    className="min-h-[120px]"
+                    disabled={isReadonly}
+                  />
                 </div>
 
                 {/* Objectives List - Only visible when useObjectives is true */}
@@ -3911,6 +3994,231 @@ export default function Scenario({
                       )}
                   </div>
                 )}
+
+                {/* Image Preview Section - Always shown to prevent layout shift */}
+                <div className="w-[70%] space-y-4">
+                  {/* ImagePicker - top right (only show when useImage is true) */}
+                  {useImage && Object.keys(imageMapping).length > 0 && (
+                    <div className="flex items-center justify-between">
+                      <div></div>
+                      <GenericPicker
+                        items={imageMapping}
+                        itemIds={Object.keys(imageMapping)}
+                        selectedIds={image ? [image.id] : []}
+                        onSelect={(ids) => {
+                          const imageId = ids[0] || null;
+                          if (imageId && imageMapping[imageId]) {
+                            const selectedImage = imageMapping[
+                              imageId
+                            ] as ImageMappingItem;
+                            setImage({
+                              id: selectedImage.upload_id || selectedImage.id,
+                              name: selectedImage.name,
+                              upload_id:
+                                selectedImage.upload_id || selectedImage.id,
+                            });
+                          }
+                        }}
+                        getId={(item) => {
+                          const imgItem = item as unknown as ImageMappingItem;
+                          return imgItem.id;
+                        }}
+                        getLabel={(item) => {
+                          const imgItem = item as unknown as ImageMappingItem;
+                          const date = new Date(imgItem.updated_at);
+                          return `${imgItem.name} - ${date.toLocaleDateString()}`;
+                        }}
+                        getSearchText={(item) => {
+                          const imgItem = item as unknown as ImageMappingItem;
+                          const date = new Date(imgItem.updated_at);
+                          return `${imgItem.name} ${date.toLocaleDateString()}`;
+                        }}
+                        renderButton={(selectedItems) => {
+                          if (selectedItems.length === 0) {
+                            return "Select image...";
+                          }
+                          const selectedImage =
+                            selectedItems[0] as unknown as ImageMappingItem;
+                          return selectedImage?.name || "Select image...";
+                        }}
+                        renderItem={(item, isSelected) => {
+                          const imgItem = item as unknown as ImageMappingItem;
+                          const date = new Date(imgItem.updated_at);
+                          return (
+                            <div className="flex flex-col items-start py-3 w-full">
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <Check
+                                    className={cn(
+                                      "h-4 w-4",
+                                      isSelected ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <span className="font-medium">
+                                    {imgItem.name}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-xs text-muted-foreground mt-1">
+                                {date.toLocaleDateString()}{" "}
+                                {date.toLocaleTimeString()}
+                              </span>
+                            </div>
+                          );
+                        }}
+                        disabled={isReadonly}
+                        multiSelect={false}
+                        hideSelectedChips={true}
+                        buttonClassName="h-8 justify-between"
+                        groupHeading="Images"
+                        placeholder="Select image..."
+                      />
+                    </div>
+                  )}
+
+                  {/* Combined Image and Chat Preview Container - Fixed height, always visible */}
+                  <div className="relative border rounded-lg overflow-hidden min-h-[400px]">
+                    {/* Background Image - when image exists and useImage is true */}
+                    {useImage && image && (
+                      <div className="absolute inset-0 w-full h-full">
+                        <ImageViewer
+                          imageId={image.id}
+                          name={image.name}
+                          bare={true}
+                        />
+                      </div>
+                    )}
+
+                    {/* Upload Area - when useImage is true but no image */}
+                    {useImage && !image && (
+                      <div
+                        onClick={() => {
+                          if (!isReadonly && !isUploadingImage) {
+                            imageInputRef.current?.click();
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
+                      >
+                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground text-center px-4">
+                          Click to upload image or leave blank to auto generate
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Background when useImage is false */}
+                    {!useImage && (
+                      <div className="absolute inset-0 w-full h-full bg-muted/20" />
+                    )}
+
+                    {/* Chat Preview Overlay - Only show when useImage is false OR image is uploaded */}
+                    {(!useImage || (useImage && image)) && (
+                      <div className="relative z-10 p-4 h-full min-h-[400px] flex flex-col justify-start">
+                        <div className="space-y-3">
+                          {/* TA/User message */}
+                          <div className="flex justify-end mb-3">
+                            <div className="max-w-[80%]">
+                              <div className="bg-primary text-primary-foreground rounded-lg p-3 shadow-lg">
+                                <p className="text-sm">
+                                  Hi, how can I help you?
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Assistant messages - one per selected persona */}
+                          {selectedPersonaIds.map((personaId) => {
+                            const persona = personaMapping[personaId];
+                            if (!persona) return null;
+
+                            const IconComponent =
+                              getPersonaIconComponent(persona.icon) ||
+                              MessageSquare;
+                            const hexColor = persona.color || "#64748b";
+                            const buttonStyle = {
+                              background: generateGradientFromHex(hexColor),
+                            };
+
+                            return (
+                              <div
+                                key={personaId}
+                                className="flex justify-start mb-3"
+                              >
+                                <div className="max-w-[80%] flex items-stretch gap-2">
+                                  {/* Persona icon button */}
+                                  <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="secondary"
+                                          size="sm"
+                                          aria-label={persona.name}
+                                          className="flex-1 p-0 rounded-md shadow-md"
+                                          style={buttonStyle}
+                                          tabIndex={-1}
+                                        >
+                                          <IconComponent className="h-4 w-4 text-white" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>{persona.name}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                  {/* Message content */}
+                                  <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
+                                    <p className="text-sm">
+                                      I'd be happy to help you with that. Let me
+                                      provide some guidance...
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Show placeholder if no personas selected */}
+                          {selectedPersonaIds.length === 0 && (
+                            <div className="flex justify-start mb-3">
+                              <div className="max-w-[80%] flex items-stretch gap-2">
+                                <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="flex-1 p-0 rounded-md shadow-md"
+                                    tabIndex={-1}
+                                  >
+                                    <MessageSquare className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
+                                  <p className="text-sm text-muted-foreground italic">
+                                    Select personas to see preview messages
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Image actions overlay - when image exists and useImage is true */}
+                    {useImage && image && !isReadonly && (
+                      <div className="absolute top-2 right-2 z-20">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setImage(null)}
+                          className="h-8 w-8 p-0 bg-background/90 backdrop-blur-sm shadow-md"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           );
