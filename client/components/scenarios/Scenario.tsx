@@ -4251,7 +4251,7 @@ export default function Scenario({
 
                   {/* Documents Preview Section - 30% right */}
                   {currentDocumentIds.length > 0 && (
-                    <div className="w-[30%] space-y-4 flex flex-col">
+                    <div className="w-[30%] space-y-4 flex flex-col h-[400px]">
                       {/* DocumentPicker - top right (only show when multiple documents, full width) */}
                       {currentDocumentIds.length > 1 && (
                         <GenericPicker
@@ -4327,7 +4327,7 @@ export default function Scenario({
 
                       {/* Document Preview Container - Matches messages section height */}
                       {scenarioPreviewDocumentId && (
-                        <div className="relative border rounded-lg overflow-hidden h-[400px] flex-1">
+                        <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
                           {(() => {
                             const docId = scenarioPreviewDocumentId;
                             const fullDoc =
