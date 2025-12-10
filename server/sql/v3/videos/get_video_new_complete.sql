@@ -134,19 +134,8 @@ problem_statement_mapping_data AS (
     ) as mapping
     FROM problem_statement_data ps
 ),
--- Get policy parameter item ID for filtering
-policy_param_item AS (
-    SELECT f.id
-    FROM fields f
-    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    JOIN parameters p ON p.id = fp.parameter_id
-    WHERE p.name = 'Document Type' 
-    AND EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true)
-    AND f.name = 'policy'
-    LIMIT 1
-),
--- Documents (filtered to only include policy documents, exclude scenario_parameter documents)
-document_data AS (
+-- Documents (filtered by department access, exclude scenario_parameter documents)
+valid_documents_filtered AS (
     SELECT DISTINCT
         d.id,
         d.name,
@@ -157,28 +146,65 @@ document_data AS (
     FROM documents d
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
-    CROSS JOIN policy_param_item ppi
-    JOIN document_fields df ON df.document_id = d.id AND df.field_id = ppi.id AND df.active = true
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
-    CROSS JOIN user_profile up
+    CROSS JOIN user_departments ud
     WHERE d.active = true
-        AND (
-            up.role = 'superadmin'
-            OR dd.department_id IN (SELECT department_id FROM user_departments)
+    GROUP BY d.id, d.name, u.file_path, u.mime_type, du.upload_id
+    HAVING 
+        (
+            COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
             OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
         )
         -- Exclude documents with scenario_parameter = true
         AND NOT EXISTS (
             SELECT 1 
-            FROM document_fields df2
-            JOIN parameter_fields pfield ON pfield.field_id = df2.field_id
+            FROM document_fields df
+            JOIN parameter_fields pfield ON pfield.field_id = df.field_id
             JOIN parameters param ON param.id = pfield.parameter_id
-            WHERE df2.document_id = d.id
-            AND df2.active = true
+            WHERE df.document_id = d.id
+            AND df.active = true
             AND pfield.active = true
             AND param.active = true
             AND param.scenario_parameter = true
         )
+),
+document_data AS (
+    SELECT * FROM valid_documents_filtered
+),
+-- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
+document_parameter_relationships AS (
+    SELECT DISTINCT
+        d.id as document_id,
+        param.id as parameter_id
+    FROM document_data d
+    CROSS JOIN parameters param
+    WHERE param.active = true
+    AND (
+        -- Direct relationship via parameter_documents
+        EXISTS (
+            SELECT 1 FROM parameter_documents pd
+            WHERE pd.document_id = d.id
+            AND pd.parameter_id = param.id
+            AND pd.active = true
+        )
+        OR
+        -- Indirect relationship via document_fields → parameter_fields
+        EXISTS (
+            SELECT 1 FROM document_fields df
+            JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+            WHERE df.document_id = d.id
+            AND pfield.parameter_id = param.id
+            AND df.active = true
+            AND pfield.active = true
+        )
+        OR
+        -- No restrictions: if parameter has no document restrictions, it's valid for all documents
+        NOT EXISTS (
+            SELECT 1 FROM parameter_documents pd2
+            WHERE pd2.parameter_id = param.id
+            AND pd2.active = true
+        )
+    )
 ),
 document_mapping_data AS (
     SELECT COALESCE(
@@ -196,7 +222,19 @@ document_mapping_data AS (
                 ),
                 'filePath', COALESCE(d.file_path, ''),
                 'mimeType', COALESCE(d.mime_type, ''),
-                'uploadId', COALESCE(d.upload_id::text, '')
+                'uploadId', COALESCE(d.upload_id::text, ''),
+                'parameter_ids', COALESCE(
+                    (SELECT jsonb_agg(dpr.parameter_id::text ORDER BY dpr.parameter_id)
+                     FROM document_parameter_relationships dpr
+                     WHERE dpr.document_id = d.id),
+                    '[]'::jsonb
+                ),
+                'field_ids', COALESCE(
+                    (SELECT jsonb_agg(df.field_id::text ORDER BY df.field_id)
+                     FROM document_fields df
+                     WHERE df.document_id = d.id AND df.active = true),
+                    '[]'::jsonb
+                )
             )
         ) FILTER (WHERE d.id IS NOT NULL),
         '{}'::jsonb
@@ -254,23 +292,27 @@ valid_agents AS (
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
 ),
--- Video parameters (filtered by video_parameters junction table OR parameter_documents junction table)
-available_video_parameters AS (
-    -- Get all parameters that could be linked to videos (via video_parameters)
-    -- For new videos, show all active parameters that are linked to at least one video
-    SELECT DISTINCT
+-- Video parameters (get ALL parameters where video_parameter = true, filtered by department access)
+parameter_data_for_mapping AS (
+    SELECT DISTINCT 
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
     FROM parameters p
+    JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    CROSS JOIN user_departments ud
     WHERE p.active = true
-    AND EXISTS (
-        SELECT 1 FROM video_parameters vp 
-        WHERE vp.parameter_id = p.id 
-        AND vp.active = true
-    )
+    AND p.video_parameter = true
+    GROUP BY p.id, p.name, p.description
+    HAVING 
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                      JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
+                      WHERE fp2.parameter_id = p.id AND fp2.active = true)
+    ORDER BY p.name
 ),
 document_parameters_for_video AS (
     -- Also include parameters linked via parameter_documents (for document filtering)
@@ -286,9 +328,22 @@ document_parameters_for_video AS (
     AND p.active = true
 ),
 video_parameter_data AS (
-    SELECT * FROM available_video_parameters
+    SELECT * FROM parameter_data_for_mapping
     UNION
     SELECT * FROM document_parameters_for_video
+),
+parameter_mapping_data AS (
+    SELECT 
+        COALESCE(jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.name, 
+                'description', p.description, 
+                'document_parameter', p.document_parameter,
+                'video_parameter', p.video_parameter
+            )
+        ), '{}'::jsonb) as parameter_mapping
+    FROM parameter_data_for_mapping p
 ),
 video_parameter_mapping_data AS (
     SELECT 
@@ -303,6 +358,24 @@ video_parameter_mapping_data AS (
         ), '{}'::jsonb) as parameter_mapping
     FROM video_parameter_data p
 ),
+enhanced_parameter_mapping_data AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT jsonb_object_agg(key, value)
+                FROM (
+                    SELECT key, value 
+                    FROM jsonb_each(pmd.parameter_mapping)
+                    UNION ALL
+                    SELECT key, value 
+                    FROM jsonb_each(vpmd.parameter_mapping)
+                ) combined
+            ),
+            '{}'::jsonb
+        ) as parameter_mapping
+    FROM parameter_mapping_data pmd
+    CROSS JOIN video_parameter_mapping_data vpmd
+),
 video_parameter_items_data AS (
     SELECT DISTINCT
         pi.id,
@@ -310,11 +383,22 @@ video_parameter_items_data AS (
         COALESCE(pi.description, '') as description,
         fp.parameter_id,
         p.name as parameter_name
-    FROM video_parameter_data vpd
-    JOIN parameter_fields fp ON fp.parameter_id = vpd.id AND fp.active = true
+    FROM (
+        SELECT id FROM parameter_data_for_mapping
+        UNION
+        SELECT id FROM document_parameters_for_video
+    ) all_params
+    JOIN parameter_fields fp ON fp.parameter_id = all_params.id AND fp.active = true
     JOIN fields pi ON pi.id = fp.field_id
     JOIN parameters p ON p.id = fp.parameter_id
-    WHERE p.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = pi.id AND fd.active = true
+    CROSS JOIN user_departments ud
+    WHERE p.active = true AND pi.active = true
+    GROUP BY pi.id, pi.name, pi.description, fp.parameter_id, p.id, p.name
+    HAVING 
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = pi.id AND fd2.active = true)
+    ORDER BY p.name, pi.name
 ),
 video_field_mapping_data AS (
     SELECT 
@@ -358,6 +442,41 @@ valid_personas_filtered AS (
         COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
 ),
+-- Persona parameter relationships: direct (parameter_personas) and via fields (persona_fields → parameter_fields)
+persona_parameter_relationships AS (
+    SELECT DISTINCT
+        p.id as persona_id,
+        param.id as parameter_id
+    FROM valid_personas_filtered p
+    CROSS JOIN parameters param
+    WHERE param.active = true
+    AND (
+        -- Direct relationship via parameter_personas
+        EXISTS (
+            SELECT 1 FROM parameter_personas pp
+            WHERE pp.persona_id = p.id
+            AND pp.parameter_id = param.id
+            AND pp.active = true
+        )
+        OR
+        -- Indirect relationship via persona_fields → parameter_fields
+        EXISTS (
+            SELECT 1 FROM persona_fields pf
+            JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+            WHERE pf.persona_id = p.id
+            AND pfield.parameter_id = param.id
+            AND pf.active = true
+            AND pfield.active = true
+        )
+        OR
+        -- No restrictions: if parameter has no persona restrictions, it's valid for all personas
+        NOT EXISTS (
+            SELECT 1 FROM parameter_personas pp2
+            WHERE pp2.parameter_id = param.id
+            AND pp2.active = true
+        )
+    )
+),
 valid_personas_data AS (
     SELECT 
         COALESCE(ARRAY_AGG(p.id::text ORDER BY p.name), ARRAY[]::text[]) as valid_persona_ids,
@@ -368,7 +487,19 @@ valid_personas_data AS (
                 'description', p.description,
                 'color', p.color,
                 'icon', p.icon,
-                'image_model', COALESCE(p.image_model, false)
+                'image_model', COALESCE(p.image_model, false),
+                'parameter_ids', COALESCE(
+                    (SELECT jsonb_agg(ppr.parameter_id::text ORDER BY ppr.parameter_id)
+                     FROM persona_parameter_relationships ppr
+                     WHERE ppr.persona_id = p.id),
+                    '[]'::jsonb
+                ),
+                'field_ids', COALESCE(
+                    (SELECT jsonb_agg(pf.field_id::text ORDER BY pf.field_id)
+                     FROM persona_fields pf
+                     WHERE pf.persona_id = p.id AND pf.active = true),
+                    '[]'::jsonb
+                )
             )
         ), '{}'::jsonb) as persona_mapping
     FROM valid_personas_filtered p
@@ -387,8 +518,8 @@ SELECT
     COALESCE((SELECT agent_id FROM default_video_agent), '') as video_agent_id,
     COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
     COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids,
-    COALESCE((SELECT parameter_mapping FROM video_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,
-    COALESCE((SELECT array_agg(id::text) FROM video_parameter_data), ARRAY[]::text[]) as valid_parameter_ids,
+    COALESCE((SELECT parameter_mapping FROM enhanced_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,
+    COALESCE((SELECT array_agg(id::text) FROM parameter_data_for_mapping), ARRAY[]::text[]) as valid_parameter_ids,
     COALESCE((SELECT field_mapping FROM video_field_mapping_data), '{}'::jsonb) as field_mapping,
     COALESCE((SELECT valid_persona_ids FROM valid_personas_data), ARRAY[]::text[]) as valid_persona_ids,
     COALESCE((SELECT persona_mapping FROM valid_personas_data), '{}'::jsonb) as persona_mapping

@@ -13799,6 +13799,42 @@ export interface components {
             videoId: string;
             /** Profileid */
             profileId: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Personaids */
+            personaIds?: string[] | null;
+            /** Documentids */
+            documentIds?: string[] | null;
+            /** Parameterids */
+            parameterIds?: string[] | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
+            /** Personasearch */
+            personaSearch?: string | null;
+            /** Documentsearch */
+            documentSearch?: string | null;
+            /** Parametersearch */
+            parameterSearch?: string | null;
+            /** Personamin */
+            personaMin?: number | null;
+            /** Personamax */
+            personaMax?: number | null;
+            /** Documentmin */
+            documentMin?: number | null;
+            /** Documentmax */
+            documentMax?: number | null;
+            /** Parameterselectionmin */
+            parameterSelectionMin?: number | null;
+            /** Parameterselectionmax */
+            parameterSelectionMax?: number | null;
+            /** Fieldranges */
+            fieldRanges?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            } | null;
+            /** Randomize */
+            randomize?: string | null;
         };
         /** VideoDocumentItem */
         VideoDocumentItem: {
@@ -13869,6 +13905,42 @@ export interface components {
         VideoNewRequest: {
             /** Profileid */
             profileId: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Personaids */
+            personaIds?: string[] | null;
+            /** Documentids */
+            documentIds?: string[] | null;
+            /** Parameterids */
+            parameterIds?: string[] | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
+            /** Personasearch */
+            personaSearch?: string | null;
+            /** Documentsearch */
+            documentSearch?: string | null;
+            /** Parametersearch */
+            parameterSearch?: string | null;
+            /** Personamin */
+            personaMin?: number | null;
+            /** Personamax */
+            personaMax?: number | null;
+            /** Documentmin */
+            documentMin?: number | null;
+            /** Documentmax */
+            documentMax?: number | null;
+            /** Parameterselectionmin */
+            parameterSelectionMin?: number | null;
+            /** Parameterselectionmax */
+            parameterSelectionMax?: number | null;
+            /** Fieldranges */
+            fieldRanges?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            } | null;
+            /** Randomize */
+            randomize?: string | null;
         };
         /**
          * VideoSearchResult
@@ -16020,7 +16092,7 @@ export interface components {
             /** Document Mapping */
             document_mapping: {
                 [key: string]: {
-                    [key: string]: string;
+                    [key: string]: unknown;
                 };
             };
             /** Valid Document Ids */
@@ -16077,6 +16149,44 @@ export interface components {
             };
             /** Valid Persona Ids */
             valid_persona_ids: string[];
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Valid General Field Ids */
+            valid_general_field_ids?: string[] | null;
+            allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
+            randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
+            /** Selected Persona Ids */
+            selected_persona_ids?: string[] | null;
+            /** Selected Document Ids */
+            selected_document_ids?: string[] | null;
+            /** Selected Parameter Ids */
+            selected_parameter_ids?: string[] | null;
+            /** Selected Field Ids */
+            selected_field_ids?: string[] | null;
+            /** Persona Search */
+            persona_search?: string | null;
+            /** Document Search */
+            document_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Persona Min */
+            persona_min?: number | null;
+            /** Persona Max */
+            persona_max?: number | null;
+            /** Document Min */
+            document_min?: number | null;
+            /** Document Max */
+            document_max?: number | null;
+            /** Parameter Selection Min */
+            parameter_selection_min?: number | null;
+            /** Parameter Selection Max */
+            parameter_selection_max?: number | null;
+            /** Field Ranges */
+            field_ranges?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            } | null;
         };
         /**
          * VideoItem
@@ -16162,7 +16272,7 @@ export interface components {
             /** Document Mapping */
             document_mapping: {
                 [key: string]: {
-                    [key: string]: string;
+                    [key: string]: unknown;
                 };
             };
             /** Valid Document Ids */
@@ -16219,6 +16329,44 @@ export interface components {
             };
             /** Valid Persona Ids */
             valid_persona_ids: string[];
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Valid General Field Ids */
+            valid_general_field_ids?: string[] | null;
+            allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
+            randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
+            /** Selected Persona Ids */
+            selected_persona_ids?: string[] | null;
+            /** Selected Document Ids */
+            selected_document_ids?: string[] | null;
+            /** Selected Parameter Ids */
+            selected_parameter_ids?: string[] | null;
+            /** Selected Field Ids */
+            selected_field_ids?: string[] | null;
+            /** Persona Search */
+            persona_search?: string | null;
+            /** Document Search */
+            document_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Persona Min */
+            persona_min?: number | null;
+            /** Persona Max */
+            persona_max?: number | null;
+            /** Document Min */
+            document_min?: number | null;
+            /** Document Max */
+            document_max?: number | null;
+            /** Parameter Selection Min */
+            parameter_selection_min?: number | null;
+            /** Parameter Selection Max */
+            parameter_selection_max?: number | null;
+            /** Field Ranges */
+            field_ranges?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            } | null;
         };
         /**
          * QuestionItem
