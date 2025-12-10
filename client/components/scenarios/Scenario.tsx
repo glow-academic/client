@@ -4252,9 +4252,8 @@ export default function Scenario({
                   {/* Documents Preview Section - 30% right */}
                   {currentDocumentIds.length > 0 && (
                     <div className="w-[30%] space-y-4 flex flex-col">
-                      {/* DocumentPicker - top right */}
-                      <div className="flex items-center justify-between">
-                        <div></div>
+                      {/* DocumentPicker - top right (only show when multiple documents, full width) */}
+                      {currentDocumentIds.length > 1 && (
                         <GenericPicker
                           items={documentMapping}
                           itemIds={currentDocumentIds}
@@ -4320,11 +4319,11 @@ export default function Scenario({
                           disabled={isReadonly}
                           multiSelect={false}
                           hideSelectedChips={true}
-                          buttonClassName="h-8 justify-between"
+                          buttonClassName="h-8 justify-between w-full"
                           groupHeading="Documents"
                           placeholder="Select document..."
                         />
-                      </div>
+                      )}
 
                       {/* Document Preview Container - Matches messages section height */}
                       {scenarioPreviewDocumentId && (
@@ -4358,7 +4357,7 @@ export default function Scenario({
                                   upload_id: null,
                                 } as DocumentItem);
                             return (
-                              <div className="h-full overflow-auto">
+                              <div className="h-full overflow-auto [&>div]:!min-h-0 [&>div]:h-full [&_iframe]:!min-h-0 [&_iframe]:h-full">
                                 <DocumentViewer
                                   document={docForViewer}
                                   bare={true}
