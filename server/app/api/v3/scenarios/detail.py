@@ -785,12 +785,22 @@ async def get_scenario_detail(
             except (ValueError, TypeError):
                 document_ids_uuid = None
         
+        # Convert problemStatementIds to UUID array if provided
+        problem_statement_ids_uuid = None
+        if request_data.problemStatementIds:
+            import uuid as uuid_lib
+            try:
+                problem_statement_ids_uuid = [uuid_lib.UUID(psid) for psid in request_data.problemStatementIds]
+            except (ValueError, TypeError):
+                problem_statement_ids_uuid = None
+        
         sql_params = (
             request_data.scenarioId,
             request_data.profileId,
             request_data.useImage,
             request_data.useObjectives,
             document_ids_uuid,
+            problem_statement_ids_uuid,
         )
 
         # Execute query

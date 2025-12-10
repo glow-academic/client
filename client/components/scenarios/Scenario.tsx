@@ -411,6 +411,13 @@ export default function Scenario({
         );
         if (data.success) {
           problemStatementId = data.problem_statement_id;
+          // Update state to trigger URL refresh
+          setCurrentProblemStatementIds((prev) => {
+            if (prev.includes(data.problem_statement_id)) {
+              return prev;
+            }
+            return [...prev, data.problem_statement_id];
+          });
         }
       };
 
@@ -726,6 +733,9 @@ export default function Scenario({
   const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
   const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
+  const [currentProblemStatementIds, setCurrentProblemStatementIds] = useState<
+    string[]
+  >([]);
   const [image, setImage] = useState<{
     id: string;
     name: string;
@@ -806,6 +816,9 @@ export default function Scenario({
       // Renamed from currentParameterItemIds
       params.set("fieldIds", currentFieldIds.join(",")); // Renamed from parameterItemIds
     }
+    if (currentProblemStatementIds.length > 0) {
+      params.set("problemStatementIds", currentProblemStatementIds.join(","));
+    }
 
     // Add search params when non-empty
     if (personaSearchTerm.trim()) {
@@ -869,6 +882,7 @@ export default function Scenario({
     currentDocumentIds,
     formData.parameterIds,
     currentFieldIds,
+    currentProblemStatementIds,
     personaSearchTerm,
     documentSearchTerm,
     parameterSearchTerm,
@@ -1234,6 +1248,19 @@ export default function Scenario({
     }
   }, [currentFieldIds, validParameterItemIds]);
 
+  // Sync problem statement IDs from URL params (for server-driven updates after router.refresh())
+  useEffect(() => {
+    const problemStatementIdsFromUrl =
+      searchParams.get("problemStatementIds")?.split(",").filter(Boolean) || [];
+    // Only update if URL params differ from current state (prevents loops)
+    const urlIdsSorted = [...problemStatementIdsFromUrl].sort().join(",");
+    const currentIdsSorted = [...currentProblemStatementIds].sort().join(",");
+    if (urlIdsSorted !== currentIdsSorted) {
+      setCurrentProblemStatementIds(problemStatementIdsFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only depend on searchParams - currentProblemStatementIds comparison prevents loops
+
   // Handle randomized selections from server response
   useEffect(() => {
     if (scenarioData?.randomized_selections) {
@@ -1346,6 +1373,7 @@ export default function Scenario({
     currentDocumentIds,
     formData.parameterIds,
     currentFieldIds, // Renamed from currentParameterItemIds
+    currentProblemStatementIds,
     personaSearchTerm,
     documentSearchTerm,
     parameterSearchTerm,
@@ -1476,6 +1504,15 @@ export default function Scenario({
         setCurrentFieldIds(newData.selected_field_ids);
       }
 
+      // Initialize problem statement IDs from URL params (server doesn't return selected_problem_statement_ids)
+      const problemStatementIdsFromUrl = searchParams
+        .get("problemStatementIds")
+        ?.split(",")
+        .filter(Boolean);
+      if (problemStatementIdsFromUrl && problemStatementIdsFromUrl.length > 0) {
+        setCurrentProblemStatementIds(problemStatementIdsFromUrl);
+      }
+
       // Initialize search terms from server response
       if (newData.persona_search) {
         setPersonaSearchTerm(newData.persona_search);
@@ -1531,6 +1568,7 @@ export default function Scenario({
     previousDepartmentIds.length,
     effectiveProfile?.primaryDepartmentId,
     initialFormData,
+    searchParams,
   ]);
 
   // Problem statement ID is now managed via URL parameters, not state

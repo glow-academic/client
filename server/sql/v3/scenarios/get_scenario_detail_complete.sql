@@ -1,5 +1,5 @@
 -- Get scenario detail with departments, problem statements, and access control
--- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid or "guest-profile-id"), $3 = use_image (bool, nullable), $4 = use_objectives (bool, nullable), $5 = document_ids (uuid[], nullable)
+-- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid or "guest-profile-id"), $3 = use_image (bool, nullable), $4 = use_objectives (bool, nullable), $5 = document_ids (uuid[], nullable), $6 = problem_statement_ids (uuid[], nullable)
 
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
@@ -73,17 +73,44 @@ scenario_all_problem_statements AS (
 problem_statement_mapping_data AS (
     SELECT 
         COALESCE(
-            jsonb_object_agg(
-                sps.problem_statement_id,
+            (
+                SELECT jsonb_object_agg(
+                    ps_id,
+                    ps_data
+                )
+                FROM (
+                    -- Problem statements from scenario
+                    SELECT 
+                        sps.problem_statement_id as ps_id,
                 jsonb_build_object(
                     'problem_statement', sps.problem_statement,
                     'created_at', sps.problem_statement_created_at::text,
                     'updated_at', sps.problem_statement_updated_at::text
-                )
+                        ) as ps_data
+                    FROM scenario_all_problem_statements sps
+                    UNION ALL
+                    -- Problem statements from provided IDs
+                    SELECT 
+                        ps.id::text as ps_id,
+                        jsonb_build_object(
+                            'problem_statement', ps.problem_statement,
+                            'created_at', ps.created_at::text,
+                            'updated_at', ps.updated_at::text
+                        ) as ps_data
+                    FROM problem_statements ps
+                    WHERE $6::uuid[] IS NOT NULL
+                    AND array_length($6::uuid[], 1) > 0
+                    AND ps.id = ANY($6::uuid[])
+                    AND ps.id NOT IN (
+                        SELECT problem_statement_id::uuid 
+                        FROM scenario_all_problem_statements 
+                        WHERE problem_statement_id IS NOT NULL
+                    )
+                ) combined
             ),
             '{}'::jsonb
         ) as problem_statement_mapping
-    FROM scenario_all_problem_statements sps
+    FROM (SELECT 1) dummy
 ),
 scenario_department_access_check AS (
     SELECT 
@@ -417,6 +444,32 @@ document_data AS (
     LEFT JOIN document_uploads du2 ON du2.document_id = d2.id AND du2.active = true
     LEFT JOIN uploads u2 ON u2.id = du2.upload_id
     WHERE d2.active = true
+    UNION
+    -- Include provided documentIds even if they don't match department filters
+    SELECT DISTINCT
+        d3.id,
+        d3.name,
+        ''::text as description,
+        u3.file_path,
+        u3.mime_type
+    FROM documents d3
+    LEFT JOIN document_uploads du3 ON du3.document_id = d3.id AND du3.active = true
+    LEFT JOIN uploads u3 ON u3.id = du3.upload_id
+    WHERE d3.active = true
+    AND $5::uuid[] IS NOT NULL
+    AND array_length($5::uuid[], 1) > 0
+    AND d3.id = ANY($5::uuid[])
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM document_fields df
+        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+        JOIN parameters param ON param.id = pfield.parameter_id
+        WHERE df.document_id = d3.id
+        AND df.active = true
+        AND pfield.active = true
+        AND param.active = true
+        AND param.video_parameter = true
+    )
 ),
 -- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
 document_parameter_relationships AS (
@@ -543,11 +596,30 @@ document_details_data AS (
                     ), '[]'::jsonb)
                 ) ORDER BY d.name
             )
+            FROM (
+                -- Documents linked to scenario
+                SELECT d.id, d.name, d.updated_at, d.active, u.file_path, u.mime_type, u.id as upload_id
             FROM scenario_documents sd
             JOIN documents d ON d.id = sd.document_id
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
             LEFT JOIN uploads u ON u.id = du.upload_id
-            WHERE sd.scenario_id = $1 AND sd.active = true
+                WHERE sd.scenario_id = $1 AND sd.active = true AND d.active = true
+                UNION
+                -- Provided documentIds not already linked to scenario
+                SELECT d.id, d.name, d.updated_at, d.active, u.file_path, u.mime_type, u.id as upload_id
+                FROM documents d
+                LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+                LEFT JOIN uploads u ON u.id = du.upload_id
+                WHERE d.active = true
+                AND $5::uuid[] IS NOT NULL
+                AND array_length($5::uuid[], 1) > 0
+                AND d.id = ANY($5::uuid[])
+                AND d.id NOT IN (
+                    SELECT document_id 
+                    FROM scenario_documents 
+                    WHERE scenario_id = $1 AND active = true
+                )
+            ) d
         ),
         '[]'::jsonb
     ) as document_details

@@ -200,6 +200,7 @@ persona_mapping_data AS (
     FROM persona_data p
 ),
 document_data AS (
+    -- Department-filtered documents
     SELECT 
         d.id,
         d.name,
@@ -224,7 +225,29 @@ document_data AS (
             AND param.active = true
             AND param.video_parameter = true
         )
-    ORDER BY d.name
+    UNION
+    -- Include provided documentIds even if they don't match department filters
+    SELECT DISTINCT
+        d.id,
+        d.name,
+        ''::text as description
+    FROM documents d
+    WHERE d.active = true
+    AND $4::uuid[] IS NOT NULL
+    AND array_length($4::uuid[], 1) > 0
+    AND d.id = ANY($4::uuid[])
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM document_fields df
+        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+        JOIN parameters param ON param.id = pfield.parameter_id
+        WHERE df.document_id = d.id
+        AND df.active = true
+        AND pfield.active = true
+        AND param.active = true
+        AND param.video_parameter = true
+    )
+    ORDER BY name
 ),
 -- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
 document_parameter_relationships AS (
@@ -460,7 +483,14 @@ document_details_data AS (
             LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
             LEFT JOIN templates t ON t.id = dt.template_id
             LEFT JOIN uploads template_u ON template_u.id = t.upload_id
-            WHERE d.id IN (SELECT id FROM document_data)
+            WHERE (
+                d.id IN (SELECT id FROM document_data)
+                OR (
+                    $4::uuid[] IS NOT NULL
+                    AND array_length($4::uuid[], 1) > 0
+                    AND d.id = ANY($4::uuid[])
+                )
+            )
             AND d.active = true
         ),
         '[]'::jsonb
@@ -521,7 +551,23 @@ objectives_history_data_default AS (
     ) as objectives_history
 ),
 problem_statement_mapping_data_default AS (
-    SELECT '{}'::jsonb as problem_statement_mapping
+    SELECT COALESCE(
+        (
+            SELECT jsonb_object_agg(
+                ps.id::text,
+                jsonb_build_object(
+                    'problem_statement', ps.problem_statement,
+                    'created_at', ps.created_at::text,
+                    'updated_at', ps.updated_at::text
+                )
+            )
+            FROM problem_statements ps
+            WHERE $5::uuid[] IS NOT NULL
+            AND array_length($5::uuid[], 1) > 0
+            AND ps.id = ANY($5::uuid[])
+        ),
+        '{}'::jsonb
+    ) as problem_statement_mapping
 ),
 user_profile AS (
     SELECT role as user_role 
