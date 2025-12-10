@@ -9,6 +9,82 @@ user_profile AS (
         (SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true LIMIT 1) as primary_department_id
     FROM profiles WHERE id = $1
 ),
+primary_department_id AS (
+    SELECT department_id::text
+    FROM profile_departments
+    WHERE profile_id = $1 AND is_primary = TRUE
+    LIMIT 1
+),
+first_user_department AS (
+    SELECT ud.department_id as id
+    FROM user_departments ud
+    ORDER BY ud.department_id
+    LIMIT 1
+),
+resolved_department_for_agents AS (
+    -- Use primary department if available, otherwise first accessible department
+    SELECT COALESCE(
+        (SELECT pd.department_id FROM profile_departments pd WHERE pd.profile_id = $1 AND pd.is_primary = TRUE LIMIT 1),
+        (SELECT id FROM first_user_department)
+    ) as department_id
+),
+default_outline_agent AS (
+    -- Get best outline agent for the resolved department
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    WHERE a.role = 'outline'
+    AND a.active = true
+    AND (
+        -- Include if agent is linked to the resolved department
+        ad.department_id = rdfa.department_id
+        -- OR agent has no department links (cross-department)
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        -- Prioritize department-specific agents over cross-department agents
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
+default_image_agent AS (
+    -- Get best image agent for the resolved department
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    WHERE a.role = 'image'
+    AND a.active = true
+    AND (
+        -- Include if agent is linked to the resolved department
+        ad.department_id = rdfa.department_id
+        -- OR agent has no department links (cross-department)
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        -- Prioritize department-specific agents over cross-department agents
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
+default_video_agent AS (
+    -- Get best video agent for the resolved department
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    WHERE a.role = 'video'
+    AND a.active = true
+    AND (
+        -- Include if agent is linked to the resolved department
+        ad.department_id = rdfa.department_id
+        -- OR agent has no department links (cross-department)
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        -- Prioritize department-specific agents over cross-department agents
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
 department_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
@@ -69,7 +145,7 @@ policy_param_item AS (
     AND f.name = 'policy'
     LIMIT 1
 ),
--- Documents (filtered to only include policy documents)
+-- Documents (filtered to only include policy documents, exclude scenario_parameter documents)
 document_data AS (
     SELECT DISTINCT
         d.id,
@@ -90,6 +166,18 @@ document_data AS (
             up.role = 'superadmin'
             OR dd.department_id IN (SELECT department_id FROM user_departments)
             OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        )
+        -- Exclude documents with scenario_parameter = true
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM document_fields df2
+            JOIN parameter_fields pfield ON pfield.field_id = df2.field_id
+            JOIN parameters param ON param.id = pfield.parameter_id
+            WHERE df2.document_id = d.id
+            AND df2.active = true
+            AND pfield.active = true
+            AND param.active = true
+            AND param.scenario_parameter = true
         )
 ),
 document_mapping_data AS (
@@ -139,7 +227,7 @@ objectives_history_data AS (
     FROM objectives_data o
 ),
 valid_agents AS (
-    -- Get agents with roles 'outline' or 'image'
+    -- Get agents with roles 'outline', 'image', or 'video'
     -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
     SELECT 
         COALESCE(
@@ -157,7 +245,7 @@ valid_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true 
-    AND a.role IN ('outline', 'image')
+    AND a.role IN ('outline', 'image', 'video')
     AND (
         EXISTS (
             SELECT 1 FROM user_departments ud
@@ -294,6 +382,9 @@ SELECT
     COALESCE((SELECT objectives_history FROM objectives_history_data), ARRAY[]::text[]) as objectives_history,
     (SELECT role FROM user_profile) as user_role,
     (SELECT primary_department_id::text FROM user_profile) as primary_department_id,
+    COALESCE((SELECT agent_id FROM default_outline_agent), '') as outline_agent_id,
+    COALESCE((SELECT agent_id FROM default_image_agent), '') as image_agent_id,
+    COALESCE((SELECT agent_id FROM default_video_agent), '') as video_agent_id,
     COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
     COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids,
     COALESCE((SELECT parameter_mapping FROM video_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,

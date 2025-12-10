@@ -41001,6 +41001,10 @@
             "type": "string",
             "title": "Image Agent Id"
           },
+          "video_agent_id": {
+            "type": "string",
+            "title": "Video Agent Id"
+          },
           "agent_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/AgentMappingItem"
@@ -41099,6 +41103,7 @@
           "questions",
           "outline_agent_id",
           "image_agent_id",
+          "video_agent_id",
           "agent_mapping",
           "valid_agent_ids",
           "parameter_mapping",
@@ -41376,6 +41381,10 @@
             "type": "string",
             "title": "Image Agent Id"
           },
+          "video_agent_id": {
+            "type": "string",
+            "title": "Video Agent Id"
+          },
           "agent_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/AgentMappingItem"
@@ -41475,6 +41484,7 @@
           "questions",
           "outline_agent_id",
           "image_agent_id",
+          "video_agent_id",
           "agent_mapping",
           "valid_agent_ids",
           "parameter_mapping",

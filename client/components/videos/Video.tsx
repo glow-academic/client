@@ -5,44 +5,16 @@
  * 01/21/2025
  */
 "use client";
-import {
-  Check,
-  ChevronsUpDown,
-  HelpCircle,
-  Image,
-  Loader2,
-  Plus,
-  Power,
-  RotateCcw,
-  Shuffle,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
 // UI Components
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import {
   Command,
   CommandEmpty,
@@ -50,45 +22,28 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+
 import { cn } from "@/lib/utils";
 
 // Custom Components
-import {
-  DocumentMappingItem,
-  DocumentPicker,
-} from "@/components/common/forms/DocumentPicker";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
-import { ParameterSelector } from "@/components/parameters/ParameterSelector";
+import { DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
+import { DocumentSection } from "@/components/common/forms/DocumentSection";
+import { ParameterItemSection } from "@/components/common/forms/ParameterItemSection";
+import { ParameterSection } from "@/components/common/forms/ParameterSection";
+import { PersonaSection } from "@/components/common/forms/PersonaSection";
+import { VideoBasicInfoSection } from "@/components/videos/VideoBasicInfoSection";
+import { VideoContentSection } from "@/components/videos/VideoContentSection";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { Brain } from "lucide-react";
 
 // Types and API functions
 import type {
@@ -168,9 +123,7 @@ type RandomizeVideoIn = {
     videoId?: string;
     profileId: string;
     departmentIds?: string[];
-    problemStatementIds?: string[];
-    objectiveIds?: string[];
-    policyIds?: string[];
+    documentIds?: string[];
     targets: string[];
   };
 };
@@ -178,9 +131,7 @@ type RandomizeVideoIn = {
 type RandomizeVideoOut = {
   success: boolean;
   message: string;
-  problemStatementIds: string[];
-  objectiveIds: string[];
-  policyIds: string[];
+  documentIds: string[];
 };
 
 type StepStatus = "pending" | "active" | "completed";
@@ -283,12 +234,14 @@ export default function Video({
   const isEditMode = mode === "edit" && !!videoId;
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
-  // Use server-provided data directly
+  // Use server-provided data directly (no fallback needed - server pages always provide data)
   const videoDetail = serverVideoDetail;
   const videoDetailDefault = serverVideoDetailDefault;
 
-  // Use edit detail when editing, default detail when creating
-  const videoData = isEditMode ? videoDetail : videoDetailDefault;
+  // Use edit detail when editing, default detail when creating - strongly typed
+  const videoData: VideoDetailOut | VideoNewOut | undefined = isEditMode
+    ? videoDetail
+    : videoDetailDefault;
 
   // Set breadcrumb context when video data is loaded
   useEffect(() => {
@@ -378,19 +331,19 @@ export default function Video({
       createPayload.document_ids = selectedDocumentIds;
     }
     if (uploadIds.length > 0) {
-      (createPayload as any).upload_ids = uploadIds;
-      (createPayload as any).image_names = imageNames;
+      createPayload.upload_ids = uploadIds;
+      createPayload.image_names = imageNames;
     }
     if (currentParameterItemIds.length > 0) {
-      (createPayload as any).parameter_item_ids = currentParameterItemIds;
+      createPayload.parameter_item_ids = currentParameterItemIds;
     }
     if (formData.parameterIds && formData.parameterIds.length > 0) {
-      (createPayload as any).parameter_ids = formData.parameterIds;
+      createPayload.parameter_ids = formData.parameterIds;
     }
     // Note: outline_agent_id is not supported in create endpoint
     // It will be set via update after creation if needed
 
-    return createPayload as any;
+    return createPayload;
   };
 
   const handleRandomizeVideo = async (targets: string[], section: string) => {
@@ -414,10 +367,10 @@ export default function Video({
         body.departmentIds = formData.departmentIds;
       }
 
-      // For policies randomization, don't send policyIds to force randomization (like documents in Scenario.tsx)
-      // The backend will randomize if policyIds is not provided
-      if (section === "policies") {
-        // Don't set body.policyIds - let backend randomize
+      // For documents randomization, don't send documentIds to force randomization (like documents in Scenario.tsx)
+      // The backend will randomize if documentIds is not provided
+      if (section === "documents") {
+        // Don't set body.documentIds - let backend randomize
       }
 
       // For parameters randomization, we handle it client-side
@@ -428,13 +381,16 @@ export default function Video({
       const result = await randomizeVideoAction({ body });
 
       if (result.success) {
-        // Update policies if randomized
-        if (targets.includes("policies") && result.policyIds.length > 0) {
-          // Note: RandomizeVideoOut doesn't return documentIds, only policyIds
-          // Documents are linked via policies, so we don't need to update documentIds here
+        // Update documents if randomized
+        if (
+          targets.includes("documents") &&
+          result.documentIds &&
+          result.documentIds.length > 0
+        ) {
+          setSelectedDocumentIds(result.documentIds);
 
-          // Randomize policy parameters for the new policies (client-side)
-          // Filter available policy parameter items for the new policies
+          // Randomize document parameters for the new documents (client-side)
+          // Filter available document parameter items for the new documents
           const newDocumentParameterItemIds: string[] = [];
           documentParameterIds.forEach((paramId) => {
             const paramItems = Object.entries(fieldMapping)
@@ -623,16 +579,35 @@ export default function Video({
           socket.off("video_outline_generation_error", handleError);
 
           if (data.success) {
-            resolve({
+            const result: {
+              success: boolean;
+              message: string;
+              name: string;
+              outline: string;
+              outline_id?: string;
+              video_name?: string;
+              questions?: Array<{
+                question_text: string;
+                allow_multiple: boolean;
+                options: Array<{
+                  option_text: string;
+                  type: string;
+                  is_correct: boolean;
+                }>;
+              }>;
+              question_timestamps?: Record<string, number[]>;
+            } = {
               success: true,
               message: data.message,
               name: data.name,
               outline: data.outline,
-              outline_id: data.outline_id,
-              video_name: data.video_name,
-              questions: data.questions,
-              question_timestamps: data.question_timestamps,
-            });
+            };
+            if (data.outline_id) result.outline_id = data.outline_id;
+            if (data.video_name) result.video_name = data.video_name;
+            if (data.questions) result.questions = data.questions;
+            if (data.question_timestamps)
+              result.question_timestamps = data.question_timestamps;
+            resolve(result);
           } else {
             reject(new Error(data.message || "Outline generation failed"));
           }
@@ -791,12 +766,18 @@ export default function Video({
           toast.dismiss("video-progress");
 
           if (data.success) {
-            resolve({
+            const result: {
+              success: boolean;
+              message: string;
+              videoUrl?: string;
+              videoId?: string;
+            } = {
               success: true,
               message: data.message,
-              videoUrl: data.videoUrl || null,
-              videoId: data.videoId || null,
-            });
+            };
+            if (data.videoUrl) result.videoUrl = data.videoUrl;
+            if (data.videoId) result.videoId = data.videoId;
+            resolve(result);
           } else {
             reject(new Error(data.message || "Video generation failed"));
           }
@@ -847,7 +828,7 @@ export default function Video({
   };
 
   const handleResetSection = (section: string) => {
-    if (section === "policies") {
+    if (section === "documents") {
       setSelectedDocumentIds([]);
     } else if (section === "parameters") {
       setCurrentParameterItemIds([]);
@@ -857,6 +838,42 @@ export default function Video({
     } else if (section === "images") {
       setImages([]);
       setUseImage(false);
+    }
+  };
+
+  // Randomize all: personas, documents, and all parameters
+  const handleRandomizeAll = async () => {
+    try {
+      await handleRandomizeVideo(
+        ["personas", "documents", "parameters"],
+        "all"
+      );
+      toast.success("All selections randomized");
+    } catch {
+      toast.error("Failed to randomize all selections");
+    }
+  };
+
+  // Reset all: clear all selections
+  const handleResetAll = () => {
+    try {
+      setFormData((prev) => ({
+        ...prev,
+        departmentIds: [],
+        personaIds: [],
+        parameterIds: [],
+      }));
+      setSelectedDocumentIds([]);
+      setCurrentParameterItemIds([]);
+      setSelectedOutlineId(null);
+      setOutlineText("");
+      setImages([]);
+      setUseImage(false);
+      setQuestions([]);
+      setUseQuestions(false);
+      toast.success("All selections reset");
+    } catch {
+      toast.error("Failed to reset all selections");
     }
   };
 
@@ -1172,9 +1189,10 @@ export default function Video({
     name: string;
     length_seconds: number;
     departmentIds: string[];
-    problemStatement: string;
     active: boolean;
     outlineAgentId: string | null;
+    imageAgentId: string | null;
+    videoAgentId: string | null;
     personaIds: string[];
     parameterIds: string[];
   };
@@ -1197,9 +1215,9 @@ export default function Video({
     }>
   >([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Policies state
+  // Documents state
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
 
   // Parameter state
@@ -1227,6 +1245,8 @@ export default function Video({
       problemStatement: "",
       active: true,
       outlineAgentId: null,
+      imageAgentId: null,
+      videoAgentId: null,
       personaIds: [],
       parameterIds: [],
     }),
@@ -1251,7 +1271,7 @@ export default function Video({
     return mapping as AgentMapping;
   }, [videoData?.agent_mapping]);
 
-  // Policy mapping
+  // Document mapping
   const documentMapping = useMemo(() => {
     // Server returns dict[str, dict[str, str]] which matches DocumentMappingItem structure
     // Use double assertion to handle index signature compatibility
@@ -1268,16 +1288,18 @@ export default function Video({
       {
         name: string;
         description: string;
+        color: string;
+        icon: string;
+        image_model?: boolean | null;
+        parameter_ids?: string[] | null;
+        field_ids?: string[] | null;
       }
     >;
   }, [videoData?.persona_mapping]);
 
   // Parameter mapping (filtered by video_parameter = true OR document_parameter = true)
   const parameterMapping = useMemo((): ParameterMapping => {
-    const mapping = ((videoData as any)?.parameter_mapping || {}) as Record<
-      string,
-      any
-    >;
+    const mapping = videoData?.parameter_mapping || {};
     // Filter to include video_parameter = true OR document_parameter = true and convert to ParameterMapping format
     const filtered = Object.fromEntries(
       Object.entries(mapping).filter(([, param]) => {
@@ -1288,7 +1310,7 @@ export default function Video({
     );
     // Convert to ParameterMapping format with all required fields
     return Object.fromEntries(
-      Object.entries(filtered).map(([key, param]: [string, any]) => [
+      Object.entries(filtered).map(([key, param]) => [
         key,
         {
           name: param?.name || "",
@@ -1301,17 +1323,14 @@ export default function Video({
         },
       ])
     ) as ParameterMapping;
-  }, [(videoData as any)?.parameter_mapping]);
+  }, [videoData?.parameter_mapping]);
 
   // Parameter item mapping
   const fieldMapping = useMemo((): FieldMapping => {
-    const mapping = ((videoData as any)?.field_mapping || {}) as Record<
-      string,
-      any
-    >;
+    const mapping = videoData?.field_mapping || {};
     // Convert to FieldMapping format with proper value type (must be string for ParameterSelector)
     return Object.fromEntries(
-      Object.entries(mapping).map(([key, item]: [string, any]) => [
+      Object.entries(mapping).map(([key, item]) => [
         key,
         {
           name: item?.name || "",
@@ -1321,7 +1340,7 @@ export default function Video({
         },
       ])
     ) as FieldMapping;
-  }, [(videoData as any)?.field_mapping]);
+  }, [videoData?.field_mapping]);
 
   // Filter parameters by document_parameter for display next to documents
   const documentParameterIds = useMemo(() => {
@@ -1403,12 +1422,45 @@ export default function Video({
   }, [parameterMapping, generalVideoParameterIds]);
 
   // Outline mapping (for version history) - only exists in VideoDetailOut, not VideoNewOut
-  const outlineMapping = useMemo(() => {
+  const outlineMapping = useMemo<
+    Record<string, { outline: string; created_at: string; updated_at: string }>
+  >(() => {
     if (isEditMode && videoDetail) {
-      return videoDetail.outline_mapping || {};
+      const mapping = videoDetail.outline_mapping || {};
+      // Ensure proper typing
+      return mapping as Record<
+        string,
+        { outline: string; created_at: string; updated_at: string }
+      >;
     }
     return {};
   }, [isEditMode, videoDetail]);
+
+  // Image mapping - create from images array for VideoContentSection
+  const imageMapping = useMemo(() => {
+    const mapping: Record<
+      string,
+      {
+        id: string;
+        name: string;
+        upload_id?: string;
+        file_path?: string;
+        created_at: string;
+        updated_at: string;
+      }
+    > = {};
+    images.forEach((img) => {
+      mapping[img.id] = {
+        id: img.id,
+        name: img.name,
+        ...(img.upload_id ? { upload_id: img.upload_id } : {}),
+        ...(img.file_path ? { file_path: img.file_path } : {}),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
+    return mapping;
+  }, [images]);
 
   // Load video data from server response
   useEffect(() => {
@@ -1420,16 +1472,17 @@ export default function Video({
         name: videoData.name,
         length_seconds: videoData.length_seconds,
         departmentIds: deptIds,
-        problemStatement: "", // Not used anymore, kept for form compatibility
         active: videoData.active ?? true,
         outlineAgentId: videoData.outline_agent_id || null,
+        imageAgentId: videoData.image_agent_id || null,
+        videoAgentId: videoData.video_agent_id || null,
         personaIds: videoData.persona_ids || [],
-        parameterIds: (videoData as any).video_parameter_ids || [],
+        parameterIds: videoData.video_parameter_ids || [],
       });
 
       // Load parameter items
-      if ((videoData as any)?.parameter_item_ids) {
-        setCurrentParameterItemIds((videoData as any).parameter_item_ids);
+      if (videoData.parameter_item_ids) {
+        setCurrentParameterItemIds(videoData.parameter_item_ids);
       }
 
       // Initialize outline video length from video data
@@ -1469,17 +1522,35 @@ export default function Video({
         videoData.video_images.length > 0
       ) {
         const loadedImages = videoData.video_images
-          .map((img: any) => {
-            const uploadId = img.upload_id || img.id;
-            return {
-              id: uploadId, // Use upload_id as id
-              name: img.name || "",
-              mime_type: img.mime_type || "image/png",
-              upload_id: uploadId,
-              file_path: `/api/v3/uploads/download/${uploadId}`, // Use upload download endpoint
-            };
-          })
-          .filter((img: { id?: string }) => img.id);
+          .map(
+            (img: {
+              id?: string;
+              upload_id?: string;
+              name?: string;
+              mime_type?: string;
+            }) => {
+              const uploadId = img.upload_id || img.id;
+              if (!uploadId) return null;
+              return {
+                id: uploadId, // Use upload_id as id
+                name: img.name || "",
+                mime_type: img.mime_type || "image/png",
+                upload_id: uploadId,
+                file_path: `/api/v3/uploads/download/${uploadId}`, // Use upload download endpoint
+              };
+            }
+          )
+          .filter(
+            (
+              img
+            ): img is {
+              id: string;
+              name: string;
+              mime_type: string;
+              upload_id: string;
+              file_path: string;
+            } => img !== null
+          );
         if (loadedImages.length > 0) {
           setImages(loadedImages);
           setUseImage(true);
@@ -1492,9 +1563,11 @@ export default function Video({
         setUseImage(false);
       }
 
-      // Load video URL if video file exists - construct from videoId (like documents)
-      if (isEditMode && videoId && (videoDetail as any)?.file_path) {
-        setGeneratedVideoUrl(`/api/videos/download/${videoId}`);
+      // Load video URL if video file exists - construct from upload_id
+      if (isEditMode && videoDetail?.upload_id) {
+        setGeneratedVideoUrl(
+          `/api/v3/uploads/download/${videoDetail.upload_id}`
+        );
       }
 
       // Load questions from server data (already strongly typed from API)
@@ -1534,10 +1607,20 @@ export default function Video({
       return;
     }
 
-    // Find first available outline agent
+    // Find first available agents
     const outlineAgentIds = videoData.valid_agent_ids.filter((id) => {
       const agent = agentMapping[id];
       return agent?.["roles"]?.includes("outline");
+    });
+
+    const imageAgentIds = videoData.valid_agent_ids.filter((id) => {
+      const agent = agentMapping[id];
+      return agent?.["roles"]?.includes("image");
+    });
+
+    const videoAgentIds = videoData.valid_agent_ids.filter((id) => {
+      const agent = agentMapping[id];
+      return agent?.["roles"]?.includes("video");
     });
 
     // Only update if we have agents and they're not already set
@@ -1545,6 +1628,14 @@ export default function Video({
 
     if (outlineAgentIds.length > 0 && !formData.outlineAgentId) {
       updates.outlineAgentId = outlineAgentIds[0]!;
+    }
+
+    if (imageAgentIds.length > 0 && !formData.imageAgentId) {
+      updates.imageAgentId = imageAgentIds[0]!;
+    }
+
+    if (videoAgentIds.length > 0 && !formData.videoAgentId) {
+      updates.videoAgentId = videoAgentIds[0]!;
     }
 
     if (Object.keys(updates).length > 0) {
@@ -1555,6 +1646,8 @@ export default function Video({
     agentMapping,
     isEditMode,
     formData.outlineAgentId,
+    formData.imageAgentId,
+    formData.videoAgentId,
   ]);
 
   const handleInputChange = <K extends keyof FormData>(
@@ -1640,20 +1733,24 @@ export default function Video({
           updatePayload.document_ids = selectedDocumentIds;
         }
         if (uploadIds.length > 0) {
-          (updatePayload as any).upload_ids = uploadIds;
-          (updatePayload as any).image_names = imageNames;
+          updatePayload.upload_ids = uploadIds;
+          updatePayload.image_names = imageNames;
         }
         if (formData.outlineAgentId) {
           updatePayload.outline_agent_id = formData.outlineAgentId;
         }
+        if (formData.imageAgentId) {
+          updatePayload.image_agent_id = formData.imageAgentId;
+        }
+        // Note: video_agent_id is not in UpdateVideoRequest - it's set during video generation
         if (currentParameterItemIds.length > 0) {
-          (updatePayload as any).parameter_item_ids = currentParameterItemIds;
+          updatePayload.parameter_item_ids = currentParameterItemIds;
         }
         if (formData.parameterIds && formData.parameterIds.length > 0) {
-          (updatePayload as any).parameter_ids = formData.parameterIds;
+          updatePayload.parameter_ids = formData.parameterIds;
         }
 
-        await handleUpdateVideo(updatePayload as any);
+        await handleUpdateVideo(updatePayload);
         toast.success("Video updated successfully!");
       } else {
         // CREATE mode - use helper function
@@ -1687,18 +1784,25 @@ export default function Video({
       case "name":
         // Always completed - name is required
         return "completed";
-      case "policies":
+      case "persona":
         // Can start immediately, doesn't depend on name
-        return selectedDocumentIds.length > 0 ? "completed" : "active";
+        return (formData.personaIds?.length || 0) > 0 ? "completed" : "active";
+      case "documents":
+        // Active when personas are selected, completed when documents are selected
+        return (formData.personaIds?.length || 0) === 0
+          ? "pending"
+          : selectedDocumentIds.length > 0
+            ? "completed"
+            : "active";
       case "parameters":
-        // Active when policies are selected, completed when parameter items are selected
+        // Active when documents are selected, completed when parameter items are selected
         return selectedDocumentIds.length === 0
           ? "pending"
           : currentParameterItemIds.length > 0
             ? "completed"
             : "active";
       case "outline":
-        // Active if policies are selected (questions are generated with outline)
+        // Active if documents are selected (questions are generated with outline)
         return selectedDocumentIds.length === 0
           ? "pending"
           : selectedOutlineId || outlineText.trim()
@@ -1710,7 +1814,7 @@ export default function Video({
           ? "pending"
           : uploadedVideoFile ||
               generatedVideoUrl ||
-              (isEditMode && videoDetail?.file_path)
+              (isEditMode && videoDetail?.upload_id)
             ? "completed"
             : "active";
       default:
@@ -1726,10 +1830,16 @@ export default function Video({
       status: getStepStatus("name"),
     },
     {
-      id: "policies",
-      title: "Policies",
-      description: "Select policies that will be available for this video",
-      status: getStepStatus("policies"),
+      id: "persona",
+      title: "Personas",
+      description: "Select personas for this video",
+      status: getStepStatus("persona"),
+    },
+    {
+      id: "documents",
+      title: "Documents",
+      description: "Select documents that will be available for this video",
+      status: getStepStatus("documents"),
     },
     {
       id: "parameters",
@@ -1741,7 +1851,7 @@ export default function Video({
       id: "outline",
       title: "Outline",
       description:
-        "Generate video outline from policies (questions are generated automatically)",
+        "Generate video outline from documents (questions are generated automatically)",
       status: getStepStatus("outline"),
     },
     {
@@ -1752,40 +1862,21 @@ export default function Video({
     },
   ];
 
-  // Question modal state
-  const [showMCQModal, setShowMCQModal] = useState(false);
-  const [editingMCQQuestion, setEditingMCQQuestion] = useState<Question | null>(
-    null
-  );
-
-  // Timeline segment modal state
-  const [showTimelineModal, setShowTimelineModal] = useState(false);
-  const [selectedTimelineSegment, setSelectedTimelineSegment] = useState<
-    number | null
-  >(null);
-  const [selectedQuestionsForSegment, setSelectedQuestionsForSegment] =
-    useState<string[]>([]);
-
-  const openMCQModal = (time?: number, question?: Question) => {
-    if (question) {
-      // Ensure minimum 2 options when editing existing question
-      const options =
-        question.options.length >= 2
-          ? question.options
-          : [
-              ...question.options,
-              ...Array.from({ length: 2 - question.options.length }, () => ({
-                option_text: "",
-                type: "discrete" as const,
-                is_correct: false,
-              })),
-            ];
-      setEditingMCQQuestion({ ...question, options });
-    } else {
-      setEditingMCQQuestion({
+  // New inline question management handlers
+  const handleAddQuestion = () => {
+    const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
+    if (questions.length >= maxQuestions) {
+      toast.error(
+        `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
+      );
+      return;
+    }
+    setQuestions((prev) => [
+      ...prev,
+      {
         question_text: "",
         allow_multiple: false,
-        times: time !== undefined ? [time] : [],
+        times: [],
         options: [
           {
             option_text: "",
@@ -1798,74 +1889,161 @@ export default function Video({
             is_correct: false,
           },
         ],
+      },
+    ]);
+  };
+
+  const handleRemoveQuestion = (index: number) => {
+    setQuestions((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateQuestion = (index: number, question: Question) => {
+    setQuestions((prev) => prev.map((q, i) => (i === index ? question : q)));
+  };
+
+  const handleQuestionTimesChange = (index: number, times: number[]) => {
+    const currentQuestion = questions[index];
+    if (!currentQuestion) return;
+    handleUpdateQuestion(index, { ...currentQuestion, times });
+  };
+
+  const handleOptionChange = (
+    questionIndex: number,
+    optionIndex: number,
+    option: QuestionOption
+  ) => {
+    const currentQuestion = questions[questionIndex];
+    if (!currentQuestion) return;
+    const newOptions = currentQuestion.options.map((opt, i) =>
+      i === optionIndex ? option : opt
+    );
+    // Infer allow_multiple from number of correct answers
+    const correctCount = newOptions.filter((opt) => opt.is_correct).length;
+    handleUpdateQuestion(questionIndex, {
+      ...currentQuestion,
+      options: newOptions,
+      allow_multiple: correctCount > 1,
+    });
+  };
+
+  const handleAddOption = (questionIndex: number) => {
+    const currentQuestion = questions[questionIndex];
+    if (!currentQuestion || currentQuestion.options.length >= 5) return;
+    handleUpdateQuestion(questionIndex, {
+      ...currentQuestion,
+      options: [
+        ...currentQuestion.options,
+        {
+          option_text: "",
+          type: "discrete" as const,
+          is_correct: false,
+        },
+      ],
+    });
+  };
+
+  const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
+    const currentQuestion = questions[questionIndex];
+    if (!currentQuestion || currentQuestion.options.length <= 2) return;
+    const newOptions = currentQuestion.options.filter(
+      (_, i) => i !== optionIndex
+    );
+    // Infer allow_multiple from number of correct answers
+    const correctCount = newOptions.filter((opt) => opt.is_correct).length;
+    handleUpdateQuestion(questionIndex, {
+      ...currentQuestion,
+      options: newOptions,
+      allow_multiple: correctCount > 1,
+    });
+  };
+
+  const handleToggleOptionCorrect = (
+    questionIndex: number,
+    optionIndex: number
+  ) => {
+    const currentQuestion = questions[questionIndex];
+    if (!currentQuestion) return;
+    const newOptions = currentQuestion.options.map((opt, i) =>
+      i === optionIndex ? { ...opt, is_correct: !opt.is_correct } : opt
+    );
+    // Infer allow_multiple from number of correct answers
+    const correctCount = newOptions.filter((opt) => opt.is_correct).length;
+    handleUpdateQuestion(questionIndex, {
+      ...currentQuestion,
+      options: newOptions,
+      allow_multiple: correctCount > 1,
+    });
+  };
+
+  // Drag and drop handlers for questions
+  const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
+    number | null
+  >(null);
+
+  const handleDragStartQuestion = (e: React.DragEvent, index: number) => {
+    setDraggedQuestionIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverQuestion = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropQuestion = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedQuestionIndex === null) return;
+
+    const newQuestions = [...questions];
+    const [movedQuestion] = newQuestions.splice(draggedQuestionIndex, 1);
+    if (movedQuestion) {
+      newQuestions.splice(targetIndex, 0, movedQuestion);
+      setQuestions(newQuestions);
+    }
+    setDraggedQuestionIndex(null);
+  };
+
+  // Drag and drop handlers for options
+  const [draggedOptionIndex, setDraggedOptionIndex] = useState<{
+    questionIndex: number;
+    optionIndex: number;
+  } | null>(null);
+
+  const handleDragStartOption = (
+    e: React.DragEvent,
+    questionIndex: number,
+    optionIndex: number
+  ) => {
+    setDraggedOptionIndex({ questionIndex, optionIndex });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverOption = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropOption = (
+    e: React.DragEvent,
+    questionIndex: number,
+    targetOptionIndex: number
+  ) => {
+    e.preventDefault();
+    if (!draggedOptionIndex) return;
+
+    const currentQuestion = questions[questionIndex];
+    if (!currentQuestion) return;
+
+    const newOptions = [...currentQuestion.options];
+    const [movedOption] = newOptions.splice(draggedOptionIndex.optionIndex, 1);
+    if (movedOption) {
+      newOptions.splice(targetOptionIndex, 0, movedOption);
+      handleUpdateQuestion(questionIndex, {
+        ...currentQuestion,
+        options: newOptions,
       });
     }
-    setShowMCQModal(true);
-  };
-
-  const closeMCQModal = () => {
-    setShowMCQModal(false);
-    setEditingMCQQuestion(null);
-  };
-
-  const saveMCQQuestion = () => {
-    if (!editingMCQQuestion) return;
-
-    if (!editingMCQQuestion.question_text.trim()) {
-      toast.error("Question text is required");
-      return;
-    }
-
-    if (editingMCQQuestion.options.length < 2) {
-      toast.error("Choice questions must have at least 2 options");
-      return;
-    }
-
-    // Allow questions without times when adding manually (not from timeline)
-    // Set default time to 0 if no time specified
-    if (editingMCQQuestion.times.length === 0) {
-      editingMCQQuestion.times = [0];
-    }
-
-    // Infer allow_multiple from number of correct answers
-    const correctCount = editingMCQQuestion.options.filter(
-      (opt) => opt.is_correct
-    ).length;
-    const updatedQuestion = {
-      ...editingMCQQuestion,
-      allow_multiple: correctCount > 1,
-    };
-
-    if (correctCount === 0) {
-      toast.error("Choice questions must have at least one correct answer");
-      return;
-    }
-
-    if (updatedQuestion.question_id) {
-      // Update existing question
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.question_id === updatedQuestion.question_id ? updatedQuestion : q
-        )
-      );
-    } else {
-      // Add new question - check max limit
-      const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
-      if (questions.length >= maxQuestions) {
-        toast.error(
-          `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
-        );
-        return;
-      }
-      setQuestions((prev) => [...prev, updatedQuestion]);
-    }
-
-    closeMCQModal();
-  };
-
-  const deleteQuestion = (questionId?: string) => {
-    if (!questionId) return;
-    setQuestions((prev) => prev.filter((q) => q.question_id !== questionId));
+    setDraggedOptionIndex(null);
   };
 
   // Format time for display
@@ -1875,7 +2053,7 @@ export default function Video({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Get all question times for timeline markers
+  // Get all question times for timeline markers (kept for compatibility, but timeline removed)
   const allQuestionTimes = useMemo(() => {
     const times = new Set<number>();
     questions.forEach((q) => {
@@ -1884,9 +2062,90 @@ export default function Video({
     return Array.from(times).sort((a, b) => a - b);
   }, [questions]);
 
+  // Handler for image selection (converting ImageMappingItem to expected format)
+  const handleImageSelect = (imageId: string | null) => {
+    if (imageId && imageMapping[imageId]) {
+      // Note: VideoContentSection expects images array, not single image
+      // This handler might not be used if we're using the array directly
+      // Image selection is handled via the images array state
+    }
+  };
+
+  // Handler for outline version selection
+  const handleOutlineVersionSelect = (id: string) => {
+    if (id && outlineMapping[id]) {
+      setOutlineText(outlineMapping[id].outline);
+      setSelectedOutlineId(id);
+    }
+  };
+
+  // Handler for resetting outline
+  const handleResetOutline = () => {
+    if (
+      isEditMode &&
+      videoDetail &&
+      videoDetail.outline_ids &&
+      videoDetail.outline_ids.length > 0
+    ) {
+      const outlineId = videoDetail.outline_ids[0]!;
+      if (outlineMapping[outlineId]) {
+        setOutlineText(outlineMapping[outlineId].outline);
+        setSelectedOutlineId(outlineId);
+      }
+    } else {
+      setOutlineText("");
+      setSelectedOutlineId(null);
+    }
+  };
+
+  // Compute outline changes
+  const hasOutlineChanges = useMemo(() => {
+    if (!isEditMode || !videoDetail) return false;
+    if (!selectedOutlineId) {
+      // New outline text
+      return outlineText.trim() !== "";
+    }
+    // Check if current text differs from selected outline version
+    const selectedOutline = outlineMapping[selectedOutlineId];
+    if (!selectedOutline) return false;
+    return outlineText.trim() !== selectedOutline.outline.trim();
+  }, [outlineText, selectedOutlineId, outlineMapping, isEditMode, videoDetail]);
+
+  // Current outline IDs for version picker
+  const currentOutlineIds = useMemo(() => {
+    if (selectedOutlineId) {
+      return [selectedOutlineId];
+    }
+    return [];
+  }, [selectedOutlineId]);
+
+  // Handler for resetting content
+  const handleResetContent = () => {
+    setSelectedOutlineId(null);
+    setOutlineText("");
+    setQuestions([]);
+    setImages([]);
+    setUseImage(false);
+    setUseQuestions(false);
+    setGeneratedVideoUrl(null);
+    setUploadedVideoFile(null);
+    setVideoObjectUrl(null);
+  };
+
+  // Handler for video preview document change
+  const handleVideoPreviewDocumentChange = (docId: string | null) => {
+    // This can be used to track which document is being previewed
+    // For now, we'll just store it in state if needed
+  };
+
+  // Video preview document ID state
+  const [videoPreviewDocumentId, setVideoPreviewDocumentId] = useState<
+    string | null
+  >(null);
+
   // Video upload state (placeholder for now)
   const [isDragActive, setIsDragActive] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
   const hasSetLengthRef = useRef<boolean>(false);
 
@@ -1946,1138 +2205,247 @@ export default function Video({
     handleInputChange("length_seconds", 0);
   };
 
+  // Compute expected agent roles
+  const expectedOutlineRole = "outline";
+  const expectedVideoRole = "video";
+
+  const validGeneralParameterItemIds = useMemo(() => {
+    if (!fieldMapping) return [];
+    return Object.keys(fieldMapping).filter((itemId) => {
+      const field = fieldMapping[itemId];
+      return field && formData.parameterIds?.includes(field.parameter_id);
+    });
+  }, [fieldMapping, formData.parameterIds]);
+
   return (
     <div className="space-y-6 py-4 px-4">
-      {/* Step 1: Basic Information - Subtle inline name editor */}
-      <Card className="transition-all">
-        <CardContent className="pt-3">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-green-500 text-white shrink-0">
-              <Check className="w-4 h-4" />
-            </div>
-            <div className="flex-1">
-              <input
-                type="text"
-                data-testid="input-video-name"
-                value={formData.name || ""}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                onFocus={(e) => {
-                  if (e.target.value === "New Video") {
-                    e.target.select();
-                  }
-                }}
-                onBlur={(e) => {
-                  // If empty on blur, revert to "New Video"
-                  if (!e.target.value || e.target.value.trim() === "") {
-                    handleInputChange("name", "New Video");
-                  }
-                }}
-                className="w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
-                placeholder="New Video"
-                disabled={isReadonly}
-              />
-              <p className="text-xs text-muted-foreground mt-1 px-2">
-                {formData.name === "New Video" || !formData.name
-                  ? "Click to edit • Name will be auto-generated if unchanged"
-                  : "Click to edit"}
-              </p>
-              {errors["name"] && (
-                <p className="text-sm text-destructive px-2 mt-1">
-                  {errors["name"]}
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-        <CardContent className="pt-0 space-y-4">
-          {/* Department Selection */}
-          {videoData?.valid_department_ids &&
-            videoData.valid_department_ids.length > 1 && (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                {formData?.departmentIds !== undefined ? (
-                  <GenericPicker
-                    items={departmentMapping}
-                    itemIds={Array.from(
-                      new Set([
-                        ...(videoData?.valid_department_ids || []),
-                        ...(formData.departmentIds || []),
-                      ])
-                    )}
-                    selectedIds={formData.departmentIds || []}
-                    onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                    getId={(dept) => (dept as unknown as { id: string }).id}
-                    getLabel={(dept) => dept.name || ""}
-                    getSearchText={(dept) =>
-                      `${dept.name} ${dept.description || ""}`
-                    }
-                    placeholder="All Departments"
-                    disabled={isReadonly}
-                    multiSelect={true}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                  />
-                ) : null}
-              </div>
-            )}
+      {/* Step 1: Basic Information */}
+      <VideoBasicInfoSection
+        name={formData.name || ""}
+        departmentIds={formData.departmentIds || []}
+        validDepartmentIds={videoData?.valid_department_ids || []}
+        departmentMapping={departmentMapping}
+        outlineAgentId={formData.outlineAgentId}
+        imageAgentId={formData.imageAgentId}
+        videoAgentId={formData.videoAgentId}
+        validAgentIds={videoData?.valid_agent_ids || []}
+        agentMapping={agentMapping}
+        expectedOutlineRole={expectedOutlineRole}
+        expectedVideoRole={expectedVideoRole}
+        active={formData.active ?? true}
+        onNameChange={(name) => handleInputChange("name", name)}
+        onDepartmentIdsChange={(ids) => handleInputChange("departmentIds", ids)}
+        onOutlineAgentIdChange={(id) =>
+          setFormData((prev) => ({ ...prev, outlineAgentId: id }))
+        }
+        onImageAgentIdChange={(id) =>
+          setFormData((prev) => ({ ...prev, imageAgentId: id }))
+        }
+        onVideoAgentIdChange={(id) =>
+          setFormData((prev) => ({ ...prev, videoAgentId: id }))
+        }
+        onActiveChange={(active) => handleInputChange("active", active)}
+        onRandomizeAll={handleRandomizeAll}
+        onResetAll={handleResetAll}
+        isReadonly={isReadonly}
+        isSuperadmin={isSuperadmin}
+      />
 
-          {/* Parameter Selection */}
-          {videoData?.valid_parameter_ids &&
-            videoData.valid_parameter_ids.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="parameters">Parameters</Label>
-                {formData?.parameterIds !== undefined ? (
-                  <GenericPicker
-                    items={parameterMapping}
-                    itemIds={videoData.valid_parameter_ids || []}
-                    selectedIds={formData.parameterIds || []}
-                    onSelect={(ids) => handleInputChange("parameterIds", ids)}
-                    getId={(item) => (item as unknown as { id: string }).id}
-                    getLabel={(item) => item.name || ""}
-                    getSearchText={(item) =>
-                      `${item.name} ${item.description || ""}`
-                    }
-                    placeholder="Select parameters..."
-                    disabled={isReadonly}
-                    multiSelect={true}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                    groupHeading="Parameters"
-                  />
-                ) : null}
-              </div>
-            )}
-
-          {/* Personas */}
-          {videoData?.persona_ids && videoData.persona_ids.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="personas">Personas</Label>
-              {formData?.personaIds !== undefined ? (
-                <GenericPicker
-                  items={personaMapping}
-                  itemIds={videoData.persona_ids}
-                  selectedIds={formData.personaIds || []}
-                  onSelect={(ids) => handleInputChange("personaIds", ids)}
-                  getId={(persona) => (persona as unknown as { id: string }).id}
-                  getLabel={(persona) => persona.name || ""}
-                  getSearchText={(persona) =>
-                    `${persona.name} ${persona.description || ""}`
-                  }
-                  renderItem={(persona, isSelected) => {
-                    const IconComponent =
-                      getPersonaIconComponent(persona.icon) || Brain;
-                    const hexColor = persona.color || "#64748b";
-                    const generateGradient = (hex: string) => {
-                      const cleanHex = hex.replace("#", "");
-                      const r = parseInt(cleanHex.substr(0, 2), 16);
-                      const g = parseInt(cleanHex.substr(2, 2), 16);
-                      const b = parseInt(cleanHex.substr(4, 2), 16);
-                      const lighterR = Math.min(255, r + 60);
-                      const lighterG = Math.min(255, g + 60);
-                      const lighterB = Math.min(255, b + 60);
-                      const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                      return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                    };
-                    return (
-                      <div className="flex items-center gap-3 w-full">
-                        <div
-                          className="p-2 rounded-lg shadow-lg flex-shrink-0"
-                          style={{
-                            background: generateGradient(hexColor),
-                          }}
-                        >
-                          <IconComponent className="h-4 w-4 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {persona.name}
-                          </div>
-                          {persona.description && (
-                            <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                              {persona.description}
-                            </div>
-                          )}
-                        </div>
-                        <Check
-                          className={cn(
-                            "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-                            isSelected ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                      </div>
-                    );
-                  }}
-                  renderButton={(selectedItems, placeholder) => {
-                    if (selectedItems.length === 0) return placeholder;
-                    if (selectedItems.length === 1) {
-                      const persona = selectedItems[0];
-                      const IconComponent =
-                        getPersonaIconComponent(persona?.icon) || Brain;
-                      const hexColor = persona?.color || "#64748b";
-                      const generateGradient = (hex: string) => {
-                        const cleanHex = hex.replace("#", "");
-                        const r = parseInt(cleanHex.substr(0, 2), 16);
-                        const g = parseInt(cleanHex.substr(2, 2), 16);
-                        const b = parseInt(cleanHex.substr(4, 2), 16);
-                        const lighterR = Math.min(255, r + 60);
-                        const lighterG = Math.min(255, g + 60);
-                        const lighterB = Math.min(255, b + 60);
-                        const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                        return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                      };
-                      return (
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div
-                            className="p-1 rounded-md shadow-sm flex-shrink-0"
-                            style={{
-                              background: generateGradient(hexColor),
-                            }}
-                          >
-                            <IconComponent className="h-3.5 w-3.5 text-white" />
-                          </div>
-                          <span className="truncate">
-                            {persona?.name || placeholder}
-                          </span>
-                        </div>
-                      );
-                    }
-                    return `${selectedItems.length} selected`;
-                  }}
-                  renderChip={(persona, onRemove) => (
-                    <div
-                      key={(persona as unknown as { id: string }).id}
-                      className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
-                    >
-                      <span className="truncate">{persona.name}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemove((persona as unknown as { id: string }).id);
-                        }}
-                        className="text-muted-foreground hover:text-destructive flex-shrink-0"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                  placeholder="Select personas"
-                  multiSelect={true}
-                  hideSelectedChips={false}
-                  disabled={isReadonly}
-                  buttonClassName="w-full"
-                  groupHeading="Personas"
-                />
-              ) : null}
-            </div>
-          )}
-
-          {/* Agent Selection */}
-          {(() => {
-            const outlineAgentIds =
-              videoData?.valid_agent_ids?.filter((id) => {
-                const agent = agentMapping[id];
-                return agent?.["roles"]?.includes("outline");
-              }) || [];
-
-            // Only show agent picker if there's more than one option
-            const showOutlinePicker = outlineAgentIds.length > 1;
-
-            if (!showOutlinePicker) {
-              return null;
-            }
-
-            return (
-              <div className="space-y-2">
-                <Label htmlFor="outlineAgentId">Outline Agent</Label>
-                {formData?.outlineAgentId !== undefined ? (
-                  <GenericPicker
-                    items={agentMapping as Record<string, AgentMappingItem>}
-                    itemIds={outlineAgentIds}
-                    selectedIds={
-                      formData?.outlineAgentId ? [formData.outlineAgentId] : []
-                    }
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        outlineAgentId: ids[0] || null,
-                      }))
-                    }
-                    getId={(item) => (item as unknown as { id: string }).id}
-                    getLabel={(item) => item.name || ""}
-                    getSearchText={(item) =>
-                      `${item.name} ${item.description || ""}`
-                    }
-                    renderPreview={(item) => (
-                      <div className="grid gap-2">
-                        <h4 className="font-medium leading-none">
-                          {item.name || "No agent selected"}
-                        </h4>
-                        <div className="text-sm text-muted-foreground">
-                          {item.description || "No description available"}
-                        </div>
-                      </div>
-                    )}
-                    renderItem={(item, isSelected) => (
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate">{item.name}</div>
-                            {item.description && (
-                              <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                {item.description}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    placeholder="Select outline agent"
-                    disabled={isReadonly}
-                    multiSelect={false}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                    groupHeading="Agents"
-                  />
-                ) : null}
-              </div>
-            );
-          })()}
-
-          {/* Active Switch */}
-          <div className="space-y-2 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="active"
-                  className="text-sm flex items-center gap-1.5"
-                >
-                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                  Active
-                </Label>
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("active", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                Inactive videos will not be available for use
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Step 2: Policies */}
-      <Card
-        className={`transition-all ${!isEditMode && getStepStatus("policies") === "active" ? "ring-2 ring-primary" : ""} ${
-          !isEditMode && getStepStatus("policies") === "pending"
-            ? "opacity-50"
-            : ""
-        }`}
-      >
-        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
-          <div className="flex items-center space-x-3">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                getStepStatus("policies") === "completed"
-                  ? "bg-green-500 text-white"
-                  : getStepStatus("policies") === "active"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-              }`}
-            >
-              {getStepStatus("policies") === "completed" ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                "2"
-              )}
-            </div>
-            <div className="flex-1">
-              <CardTitle className="text-lg">{steps[1]?.title || ""}</CardTitle>
-              <CardDescription>{steps[1]?.description || ""}</CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRandomizeVideo(["policies"], "policies")}
-                  disabled={isRandomizing || isReadonly}
-                >
-                  {isRandomizing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Shuffle className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Randomize</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleResetSection("policies")}
-                  disabled={isReadonly}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset</TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <DocumentPicker
-            mapping={documentMapping}
-            validIds={videoData?.valid_document_ids || []}
-            selectedIds={selectedDocumentIds}
-            documentDetails={[]}
-            onSelect={(ids) => {
-              setSelectedDocumentIds(ids);
-            }}
-            multiSelect={true}
-            label="Documents"
-            placeholder="Select documents..."
-            description="Choose documents (policies) that will be available for this video."
-            disabled={isSubmitting}
-            readonly={isReadonly}
+      {/* Step 2: Persona Selection */}
+      {videoData?.valid_persona_ids &&
+        videoData.valid_persona_ids.length > 0 && (
+          <PersonaSection
+            validPersonaIds={videoData.valid_persona_ids}
+            personaMapping={personaMapping}
+            selectedPersonaIds={formData.personaIds || []}
+            searchTerm=""
+            minMax={{ min: 1, max: 2 }}
+            onPersonaIdsChange={(ids) => handleInputChange("personaIds", ids)}
+            onSearchTermChange={() => {}}
+            onMinMaxChange={() => {}}
+            onRandomize={() => {}}
+            onReset={() => handleInputChange("personaIds", [])}
+            stepStatus={getStepStatus("persona")}
+            stepTitle={steps[1]?.title || ""}
+            stepDescription={steps[1]?.description || ""}
+            stepNumber={2}
+            isReadonly={isReadonly}
+            isEditMode={isEditMode}
           />
-          {/* Document Parameters - co-located with documents section */}
-          {Object.keys(documentParameterMapping).length > 0 && (
-            <div className="pt-2">
-              <ParameterSelector
-                parameterMapping={documentParameterMapping}
-                fieldMapping={fieldMapping}
-                validParameterItemIds={validDocumentParameterItemIds}
-                selectedParameterItemIds={documentParameterItemIds}
-                onParameterItemIdsChange={(newIds) => {
-                  // Remove old document parameter items
-                  const nonDocumentParamIds = currentParameterItemIds.filter(
-                    (itemId) => {
-                      const item = fieldMapping[itemId];
-                      if (!item) return true;
-                      const paramId = item.parameter_id;
-                      return !documentParameterIds.includes(paramId);
-                    }
-                  );
-                  // Combine with new document parameter items
-                  const updatedParameterItemIds = [
-                    ...nonDocumentParamIds,
-                    ...newIds,
-                  ];
-                  setCurrentParameterItemIds(updatedParameterItemIds);
-                }}
-                disabled={isReadonly}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Step 3: Parameters */}
-      <Card
-        className={`transition-all ${!isEditMode && getStepStatus("parameters") === "active" ? "ring-2 ring-primary" : ""} ${
-          !isEditMode && getStepStatus("parameters") === "pending"
-            ? "opacity-50"
-            : ""
-        }`}
-      >
-        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
-          <div className="flex items-center space-x-3">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                getStepStatus("parameters") === "completed"
-                  ? "bg-green-500 text-white"
-                  : getStepStatus("parameters") === "active"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-              }`}
-            >
-              {getStepStatus("parameters") === "completed" ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                "3"
-              )}
-            </div>
-            <div className="flex-1">
-              <CardTitle className="text-lg">{steps[2]?.title || ""}</CardTitle>
-              <CardDescription>{steps[2]?.description || ""}</CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    handleRandomizeVideo(["parameters"], "parameters")
-                  }
-                  disabled={isRandomizing || isReadonly}
-                >
-                  {isRandomizing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Shuffle className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Randomize</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setCurrentParameterItemIds([]);
-                  }}
-                  disabled={isReadonly}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset</TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {Object.keys(generalVideoParameterMapping).length > 0 ? (
-            <ParameterSelector
-              parameterMapping={generalVideoParameterMapping as any}
-              fieldMapping={fieldMapping as any}
-              validParameterItemIds={validGeneralVideoParameterItemIds}
-              selectedParameterItemIds={generalVideoParameterItemIds}
-              onParameterItemIdsChange={(newIds) => {
-                // Remove old general video parameter items
-                const nonGeneralParamIds = currentParameterItemIds.filter(
-                  (itemId) => {
-                    const item = fieldMapping[itemId];
-                    if (!item) return true;
-                    const paramId = item.parameter_id;
-                    return !generalVideoParameterIds.includes(paramId);
-                  }
+      {/* Step 3: Documents */}
+      <DocumentSection
+        validDocumentIds={videoData?.valid_document_ids || []}
+        documentMapping={documentMapping}
+        selectedDocumentIds={selectedDocumentIds}
+        templateDocumentIds={[]}
+        searchTerm=""
+        minMax={{ min: 1, max: 2 }}
+        previewDocumentId={null}
+        onDocumentIdsChange={setSelectedDocumentIds}
+        onTemplateDocumentIdsChange={() => {}}
+        onSearchTermChange={() => {}}
+        onMinMaxChange={() => {}}
+        onPreviewDocument={() => {}}
+        onRandomize={() => handleRandomizeVideo(["documents"], "documents")}
+        onReset={() => handleResetSection("documents")}
+        stepStatus={getStepStatus("documents")}
+        stepTitle={steps[2]?.title || ""}
+        stepDescription={steps[2]?.description || ""}
+        stepNumber={3}
+        isReadonly={isReadonly}
+        isEditMode={isEditMode}
+      />
+
+      {/* Step 4: Parameters */}
+      <ParameterSection
+        validParameterIds={formData.parameterIds || []}
+        parameterMapping={parameterMapping}
+        selectedParameterIds={formData.parameterIds || []}
+        searchTerm=""
+        minMax={{ min: 1, max: 2 }}
+        onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
+        onSearchTermChange={() => {}}
+        onMinMaxChange={() => {}}
+        onRandomize={() => handleRandomizeVideo(["parameters"], "parameters")}
+        onReset={() => {
+          handleInputChange("parameterIds", []);
+          setCurrentParameterItemIds([]);
+        }}
+        stepStatus={getStepStatus("parameters")}
+        stepTitle={steps[3]?.title || ""}
+        stepDescription={steps[3]?.description || ""}
+        stepNumber={4}
+        isReadonly={isReadonly}
+        isEditMode={isEditMode}
+      />
+
+      {/* Individual Parameter Sections */}
+      {Object.entries(generalVideoParameterMapping).map(
+        ([paramId, param], index) => {
+          const stepIndex = 4 + index;
+          const stepId = `parameter-${paramId}`;
+          const stepStatus = getStepStatus(stepId);
+          const validItemsForParam = validGeneralParameterItemIds.filter(
+            (itemId) => fieldMapping[itemId]?.parameter_id === paramId
+          );
+          const selectedItemsForParam = currentParameterItemIds.filter(
+            (itemId) => fieldMapping[itemId]?.parameter_id === paramId
+          );
+
+          return (
+            <ParameterItemSection
+              key={paramId}
+              parameterId={paramId}
+              parameter={param}
+              validFieldIds={validItemsForParam}
+              fieldMapping={fieldMapping}
+              selectedFieldIds={selectedItemsForParam}
+              minMax={{ min: 1, max: 2 }}
+              onFieldIdsChange={(newIds) => {
+                const otherFieldIds = currentParameterItemIds.filter(
+                  (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
                 );
-                // Combine with new general video parameter items
-                const updatedParameterItemIds = [
-                  ...nonGeneralParamIds,
-                  ...newIds,
-                ];
-                setCurrentParameterItemIds(updatedParameterItemIds);
+                setCurrentParameterItemIds([...otherFieldIds, ...newIds]);
               }}
-              disabled={isReadonly}
+              onMinMaxChange={() => {}}
+              onRandomize={() => {}}
+              onReset={() => {
+                const otherFieldIds = currentParameterItemIds.filter(
+                  (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+                );
+                setCurrentParameterItemIds(otherFieldIds);
+              }}
+              stepStatus={stepStatus}
+              stepNumber={stepIndex + 1}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
             />
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No video parameters available. Parameters will appear here once
-              they are configured.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          );
+        }
+      )}
 
-      {/* Step 4: Outline */}
-      <Card
-        className={`transition-all ${!isEditMode && getStepStatus("outline") === "active" ? "ring-2 ring-primary" : ""} ${
-          !isEditMode && getStepStatus("outline") === "pending"
-            ? "opacity-50"
+      {/* Step 5: Content (Outline, Questions, Images, Video) */}
+      <VideoContentSection
+        outline={outlineText}
+        outlineMapping={outlineMapping}
+        currentOutlineIds={currentOutlineIds}
+        hasOutlineChanges={hasOutlineChanges}
+        originalOutline={
+          isEditMode &&
+          videoDetail &&
+          videoDetail.outline_ids &&
+          videoDetail.outline_ids.length > 0
+            ? outlineMapping[videoDetail.outline_ids[0]!]?.outline || ""
             : ""
-        }`}
-      >
-        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
-          <div className="flex items-center space-x-3">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                getStepStatus("outline") === "completed"
-                  ? "bg-green-500 text-white"
-                  : getStepStatus("outline") === "active"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-              }`}
-            >
-              {getStepStatus("outline") === "completed" ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                "4"
-              )}
-            </div>
-            <div className="flex-1">
-              <CardTitle className="text-lg">{steps[3]?.title || ""}</CardTitle>
-              <CardDescription>{steps[3]?.description || ""}</CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <VideoLengthPicker
-              value={outlineVideoLength}
-              onValueChange={(value) => {
-                setOutlineVideoLength(value);
-                // Update formData length_seconds as well
-                handleInputChange("length_seconds", value);
-              }}
-              disabled={isReadonly}
-            />
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleGenerateOutline}
-              disabled={isSubmitting || isGeneratingOutline || isReadonly}
-            >
-              {isGeneratingOutline ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                "Generate"
-              )}
-            </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setSelectedOutlineId(null);
-                    setOutlineText("");
-                    setImages([]);
-                    setUseImage(false);
-                  }}
-                  disabled={isReadonly}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset</TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Image Preview or Upload Card */}
-          {useImage && (
-            <div className="mb-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Images</Label>
-                <p className="text-xs text-muted-foreground">
-                  Max {Math.floor(outlineVideoLength / 4) + 1} image
-                  {Math.floor(outlineVideoLength / 4) + 1 !== 1 ? "s" : ""} (
-                  {images.length}/{Math.floor(outlineVideoLength / 4) + 1})
-                </p>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {images.map((img, index) => (
-                  <ImagePreviewCard
-                    key={img.id}
-                    image={img}
-                    onRemove={() => {
-                      setImages((prev) => prev.filter((_, i) => i !== index));
-                    }}
-                    showActions={!isReadonly}
-                  />
-                ))}
-                {images.length < Math.floor(outlineVideoLength / 4) + 1 && (
-                  <div
-                    onClick={() => {
-                      if (!isReadonly && !isUploadingImage) {
-                        imageInputRef.current?.click();
-                      }
-                    }}
-                    className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground hover:bg-muted/50 transition-colors bg-muted/20"
-                  >
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground text-center px-4">
-                      Click to upload image
-                    </p>
-                  </div>
-                )}
-              </div>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                disabled={isReadonly || isUploadingImage}
-                className="hidden"
-              />
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label>Outline</Label>
-            <Textarea
-              value={outlineText || ""}
-              onChange={(e) => {
-                setOutlineText(e.target.value);
-                if (selectedOutlineId) {
-                  setSelectedOutlineId(null);
-                }
-              }}
-              placeholder="Enter video outline or generate one from policies and questions..."
-              className="min-h-[120px]"
-              disabled={isReadonly}
-            />
-          </div>
-
-          {/* Use Image Switch */}
-          <div className="space-y-1 pt-2">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="use-image"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Image
-                  className="h-3.5 w-3.5 text-muted-foreground"
-                  aria-label="Image icon"
-                />
-                Use Images
-              </Label>
-              <Switch
-                id="use-image"
-                checked={useImage}
-                onCheckedChange={(checked) => {
-                  setUseImage(checked);
-                  if (!checked) {
-                    setImages([]);
-                  }
-                }}
-                disabled={isReadonly}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Use video reference images
-            </p>
-          </div>
-
-          {/* Use Questions Switch */}
-          <div className="space-y-1 pt-2">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="use-questions"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <HelpCircle
-                  className="h-3.5 w-3.5 text-muted-foreground"
-                  aria-label="Question icon"
-                />
-                Generate Questions
-              </Label>
-              <Switch
-                id="use-questions"
-                checked={useQuestions}
-                onCheckedChange={(checked) => {
-                  setUseQuestions(checked);
-                  if (!checked) {
-                    // Clear generated questions when disabled
-                    setQuestions([]);
-                  }
-                }}
-                disabled={isReadonly}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Automatically generate questions when generating outline
-            </p>
-          </div>
-
-          {/* Manual Question Addition */}
-          {useQuestions && (
-            <div className="space-y-2 pt-4 border-t">
-              <div className="flex items-center justify-between">
-                <Label>
-                  Questions ({questions.length}/
-                  {Math.floor(outlineVideoLength / 4) + 1})
-                </Label>
-              </div>
-              {questions.length > 0 && (
-                <div className="space-y-2">
-                  {questions.map((question, index) => (
-                    <div
-                      key={question.question_id || index}
-                      className="border rounded-lg p-3 space-y-2"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            {question.question_text}
-                          </p>
-                          {question.options.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {question.options.map((opt, optIdx) => (
-                                <div
-                                  key={optIdx}
-                                  className="flex items-center gap-2 text-xs"
-                                >
-                                  {opt.is_correct && (
-                                    <Check className="h-3 w-3 text-green-600" />
-                                  )}
-                                  <span
-                                    className={
-                                      opt.is_correct ? "font-semibold" : ""
-                                    }
-                                  >
-                                    {opt.option_text}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {question.times.length > 0 && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                              Times: {question.times.join(", ")}s
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              openMCQModal(undefined, question);
-                            }}
-                            disabled={isReadonly}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteQuestion(question.question_id)}
-                            disabled={isReadonly}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
-                    if (questions.length >= maxQuestions) {
-                      toast.error(
-                        `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
-                      );
-                      return;
-                    }
-                    openMCQModal();
-                  }}
-                  disabled={
-                    isReadonly ||
-                    questions.length >= Math.floor(outlineVideoLength / 4) + 1
-                  }
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add MCQ
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
-                    if (questions.length >= maxQuestions) {
-                      toast.error(
-                        `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
-                      );
-                      return;
-                    }
-                    openMCQModal();
-                  }}
-                  disabled={
-                    isReadonly ||
-                    questions.length >= Math.floor(outlineVideoLength / 4) + 1
-                  }
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Freeform
-                </Button>
-              </div>
-
-              {/* Timeline */}
-              {questions.length > 0 && (
-                <div className="space-y-2 pt-4 border-t">
-                  <Label>
-                    Timeline ({outlineVideoLength} seconds) - Click to assign
-                    questions
-                  </Label>
-                  <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
-                    {/* Timeline markers for questions */}
-                    {allQuestionTimes.map((time) => {
-                      const questionsAtTime = questions.filter((q) =>
-                        q.times.includes(time)
-                      );
-                      return (
-                        <Tooltip key={time}>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (isReadonly) return;
-                                setSelectedTimelineSegment(time);
-                                // Get currently selected questions for this timestamp
-                                const currentQuestions = questions
-                                  .filter((q) => q.times.includes(time))
-                                  .map(
-                                    (q, idx) => q.question_id || `temp-${idx}`
-                                  );
-                                setSelectedQuestionsForSegment(
-                                  currentQuestions
-                                );
-                                setShowTimelineModal(true);
-                              }}
-                              className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
-                              style={{
-                                left: `${(time / outlineVideoLength) * 100}%`,
-                              }}
-                              disabled={isReadonly}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              {formatTime(time)} - {questionsAtTime.length}{" "}
-                              question
-                              {questionsAtTime.length !== 1 ? "s" : ""}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-
-                    {/* Clickable timeline */}
-                    <div
-                      className="absolute inset-0 cursor-pointer"
-                      onClick={(e) => {
-                        if (isReadonly) return;
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const percentage = x / rect.width;
-                        const clickedTime = percentage * outlineVideoLength;
-
-                        // Find the closest timestamp based on video length
-                        const possibleTimestamps = Array.from(
-                          { length: outlineVideoLength + 1 },
-                          (_, i) => i
-                        );
-                        const closestTimestamp = possibleTimestamps.reduce(
-                          (prev, curr) =>
-                            Math.abs(curr - clickedTime) <
-                            Math.abs(prev - clickedTime)
-                              ? curr
-                              : prev
-                        );
-
-                        setSelectedTimelineSegment(closestTimestamp);
-                        // Get currently selected questions for this timestamp
-                        const currentQuestions = questions
-                          .filter((q) => q.times.includes(closestTimestamp))
-                          .map((q, idx) => q.question_id || `temp-${idx}`);
-                        setSelectedQuestionsForSegment(currentQuestions);
-                        setShowTimelineModal(true);
-                      }}
-                    />
-
-                    {/* Time labels */}
-                    <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
-                      <span>0:00</span>
-                      <span>{formatTime(outlineVideoLength)}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Step 5: Video Generation */}
-      <Card
-        className={`transition-all ${!isEditMode && getStepStatus("video_generation") === "active" ? "ring-2 ring-primary" : ""} ${
-          !isEditMode && getStepStatus("video_generation") === "pending"
-            ? "opacity-50"
-            : ""
-        }`}
-      >
-        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
-          <div className="flex items-center space-x-3">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                getStepStatus("video_generation") === "completed"
-                  ? "bg-green-500 text-white"
-                  : getStepStatus("video_generation") === "active"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-              }`}
-            >
-              {getStepStatus("video_generation") === "completed" ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                "5"
-              )}
-            </div>
-            <div className="flex-1">
-              <CardTitle className="text-lg">Video</CardTitle>
-              <CardDescription>{steps[4]?.description || ""}</CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleGenerateVideo}
-              disabled={
-                isSubmitting ||
-                isGeneratingVideo ||
-                isUploadingVideo ||
-                isReadonly ||
-                !outlineText.trim()
-              }
-            >
-              {isGeneratingVideo ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                "Generate"
-              )}
-            </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setGeneratedVideoUrl(null);
-                    setUploadedVideoFile(null);
-                    setVideoObjectUrl(null);
-                  }}
-                  disabled={
-                    isReadonly || (!generatedVideoUrl && !uploadedVideoFile)
-                  }
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset</TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Video Display - Shows either generated, uploaded, or server video */}
-          {isUploadingVideo ? (
-            <div className="space-y-2">
-              <Label>Video</Label>
-              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
-                <div className="flex flex-col items-center gap-2 text-white">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="text-sm">Uploading video...</p>
-                </div>
-              </div>
-            </div>
-          ) : generatedVideoUrl ||
-            (isEditMode &&
-              videoId &&
-              (videoDetail as any)?.file_path &&
-              !uploadedVideoFile) ? (
-            <div className="space-y-2">
-              <Label>Video</Label>
-              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
-                <video
-                  src={generatedVideoUrl || `/api/videos/download/${videoId}`}
-                  controls
-                  className="w-full h-full rounded-lg"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setGeneratedVideoUrl(null);
-                    // If there's an uploaded video, it will show after clearing generated
-                  }}
-                  className="absolute top-2 right-2"
-                  disabled={isReadonly || !!(videoDetail as any)?.file_path}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ) : uploadedVideoFile && videoObjectUrl ? (
-            <div className="space-y-2">
-              <Label>Video</Label>
-              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
-                <video
-                  ref={videoRef}
-                  src={videoObjectUrl}
-                  controls
-                  className="w-full h-full rounded-lg"
-                  onLoadedMetadata={handleVideoLoadedMetadata}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRemoveVideo}
-                  className="absolute top-2 right-2"
-                  disabled={isReadonly}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Video</Label>
-              <div
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative aspect-video flex items-center justify-center",
-                  isDragActive
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-primary/50"
-                )}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => {
-                  if (!isReadonly && !isUploadingVideo) {
-                    document.getElementById("video-upload-input")?.click();
-                  }
-                }}
-              >
-                <input
-                  id="video-upload-input"
-                  type="file"
-                  accept="video/*"
-                  onChange={handleFileSelect}
-                  disabled={isReadonly || isUploadingVideo}
-                  className="hidden"
-                />
-                <div className="space-y-3">
-                  <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <div>
-                    <p className="text-lg font-medium">
-                      Click to upload or drag and drop
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Video files only
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        }
+        useQuestions={useQuestions}
+        questions={questions}
+        outlineVideoLength={outlineVideoLength}
+        useImage={useImage}
+        images={images}
+        imageMapping={imageMapping}
+        isUploadingImage={isUploadingImage}
+        allPreviewDocumentIds={selectedDocumentIds}
+        documentMapping={documentMapping}
+        videoPreviewDocumentId={videoPreviewDocumentId}
+        generatedVideoUrl={generatedVideoUrl}
+        uploadedVideoFile={uploadedVideoFile}
+        videoObjectUrl={videoObjectUrl}
+        isUploadingVideo={isUploadingVideo}
+        isGeneratingVideo={isGeneratingVideo}
+        onOutlineChange={setOutlineText}
+        onOutlineVersionSelect={handleOutlineVersionSelect}
+        onResetOutline={handleResetOutline}
+        onUseQuestionsChange={setUseQuestions}
+        onQuestionsChange={setQuestions}
+        onAddQuestion={handleAddQuestion}
+        onRemoveQuestion={handleRemoveQuestion}
+        onUpdateQuestion={handleUpdateQuestion}
+        onQuestionTimesChange={handleQuestionTimesChange}
+        onOptionChange={handleOptionChange}
+        onAddOption={handleAddOption}
+        onRemoveOption={handleRemoveOption}
+        onToggleOptionCorrect={handleToggleOptionCorrect}
+        onUseImageChange={(checked) => {
+          setUseImage(checked);
+          if (!checked) {
+            setImages([]);
+          }
+        }}
+        onImageSelect={handleImageSelect}
+        onImageUpload={handleImageUpload}
+        onImageRemove={(index) => {
+          setImages((prev) => prev.filter((_, i) => i !== index));
+        }}
+        onVideoPreviewDocumentChange={(docId) =>
+          setVideoPreviewDocumentId(docId)
+        }
+        onGenerateOutline={() => handleGenerateOutline()}
+        onGenerateVideo={handleGenerateVideo}
+        onResetContent={handleResetContent}
+        onOutlineVideoLengthChange={(value) => {
+          setOutlineVideoLength(value);
+          handleInputChange("length_seconds", value);
+        }}
+        onDragStartQuestion={handleDragStartQuestion}
+        onDragOverQuestion={handleDragOverQuestion}
+        onDropQuestion={handleDropQuestion}
+        onDragStartOption={handleDragStartOption}
+        onDragOverOption={handleDragOverOption}
+        onDropOption={handleDropOption}
+        stepStatus={getStepStatus("outline")}
+        stepTitle={steps[4]?.title || ""}
+        stepDescription={steps[4]?.description || ""}
+        stepNumber={5}
+        isReadonly={isReadonly}
+        isSubmitting={isSubmitting}
+        imageInputRef={imageInputRef}
+        videoRef={videoRef}
+        draggedQuestionIndex={draggedQuestionIndex}
+        draggedOptionIndex={draggedOptionIndex}
+      />
 
       {/* Action Buttons */}
       <div className="flex gap-2 justify-end">
@@ -3099,371 +2467,6 @@ export default function Video({
               : "Create Video"}
         </Button>
       </div>
-
-      {/* Timeline Segment Modal */}
-      {showTimelineModal && selectedTimelineSegment !== null && (
-        <AlertDialog
-          open={showTimelineModal}
-          onOpenChange={setShowTimelineModal}
-        >
-          <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Select Questions for {formatTime(selectedTimelineSegment)}
-              </AlertDialogTitle>
-            </AlertDialogHeader>
-            <div className="space-y-4 py-4">
-              {questions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No questions available. Please add questions first.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {questions
-                    .map((q, idx) => {
-                      const qKey = q.question_id || `temp-${idx}`;
-                      // Check if question is already assigned to OTHER timestamps (not this one)
-                      const isAssignedElsewhere = q.times.some(
-                        (t) => t !== selectedTimelineSegment!
-                      );
-                      const isSelected =
-                        selectedQuestionsForSegment.includes(qKey);
-
-                      return { q, qKey, isAssignedElsewhere, isSelected, idx };
-                    })
-                    .filter(({ isAssignedElsewhere }) => !isAssignedElsewhere) // Hide questions assigned to other timestamps
-                    .map(({ q, qKey, isSelected }) => (
-                      <div
-                        key={qKey}
-                        className="flex items-start space-x-3 p-3 border rounded-lg"
-                      >
-                        <Checkbox
-                          id={`timeline-${qKey}`}
-                          checked={isSelected}
-                          onCheckedChange={(checked) => {
-                            if (isReadonly) return;
-                            if (checked) {
-                              setSelectedQuestionsForSegment([
-                                ...selectedQuestionsForSegment,
-                                qKey,
-                              ]);
-                            } else {
-                              setSelectedQuestionsForSegment(
-                                selectedQuestionsForSegment.filter(
-                                  (k) => k !== qKey
-                                )
-                              );
-                            }
-                          }}
-                          disabled={isReadonly}
-                        />
-                        <Label
-                          htmlFor={`timeline-${qKey}`}
-                          className="flex-1 cursor-pointer"
-                        >
-                          <div className="font-medium">{q.question_text}</div>
-                        </Label>
-                      </div>
-                    ))}
-                  {questions.filter((q) => {
-                    return q.times.some((t) => t !== selectedTimelineSegment!);
-                  }).length === questions.length && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      All questions are already assigned to other timestamps.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel
-                onClick={() => {
-                  setShowTimelineModal(false);
-                  setSelectedTimelineSegment(null);
-                  setSelectedQuestionsForSegment([]);
-                }}
-              >
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (isReadonly) return;
-                  const timestamp = selectedTimelineSegment!;
-
-                  // Remove this timestamp from all questions
-                  setQuestions((prev) =>
-                    prev.map((q) => ({
-                      ...q,
-                      times: q.times.filter((t) => t !== timestamp),
-                    }))
-                  );
-
-                  // Add this timestamp to selected questions
-                  setQuestions((prev) =>
-                    prev.map((q, idx) => {
-                      const qKey = q.question_id || `temp-${idx}`;
-                      if (selectedQuestionsForSegment.includes(qKey)) {
-                        // Add the timestamp if not already present
-                        const newTimes = [...q.times, timestamp]
-                          .filter((t, i, arr) => arr.indexOf(t) === i)
-                          .sort((a, b) => a - b);
-                        return { ...q, times: newTimes };
-                      }
-                      return q;
-                    })
-                  );
-
-                  setShowTimelineModal(false);
-                  setSelectedTimelineSegment(null);
-                  setSelectedQuestionsForSegment([]);
-                }}
-                disabled={isReadonly}
-              >
-                Save
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-
-      {/* MCQ Question Modal */}
-      {showMCQModal && editingMCQQuestion && (
-        <AlertDialog open={showMCQModal} onOpenChange={closeMCQModal}>
-          <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {editingMCQQuestion.question_id
-                  ? "Edit MCQ Question"
-                  : "Add MCQ Question"}
-              </AlertDialogTitle>
-            </AlertDialogHeader>
-            <div className="space-y-4 py-4">
-              {/* Question Text */}
-              <div className="space-y-2">
-                <Label>Question Text *</Label>
-                <Textarea
-                  value={editingMCQQuestion.question_text}
-                  onChange={(e) =>
-                    setEditingMCQQuestion({
-                      ...editingMCQQuestion,
-                      question_text: e.target.value,
-                    })
-                  }
-                  placeholder="Enter question text"
-                  rows={3}
-                />
-              </div>
-
-              {/* Options */}
-              <div className="space-y-2">
-                <Label>Options *</Label>
-                {editingMCQQuestion.options.length === 0 ? (
-                  <div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => {
-                        if (!editingMCQQuestion) return;
-                        setEditingMCQQuestion({
-                          ...editingMCQQuestion,
-                          options: [
-                            {
-                              option_text: "",
-                              type: "discrete" as const,
-                              is_correct: false,
-                            },
-                            {
-                              option_text: "",
-                              type: "discrete" as const,
-                              is_correct: false,
-                            },
-                          ],
-                        });
-                      }}
-                      disabled={isReadonly}
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Option
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    {editingMCQQuestion.options.map((option, index) => (
-                      <div
-                        key={index}
-                        className={`flex items-end gap-2 ${index === 0 ? "" : ""}`}
-                      >
-                        {/* Option Text */}
-                        <div
-                          className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}
-                        >
-                          {index === 0 && (
-                            <Label
-                              htmlFor={`option-text-${index}`}
-                              className="text-sm font-medium"
-                            >
-                              Option Text
-                            </Label>
-                          )}
-                          <Input
-                            id={`option-text-${index}`}
-                            value={option.option_text}
-                            onChange={(e) => {
-                              if (!editingMCQQuestion) return;
-                              setEditingMCQQuestion({
-                                ...editingMCQQuestion,
-                                options: editingMCQQuestion.options.map(
-                                  (opt, i) =>
-                                    i === index
-                                      ? { ...opt, option_text: e.target.value }
-                                      : opt
-                                ),
-                              });
-                            }}
-                            placeholder="Option text"
-                            disabled={isReadonly}
-                          />
-                        </div>
-
-                        {/* Type */}
-                        <div
-                          className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}
-                        >
-                          {index === 0 && (
-                            <Label
-                              htmlFor={`option-type-${index}`}
-                              className="text-sm font-medium"
-                            >
-                              Type
-                            </Label>
-                          )}
-                          <Select
-                            value={option.type}
-                            onValueChange={(value: "discrete" | "freeform") => {
-                              if (!editingMCQQuestion) return;
-                              setEditingMCQQuestion({
-                                ...editingMCQQuestion,
-                                options: editingMCQQuestion.options.map(
-                                  (opt, i) =>
-                                    i === index ? { ...opt, type: value } : opt
-                                ),
-                              });
-                            }}
-                            disabled={isReadonly}
-                          >
-                            <SelectTrigger
-                              id={`option-type-${index}`}
-                              className="w-32"
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="discrete">Discrete</SelectItem>
-                              <SelectItem value="freeform">Freeform</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Correct Checkbox (only for discrete) */}
-                        <div className={`${index === 0 ? "space-y-2" : ""}`}>
-                          {index === 0 && (
-                            <Label className="text-sm font-medium block">
-                              Correct
-                            </Label>
-                          )}
-                          <div className="flex items-center gap-2 h-10">
-                            {option.type === "discrete" ? (
-                              <Checkbox
-                                checked={option.is_correct}
-                                onCheckedChange={(checked) => {
-                                  if (!editingMCQQuestion) return;
-                                  setEditingMCQQuestion({
-                                    ...editingMCQQuestion,
-                                    options: editingMCQQuestion.options.map(
-                                      (opt, i) =>
-                                        i === index
-                                          ? {
-                                              ...opt,
-                                              is_correct: checked === true,
-                                            }
-                                          : opt
-                                    ),
-                                  });
-                                }}
-                                disabled={isReadonly}
-                              />
-                            ) : (
-                              <div className="w-4 h-4" /> // Spacer for alignment
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Delete Button */}
-                        {editingMCQQuestion.options.length > 2 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              if (!editingMCQQuestion) return;
-                              setEditingMCQQuestion({
-                                ...editingMCQQuestion,
-                                options: editingMCQQuestion.options.filter(
-                                  (_, i) => i !== index
-                                ),
-                              });
-                            }}
-                            className={`h-8 w-8 shrink-0 ${index === 0 ? "mb-0.5" : ""}`}
-                            disabled={isReadonly}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => {
-                          if (!editingMCQQuestion) return;
-                          setEditingMCQQuestion({
-                            ...editingMCQQuestion,
-                            options: [
-                              ...editingMCQQuestion.options,
-                              {
-                                option_text: "",
-                                type: "discrete" as const,
-                                is_correct: false,
-                              },
-                            ],
-                          });
-                        }}
-                        disabled={
-                          isReadonly || editingMCQQuestion.options.length >= 5
-                        }
-                        size="sm"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Option
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={closeMCQModal}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={saveMCQQuestion}>
-                Save
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
     </div>
   );
 }

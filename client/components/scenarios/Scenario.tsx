@@ -29,13 +29,13 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
-import { BasicInfoSection } from "@/components/common/forms/BasicInfoSection";
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { DocumentSection } from "@/components/common/forms/DocumentSection";
 import { ParameterItemSection } from "@/components/common/forms/ParameterItemSection";
 import { ParameterSection } from "@/components/common/forms/ParameterSection";
 import { PersonaSection } from "@/components/common/forms/PersonaSection";
 import { ContentSection } from "@/components/scenarios/ContentSection";
+import { ScenarioBasicInfoSection } from "@/components/scenarios/ScenarioBasicInfoSection";
 
 // Types and API functions
 import type {
@@ -2503,7 +2503,7 @@ export default function Scenario({
 
       <div className="space-y-6">
         {/* Step 1: Basic Information */}
-        <BasicInfoSection
+        <ScenarioBasicInfoSection
           name={formData.name || ""}
           departmentIds={formData.departmentIds || []}
           validDepartmentIds={scenarioData?.valid_department_ids || []}

@@ -90,6 +90,7 @@ class VideoDetailResponse(BaseModel):
     questions: list[QuestionResponse]  # Empty for default
     outline_agent_id: str
     image_agent_id: str
+    video_agent_id: str
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
     parameter_mapping: ParameterMapping
@@ -346,8 +347,9 @@ async def get_video_new(
             # Questions (empty for create mode)
             questions=[],
             # Agents (empty IDs for new video, but include mapping and valid IDs)
-            outline_agent_id="",
-            image_agent_id="",
+            outline_agent_id=result.get("outline_agent_id", "") or "",
+            image_agent_id=result.get("image_agent_id", "") or "",
+            video_agent_id=result.get("video_agent_id", "") or "",
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
             # Parameters (empty for new video)

@@ -16047,6 +16047,8 @@ export interface components {
             outline_agent_id: string;
             /** Image Agent Id */
             image_agent_id: string;
+            /** Video Agent Id */
+            video_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
                 [key: string]: components["schemas"]["AgentMappingItem"];
@@ -16187,6 +16189,8 @@ export interface components {
             outline_agent_id: string;
             /** Image Agent Id */
             image_agent_id: string;
+            /** Video Agent Id */
+            video_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
                 [key: string]: components["schemas"]["AgentMappingItem"];

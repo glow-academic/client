@@ -1,6 +1,6 @@
 /**
- * BasicInfoSection.tsx
- * Reusable basic information section component
+ * VideoBasicInfoSection.tsx
+ * Video-specific basic information section component
  */
 "use client";
 import { Check, Power, RotateCcw, Shuffle } from "lucide-react";
@@ -23,24 +23,27 @@ import type { components } from "@/lib/api/schema";
 type AgentMappingItem = components["schemas"]["AgentMappingItem"];
 type DepartmentMappingItem = components["schemas"]["app__utils__schema__DepartmentMappingItem"];
 
-export interface BasicInfoSectionProps {
+export interface VideoBasicInfoSectionProps {
   // Data
   name: string;
   departmentIds: string[];
   validDepartmentIds: string[];
   departmentMapping: Record<string, DepartmentMappingItem>;
-  scenarioAgentId: string | null;
+  outlineAgentId: string | null;
   imageAgentId: string | null;
+  videoAgentId: string | null;
   validAgentIds: string[];
   agentMapping: Record<string, AgentMappingItem>;
-  expectedScenarioRole: string;
+  expectedOutlineRole: string;
+  expectedVideoRole: string;
   active: boolean;
 
   // Callbacks
   onNameChange: (name: string) => void;
   onDepartmentIdsChange: (ids: string[]) => void;
-  onScenarioAgentIdChange: (id: string | null) => void;
+  onOutlineAgentIdChange: (id: string | null) => void;
   onImageAgentIdChange: (id: string | null) => void;
+  onVideoAgentIdChange: (id: string | null) => void;
   onActiveChange: (active: boolean) => void;
   onRandomizeAll: () => void;
   onResetAll: () => void;
@@ -53,37 +56,38 @@ export interface BasicInfoSectionProps {
   activeDescription?: string;
 }
 
-export function BasicInfoSection({
+export function VideoBasicInfoSection({
   name,
   departmentIds,
   validDepartmentIds,
   departmentMapping,
-  scenarioAgentId,
+  outlineAgentId,
   imageAgentId,
+  videoAgentId,
   validAgentIds,
   agentMapping,
-  expectedScenarioRole,
+  expectedOutlineRole,
+  expectedVideoRole,
   active,
   onNameChange,
   onDepartmentIdsChange,
-  onScenarioAgentIdChange,
+  onOutlineAgentIdChange,
   onImageAgentIdChange,
+  onVideoAgentIdChange,
   onActiveChange,
   onRandomizeAll,
   onResetAll,
   isReadonly,
   isSuperadmin,
-  defaultName = "New Scenario",
+  defaultName = "New Video",
   activeLabel = "Active",
-  activeDescription = "Inactive scenarios will not be available for other simulations",
-}: BasicInfoSectionProps) {
-  // Filter agents by computed role based on current flags
-  const filteredScenarioAgentIds =
+  activeDescription = "Inactive videos will not be available for use",
+}: VideoBasicInfoSectionProps) {
+  // Filter agents by role
+  const filteredOutlineAgentIds =
     validAgentIds?.filter((id) => {
       const agent = agentMapping[id];
-      const agentRole = agent?.roles?.[0];
-      // Include agents matching expected role OR legacy 'scenario' role (backward compatibility)
-      return agentRole === expectedScenarioRole || agentRole === "scenario";
+      return agent?.roles?.includes("outline") || agent?.roles?.[0] === expectedOutlineRole;
     }) || [];
 
   const imageAgentIds =
@@ -92,9 +96,16 @@ export function BasicInfoSection({
       return agent?.roles?.includes("image");
     }) || [];
 
+  const filteredVideoAgentIds =
+    validAgentIds?.filter((id) => {
+      const agent = agentMapping[id];
+      return agent?.roles?.includes("video") || agent?.roles?.[0] === expectedVideoRole;
+    }) || [];
+
   // Only show agent pickers if there's more than one option
-  const showScenarioPicker = filteredScenarioAgentIds.length > 1;
+  const showOutlinePicker = filteredOutlineAgentIds.length > 1;
   const showImagePicker = imageAgentIds.length > 1;
+  const showVideoPicker = filteredVideoAgentIds.length > 1;
 
   return (
     <Card className="transition-all">
@@ -106,7 +117,7 @@ export function BasicInfoSection({
           <div className="flex-1">
             <input
               type="text"
-              data-testid="input-scenario-title"
+              data-testid="input-video-title"
               value={name || ""}
               onChange={(e) => onNameChange(e.target.value)}
               onFocus={(e) => {
@@ -189,18 +200,18 @@ export function BasicInfoSection({
         ) : null}
 
         {/* Agent Selection */}
-        {(showScenarioPicker || showImagePicker) && (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            {/* Scenario Agent Selection */}
-            {showScenarioPicker && (
+        {(showOutlinePicker || showImagePicker || showVideoPicker) && (
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {/* Outline Agent Selection */}
+            {showOutlinePicker && (
               <div className="space-y-2">
-                <Label htmlFor="scenarioAgentId">Scenario Agent</Label>
-                {scenarioAgentId !== undefined ? (
+                <Label htmlFor="outlineAgentId">Outline Agent</Label>
+                {outlineAgentId !== undefined ? (
                   <GenericPicker
                     items={agentMapping}
-                    itemIds={filteredScenarioAgentIds}
-                    selectedIds={scenarioAgentId ? [scenarioAgentId] : []}
-                    onSelect={(ids) => onScenarioAgentIdChange(ids[0] || null)}
+                    itemIds={filteredOutlineAgentIds}
+                    selectedIds={outlineAgentId ? [outlineAgentId] : []}
+                    onSelect={(ids) => onOutlineAgentIdChange(ids[0] || null)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
                     getSearchText={(item) =>
@@ -230,7 +241,7 @@ export function BasicInfoSection({
                         </div>
                       </div>
                     )}
-                    placeholder="Select scenario agent"
+                    placeholder="Select outline agent"
                     disabled={isReadonly}
                     multiSelect={false}
                     hideSelectedChips={true}
@@ -290,6 +301,56 @@ export function BasicInfoSection({
                 ) : null}
               </div>
             )}
+
+            {/* Video Agent Selection */}
+            {showVideoPicker && (
+              <div className="space-y-2">
+                <Label htmlFor="videoAgentId">Video Agent</Label>
+                {videoAgentId !== undefined ? (
+                  <GenericPicker
+                    items={agentMapping}
+                    itemIds={filteredVideoAgentIds}
+                    selectedIds={videoAgentId ? [videoAgentId] : []}
+                    onSelect={(ids) => onVideoAgentIdChange(ids[0] || null)}
+                    getId={(item) => (item as unknown as { id: string }).id}
+                    getLabel={(item) => item.name || ""}
+                    getSearchText={(item) =>
+                      `${item.name} ${item.description || ""}`
+                    }
+                    renderPreview={(item) => (
+                      <div className="grid gap-2">
+                        <h4 className="font-medium leading-none">
+                          {item.name || "No agent selected"}
+                        </h4>
+                        <div className="text-sm text-muted-foreground">
+                          {item.description || "No description available"}
+                        </div>
+                      </div>
+                    )}
+                    renderItem={(item, _isSelected) => (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate">{item.name}</div>
+                            {item.description && (
+                              <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                {item.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    placeholder="Select video agent"
+                    disabled={isReadonly}
+                    multiSelect={false}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
+                    groupHeading="Agents"
+                  />
+                ) : null}
+              </div>
+            )}
           </div>
         )}
 
@@ -306,7 +367,7 @@ export function BasicInfoSection({
               </Label>
               <Switch
                 id="active"
-                data-testid="switch-scenario-active"
+                data-testid="switch-video-active"
                 checked={active ?? true}
                 onCheckedChange={(checked) => onActiveChange(checked)}
                 disabled={isReadonly}

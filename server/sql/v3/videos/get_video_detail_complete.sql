@@ -160,6 +160,18 @@ document_mapping_data AS (
     CROSS JOIN policy_param_item ppi
     JOIN document_fields df ON df.document_id = d.id AND df.field_id = ppi.id AND df.active = true
     WHERE vd.video_id = $1 AND vd.active = true AND d.active = true
+        -- Exclude documents with scenario_parameter = true
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM document_fields df2
+            JOIN parameter_fields pfield ON pfield.field_id = df2.field_id
+            JOIN parameters param ON param.id = pfield.parameter_id
+            WHERE df2.document_id = d.id
+            AND df2.active = true
+            AND pfield.active = true
+            AND param.active = true
+            AND param.scenario_parameter = true
+        )
 ),
 valid_documents AS (
     SELECT ARRAY_AGG(d.id::text ORDER BY d.id) as document_ids
@@ -173,6 +185,18 @@ valid_documents AS (
             up.role = 'superadmin'
             OR dd.department_id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd2 ON pd2.profile_id = rpi.resolved_profile_id WHERE pd2.active = true)
             OR NOT EXISTS (SELECT 1 FROM document_departments dd3 WHERE dd3.document_id = d.id AND dd3.active = true)
+        )
+        -- Exclude documents with scenario_parameter = true
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM document_fields df2
+            JOIN parameter_fields pfield ON pfield.field_id = df2.field_id
+            JOIN parameters param ON param.id = pfield.parameter_id
+            WHERE df2.document_id = d.id
+            AND df2.active = true
+            AND pfield.active = true
+            AND param.active = true
+            AND param.scenario_parameter = true
         )
     ) d
 ),

@@ -88,6 +88,7 @@ class VideoDetailResponse(BaseModel):
     questions: list[QuestionResponse]
     outline_agent_id: str
     image_agent_id: str
+    video_agent_id: str
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
     parameter_mapping: ParameterMapping
@@ -455,6 +456,7 @@ async def get_video_detail(
             questions=questions,
             outline_agent_id=video.get("outline_agent_id", ""),
             image_agent_id=video.get("image_agent_id", ""),
+            video_agent_id=video.get("video_agent_id", "") or "",
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
             parameter_mapping=parameter_mapping,
