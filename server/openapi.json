@@ -39302,6 +39302,11 @@
                 "type": "null"
               }
             ]
+          },
+          "randomized": {
+            "type": "boolean",
+            "title": "Randomized",
+            "default": false
           }
         },
         "type": "object",
@@ -39824,6 +39829,11 @@
                 "type": "null"
               }
             ]
+          },
+          "randomized": {
+            "type": "boolean",
+            "title": "Randomized",
+            "default": false
           },
           "selected_persona_ids": {
             "anyOf": [

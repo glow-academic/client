@@ -15426,6 +15426,11 @@ export interface components {
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             objective_count_range: components["schemas"]["RangeMinMax"];
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
+            /**
+             * Randomized
+             * @default false
+             */
+            randomized: boolean;
         };
         /**
          * ScenarioItem
@@ -15599,6 +15604,11 @@ export interface components {
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             objective_count_range: components["schemas"]["RangeMinMax"];
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
+            /**
+             * Randomized
+             * @default false
+             */
+            randomized: boolean;
             /** Selected Persona Ids */
             selected_persona_ids?: string[] | null;
             /** Selected Document Ids */

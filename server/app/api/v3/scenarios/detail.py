@@ -254,6 +254,8 @@ class ScenarioDetailResponse(BaseModel):
     objective_count_range: RangeMinMax
     # Randomized selections (if randomization params provided)
     randomized_selections: RandomizedSelections | None = None
+    # Flag indicating if randomization was applied (client should clear randomize param when true)
+    randomized: bool = False
 
 
 router = APIRouter()
@@ -767,16 +769,23 @@ async def get_scenario_detail(
     """Get detailed scenario information."""
     tags = ["scenarios"]  # From router tags
 
+    # Check for cache bypass header (for hard refresh or randomization)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    # Also bypass cache when randomize param is present (each randomization should be unique)
+    if request_data.randomize:
+        bypass_cache = True
+
     # Generate cache key from path and parsed body
     body_dict = request_data.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return ScenarioDetailResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return ScenarioDetailResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -1569,19 +1578,40 @@ async def get_scenario_detail(
                     except (ValueError, IndexError):
                         pass
 
-        if (
+        # Determine if randomization occurred
+        randomization_occurred = (
             randomized_persona_ids is not None
             or randomized_document_ids is not None
             or randomized_parameter_ids is not None
-            or randomized_field_ids
-            is not None  # Renamed from randomized_parameter_item_ids
-        ):
+            or randomized_field_ids is not None
+        )
+
+        if randomization_occurred:
             randomized_selections = RandomizedSelections(
                 personaIds=randomized_persona_ids,
                 documentIds=randomized_document_ids,
                 parameterIds=randomized_parameter_ids,
                 fieldIds=randomized_field_ids,  # Renamed from parameterItemIds
             )
+
+        # Apply randomized values to main fields (DHH-style: server applies directly)
+        # Use randomized values if available, otherwise use existing scenario values
+        final_persona_ids = (
+            randomized_persona_ids if randomized_persona_ids is not None else persona_ids
+        )
+        final_document_ids = (
+            randomized_document_ids if randomized_document_ids is not None else document_ids
+        )
+        final_parameter_ids = (
+            randomized_parameter_ids
+            if randomized_parameter_ids is not None
+            else scenario_parameter_ids
+        )
+        # For fields, extract from parameters dict if randomized_field_ids is set
+        # Otherwise fields come from parameters dict (existing scenario data)
+        final_field_ids = (
+            randomized_field_ids if randomized_field_ids is not None else None
+        )
 
         # Apply search filtering if search terms provided
         if request_data.personaSearch:
@@ -1629,9 +1659,9 @@ async def get_scenario_detail(
             parent_scenario_id=scenario["parent_scenario_id"],
             department_ids=department_ids,
             valid_department_ids=dept_ids,
-            persona_ids=persona_ids,
+            persona_ids=final_persona_ids,
             valid_persona_ids=filtered_valid_persona_ids,
-            document_ids=document_ids,
+            document_ids=final_document_ids,
             valid_document_ids=filtered_valid_document_ids,
             valid_field_ids=filtered_valid_field_ids,  # Renamed from valid_parameter_item_ids
             valid_general_field_ids=filtered_valid_general_field_ids,  # Renamed from valid_general_parameter_item_ids
@@ -1639,6 +1669,7 @@ async def get_scenario_detail(
             # Objectives: 0-3 (default: 1) - fixed range
             objective_count_range=RangeMinMax(min=1, max=3),
             randomized_selections=randomized_selections,
+            randomized=randomization_occurred,
             scenario_images=scenario_images,
             objective_ids=objective_ids,
             valid_objectives=[],
@@ -1657,7 +1688,7 @@ async def get_scenario_detail(
             objective_mapping=objective_mapping,
             department_mapping=department_mapping,
             problem_statement_mapping=problem_statement_mapping,
-            scenario_parameter_ids=scenario_parameter_ids,
+            scenario_parameter_ids=final_parameter_ids,
             valid_parameter_ids=valid_parameter_ids,
             scenario_agent_id=scenario.get("scenario_agent_id", ""),
             image_agent_id=scenario.get("image_agent_id", ""),
