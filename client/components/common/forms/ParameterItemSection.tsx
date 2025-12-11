@@ -48,7 +48,8 @@ export interface ParameterItemSectionProps {
   selectedFieldIds: string[];
 
   // State
-  minMax: { min: number; max: number };
+  minMax: { min: number; max: number }; // Current values
+  allowedRange?: { min: number; max: number } | undefined; // Allowed limits (optional, defaults to minMax if not provided)
 
   // Callbacks
   onFieldIdsChange: (ids: string[]) => void;
@@ -71,6 +72,7 @@ export function ParameterItemSection({
   fieldMapping,
   selectedFieldIds,
   minMax,
+  allowedRange,
   onFieldIdsChange,
   onMinMaxChange,
   onRandomize,
@@ -81,6 +83,9 @@ export function ParameterItemSection({
   disabled = false,
   isEditMode = false,
 }: ParameterItemSectionProps) {
+  // Use allowedRange for slider limits, minMax for current values
+  const sliderMin = allowedRange?.min ?? minMax.min ?? 1;
+  const sliderMax = allowedRange?.max ?? minMax.max ?? 3;
   return (
     <Card
       className={cn(
@@ -114,16 +119,13 @@ export function ParameterItemSection({
         </div>
         <div className="flex items-center">
           <RangeSlider
-            min={1}
-            max={Math.min(5, validFieldIds.length)}
-            value={[
-              minMax.min ?? 1,
-              Math.min(Math.min(5, validFieldIds.length), minMax.max ?? 2),
-            ]}
+            min={sliderMin}
+            max={sliderMax}
+            value={[minMax.min ?? sliderMin, minMax.max ?? sliderMax]}
             onValueChange={([min, max]) =>
               onMinMaxChange({
-                min,
-                max: Math.min(Math.min(5, validFieldIds.length), max),
+                min: min ?? sliderMin,
+                max: max ?? sliderMax,
               })
             }
             disabled={isReadonly || disabled}

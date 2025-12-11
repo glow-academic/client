@@ -23,7 +23,7 @@ export type DocumentItem = {
 
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface DocumentViewerProps {
   document: DocumentItem;
@@ -55,14 +55,25 @@ export default function DocumentViewer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [iframeLoading, setIframeLoading] = useState(true);
+  // Use ref to track blob URLs for cleanup without causing dependency issues
+  const blobUrlRef = useRef<string | null>(null);
 
   // Load document
   useEffect(() => {
+    let blobUrl: string | null = null;
+
     const loadDocument = async () => {
       try {
         setLoading(true);
         setError(null);
         setIframeLoading(true);
+
+        // Clean up previous blob URL if it exists
+        if (blobUrlRef.current && blobUrlRef.current.startsWith("blob:")) {
+          URL.revokeObjectURL(blobUrlRef.current);
+          blobUrlRef.current = null;
+        }
+        setContent(null);
 
         // Build URL with preview parameter for compact mode
         let url = "";
@@ -112,7 +123,8 @@ export default function DocumentViewer({
           setContent(textContent);
         } else {
           const blob = await response.blob();
-          const blobUrl = URL.createObjectURL(blob);
+          blobUrl = URL.createObjectURL(blob);
+          blobUrlRef.current = blobUrl;
           setContent(blobUrl);
         }
       } catch (e) {
@@ -123,6 +135,14 @@ export default function DocumentViewer({
     };
 
     loadDocument();
+
+    // Cleanup blob URL on unmount or when dependencies change
+    return () => {
+      if (blobUrl && blobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(blobUrl);
+        blobUrlRef.current = null;
+      }
+    };
   }, [
     document.document_id,
     document.name,
@@ -155,15 +175,18 @@ export default function DocumentViewer({
     }
 
     // PDF preview image (when compact mode returns PNG preview)
+    // Only render if content is a valid non-empty string
     if (
       compact &&
       type?.includes("image/png") &&
-      document.name?.toLowerCase().endsWith(".pdf")
+      document.name?.toLowerCase().endsWith(".pdf") &&
+      content &&
+      content.trim() !== ""
     ) {
       return (
         <div className="w-full h-full">
           <Image
-            src={content ?? ""}
+            src={content}
             alt={document.name ?? ""}
             className="w-full h-full object-contain"
             width={0}
@@ -208,11 +231,12 @@ export default function DocumentViewer({
     }
 
     // Image viewer - responsive and fit to width
-    if (type?.includes("image/")) {
+    // Only render if content is a valid non-empty string
+    if (type?.includes("image/") && content && content.trim() !== "") {
       return (
         <div className="w-full h-full">
           <Image
-            src={content ?? ""}
+            src={content}
             alt={document.name ?? ""}
             className="w-full h-full object-cover"
             width={0}

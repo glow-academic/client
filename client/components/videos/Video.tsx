@@ -1170,7 +1170,7 @@ export default function Video({
     min: number;
     max: number;
   }>(() => {
-    // Initialize from URL params or default
+    // Initialize from URL params or server-provided default
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const min = params.get("documentMin");
@@ -1179,7 +1179,8 @@ export default function Video({
         return { min: parseInt(min, 10), max: parseInt(max, 10) };
       }
     }
-    return { min: 1, max: 2 };
+    // Fallback only if server doesn't provide ranges (will be updated when videoData loads)
+    return { min: 0, max: 3 };
   });
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
@@ -1452,14 +1453,26 @@ export default function Video({
       params.set("documentSearch", documentSearchTerm);
     }
 
-    // Add range params when different from defaults
-    // Document ranges (default: min=1, max=2)
-    if (documentMinMax.min !== 1 || documentMinMax.max !== 2) {
+    // Add range params when different from server-provided defaults
+    const serverRanges = videoData?.allowed_ranges;
+    const questionRange = videoData?.question_count_range;
+
+    // Document ranges - compare against server defaults
+    const documentDefault = serverRanges?.document || { min: 0, max: 3 };
+    if (
+      documentMinMax.min !== documentDefault.min ||
+      documentMinMax.max !== documentDefault.max
+    ) {
       params.set("documentMin", documentMinMax.min.toString());
       params.set("documentMax", documentMinMax.max.toString());
     }
-    // Question ranges (default: min=0, max=3)
-    if (questionCount[0] !== 0 || questionCount[1] !== 3) {
+
+    // Question ranges - compare against server defaults
+    const questionDefault = questionRange || { min: 0, max: 3 };
+    if (
+      questionCount[0] !== questionDefault.min ||
+      questionCount[1] !== questionDefault.max
+    ) {
       params.set("questionMin", questionCount[0].toString());
       params.set("questionMax", questionCount[1].toString());
     }
@@ -1478,6 +1491,8 @@ export default function Video({
     documentSearchTerm,
     documentMinMax,
     questionCount,
+    videoData?.allowed_ranges, // Include server ranges in dependencies
+    videoData?.question_count_range, // Include question range in dependencies
   ]);
 
   // Debounce timeout ref for URL updates
@@ -2443,7 +2458,7 @@ export default function Video({
             personaMapping={personaMapping}
             selectedPersonaIds={formData.personaIds || []}
             searchTerm=""
-            minMax={{ min: 1, max: 2 }}
+            minMax={videoData?.allowed_ranges?.persona || { min: 1, max: 3 }}
             onPersonaIdsChange={(ids) => handleInputChange("personaIds", ids)}
             onSearchTermChange={() => {}}
             onMinMaxChange={() => {}}
@@ -2499,7 +2514,9 @@ export default function Video({
         parameterMapping={parameterMapping}
         selectedParameterIds={formData.parameterIds || []}
         searchTerm=""
-        minMax={{ min: 1, max: 2 }}
+        minMax={
+          videoData?.allowed_ranges?.parameter_selection || { min: 0, max: 3 }
+        }
         onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
         onSearchTermChange={() => {}}
         onMinMaxChange={() => {}}
@@ -2537,7 +2554,12 @@ export default function Video({
               validFieldIds={validItemsForParam}
               fieldMapping={fieldMapping}
               selectedFieldIds={selectedItemsForParam}
-              minMax={{ min: 1, max: 2 }}
+              minMax={
+                videoData?.allowed_ranges?.fields?.[paramId] || {
+                  min: 1,
+                  max: 3,
+                }
+              }
               onFieldIdsChange={(newIds) => {
                 const otherFieldIds = currentParameterItemIds.filter(
                   (itemId) => fieldMapping[itemId]?.parameter_id !== paramId

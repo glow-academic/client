@@ -222,9 +222,9 @@ class ScenarioDetailResponse(BaseModel):
     valid_general_field_ids: list[str] | None = (
         None  # Renamed from valid_general_parameter_item_ids - filtered based on personas/documents/parameters
     )
-    # Allowed ranges (computed from filtered IDs, capped at 5)
+    # Allowed ranges (computed from filtered IDs, capped at 3)
     allowed_ranges: AllowedRanges | None = None
-    # Objective count range (default: min=0, max=5)
+    # Objective count range (default: min=0, max=3)
     objective_count_range: RangeMinMax
     # Randomized selections (if randomization params provided)
     randomized_selections: RandomizedSelections | None = None
@@ -1293,79 +1293,103 @@ async def get_scenario_new(
                 document_details=document_details,
             )
 
-        # Compute allowed ranges from filtered IDs (cap max at 5)
-        max_valid_personas = min(5, len(filtered_valid_persona_ids))
-        max_valid_documents = min(5, len(filtered_valid_document_ids))
-        max_valid_parameters = min(5, len(valid_parameter_ids))
-
-        # Default ranges
+        # Fixed ranges (server is source of truth, not based on available items)
+        # Personas: 1-3 (range), default value: 1
+        # The allowed range is always 1-3, request params are for current values
         persona_min = (
             request_data.personaMin if request_data.personaMin is not None else 1
         )
-        persona_max = min(
-            request_data.personaMax if request_data.personaMax is not None else 2,
-            max_valid_personas,
+        persona_max = (
+            request_data.personaMax if request_data.personaMax is not None else 1
         )
+        # Allowed range is always 1-3 (fixed limits)
+        allowed_persona_min = 1
+        allowed_persona_max = 3
+        # Ensure requested values are within allowed range
+        persona_min = max(allowed_persona_min, min(persona_min, allowed_persona_max))
+        persona_max = max(allowed_persona_min, min(persona_max, allowed_persona_max))
+        # Ensure min doesn't exceed max
+        persona_min = min(persona_min, persona_max)
+        
+        # Documents: 0-3 (range), default value: 1
+        # The allowed range is always 0-3, request params are for current values
         document_min = (
             request_data.documentMin if request_data.documentMin is not None else 0
         )
-        document_max = min(
-            request_data.documentMax if request_data.documentMax is not None else 2,
-            max_valid_documents,
+        document_max = (
+            request_data.documentMax if request_data.documentMax is not None else 1
         )
+        # Allowed range is always 0-3 (fixed limits)
+        allowed_document_min = 0
+        allowed_document_max = 3
+        # Ensure requested values are within allowed range
+        document_min = max(allowed_document_min, min(document_min, allowed_document_max))
+        document_max = max(allowed_document_min, min(document_max, allowed_document_max))
+        # Ensure min doesn't exceed max
+        document_min = min(document_min, document_max)
+        
+        # Parameters: 0-3 (range), default value: 3
+        # The allowed range is always 0-3, request params are for current values
         parameter_selection_min = (
             request_data.parameterSelectionMin
             if request_data.parameterSelectionMin is not None
             else 0
         )
-        parameter_selection_max = min(
+        parameter_selection_max = (
             request_data.parameterSelectionMax
             if request_data.parameterSelectionMax is not None
-            else 5,
-            max_valid_parameters,
+            else 3
         )
+        # Allowed range is always 0-3 (fixed limits)
+        allowed_parameter_min = 0
+        allowed_parameter_max = 3
+        # Ensure requested values are within allowed range
+        parameter_selection_min = max(allowed_parameter_min, min(parameter_selection_min, allowed_parameter_max))
+        parameter_selection_max = max(allowed_parameter_min, min(parameter_selection_max, allowed_parameter_max))
+        # Ensure min doesn't exceed max
+        parameter_selection_min = min(parameter_selection_min, parameter_selection_max)
+        
+        # For randomization, we still need to cap based on available items
+        max_valid_personas = len(filtered_valid_persona_ids)
+        max_valid_documents = len(filtered_valid_document_ids)
+        max_valid_parameters = len(valid_parameter_ids)
 
         # Per-parameter field ranges
+        # Always set default ranges for all valid parameters (fixed ranges, not based on available items)
         field_ranges_dict: dict[
             str, dict[str, int]
         ] = {}  # Renamed from parameter_items_ranges
-        if (
-            filtered_valid_general_field_ids
-        ):  # Renamed from filtered_valid_general_parameter_item_ids
-            for param_id in parameter_mapping.keys():
-                valid_items_for_param = [
-                    item_id
-                    for item_id in filtered_valid_general_field_ids  # Renamed from filtered_valid_general_parameter_item_ids
-                    if item_id in field_mapping  # Renamed from parameter_item_mapping
-                    and field_mapping[item_id].parameter_id == param_id
-                ]
-                max_valid_items = min(5, len(valid_items_for_param))
+        # Use valid_parameter_ids to ensure we include all valid parameters
+        for param_id in valid_parameter_ids:
+            # Parameter fields: 1-3 (default max: 1) - fixed range
+            if (
+                request_data.fieldRanges and param_id in request_data.fieldRanges
+            ):  # Renamed from parameterItemRanges
+                param_range = request_data.fieldRanges[param_id]
+                param_min = param_range.get("min", 1)
+                param_max = param_range.get("max", 1)
+            else:
+                param_min = 1
+                param_max = 1
+            # Ensure max doesn't exceed fixed limit
+            param_max = min(param_max, 3)
+            # Ensure min doesn't exceed max
+            param_min = min(param_min, param_max)
 
-                if (
-                    request_data.fieldRanges and param_id in request_data.fieldRanges
-                ):  # Renamed from parameterItemRanges
-                    param_range = request_data.fieldRanges[param_id]
-                    param_min = param_range.get("min", 1)
-                    param_max = min(param_range.get("max", 2), max_valid_items)
-                else:
-                    param_min = 1
-                    param_max = min(2, max_valid_items)
+            field_ranges_dict[param_id] = {
+                "min": param_min,
+                "max": param_max,
+            }  # Renamed from parameter_items_ranges
 
-                field_ranges_dict[param_id] = {
-                    "min": param_min,
-                    "max": param_max,
-                }  # Renamed from parameter_items_ranges
-
+        # Allowed ranges are fixed limits (not current values)
+        # Personas: 1-3, Documents: 0-3, Parameters: 0-3, Fields: 1-3
         allowed_ranges = AllowedRanges(
-            persona=RangeMinMax(min=persona_min, max=persona_max),
-            document=RangeMinMax(min=document_min, max=document_max),
-            parameter_selection=RangeMinMax(
-                min=parameter_selection_min,
-                max=parameter_selection_max,
-            ),
+            persona=RangeMinMax(min=1, max=3),  # Fixed allowed range
+            document=RangeMinMax(min=0, max=3),  # Fixed allowed range
+            parameter_selection=RangeMinMax(min=0, max=3),  # Fixed allowed range
             fields={  # Renamed from parameter_items
-                param_id: RangeMinMax(min=range_dict["min"], max=range_dict["max"])
-                for param_id, range_dict in field_ranges_dict.items()  # Renamed from parameter_items_ranges
+                param_id: RangeMinMax(min=1, max=3)  # Fixed allowed range per parameter
+                for param_id in field_ranges_dict.keys()
             },
         )
 
@@ -1457,7 +1481,8 @@ async def get_scenario_new(
                                     and field_mapping[item_id].parameter_id == param_id
                                 ]
                                 if valid_items_for_param:
-                                    max_valid_items = min(5, len(valid_items_for_param))
+                                    # Cap based on available items for randomization
+                                    max_valid_items = len(valid_items_for_param)
                                     capped_max = min(max_val, max_valid_items)
                                     count = min(
                                         capped_max,
@@ -1539,7 +1564,8 @@ async def get_scenario_new(
                             and field_mapping[item_id].parameter_id == param_id
                         ]
                         if valid_items_for_param:
-                            max_valid_items = min(5, len(valid_items_for_param))
+                            # Cap based on available items for randomization
+                            max_valid_items = len(valid_items_for_param)
                             capped_max = min(max_val, max_valid_items)
                             count = min(
                                 capped_max,
@@ -1676,8 +1702,8 @@ async def get_scenario_new(
             valid_field_ids=filtered_valid_field_ids,  # Renamed from valid_parameter_item_ids
             valid_general_field_ids=filtered_valid_general_field_ids,  # Renamed from valid_general_parameter_item_ids
             allowed_ranges=allowed_ranges,
-            # Objective count range (default: min=0, max=5)
-            objective_count_range=RangeMinMax(min=0, max=5),
+            # Objectives: 0-3 (default: 1) - fixed range
+            objective_count_range=RangeMinMax(min=1, max=3),
             randomized_selections=randomized_selections,
             # Objectives (empty defaults)
             objective_ids=[],
@@ -1719,13 +1745,13 @@ async def get_scenario_new(
             persona_search=request_data.personaSearch,
             document_search=request_data.documentSearch,
             parameter_search=request_data.parameterSearch,
-            # Range values from request
-            persona_min=request_data.personaMin,
-            persona_max=request_data.personaMax,
-            document_min=request_data.documentMin,
-            document_max=request_data.documentMax,
-            parameter_selection_min=request_data.parameterSelectionMin,
-            parameter_selection_max=request_data.parameterSelectionMax,
+            # Range values from request (default to 1 for personas, 1 for documents, 3 for parameters)
+            persona_min=persona_min,  # Already validated and defaulted to 1
+            persona_max=persona_max,  # Already validated and defaulted to 1
+            document_min=document_min,  # Already validated and defaulted to 0
+            document_max=document_max,  # Already validated and defaulted to 1
+            parameter_selection_min=parameter_selection_min,  # Already validated and defaulted to 0
+            parameter_selection_max=parameter_selection_max,  # Already validated and defaulted to 3
             field_ranges=request_data.fieldRanges,  # Renamed from parameterItemRanges
         )
 

@@ -49,7 +49,8 @@ export interface DocumentSectionProps {
 
   // State
   searchTerm: string;
-  minMax: { min: number; max: number };
+  minMax: { min: number; max: number }; // Current values
+  allowedRange?: { min: number; max: number } | undefined; // Allowed limits (optional, defaults to minMax if not provided)
   previewDocumentId: string | null;
 
   // Callbacks
@@ -79,6 +80,7 @@ export function DocumentSection({
   documentDetails,
   searchTerm,
   minMax,
+  allowedRange,
   previewDocumentId,
   onDocumentIdsChange,
   onTemplateDocumentIdsChange,
@@ -95,9 +97,13 @@ export function DocumentSection({
   disabled = false,
   isEditMode = false,
 }: DocumentSectionProps) {
+  // Use allowedRange for slider limits, minMax for current values
+  const sliderMin = allowedRange?.min ?? minMax.min ?? 0;
+  const sliderMax = allowedRange?.max ?? minMax.max ?? 3;
   // Local state for preview dialog (managed internally)
-  const [localPreviewDocumentId, setLocalPreviewDocumentId] =
-    useState<string | null>(previewDocumentId);
+  const [localPreviewDocumentId, setLocalPreviewDocumentId] = useState<
+    string | null
+  >(previewDocumentId);
 
   // Sync with prop when it changes externally
   useEffect(() => {
@@ -113,8 +119,7 @@ export function DocumentSection({
     return validDocumentIds.filter((docId) => {
       const doc = documentMapping[docId];
       if (!doc) return false;
-      const searchText =
-        `${doc.name} ${doc.description || ""}`.toLowerCase();
+      const searchText = `${doc.name} ${doc.description || ""}`.toLowerCase();
       return searchText.includes(searchLower);
     });
   }, [validDocumentIds, documentMapping, searchTerm]);
@@ -167,22 +172,13 @@ export function DocumentSection({
           </div>
           <div className="flex items-center">
             <RangeSlider
-              min={0}
-              max={Math.min(5, validDocumentIds.length)}
-              value={[
-                minMax.min ?? 0,
-                Math.min(
-                  Math.min(5, validDocumentIds.length),
-                  minMax.max ?? 2
-                ),
-              ]}
+              min={sliderMin}
+              max={sliderMax}
+              value={[minMax.min ?? sliderMin, minMax.max ?? sliderMax]}
               onValueChange={([min, max]) =>
                 onMinMaxChange({
-                  min: min ?? 0,
-                  max: Math.min(
-                    Math.min(5, validDocumentIds.length),
-                    max ?? 2
-                  ),
+                  min: min ?? sliderMin,
+                  max: max ?? sliderMax,
                 })
               }
               disabled={isReadonly || disabled}
@@ -274,10 +270,7 @@ export function DocumentSection({
                     if (isReadonly || disabled) return;
                     const newIds = isSelected
                       ? selectedDocumentIds.filter((id) => id !== docId)
-                      : [...selectedDocumentIds, docId].slice(
-                          0,
-                          minMax.max
-                        ); // Max documents from range slider
+                      : [...selectedDocumentIds, docId].slice(0, minMax.max); // Max documents from range slider
                     onDocumentIdsChange(newIds);
                   }}
                   disabled={
@@ -398,4 +391,3 @@ export function DocumentSection({
     </>
   );
 }
-

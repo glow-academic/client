@@ -77,7 +77,7 @@ const getScenario = async (
     imageIds?: string[];
     objectiveIds?: string[];
     problemStatementIds?: string[];
-  },
+  }
 ): Promise<ScenarioDetailOut> => {
   return api.post(
     "/scenarios/detail",
@@ -93,14 +93,14 @@ const getScenario = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { scenarioId } = await params;
   const session = await getSession();
@@ -123,7 +123,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createScenario(
-  input: CreateScenarioIn,
+  input: CreateScenarioIn
 ): Promise<CreateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -131,7 +131,7 @@ async function createScenario(
 }
 
 async function updateScenario(
-  input: UpdateScenarioIn,
+  input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -141,7 +141,7 @@ async function updateScenario(
 // generateAIScenario removed - component now uses WebSocket directly
 
 async function randomizeScenario(
-  input: RandomizeScenarioIn,
+  input: RandomizeScenarioIn
 ): Promise<RandomizeScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -174,28 +174,66 @@ export default async function EditScenarioPage({
   });
 
   // Extract filter params
-  const departmentIds = searchParamsObj.get("departmentIds")?.split(",").filter(Boolean);
-  const personaIds = searchParamsObj.get("personaIds")?.split(",").filter(Boolean);
-  const documentIds = searchParamsObj.get("documentIds")?.split(",").filter(Boolean);
-  const templateDocumentIds = searchParamsObj.get("templateDocumentIds")?.split(",").filter(Boolean);
-  const parameterIds = searchParamsObj.get("parameterIds")?.split(",").filter(Boolean);
-  const parameterItemIds = searchParamsObj.get("parameterItemIds")?.split(",").filter(Boolean);
+  const departmentIds = searchParamsObj
+    .get("departmentIds")
+    ?.split(",")
+    .filter(Boolean);
+  const personaIds = searchParamsObj
+    .get("personaIds")
+    ?.split(",")
+    .filter(Boolean);
+  const documentIds = searchParamsObj
+    .get("documentIds")
+    ?.split(",")
+    .filter(Boolean);
+  const templateDocumentIds = searchParamsObj
+    .get("templateDocumentIds")
+    ?.split(",")
+    .filter(Boolean);
+  const parameterIds = searchParamsObj
+    .get("parameterIds")
+    ?.split(",")
+    .filter(Boolean);
+  const parameterItemIds = searchParamsObj
+    .get("parameterItemIds")
+    ?.split(",")
+    .filter(Boolean);
   // Extract URL parameters for linking generated resources
   const imageIds = searchParamsObj.get("imageIds")?.split(",").filter(Boolean);
-  const objectiveIds = searchParamsObj.get("objectiveIds")?.split(",").filter(Boolean);
-  const problemStatementIds = searchParamsObj.get("problemStatementIds")?.split(",").filter(Boolean);
+  const objectiveIds = searchParamsObj
+    .get("objectiveIds")
+    ?.split(",")
+    .filter(Boolean);
+  const problemStatementIds = searchParamsObj
+    .get("problemStatementIds")
+    ?.split(",")
+    .filter(Boolean);
   const personaSearch = searchParamsObj.get("personaSearch") || undefined;
   const documentSearch = searchParamsObj.get("documentSearch") || undefined;
   const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
-  const personaMin = searchParamsObj.get("personaMin") ? parseInt(searchParamsObj.get("personaMin") || "1", 10) : undefined;
-  const personaMax = searchParamsObj.get("personaMax") ? parseInt(searchParamsObj.get("personaMax") || "2", 10) : undefined;
-  const documentMin = searchParamsObj.get("documentMin") ? parseInt(searchParamsObj.get("documentMin") || "0", 10) : undefined;
-  const documentMax = searchParamsObj.get("documentMax") ? parseInt(searchParamsObj.get("documentMax") || "2", 10) : undefined;
-  const parameterSelectionMin = searchParamsObj.get("parameterSelectionMin") ? parseInt(searchParamsObj.get("parameterSelectionMin") || "0", 10) : undefined;
-  const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax") ? parseInt(searchParamsObj.get("parameterSelectionMax") || "5", 10) : undefined;
-  
+  const personaMin = searchParamsObj.get("personaMin")
+    ? parseInt(searchParamsObj.get("personaMin") || "1", 10)
+    : undefined;
+  const personaMax = searchParamsObj.get("personaMax")
+    ? parseInt(searchParamsObj.get("personaMax") || "1", 10)
+    : undefined;
+  const documentMin = searchParamsObj.get("documentMin")
+    ? parseInt(searchParamsObj.get("documentMin") || "0", 10)
+    : undefined;
+  const documentMax = searchParamsObj.get("documentMax")
+    ? parseInt(searchParamsObj.get("documentMax") || "1", 10)
+    : undefined;
+  const parameterSelectionMin = searchParamsObj.get("parameterSelectionMin")
+    ? parseInt(searchParamsObj.get("parameterSelectionMin") || "0", 10)
+    : undefined;
+  const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
+    ? parseInt(searchParamsObj.get("parameterSelectionMax") || "3", 10)
+    : undefined;
+
   // Parse parameter item ranges
-  const parameterItemRanges: Record<string, { min: number; max: number }> | undefined = (() => {
+  const parameterItemRanges:
+    | Record<string, { min: number; max: number }>
+    | undefined = (() => {
     const ranges: Record<string, { min: number; max: number }> = {};
     let hasRanges = false;
     for (const [key, value] of searchParamsObj.entries()) {
@@ -221,10 +259,13 @@ export default async function EditScenarioPage({
   })();
 
   // Parse randomization params
-  const randomizePersonas = searchParamsObj.get("randomizePersonas") || undefined;
-  const randomizeDocuments = searchParamsObj.get("randomizeDocuments") || undefined;
-  const randomizeParameters = searchParamsObj.get("randomizeParameters") || undefined;
-  
+  const randomizePersonas =
+    searchParamsObj.get("randomizePersonas") || undefined;
+  const randomizeDocuments =
+    searchParamsObj.get("randomizeDocuments") || undefined;
+  const randomizeParameters =
+    searchParamsObj.get("randomizeParameters") || undefined;
+
   const randomizeParameterItems: Record<string, string> | undefined = (() => {
     const items: Record<string, string> = {};
     for (const [key, value] of searchParamsObj.entries()) {
@@ -305,10 +346,10 @@ export type {
   GenerateAIScenarioOut,
   RandomizeScenarioIn,
   RandomizeScenarioOut,
-  ScenarioNewIn,
-  ScenarioNewOut,
   ScenarioDetailIn,
   ScenarioDetailOut,
+  ScenarioNewIn,
+  ScenarioNewOut,
   UpdateScenarioIn,
   UpdateScenarioOut,
 };

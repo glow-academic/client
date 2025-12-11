@@ -37,7 +37,8 @@ export interface ParameterSectionProps {
 
   // State
   searchTerm: string;
-  minMax: { min: number; max: number };
+  minMax: { min: number; max: number }; // Current values
+  allowedRange?: { min: number; max: number } | undefined; // Allowed limits (optional, defaults to minMax if not provided)
 
   // Callbacks
   onParameterIdsChange: (ids: string[]) => void;
@@ -63,6 +64,7 @@ export function ParameterSection({
   selectedParameterIds,
   searchTerm,
   minMax,
+  allowedRange,
   onParameterIdsChange,
   onSearchTermChange,
   onMinMaxChange,
@@ -77,6 +79,9 @@ export function ParameterSection({
   disabled = false,
   isEditMode = false,
 }: ParameterSectionProps) {
+  // Use allowedRange for slider limits, minMax for current values
+  const sliderMin = allowedRange?.min ?? minMax.min ?? 0;
+  const sliderMax = allowedRange?.max ?? minMax.max ?? 3;
   // Filter parameters based on search term
   const filteredParameterIds = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -131,22 +136,13 @@ export function ParameterSection({
           {validParameterIds.length > 0 && (
             <>
               <RangeSlider
-                min={0}
-                max={Math.min(5, validParameterIds.length)}
-                value={[
-                  minMax.min ?? 0,
-                  Math.min(
-                    Math.min(5, validParameterIds.length),
-                    minMax.max ?? 5
-                  ),
-                ]}
+                min={sliderMin}
+                max={sliderMax}
+                value={[minMax.min ?? sliderMin, minMax.max ?? sliderMax]}
                 onValueChange={([min, max]) =>
                   onMinMaxChange({
-                    min: min ?? 0,
-                    max: Math.min(
-                      Math.min(5, validParameterIds.length),
-                      max ?? 5
-                    ),
+                    min: min ?? sliderMin,
+                    max: max ?? sliderMax,
                   })
                 }
                 disabled={isReadonly || disabled}
@@ -253,7 +249,3 @@ export function ParameterSection({
     </Card>
   );
 }
-
-
-
-

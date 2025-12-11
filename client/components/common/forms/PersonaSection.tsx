@@ -36,7 +36,8 @@ export interface PersonaSectionProps {
 
   // State
   searchTerm: string;
-  minMax: { min: number; max: number };
+  minMax: { min: number; max: number }; // Current values
+  allowedRange?: { min: number; max: number } | undefined; // Allowed limits (optional, defaults to minMax if not provided)
 
   // Callbacks
   onPersonaIdsChange: (ids: string[]) => void;
@@ -82,6 +83,7 @@ export function PersonaSection({
   selectedPersonaIds,
   searchTerm,
   minMax,
+  allowedRange,
   onPersonaIdsChange,
   onSearchTermChange,
   onMinMaxChange,
@@ -95,6 +97,9 @@ export function PersonaSection({
   disabled = false,
   isEditMode = false,
 }: PersonaSectionProps) {
+  // Use allowedRange for slider limits, minMax for current values
+  const sliderMin = allowedRange?.min ?? minMax.min ?? 1;
+  const sliderMax = allowedRange?.max ?? minMax.max ?? 3;
   // Filter personas based on search term
   const filteredPersonaIds = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -143,16 +148,13 @@ export function PersonaSection({
         </div>
         <div className="flex items-center">
           <RangeSlider
-            min={1}
-            max={Math.min(5, validPersonaIds.length)}
-            value={[
-              minMax.min ?? 1,
-              Math.min(Math.min(5, validPersonaIds.length), minMax.max ?? 2),
-            ]}
+            min={sliderMin}
+            max={sliderMax}
+            value={[minMax.min ?? sliderMin, minMax.max ?? sliderMin]}
             onValueChange={([min, max]) =>
               onMinMaxChange({
-                min: min ?? 1,
-                max: Math.min(Math.min(5, validPersonaIds.length), max ?? 2),
+                min: min ?? sliderMin,
+                max: max ?? sliderMax,
               })
             }
             disabled={isReadonly || disabled}
@@ -262,6 +264,3 @@ export function PersonaSection({
     </Card>
   );
 }
-
-
-

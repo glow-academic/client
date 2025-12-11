@@ -4,13 +4,12 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -107,6 +106,44 @@ async def create_scenario(
         image_names = request.image_names or []
         parameter_item_ids = parameter_item_ids or []
         parameter_ids = parameter_ids or []
+
+        # Server-side validation: enforce fixed limits (server is source of truth)
+        # Personas: 1-3 (must have at least 1)
+        persona_count = len(persona_ids)
+        if persona_count < 1 or persona_count > 3:
+            raise ValueError(
+                f"Personas must be between 1 and 3. Received {persona_count}."
+            )
+
+        # Documents: 0-3
+        document_count = len(document_ids)
+        if document_count > 3:
+            raise ValueError(
+                f"Documents must be between 0 and 3. Received {document_count}."
+            )
+
+        # Parameters: 0-3
+        parameter_count = len(parameter_ids)
+        if parameter_count > 3:
+            raise ValueError(
+                f"Parameters must be between 0 and 3. Received {parameter_count}."
+            )
+
+        # Each parameter's fields: 1-3 per parameter
+        for param_id, field_ids in request.parameters.items():
+            field_count = len(field_ids)
+            if field_count < 1 or field_count > 3:
+                raise ValueError(
+                    f"Fields for parameter {param_id} must be between 1 and 3. "
+                    f"Received {field_count}."
+                )
+
+        # Objectives: 0-3
+        objective_count = len(objective_ids)
+        if objective_count > 3:
+            raise ValueError(
+                f"Objectives must be between 0 and 3. Received {objective_count}."
+            )
 
         # Validate upload_ids and image_names match in length
         if len(upload_ids) != len(image_names):

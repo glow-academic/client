@@ -288,33 +288,22 @@ export default function Scenario({
         if (data.success) {
           documentIds.push(data.document_id);
 
-          // If parent_document_id is provided, add template document to currentTemplateDocumentIds
-          // Keep parent document in currentDocumentIds (don't replace)
+          // Add document to currentDocumentIds
+          // Template status will be determined from server documentDetails when data refreshes
           const parentDocumentId = data.parent_document_id;
           if (parentDocumentId) {
             // eslint-disable-next-line no-console
-            console.log("[Scenario] Adding template document:", {
+            console.log("[Scenario] Adding document with parent:", {
               parent_id: parentDocumentId,
-              template_id: data.document_id,
-            });
-            // Add template document to templateDocumentIds
-            setCurrentTemplateDocumentIds((prev) => {
-              if (prev.includes(data.document_id)) {
-                return prev;
-              }
-              return [...prev, data.document_id];
+              document_id: data.document_id,
             });
             // Keep parent document in currentDocumentIds (don't replace)
-            // Parent document stays in currentDocumentIds for selection box
-          } else {
-            // No parent ID - just add the new document ID to regular documents
-            // eslint-disable-next-line no-console
-            console.log(
-              "[Scenario] No parent_document_id provided, adding new document:",
-              data.document_id
-            );
-            setCurrentDocumentIds((prev) => [...prev, data.document_id]);
+            // Template status will be derived from server documentDetails
           }
+          // Add the new document ID to regular documents
+          // eslint-disable-next-line no-console
+          console.log("[Scenario] Adding new document:", data.document_id);
+          setCurrentDocumentIds((prev) => [...prev, data.document_id]);
         } else {
           // eslint-disable-next-line no-console
           console.error("[Scenario] Document completion failed:", data.message);
@@ -539,7 +528,7 @@ export default function Scenario({
   const [useImage, setUseImage] = useState(false);
   // Objective count state: [min, max] - initialized from server or URL params
   const [objectiveCount, setObjectiveCount] = useState<[number, number]>([
-    0, 0,
+    1, 1,
   ]);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
@@ -549,9 +538,8 @@ export default function Scenario({
   const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
   const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
-  const [currentTemplateDocumentIds, setCurrentTemplateDocumentIds] = useState<
-    string[]
-  >([]);
+  // templateDocumentIds is derived from server documentDetails (is_template field)
+  // No state variable needed - derived via useMemo
   const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
     string | null
   >(null);
@@ -566,36 +554,75 @@ export default function Scenario({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Min/max state for randomization (initialized from server-provided allowed_ranges)
+  // Min/max state for randomization (current values, not allowed ranges)
+  // Initialize from server's persona_min/persona_max (current values), default to 1
   const [personaMinMax, setPersonaMinMax] = useState(() => {
-    const ranges = scenarioData?.allowed_ranges;
-    return ranges?.persona
-      ? { min: ranges.persona.min, max: ranges.persona.max }
-      : { min: 1, max: 2 };
+    // In create mode, check if scenarioData has persona_min/persona_max
+    if (scenarioData && "persona_min" in scenarioData) {
+      const newData = scenarioData as ScenarioNewOut;
+      return {
+        min: newData.persona_min ?? 1,
+        max: newData.persona_max ?? 1,
+      };
+    }
+    // Default to 1 (not the allowed range max of 3)
+    return { min: 1, max: 1 };
   });
+  // Initialize from server's current values (persona_min/persona_max, document_min/document_max, etc.)
+  // Server is source of truth - use current values, not allowed_ranges
   const [documentMinMax, setDocumentMinMax] = useState(() => {
-    const ranges = scenarioData?.allowed_ranges;
-    return ranges?.document
-      ? { min: ranges.document.min, max: ranges.document.max }
-      : { min: 0, max: 2 };
+    if (scenarioData && "document_min" in scenarioData) {
+      const newData = scenarioData as ScenarioNewOut;
+      return {
+        min: newData.document_min ?? 0,
+        max: newData.document_max ?? 1,
+      };
+    }
+    // Fallback to default current values (0-1) if server data not available yet
+    // allowed_ranges contains bounds (0-3), but we want default current values (0-1)
+    return { min: 0, max: 1 };
   });
   const [parameterSelectionMinMax, setParameterSelectionMinMax] = useState(
     () => {
+      if (scenarioData && "parameter_selection_min" in scenarioData) {
+        const newData = scenarioData as ScenarioNewOut;
+        return {
+          min: newData.parameter_selection_min ?? 0,
+          max: newData.parameter_selection_max ?? 3,
+        };
+      }
+      // Fallback to allowed range if server data not available yet
       const ranges = scenarioData?.allowed_ranges;
       return ranges?.parameter_selection
         ? {
             min: ranges.parameter_selection.min,
             max: ranges.parameter_selection.max,
           }
-        : { min: 0, max: 5 };
+        : { min: 0, max: 3 };
     }
   );
   const [fieldMinMax, setFieldMinMax] = useState<
     Record<string, { min: number; max: number }>
   >(() => {
+    // Use field_ranges (current values) if available, otherwise use allowed_ranges.fields
+    if (scenarioData && "field_ranges" in scenarioData) {
+      const newData = scenarioData as ScenarioNewOut;
+      if (newData.field_ranges) {
+        const result: Record<string, { min: number; max: number }> = {};
+        Object.entries(newData.field_ranges).forEach(([paramId, range]) => {
+          // Handle undefined values with defaults - type assertion needed for index signature
+          const typedRange = range as { min?: number; max?: number };
+          result[paramId] = {
+            min: typedRange.min ?? 1,
+            max: typedRange.max ?? 3,
+          };
+        });
+        return result;
+      }
+    }
+    // Fallback to allowed_ranges.fields if server data not available yet
     const ranges = scenarioData?.allowed_ranges;
     if (!ranges?.fields) return {};
-    // Convert server format to client format
     const result: Record<string, { min: number; max: number }> = {};
     Object.entries(ranges.fields).forEach(([paramId, range]) => {
       result[paramId] = { min: range.min, max: range.max };
@@ -616,6 +643,16 @@ export default function Scenario({
     []
   );
 
+  // Derive templateDocumentIds from server documentDetails (only from server data)
+  // This is the source of truth - no brittle useEffect needed
+  // Defined early so it can be used in useCallback below
+  const templateDocumentIds = useMemo(() => {
+    if (!scenarioData?.document_details) return [];
+    return scenarioData.document_details
+      .filter((doc) => doc.is_template === true)
+      .map((doc) => doc.document_id);
+  }, [scenarioData?.document_details]);
+
   // Helper function to build search params including filters, search terms, ranges, and randomize param
   const buildSearchParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -631,9 +668,7 @@ export default function Scenario({
     if (currentDocumentIds.length > 0) {
       params.set("documentIds", currentDocumentIds.join(","));
     }
-    if (currentTemplateDocumentIds.length > 0) {
-      params.set("templateDocumentIds", currentTemplateDocumentIds.join(","));
-    }
+    // Template document IDs are derived from server - no need to sync to URL
     if (formData.parameterIds && formData.parameterIds.length > 0) {
       params.set("parameterIds", formData.parameterIds.join(","));
     }
@@ -656,21 +691,37 @@ export default function Scenario({
       params.set("parameterSearch", parameterSearchTerm);
     }
 
-    // Add range params when different from defaults
-    // Persona ranges (default: min=1, max=2)
-    if (personaMinMax.min !== 1 || personaMinMax.max !== 2) {
+    // Add range params when different from server-provided defaults
+    const serverRanges = scenarioData?.allowed_ranges;
+
+    // Persona ranges - compare against server defaults
+    const personaDefault = serverRanges?.persona || { min: 1, max: 3 };
+    if (
+      personaMinMax.min !== personaDefault.min ||
+      personaMinMax.max !== personaDefault.max
+    ) {
       params.set("personaMin", personaMinMax.min.toString());
       params.set("personaMax", personaMinMax.max.toString());
     }
-    // Document ranges (default: min=0, max=2)
-    if (documentMinMax.min !== 0 || documentMinMax.max !== 2) {
+
+    // Document ranges - compare against server defaults
+    const documentDefault = serverRanges?.document || { min: 0, max: 3 };
+    if (
+      documentMinMax.min !== documentDefault.min ||
+      documentMinMax.max !== documentDefault.max
+    ) {
       params.set("documentMin", documentMinMax.min.toString());
       params.set("documentMax", documentMinMax.max.toString());
     }
-    // Parameter selection ranges (default: min=0, max=5)
+
+    // Parameter selection ranges - compare against server defaults
+    const parameterDefault = serverRanges?.parameter_selection || {
+      min: 0,
+      max: 3,
+    };
     if (
-      parameterSelectionMinMax.min !== 0 ||
-      parameterSelectionMinMax.max !== 5
+      parameterSelectionMinMax.min !== parameterDefault.min ||
+      parameterSelectionMinMax.max !== parameterDefault.max
     ) {
       params.set(
         "parameterSelectionMin",
@@ -681,7 +732,8 @@ export default function Scenario({
         parameterSelectionMinMax.max.toString()
       );
     }
-    // Per-parameter item ranges (default: min=1, max=2 for each)
+
+    // Per-parameter item ranges - compare against server defaults
     // Include ranges for selected parameters, or for all parameters if randomize=all (server needs ranges for randomized params)
     const selectedParamIds = formData.parameterIds || [];
     const isRandomizing = searchParams.get("randomize") === "all";
@@ -689,9 +741,16 @@ export default function Scenario({
       // Include range if:
       // 1. Parameter is selected, OR
       // 2. We're randomizing all (server will randomize parameters and need these ranges)
-      // AND range differs from default
+      // AND range differs from server default
       const shouldInclude = isRandomizing || selectedParamIds.includes(fieldId);
-      if (shouldInclude && (range.min !== 1 || range.max !== 2)) {
+      const fieldDefault = serverRanges?.fields?.[fieldId] || {
+        min: 1,
+        max: 3,
+      };
+      if (
+        shouldInclude &&
+        (range.min !== fieldDefault.min || range.max !== fieldDefault.max)
+      ) {
         params.set(`fieldMin_${fieldId}`, range.min.toString());
         params.set(`fieldMax_${fieldId}`, range.max.toString());
       }
@@ -702,10 +761,10 @@ export default function Scenario({
 
     return params;
   }, [
+    scenarioData?.allowed_ranges, // Include server ranges in dependencies
     formData.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
-    currentTemplateDocumentIds,
     formData.parameterIds,
     currentFieldIds,
     currentProblemStatementIds,
@@ -774,84 +833,13 @@ export default function Scenario({
     return { ...serverMapping, ...localMapping };
   }, [scenarioData?.problem_statement_mapping, localProblemStatementVersions]);
 
-  // Extract template document IDs from document_mapping
-  // Template documents are documents that have parent_document_id (generated from a parent)
-  // OR documents that are referenced as parent_document_id by other documents (parent templates)
-  // This runs whenever documentMapping changes (similar to Video.tsx)
-  useEffect(() => {
-    if (documentMapping && Object.keys(documentMapping).length > 0) {
-      // First, find all documents that have parent_document_id (generated templates)
-      const generatedTemplateDocIds = Object.entries(documentMapping)
-        .filter(([docId, doc]) => {
-          const docWithParent = doc as DocumentMappingItem;
-          const hasParent = !!(
-            docWithParent?.parent_document_id &&
-            docWithParent.parent_document_id.trim()
-          );
-          return hasParent;
-        })
-        .map(([docId]) => docId);
-
-      // Second, find all documents that are referenced as parent_document_id (parent templates)
-      const parentTemplateDocIds = Object.keys(documentMapping).filter(
-        (docId) => {
-          // Check if any other document has this docId as its parent_document_id
-          return Object.values(documentMapping).some((doc) => {
-            const docWithParent = doc as DocumentMappingItem;
-            return (
-              docWithParent?.parent_document_id === docId &&
-              docWithParent.parent_document_id.trim()
-            );
-          });
-        }
-      );
-
-      // Combine both: generated templates + parent templates
-      const templateDocIds = [
-        ...new Set([...generatedTemplateDocIds, ...parentTemplateDocIds]),
-      ];
-
-      if (templateDocIds.length > 0) {
-        setCurrentTemplateDocumentIds(templateDocIds);
-      } else {
-        // Fallback: if no parent_document_id relationships found, check document names
-        // Documents with "Template" in name might be templates
-        const templateByNameDocIds = Object.entries(documentMapping)
-          .filter(([_, doc]) => {
-            const docItem = doc as DocumentMappingItem;
-            return docItem?.name?.toLowerCase().includes("template") ?? false;
-          })
-          .map(([docId]) => docId);
-        if (templateByNameDocIds.length > 0) {
-          setCurrentTemplateDocumentIds(templateByNameDocIds);
-        }
-      }
-    }
-  }, [documentMapping]);
-
-  // Combine currentDocumentIds and currentTemplateDocumentIds for preview
-  // Filter out parent documents if their template document exists
+  // Combine currentDocumentIds and templateDocumentIds for preview
+  // Include all selected documents and template documents from server
   const allPreviewDocumentIds = useMemo(() => {
-    const combined = [...currentDocumentIds, ...currentTemplateDocumentIds];
-    const templateDocSet = new Set(currentTemplateDocumentIds);
-    // Filter out parent documents that have template documents
-    const filtered = combined.filter((docId) => {
-      const doc = documentMapping[docId];
-      // If this document has a parent and the parent's template exists, exclude parent
-      if (doc?.parent_document_id) {
-        // This is a template document, include it
-        return true;
-      }
-      // Check if this document is a parent that has a template
-      const hasTemplate = Array.from(templateDocSet).some((templateId) => {
-        const templateDoc = documentMapping[templateId];
-        return templateDoc?.parent_document_id === docId;
-      });
-      // Exclude parent if template exists
-      return !hasTemplate;
-    });
-    return filtered;
-  }, [currentDocumentIds, currentTemplateDocumentIds, documentMapping]);
+    const combined = [...currentDocumentIds, ...templateDocumentIds];
+    // Remove duplicates
+    return [...new Set(combined)];
+  }, [currentDocumentIds, templateDocumentIds]);
 
   // Extract image mapping from scenario_images array
   type ImageMappingItem = {
@@ -1353,7 +1341,6 @@ export default function Scenario({
     formData.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
-    currentTemplateDocumentIds,
     formData.parameterIds,
     currentFieldIds, // Renamed from currentParameterItemIds
     currentProblemStatementIds,
@@ -1389,17 +1376,8 @@ export default function Scenario({
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
       setCurrentDocumentIds(scenarioData.document_ids);
-      // Extract template document IDs from document_mapping (documents with parent_document_id)
-      const templateDocIds = Object.entries(scenarioData.document_mapping || {})
-        .filter(
-          ([_, doc]) =>
-            doc &&
-            typeof doc === "object" &&
-            "parent_document_id" in doc &&
-            doc.parent_document_id
-        )
-        .map(([docId]) => docId);
-      setCurrentTemplateDocumentIds(templateDocIds);
+      // Template document IDs are derived from documentDetails (is_template field)
+      // No need to set currentTemplateDocumentIds here - it's derived from server data
       setCurrentFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setCurrentObjectives(
         getObjectivesFromMapping(
@@ -1424,11 +1402,11 @@ export default function Scenario({
         }>;
       };
       // Documents are always enabled (no switch)
-      // Initialize objective count from server data or default to [0, 0]
+      // Initialize objective count from server data or default to [1, 1]
       if (scenarioDataWithFlags?.objective_count_range) {
         setObjectiveCount([
-          scenarioDataWithFlags.objective_count_range.min || 0,
-          scenarioDataWithFlags.objective_count_range.max || 0,
+          scenarioDataWithFlags.objective_count_range.min ?? 1,
+          scenarioDataWithFlags.objective_count_range.max ?? 1,
         ]);
       }
       // Load image_enabled and scenario image (single image - take first if exists)
@@ -1470,18 +1448,11 @@ export default function Scenario({
         parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       setOriginalDocumentIds(scenarioData.document_ids);
-      // Extract template document IDs from document_mapping for original tracking
-      const originalTemplateDocIds = Object.entries(
-        scenarioData.document_mapping || {}
-      )
-        .filter(
-          ([_, doc]) =>
-            doc &&
-            typeof doc === "object" &&
-            "parent_document_id" in doc &&
-            doc.parent_document_id
-        )
-        .map(([docId]) => docId);
+      // Extract template document IDs from documentDetails (is_template field) for original tracking
+      const originalTemplateDocIds =
+        scenarioData.document_details
+          ?.filter((doc) => doc.is_template === true)
+          .map((doc) => doc.document_id) || [];
       setOriginalTemplateDocumentIds(originalTemplateDocIds);
       setOriginalFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setOriginalObjectives(
@@ -1512,9 +1483,8 @@ export default function Scenario({
       if (newData.selected_document_ids) {
         setCurrentDocumentIds(newData.selected_document_ids);
       }
-      if (newData.selected_template_document_ids) {
-        setCurrentTemplateDocumentIds(newData.selected_template_document_ids);
-      }
+      // Template document IDs are derived from documentDetails (is_template field)
+      // No need to set from selected_template_document_ids - derive from server data
       if (newData.selected_field_ids) {
         setCurrentFieldIds(newData.selected_field_ids);
       }
@@ -1528,14 +1498,8 @@ export default function Scenario({
         setCurrentProblemStatementIds(problemStatementIdsFromUrl);
       }
 
-      // Initialize template document IDs from URL params
-      const templateDocumentIdsFromUrl = searchParams
-        .get("templateDocumentIds")
-        ?.split(",")
-        .filter(Boolean);
-      if (templateDocumentIdsFromUrl && templateDocumentIdsFromUrl.length > 0) {
-        setCurrentTemplateDocumentIds(templateDocumentIdsFromUrl);
-      }
+      // Template document IDs are derived from server documentDetails (is_template field)
+      // No URL param handling needed - server is source of truth
 
       // Initialize search terms from server response
       if (newData.persona_search) {
@@ -1548,40 +1512,47 @@ export default function Scenario({
         setParameterSearchTerm(newData.parameter_search);
       }
 
-      // Initialize range values from server response
-      if (
-        newData.persona_min !== undefined ||
-        newData.persona_max !== undefined
-      ) {
-        setPersonaMinMax({
-          min: newData.persona_min ?? 1,
-          max: newData.persona_max ?? 2,
-        });
-      }
+      // Initialize range values from server response (current values, not allowed ranges)
+      // Always set from server response if available, default to 1
+      setPersonaMinMax({
+        min: newData.persona_min ?? 1,
+        max: newData.persona_max ?? 1,
+      });
       if (
         newData.document_min !== undefined ||
         newData.document_max !== undefined
       ) {
         setDocumentMinMax({
           min: newData.document_min ?? 0,
-          max: newData.document_max ?? 2,
+          max: newData.document_max ?? 1,
         });
       }
       if (
         newData.parameter_selection_min !== undefined ||
         newData.parameter_selection_max !== undefined
       ) {
+        // Use server-provided ranges as source of truth, fallback to current state
+        const parameterDefault =
+          scenarioData?.allowed_ranges?.parameter_selection ||
+          parameterSelectionMinMax;
         setParameterSelectionMinMax({
-          min: newData.parameter_selection_min ?? 0,
-          max: newData.parameter_selection_max ?? 5,
+          min: newData.parameter_selection_min ?? parameterDefault.min,
+          max: newData.parameter_selection_max ?? parameterDefault.max,
         });
       }
 
       // Initialize per-parameter item ranges from server response
       if (newData.field_ranges) {
-        setFieldMinMax(
-          newData.field_ranges as Record<string, { min: number; max: number }>
-        );
+        const result: Record<string, { min: number; max: number }> = {};
+        Object.entries(newData.field_ranges).forEach(([paramId, range]) => {
+          // Type assertion needed for index signature - use bracket notation
+          const typedRange = range as { min?: number; max?: number };
+          result[paramId] = {
+            min: typedRange["min"] ?? 1,
+            max: typedRange["max"] ?? 3,
+          };
+        });
+        setFieldMinMax(result);
       }
 
       formDataInitializedRef.current = true;
@@ -1593,6 +1564,7 @@ export default function Scenario({
     effectiveProfile?.primaryDepartmentId,
     initialFormData,
     searchParams,
+    parameterSelectionMinMax, // Used as fallback value in effect
   ]);
 
   // Problem statement ID is now managed via URL parameters, not state
@@ -1726,7 +1698,7 @@ export default function Scenario({
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
         JSON.stringify([...(originalDocumentIds || [])].sort()) ||
-      JSON.stringify([...currentTemplateDocumentIds].sort()) !==
+      JSON.stringify([...templateDocumentIds].sort()) !==
         JSON.stringify([...(originalTemplateDocumentIds || [])].sort()) ||
       JSON.stringify([...currentFieldIds].sort()) !==
         JSON.stringify([...(originalFieldIds || [])].sort()) ||
@@ -1741,7 +1713,7 @@ export default function Scenario({
     scenarioData,
     currentDocumentIds,
     originalDocumentIds,
-    currentTemplateDocumentIds,
+    templateDocumentIds,
     originalTemplateDocumentIds,
     currentFieldIds, // Renamed from currentParameterItemIds
     originalFieldIds, // Renamed from originalParameterItemIds
@@ -1835,35 +1807,8 @@ export default function Scenario({
     ]
   );
 
-  // Update min/max ranges from server-provided allowed_ranges
-  useEffect(() => {
-    const ranges = scenarioData?.allowed_ranges;
-    if (ranges) {
-      if (ranges.persona) {
-        setPersonaMinMax({ min: ranges.persona.min, max: ranges.persona.max });
-      }
-      if (ranges.document) {
-        setDocumentMinMax({
-          min: ranges.document.min,
-          max: ranges.document.max,
-        });
-      }
-      if (ranges.parameter_selection) {
-        setParameterSelectionMinMax({
-          min: ranges.parameter_selection.min,
-          max: ranges.parameter_selection.max,
-        });
-      }
-      if (ranges.fields) {
-        // Convert server format to client format
-        const converted: Record<string, { min: number; max: number }> = {};
-        Object.entries(ranges.fields).forEach(([fieldId, range]) => {
-          converted[fieldId] = { min: range.min, max: range.max };
-        });
-        setFieldMinMax(converted);
-      }
-    }
-  }, [scenarioData?.allowed_ranges]);
+  // Removed useEffect - server values are initialized in useState and useEffect at line 1436
+  // Server is source of truth, no need to sync via useEffect (DHH approach)
 
   // Dynamic steps array based on available parameters
   const steps: Step[] = useMemo(() => {
@@ -2121,8 +2066,10 @@ export default function Scenario({
 
   // Objective handlers
   const addObjective = () => {
-    if (currentObjectives.length >= 3) {
-      toast.error("Maximum 3 objectives allowed");
+    // Use server-provided range as source of truth
+    const maxObjectives = scenarioData?.objective_count_range?.max ?? 3;
+    if (currentObjectives.length >= maxObjectives) {
+      toast.error(`Maximum ${maxObjectives} objectives allowed`);
       return;
     }
     setCurrentObjectives((prev) => [...prev, ""]);
@@ -2425,9 +2372,7 @@ export default function Scenario({
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
         template_document_ids:
-          currentTemplateDocumentIds.length > 0
-            ? currentTemplateDocumentIds
-            : null,
+          templateDocumentIds.length > 0 ? templateDocumentIds : null,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
         upload_ids: image?.upload_id ? [image.upload_id] : null,
         image_names: image?.name ? [image.name] : null,
@@ -2607,6 +2552,14 @@ export default function Scenario({
           selectedPersonaIds={selectedPersonaIds}
           searchTerm={personaSearchTerm}
           minMax={personaMinMax}
+          allowedRange={
+            scenarioData?.allowed_ranges?.persona
+              ? {
+                  min: scenarioData.allowed_ranges.persona.min,
+                  max: scenarioData.allowed_ranges.persona.max,
+                }
+              : undefined
+          }
           onPersonaIdsChange={handlePersonaSelect}
           onSearchTermChange={setPersonaSearchTerm}
           onMinMaxChange={setPersonaMinMax}
@@ -2625,7 +2578,7 @@ export default function Scenario({
           validDocumentIds={validDocumentIds}
           documentMapping={documentMapping}
           selectedDocumentIds={currentDocumentIds}
-          templateDocumentIds={currentTemplateDocumentIds}
+          templateDocumentIds={templateDocumentIds}
           {...(scenarioData?.document_details
             ? {
                 documentDetails: scenarioData.document_details as Array<{
@@ -2637,9 +2590,19 @@ export default function Scenario({
             : {})}
           searchTerm={documentSearchTerm}
           minMax={documentMinMax}
+          allowedRange={
+            scenarioData?.allowed_ranges?.document
+              ? {
+                  min: scenarioData.allowed_ranges.document.min,
+                  max: scenarioData.allowed_ranges.document.max,
+                }
+              : undefined
+          }
           previewDocumentId={previewDocumentId}
           onDocumentIdsChange={setCurrentDocumentIds}
-          onTemplateDocumentIdsChange={setCurrentTemplateDocumentIds}
+          onTemplateDocumentIdsChange={() => {
+            // Template document IDs are derived from server - no manual updates needed
+          }}
           onSearchTermChange={setDocumentSearchTerm}
           onMinMaxChange={setDocumentMinMax}
           onPreviewDocument={setPreviewDocumentId}
@@ -2660,6 +2623,14 @@ export default function Scenario({
           selectedParameterIds={formData.parameterIds || []}
           searchTerm={parameterSearchTerm}
           minMax={parameterSelectionMinMax}
+          allowedRange={
+            scenarioData?.allowed_ranges?.parameter_selection
+              ? {
+                  min: scenarioData.allowed_ranges.parameter_selection.min,
+                  max: scenarioData.allowed_ranges.parameter_selection.max,
+                }
+              : undefined
+          }
           onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
           onSearchTermChange={setParameterSearchTerm}
           onMinMaxChange={setParameterSelectionMinMax}
@@ -2702,7 +2673,21 @@ export default function Scenario({
                 validFieldIds={validItemsForParam}
                 fieldMapping={fieldMapping}
                 selectedFieldIds={selectedItemsForParam}
-                minMax={fieldMinMax[paramId] || { min: 1, max: 2 }}
+                minMax={
+                  fieldMinMax[paramId] ||
+                  scenarioData?.allowed_ranges?.fields?.[paramId] || {
+                    min: 1,
+                    max: 3,
+                  }
+                }
+                allowedRange={
+                  scenarioData?.allowed_ranges?.fields?.[paramId]
+                    ? {
+                        min: scenarioData.allowed_ranges.fields[paramId].min,
+                        max: scenarioData.allowed_ranges.fields[paramId].max,
+                      }
+                    : undefined
+                }
                 onFieldIdsChange={(newIds) => {
                   // Update only this parameter's items
                   const otherFieldIds = currentFieldIds.filter(
@@ -2749,7 +2734,7 @@ export default function Scenario({
                       min: scenarioData.objective_count_range.min,
                       max: scenarioData.objective_count_range.max,
                     }
-                  : { min: 0, max: 5 }
+                  : { min: 1, max: 3 }
               }
               objectiveCount={objectiveCount}
               onObjectiveCountChange={(min, max) =>
@@ -2773,7 +2758,7 @@ export default function Scenario({
                     }>,
                   }
                 : {})}
-              templateDocumentIds={currentTemplateDocumentIds}
+              templateDocumentIds={templateDocumentIds}
               selectedPersonaIds={selectedPersonaIds}
               personaMapping={personaMapping}
               onProblemStatementChange={(value) =>

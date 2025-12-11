@@ -26,10 +26,17 @@ export default function ImageViewer({
 
   // Load image
   useEffect(() => {
+    let blobUrl: string | null = null;
+
     const loadImage = async () => {
       try {
         setLoading(true);
         setError(null);
+        // Clear previous content when loading new image
+        if (content && content.startsWith("blob:")) {
+          URL.revokeObjectURL(content);
+        }
+        setContent(null);
 
         const response = await fetch(`/api/images/download/${imageId}`, {
           method: "GET",
@@ -53,7 +60,8 @@ export default function ImageViewer({
         setType(contentType);
 
         const blob = await response.blob();
-        setContent(URL.createObjectURL(blob));
+        blobUrl = URL.createObjectURL(blob);
+        setContent(blobUrl);
       } catch (e) {
         setError((e as Error).message);
       } finally {
@@ -62,16 +70,14 @@ export default function ImageViewer({
     };
 
     loadImage();
-  }, [imageId]);
 
-  // Cleanup blob URL on unmount
-  useEffect(() => {
+    // Cleanup blob URL on unmount or when imageId changes
     return () => {
-      if (content && content.startsWith("blob:")) {
-        URL.revokeObjectURL(content);
+      if (blobUrl && blobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [content]);
+  }, [imageId]); // Only depend on imageId, not content
 
   const renderContent = () => {
     if (loading) {
@@ -92,7 +98,8 @@ export default function ImageViewer({
     }
 
     // Image viewer - responsive and fit to width
-    if (type?.includes("image/") && content) {
+    // Only render if content is a valid non-empty string
+    if (type?.includes("image/") && content && content.trim() !== "") {
       return (
         <div className="w-full h-full">
           <Image

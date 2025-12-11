@@ -506,7 +506,7 @@ class VideoDetailResponse(BaseModel):
     valid_general_field_ids: list[str] | None = (
         None  # Filtered based on personas/documents/parameters
     )
-    # Allowed ranges (computed from filtered IDs, capped at 5)
+    # Allowed ranges (computed from filtered IDs, capped at 3)
     allowed_ranges: AllowedRanges | None = None
     # Question count range (computed from video length)
     question_count_range: RangeMinMax
@@ -884,59 +884,70 @@ async def get_video_new(
                 field_mapping=field_mapping,
             )
 
-        # Compute allowed ranges from filtered IDs (cap max at 5)
-        max_valid_personas = min(5, len(filtered_valid_persona_ids))
-        max_valid_documents = min(5, len(filtered_valid_document_ids))
-        max_valid_parameters = min(5, len(valid_parameter_ids))
-
-        # Default ranges
+        # Fixed ranges (server is source of truth, not based on available items)
+        # Personas: 1-3 (default max: 1)
         persona_min = (
             request_data.personaMin if request_data.personaMin is not None else 1
         )
-        persona_max = min(
-            request_data.personaMax if request_data.personaMax is not None else 2,
-            max_valid_personas,
+        persona_max = (
+            request_data.personaMax if request_data.personaMax is not None else 1
         )
+        # Ensure max doesn't exceed fixed limit
+        persona_max = min(persona_max, 3)
+        # Ensure min doesn't exceed max
+        persona_min = min(persona_min, persona_max)
+        
+        # Documents: 0-3 (default max: 1)
         document_min = (
             request_data.documentMin if request_data.documentMin is not None else 0
         )
-        document_max = min(
-            request_data.documentMax if request_data.documentMax is not None else 2,
-            max_valid_documents,
+        document_max = (
+            request_data.documentMax if request_data.documentMax is not None else 1
         )
+        # Ensure max doesn't exceed fixed limit
+        document_max = min(document_max, 3)
+        # Ensure min doesn't exceed max
+        document_min = min(document_min, document_max)
+        
+        # Parameters: 0-3 (default max: 3)
         parameter_selection_min = (
             request_data.parameterSelectionMin
             if request_data.parameterSelectionMin is not None
             else 0
         )
-        parameter_selection_max = min(
+        parameter_selection_max = (
             request_data.parameterSelectionMax
             if request_data.parameterSelectionMax is not None
-            else 5,
-            max_valid_parameters,
+            else 3
         )
+        # Ensure max doesn't exceed fixed limit
+        parameter_selection_max = min(parameter_selection_max, 3)
+        # Ensure min doesn't exceed max
+        parameter_selection_min = min(parameter_selection_min, parameter_selection_max)
+        
+        # For randomization, we still need to cap based on available items
+        max_valid_personas = len(filtered_valid_persona_ids)
+        max_valid_documents = len(filtered_valid_document_ids)
+        max_valid_parameters = len(valid_parameter_ids)
 
         # Per-parameter field ranges
+        # Always set default ranges for all parameters (fixed ranges, not based on available items)
         field_ranges_dict: dict[str, dict[str, int]] = {}
-        if filtered_valid_general_field_ids:
-            for param_id in parameter_mapping.keys():
-                valid_items_for_param = [
-                    item_id
-                    for item_id in filtered_valid_general_field_ids
-                    if item_id in field_mapping
-                    and field_mapping[item_id].parameter_id == param_id
-                ]
-                max_valid_items = min(5, len(valid_items_for_param))
+        for param_id in parameter_mapping.keys():
+            # Parameter fields: 1-3 (default max: 1) - fixed range
+            if request_data.fieldRanges and param_id in request_data.fieldRanges:
+                param_range = request_data.fieldRanges[param_id]
+                param_min = param_range.get("min", 1)
+                param_max = param_range.get("max", 1)
+            else:
+                param_min = 1
+                param_max = 1
+            # Ensure max doesn't exceed fixed limit
+            param_max = min(param_max, 3)
+            # Ensure min doesn't exceed max
+            param_min = min(param_min, param_max)
 
-                if request_data.fieldRanges and param_id in request_data.fieldRanges:
-                    param_range = request_data.fieldRanges[param_id]
-                    param_min = param_range.get("min", 1)
-                    param_max = min(param_range.get("max", 2), max_valid_items)
-                else:
-                    param_min = 1
-                    param_max = min(2, max_valid_items)
-
-                field_ranges_dict[param_id] = {"min": param_min, "max": param_max}
+            field_ranges_dict[param_id] = {"min": param_min, "max": param_max}
 
         allowed_ranges = AllowedRanges(
             persona=RangeMinMax(min=persona_min, max=persona_max),

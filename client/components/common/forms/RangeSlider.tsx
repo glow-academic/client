@@ -147,27 +147,47 @@ export function RangeSlider({
           </span>
 
           {/* Handle value labels - show below each handle */}
-          {minValue !== min && (
-            <span
-              className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
-              style={{
-                left: `${getLabelPosition(minValue)}%`,
-                transform: "translateX(-50%)",
-              }}
-            >
-              {minValue}
-            </span>
-          )}
-          {maxValue !== max && (
-            <span
-              className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
-              style={{
-                left: `${getLabelPosition(maxValue)}%`,
-                transform: "translateX(-50%)",
-              }}
-            >
-              {maxValue}
-            </span>
+          {/* When minValue === maxValue, show only one label to avoid duplication */}
+          {minValue === maxValue ? (
+            // Single value case: show label only if it's not at the edges
+            minValue !== min &&
+            minValue !== max && (
+              <span
+                className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                style={{
+                  left: `${getLabelPosition(minValue)}%`,
+                  transform: "translateX(-50%)",
+                }}
+              >
+                {minValue}
+              </span>
+            )
+          ) : (
+            // Range case: show both labels if they're not at the edges
+            <>
+              {minValue !== min && (
+                <span
+                  className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                  style={{
+                    left: `${getLabelPosition(minValue)}%`,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  {minValue}
+                </span>
+              )}
+              {maxValue !== max && (
+                <span
+                  className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                  style={{
+                    left: `${getLabelPosition(maxValue)}%`,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  {maxValue}
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>

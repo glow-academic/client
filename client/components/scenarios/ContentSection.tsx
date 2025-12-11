@@ -849,8 +849,13 @@ export function ContentSection({
                       id: string;
                     };
                     const docId = itemWithId.id || "";
+                    // Derive template status from documentDetails (server data)
+                    const fullDoc = documentDetails?.find(
+                      (d) => d.document_id === docId
+                    );
                     const isTemplateDocument =
-                      templateDocumentIds.includes(docId);
+                      Boolean(fullDoc?.["is_template"]) ||
+                      templateDocumentIds.includes(docId); // Fallback for compatibility
                     return (
                       <div className="flex flex-col items-start py-3 w-full">
                         <div className="flex items-center justify-between w-full">
@@ -894,9 +899,10 @@ export function ContentSection({
                     const fullDoc = documentDetails?.find(
                       (d) => d.document_id === docId
                     );
-                    const isTemplateDocument =
-                      Boolean(fullDoc?.["is_template"]) ||
-                      templateDocumentIds.includes(docId);
+                    // Derive template status from documentDetails (server data is source of truth)
+                    const isTemplateDocument = Boolean(
+                      fullDoc?.["is_template"]
+                    );
 
                     const docForViewer: DocumentItem = fullDoc
                       ? ({
