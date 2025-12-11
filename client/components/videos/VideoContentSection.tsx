@@ -675,22 +675,21 @@ export function VideoContentSection({
         )}
 
         {/* Three-Column Layout: Images | Video | Documents */}
-        <div className="flex gap-4 h-[600px]">
+        <div className="flex gap-4">
           {/* Images Column (Left) - Only shown when useImage is true */}
           {useImage && (
-            <div className="w-48 space-y-2 flex-shrink-0 h-full flex flex-col">
-              <Label>Images</Label>
+            <div className="w-48 flex-shrink-0 h-[400px] flex flex-col">
               {images.length > 0 ? (
                 <div className="space-y-2 flex-1 overflow-y-auto">
                   {images.map((img, idx) => (
-                    <div key={img.id || idx} className="relative">
+                    <div key={img.id || idx} className="relative aspect-square">
                       <img
                         src={
                           img.file_path ||
                           `/api/v3/uploads/download/${img.upload_id || img.id}`
                         }
                         alt={img.name}
-                        className="w-full h-32 object-cover rounded-lg border"
+                        className="w-full h-full object-cover rounded-lg border"
                       />
                       <Button
                         type="button"
@@ -739,14 +738,14 @@ export function VideoContentSection({
             className={
               allPreviewDocumentIds.length > 0
                 ? useImage
-                  ? "w-[calc(70%-13rem)] space-y-4"
-                  : "w-[70%] space-y-4"
+                  ? "w-[calc(70%-13rem)]"
+                  : "w-[70%]"
                 : useImage
-                  ? "flex-1 space-y-4"
-                  : "w-full space-y-4"
+                  ? "flex-1"
+                  : "w-full"
             }
           >
-            <div className="relative border rounded-lg overflow-hidden min-h-[400px]">
+            <div className="relative border rounded-lg overflow-hidden h-[400px]">
               {/* Video Player */}
               {isUploadingVideo ? (
                 <div className="absolute inset-0 w-full h-full bg-muted/20 flex items-center justify-center">
