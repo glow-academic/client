@@ -1410,21 +1410,37 @@ export default function Video({
   // Persona and parameter search terms (matching scenarios pattern)
   const [personaSearchTerm, setPersonaSearchTerm] = useState<string>("");
   const [parameterSearchTerm, setParameterSearchTerm] = useState<string>("");
+  // Min/max state for randomization (current values, not allowed ranges)
+  // Initialize from server's persona_min/persona_max (current values), default to 1
+  // Note: Videos don't use personaMin/personaMax in URL, but we track state for consistency
+  const [personaMinMax, setPersonaMinMax] = useState(() => {
+    // In create mode, check if videoData has persona_min/persona_max
+    if (videoData && "persona_min" in videoData) {
+      const newData = videoData as VideoNewOut;
+      return {
+        min: newData.persona_min ?? 1,
+        max: newData.persona_max ?? 1,
+      };
+    }
+    // Default to 1 (not the allowed range max of 3)
+    return { min: 1, max: 1 };
+  });
+  // Initialize from server's current values (document_min/document_max, etc.)
+  // Server is source of truth - use current values, not allowed_ranges
   const [documentMinMax, setDocumentMinMax] = useState<{
     min: number;
     max: number;
   }>(() => {
-    // Initialize from URL params or server-provided default
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const min = params.get("documentMin");
-      const max = params.get("documentMax");
-      if (min !== null && max !== null) {
-        return { min: parseInt(min, 10), max: parseInt(max, 10) };
-      }
+    if (videoData && "document_min" in videoData) {
+      const newData = videoData as VideoNewOut;
+      return {
+        min: newData.document_min ?? 0,
+        max: newData.document_max ?? 1,
+      };
     }
-    // Fallback only if server doesn't provide ranges (will be updated when videoData loads)
-    return { min: 0, max: 3 };
+    // Fallback to default current values (0-1) if server data not available yet
+    // allowed_ranges contains bounds (0-3), but we want default current values (0-1)
+    return { min: 0, max: 1 };
   });
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
@@ -2228,7 +2244,11 @@ export default function Video({
       // Initialize range values from server response (current values, not allowed ranges)
       // Always set from server response if available, default to 1
       // Always update to ensure reset works properly (even if values match defaults)
-      // Note: Videos don't use persona ranges in URL params like scenarios do
+      // Always update persona ranges (not conditional) to ensure reset works
+      setPersonaMinMax({
+        min: newData.persona_min ?? 1,
+        max: newData.persona_max ?? 1,
+      });
       // Always update document ranges (not conditional) to ensure reset works
       setDocumentMinMax({
         min: newData.document_min ?? 0,

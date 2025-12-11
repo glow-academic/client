@@ -437,7 +437,7 @@ export function ContentSection({
         {/* Problem Statement */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <div></div>
+            <Label>Problem Statement</Label>
             {Object.keys(problemStatementMapping).length > 0 && (
               <div className="flex items-center gap-2">
                 <GenericPicker

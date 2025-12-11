@@ -1635,7 +1635,7 @@ async def get_video_new(
             document_max=document_max,  # Already validated and defaulted to 1
             parameter_selection_min=parameter_selection_min,  # Already validated and defaulted to 0
             parameter_selection_max=parameter_selection_max,  # Already validated and defaulted to 3
-            field_ranges=request_data.fieldRanges,  # Use request values like scenarios
+            field_ranges=field_ranges_dict,  # Return computed defaults for all valid parameters
         )
 
         # Cache response
