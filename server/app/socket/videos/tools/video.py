@@ -3,9 +3,10 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -122,8 +123,10 @@ async def _video_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                 return
 
         # No images required OR images are ready - call video generation handler directly
-        from app.socket.videos.generate import (GenerateVideoPayload,
-                                                _video_generate_impl)
+        from app.socket.videos.generate import (
+            GenerateVideoPayload,
+            _video_generate_impl,
+        )
 
         video_payload = GenerateVideoPayload(
             videoId=validated.video_id,

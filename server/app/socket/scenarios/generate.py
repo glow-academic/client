@@ -5,19 +5,10 @@ import os
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
+                    trace)
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
-
 from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
@@ -28,7 +19,10 @@ from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
+from app.utils.scenario.image_generation import set_image_generation_context
 from app.utils.sql_helper import load_sql
+from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
+                      create_model)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -79,7 +73,10 @@ class ScenarioImageGenerationErrorPayload(BaseModel):
 # Pydantic model for client-to-server event
 class GenerateScenarioAIPayload(BaseModel):
     departmentId: str
-    agentId: str  # Required: UI filters and selects appropriate agent based on flags
+    scenarioAgentId: str  # Required: UI filters and selects appropriate agent for scenario generation
+    imageAgentId: str | None = (
+        None  # Optional: Agent ID for image generation (required when images are enabled)
+    )
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
     fieldIds: list[str] | None = None
@@ -333,23 +330,39 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             field_ids_str = [str(f) for f in field_ids] if field_ids else []
 
             sql = load_sql("sql/v3/agents/get_scenario_run_context_and_create_run.sql")
-            # Agent ID should be provided in payload (UI filters and selects appropriate agent)
-            agent_id = (
-                uuid.UUID(data.agentId)
-                if hasattr(data, "agentId") and data.agentId
+            # Scenario Agent ID should be provided in payload (UI filters and selects appropriate agent)
+            scenario_agent_id = (
+                uuid.UUID(data.scenarioAgentId)
+                if hasattr(data, "scenarioAgentId") and data.scenarioAgentId
                 else None
             )
 
-            if not agent_id:
+            if not scenario_agent_id:
                 await scenario_generation_error(
                     ScenarioGenerationErrorPayload(
                         success=False,
-                        message="Agent ID is required for scenario generation",
+                        message="Scenario Agent ID is required for scenario generation",
                         trace_id=trace_id,
                     ),
                     room=sid,
                 )
                 return
+
+            # Extract image agent ID (required when images are enabled)
+            image_agent_id = None
+            if hasattr(data, "imageAgentId") and data.imageAgentId:
+                try:
+                    image_agent_id = uuid.UUID(data.imageAgentId)
+                except (ValueError, TypeError):
+                    await scenario_generation_error(
+                        ScenarioGenerationErrorPayload(
+                            success=False,
+                            message=f"Invalid imageAgentId provided: {data.imageAgentId}",
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
 
             try:
                 # Get context AND create run in single atomic transaction
@@ -360,7 +373,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     str(persona_id) if persona_id else None,
                     doc_ids_str,
                     field_ids_str,
-                    str(agent_id),  # agent_id (required)
+                    str(scenario_agent_id),  # scenario_agent_id (required)
                     str(profile_id) if profile_id else None,  # profile_id (nullable)
                 )
             except Exception as e:
@@ -548,6 +561,39 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # Create scenario generation tools inline
             scenario_tools: list[Tool] = []
             primary_id = trace_id or (str(group_id) if group_id else None)
+
+            # Set image generation context before creating tools (if images enabled)
+            # Require image_agent_id when images are enabled
+            if images_enabled:
+                if not image_agent_id:
+                    await scenario_generation_error(
+                        ScenarioGenerationErrorPayload(
+                            success=False,
+                            message="imageAgentId is required when image generation is enabled",
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
+
+                if not final_profile_id:
+                    await scenario_generation_error(
+                        ScenarioGenerationErrorPayload(
+                            success=False,
+                            message="profile_id is required for image generation",
+                            trace_id=trace_id,
+                        ),
+                        room=sid,
+                    )
+                    return
+
+                await set_image_generation_context(
+                    agent_id=str(image_agent_id),
+                    profile_id=str(final_profile_id),
+                    primary_id=primary_id,
+                    department_id=str(department_id) if department_id else None,
+                    room=sid,  # WebSocket room for emitting events
+                )
 
             # 1. Title and Description Tool (always included)
             async def set_title_description(
@@ -1030,6 +1076,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             Confirmation message
                         """
                         # Emit to internal bus for image creation
+                        # Use image_agent_id (set from payload) instead of scenario agent_id
                         await internal_sio.emit(
                             "scenario_tool_image",
                             {
@@ -1037,7 +1084,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 "trace_id": trace_id,
                                 "name": name,
                                 "prompt": prompt,
-                                "agent_id": str(context["agent_id"]),
+                                "agent_id": str(
+                                    image_agent_id
+                                ),  # Use image agent ID for image generation
                                 "department_id": str(department_id)
                                 if department_id
                                 else None,

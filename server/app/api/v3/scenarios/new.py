@@ -5,20 +5,29 @@ from collections.abc import Sequence
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              DocumentMapping, DocumentMappingItem,
-                              FieldMapping, FieldMappingItem, ParameterMapping,
-                              ParameterMappingItem, PersonaMapping,
-                              PersonaMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    DocumentMapping,
+    DocumentMappingItem,
+    FieldMapping,
+    FieldMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 def preserve_order_union(
@@ -538,10 +547,12 @@ def filter_valid_document_ids(
             # Also include fields that belong to scenario parameters (back-filtering)
             if param.scenario_parameter:
                 scenario_parameter_field_ids.append(field_id)
-    
+
     # Combine both document and scenario parameter fields for filtering
-    all_filtering_field_ids = document_parameter_field_ids + scenario_parameter_field_ids
-    
+    all_filtering_field_ids = (
+        document_parameter_field_ids + scenario_parameter_field_ids
+    )
+
     # Only apply field-based filtering if we have any parameter fields to filter by
     if len(all_filtering_field_ids) == 0:
         return param_filtered
@@ -552,7 +563,7 @@ def filter_valid_document_ids(
     result = []
     # Track if any documents match scenario parameter fields (for fallback logic)
     scenario_matches_found = False
-    
+
     for doc_id in param_filtered:
         # Always include currently selected documents
         if doc_id in selected_doc_ids_for_filter:
@@ -585,8 +596,16 @@ def filter_valid_document_ids(
         doc_field_set = set(all_doc_field_ids)
 
         # Separate scenario and document parameter fields for different logic
-        scenario_field_ids = [fid for fid in all_filtering_field_ids if fid in scenario_parameter_field_ids]
-        document_field_ids = [fid for fid in all_filtering_field_ids if fid in document_parameter_field_ids]
+        scenario_field_ids = [
+            fid
+            for fid in all_filtering_field_ids
+            if fid in scenario_parameter_field_ids
+        ]
+        document_field_ids = [
+            fid
+            for fid in all_filtering_field_ids
+            if fid in document_parameter_field_ids
+        ]
 
         # For scenario parameters: document must have at least ONE of the selected fields (OR logic)
         # This allows filtering when multiple fields from different parameters are selected
@@ -608,9 +627,8 @@ def filter_valid_document_ids(
             )
 
         # Document matches if it satisfies both conditions (if applicable)
-        has_matching_field = (
-            (len(scenario_field_ids) == 0 or has_scenario_match) and
-            (len(document_field_ids) == 0 or has_document_match)
+        has_matching_field = (len(scenario_field_ids) == 0 or has_scenario_match) and (
+            len(document_field_ids) == 0 or has_document_match
         )
 
         if has_matching_field:
@@ -618,7 +636,11 @@ def filter_valid_document_ids(
 
     # Fallback logic: If scenario parameter fields were selected but no documents matched,
     # show all documents instead of filtering to 0 (for better UX in back-filtering)
-    if len(scenario_parameter_field_ids) > 0 and not scenario_matches_found and len(document_parameter_field_ids) == 0:
+    if (
+        len(scenario_parameter_field_ids) > 0
+        and not scenario_matches_found
+        and len(document_parameter_field_ids) == 0
+    ):
         # No documents matched scenario fields and no document parameter fields selected
         # Return all documents (fallback behavior)
         return param_filtered
@@ -1305,7 +1327,6 @@ async def get_scenario_new(
                 document_details=document_details,
             )
 
-
             # Filter valid field IDs
             mapping_ids = list(
                 field_mapping.keys()
@@ -1367,7 +1388,7 @@ async def get_scenario_new(
         persona_max = max(allowed_persona_min, min(persona_max, allowed_persona_max))
         # Ensure min doesn't exceed max
         persona_min = min(persona_min, persona_max)
-        
+
         # Documents: 0-3 (range), default value: 1
         # The allowed range is always 0-3, request params are for current values
         document_min = (
@@ -1380,11 +1401,15 @@ async def get_scenario_new(
         allowed_document_min = 0
         allowed_document_max = 3
         # Ensure requested values are within allowed range
-        document_min = max(allowed_document_min, min(document_min, allowed_document_max))
-        document_max = max(allowed_document_min, min(document_max, allowed_document_max))
+        document_min = max(
+            allowed_document_min, min(document_min, allowed_document_max)
+        )
+        document_max = max(
+            allowed_document_min, min(document_max, allowed_document_max)
+        )
         # Ensure min doesn't exceed max
         document_min = min(document_min, document_max)
-        
+
         # Parameters: 0-3 (range), default value: 3
         # The allowed range is always 0-3, request params are for current values
         parameter_selection_min = (
@@ -1401,11 +1426,15 @@ async def get_scenario_new(
         allowed_parameter_min = 0
         allowed_parameter_max = 3
         # Ensure requested values are within allowed range
-        parameter_selection_min = max(allowed_parameter_min, min(parameter_selection_min, allowed_parameter_max))
-        parameter_selection_max = max(allowed_parameter_min, min(parameter_selection_max, allowed_parameter_max))
+        parameter_selection_min = max(
+            allowed_parameter_min, min(parameter_selection_min, allowed_parameter_max)
+        )
+        parameter_selection_max = max(
+            allowed_parameter_min, min(parameter_selection_max, allowed_parameter_max)
+        )
         # Ensure min doesn't exceed max
         parameter_selection_min = min(parameter_selection_min, parameter_selection_max)
-        
+
         # For randomization, we still need to cap based on available items
         max_valid_personas = len(filtered_valid_persona_ids)
         max_valid_documents = len(filtered_valid_document_ids)
@@ -1768,7 +1797,11 @@ async def get_scenario_new(
         final_parameter_ids = (
             randomized_parameter_ids
             if randomized_parameter_ids is not None
-            else (selected_parameter_ids if selected_parameter_ids else scenario_parameter_ids)
+            else (
+                selected_parameter_ids
+                if selected_parameter_ids
+                else scenario_parameter_ids
+            )
         )
         final_field_ids = (
             randomized_field_ids

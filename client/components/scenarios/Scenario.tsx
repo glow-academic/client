@@ -431,7 +431,7 @@ export default function Scenario({
       );
 
       // Emit the event
-      // agentId is required - UI filters and selects appropriate agent based on flags
+      // scenarioAgentId is required - UI filters and selects appropriate agent for scenario generation
       if (!formData.scenarioAgentId) {
         toast.error("Please select a scenario agent before generating");
         reject(new Error("Scenario agent ID is required"));
@@ -440,7 +440,8 @@ export default function Scenario({
 
       socket.emit("generate_scenario", {
         departmentId: body.departmentId,
-        agentId: formData.scenarioAgentId, // Required: selected agent ID
+        scenarioAgentId: formData.scenarioAgentId, // Required: selected scenario agent ID
+        imageAgentId: formData.imageAgentId || undefined, // Optional: selected image agent ID
         personaIds: body.personaIds,
         documentIds: body.documentIds,
         fieldIds: body.fieldIds, // Renamed from parameterItemIds
@@ -770,18 +771,22 @@ export default function Scenario({
       // Get the parameter_id for this field to find its range in server response
       const fieldParamId = fieldMapping[fieldId]?.parameter_id;
       const serverFieldRange = fieldParamId
-        ? serverFieldRanges[fieldParamId]
+        ? (serverFieldRanges[fieldParamId] as
+            | { min?: number; max?: number }
+            | undefined)
         : undefined;
-      const fieldDefault = serverFieldRange || {
-        min: 1,
-        max: 3,
+      const fieldDefaultMin = serverFieldRange?.["min"] ?? 1;
+      const fieldDefaultMax = serverFieldRange?.["max"] ?? 3;
+      const fieldDefault: { min: number; max: number } = {
+        min: fieldDefaultMin,
+        max: fieldDefaultMax,
       };
       if (
         shouldInclude &&
-        (range.min !== fieldDefault.min || range.max !== fieldDefault.max)
+        (range["min"] !== fieldDefault.min || range["max"] !== fieldDefault.max)
       ) {
-        params.set(`fieldMin_${fieldId}`, range.min.toString());
-        params.set(`fieldMax_${fieldId}`, range.max.toString());
+        params.set(`fieldMin_${fieldId}`, range["min"].toString());
+        params.set(`fieldMax_${fieldId}`, range["max"].toString());
       }
     });
 
@@ -1346,17 +1351,17 @@ export default function Scenario({
 
         // Add randomized IDs to URL params so URL reflects current state
         if (randomized.personaIds && randomized.personaIds.length > 0) {
-          urlUpdates.personaIds = randomized.personaIds;
+          urlUpdates["personaIds"] = randomized.personaIds;
         }
         if (randomized.documentIds && randomized.documentIds.length > 0) {
-          urlUpdates.documentIds = randomized.documentIds;
+          urlUpdates["documentIds"] = randomized.documentIds;
         }
         if (randomized.parameterIds && randomized.parameterIds.length > 0) {
-          urlUpdates.parameterIds = randomized.parameterIds;
+          urlUpdates["parameterIds"] = randomized.parameterIds;
         }
         if (finalFieldIds && finalFieldIds.length > 0) {
           // Use the computed finalFieldIds (already merged if needed)
-          urlUpdates.fieldIds = finalFieldIds;
+          urlUpdates["fieldIds"] = finalFieldIds;
         }
 
         updateUrlParams(urlUpdates);
@@ -1374,6 +1379,8 @@ export default function Scenario({
     updateUrlParams,
     handleInputChange,
     randomizingSection,
+    currentFieldIds,
+    fieldMapping,
   ]);
 
   // Also handle randomized flag as fallback (DHH-style: server tells client when to clear param)
@@ -1428,19 +1435,19 @@ export default function Scenario({
 
           // Update URL params to reflect randomized state
           if (scenarioData.persona_ids && scenarioData.persona_ids.length > 0) {
-            fallbackUrlUpdates.personaIds = scenarioData.persona_ids;
+            fallbackUrlUpdates["personaIds"] = scenarioData.persona_ids;
           }
           if (
             scenarioData.document_ids &&
             scenarioData.document_ids.length > 0
           ) {
-            fallbackUrlUpdates.documentIds = scenarioData.document_ids;
+            fallbackUrlUpdates["documentIds"] = scenarioData.document_ids;
           }
           if (
             scenarioData.scenario_parameter_ids &&
             scenarioData.scenario_parameter_ids.length > 0
           ) {
-            fallbackUrlUpdates.parameterIds =
+            fallbackUrlUpdates["parameterIds"] =
               scenarioData.scenario_parameter_ids;
           }
           // For fields, we need to extract from parameters dict or use selected_field_ids
@@ -1449,7 +1456,8 @@ export default function Scenario({
             fallbackServerData?.selected_field_ids &&
             fallbackServerData.selected_field_ids.length > 0
           ) {
-            fallbackUrlUpdates.fieldIds = fallbackServerData.selected_field_ids;
+            fallbackUrlUpdates["fieldIds"] =
+              fallbackServerData.selected_field_ids;
           }
 
           // Reset flags to allow next randomization to be processed
@@ -1463,6 +1471,7 @@ export default function Scenario({
 
       return () => clearTimeout(timeoutId);
     }
+    return undefined;
   }, [
     scenarioData?.randomized,
     scenarioData,
@@ -1768,6 +1777,7 @@ export default function Scenario({
     initialFormData,
     searchParams,
     parameterSelectionMinMax, // Used as fallback value in effect
+    parameterMapping,
   ]);
 
   // Problem statement ID is now managed via URL parameters, not state
@@ -2094,8 +2104,8 @@ export default function Scenario({
       const newData = scenarioData as ScenarioNewOut | undefined;
       const serverFieldRanges = newData?.field_ranges || {};
       const serverRange = serverFieldRanges[paramId];
-      const defaultMin = serverRange?.min ?? 1;
-      const defaultMax = serverRange?.max ?? 3;
+      const defaultMin = serverRange?.["min"] ?? 1;
+      const defaultMax = serverRange?.["max"] ?? 3;
 
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;

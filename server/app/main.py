@@ -530,6 +530,8 @@ from app.socket.connect import connect  # type: ignore
 from app.socket.disconnect import disconnect  # type: ignore
 from app.socket.documents.generate import \
     document_generate  # noqa: E402; type: ignore
+# Import log module to register internal_sio handler
+from app.socket.log import log_run  # noqa: F401
 from app.socket.scenarios.generate import \
     generate_scenario  # noqa: E402; type: ignore
 from app.socket.simulations import simulation_join  # type: ignore
@@ -1240,8 +1242,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             video_outline_generation_complete, video_outline_generation_error,
             video_outline_generation_progress)
         # Note: video document tool reuses document_tool_complete (already imported above)
-        from app.socket.videos.tools.image import \
-            image_tool_complete as video_image_tool_complete  # noqa: F401
         from app.socket.videos.tools.outline import \
             outline_tool_complete as video_outline_tool_complete  # noqa: F401
         from app.socket.videos.tools.questions import \

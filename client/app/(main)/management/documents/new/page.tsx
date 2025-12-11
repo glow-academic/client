@@ -66,9 +66,9 @@ async function createDocument(
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Document",
-    description: "Upload new learning resources and educational documents for teaching assistant training. Add course materials, instructional resources, and reference documents to support pedagogical development and L&D program content.",
+    description:
+      "Upload new learning resources and educational documents for teaching assistant training. Add course materials, instructional resources, and reference documents to support pedagogical development and L&D program content.",
   };
-}
 }
 
 export default async function NewDocumentPage() {
