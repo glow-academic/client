@@ -357,7 +357,10 @@ available_scenario_parameters AS (
         p.name,
         COALESCE(p.description, '') as description,
         CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter,
+        p.scenario_parameter,
+        p.video_parameter,
+        false as numerical
     FROM parameters p
     WHERE p.active = true
     AND p.scenario_parameter = true
@@ -405,7 +408,10 @@ parameter_mapping_data AS (
                 'name', p.name,
                 'description', p.description,
                 'document_parameter', p.document_parameter,
-                'persona_parameter', p.persona_parameter
+                'persona_parameter', p.persona_parameter,
+                'scenario_parameter', p.scenario_parameter,
+                'video_parameter', p.video_parameter,
+                'numerical', false
             )
         ),
         '{}'::jsonb

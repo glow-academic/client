@@ -518,9 +518,10 @@ def filter_valid_document_ids(
 
     # Apply field-based filtering (bidirectional: fields → documents)
     # When specific fields are selected, only show documents that have those exact fields
-    # BUT: Only filter by fields that belong to document parameters
-    # Filter out non-document-parameter fields from selected_field_ids
+    # Filter by BOTH document parameters AND scenario parameters (back-filtering)
+    # Documents can have fields from scenario parameters (e.g., Class field on documents)
     document_parameter_field_ids = []
+    scenario_parameter_field_ids = []
     if selected_field_ids:
         for field_id in selected_field_ids:
             if not field_id:
@@ -528,19 +529,30 @@ def filter_valid_document_ids(
             field = field_mapping.get(field_id)
             if not field or not field.parameter_id:
                 continue
-            # Only include fields that belong to document parameters
             param = parameter_mapping.get(field.parameter_id)
-            if param and param.document_parameter:
+            if not param:
+                continue
+            # Include fields that belong to document parameters
+            if param.document_parameter:
                 document_parameter_field_ids.append(field_id)
+            # Also include fields that belong to scenario parameters (back-filtering)
+            if param.scenario_parameter:
+                scenario_parameter_field_ids.append(field_id)
     
-    # Only apply field-based filtering if we have document parameter fields
-    if len(document_parameter_field_ids) == 0:
+    # Combine both document and scenario parameter fields for filtering
+    all_filtering_field_ids = document_parameter_field_ids + scenario_parameter_field_ids
+    
+    # Only apply field-based filtering if we have any parameter fields to filter by
+    if len(all_filtering_field_ids) == 0:
         return param_filtered
 
     # Always include currently selected documents (for edit mode)
     selected_doc_ids_for_filter = set(selected_doc_ids)
 
     result = []
+    # Track if any documents match scenario parameter fields (for fallback logic)
+    scenario_matches_found = False
+    
     for doc_id in param_filtered:
         # Always include currently selected documents
         if doc_id in selected_doc_ids_for_filter:
@@ -566,31 +578,50 @@ def filter_valid_document_ids(
         # Combine both sources of field IDs
         all_doc_field_ids = list(set(doc_field_ids + doc_details_field_ids))
 
-        # If document has no fields at all, and we have selected document parameter fields, filter it out
-        if len(all_doc_field_ids) == 0 and len(document_parameter_field_ids) > 0:
+        # If document has no fields at all, and we have selected parameter fields, filter it out
+        if len(all_doc_field_ids) == 0 and len(all_filtering_field_ids) > 0:
             continue
 
         doc_field_set = set(all_doc_field_ids)
 
-        # Check each selected document parameter field: document must have the exact selected field
-        has_all_fields = True
-        for selected_field_id in document_parameter_field_ids:
-            if not selected_field_id:
-                continue
+        # Separate scenario and document parameter fields for different logic
+        scenario_field_ids = [fid for fid in all_filtering_field_ids if fid in scenario_parameter_field_ids]
+        document_field_ids = [fid for fid in all_filtering_field_ids if fid in document_parameter_field_ids]
 
-            selected_field = field_mapping.get(
-                selected_field_id
-            )  # Renamed from parameter_item_mapping
-            if not selected_field or not selected_field.parameter_id:
-                continue
+        # For scenario parameters: document must have at least ONE of the selected fields (OR logic)
+        # This allows filtering when multiple fields from different parameters are selected
+        has_scenario_match = False
+        if len(scenario_field_ids) > 0:
+            has_scenario_match = any(
+                selected_field_id in doc_field_set
+                for selected_field_id in scenario_field_ids
+            )
+            if has_scenario_match:
+                scenario_matches_found = True
 
-            # Document must have this exact selected field
-            if selected_field_id not in doc_field_set:
-                has_all_fields = False
-                break
+        # For document parameters: document must have ALL selected fields (AND logic)
+        has_document_match = True
+        if len(document_field_ids) > 0:
+            has_document_match = all(
+                selected_field_id in doc_field_set
+                for selected_field_id in document_field_ids
+            )
 
-        if has_all_fields:
+        # Document matches if it satisfies both conditions (if applicable)
+        has_matching_field = (
+            (len(scenario_field_ids) == 0 or has_scenario_match) and
+            (len(document_field_ids) == 0 or has_document_match)
+        )
+
+        if has_matching_field:
             result.append(doc_id)
+
+    # Fallback logic: If scenario parameter fields were selected but no documents matched,
+    # show all documents instead of filtering to 0 (for better UX in back-filtering)
+    if len(scenario_parameter_field_ids) > 0 and not scenario_matches_found and len(document_parameter_field_ids) == 0:
+        # No documents matched scenario fields and no document parameter fields selected
+        # Return all documents (fallback behavior)
+        return param_filtered
 
     return result
 
@@ -1273,6 +1304,7 @@ async def get_scenario_new(
                 parameter_mapping=parameter_mapping,
                 document_details=document_details,
             )
+
 
             # Filter valid field IDs
             mapping_ids = list(
