@@ -34398,6 +34398,20 @@
             ],
             "title": "Documentids"
           },
+          "templateDocumentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templatedocumentids"
+          },
           "parameterIds": {
             "anyOf": [
               {
@@ -34802,6 +34816,20 @@
               }
             ],
             "title": "Documentids"
+          },
+          "templateDocumentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templatedocumentids"
           },
           "parameterIds": {
             "anyOf": [
@@ -41631,6 +41659,11 @@
               }
             ]
           },
+          "randomized": {
+            "type": "boolean",
+            "title": "Randomized",
+            "default": false
+          },
           "selected_persona_ids": {
             "anyOf": [
               {
@@ -41658,6 +41691,20 @@
               }
             ],
             "title": "Selected Document Ids"
+          },
+          "selected_template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Template Document Ids"
           },
           "selected_parameter_ids": {
             "anyOf": [
@@ -42241,6 +42288,11 @@
               }
             ]
           },
+          "randomized": {
+            "type": "boolean",
+            "title": "Randomized",
+            "default": false
+          },
           "selected_persona_ids": {
             "anyOf": [
               {
@@ -42268,6 +42320,20 @@
               }
             ],
             "title": "Selected Document Ids"
+          },
+          "selected_template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Template Document Ids"
           },
           "selected_parameter_ids": {
             "anyOf": [

@@ -6,7 +6,14 @@
  */
 "use client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
@@ -135,7 +142,7 @@ export default function Video({
   videoDetailDefault: serverVideoDetailDefault,
   createVideoAction,
   updateVideoAction,
-  randomizeVideoAction,
+  randomizeVideoAction: _randomizeVideoAction,
   generateOutlineAction: _generateOutlineAction,
   generateVideoAction: _generateVideoAction,
 }: VideoProps) {
@@ -146,6 +153,27 @@ export default function Video({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isEditMode = mode === "edit" && !!videoId;
   const isSuperadmin = effectiveProfile?.role === "superadmin";
+
+  // Helper function to update URL with query parameters
+  const updateUrlParams = useCallback(
+    (updates: Record<string, string | string[] | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || (Array.isArray(value) && value.length === 0)) {
+          params.delete(key);
+        } else if (Array.isArray(value)) {
+          // Use comma-separated values to match how page.tsx reads them
+          params.set(key, value.join(","));
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, pathname, router]
+  );
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const videoDetail = serverVideoDetail;
@@ -245,8 +273,8 @@ export default function Video({
       createPayload.upload_ids = uploadIds;
       createPayload.image_names = imageNames;
     }
-    if (currentParameterItemIds.length > 0) {
-      createPayload.parameter_item_ids = currentParameterItemIds;
+    if (currentFieldIds.length > 0) {
+      createPayload.parameter_item_ids = currentFieldIds;
     }
     if (formData.parameterIds && formData.parameterIds.length > 0) {
       createPayload.parameter_ids = formData.parameterIds;
@@ -257,124 +285,66 @@ export default function Video({
     return createPayload;
   };
 
-  const handleRandomizeVideo = async (targets: string[], section: string) => {
-    if (!randomizeVideoAction || !effectiveProfile?.id) {
-      toast.error("Randomization not available");
-      return;
-    }
+  // Parameter actions - Server-side randomization per parameter
+  const handleRandomizeParameterClient = (paramId: string) => {
+    // Set loading state for this specific parameter section
+    setRandomizingSection(`parameter_${paramId}`);
+    // Keep fields for other parameters in URL to avoid flash
+    // Keep existing fields in local state too - randomized ones will merge via randomized_selections useEffect
+    const filteredFieldIds = currentFieldIds.filter(
+      (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+    );
+    // Update URL: keep fields for other parameters, add randomize param
+    // Server will randomize fields for this parameter and return them
+    // The randomized_selections useEffect will merge randomized fields with existing ones
+    updateUrlParams({
+      fieldIds: filteredFieldIds.length > 0 ? filteredFieldIds : null,
+      randomize: `parameter_${paramId}`,
+    });
+    // Don't clear local state - keep existing items until server returns randomized ones
+    // The randomized_selections useEffect will merge and update state
+    // Trigger page refresh to get randomized results from server
+    router.refresh();
+  };
 
-    try {
-      const body: RandomizeVideoIn["body"] = {
-        profileId: effectiveProfile.id,
-        targets,
-      };
+  // Persona actions - Server-side randomization
+  const handleRandomizePersonaClient = () => {
+    // Set loading state for persona section
+    setRandomizingSection("persona");
+    // Keep existing personaIds in URL to avoid flash of empty state
+    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
+    updateUrlParams({
+      randomize: "persona",
+    });
+    // Don't clear local state - keep existing values until server returns randomized ones
+    // Trigger page refresh to get randomized results from server
+    router.refresh();
+  };
 
-      if (isEditMode && videoId) {
-        body.videoId = videoId;
-      }
+  // Documents actions - Server-side randomization
+  const handleRandomizeDocumentsClient = () => {
+    // Set loading state for document section
+    setRandomizingSection("document");
+    // Keep existing documentIds in URL to avoid flash of empty state
+    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
+    updateUrlParams({
+      randomize: "document",
+    });
+    // Don't clear local state - keep existing values until server returns randomized ones
+    // Trigger page refresh to get randomized results from server
+    router.refresh();
+  };
 
-      if (formData.departmentIds && formData.departmentIds.length > 0) {
-        body.departmentIds = formData.departmentIds;
-      }
-
-      // For documents randomization, don't send documentIds to force randomization (like documents in Scenario.tsx)
-      // The backend will randomize if documentIds is not provided
-      if (section === "documents") {
-        // Don't set body.documentIds - let backend randomize
-      }
-
-      // For parameters randomization, we handle it client-side
-      if (section === "parameters") {
-        // Client-side randomization for general video parameters
-      }
-
-      const result = await randomizeVideoAction({ body });
-
-      if (result.success) {
-        // Update documents if randomized
-        if (
-          targets.includes("documents") &&
-          result.documentIds &&
-          result.documentIds.length > 0
-        ) {
-          setSelectedDocumentIds(result.documentIds);
-
-          // Randomize document parameters for the new documents (client-side)
-          // Filter available document parameter items for the new documents
-          const newDocumentParameterItemIds: string[] = [];
-          documentParameterIds.forEach((paramId) => {
-            const paramItems = Object.entries(fieldMapping)
-              .filter(([_itemId, item]) => item.parameter_id === paramId)
-              .map(([itemId]) => itemId);
-            const validItems = paramItems.filter((itemId) =>
-              validDocumentParameterItemIds.includes(itemId)
-            );
-            if (validItems.length > 0) {
-              // Randomly select one item per parameter
-              const randomIndex = Math.floor(Math.random() * validItems.length);
-              const randomItemId = validItems[randomIndex];
-              if (randomItemId) {
-                newDocumentParameterItemIds.push(randomItemId);
-              }
-            }
-          });
-
-          // Update parameters: remove old document parameters, add new ones, keep general video parameters
-          const nonDocumentParamIds = currentParameterItemIds.filter(
-            (itemId) => {
-              const item = fieldMapping[itemId];
-              if (!item) return true;
-              const paramId = item.parameter_id;
-              return !documentParameterIds.includes(paramId);
-            }
-          );
-          setCurrentParameterItemIds([
-            ...nonDocumentParamIds,
-            ...newDocumentParameterItemIds,
-          ]);
-        }
-
-        // Note: Parameters randomization would need backend support to fully work
-        // For now, we can randomize client-side for general video parameters
-        if (targets.includes("parameters")) {
-          const newGeneralParamItemIds: string[] = [];
-          generalVideoParameterIds.forEach((paramId) => {
-            const paramItems = Object.entries(fieldMapping)
-              .filter(([_itemId, item]) => item.parameter_id === paramId)
-              .map(([itemId]) => itemId);
-            const validItems = paramItems.filter((itemId) =>
-              validGeneralVideoParameterItemIds.includes(itemId)
-            );
-            if (validItems.length > 0) {
-              // Randomly select one item per parameter
-              const randomIndex = Math.floor(Math.random() * validItems.length);
-              const randomItemId = validItems[randomIndex];
-              if (randomItemId) {
-                newGeneralParamItemIds.push(randomItemId);
-              }
-            }
-          });
-
-          // Update parameters: keep policy parameters, replace general video parameters
-          const policyParamIds = currentParameterItemIds.filter((itemId) => {
-            const item = fieldMapping[itemId];
-            if (!item) return false;
-            const paramId = item.parameter_id;
-            return documentParameterIds.includes(paramId);
-          });
-          setCurrentParameterItemIds([
-            ...policyParamIds,
-            ...newGeneralParamItemIds,
-          ]);
-        }
-
-        toast.success("Randomization completed successfully!");
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to randomize: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    }
+  // Parameters actions - Server-side randomization
+  const handleRandomizeParametersClient = () => {
+    // Keep existing parameterIds in URL to avoid flash of empty state
+    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
+    updateUrlParams({
+      randomize: "parameters",
+    });
+    // Don't clear local state - keep existing values until server returns randomized ones
+    // Trigger page refresh to get randomized results from server
+    router.refresh();
   };
 
   const handleGenerate = async () => {
@@ -419,9 +389,7 @@ export default function Video({
         documentIds: selectedDocumentIds,
         questionIds: null as string[] | null, // Questions are now generated by outline agent if questionsMax > 0
         parameterItemIds:
-          currentParameterItemIds.length > 0
-            ? currentParameterItemIds
-            : undefined,
+          currentFieldIds.length > 0 ? currentFieldIds : undefined,
         profileId: effectiveProfile.id,
         videoId: isEditMode && videoId ? videoId : undefined,
         questionsMin: questionCount[0] > 0 ? questionCount[0] : undefined,
@@ -688,7 +656,8 @@ export default function Video({
           departmentId: body.departmentId,
           documentIds: body.documentIds,
           questionIds: body.questionIds,
-          parameterItemIds: body.parameterItemIds,
+          parameterItemIds:
+            currentFieldIds.length > 0 ? currentFieldIds : undefined,
           existingQuestions: body.existingQuestions,
           profileId: body.profileId,
           videoId: body.videoId,
@@ -769,55 +738,327 @@ export default function Video({
     }
   };
 
-  const handleResetSection = (section: string) => {
-    if (section === "documents") {
-      setSelectedDocumentIds([]);
-      setPreviewDocumentId(null);
-      setTemplateDocumentIds([]);
-      setDocumentSearchTerm("");
-    } else if (section === "parameters") {
-      setCurrentParameterItemIds([]);
-    } else if (section === "outline") {
-      setSelectedOutlineId(null);
-      setOutlineText("");
-    } else if (section === "images") {
-      setImages([]);
-      setUseImage(false);
+  // Persona actions - Reset
+  const handleResetPersona = () => {
+    try {
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Clear URL params FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
+      updateUrlParams({
+        personaIds: null,
+        personaSearch: null,
+        personaMin: null,
+        personaMax: null,
+        randomize: null,
+      });
+
+      // Update local state after URL update completes (next frame)
+      // This ensures URL is cleared before state updates trigger buildSearchParams
+      requestAnimationFrame(() => {
+        handleInputChange("personaIds", []);
+        setPersonaSearchTerm("");
+        // Refresh after state updates to get fresh server data
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
+
+      toast.success("Persona reset");
+    } catch {
+      isResettingRef.current = false;
+      toast.error("Failed to reset persona");
     }
   };
 
-  // Randomize all: personas, documents, and all parameters
-  const handleRandomizeAll = async () => {
+  // Documents actions - Reset
+  const handleResetDocuments = () => {
     try {
-      await handleRandomizeVideo(
-        ["personas", "documents", "parameters"],
-        "all"
+      // Get default min/max from server or use defaults
+      const serverRanges = videoData?.allowed_ranges;
+      const documentDefault = serverRanges?.document || { min: 0, max: 1 };
+      const defaultMin = documentDefault.min;
+      const defaultMax = documentDefault.max;
+
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Clear URL params FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
+      updateUrlParams({
+        documentIds: null,
+        documentSearch: null,
+        documentMin: null,
+        documentMax: null,
+        randomize: null,
+      });
+
+      // Update local state after URL update completes (next frame)
+      // This ensures URL is cleared before state updates trigger buildSearchParams
+      requestAnimationFrame(() => {
+        setDocumentMinMax({ min: defaultMin, max: defaultMax });
+        setSelectedDocumentIds([]);
+        setDocumentSearchTerm("");
+        setPreviewDocumentId(null);
+        // Refresh after state updates to get fresh server data
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
+
+      toast.success("Documents reset");
+    } catch {
+      isResettingRef.current = false;
+      toast.error("Failed to reset documents");
+    }
+  };
+
+  // Parameters actions - Reset
+  const handleResetParameters = () => {
+    try {
+      // Get default min/max from server or use defaults
+      const newData = videoData as VideoNewOut | undefined;
+      const defaultMin = newData?.parameter_selection_min ?? 0;
+      const defaultMax = newData?.parameter_selection_max ?? 3;
+
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Build URL updates - clear parameter IDs, search, ranges, and ALL field IDs
+      const urlUpdates: Record<string, string | string[] | null> = {
+        parameterIds: null,
+        parameterSearch: null,
+        parameterSelectionMin: null,
+        parameterSelectionMax: null,
+        fieldIds: null, // Clear all field IDs when resetting parameters
+        randomize: null,
+      };
+
+      // Clear all field range params for ALL parameters (including defaults)
+      // Use parameterMapping (all parameters) not generalVideoParameterMapping (filtered)
+      Object.keys(parameterMapping).forEach((paramId) => {
+        urlUpdates[`fieldMin_${paramId}`] = null;
+        urlUpdates[`fieldMax_${paramId}`] = null;
+      });
+
+      // Also clear any fieldMin_* or fieldMax_* params from URL that we might have missed
+      searchParams.forEach((_value, key) => {
+        if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
+          urlUpdates[key] = null;
+        }
+      });
+
+      // Clear URL params FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
+      updateUrlParams(urlUpdates);
+
+      // Update local state after URL update completes (next frame)
+      // This ensures URL is cleared before state updates trigger buildSearchParams
+      requestAnimationFrame(() => {
+        setParameterSelectionMinMax({ min: defaultMin, max: defaultMax });
+        handleInputChange("parameterIds", []);
+        setParameterSearchTerm("");
+        // Clear all field IDs when resetting parameters
+        setCurrentFieldIds([]);
+        // Reset field ranges to defaults for ALL parameters
+        const defaultFieldRanges: Record<string, { min: number; max: number }> =
+          {};
+        Object.keys(parameterMapping).forEach((paramId) => {
+          defaultFieldRanges[paramId] = { min: 1, max: 3 };
+        });
+        setFieldMinMax(defaultFieldRanges);
+        // Refresh after state updates to get fresh server data
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
+
+      toast.success("Parameters reset");
+    } catch {
+      isResettingRef.current = false;
+      toast.error("Failed to reset parameters");
+    }
+  };
+
+  // Parameter actions - Reset per parameter
+  const handleResetParameter = (paramId: string) => {
+    try {
+      // Get default min/max for this parameter from server or use defaults
+      const newData = videoData as VideoNewOut | undefined;
+      const serverFieldRanges = newData?.field_ranges || {};
+      const serverRange = serverFieldRanges[paramId];
+      const defaultMin = serverRange?.min ?? 1;
+      const defaultMax = serverRange?.max ?? 3;
+
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Remove this parameter's items from URL params and local state
+      const currentParamItems = currentFieldIds.filter(
+        (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
       );
-      toast.success("All selections randomized");
+
+      // Build URL updates - clear field IDs and range params for this parameter
+      const urlUpdates: Record<string, string | string[] | null> = {
+        fieldIds: currentParamItems.length > 0 ? currentParamItems : null,
+        randomize: null,
+      };
+      // Clear range params for this parameter
+      urlUpdates[`fieldMin_${paramId}`] = null;
+      urlUpdates[`fieldMax_${paramId}`] = null;
+
+      // Clear URL params FIRST, then update state after URL update completes
+      updateUrlParams(urlUpdates);
+
+      // Update local state after URL update completes (next frame)
+      requestAnimationFrame(() => {
+        // Reset local state for this parameter's range
+        setFieldMinMax((prev) => ({
+          ...prev,
+          [paramId]: { min: defaultMin, max: defaultMax },
+        }));
+        // Update local state - remove this parameter's fields
+        setCurrentFieldIds(currentParamItems);
+        // Refresh after state updates to get fresh server data
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
+
+      toast.success(
+        `${generalVideoParameterMapping[paramId]?.name || "Parameter"} reset`
+      );
+    } catch {
+      isResettingRef.current = false;
+      toast.error("Failed to reset parameter");
+    }
+  };
+
+  // Randomize all: personas, documents, and all parameters (server-side via URL params)
+  const handleRandomizeAll = () => {
+    try {
+      // Set loading state for all sections
+      setRandomizingSection("all");
+      // Keep existing IDs in URL to avoid flash of empty state
+      // Server will randomize and return new values, which will update URL via randomized_selections useEffect
+      // Server randomizes from the full filtered set regardless of existing selections
+      updateUrlParams({
+        randomize: "all",
+      });
+
+      // Trigger page refresh to get randomized results from server
+      router.refresh();
     } catch {
       toast.error("Failed to randomize all selections");
     }
   };
 
-  // Reset all: clear all selections
+  // Reset all: personas, documents, and all parameters (clear URL params)
   const handleResetAll = () => {
     try {
-      setFormData((prev) => ({
-        ...prev,
-        departmentIds: [],
-        personaIds: [],
-        parameterIds: [],
-      }));
-      setSelectedDocumentIds([]);
-      setCurrentParameterItemIds([]);
-      setSelectedOutlineId(null);
-      setOutlineText("");
-      setImages([]);
-      setUseImage(false);
-      setQuestions([]);
-      setQuestionCount([0, 0]);
+      // Clear all URL params first - server will return defaults
+      // Build URL updates - clear all params including ranges
+      const urlUpdates: Record<string, string | null> = {
+        departmentIds: null,
+        personaIds: null,
+        documentIds: null,
+        parameterIds: null,
+        fieldIds: null,
+        personaSearch: null,
+        documentSearch: null,
+        parameterSearch: null,
+        personaMin: null,
+        personaMax: null,
+        documentMin: null,
+        documentMax: null,
+        parameterSelectionMin: null,
+        parameterSelectionMax: null,
+        randomize: null,
+      };
+
+      // Clear all field range params for ALL parameters (including defaults)
+      // Use parameterMapping (all parameters) not generalVideoParameterMapping (filtered)
+      // Also clear any fieldMin_* or fieldMax_* params that might exist in URL but not in current mapping
+      Object.keys(parameterMapping).forEach((paramId) => {
+        urlUpdates[`fieldMin_${paramId}`] = null;
+        urlUpdates[`fieldMax_${paramId}`] = null;
+      });
+
+      // Also clear any fieldMin_* or fieldMax_* params from URL that we might have missed
+      // This handles edge cases where params exist but aren't in current parameterMapping
+      searchParams.forEach((_value, key) => {
+        if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
+          urlUpdates[key] = null;
+        }
+      });
+
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Update URL FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
+      updateUrlParams(urlUpdates);
+
+      // Update local state after URL update completes (next frame)
+      // This ensures URL is cleared before state updates trigger buildSearchParams
+      requestAnimationFrame(() => {
+        // Reset all local state to defaults for instant UI feedback
+        // Server response will sync these values properly via useEffect
+        setDocumentMinMax({ min: 0, max: 1 });
+        setParameterSelectionMinMax({ min: 0, max: 3 });
+
+        // Reset field ranges to defaults for ALL parameters (including defaults)
+        // Use parameterMapping (all parameters) not generalVideoParameterMapping (filtered)
+        const defaultFieldRanges: Record<string, { min: number; max: number }> =
+          {};
+        Object.keys(parameterMapping).forEach((paramId) => {
+          defaultFieldRanges[paramId] = { min: 1, max: 3 };
+        });
+        setFieldMinMax(defaultFieldRanges);
+
+        const questionDefault = videoData?.question_count_range || {
+          min: 0,
+          max: 3,
+        };
+        setQuestionCount([questionDefault.min, questionDefault.max]);
+
+        // Reset all search terms
+        setPersonaSearchTerm("");
+        setDocumentSearchTerm("");
+        setParameterSearchTerm("");
+
+        // Reset all selections
+        handleInputChange("personaIds", []);
+        setSelectedDocumentIds([]);
+        setCurrentFieldIds([]);
+        handleInputChange("parameterIds", []);
+        setPreviewDocumentId(null);
+        setSelectedOutlineId(null);
+        setOutlineText("");
+        setImages([]);
+        setUseImage(false);
+        setQuestions([]);
+
+        // Refresh after state updates to get fresh server data
+        // The useEffect will sync state from server response
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
       toast.success("All selections reset");
     } catch {
+      isResettingRef.current = false;
       toast.error("Failed to reset all selections");
     }
   };
@@ -1166,6 +1407,9 @@ export default function Video({
   // Documents state
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [documentSearchTerm, setDocumentSearchTerm] = useState<string>("");
+  // Persona and parameter search terms (matching scenarios pattern)
+  const [personaSearchTerm, setPersonaSearchTerm] = useState<string>("");
+  const [parameterSearchTerm, setParameterSearchTerm] = useState<string>("");
   const [documentMinMax, setDocumentMinMax] = useState<{
     min: number;
     max: number;
@@ -1186,11 +1430,60 @@ export default function Video({
     null
   );
   const [templateDocumentIds, setTemplateDocumentIds] = useState<string[]>([]);
+  const [originalTemplateDocumentIds, setOriginalTemplateDocumentIds] =
+    useState<string[]>([]);
 
   // Parameter state
-  const [currentParameterItemIds, setCurrentParameterItemIds] = useState<
-    string[]
-  >([]);
+  const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
+  // Parameter selection range state: [min, max] - initialized from server or URL params
+  const [parameterSelectionMinMax, setParameterSelectionMinMax] = useState(
+    () => {
+      if (videoData && "parameter_selection_min" in videoData) {
+        const newData = videoData as VideoNewOut;
+        return {
+          min: newData.parameter_selection_min ?? 0,
+          max: newData.parameter_selection_max ?? 3,
+        };
+      }
+      // Fallback to allowed range if server data not available yet
+      const ranges = videoData?.allowed_ranges;
+      return ranges?.parameter_selection
+        ? {
+            min: ranges.parameter_selection.min,
+            max: ranges.parameter_selection.max,
+          }
+        : { min: 0, max: 3 };
+    }
+  );
+  // Field ranges state: per-parameter min/max - initialized from server or URL params
+  const [fieldMinMax, setFieldMinMax] = useState<
+    Record<string, { min: number; max: number }>
+  >(() => {
+    // Use field_ranges (current values) if available, otherwise use allowed_ranges.fields
+    if (videoData && "field_ranges" in videoData) {
+      const newData = videoData as VideoNewOut;
+      if (newData.field_ranges) {
+        const result: Record<string, { min: number; max: number }> = {};
+        Object.entries(newData.field_ranges).forEach(([paramId, range]) => {
+          // Handle undefined values with defaults - type assertion needed for index signature
+          const typedRange = range as { min?: number; max?: number };
+          result[paramId] = {
+            min: typedRange.min ?? 1,
+            max: typedRange.max ?? 3,
+          };
+        });
+        return result;
+      }
+    }
+    // Fallback to allowed_ranges.fields if server data not available yet
+    const ranges = videoData?.allowed_ranges;
+    if (!ranges?.fields) return {};
+    const result: Record<string, { min: number; max: number }> = {};
+    Object.entries(ranges.fields).forEach(([paramId, range]) => {
+      result[paramId] = { min: range.min, max: range.max };
+    });
+    return result;
+  });
 
   // Video generation state
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
@@ -1221,6 +1514,16 @@ export default function Video({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const formDataInitializedRef = useRef<boolean>(false);
+  // Track last processed randomized_selections to prevent re-processing
+  const lastProcessedRandomizedRef = useRef<string | null>(null);
+  // Track if we're currently applying randomized selections to skip URL updates
+  const isApplyingRandomizedRef = useRef<boolean>(false);
+  // Track which section is currently being randomized for loading indicators
+  const [randomizingSection, setRandomizingSection] = useState<
+    "persona" | "document" | "parameters" | `parameter_${string}` | "all" | null
+  >(null);
+  // Use transition for smooth UI updates during randomization
+  const [isPending, startTransition] = useTransition();
 
   // Department mapping
   const departmentMapping = useMemo(
@@ -1318,9 +1621,24 @@ export default function Video({
     );
   }, [parameterMapping]);
 
+  // Use server-provided filtered valid IDs (replacing client-side filtering)
+  // Server now handles all filtering logic based on query parameters
+  const validPersonaIds = useMemo(() => {
+    return videoData?.valid_persona_ids || [];
+  }, [videoData?.valid_persona_ids]);
+
+  // Use server-provided filtered valid document IDs
+  const validDocumentIds = useMemo(() => {
+    return videoData?.valid_document_ids || [];
+  }, [videoData?.valid_document_ids]);
+
   // Filter valid parameter item IDs by parameter type
   const validParameterItemIds = useMemo(() => {
-    // Get all parameter item IDs from mapping that belong to video parameters
+    // Use server-provided filtered IDs if available, otherwise fall back to mapping keys
+    if (videoData?.valid_field_ids) {
+      return videoData.valid_field_ids;
+    }
+    // Fallback: Get all parameter item IDs from mapping that belong to video parameters
     const allVideoParamItemIds = Object.keys(fieldMapping).filter((itemId) => {
       const item = fieldMapping[itemId];
       if (!item) return false;
@@ -1328,9 +1646,9 @@ export default function Video({
       return Object.keys(parameterMapping).includes(paramId);
     });
     return allVideoParamItemIds;
-  }, [fieldMapping, parameterMapping]);
+  }, [videoData?.valid_field_ids, fieldMapping, parameterMapping]);
 
-  const validDocumentParameterItemIds = useMemo(() => {
+  const _validDocumentParameterItemIds = useMemo(() => {
     return validParameterItemIds.filter((itemId) => {
       const item = fieldMapping[itemId];
       if (!item) return false;
@@ -1339,7 +1657,7 @@ export default function Video({
     });
   }, [validParameterItemIds, fieldMapping, documentParameterIds]);
 
-  const validGeneralVideoParameterItemIds = useMemo(() => {
+  const _validGeneralVideoParameterItemIds = useMemo(() => {
     return validParameterItemIds.filter((itemId) => {
       const item = fieldMapping[itemId];
       if (!item) return false;
@@ -1435,8 +1753,8 @@ export default function Video({
     if (formData.parameterIds && formData.parameterIds.length > 0) {
       params.set("parameterIds", formData.parameterIds.join(","));
     }
-    if (currentParameterItemIds.length > 0) {
-      params.set("parameterItemIds", currentParameterItemIds.join(","));
+    if (currentFieldIds.length > 0) {
+      params.set("fieldIds", currentFieldIds.join(","));
     }
     if (urlOutlineIds.length > 0) {
       params.set("outlineIds", urlOutlineIds.join(","));
@@ -1449,25 +1767,84 @@ export default function Video({
     }
 
     // Add search params when non-empty
+    if (personaSearchTerm.trim()) {
+      params.set("personaSearch", personaSearchTerm);
+    }
     if (documentSearchTerm.trim()) {
       params.set("documentSearch", documentSearchTerm);
     }
+    if (parameterSearchTerm.trim()) {
+      params.set("parameterSearch", parameterSearchTerm);
+    }
 
-    // Add range params when different from server-provided defaults
-    const serverRanges = videoData?.allowed_ranges;
-    const questionRange = videoData?.question_count_range;
+    // Add range params when different from server-provided current values
+    // Compare against server's current values (persona_min/persona_max), not allowed_ranges
+    const serverCurrentValues = videoData as VideoNewOut | undefined;
 
-    // Document ranges - compare against server defaults
-    const documentDefault = serverRanges?.document || { min: 0, max: 3 };
+    // Persona ranges - compare against server's current values (videos don't have persona ranges in URL, but include for consistency)
+    // Note: Videos don't use personaMin/personaMax in URL, but we'll keep the structure consistent
+
+    // Document ranges - compare against server's current values
+    const serverDocumentMin = serverCurrentValues?.document_min ?? 0;
+    const serverDocumentMax = serverCurrentValues?.document_max ?? 1;
     if (
-      documentMinMax.min !== documentDefault.min ||
-      documentMinMax.max !== documentDefault.max
+      documentMinMax.min !== serverDocumentMin ||
+      documentMinMax.max !== serverDocumentMax
     ) {
       params.set("documentMin", documentMinMax.min.toString());
       params.set("documentMax", documentMinMax.max.toString());
     }
 
+    // Parameter selection ranges - compare against server's current values
+    const serverParameterMin =
+      serverCurrentValues?.parameter_selection_min ?? 0;
+    const serverParameterMax =
+      serverCurrentValues?.parameter_selection_max ?? 3;
+    if (
+      parameterSelectionMinMax.min !== serverParameterMin ||
+      parameterSelectionMinMax.max !== serverParameterMax
+    ) {
+      params.set(
+        "parameterSelectionMin",
+        parameterSelectionMinMax.min.toString()
+      );
+      params.set(
+        "parameterSelectionMax",
+        parameterSelectionMinMax.max.toString()
+      );
+    }
+
+    // Per-parameter field ranges - compare against server's current values
+    // Include ranges for selected parameters, or for all parameters if randomize=all (server needs ranges for randomized params)
+    const selectedParamIds = formData.parameterIds || [];
+    const isRandomizing = searchParams.get("randomize") === "all";
+    const serverFieldRanges = serverCurrentValues?.field_ranges || {};
+    Object.entries(fieldMinMax).forEach(([fieldId, range]) => {
+      // Include range if:
+      // 1. Parameter is selected, OR
+      // 2. We're randomizing all (server will randomize parameters and need these ranges)
+      // AND range differs from server's current value
+      const shouldInclude = isRandomizing || selectedParamIds.includes(fieldId);
+      // Get the parameter_id for this field to find its range in server response
+      const fieldParamId = fieldMapping[fieldId]?.parameter_id;
+      const serverFieldRange = fieldParamId
+        ? serverFieldRanges[fieldParamId]
+        : undefined;
+      const fieldDefault = serverFieldRange || {
+        min: 1,
+        max: 3,
+      };
+      if (
+        shouldInclude &&
+        (range.min !== fieldDefault.min || range.max !== fieldDefault.max)
+      ) {
+        params.set(`fieldMin_${fieldId}`, range.min.toString());
+        params.set(`fieldMax_${fieldId}`, range.max.toString());
+      }
+    });
+
     // Question ranges - compare against server defaults
+    const questionRange = videoData?.question_count_range;
     const questionDefault = questionRange || { min: 0, max: 3 };
     if (
       questionCount[0] !== questionDefault.min ||
@@ -1484,21 +1861,28 @@ export default function Video({
     formData.parameterIds,
     selectedDocumentIds,
     templateDocumentIds,
-    currentParameterItemIds,
+    currentFieldIds,
     urlOutlineIds,
     urlQuestionIds,
     urlVideoIds,
+    personaSearchTerm,
     documentSearchTerm,
+    parameterSearchTerm,
     documentMinMax,
+    parameterSelectionMinMax,
+    fieldMinMax,
     questionCount,
-    videoData?.allowed_ranges, // Include server ranges in dependencies
-    videoData?.question_count_range, // Include question range in dependencies
+    videoData, // Include full videoData to access current values (document_min, document_max, etc.)
+    searchParams, // Include searchParams to check for randomize param
+    fieldMapping, // Include fieldMapping for field range logic
   ]);
 
   // Debounce timeout ref for URL updates
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Track last params string to prevent duplicate updates
   const lastParamsStringRef = useRef<string>("");
+  // Track if we're currently resetting to prevent buildSearchParams from interfering
+  const isResettingRef = useRef<boolean>(false);
 
   // Helper to normalize URLSearchParams for comparison (sort keys and values)
   const normalizeParamsString = (params: URLSearchParams): string => {
@@ -1513,13 +1897,25 @@ export default function Video({
   // Follows analytics pattern: Form state → URL → router.refresh() → Server re-fetch → Filtered data
   // Server already parses URL params and returns filtered data, so no need for URL → Form sync
   useEffect(() => {
+    // Skip URL updates if we're currently applying randomized selections
+    // This prevents infinite loops when randomized selections trigger state updates
+    if (isApplyingRandomizedRef.current) {
+      return;
+    }
+
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
     // Debounce URL updates (100ms, like analytics)
+    // Skip if we're currently resetting (prevents re-adding params that were just cleared)
     debounceTimeoutRef.current = setTimeout(() => {
+      // Skip buildSearchParams if we're resetting - let reset handlers manage URL directly
+      if (isResettingRef.current) {
+        return;
+      }
+
       const newParams = buildSearchParams();
       const newParamsString = normalizeParamsString(newParams);
       const currentParamsString = normalizeParamsString(searchParams);
@@ -1530,9 +1926,12 @@ export default function Video({
         newParamsString !== lastParamsStringRef.current
       ) {
         lastParamsStringRef.current = newParamsString;
-        router.replace(`${pathname}?${newParams.toString()}`, {
-          scroll: false,
+        // Use updateUrlParams helper instead of direct router.replace
+        const updates: Record<string, string | string[] | null> = {};
+        newParams.forEach((value, key) => {
+          updates[key] = value;
         });
+        updateUrlParams(updates);
         // Force server components to re-render with updated search params (like analytics)
         router.refresh();
       }
@@ -1543,6 +1942,8 @@ export default function Video({
         clearTimeout(debounceTimeoutRef.current);
       }
     };
+    // Remove buildSearchParams from dependencies - it's already covered by its own dependencies
+    // Remove searchParams and router from dependencies to prevent loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     formData.departmentIds,
@@ -1550,12 +1951,16 @@ export default function Video({
     selectedDocumentIds,
     templateDocumentIds,
     formData.parameterIds,
-    currentParameterItemIds,
+    currentFieldIds,
     urlOutlineIds,
     urlQuestionIds,
     urlVideoIds,
+    personaSearchTerm,
     documentSearchTerm,
+    parameterSearchTerm,
     documentMinMax,
+    parameterSelectionMinMax,
+    fieldMinMax,
     questionCount,
     pathname,
   ]);
@@ -1584,7 +1989,8 @@ export default function Video({
         setUrlVideoIds(videoIdsFromUrl);
       }
 
-      // Initialize template document IDs from URL params
+      // Initialize template document IDs from URL params (create mode)
+      // Server may provide selected_template_document_ids in future, but for now use URL params
       const templateDocumentIdsFromUrl = searchParams
         .get("templateDocumentIds")
         ?.split(",")
@@ -1614,9 +2020,9 @@ export default function Video({
         parameterIds: videoData.video_parameter_ids || [],
       });
 
-      // Load parameter items
+      // Load field IDs
       if (videoData.parameter_item_ids) {
-        setCurrentParameterItemIds(videoData.parameter_item_ids);
+        setCurrentFieldIds(videoData.parameter_item_ids);
       }
 
       // Initialize question count from server data or default to [0, 0]
@@ -1663,23 +2069,21 @@ export default function Video({
           setPreviewDocumentId(videoData.document_ids[0] || null);
         }
       }
-
-      // Load template document IDs from document_details if available
-      if (
-        videoData &&
-        "document_details" in videoData &&
-        videoData.document_details &&
-        Array.isArray(videoData.document_details)
-      ) {
-        const templateIds = videoData.document_details
-          .filter((doc: { is_template?: boolean; document_id?: string }) => {
-            return doc.is_template === true && doc.document_id;
-          })
-          .map((doc: { document_id: string }) => doc.document_id);
-        if (templateIds.length > 0) {
-          setTemplateDocumentIds(templateIds);
-        }
-      }
+      // Extract template document IDs from documentDetails (is_template field) for edit mode
+      const videoDataWithDetails = videoData as VideoDetailOut & {
+        document_details?: Array<{
+          document_id: string;
+          is_template?: boolean;
+          [key: string]: unknown;
+        }>;
+      };
+      const templateDocIds =
+        videoDataWithDetails.document_details
+          ?.filter((doc) => doc.is_template === true)
+          .map((doc) => doc.document_id) || [];
+      setTemplateDocumentIds(templateDocIds);
+      // Store template document IDs for original tracking (already extracted above as templateDocIds)
+      setOriginalTemplateDocumentIds(templateDocIds);
 
       // Load video images (all images from array)
       if (
@@ -1765,6 +2169,95 @@ export default function Video({
       }
 
       formDataInitializedRef.current = true;
+    } else if (!isEditMode && videoData && !formDataInitializedRef.current) {
+      // Create mode: initialize from server response (server-driven approach)
+      // Server already parsed URL params and returns selected IDs, search terms, ranges
+      const newData = videoData as VideoNewOut;
+      setFormData({
+        ...initialFormData,
+        outlineAgentId: videoData.outline_agent_id || null,
+        imageAgentId: videoData.image_agent_id || null,
+        videoAgentId: videoData.video_agent_id || null,
+        parameterIds: newData.selected_parameter_ids || [],
+      });
+
+      // Initialize selections from server response (filtered to valid IDs)
+      if (newData.selected_persona_ids) {
+        handleInputChange("personaIds", newData.selected_persona_ids);
+      }
+      if (newData.selected_document_ids) {
+        setSelectedDocumentIds(newData.selected_document_ids);
+      }
+      // Template document IDs come from URL params (server returns selected_template_document_ids)
+      if (newData.selected_template_document_ids) {
+        setTemplateDocumentIds(newData.selected_template_document_ids);
+      }
+      if (newData.selected_field_ids) {
+        setCurrentFieldIds(newData.selected_field_ids);
+      }
+
+      // Initialize search terms from server response
+      if (newData.persona_search) {
+        setPersonaSearchTerm(newData.persona_search);
+      }
+      if (newData.document_search) {
+        setDocumentSearchTerm(newData.document_search);
+      }
+      if (newData.parameter_search) {
+        setParameterSearchTerm(newData.parameter_search);
+      }
+
+      // Initialize range values from server response (current values, not allowed ranges)
+      // Always set from server response if available, default to 1
+      // Always update to ensure reset works properly (even if values match defaults)
+      // Note: Videos don't use persona ranges in URL params like scenarios do
+      // Always update document ranges (not conditional) to ensure reset works
+      setDocumentMinMax({
+        min: newData.document_min ?? 0,
+        max: newData.document_max ?? 1,
+      });
+      // Always update parameter selection ranges to ensure reset works
+      const parameterDefault =
+        videoData?.allowed_ranges?.parameter_selection ||
+        parameterSelectionMinMax;
+      setParameterSelectionMinMax({
+        min: newData.parameter_selection_min ?? parameterDefault.min,
+        max: newData.parameter_selection_max ?? parameterDefault.max,
+      });
+
+      // Initialize per-parameter field ranges from server response
+      // Always update field ranges (even if empty) to ensure reset works
+      if (newData.field_ranges) {
+        const result: Record<string, { min: number; max: number }> = {};
+        Object.entries(newData.field_ranges).forEach(([paramId, range]) => {
+          // Type assertion needed for index signature - use bracket notation
+          const typedRange = range as { min?: number; max?: number };
+          result[paramId] = {
+            min: typedRange["min"] ?? 1,
+            max: typedRange["max"] ?? 3,
+          };
+        });
+        setFieldMinMax(result);
+      } else {
+        // This ensures reset works even if server doesn't return field_ranges
+        // Initialize defaults for all valid parameters
+        const defaultFieldRanges: Record<string, { min: number; max: number }> =
+          {};
+        Object.keys(parameterMapping).forEach((paramId) => {
+          defaultFieldRanges[paramId] = { min: 1, max: 3 };
+        });
+        setFieldMinMax(defaultFieldRanges);
+      }
+
+      // Initialize question count from server data or default to [0, 0]
+      if (videoData?.question_count_range) {
+        setQuestionCount([
+          videoData.question_count_range.min || 0,
+          videoData.question_count_range.max || 0,
+        ]);
+      }
+
+      formDataInitializedRef.current = true;
     }
   }, [
     videoData,
@@ -1773,6 +2266,9 @@ export default function Video({
     videoDetail,
     videoId,
     previewDocumentId,
+    parameterMapping,
+    parameterSelectionMinMax,
+    handleInputChange,
   ]);
 
   // Auto-select first available outline and question agents if not already selected
@@ -1848,6 +2344,245 @@ export default function Video({
       });
     }
   };
+
+  // Clear selections when they become invalid after department changes
+  // (but preserve cross-department entities and staged selections)
+  useEffect(() => {
+    // Clear personas that are no longer valid
+    if (formData.personaIds && formData.personaIds.length > 0) {
+      const validSet = new Set(validPersonaIds);
+      const filtered = formData.personaIds.filter((id) => validSet.has(id));
+      if (filtered.length !== formData.personaIds.length) {
+        handleInputChange("personaIds", filtered);
+      }
+    }
+  }, [formData.personaIds, validPersonaIds, handleInputChange]);
+
+  useEffect(() => {
+    // Clear documents that are no longer valid
+    if (selectedDocumentIds.length > 0) {
+      const validSet = new Set(validDocumentIds);
+      const filtered = selectedDocumentIds.filter((id) => validSet.has(id));
+      if (filtered.length !== selectedDocumentIds.length) {
+        setSelectedDocumentIds(filtered);
+      }
+    }
+  }, [selectedDocumentIds, validDocumentIds]);
+
+  useEffect(() => {
+    // Clear parameter items that are no longer valid
+    if (currentFieldIds.length > 0) {
+      const validSet = new Set(validParameterItemIds);
+      const filtered = currentFieldIds.filter((id) => validSet.has(id));
+      if (filtered.length !== currentFieldIds.length) {
+        setCurrentFieldIds(filtered);
+      }
+    }
+  }, [currentFieldIds, validParameterItemIds]);
+
+  // Handle randomized selections from server response
+  useEffect(() => {
+    // Only process if randomize param is present (prevents processing stale randomized_selections)
+    const randomizeParam = searchParams.get("randomize");
+    if (videoData?.randomized_selections && randomizeParam) {
+      const randomized = videoData.randomized_selections;
+
+      // Create a hash of the randomized selections to detect if we've already processed this
+      const randomizedHash = JSON.stringify({
+        personaIds: randomized.personaIds,
+        documentIds: randomized.documentIds,
+        parameterIds: randomized.parameterIds,
+        fieldIds: randomized.fieldIds,
+      });
+
+      // Skip if we're currently applying randomized selections (prevents double-processing)
+      if (isApplyingRandomizedRef.current) {
+        // Still clear randomizing section to prevent infinite loading
+        setRandomizingSection(null);
+        return;
+      }
+
+      // If we've already processed this exact randomized selection, just clear the param and reset hash
+      if (lastProcessedRandomizedRef.current === randomizedHash) {
+        // Reset hash so next randomization (even if same result) can be processed
+        lastProcessedRandomizedRef.current = null;
+        // Clear randomizing section to prevent infinite loading
+        setRandomizingSection(null);
+        updateUrlParams({
+          randomize: null,
+        });
+        return;
+      }
+
+      // Mark that we're applying randomized selections (prevents second useEffect from running)
+      isApplyingRandomizedRef.current = true;
+      lastProcessedRandomizedRef.current = randomizedHash;
+
+      // Update state with randomized selections using transition for smooth UI updates
+      // This ensures the old UI stays visible while new selections are being applied,
+      // especially important for personas which sort selected ones first
+      startTransition(() => {
+        if (randomized.personaIds) {
+          handleInputChange("personaIds", randomized.personaIds);
+        }
+        if (randomized.documentIds) {
+          setSelectedDocumentIds(randomized.documentIds);
+        }
+        if (randomized.parameterIds) {
+          handleInputChange("parameterIds", randomized.parameterIds);
+        }
+        // Clear randomizing section state when randomization completes
+        setRandomizingSection(null);
+      });
+
+      // Compute merged fieldIds if needed (for single parameter randomization)
+      let finalFieldIds: string[] | undefined;
+      if (randomized.fieldIds && randomized.fieldIds.length > 0) {
+        const randomizeParam = searchParams.get("randomize");
+        if (randomizeParam && randomizeParam.startsWith("parameter_")) {
+          // Single parameter randomization: keep fields for other parameters, add randomized ones
+          const paramId = randomizeParam.replace("parameter_", "");
+          // Compute merged fields before state update
+          // Note: Using currentFieldIds and fieldMapping from closure - they're stable references
+
+          const otherParamFields = currentFieldIds.filter(
+            (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+          );
+          finalFieldIds = [...otherParamFields, ...randomized.fieldIds];
+          // Wrap field updates in transition too for smooth transitions
+          startTransition(() => {
+            setCurrentFieldIds(finalFieldIds!);
+          });
+        } else {
+          // Full randomization (randomize=all): replace all fields
+          finalFieldIds = randomized.fieldIds;
+          startTransition(() => {
+            setCurrentFieldIds(finalFieldIds!);
+          });
+        }
+      }
+
+      // Update URL params with randomized selections AND clear randomize param
+      // This ensures URL reflects the randomized state (URL is source of truth)
+      requestAnimationFrame(() => {
+        const urlUpdates: Record<string, string | string[] | null> = {
+          randomize: null, // Clear randomize param
+        };
+
+        // Add randomized IDs to URL params so URL reflects current state
+        if (randomized.personaIds && randomized.personaIds.length > 0) {
+          urlUpdates.personaIds = randomized.personaIds;
+        }
+        if (randomized.documentIds && randomized.documentIds.length > 0) {
+          urlUpdates.documentIds = randomized.documentIds;
+        }
+        if (randomized.parameterIds && randomized.parameterIds.length > 0) {
+          urlUpdates.parameterIds = randomized.parameterIds;
+        }
+        if (finalFieldIds && finalFieldIds.length > 0) {
+          // Use the computed finalFieldIds (already merged if needed)
+          urlUpdates.fieldIds = finalFieldIds;
+        }
+
+        updateUrlParams(urlUpdates);
+        // Reset the flag after clearing params (use another frame to ensure URL update completes)
+        requestAnimationFrame(() => {
+          isApplyingRandomizedRef.current = false;
+          // Ensure randomizing section is cleared even if transition didn't run
+          setRandomizingSection(null);
+        });
+      });
+    }
+  }, [
+    videoData?.randomized_selections,
+    searchParams,
+    updateUrlParams,
+    handleInputChange,
+    randomizingSection,
+  ]);
+
+  // Also handle randomized flag as fallback (DHH-style: server tells client when to clear param)
+  // This ensures the param is cleared even if randomized_selections processing fails or gets stuck
+  // Also updates URL with randomized IDs from main fields (persona_ids, document_ids, etc.)
+  useEffect(() => {
+    const randomizeParam = searchParams.get("randomize");
+    if (videoData?.randomized === true && randomizeParam) {
+      // Server has applied randomization to main fields - update URL with randomized IDs
+      // Use a small delay to ensure randomized_selections useEffect has a chance to run first
+      const timeoutId = setTimeout(() => {
+        // Only process if param is still present (randomized_selections might have already handled it)
+        if (searchParams.get("randomize")) {
+          // Read randomized values from main fields and update URL params
+          // This ensures URL reflects the randomized state even if randomized_selections didn't process
+          // Use transition for smooth state updates
+          startTransition(() => {
+            if (videoData.persona_ids && videoData.persona_ids.length > 0) {
+              handleInputChange("personaIds", videoData.persona_ids);
+            }
+            if (videoData.document_ids && videoData.document_ids.length > 0) {
+              setSelectedDocumentIds(videoData.document_ids);
+            }
+            if (
+              videoData.video_parameter_ids &&
+              videoData.video_parameter_ids.length > 0
+            ) {
+              handleInputChange("parameterIds", videoData.video_parameter_ids);
+            }
+            // For fields, we need to use selected_field_ids
+            const serverData = videoData as VideoNewOut | undefined;
+            if (
+              serverData?.selected_field_ids &&
+              serverData.selected_field_ids.length > 0
+            ) {
+              setCurrentFieldIds(serverData.selected_field_ids);
+            }
+          });
+
+          const fallbackUrlUpdates: Record<string, string | string[] | null> = {
+            randomize: null, // Clear randomize param
+          };
+
+          // Update URL params to reflect randomized state
+          if (videoData.persona_ids && videoData.persona_ids.length > 0) {
+            fallbackUrlUpdates.personaIds = videoData.persona_ids;
+          }
+          if (videoData.document_ids && videoData.document_ids.length > 0) {
+            fallbackUrlUpdates.documentIds = videoData.document_ids;
+          }
+          if (
+            videoData.video_parameter_ids &&
+            videoData.video_parameter_ids.length > 0
+          ) {
+            fallbackUrlUpdates.parameterIds = videoData.video_parameter_ids;
+          }
+          // For fields, we need to use selected_field_ids
+          const fallbackServerData = videoData as VideoNewOut | undefined;
+          if (
+            fallbackServerData?.selected_field_ids &&
+            fallbackServerData.selected_field_ids.length > 0
+          ) {
+            fallbackUrlUpdates.fieldIds = fallbackServerData.selected_field_ids;
+          }
+
+          // Reset flags to allow next randomization to be processed
+          lastProcessedRandomizedRef.current = null;
+          isApplyingRandomizedRef.current = false;
+          // Clear randomizing section state
+          setRandomizingSection(null);
+          updateUrlParams(fallbackUrlUpdates);
+        }
+      }, 200);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    videoData?.randomized,
+    videoData,
+    searchParams,
+    updateUrlParams,
+    startTransition,
+    handleInputChange,
+  ]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -1927,8 +2662,8 @@ export default function Video({
           updatePayload.image_agent_id = formData.imageAgentId;
         }
         // Note: video_agent_id is not in UpdateVideoRequest - it's set during video generation
-        if (currentParameterItemIds.length > 0) {
-          updatePayload.parameter_item_ids = currentParameterItemIds;
+        if (currentFieldIds.length > 0) {
+          updatePayload.parameter_item_ids = currentFieldIds;
         }
         if (formData.parameterIds && formData.parameterIds.length > 0) {
           updatePayload.parameter_ids = formData.parameterIds;
@@ -1982,7 +2717,7 @@ export default function Video({
         // Active when documents are selected, completed when parameter items are selected
         return selectedDocumentIds.length === 0
           ? "pending"
-          : currentParameterItemIds.length > 0
+          : currentFieldIds.length > 0
             ? "completed"
             : "active";
       case "outline":
@@ -2162,6 +2897,93 @@ export default function Video({
     });
   };
 
+  // Smart questions management: automatically add/remove questions based on slider changes
+  useEffect(() => {
+    const [min, max] = questionCount;
+    const currentLength = questions.length;
+
+    // If questions are disabled (max === 0), clear all questions
+    if (max === 0) {
+      if (currentLength > 0) {
+        setQuestions([]);
+      }
+      return;
+    }
+
+    // Ensure we have at least minimum questions (add blank ones if needed)
+    if (currentLength < min) {
+      const blankQuestionsToAdd = min - currentLength;
+      setQuestions((prev) => [
+        ...prev,
+        ...Array(blankQuestionsToAdd)
+          .fill(null)
+          .map(() => ({
+            question_text: "",
+            allow_multiple: false,
+            times: [],
+            options: [
+              {
+                option_text: "",
+                type: "discrete" as const,
+                is_correct: false,
+              },
+              {
+                option_text: "",
+                type: "discrete" as const,
+                is_correct: false,
+              },
+            ],
+          })),
+      ]);
+      return;
+    }
+
+    // If maximum decreased, remove questions (empty ones first, then filled ones)
+    if (currentLength > max) {
+      setQuestions((prev) => {
+        const next = [...prev];
+        const toRemove = currentLength - max;
+
+        // First, find and remove empty questions
+        const emptyIndices: number[] = [];
+        for (let i = next.length - 1; i >= 0; i--) {
+          const question = next[i];
+          if (
+            !question ||
+            !question.question_text ||
+            question.question_text.trim() === ""
+          ) {
+            emptyIndices.push(i);
+            if (emptyIndices.length >= toRemove) break;
+          }
+        }
+
+        // Remove empty questions first
+        let removed = 0;
+        for (const idx of emptyIndices) {
+          if (removed < toRemove) {
+            next.splice(idx, 1);
+            removed++;
+          }
+        }
+
+        // If we still need to remove more, remove from the end (filled questions)
+        while (next.length > max && removed < toRemove) {
+          next.pop();
+          removed++;
+        }
+
+        return next;
+      });
+      return;
+    }
+
+    // Ensure we don't exceed maximum (shouldn't happen with UI controls, but safety check)
+    if (currentLength > max) {
+      setQuestions((prev) => prev.slice(0, max));
+    }
+  }, [questionCount, questions.length]); // Only depend on length, not content, to avoid loops
+
   // Drag and drop handlers for questions
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
     number | null
@@ -2325,59 +3147,11 @@ export default function Video({
     }
   }, [selectedDocumentIds, videoPreviewDocumentId]);
 
-  // Extract template document IDs from document_mapping
-  // Template documents are documents that have parent_document_id (generated from a parent)
-  // OR documents that are referenced as parent_document_id by other documents (parent templates)
-  useEffect(() => {
-    if (documentMapping && Object.keys(documentMapping).length > 0) {
-      // First, find all documents that have parent_document_id (generated templates)
-      const generatedTemplateDocIds = Object.entries(documentMapping)
-        .filter(([docId, doc]) => {
-          const docWithParent = doc as DocumentMappingItem;
-          const hasParent = !!(
-            docWithParent?.parent_document_id &&
-            docWithParent.parent_document_id.trim()
-          );
-          return hasParent;
-        })
-        .map(([docId]) => docId);
-
-      // Second, find all documents that are referenced as parent_document_id (parent templates)
-      const parentTemplateDocIds = Object.keys(documentMapping).filter(
-        (docId) => {
-          // Check if any other document has this docId as its parent_document_id
-          return Object.values(documentMapping).some((doc) => {
-            const docWithParent = doc as DocumentMappingItem;
-            return (
-              docWithParent?.parent_document_id === docId &&
-              docWithParent.parent_document_id.trim()
-            );
-          });
-        }
-      );
-
-      // Combine both: generated templates + parent templates
-      const templateDocIds = [
-        ...new Set([...generatedTemplateDocIds, ...parentTemplateDocIds]),
-      ];
-
-      if (templateDocIds.length > 0) {
-        setTemplateDocumentIds(templateDocIds);
-      } else {
-        // Fallback: if no parent_document_id relationships found, check document names
-        // Documents with "Template" in name might be templates
-        const templateByNameDocIds = Object.entries(documentMapping)
-          .filter(([_, doc]) => {
-            const docItem = doc as DocumentMappingItem;
-            return docItem?.name?.toLowerCase().includes("template") ?? false;
-          })
-          .map(([docId]) => docId);
-        if (templateByNameDocIds.length > 0) {
-          setTemplateDocumentIds(templateByNameDocIds);
-        }
-      }
-    }
-  }, [documentMapping]);
+  // Template document IDs are managed via:
+  // - Edit mode: extracted from documentDetails (is_template field) in useEffect above
+  // - Create mode: loaded from server response (selected_template_document_ids)
+  // - URL params: single source of truth, server provides selected_template_document_ids
+  // No need for document_mapping derivation - matches Scenario.tsx pattern
 
   // Video upload state
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -2457,18 +3231,22 @@ export default function Video({
             validPersonaIds={videoData.valid_persona_ids}
             personaMapping={personaMapping}
             selectedPersonaIds={formData.personaIds || []}
-            searchTerm=""
+            searchTerm={personaSearchTerm}
             minMax={videoData?.allowed_ranges?.persona || { min: 1, max: 3 }}
             onPersonaIdsChange={(ids) => handleInputChange("personaIds", ids)}
-            onSearchTermChange={() => {}}
+            onSearchTermChange={setPersonaSearchTerm}
             onMinMaxChange={() => {}}
-            onRandomize={() => {}}
-            onReset={() => handleInputChange("personaIds", [])}
+            onRandomize={handleRandomizePersonaClient}
+            onReset={handleResetPersona}
             stepStatus={getStepStatus("persona")}
             stepTitle={steps[1]?.title || ""}
             stepDescription={steps[1]?.description || ""}
             stepNumber={2}
             isReadonly={isReadonly}
+            disabled={isPending}
+            isRandomizing={
+              randomizingSection === "persona" || randomizingSection === "all"
+            }
             isEditMode={isEditMode}
           />
         )}
@@ -2498,13 +3276,16 @@ export default function Video({
         onSearchTermChange={setDocumentSearchTerm}
         onMinMaxChange={setDocumentMinMax}
         onPreviewDocument={setPreviewDocumentId}
-        onRandomize={() => handleRandomizeVideo(["documents"], "documents")}
-        onReset={() => handleResetSection("documents")}
+        onRandomize={handleRandomizeDocumentsClient}
+        onReset={handleResetDocuments}
         stepStatus={getStepStatus("documents")}
         stepTitle={steps[2]?.title || ""}
         stepDescription={steps[2]?.description || ""}
         stepNumber={3}
         isReadonly={isReadonly}
+        isRandomizing={
+          randomizingSection === "document" || randomizingSection === "all"
+        }
         isEditMode={isEditMode}
       />
 
@@ -2513,23 +3294,31 @@ export default function Video({
         validParameterIds={videoData?.valid_parameter_ids || []}
         parameterMapping={parameterMapping}
         selectedParameterIds={formData.parameterIds || []}
-        searchTerm=""
+        searchTerm={parameterSearchTerm}
         minMax={
           videoData?.allowed_ranges?.parameter_selection || { min: 0, max: 3 }
         }
         onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
-        onSearchTermChange={() => {}}
+        onSearchTermChange={setParameterSearchTerm}
         onMinMaxChange={() => {}}
-        onRandomize={() => handleRandomizeVideo(["parameters"], "parameters")}
-        onReset={() => {
-          handleInputChange("parameterIds", []);
-          setCurrentParameterItemIds([]);
+        onRandomize={handleRandomizeParametersClient}
+        onParameterUnselect={(paramId) => {
+          // When unselecting a parameter, also remove all its fields
+          setCurrentFieldIds((prev) =>
+            prev.filter(
+              (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+            )
+          );
         }}
+        onReset={handleResetParameters}
         stepStatus={getStepStatus("parameters")}
         stepTitle={steps[3]?.title || ""}
         stepDescription={steps[3]?.description || ""}
         stepNumber={4}
         isReadonly={isReadonly}
+        isRandomizing={
+          randomizingSection === "parameters" || randomizingSection === "all"
+        }
         isEditMode={isEditMode}
       />
 
@@ -2542,7 +3331,7 @@ export default function Video({
           const validItemsForParam = validGeneralParameterItemIds.filter(
             (itemId) => fieldMapping[itemId]?.parameter_id === paramId
           );
-          const selectedItemsForParam = currentParameterItemIds.filter(
+          const selectedItemsForParam = currentFieldIds.filter(
             (itemId) => fieldMapping[itemId]?.parameter_id === paramId
           );
 
@@ -2555,28 +3344,42 @@ export default function Video({
               fieldMapping={fieldMapping}
               selectedFieldIds={selectedItemsForParam}
               minMax={
+                fieldMinMax[paramId] ||
                 videoData?.allowed_ranges?.fields?.[paramId] || {
                   min: 1,
                   max: 3,
                 }
               }
+              allowedRange={
+                videoData?.allowed_ranges?.fields?.[paramId]
+                  ? {
+                      min: videoData.allowed_ranges.fields[paramId].min,
+                      max: videoData.allowed_ranges.fields[paramId].max,
+                    }
+                  : undefined
+              }
               onFieldIdsChange={(newIds) => {
-                const otherFieldIds = currentParameterItemIds.filter(
+                // Update only this parameter's fields
+                const otherFieldIds = currentFieldIds.filter(
                   (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
                 );
-                setCurrentParameterItemIds([...otherFieldIds, ...newIds]);
+                setCurrentFieldIds([...otherFieldIds, ...newIds]);
               }}
-              onMinMaxChange={() => {}}
-              onRandomize={() => {}}
-              onReset={() => {
-                const otherFieldIds = currentParameterItemIds.filter(
-                  (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
-                );
-                setCurrentParameterItemIds(otherFieldIds);
-              }}
+              onMinMaxChange={(minMax) =>
+                setFieldMinMax((prev) => ({
+                  ...prev,
+                  [paramId]: minMax,
+                }))
+              }
+              onRandomize={() => handleRandomizeParameterClient(paramId)}
+              onReset={() => handleResetParameter(paramId)}
               stepStatus={stepStatus}
               stepNumber={stepIndex + 1}
               isReadonly={isReadonly}
+              isRandomizing={
+                randomizingSection === `parameter_${paramId}` ||
+                randomizingSection === "all"
+              }
               isEditMode={isEditMode}
             />
           );

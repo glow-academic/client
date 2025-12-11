@@ -13816,6 +13816,8 @@ export interface components {
             personaIds?: string[] | null;
             /** Documentids */
             documentIds?: string[] | null;
+            /** Templatedocumentids */
+            templateDocumentIds?: string[] | null;
             /** Parameterids */
             parameterIds?: string[] | null;
             /** Fieldids */
@@ -13926,6 +13928,8 @@ export interface components {
             personaIds?: string[] | null;
             /** Documentids */
             documentIds?: string[] | null;
+            /** Templatedocumentids */
+            templateDocumentIds?: string[] | null;
             /** Parameterids */
             parameterIds?: string[] | null;
             /** Fieldids */
@@ -16189,10 +16193,17 @@ export interface components {
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             question_count_range: components["schemas"]["RangeMinMax"];
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
+            /**
+             * Randomized
+             * @default false
+             */
+            randomized: boolean;
             /** Selected Persona Ids */
             selected_persona_ids?: string[] | null;
             /** Selected Document Ids */
             selected_document_ids?: string[] | null;
+            /** Selected Template Document Ids */
+            selected_template_document_ids?: string[] | null;
             /** Selected Parameter Ids */
             selected_parameter_ids?: string[] | null;
             /** Selected Field Ids */
@@ -16372,10 +16383,17 @@ export interface components {
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             question_count_range: components["schemas"]["RangeMinMax"];
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
+            /**
+             * Randomized
+             * @default false
+             */
+            randomized: boolean;
             /** Selected Persona Ids */
             selected_persona_ids?: string[] | null;
             /** Selected Document Ids */
             selected_document_ids?: string[] | null;
+            /** Selected Template Document Ids */
+            selected_template_document_ids?: string[] | null;
             /** Selected Parameter Ids */
             selected_parameter_ids?: string[] | null;
             /** Selected Field Ids */

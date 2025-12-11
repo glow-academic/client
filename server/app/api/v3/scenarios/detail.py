@@ -1469,17 +1469,24 @@ async def get_scenario_detail(
                     pass
 
                 # Randomize all fields
-                # Only randomize items for parameters that were randomized (or selected if no randomization)
+                # When randomizing "all", randomize fields for ALL valid parameters (not just randomized/selected ones)
                 if (
                     filtered_valid_general_field_ids
                 ):  # Renamed from filtered_valid_general_parameter_item_ids
                     randomized_items: list[str] = []
-                    # Use randomized parameter IDs if available, otherwise use selected parameter IDs
-                    params_to_randomize = (
-                        randomized_parameter_ids
-                        if randomized_parameter_ids
-                        else (request_data.parameterIds or [])
-                    )
+                    # When randomizing "all", always randomize fields for ALL valid parameters
+                    # (not just the randomized parameters subset)
+                    # For other randomize types, use randomized/selected parameters
+                    if randomize_value == "all":
+                        # Always use all valid parameters when randomizing "all"
+                        params_to_randomize = valid_parameter_ids
+                    elif randomized_parameter_ids:
+                        params_to_randomize = randomized_parameter_ids
+                    elif request_data.parameterIds:
+                        params_to_randomize = request_data.parameterIds
+                    else:
+                        # No parameters selected - use all valid parameters as fallback
+                        params_to_randomize = valid_parameter_ids
                     for param_id in params_to_randomize:
                         if (
                             param_id in field_ranges_dict

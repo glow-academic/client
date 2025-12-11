@@ -38,7 +38,7 @@ const getVideoDefault = async (
     documentIds?: string[];
     templateDocumentIds?: string[];
     parameterIds?: string[];
-    parameterItemIds?: string[];
+    fieldIds?: string[];
     personaSearch?: string;
     documentSearch?: string;
     parameterSearch?: string;
@@ -50,11 +50,8 @@ const getVideoDefault = async (
     parameterSelectionMax?: number;
     questionMin?: number;
     questionMax?: number;
-    parameterItemRanges?: Record<string, { min: number; max: number }>;
-    randomizePersonas?: string;
-    randomizeDocuments?: string;
-    randomizeParameters?: string;
-    randomizeParameterItems?: Record<string, string>;
+    fieldRanges?: Record<string, { min: number; max: number }>;
+    randomize?: string; // Single randomize param: "all", "persona", "document", "parameters", or "parameter_{paramId}"
     outlineIds?: string[];
     questionIds?: string[];
     videoIds?: string[];
@@ -150,10 +147,9 @@ export default async function NewVideoPage({
     .get("parameterIds")
     ?.split(",")
     .filter(Boolean);
-  const parameterItemIds = searchParamsObj
-    .get("parameterItemIds")
-    ?.split(",")
-    .filter(Boolean);
+  const fieldIds = searchParamsObj.get("fieldIds")?.split(",").filter(Boolean);
+  // Parse single randomize param (matching scenarios pattern)
+  const randomize = searchParamsObj.get("randomize") || undefined;
   // Extract URL parameters for linking generated resources (parsed but not passed to API - just for URL tracking)
   const _outlineIds = searchParamsObj
     .get("outlineIds")
@@ -192,52 +188,34 @@ export default async function NewVideoPage({
     ? parseInt(searchParamsObj.get("questionMax") || "3", 10)
     : undefined;
 
-  // Parse parameter item ranges
-  const parameterItemRanges:
-    | Record<string, { min: number; max: number }>
-    | undefined = (() => {
-    const ranges: Record<string, { min: number; max: number }> = {};
-    let hasRanges = false;
-    for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("parameterItemMin_")) {
-        const paramId = key.replace("parameterItemMin_", "");
-        const min = parseInt(value, 10);
-        if (!isNaN(min)) {
-          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
-          ranges[paramId].min = min;
-          hasRanges = true;
-        }
-      } else if (key.startsWith("parameterItemMax_")) {
-        const paramId = key.replace("parameterItemMax_", "");
-        const max = parseInt(value, 10);
-        if (!isNaN(max)) {
-          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
-          ranges[paramId].max = max;
-          hasRanges = true;
+  // Parse field ranges
+  const fieldRanges: Record<string, { min: number; max: number }> | undefined =
+    (() => {
+      const ranges: Record<string, { min: number; max: number }> = {};
+      let hasRanges = false;
+      for (const [key, value] of searchParamsObj.entries()) {
+        if (key.startsWith("fieldMin_")) {
+          const paramId = key.replace("fieldMin_", "");
+          const min = parseInt(value, 10);
+          if (!isNaN(min)) {
+            if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
+            ranges[paramId].min = min;
+            hasRanges = true;
+          }
+        } else if (key.startsWith("fieldMax_")) {
+          const paramId = key.replace("fieldMax_", "");
+          const max = parseInt(value, 10);
+          if (!isNaN(max)) {
+            if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
+            ranges[paramId].max = max;
+            hasRanges = true;
+          }
         }
       }
-    }
-    return hasRanges ? ranges : undefined;
-  })();
+      return hasRanges ? ranges : undefined;
+    })();
 
-  // Parse randomization params
-  const randomizePersonas =
-    searchParamsObj.get("randomizePersonas") || undefined;
-  const randomizeDocuments =
-    searchParamsObj.get("randomizeDocuments") || undefined;
-  const randomizeParameters =
-    searchParamsObj.get("randomizeParameters") || undefined;
-
-  const randomizeParameterItems: Record<string, string> | undefined = (() => {
-    const items: Record<string, string> = {};
-    for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("randomizeParameterItems_")) {
-        const paramId = key.replace("randomizeParameterItems_", "");
-        items[paramId] = value;
-      }
-    }
-    return Object.keys(items).length > 0 ? items : undefined;
-  })();
+  // Randomize param is parsed above (single param matching scenarios pattern)
 
   // Fetch default video detail server-side with filter params
   const filterParams: Parameters<typeof getVideoDefault>[1] = {};
@@ -250,8 +228,7 @@ export default async function NewVideoPage({
     filterParams.templateDocumentIds = templateDocumentIds;
   if (parameterIds && parameterIds.length > 0)
     filterParams.parameterIds = parameterIds;
-  if (parameterItemIds && parameterItemIds.length > 0)
-    filterParams.parameterItemIds = parameterItemIds;
+  if (fieldIds && fieldIds.length > 0) filterParams.fieldIds = fieldIds;
   if (personaSearch) filterParams.personaSearch = personaSearch;
   if (documentSearch) filterParams.documentSearch = documentSearch;
   if (parameterSearch) filterParams.parameterSearch = parameterSearch;
@@ -265,14 +242,8 @@ export default async function NewVideoPage({
     filterParams.parameterSelectionMax = parameterSelectionMax;
   if (questionMin !== undefined) filterParams.questionMin = questionMin;
   if (questionMax !== undefined) filterParams.questionMax = questionMax;
-  if (parameterItemRanges)
-    filterParams.parameterItemRanges = parameterItemRanges;
-  if (randomizePersonas) filterParams.randomizePersonas = randomizePersonas;
-  if (randomizeDocuments) filterParams.randomizeDocuments = randomizeDocuments;
-  if (randomizeParameters)
-    filterParams.randomizeParameters = randomizeParameters;
-  if (randomizeParameterItems)
-    filterParams.randomizeParameterItems = randomizeParameterItems;
+  if (fieldRanges) filterParams.fieldRanges = fieldRanges;
+  if (randomize) filterParams.randomize = randomize;
   // Note: outlineIds, questionIds, videoIds are for URL tracking only, not passed to API
 
   const videoDetailDefault = await getVideoDefault(

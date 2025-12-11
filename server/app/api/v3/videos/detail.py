@@ -1,6 +1,7 @@
 """Video detail endpoint - v3 API following DHH principles."""
 
 import json
+from collections.abc import Sequence
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -51,6 +52,7 @@ class VideoDetailRequest(BaseModel):
     departmentIds: list[str] | None = None
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
+    templateDocumentIds: list[str] | None = None
     parameterIds: list[str] | None = None
     fieldIds: list[str] | None = None  # Renamed from parameterItemIds for readability
     # Search parameters
@@ -194,9 +196,12 @@ class VideoDetailResponse(BaseModel):
     question_count_range: RangeMinMax
     # Randomized selections (if randomization params provided)
     randomized_selections: RandomizedSelections | None = None
+    # Flag indicating if randomization was applied (client should clear randomize param when true)
+    randomized: bool = False
     # Selected IDs from request (filtered to valid ones) - server-driven approach
     selected_persona_ids: list[str] | None = None
     selected_document_ids: list[str] | None = None
+    selected_template_document_ids: list[str] | None = None
     selected_parameter_ids: list[str] | None = None
     selected_field_ids: list[str] | None = None
     # Search terms from request
@@ -319,12 +324,18 @@ def filter_valid_document_ids(
     selected_param_ids: list[str] | None,
     selected_field_ids: list[str] | None,
     selected_doc_ids: list[str] | None,
+    selected_field_ids_for_docs: list[str]
+    | None,  # Renamed from selected_param_item_ids (different from selected_field_ids above)
     department_mapping: DepartmentMapping,
     document_mapping: DocumentMapping,
     field_mapping: FieldMapping,
     parameter_mapping: ParameterMapping,
+    document_details: list[DocumentDetailItem],
 ) -> list[str]:
-    """Filter valid document IDs based on selections."""
+    """
+    Filter valid document IDs based on selections.
+    Replicates logic from client-side useMemo (lines 759-937 of Scenario.tsx).
+    """
     if selected_dept_ids is None:
         selected_dept_ids = []
     if selected_param_ids is None:
@@ -333,25 +344,35 @@ def filter_valid_document_ids(
         selected_field_ids = []
     if selected_doc_ids is None:
         selected_doc_ids = []
+    if selected_field_ids_for_docs is None:
+        selected_field_ids_for_docs = []
 
+    # Always include currently selected documents (for edit mode - ensures selected items are visible)
     selected_doc_id_set = set(selected_doc_ids)
 
+    # If no departments selected, start with selected ones first, then all valid IDs (preserving order)
     if len(selected_dept_ids) == 0:
         dept_filtered_ids = preserve_order_union_selected_first(
             selected_doc_ids, base_ids
         )
     else:
+        # Get union of document_ids from ALL departments (to identify cross-department items)
         all_dept_document_ids: set[str] = set()
         for dept_data in department_mapping.values():
-            if dept_data.document_ids is not None:
+            if dept_data.document_ids:
                 all_dept_document_ids.update(dept_data.document_ids)
 
+        # Get union of document_ids from selected departments
         selected_dept_document_ids: set[str] = set()
         for dept_id in selected_dept_ids:
             dept_data = department_mapping.get(dept_id)
             if dept_data and dept_data.document_ids is not None:
                 selected_dept_document_ids.update(dept_data.document_ids)
 
+        # Include items that are:
+        # 1. In selected departments
+        # 2. Cross-department (not in any department's document_ids)
+        # 3. Currently selected
         filtered = [
             doc_id
             for doc_id in base_ids
@@ -359,12 +380,52 @@ def filter_valid_document_ids(
             or doc_id not in all_dept_document_ids
         ]
 
+        # Preserve order: selected items first, then filtered items
         dept_filtered_ids = preserve_order_union_selected_first(
             selected_doc_ids, filtered
         )
 
+    # Filter by selected document fields if any are selected
+    # Compute documentFieldIds inline to avoid dependency order issue
+    current_doc_field_ids = [
+        item_id
+        for item_id in selected_field_ids_for_docs  # Renamed from selected_param_item_ids
+        if (
+            item_id in field_mapping  # Renamed from parameter_item_mapping
+            and field_mapping[item_id].parameter_id in parameter_mapping
+            and parameter_mapping[
+                field_mapping[item_id].parameter_id
+            ].document_parameter
+        )
+    ]
+
+    if len(current_doc_field_ids) > 0:
+        # If document_details is empty/missing, can't filter - show all documents
+        if document_details and len(document_details) > 0:
+            docs_with_selected_params: set[str] = set()
+            for doc in document_details:
+                if doc.field_ids:  # Renamed from parameter_item_ids
+                    doc_field_items_set = set(doc.field_ids)
+                    has_all_selected_params = all(
+                        param_id in doc_field_items_set
+                        for param_id in current_doc_field_ids
+                    )
+                    if has_all_selected_params:
+                        docs_with_selected_params.add(doc.document_id)
+
+            # If documents match document parameter filtering, apply it
+            if len(docs_with_selected_params) > 0:
+                dept_filtered_ids = [
+                    doc_id
+                    for doc_id in dept_filtered_ids
+                    if doc_id in docs_with_selected_params
+                    or doc_id in selected_doc_id_set
+                ]
+        # If no documents match, continue to field-based filtering (don't filter out everything)
+
     dept_filtered = dept_filtered_ids
 
+    # Apply parameter-based filtering
     param_filtered = dept_filtered
     if len(selected_param_ids) > 0:
         param_filtered = [
@@ -385,6 +446,7 @@ def filter_valid_document_ids(
         ]
 
     # Apply field-based filtering (bidirectional: fields → documents)
+    # When specific fields are selected, only show documents that have those exact fields
     # BUT: Only filter by fields that belong to document parameters
     # Filter out non-document-parameter fields from selected_field_ids
     document_parameter_field_ids = []
@@ -404,23 +466,40 @@ def filter_valid_document_ids(
     if len(document_parameter_field_ids) == 0:
         return preserve_order_union_selected_first(selected_doc_ids, param_filtered)
 
+    # Always include currently selected documents (for edit mode)
     selected_doc_ids_for_filter = set(selected_doc_ids)
-    filtered_result = []
 
+    result = []
     for doc_id in param_filtered:
+        # Always include currently selected documents
         if doc_id in selected_doc_ids_for_filter:
+            result.append(doc_id)
             continue
 
-        doc_mapping_item = document_mapping.get(doc_id)
+        # Get fields from documentMapping (not document_details)
+        doc = document_mapping.get(doc_id)
         doc_field_ids: list[str] = []
-        if doc_mapping_item and doc_mapping_item.field_ids:
-            doc_field_ids = doc_mapping_item.field_ids
+        if doc and doc.field_ids:
+            doc_field_ids = doc.field_ids
+
+        # Get fields from document_details (field_ids)
+        doc_details = next(
+            (d for d in document_details if d.document_id == doc_id), None
+        )
+        doc_details_field_ids = (
+            doc_details.field_ids
+            if doc_details
+            else []  # Renamed from parameter_item_ids
+        )
+
+        # Combine both sources of field IDs
+        all_doc_field_ids = list(set(doc_field_ids + doc_details_field_ids))
 
         # If document has no fields at all, and we have selected document parameter fields, filter it out
-        if len(doc_field_ids) == 0 and len(document_parameter_field_ids) > 0:
+        if len(all_doc_field_ids) == 0 and len(document_parameter_field_ids) > 0:
             continue
 
-        doc_field_set = set(doc_field_ids)
+        doc_field_set = set(all_doc_field_ids)
 
         # Check each selected document parameter field: document must have the exact selected field
         has_all_fields = True
@@ -428,18 +507,22 @@ def filter_valid_document_ids(
             if not selected_field_id:
                 continue
 
-            selected_field = field_mapping.get(selected_field_id)
+            selected_field = field_mapping.get(
+                selected_field_id
+            )  # Renamed from parameter_item_mapping
             if not selected_field or not selected_field.parameter_id:
                 continue
 
+            # Document must have this exact selected field
             if selected_field_id not in doc_field_set:
                 has_all_fields = False
                 break
 
         if has_all_fields:
-            filtered_result.append(doc_id)
+            result.append(doc_id)
 
-    return preserve_order_union_selected_first(selected_doc_ids, filtered_result)
+    # Return selected items first, then filtered items
+    return preserve_order_union_selected_first(selected_doc_ids, result)
 
 
 def filter_valid_field_ids(
@@ -461,14 +544,14 @@ def filter_valid_field_ids(
 
     all_dept_field_ids: set[str] = set()
     for dept_data in department_mapping.values():
-        if dept_data.field_ids is not None:
-            all_dept_field_ids.update(dept_data.field_ids)
+        if dept_data.parameter_item_ids is not None:
+            all_dept_field_ids.update(dept_data.parameter_item_ids)
 
     selected_dept_field_ids: set[str] = set()
     for dept_id in selected_dept_ids:
         dept_data = department_mapping.get(dept_id)
-        if dept_data and dept_data.field_ids is not None:
-            selected_dept_field_ids.update(dept_data.field_ids)
+        if dept_data and dept_data.parameter_item_ids is not None:
+            selected_dept_field_ids.update(dept_data.parameter_item_ids)
 
     filtered = [
         item_id
@@ -479,17 +562,21 @@ def filter_valid_field_ids(
     return preserve_order_union_selected_first(selected_field_ids, filtered)
 
 
-def filter_valid_general_field_ids(
-    valid_field_ids: list[str],
+def filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
+    valid_field_ids: list[str],  # Renamed from valid_parameter_item_ids
     selected_param_ids: list[str] | None,
     selected_persona_ids: list[str] | None,
     selected_doc_ids: list[str] | None,
-    selected_field_ids: list[str] | None,
+    selected_field_ids: list[str] | None,  # Renamed from selected_param_item_ids
     persona_mapping: PersonaMapping,
     document_mapping: DocumentMapping,
     field_mapping: FieldMapping,
+    document_details: list[DocumentDetailItem],
 ) -> list[str]:
-    """Filter valid general field IDs based on personas/documents/parameters."""
+    """
+    Filter valid general field IDs based on selected personas, documents, and parameters.
+    Replicates logic from client-side useMemo (lines 1004-1210 of Scenario.tsx).
+    """
     if selected_param_ids is None:
         selected_param_ids = []
     if selected_persona_ids is None:
@@ -499,52 +586,158 @@ def filter_valid_general_field_ids(
     if selected_field_ids is None:
         selected_field_ids = []
 
-    if (
-        len(selected_param_ids) == 0
-        and len(selected_persona_ids) == 0
-        and len(selected_doc_ids) == 0
-    ):
-        return preserve_order_union_selected_first(selected_field_ids, valid_field_ids)
+    has_selected_personas = len(selected_persona_ids) > 0
+    has_selected_documents = len(selected_doc_ids) > 0
+    has_selections = has_selected_personas or has_selected_documents
 
-    filtered_result: list[str] = []
+    # Get all fields linked to selected personas
+    persona_fields: set[str] = set()
+    persona_parameter_ids: set[str] = set()
+    for persona_id in selected_persona_ids:
+        persona = persona_mapping.get(persona_id)
+        if persona and persona.field_ids:
+            for field_id in persona.field_ids:
+                persona_fields.add(field_id)
+                field = field_mapping.get(field_id)
+                if field and field.parameter_id:
+                    persona_parameter_ids.add(field.parameter_id)
+
+    # Get all fields linked to selected documents
+    document_fields: set[str] = set()
+    document_parameter_ids: set[str] = set()
+    for doc_id in selected_doc_ids:
+        doc = document_mapping.get(doc_id)
+        if doc and doc.field_ids:
+            for field_id in doc.field_ids:
+                document_fields.add(field_id)
+                field = field_mapping.get(field_id)
+                if field and field.parameter_id:
+                    document_parameter_ids.add(field.parameter_id)
+
+        # Also check document_details for field_ids (parameter_item_ids is actually field_ids)
+        doc_details = next(
+            (d for d in document_details if d.document_id == doc_id), None
+        )
+        if doc_details and doc_details.field_ids:  # Renamed from parameter_item_ids
+            for field_id in doc_details.field_ids:
+                document_fields.add(field_id)
+                field = field_mapping.get(field_id)
+                if field and field.parameter_id:
+                    document_parameter_ids.add(field.parameter_id)
+
+    # Combined set of parameters that selected personas/documents have fields from
+    selected_entity_parameter_ids = persona_parameter_ids | document_parameter_ids
+
+    # Get conditional parameters from selected fields
+    conditional_param_ids: set[str] = set()
+    for field_id in selected_field_ids:  # Renamed from selected_param_item_ids
+        field = field_mapping.get(field_id)  # Renamed from parameter_item_mapping
+        if field and field.conditional_parameter_ids:
+            conditional_param_ids.update(field.conditional_parameter_ids)
+
+    # Build result with selected fields first, then filtered fields
     selected_field_id_set = set(selected_field_ids)
-
-    for item_id in valid_field_ids:
-        if item_id in selected_field_id_set:
-            filtered_result.append(item_id)
+    filtered_result = []
+    for field_id in valid_field_ids:  # Renamed from valid_parameter_item_ids
+        # Skip selected fields - they'll be prepended
+        if field_id in selected_field_id_set:
+            continue
+        field = field_mapping.get(field_id)  # Renamed from parameter_item_mapping
+        if not field:
             continue
 
-        item = field_mapping.get(item_id)
-        if not item:
+        field_param_id = field.parameter_id
+
+        if field_id == field_param_id:
             continue
 
-        param_id = item.parameter_id
+        if has_selections:
+            has_persona_fields = len(persona_fields) > 0
+            has_document_fields = len(document_fields) > 0
+            has_any_fields = has_persona_fields or has_document_fields
 
-        if len(selected_param_ids) > 0 and param_id not in selected_param_ids:
-            continue
-
-        if len(selected_persona_ids) > 0:
-            has_matching_persona = False
-            for persona_id in selected_persona_ids:
-                persona = persona_mapping.get(persona_id)
-                if persona and persona.field_ids and item_id in persona.field_ids:
-                    has_matching_persona = True
-                    break
-            if not has_matching_persona:
+            if not has_any_fields:
+                if len(selected_param_ids) == 0:
+                    filtered_result.append(field_id)
+                    continue
+                if field_param_id in selected_param_ids:
+                    filtered_result.append(field_id)
                 continue
 
-        if len(selected_doc_ids) > 0:
-            has_matching_doc = False
-            for doc_id in selected_doc_ids:
-                doc = document_mapping.get(doc_id)
-                if doc and doc.field_ids and item_id in doc.field_ids:
-                    has_matching_doc = True
-                    break
-            if not has_matching_doc:
+            if len(selected_param_ids) > 0:
+                if field_param_id not in selected_param_ids:
+                    if field_param_id in conditional_param_ids:
+                        triggers_conditional = any(
+                            selected_field_id in field_mapping
+                            and field_mapping[
+                                selected_field_id
+                            ].conditional_parameter_ids
+                            is not None
+                            and field_param_id
+                            in (
+                                field_mapping[
+                                    selected_field_id
+                                ].conditional_parameter_ids
+                                or []
+                            )
+                            and field_mapping[selected_field_id].parameter_id
+                            in selected_param_ids
+                            for selected_field_id in selected_field_ids
+                        )
+                        if triggers_conditional:
+                            filtered_result.append(field_id)
+                    continue
+
+                has_fields_from_this_parameter = (
+                    field_param_id in selected_entity_parameter_ids
+                )
+
+                if not has_fields_from_this_parameter:
+                    filtered_result.append(field_id)
+                    continue
+
+                is_linked_to_persona = field_id in persona_fields
+                is_linked_to_document = field_id in document_fields
+
+                if is_linked_to_persona or is_linked_to_document:
+                    filtered_result.append(field_id)
                 continue
 
-        filtered_result.append(item_id)
+            has_fields_from_this_parameter = (
+                field_param_id in selected_entity_parameter_ids
+            )
 
+            if not has_fields_from_this_parameter:
+                filtered_result.append(field_id)
+                continue
+
+            if field_id in persona_fields:
+                filtered_result.append(field_id)
+                continue
+
+            if field_id in document_fields:
+                filtered_result.append(field_id)
+                continue
+
+            if field_param_id in conditional_param_ids:
+                filtered_result.append(field_id)
+                continue
+
+            continue
+
+        if len(selected_param_ids) == 0:
+            filtered_result.append(field_id)
+            continue
+
+        if field_param_id in selected_param_ids:
+            filtered_result.append(field_id)
+            continue
+
+        if field_param_id in conditional_param_ids:
+            filtered_result.append(field_id)
+            continue
+
+    # Return selected fields first, then filtered fields
     return preserve_order_union_selected_first(selected_field_ids, filtered_result)
 
 
@@ -580,16 +773,23 @@ async def get_video_detail(
     """Get detailed video information."""
     tags = ["videos"]  # From router tags
 
+    # Check for cache bypass header (for hard refresh or randomization)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    # Also bypass cache when randomize param is present (each randomization should be unique)
+    if request_data.randomize:
+        bypass_cache = True
+
     # Generate cache key from path and parsed body
     body_dict = request_data.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return VideoDetailResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return VideoDetailResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -624,9 +824,23 @@ async def get_video_detail(
         if isinstance(department_mapping_data, dict):
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
+
+                    def to_str_list(value: Sequence[Any] | None) -> list[str] | None:
+                        if value is None:
+                            return None
+                        if isinstance(value, list):
+                            return [str(v) for v in value if v is not None]
+                        return None
+
                     department_mapping[did] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
+                        persona_ids=to_str_list(ddata.get("persona_ids")),
+                        document_ids=to_str_list(ddata.get("document_ids")),
+                        parameter_ids=to_str_list(ddata.get("parameter_ids")),
+                        parameter_item_ids=to_str_list(
+                            ddata.get("parameter_item_ids")
+                        ),  # Database column name (keeping as-is)
                     )
 
         # Parse questions from JSONB into strongly typed models
@@ -744,8 +958,8 @@ async def get_video_detail(
                     document_mapping[k] = DocumentMappingItem(
                         name=v.get("name", ""),
                         description=v.get("description", ""),
-                        file_path=v.get("filePath", ""),
-                        mime_type=v.get("mimeType", ""),
+                        filePath=v.get("filePath", ""),
+                        mimeType=v.get("mimeType", ""),
                         parameter_ids=v.get("parameter_ids", []),
                         field_ids=v.get("field_ids", []),
                         parent_document_id=str(parent_document_id)
@@ -979,10 +1193,12 @@ async def get_video_detail(
                 selected_param_ids=request_data.parameterIds,
                 selected_field_ids=request_data.fieldIds,
                 selected_doc_ids=request_data.documentIds,
+                selected_field_ids_for_docs=request_data.fieldIds,  # Renamed from parameterItemIds
                 department_mapping=department_mapping,
                 document_mapping=document_mapping,
                 field_mapping=field_mapping,
                 parameter_mapping=parameter_mapping,
+                document_details=document_details,
             )
 
             # Filter valid field IDs
@@ -995,57 +1211,75 @@ async def get_video_detail(
             )
 
             # Filter valid general field IDs
-            filtered_valid_general_field_ids = filter_valid_general_field_ids(
-                valid_field_ids=filtered_valid_field_ids or mapping_ids,
+            filtered_valid_general_field_ids = filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
+                valid_field_ids=filtered_valid_field_ids or mapping_ids,  # Renamed from valid_parameter_item_ids
                 selected_param_ids=request_data.parameterIds,
                 selected_persona_ids=request_data.personaIds,
                 selected_doc_ids=request_data.documentIds,
-                selected_field_ids=request_data.fieldIds,
+                selected_field_ids=request_data.fieldIds,  # Renamed from parameterItemIds
                 persona_mapping=persona_mapping,
                 document_mapping=document_mapping,
-                field_mapping=field_mapping,
+                field_mapping=field_mapping,  # Renamed from parameter_item_mapping
+                document_details=document_details,
             )
         elif request_data.randomize:
             # When randomize is present but no filter params, still need filtered_valid_general_field_ids
-            mapping_ids = list(field_mapping.keys())
-            filtered_valid_field_ids = mapping_ids
-            filtered_valid_general_field_ids = filter_valid_general_field_ids(
-                valid_field_ids=filtered_valid_field_ids,
+            # Initialize with base values (no filtering applied)
+            mapping_ids = list(
+                field_mapping.keys()
+            )  # Renamed from parameter_item_mapping
+            filtered_valid_field_ids = (
+                mapping_ids  # Renamed from filtered_valid_parameter_item_ids
+            )
+            filtered_valid_general_field_ids = filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
+                valid_field_ids=filtered_valid_field_ids,  # Renamed from valid_parameter_item_ids
                 selected_param_ids=None,
                 selected_persona_ids=None,
                 selected_doc_ids=None,
-                selected_field_ids=None,
+                selected_field_ids=None,  # Renamed from selected_param_item_ids
                 persona_mapping=persona_mapping,
                 document_mapping=document_mapping,
-                field_mapping=field_mapping,
+                field_mapping=field_mapping,  # Renamed from parameter_item_mapping
+                document_details=document_details,
             )
 
         # Fixed ranges (server is source of truth, not based on available items)
-        # Personas: 1-3 (default max: 1)
+        # Personas: 1-3 (range), default value: 1
+        # The allowed range is always 1-3, request params are for current values
         persona_min = (
             request_data.personaMin if request_data.personaMin is not None else 1
         )
         persona_max = (
             request_data.personaMax if request_data.personaMax is not None else 1
         )
-        # Ensure max doesn't exceed fixed limit
-        persona_max = min(persona_max, 3)
+        # Allowed range is always 1-3 (fixed limits)
+        allowed_persona_min = 1
+        allowed_persona_max = 3
+        # Ensure requested values are within allowed range
+        persona_min = max(allowed_persona_min, min(persona_min, allowed_persona_max))
+        persona_max = max(allowed_persona_min, min(persona_max, allowed_persona_max))
         # Ensure min doesn't exceed max
         persona_min = min(persona_min, persona_max)
         
-        # Documents: 0-3 (default max: 1)
+        # Documents: 0-3 (range), default value: 1
+        # The allowed range is always 0-3, request params are for current values
         document_min = (
             request_data.documentMin if request_data.documentMin is not None else 0
         )
         document_max = (
             request_data.documentMax if request_data.documentMax is not None else 1
         )
-        # Ensure max doesn't exceed fixed limit
-        document_max = min(document_max, 3)
+        # Allowed range is always 0-3 (fixed limits)
+        allowed_document_min = 0
+        allowed_document_max = 3
+        # Ensure requested values are within allowed range
+        document_min = max(allowed_document_min, min(document_min, allowed_document_max))
+        document_max = max(allowed_document_min, min(document_max, allowed_document_max))
         # Ensure min doesn't exceed max
         document_min = min(document_min, document_max)
         
-        # Parameters: 0-3 (default max: 3)
+        # Parameters: 0-3 (range), default value: 3
+        # The allowed range is always 0-3, request params are for current values
         parameter_selection_min = (
             request_data.parameterSelectionMin
             if request_data.parameterSelectionMin is not None
@@ -1056,8 +1290,12 @@ async def get_video_detail(
             if request_data.parameterSelectionMax is not None
             else 3
         )
-        # Ensure max doesn't exceed fixed limit
-        parameter_selection_max = min(parameter_selection_max, 3)
+        # Allowed range is always 0-3 (fixed limits)
+        allowed_parameter_min = 0
+        allowed_parameter_max = 3
+        # Ensure requested values are within allowed range
+        parameter_selection_min = max(allowed_parameter_min, min(parameter_selection_min, allowed_parameter_max))
+        parameter_selection_max = max(allowed_parameter_min, min(parameter_selection_max, allowed_parameter_max))
         # Ensure min doesn't exceed max
         parameter_selection_min = min(parameter_selection_min, parameter_selection_max)
         
@@ -1067,9 +1305,10 @@ async def get_video_detail(
         max_valid_parameters = len(valid_parameter_ids)
 
         # Per-parameter field ranges
-        # Always set default ranges for all parameters (fixed ranges, not based on available items)
+        # Always set default ranges for all valid parameters (fixed ranges, not based on available items)
         field_ranges_dict: dict[str, dict[str, int]] = {}
-        for param_id in parameter_mapping.keys():
+        # Use valid_parameter_ids to ensure we include all valid parameters
+        for param_id in valid_parameter_ids:
             # Parameter fields: 1-3 (default max: 1) - fixed range
             if request_data.fieldRanges and param_id in request_data.fieldRanges:
                 param_range = request_data.fieldRanges[param_id]
@@ -1085,16 +1324,15 @@ async def get_video_detail(
 
             field_ranges_dict[param_id] = {"min": param_min, "max": param_max}
 
+        # Allowed ranges are fixed limits (not current values)
+        # Personas: 1-3, Documents: 0-3, Parameters: 0-3, Fields: 1-3
         allowed_ranges = AllowedRanges(
-            persona=RangeMinMax(min=persona_min, max=persona_max),
-            document=RangeMinMax(min=document_min, max=document_max),
-            parameter_selection=RangeMinMax(
-                min=parameter_selection_min,
-                max=parameter_selection_max,
-            ),
-            fields={
-                param_id: RangeMinMax(min=range_dict["min"], max=range_dict["max"])
-                for param_id, range_dict in field_ranges_dict.items()
+            persona=RangeMinMax(min=1, max=3),  # Fixed allowed range
+            document=RangeMinMax(min=0, max=3),  # Fixed allowed range
+            parameter_selection=RangeMinMax(min=0, max=3),  # Fixed allowed range
+            fields={  # Renamed from parameter_items
+                param_id: RangeMinMax(min=1, max=3)  # Fixed allowed range per parameter
+                for param_id in field_ranges_dict.keys()
             },
         )
 
@@ -1157,13 +1395,22 @@ async def get_video_detail(
                     pass
 
                 # Randomize all fields
+                # When randomizing "all", randomize fields for ALL valid parameters (not just randomized/selected ones)
                 if filtered_valid_general_field_ids:
                     randomized_items: list[str] = []
-                    params_to_randomize = (
-                        randomized_parameter_ids
-                        if randomized_parameter_ids
-                        else (request_data.parameterIds or [])
-                    )
+                    # When randomizing "all", always randomize fields for ALL valid parameters
+                    # (not just the randomized parameters subset)
+                    # For other randomize types, use randomized/selected parameters
+                    if randomize_value == "all":
+                        # Always use all valid parameters when randomizing "all"
+                        params_to_randomize = valid_parameter_ids
+                    elif randomized_parameter_ids:
+                        params_to_randomize = randomized_parameter_ids
+                    elif request_data.parameterIds:
+                        params_to_randomize = request_data.parameterIds
+                    else:
+                        # No parameters selected - use all valid parameters as fallback
+                        params_to_randomize = valid_parameter_ids
                     for param_id in params_to_randomize:
                         if param_id in field_ranges_dict:
                             param_range = field_ranges_dict[param_id]
@@ -1176,14 +1423,19 @@ async def get_video_detail(
                                     if item_id in field_mapping
                                     and field_mapping[item_id].parameter_id == param_id
                                 ]
-                                capped_max = min(max_val, len(valid_items_for_param))
-                                count = min(
-                                    capped_max,
-                                    max(min_val, random.randint(min_val, capped_max)),
-                                )
-                                shuffled = valid_items_for_param.copy()
-                                random.shuffle(shuffled)
-                                randomized_items.extend(shuffled[:count])
+                                if valid_items_for_param:
+                                    # Cap based on available items for randomization
+                                    max_valid_items = len(valid_items_for_param)
+                                    capped_max = min(max_val, max_valid_items)
+                                    count = min(
+                                        capped_max,
+                                        max(
+                                            min_val, random.randint(min_val, capped_max)
+                                        ),
+                                    )
+                                    shuffled = valid_items_for_param.copy()
+                                    random.shuffle(shuffled)
+                                    randomized_items.extend(shuffled[:count])
                             except (ValueError, IndexError):
                                 pass
                     if randomized_items:
@@ -1262,18 +1514,121 @@ async def get_video_detail(
                     except (ValueError, IndexError):
                         pass
 
-            if (
-                randomized_persona_ids is not None
-                or randomized_document_ids is not None
-                or randomized_parameter_ids is not None
-                or randomized_field_ids is not None
-            ):
-                randomized_selections = RandomizedSelections(
-                    personaIds=randomized_persona_ids,
-                    documentIds=randomized_document_ids,
-                    parameterIds=randomized_parameter_ids,
-                    fieldIds=randomized_field_ids,
+        # Determine if randomization occurred
+        randomization_occurred = (
+            randomized_persona_ids is not None
+            or randomized_document_ids is not None
+            or randomized_parameter_ids is not None
+            or randomized_field_ids is not None
+        )
+
+        if randomization_occurred:
+            randomized_selections = RandomizedSelections(
+                personaIds=randomized_persona_ids,
+                documentIds=randomized_document_ids,
+                parameterIds=randomized_parameter_ids,
+                fieldIds=randomized_field_ids,
+            )
+
+        # Apply randomized values to main fields (DHH-style: server applies directly)
+        # Use randomized values if available, otherwise use existing video values
+        final_persona_ids = (
+            randomized_persona_ids if randomized_persona_ids is not None else persona_ids
+        )
+        final_document_ids = (
+            randomized_document_ids if randomized_document_ids is not None else document_ids
+        )
+        final_parameter_ids = (
+            randomized_parameter_ids
+            if randomized_parameter_ids is not None
+            else video_parameter_ids
+        )
+        # For fields, use randomized_field_ids if set, otherwise use selected_field_ids from request
+        final_field_ids = (
+            randomized_field_ids if randomized_field_ids is not None else None
+        )
+
+        # Save filtered_valid_document_ids before search filter for selected_document_ids intersection
+        # Search term should only affect valid_document_ids for display, not selected_document_ids
+        filtered_valid_document_ids_before_search = filtered_valid_document_ids
+
+        # Apply search filtering if search terms provided
+        if request_data.personaSearch:
+            search_lower = request_data.personaSearch.lower()
+            filtered_valid_persona_ids = [
+                pid
+                for pid in filtered_valid_persona_ids
+                if pid in persona_mapping
+                and (
+                    search_lower in persona_mapping[pid].name.lower()
+                    or (
+                        persona_mapping[pid].description
+                        and search_lower in persona_mapping[pid].description.lower()
+                    )
                 )
+            ]
+
+        if request_data.documentSearch:
+            search_lower = request_data.documentSearch.lower()
+            filtered_valid_document_ids = [
+                did
+                for did in filtered_valid_document_ids
+                if did in document_mapping
+                and (
+                    search_lower in document_mapping[did].name.lower()
+                    or (
+                        document_mapping[did].description
+                        and search_lower in document_mapping[did].description.lower()
+                    )
+                )
+            ]
+
+        # Filter selected IDs from request to only include valid ones (server-driven approach)
+        # Note: These are used as fallback if no randomization occurred
+        selected_persona_ids: list[str] | None = None
+        selected_document_ids: list[str] | None = None
+        selected_parameter_ids: list[str] | None = None
+        selected_field_ids: list[str] | None = None
+
+        if request_data.personaIds:
+            # Intersect requested IDs with valid filtered IDs
+            selected_persona_ids = [
+                pid
+                for pid in request_data.personaIds
+                if pid in filtered_valid_persona_ids
+            ]
+
+        if request_data.documentIds:
+            # Intersect requested IDs with valid filtered IDs (before search filter)
+            # Search term should only affect display, not selected documents
+            selected_document_ids = [
+                did
+                for did in request_data.documentIds
+                if did in filtered_valid_document_ids_before_search
+            ]
+
+        if request_data.parameterIds:
+            # Intersect requested IDs with valid parameter IDs
+            selected_parameter_ids = [
+                pid for pid in request_data.parameterIds if pid in valid_parameter_ids
+            ]
+
+        if request_data.fieldIds:
+            # Intersect requested IDs with valid general field IDs
+            if filtered_valid_general_field_ids:
+                selected_field_ids = [
+                    item_id
+                    for item_id in request_data.fieldIds
+                    if item_id in filtered_valid_general_field_ids
+                ]
+            else:
+                # Fallback to valid field IDs if general not available
+                if filtered_valid_field_ids:
+                    selected_field_ids = [
+                        item_id
+                        for item_id in request_data.fieldIds
+                        if item_id in filtered_valid_field_ids
+                    ]
 
         response_data = VideoDetailResponse(
             name=video["name"],
@@ -1289,7 +1644,7 @@ async def get_video_detail(
             problem_statement_mapping=problem_statement_mapping,
             objective_ids=[str(oid) for oid in objective_ids],
             objective_mapping=objective_mapping,
-            document_ids=[str(did) for did in document_ids],
+            # document_ids will be set below with final values
             document_mapping=document_mapping_dict,
             document_details=document_details,
             valid_document_ids=filtered_valid_document_ids,
@@ -1308,34 +1663,40 @@ async def get_video_detail(
             parameter_mapping=parameter_mapping,
             field_mapping=field_mapping,
             parameter_item_ids=parameter_item_ids,
-            video_parameter_ids=video_parameter_ids,
             valid_parameter_ids=valid_parameter_ids,
-            persona_ids=persona_ids,
+            # persona_ids and video_parameter_ids will be set below with final values
             persona_mapping=persona_mapping,
             valid_persona_ids=filtered_valid_persona_ids,
             valid_field_ids=filtered_valid_field_ids,
             valid_general_field_ids=filtered_valid_general_field_ids,
             allowed_ranges=allowed_ranges,
-            # Calculate question count range based on video length
+            # Questions: 0-3 (default: 1) - calculated max from video length, min=1 for edit mode
             question_count_range=RangeMinMax(
-                min=0,
+                min=1,
                 max=min(3, (video["length_seconds"] // 4) + 1),
             ),
             randomized_selections=randomized_selections,
-            selected_persona_ids=request_data.personaIds,
-            selected_document_ids=request_data.documentIds,
-            selected_parameter_ids=request_data.parameterIds,
-            selected_field_ids=request_data.fieldIds,
+            randomized=randomization_occurred,
+            # IDs (apply randomized values directly to main fields)
+            persona_ids=[str(pid) for pid in final_persona_ids],
+            document_ids=[str(did) for did in final_document_ids],
+            video_parameter_ids=[str(pid) for pid in final_parameter_ids],
+            selected_persona_ids=selected_persona_ids,
+            selected_document_ids=selected_document_ids,
+            selected_template_document_ids=request_data.templateDocumentIds or [],
+            selected_parameter_ids=selected_parameter_ids,
+            selected_field_ids=final_field_ids if final_field_ids is not None else selected_field_ids,  # Apply randomized values
             persona_search=request_data.personaSearch,
             document_search=request_data.documentSearch,
             parameter_search=request_data.parameterSearch,
-            persona_min=request_data.personaMin,
-            persona_max=request_data.personaMax,
-            document_min=request_data.documentMin,
-            document_max=request_data.documentMax,
-            parameter_selection_min=request_data.parameterSelectionMin,
-            parameter_selection_max=request_data.parameterSelectionMax,
-            field_ranges=request_data.fieldRanges,
+            # Range values from request (default to 1 for personas, 1 for documents, 3 for parameters)
+            persona_min=persona_min,  # Already validated and defaulted to 1
+            persona_max=persona_max,  # Already validated and defaulted to 1
+            document_min=document_min,  # Already validated and defaulted to 0
+            document_max=document_max,  # Already validated and defaulted to 1
+            parameter_selection_min=parameter_selection_min,  # Already validated and defaulted to 0
+            parameter_selection_max=parameter_selection_max,  # Already validated and defaulted to 3
+            field_ranges=request_data.fieldRanges,  # Use request values like scenarios
         )
 
         # Cache response
