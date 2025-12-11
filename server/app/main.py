@@ -530,21 +530,8 @@ from app.socket.connect import connect  # type: ignore
 from app.socket.disconnect import disconnect  # type: ignore
 from app.socket.documents.generate import \
     document_generate  # noqa: E402; type: ignore
-from app.socket.images.complete import \
-    image_generation_complete  # noqa: E402; type: ignore
-from app.socket.images.generate import \
-    generate_image  # noqa: E402; type: ignore
-from app.socket.log import log_run  # type: ignore
 from app.socket.scenarios.generate import \
     generate_scenario  # noqa: E402; type: ignore
-from app.socket.scenarios.tools.document import \
-    scenario_tool_document  # noqa: F401, E402; type: ignore
-from app.socket.scenarios.tools.image import \
-    scenario_tool_image  # noqa: F401, E402; type: ignore
-from app.socket.scenarios.tools.objectives import \
-    scenario_tool_objectives  # noqa: F401, E402; type: ignore
-from app.socket.scenarios.tools.statement import \
-    scenario_tool_problem_statement  # noqa: F401, E402; type: ignore
 from app.socket.simulations import simulation_join  # type: ignore
 from app.socket.simulations import simulation_leave
 from app.socket.simulations.text.end import \
@@ -584,6 +571,13 @@ from app.socket.simulations.voice.user.transcript import \
 from app.socket.videos.generate import \
     video_generate  # noqa: E402; type: ignore
 from app.socket.videos.outline import video_outline  # noqa: E402; type: ignore
+# Import video tools to register internal_sio handlers
+from app.socket.videos.tools.document import video_tool_document  # noqa: F401
+from app.socket.videos.tools.image import video_tool_image  # noqa: F401
+from app.socket.videos.tools.outline import video_tool_outline  # noqa: F401
+from app.socket.videos.tools.questions import \
+    video_tool_questions  # noqa: F401
+from app.socket.videos.tools.video import video_tool_video  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
@@ -611,7 +605,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Configure Socket.IO loggers to prevent propagation to root logger
         # This prevents duplicate log entries (Socket.IO logs + root logger formatted logs)
-        for logger_name in ["socketio", "engineio", "socketio.server", "engineio.server"]:
+        for logger_name in [
+            "socketio",
+            "engineio",
+            "socketio.server",
+            "engineio.server",
+        ]:
             socketio_logger = logging.getLogger(logger_name)
             socketio_logger.propagate = False  # Prevent double logging
             # Update existing handlers or add new one
@@ -707,10 +706,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             # Add DBLogHandler to Socket.IO loggers so they write to database
             from app.utils.logging.db_logger import DBLogHandler  # noqa: E402
 
-            for logger_name in ["socketio", "engineio", "socketio.server", "engineio.server"]:
+            for logger_name in [
+                "socketio",
+                "engineio",
+                "socketio.server",
+                "engineio.server",
+            ]:
                 socketio_logger = logging.getLogger(logger_name)
                 # Only add DBLogHandler if not already present
-                if not any(isinstance(h, DBLogHandler) for h in socketio_logger.handlers):
+                if not any(
+                    isinstance(h, DBLogHandler) for h in socketio_logger.handlers
+                ):
                     db_handler = DBLogHandler()
                     db_handler.setLevel(logging.DEBUG)
                     socketio_logger.addHandler(db_handler)
@@ -1233,6 +1239,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.videos.outline import (
             video_outline_generation_complete, video_outline_generation_error,
             video_outline_generation_progress)
+        # Note: video document tool reuses document_tool_complete (already imported above)
+        from app.socket.videos.tools.image import \
+            image_tool_complete as video_image_tool_complete  # noqa: F401
+        from app.socket.videos.tools.outline import \
+            outline_tool_complete as video_outline_tool_complete  # noqa: F401
+        from app.socket.videos.tools.questions import \
+            questions_tool_complete as \
+            video_questions_tool_complete  # noqa: F401
+        from app.socket.videos.tools.video import \
+            video_tool_complete as video_video_tool_complete  # noqa: F401
 
         # Collect all unique emit functions (use one instance of each event name)
         server_to_client_stubs = [
@@ -1278,6 +1294,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             problem_statement_tool_complete,  # scenario_tool_problem_statement_complete
             objectives_tool_complete,  # scenario_tool_objectives_complete
             image_tool_complete,  # scenario_tool_image_complete
+            # Video tool events
+            video_questions_tool_complete,  # questions_tool_complete
+            video_outline_tool_complete,  # outline_tool_complete
+            # Note: video_image_tool_complete reuses image_tool_complete (already registered above for scenarios)
+            video_video_tool_complete,  # video_tool_complete
+            # Note: video_document_tool_complete reuses document_tool_complete (already registered above)
             # Voice events
             simulation_voice_start_response,
             simulation_voice_start_error,

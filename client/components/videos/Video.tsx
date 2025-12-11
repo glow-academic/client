@@ -378,7 +378,7 @@ export default function Video({
     }
   };
 
-  const handleGenerateOutline = async () => {
+  const handleGenerate = async () => {
     if (!socket || !isConnected || !effectiveProfile?.id) {
       toast.error("WebSocket not connected");
       return;
@@ -386,6 +386,11 @@ export default function Video({
 
     if (selectedDocumentIds.length === 0) {
       toast.error("Please select a policy");
+      return;
+    }
+
+    if (!videoId) {
+      toast.error("Please create the video first by clicking 'Create Video'");
       return;
     }
 
@@ -402,6 +407,14 @@ export default function Video({
     }
 
     setIsGeneratingOutline(true);
+    setIsGeneratingVideo(true);
+
+    // Track generated resources
+    const generatedImageIds: string[] = [];
+    const generatedQuestionIds: string[] = [];
+    let generatedOutlineId: string | null = null;
+    let generatedVideoUrl: string | null = null;
+
     try {
       // WebSocket payload type (not using GenerateOutlineIn since it's never)
       const body = {
@@ -454,13 +467,88 @@ export default function Video({
         }>;
         question_timestamps?: Record<string, number[]>;
       }>((resolve, reject) => {
+        const toastId = `video-generate-${Date.now()}`;
+        const initialMessage = "Starting video generation...";
+        toast.loading(initialMessage, { id: toastId });
+
         const handleProgress = (data: {
           type: string;
           message?: string;
+          tool_name?: string;
           trace_id?: string;
         }) => {
-          if (data.type === "start") {
-            toast.info(data.message || "Starting outline generation...");
+          const progressMessage =
+            data.message ||
+            (data.type === "start"
+              ? initialMessage
+              : data.tool_name
+                ? `Calling ${data.tool_name}...`
+                : "Processing...");
+          toast.loading(progressMessage, { id: toastId });
+        };
+
+        // Tool completion event handlers
+        const handleQuestionsComplete = (data: {
+          success: boolean;
+          question_ids: string[];
+          trace_id?: string;
+          message?: string;
+        }) => {
+          if (data.success) {
+            generatedQuestionIds.push(...data.question_ids);
+          }
+        };
+
+        const handleOutlineComplete = (data: {
+          success: boolean;
+          outline_id: string;
+          trace_id?: string;
+          message?: string;
+        }) => {
+          if (data.success) {
+            generatedOutlineId = data.outline_id;
+          }
+        };
+
+        const handleImageComplete = (data: {
+          success: boolean;
+          image_id: string;
+          trace_id?: string;
+          message?: string;
+        }) => {
+          if (data.success) {
+            generatedImageIds.push(data.image_id);
+          }
+        };
+
+        const handleVideoComplete = (data: {
+          success: boolean;
+          generation_id?: string;
+          trace_id?: string;
+          message?: string;
+        }) => {
+          // Video generation completion is handled separately via video_generation_complete
+        };
+
+        const handleDocumentComplete = (data: {
+          success: boolean;
+          document_id: string;
+          parent_document_id: string;
+          trace_id?: string;
+          message?: string;
+        }) => {
+          // Document completion tracking if needed
+        };
+
+        // Listen for video generation completion (from video_generate handler)
+        const handleVideoGenerationComplete = (data: {
+          success: boolean;
+          message: string;
+          videoUrl?: string;
+          videoId?: string;
+        }) => {
+          if (data.success && data.videoUrl) {
+            generatedVideoUrl = data.videoUrl;
           }
         };
 
@@ -483,11 +571,24 @@ export default function Video({
           question_timestamps?: Record<string, number[]>;
           trace_id?: string;
         }) => {
+          // Clean up all listeners
           socket.off("video_outline_generation_progress", handleProgress);
           socket.off("video_outline_generation_complete", handleComplete);
           socket.off("video_outline_generation_error", handleError);
+          socket.off("questions_tool_complete", handleQuestionsComplete);
+          socket.off("outline_tool_complete", handleOutlineComplete);
+          socket.off("image_tool_complete", handleImageComplete);
+          socket.off("video_tool_complete", handleVideoComplete);
+          socket.off("document_tool_complete", handleDocumentComplete);
+          socket.off(
+            "video_generation_complete",
+            handleVideoGenerationComplete
+          );
 
           if (data.success) {
+            toast.success(data.message || "Video generation completed!", {
+              id: toastId,
+            });
             const result: {
               success: boolean;
               message: string;
@@ -518,7 +619,10 @@ export default function Video({
               result.question_timestamps = data.question_timestamps;
             resolve(result);
           } else {
-            reject(new Error(data.message || "Outline generation failed"));
+            toast.error(data.message || "Video generation failed", {
+              id: toastId,
+            });
+            reject(new Error(data.message || "Video generation failed"));
           }
         };
 
@@ -527,16 +631,36 @@ export default function Video({
           message: string;
           trace_id?: string;
         }) => {
+          // Clean up all listeners
           socket.off("video_outline_generation_progress", handleProgress);
           socket.off("video_outline_generation_complete", handleComplete);
           socket.off("video_outline_generation_error", handleError);
+          socket.off("questions_tool_complete", handleQuestionsComplete);
+          socket.off("outline_tool_complete", handleOutlineComplete);
+          socket.off("image_tool_complete", handleImageComplete);
+          socket.off("video_tool_complete", handleVideoComplete);
+          socket.off("document_tool_complete", handleDocumentComplete);
+          socket.off(
+            "video_generation_complete",
+            handleVideoGenerationComplete
+          );
 
-          reject(new Error(data.message || "Outline generation failed"));
+          toast.error(data.message || "Video generation failed", {
+            id: toastId,
+          });
+          reject(new Error(data.message || "Video generation failed"));
         };
 
+        // Register all listeners
         socket.on("video_outline_generation_progress", handleProgress);
         socket.on("video_outline_generation_complete", handleComplete);
         socket.on("video_outline_generation_error", handleError);
+        socket.on("questions_tool_complete", handleQuestionsComplete);
+        socket.on("outline_tool_complete", handleOutlineComplete);
+        socket.on("image_tool_complete", handleImageComplete);
+        socket.on("video_tool_complete", handleVideoComplete);
+        socket.on("document_tool_complete", handleDocumentComplete);
+        socket.on("video_generation_complete", handleVideoGenerationComplete);
 
         socket.emit("video_outline", {
           departmentId: body.departmentId,
@@ -600,20 +724,25 @@ export default function Video({
           );
         }
 
-        toast.success(
-          questionCount[1] > 0
-            ? "Outline and questions generated successfully!"
-            : "Outline generated successfully!"
-        );
+        // Update generated video URL if available
+        if (generatedVideoUrl) {
+          setGeneratedVideoUrl(generatedVideoUrl);
+          setUploadedVideoFile(null);
+          setVideoObjectUrl(null);
+        }
       }
     } catch (error) {
       toast.error(
-        `Failed to generate outline: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to generate: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsGeneratingOutline(false);
+      setIsGeneratingVideo(false);
     }
   };
+
+  // Keep handleGenerateOutline for backward compatibility (can be removed later)
+  const handleGenerateOutline = handleGenerate;
 
   const handleGenerateVideo = async () => {
     if (!socket || !isConnected) {
@@ -2340,6 +2469,7 @@ export default function Video({
         videoObjectUrl={videoObjectUrl}
         isUploadingVideo={isUploadingVideo}
         isGeneratingVideo={isGeneratingVideo}
+        isGeneratingOutline={isGeneratingOutline}
         onOutlineChange={setOutlineText}
         onOutlineVersionSelect={handleOutlineVersionSelect}
         onResetOutline={handleResetOutline}
@@ -2366,8 +2496,7 @@ export default function Video({
         onVideoPreviewDocumentChange={(docId) =>
           setVideoPreviewDocumentId(docId)
         }
-        onGenerateOutline={() => handleGenerateOutline()}
-        onGenerateVideo={handleGenerateVideo}
+        onGenerate={handleGenerate}
         onResetContent={handleResetContent}
         onDragStartQuestion={handleDragStartQuestion}
         onDragOverQuestion={handleDragOverQuestion}

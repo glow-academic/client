@@ -110,6 +110,7 @@ export interface VideoContentSectionProps {
   videoObjectUrl: string | null;
   isUploadingVideo: boolean;
   isGeneratingVideo: boolean;
+  isGeneratingOutline: boolean;
 
   // Callbacks
   onOutlineChange: (value: string) => void;
@@ -133,8 +134,7 @@ export interface VideoContentSectionProps {
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageRemove: (index: number) => void;
   onVideoPreviewDocumentChange: (docId: string | null) => void;
-  onGenerateOutline: (instructions?: string) => void;
-  onGenerateVideo: () => void;
+  onGenerate: () => void;
   onResetContent: () => void;
   onDragStartQuestion: (e: React.DragEvent, index: number) => void;
   onDragOverQuestion: (e: React.DragEvent) => void;
@@ -204,8 +204,7 @@ export function VideoContentSection({
   onImageUpload,
   onImageRemove,
   onVideoPreviewDocumentChange,
-  onGenerateOutline,
-  onGenerateVideo,
+  onGenerate,
   onResetContent,
   onDragStartQuestion,
   onDragOverQuestion,
@@ -311,16 +310,21 @@ export function VideoContentSection({
           <Button
             variant="default"
             size="sm"
-            onClick={() => onGenerateOutline()}
-            disabled={isSubmitting || isGeneratingVideo || isReadonly}
+            onClick={onGenerate}
+            disabled={
+              isSubmitting ||
+              isGeneratingVideo ||
+              isGeneratingOutline ||
+              isReadonly
+            }
           >
-            {isGeneratingVideo ? (
+            {isGeneratingVideo || isGeneratingOutline ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Generating...
               </>
             ) : (
-              "Generate Outline"
+              "Generate"
             )}
           </Button>
           <Tooltip>
@@ -759,27 +763,6 @@ export function VideoContentSection({
                 </div>
               </div>
             )}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={onGenerateVideo}
-              disabled={
-                isSubmitting ||
-                isGeneratingVideo ||
-                isUploadingVideo ||
-                isReadonly ||
-                !outline.trim()
-              }
-            >
-              {isGeneratingVideo ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                "Generate Video"
-              )}
-            </Button>
           </div>
 
           {/* Documents Column (Right) */}
