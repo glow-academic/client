@@ -773,6 +773,62 @@ export default function Scenario({
     // Simple merge: server versions + local versions (local takes precedence if same ID)
     return { ...serverMapping, ...localMapping };
   }, [scenarioData?.problem_statement_mapping, localProblemStatementVersions]);
+
+  // Extract template document IDs from document_mapping
+  // Template documents are documents that have parent_document_id (generated from a parent)
+  // OR documents that are referenced as parent_document_id by other documents (parent templates)
+  // This runs whenever documentMapping changes (similar to Video.tsx)
+  useEffect(() => {
+    if (documentMapping && Object.keys(documentMapping).length > 0) {
+      // First, find all documents that have parent_document_id (generated templates)
+      const generatedTemplateDocIds = Object.entries(documentMapping)
+        .filter(([docId, doc]) => {
+          const docWithParent = doc as DocumentMappingItem;
+          const hasParent = !!(
+            docWithParent?.parent_document_id &&
+            docWithParent.parent_document_id.trim()
+          );
+          return hasParent;
+        })
+        .map(([docId]) => docId);
+
+      // Second, find all documents that are referenced as parent_document_id (parent templates)
+      const parentTemplateDocIds = Object.keys(documentMapping).filter(
+        (docId) => {
+          // Check if any other document has this docId as its parent_document_id
+          return Object.values(documentMapping).some((doc) => {
+            const docWithParent = doc as DocumentMappingItem;
+            return (
+              docWithParent?.parent_document_id === docId &&
+              docWithParent.parent_document_id.trim()
+            );
+          });
+        }
+      );
+
+      // Combine both: generated templates + parent templates
+      const templateDocIds = [
+        ...new Set([...generatedTemplateDocIds, ...parentTemplateDocIds]),
+      ];
+
+      if (templateDocIds.length > 0) {
+        setCurrentTemplateDocumentIds(templateDocIds);
+      } else {
+        // Fallback: if no parent_document_id relationships found, check document names
+        // Documents with "Template" in name might be templates
+        const templateByNameDocIds = Object.entries(documentMapping)
+          .filter(([_, doc]) => {
+            const docItem = doc as DocumentMappingItem;
+            return docItem?.name?.toLowerCase().includes("template") ?? false;
+          })
+          .map(([docId]) => docId);
+        if (templateByNameDocIds.length > 0) {
+          setCurrentTemplateDocumentIds(templateByNameDocIds);
+        }
+      }
+    }
+  }, [documentMapping]);
+
   // Combine currentDocumentIds and currentTemplateDocumentIds for preview
   // Filter out parent documents if their template document exists
   const allPreviewDocumentIds = useMemo(() => {
