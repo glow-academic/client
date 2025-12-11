@@ -384,7 +384,24 @@ def filter_valid_document_ids(
             )
         ]
 
-    if len(selected_field_ids) == 0:
+    # Apply field-based filtering (bidirectional: fields → documents)
+    # BUT: Only filter by fields that belong to document parameters
+    # Filter out non-document-parameter fields from selected_field_ids
+    document_parameter_field_ids = []
+    if selected_field_ids:
+        for field_id in selected_field_ids:
+            if not field_id:
+                continue
+            field = field_mapping.get(field_id)
+            if not field or not field.parameter_id:
+                continue
+            # Only include fields that belong to document parameters
+            param = parameter_mapping.get(field.parameter_id)
+            if param and param.document_parameter:
+                document_parameter_field_ids.append(field_id)
+    
+    # Only apply field-based filtering if we have document parameter fields
+    if len(document_parameter_field_ids) == 0:
         return preserve_order_union_selected_first(selected_doc_ids, param_filtered)
 
     selected_doc_ids_for_filter = set(selected_doc_ids)
@@ -399,13 +416,15 @@ def filter_valid_document_ids(
         if doc_mapping_item and doc_mapping_item.field_ids:
             doc_field_ids = doc_mapping_item.field_ids
 
-        if len(doc_field_ids) == 0 and len(selected_field_ids) > 0:
+        # If document has no fields at all, and we have selected document parameter fields, filter it out
+        if len(doc_field_ids) == 0 and len(document_parameter_field_ids) > 0:
             continue
 
         doc_field_set = set(doc_field_ids)
 
+        # Check each selected document parameter field: document must have the exact selected field
         has_all_fields = True
-        for selected_field_id in selected_field_ids:
+        for selected_field_id in document_parameter_field_ids:
             if not selected_field_id:
                 continue
 
