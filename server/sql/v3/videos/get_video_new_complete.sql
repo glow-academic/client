@@ -263,6 +263,42 @@ valid_document_ids_data AS (
     SELECT ARRAY_AGG(id::text ORDER BY id) as document_ids
     FROM document_data
 ),
+document_details_data AS (
+    SELECT COALESCE(
+        (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'document_id', dd.id::text,
+                    'name', dd.name,
+                    'updatedAt', d.updated_at::text,
+                    'extension', COALESCE(
+                        CASE 
+                            WHEN dd.file_path IS NOT NULL AND dd.file_path != '' THEN SUBSTRING(dd.file_path FROM '\.([^\.]+)$')
+                            ELSE NULL
+                        END,
+                        ''
+                    ),
+                    'scenario_ids', '[]'::jsonb,
+                    'can_edit', true,
+                    'can_delete', true,
+                    'active', d.active,
+                    'file_path', COALESCE(dd.file_path, ''),
+                    'mime_type', COALESCE(dd.mime_type, ''),
+                    'upload_id', COALESCE(NULLIF(dd.upload_id, ''), NULL),
+                    'parameter_item_ids', COALESCE((
+                        SELECT jsonb_agg(df.field_id::text)
+                        FROM document_fields df
+                        WHERE df.document_id = dd.id AND df.active = true
+                    ), '[]'::jsonb)
+                ) ORDER BY dd.name
+            )
+            FROM document_data dd
+            JOIN documents d ON d.id = dd.id
+            WHERE d.active = true
+        ),
+        '[]'::jsonb
+    ) as document_details
+),
 -- Objectives (shared between scenarios only - videos now use outlines)
 objectives_data AS (
     SELECT DISTINCT
@@ -546,6 +582,7 @@ SELECT
     COALESCE((SELECT mapping FROM problem_statement_mapping_data), '{}'::jsonb) as problem_statement_mapping,
     COALESCE((SELECT mapping FROM document_mapping_data), '{}'::jsonb) as document_mapping,
     COALESCE((SELECT document_ids FROM valid_document_ids_data), ARRAY[]::text[]) as valid_document_ids,
+    COALESCE((SELECT document_details FROM document_details_data), '[]'::jsonb) as document_details,
     COALESCE((SELECT objectives_history FROM objectives_history_data), ARRAY[]::text[]) as objectives_history,
     (SELECT role FROM user_profile) as user_role,
     (SELECT primary_department_id::text FROM user_profile) as primary_department_id,

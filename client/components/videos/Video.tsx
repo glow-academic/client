@@ -2344,6 +2344,15 @@ export default function Video({
         documentMapping={documentMapping}
         selectedDocumentIds={selectedDocumentIds}
         templateDocumentIds={[]}
+        {...(videoData?.document_details
+          ? {
+              documentDetails: videoData.document_details as Array<{
+                document_id: string;
+                upload_id?: string | null;
+                [key: string]: unknown;
+              }>,
+            }
+          : {})}
         searchTerm=""
         minMax={{ min: 1, max: 2 }}
         previewDocumentId={null}
