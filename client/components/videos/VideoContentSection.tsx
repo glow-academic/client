@@ -23,6 +23,7 @@ import DocumentViewer, {
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -103,6 +104,7 @@ export interface VideoContentSectionProps {
   documentMapping: Record<string, DocumentMappingItem>;
   videoPreviewDocumentId: string | null;
   documentDetails?: Array<{ document_id: string; [key: string]: unknown }>;
+  templateDocumentIds?: string[];
 
   // Video
   generatedVideoUrl: string | null;
@@ -183,6 +185,7 @@ export function VideoContentSection({
   documentMapping,
   videoPreviewDocumentId,
   documentDetails,
+  templateDocumentIds = [],
   generatedVideoUrl,
   uploadedVideoFile,
   videoObjectUrl,
@@ -773,6 +776,12 @@ export function VideoContentSection({
                 <div className="overflow-y-auto flex-1">
                   {allPreviewDocumentIds.map((docId) => {
                     const doc = documentMapping[docId];
+                    const fullDoc = documentDetails?.find(
+                      (d) => d.document_id === docId
+                    );
+                    const isTemplateDocument =
+                      (fullDoc as { is_template?: boolean })?.is_template ||
+                      templateDocumentIds.includes(docId);
                     if (!doc) return null;
                     return (
                       <div
@@ -787,23 +796,96 @@ export function VideoContentSection({
                           )
                         }
                       >
-                        <div className="font-medium text-sm">{doc.name}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium text-sm">{doc.name}</div>
+                          {isTemplateDocument && (
+                            <Badge variant="secondary" className="text-xs">
+                              Template
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
-              {videoPreviewDocumentId &&
-                (() => {
-                  const previewDoc = documentDetails?.find(
-                    (d) => d.document_id === videoPreviewDocumentId
-                  );
-                  return previewDoc ? (
-                    <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
-                      <DocumentViewer document={previewDoc as DocumentItem} />
-                    </div>
-                  ) : null;
-                })()}
+              {videoPreviewDocumentId && (
+                <div className="relative border rounded-lg overflow-hidden max-h-[300px]">
+                  {(() => {
+                    const docId = videoPreviewDocumentId;
+                    const fullDoc = documentDetails?.find(
+                      (d) => d.document_id === docId
+                    );
+                    const isTemplateDocument =
+                      (fullDoc as { is_template?: boolean })?.is_template ||
+                      templateDocumentIds.includes(docId);
+
+                    const docForViewer: DocumentItem = fullDoc
+                      ? ({
+                          document_id: fullDoc.document_id,
+                          name:
+                            (fullDoc as { name?: string }).name ||
+                            documentMapping[docId]?.name ||
+                            "Document",
+                          updatedAt:
+                            (fullDoc as { updatedAt?: string }).updatedAt ||
+                            new Date().toISOString(),
+                          extension:
+                            (fullDoc as { extension?: string }).extension || "",
+                          scenario_ids: [],
+                          can_edit: false,
+                          can_delete: false,
+                          active: true,
+                          department_ids: null,
+                          upload_id:
+                            (fullDoc as { upload_id?: string | null })
+                              .upload_id ?? null,
+                          parameter_item_ids: [],
+                          field_ids: [],
+                        } as DocumentItem)
+                      : ({
+                          document_id: docId,
+                          name: documentMapping[docId]?.name || "Document",
+                          updatedAt: new Date().toISOString(),
+                          extension: "",
+                          scenario_ids: [],
+                          can_edit: false,
+                          can_delete: false,
+                          active: true,
+                          department_ids: null,
+                          field_ids: [],
+                          parameter_item_ids: [],
+                          upload_id: null,
+                        } as DocumentItem);
+
+                    return (
+                      <>
+                        <div
+                          className={cn(
+                            "h-full overflow-auto p-4 max-h-[300px]",
+                            isTemplateDocument && "opacity-20"
+                          )}
+                        >
+                          <DocumentViewer
+                            document={docForViewer}
+                            bare={true}
+                            isFormDocument={false}
+                            compact={isTemplateDocument}
+                          />
+                        </div>
+                        {isTemplateDocument && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                            <p className="text-sm font-medium text-foreground px-4 py-2 rounded text-center">
+                              Document will be automatically generated from this
+                              template
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           )}
         </div>

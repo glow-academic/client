@@ -2511,6 +2511,7 @@ export default function Video({
         allPreviewDocumentIds={selectedDocumentIds}
         documentMapping={documentMapping}
         videoPreviewDocumentId={videoPreviewDocumentId}
+        templateDocumentIds={templateDocumentIds}
         generatedVideoUrl={generatedVideoUrl}
         uploadedVideoFile={uploadedVideoFile}
         videoObjectUrl={videoObjectUrl}

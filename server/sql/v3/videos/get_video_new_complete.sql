@@ -289,7 +289,15 @@ document_details_data AS (
                         SELECT jsonb_agg(df.field_id::text)
                         FROM document_fields df
                         WHERE df.document_id = dd.id AND df.active = true
-                    ), '[]'::jsonb)
+                    ), '[]'::jsonb),
+                    'is_template', CASE 
+                        WHEN d.template = true THEN true
+                        WHEN EXISTS(
+                            SELECT 1 FROM document_templates dt2 
+                            WHERE dt2.document_id = d.id AND dt2.active = true
+                        ) THEN true
+                        ELSE false
+                    END
                 ) ORDER BY dd.name
             )
             FROM document_data dd

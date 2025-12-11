@@ -654,6 +654,7 @@ async def get_video_new(
                         "mime_type": doc.get("mime_type") or None,
                         "upload_id": doc.get("upload_id") or None,
                         "parameter_item_ids": doc.get("parameter_item_ids", []),
+                        "is_template": doc.get("is_template", False),
                     })
 
         # Parse objectives_history
