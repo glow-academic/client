@@ -4,28 +4,19 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    DocumentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ParameterMapping,
-    PersonaMapping,
-    PersonaMappingItem,
-)
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              DocumentMapping, DocumentMappingItem,
+                              FieldMapping, FieldMappingItem, ParameterMapping,
+                              PersonaMapping, PersonaMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 def preserve_order_union_selected_first(
@@ -74,6 +65,8 @@ class VideoDetailRequest(BaseModel):
     documentMax: int | None = None
     parameterSelectionMin: int | None = None
     parameterSelectionMax: int | None = None
+    questionsMin: int | None = None
+    questionsMax: int | None = None
     # Per-parameter field ranges (dict: {paramId: {"min": int, "max": int}})
     fieldRanges: dict[str, dict[str, int]] | None = None
     # Randomization parameter (single param: "all", "persona", "document", "parameters", or "parameter_{field_id}")
@@ -176,6 +169,8 @@ class VideoDetailResponse(BaseModel):
     valid_general_field_ids: list[str] | None = None  # Filtered based on personas/documents/parameters
     # Allowed ranges (computed from filtered IDs, capped at 5)
     allowed_ranges: AllowedRanges | None = None
+    # Question count range (computed from video length)
+    question_count_range: RangeMinMax
     # Randomized selections (if randomization params provided)
     randomized_selections: RandomizedSelections | None = None
     # Selected IDs from request (filtered to valid ones) - server-driven approach
@@ -1216,6 +1211,11 @@ async def get_video_detail(
             valid_field_ids=filtered_valid_field_ids,
             valid_general_field_ids=filtered_valid_general_field_ids,
             allowed_ranges=allowed_ranges,
+            # Calculate question count range based on video length
+            question_count_range=RangeMinMax(
+                min=0,
+                max=min(5, (video["length_seconds"] // 4) + 1),
+            ),
             randomized_selections=randomized_selections,
             selected_persona_ids=request_data.personaIds,
             selected_document_ids=request_data.documentIds,

@@ -86,7 +86,8 @@ class GenerateVideoOutlinePayload(BaseModel):
     profileId: str | None = None
     videoId: str | None = None
     videoLengthSeconds: int | None = None
-    useQuestions: bool = True
+    questionsMin: int | None = None
+    questionsMax: int | None = None
     personaIds: list[str] | None = None
 
 
@@ -354,7 +355,10 @@ async def _video_outline_impl(
 
             # Create outline generation tools
             group_id = None
-            use_questions = data.useQuestions if hasattr(data, "useQuestions") else True
+            # Use questionsMax to determine if questions should be generated
+            use_questions = (
+                data.questionsMax is not None and data.questionsMax > 0
+            ) if hasattr(data, "questionsMax") else False
 
             # Use video_id as primary_id if available, otherwise trace_id
             primary_id = str(video_id) if video_id else trace_id

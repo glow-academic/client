@@ -4,7 +4,6 @@
  */
 "use client";
 import {
-  Check,
   ChevronDown,
   ChevronUp,
   GripVertical,
@@ -12,7 +11,6 @@ import {
   Loader2,
   PlusCircle,
   RotateCcw,
-  Target,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -23,6 +21,7 @@ import DocumentViewer, {
 } from "@/components/common/chat/viewers/DocumentViewer";
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,19 +32,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -54,7 +40,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { ChevronsUpDown } from "lucide-react";
 
 type StepStatus = "pending" | "active" | "completed";
 
@@ -95,10 +80,10 @@ export interface VideoContentSectionProps {
   originalOutline: string;
 
   // Questions
-  useQuestions: boolean;
+  questionCountRange: { min: number; max: number };
+  questionCount: [number, number]; // [min, max]
+  onQuestionCountChange: (min: number, max: number) => void;
   questions: Question[];
-  outlineVideoLength: number;
-  onOutlineVideoLengthChange: (length: number) => void;
 
   // Images
   useImage: boolean;
@@ -129,7 +114,6 @@ export interface VideoContentSectionProps {
   onOutlineChange: (value: string) => void;
   onOutlineVersionSelect: (id: string) => void;
   onResetOutline: () => void;
-  onUseQuestionsChange: (enabled: boolean) => void;
   onQuestionsChange: (questions: Question[]) => void;
   onAddQuestion: () => void;
   onRemoveQuestion: (index: number) => void;
@@ -185,10 +169,10 @@ export function VideoContentSection({
   currentOutlineIds: _currentOutlineIds,
   hasOutlineChanges,
   originalOutline: _originalOutline,
-  useQuestions,
+  questionCountRange,
+  questionCount,
+  onQuestionCountChange,
   questions,
-  outlineVideoLength,
-  onOutlineVideoLengthChange,
   useImage,
   images,
   imageMapping: _imageMapping,
@@ -205,7 +189,6 @@ export function VideoContentSection({
   onOutlineChange,
   onOutlineVersionSelect,
   onResetOutline,
-  onUseQuestionsChange,
   onQuestionsChange: _onQuestionsChange,
   onAddQuestion,
   onRemoveQuestion,
@@ -245,79 +228,6 @@ export function VideoContentSection({
   );
 
   // Video length picker component
-  const VIDEO_LENGTHS = [
-    { value: 4, label: "4 seconds" },
-    { value: 8, label: "8 seconds" },
-    { value: 12, label: "12 seconds" },
-    { value: 16, label: "16 seconds" },
-    { value: 20, label: "20 seconds" },
-    { value: 24, label: "24 seconds" },
-    { value: 28, label: "28 seconds" },
-    { value: 32, label: "32 seconds" },
-  ];
-
-  const VideoLengthPicker = ({
-    value,
-    onValueChange,
-    disabled = false,
-  }: {
-    value: number;
-    onValueChange: (value: number) => void;
-    disabled?: boolean;
-  }) => {
-    const [open, setOpen] = useState(false);
-    const selectedLabel =
-      VIDEO_LENGTHS.find((vl) => vl.value === value)?.label || "Select length";
-
-    return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            aria-label="Select video length"
-            size="sm"
-            className={cn(
-              "w-[140px] justify-between",
-              disabled && "opacity-50"
-            )}
-            disabled={disabled}
-          >
-            <span className="truncate text-left">{selectedLabel}</span>
-            <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2 h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="w-[200px] p-0">
-          <Command>
-            <CommandList>
-              <CommandEmpty>No length found.</CommandEmpty>
-              <CommandGroup>
-                {VIDEO_LENGTHS.map((vl) => (
-                  <CommandItem
-                    key={vl.value}
-                    onSelect={() => {
-                      onValueChange(vl.value);
-                      setOpen(false);
-                    }}
-                    className="flex items-center justify-between"
-                  >
-                    {vl.label}
-                    <Check
-                      className={cn(
-                        "ml-auto h-4 w-4",
-                        value === vl.value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    );
-  };
 
   const toggleQuestionExpanded = (index: number) => {
     setExpandedQuestions((prev) => {
@@ -333,7 +243,10 @@ export function VideoContentSection({
 
   const handleQuestionTimeChange = (index: number, timeStr: string) => {
     const time = parseInt(timeStr, 10);
-    if (isNaN(time) || time < 0 || time > outlineVideoLength) {
+    // Approximate video length from question count: max questions = floor(length/4)+1, so length ≈ (max-1)*4
+    const estimatedVideoLength =
+      questionCount[1] > 0 ? (questionCount[1] - 1) * 4 : 8;
+    if (isNaN(time) || time < 0 || time > estimatedVideoLength) {
       return;
     }
     const currentQuestion = questions[index];
@@ -384,10 +297,15 @@ export function VideoContentSection({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <VideoLengthPicker
-            value={outlineVideoLength}
-            onValueChange={onOutlineVideoLengthChange}
+          <RangeSlider
+            min={questionCountRange.min}
+            max={questionCountRange.max}
+            value={questionCount}
+            onValueChange={([min, max]) =>
+              onQuestionCountChange(min ?? 0, max ?? 0)
+            }
             disabled={isReadonly}
+            className="w-[200px] mr-4"
           />
           <Button
             variant="default"
@@ -520,35 +438,12 @@ export function VideoContentSection({
           />
         </div>
 
-        {/* Use Questions Switch */}
-        <div className="space-y-1 pt-2">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="use-questions"
-              className="text-sm flex items-center gap-1.5"
-            >
-              <Target className="h-3.5 w-3.5 text-muted-foreground" />
-              Use Questions
-            </Label>
-            <Switch
-              id="use-questions"
-              checked={useQuestions}
-              onCheckedChange={onUseQuestionsChange}
-              disabled={isReadonly}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground pl-5">
-            Generate and manage questions for this video
-          </p>
-        </div>
-
         {/* Questions List */}
-        {useQuestions && (
+        {questionCount[1] > 0 && (
           <div className="space-y-2 pt-4 border-t">
             <div className="flex items-center justify-between">
               <Label>
-                Questions ({questions.length}/
-                {Math.floor(outlineVideoLength / 4) + 1})
+                Questions ({questions.length}/{questionCount[1]})
               </Label>
             </div>
             {questions.length > 0 && (
@@ -591,7 +486,9 @@ export function VideoContentSection({
                       <Input
                         type="number"
                         min="0"
-                        max={outlineVideoLength}
+                        max={
+                          questionCount[1] > 0 ? (questionCount[1] - 1) * 4 : 8
+                        }
                         value={question.times[0] ?? ""}
                         onChange={(e) =>
                           handleQuestionTimeChange(index, e.target.value)
@@ -745,10 +642,7 @@ export function VideoContentSection({
                 variant="outline"
                 size="sm"
                 onClick={onAddQuestion}
-                disabled={
-                  isReadonly ||
-                  questions.length >= Math.floor(outlineVideoLength / 4) + 1
-                }
+                disabled={isReadonly || questions.length >= questionCount[1]}
               >
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Add Question

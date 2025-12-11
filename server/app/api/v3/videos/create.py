@@ -4,13 +4,12 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -35,7 +34,7 @@ class CreateVideoRequest(BaseModel):
     """Request to create a video."""
 
     name: str
-    length_seconds: int
+    length_seconds: int | None = None  # Optional, defaults to 8 if not provided
     upload_id: str | None = None
     department_ids: list[str] | None
     outline_ids: list[str] | None = None
@@ -74,9 +73,11 @@ async def create_video(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Validate length_seconds
-        if request.length_seconds <= 0:
-            raise ValueError("length_seconds must be greater than 0")
+        # Default length_seconds to 8 if not provided
+        if request.length_seconds is not None and request.length_seconds > 0:
+            length_seconds = request.length_seconds
+        else:
+            length_seconds = 8
 
         # Ensure arrays are not None (use empty arrays)
         department_ids = request.department_ids or []
@@ -112,7 +113,7 @@ async def create_video(
         sql_query = load_sql("sql/v3/videos/create_video_complete.sql")
         sql_params = (
             request.name,
-            request.length_seconds,
+            length_seconds,
             request.active,
             department_ids if department_ids else None,
             outline_ids if outline_ids else None,

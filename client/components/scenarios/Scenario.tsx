@@ -450,6 +450,8 @@ export default function Scenario({
         fieldIds: body.fieldIds, // Renamed from parameterItemIds
         profileId: body.profileId,
         scenarioId: scenarioId || undefined, // Pass scenarioId if in edit mode
+        objectivesMin: objectiveCount[0] > 0 ? objectiveCount[0] : undefined,
+        objectivesMax: objectiveCount[1] > 0 ? objectiveCount[1] : undefined,
       });
     });
   };
@@ -535,7 +537,10 @@ export default function Scenario({
   const useDocuments = true;
   const documentVisionEnabled = false;
   const [useImage, setUseImage] = useState(false);
-  const [useObjectives, setUseObjectives] = useState(false);
+  // Objective count state: [min, max] - initialized from server or URL params
+  const [objectiveCount, setObjectiveCount] = useState<[number, number]>([
+    0, 0,
+  ]);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
@@ -1363,8 +1368,13 @@ export default function Scenario({
         }>;
       };
       // Documents are always enabled (no switch)
-      // Load objectives_enabled
-      setUseObjectives(scenarioDataWithFlags.objectives_enabled ?? false);
+      // Initialize objective count from server data or default to [0, 0]
+      if (scenarioDataWithFlags?.objective_count_range) {
+        setObjectiveCount([
+          scenarioDataWithFlags.objective_count_range.min || 0,
+          scenarioDataWithFlags.objective_count_range.max || 0,
+        ]);
+      }
       // Load image_enabled and scenario image (single image - take first if exists)
       const imageEnabled = scenarioDataWithFlags.image_enabled ?? false;
       setUseImage(imageEnabled);
@@ -1563,8 +1573,12 @@ export default function Scenario({
   // Compute expected agent role from current flags
   const expectedScenarioRole = useMemo(() => {
     const documentsEnabled = currentDocumentIds.length > 0;
-    return getScenarioAgentRole(useImage, useObjectives, documentsEnabled);
-  }, [useImage, useObjectives, currentDocumentIds, getScenarioAgentRole]);
+    return getScenarioAgentRole(
+      useImage,
+      objectiveCount[1] > 0,
+      documentsEnabled
+    );
+  }, [useImage, objectiveCount, currentDocumentIds, getScenarioAgentRole]);
 
   // Reset initialization flag when switching between edit/create modes or scenario changes
   useEffect(() => {
@@ -2390,7 +2404,7 @@ export default function Scenario({
             ...payload,
             documents_enabled: useDocuments,
             document_vision_enabled: documentVisionEnabled,
-            objectives_enabled: useObjectives,
+            objectives_enabled: objectiveCount[1] > 0,
             image_enabled: useImage,
           });
           toast.success("Scenario updated successfully!");
@@ -2408,7 +2422,7 @@ export default function Scenario({
             ...payload,
             documents_enabled: useDocuments,
             document_vision_enabled: documentVisionEnabled,
-            objectives_enabled: useObjectives,
+            objectives_enabled: objectiveCount[1] > 0,
             image_enabled: useImage,
           });
           // Clear local versions after successful creation
@@ -2673,7 +2687,18 @@ export default function Scenario({
               originalProblemStatement={
                 originalFormData?.problemStatement || ""
               }
-              useObjectives={useObjectives}
+              objectiveCountRange={
+                scenarioData?.objective_count_range
+                  ? {
+                      min: scenarioData.objective_count_range.min,
+                      max: scenarioData.objective_count_range.max,
+                    }
+                  : { min: 0, max: 5 }
+              }
+              objectiveCount={objectiveCount}
+              onObjectiveCountChange={(min, max) =>
+                setObjectiveCount([min, max])
+              }
               objectives={currentObjectives}
               objectivesHistory={objectivesHistory}
               useImage={useImage}
@@ -2707,16 +2732,6 @@ export default function Scenario({
                   originalFormData?.problemStatement || ""
                 )
               }
-              onUseObjectivesChange={(enabled) => {
-                setUseObjectives(enabled);
-                if (enabled) {
-                  if (currentObjectives.length === 0) {
-                    setCurrentObjectives([""]);
-                  }
-                } else {
-                  setCurrentObjectives([]);
-                }
-              }}
               onObjectivesChange={setCurrentObjectives}
               onAddObjective={addObjective}
               onRemoveObjective={removeObjective}

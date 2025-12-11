@@ -93,6 +93,8 @@ class ScenarioDetailRequest(BaseModel):
     documentMax: int | None = None
     parameterSelectionMin: int | None = None
     parameterSelectionMax: int | None = None
+    objectivesMin: int | None = None
+    objectivesMax: int | None = None
     # Per-parameter field ranges (dict: {paramId: {"min": int, "max": int}})
     fieldRanges: dict[str, dict[str, int]] | None = (
         None  # Renamed from parameterItemRanges
@@ -101,7 +103,6 @@ class ScenarioDetailRequest(BaseModel):
     randomize: str | None = None
     # Agent filtering parameters
     useImage: bool | None = None
-    useObjectives: bool | None = None
     # URL parameters for linking generated resources
     imageIds: list[str] | None = None
     objectiveIds: list[str] | None = None
@@ -248,6 +249,8 @@ class ScenarioDetailResponse(BaseModel):
     )
     # Allowed ranges (computed from filtered IDs, capped at 5)
     allowed_ranges: AllowedRanges | None = None
+    # Objective count range (default: min=0, max=5)
+    objective_count_range: RangeMinMax
     # Randomized selections (if randomization params provided)
     randomized_selections: RandomizedSelections | None = None
 
@@ -804,11 +807,15 @@ async def get_scenario_detail(
             except (ValueError, TypeError):
                 problem_statement_ids_uuid = None
         
+        # Derive useObjectives from objectivesMax for backward compatibility with SQL
+        use_objectives = (
+            request_data.objectivesMax is not None and request_data.objectivesMax > 0
+        )
         sql_params = (
             request_data.scenarioId,
             request_data.profileId,
             request_data.useImage,
-            request_data.useObjectives,
+            use_objectives,
             document_ids_uuid,
             problem_statement_ids_uuid,
             template_document_ids_uuid,
@@ -1576,6 +1583,8 @@ async def get_scenario_detail(
             valid_field_ids=filtered_valid_field_ids,  # Renamed from valid_parameter_item_ids
             valid_general_field_ids=filtered_valid_general_field_ids,  # Renamed from valid_general_parameter_item_ids
             allowed_ranges=allowed_ranges,
+            # Objective count range (default: min=0, max=5)
+            objective_count_range=RangeMinMax(min=0, max=5),
             randomized_selections=randomized_selections,
             scenario_images=scenario_images,
             objective_ids=objective_ids,

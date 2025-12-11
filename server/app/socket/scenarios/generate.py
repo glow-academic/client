@@ -80,6 +80,8 @@ class GenerateScenarioAIPayload(BaseModel):
     fieldIds: list[str] | None = None
     profileId: str | None = None
     scenarioId: str | None = None  # Optional scenario ID to link generated resources
+    objectivesMin: int | None = None
+    objectivesMax: int | None = None
 
 
 # Emit helper functions
@@ -496,9 +498,16 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # Base 'scenario' role supports all tools (backward compatibility)
             # Fine-grained roles indicate specific capabilities
             agent_role_str = str(agent_role).lower()
+            # Check if objectives should be generated based on objectivesMax
+            objectives_requested = (
+                data.objectivesMax is not None and data.objectivesMax > 0
+            ) if hasattr(data, "objectivesMax") else False
             objectives_enabled = (
-                agent_role_str == "scenario"  # Base role supports all
-                or "objectives" in agent_role_str
+                objectives_requested
+                and (
+                    agent_role_str == "scenario"  # Base role supports all
+                    or "objectives" in agent_role_str
+                )
             )
             images_enabled = (
                 agent_role_str == "scenario"  # Base role supports all
@@ -603,12 +612,15 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     Returns:
                         Confirmation message
                     """
-                    # Limit to maximum 3 objectives
-                    objectives = objectives[:3]
+                    # Limit objectives based on objectivesMax if provided, otherwise max 3
+                    max_objectives = (
+                        min(data.objectivesMax, 5) if hasattr(data, "objectivesMax") and data.objectivesMax is not None else 3
+                    )
+                    objectives = objectives[:max_objectives]
 
-                    if len(objectives) < 1 or len(objectives) > 3:
+                    if len(objectives) < 1 or len(objectives) > max_objectives:
                         logger.warning(
-                            f"Objectives count ({len(objectives)}) outside recommended range of 1-3"
+                            f"Objectives count ({len(objectives)}) outside recommended range of 1-{max_objectives}"
                         )
 
                     # Emit to internal bus for objectives creation

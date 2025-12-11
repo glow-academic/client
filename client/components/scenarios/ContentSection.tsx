@@ -11,7 +11,6 @@ import {
   MessageSquare,
   PlusCircle,
   RotateCcw,
-  Target,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -23,6 +22,7 @@ import DocumentViewer, {
 import ImageViewer from "@/components/common/chat/viewers/ImageViewer";
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,7 +76,7 @@ function ObjectiveInputWithAutocomplete({
   onDrop,
   onRemove,
   totalObjectives,
-  useObjectives,
+  objectivesEnabled,
 }: {
   index: number;
   value: string;
@@ -90,7 +90,7 @@ function ObjectiveInputWithAutocomplete({
   onDrop: (e: React.DragEvent) => void;
   onRemove: () => void;
   totalObjectives: number;
-  useObjectives: boolean;
+  objectivesEnabled: boolean;
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -175,7 +175,7 @@ function ObjectiveInputWithAutocomplete({
             </div>
           )}
         </div>
-        {!(useObjectives && totalObjectives === 1) && (
+        {!(objectiveCount[1] > 0 && totalObjectives === 1) && (
           <Button
             type="button"
             variant="outline"
@@ -217,7 +217,9 @@ export interface ContentSectionProps {
   originalProblemStatement: string;
 
   // Objectives
-  useObjectives: boolean;
+  objectiveCountRange: { min: number; max: number };
+  objectiveCount: [number, number]; // [min, max]
+  onObjectiveCountChange: (min: number, max: number) => void;
   objectives: string[];
   objectivesHistory: string[];
 
@@ -246,7 +248,6 @@ export interface ContentSectionProps {
   onProblemStatementChange: (value: string) => void;
   onProblemStatementVersionSelect: (id: string) => void;
   onResetProblemStatement: () => void;
-  onUseObjectivesChange: (enabled: boolean) => void;
   onObjectivesChange: (objectives: string[]) => void;
   onAddObjective: () => void;
   onRemoveObjective: (index: number) => void;
@@ -288,7 +289,9 @@ export function ContentSection({
   currentProblemStatementIds: _currentProblemStatementIds,
   hasProblemStatementChanges,
   originalProblemStatement: _originalProblemStatement,
-  useObjectives,
+  objectiveCountRange,
+  objectiveCount,
+  onObjectiveCountChange,
   objectives,
   objectivesHistory,
   useImage,
@@ -305,7 +308,6 @@ export function ContentSection({
   onProblemStatementChange,
   onProblemStatementVersionSelect: _onProblemStatementVersionSelect,
   onResetProblemStatement,
-  onUseObjectivesChange,
   onObjectivesChange,
   onAddObjective,
   onRemoveObjective,
@@ -371,6 +373,16 @@ export function ContentSection({
             onChange={onImageUpload}
             disabled={isUploadingImage || isReadonly}
             className="hidden"
+          />
+          <RangeSlider
+            min={objectiveCountRange.min}
+            max={objectiveCountRange.max}
+            value={objectiveCount}
+            onValueChange={([min, max]) =>
+              onObjectiveCountChange(min ?? 0, max ?? 0)
+            }
+            disabled={isReadonly}
+            className="w-[200px] mr-4"
           />
           <Button
             variant="default"
@@ -516,7 +528,7 @@ export function ContentSection({
         </div>
 
         {/* Objectives List */}
-        {useObjectives && (
+        {objectiveCount[1] > 0 && (
           <div className="space-y-2">
             {objectives.length === 0 && (
               <div>
@@ -546,7 +558,7 @@ export function ContentSection({
                 onDrop={(e) => onDropObjective(e, index)}
                 onRemove={() => onRemoveObjective(index)}
                 totalObjectives={objectives.length}
-                useObjectives={useObjectives}
+                objectivesEnabled={objectiveCount[1] > 0}
               />
             ))}
 
@@ -938,37 +950,8 @@ export function ContentSection({
           )}
         </div>
 
-        {/* Use Objectives and Use Image Switches */}
+        {/* Use Image Switch */}
         <div className="space-y-4 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="use-objectives"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                Use Objectives
-              </Label>
-              <Switch
-                id="use-objectives"
-                checked={useObjectives}
-                onCheckedChange={(checked) => {
-                  onUseObjectivesChange(checked);
-                  if (checked) {
-                    if (objectives.length === 0) {
-                      onObjectivesChange([""]);
-                    }
-                  } else {
-                    onObjectivesChange([]);
-                  }
-                }}
-                disabled={isReadonly}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Use learning objectives
-            </p>
-          </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Label
