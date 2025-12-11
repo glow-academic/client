@@ -50,6 +50,7 @@ class PersonaMappingItem(MappingItem):
     )
     parameter_ids: list[str] | None = None  # Parameters this persona is valid for
     field_ids: list[str] | None = None  # Fields linked to this persona
+    example: str | None = None  # Optional: top example from persona_examples table
 
 
 class RubricMappingItem(MappingItem):

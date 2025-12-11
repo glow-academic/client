@@ -17578,6 +17578,11 @@
             },
             "type": "array",
             "title": "Field Ids"
+          },
+          "is_template": {
+            "type": "boolean",
+            "title": "Is Template",
+            "default": false
           }
         },
         "type": "object",
@@ -23275,6 +23280,17 @@
               }
             ],
             "title": "Field Ids"
+          },
+          "example": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example"
           }
         },
         "type": "object",

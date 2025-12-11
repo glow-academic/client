@@ -749,8 +749,8 @@ export function ContentSection({
                             </div>
                             <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
                               <p className="text-sm">
-                                I'd be happy to help you with that. Let me
-                                provide some guidance...
+                                {persona.example ||
+                                  "I'd be happy to help you with that. Let me provide some guidance..."}
                               </p>
                             </div>
                           </div>
@@ -890,6 +890,10 @@ export function ContentSection({
                     const fullDoc = documentDetails?.find(
                       (d) => d.document_id === docId
                     );
+                    const isTemplateDocument =
+                      fullDoc?.is_template ||
+                      templateDocumentIds.includes(docId);
+
                     const docForViewer: DocumentItem = fullDoc
                       ? ({
                           document_id: fullDoc.document_id,
@@ -935,13 +939,29 @@ export function ContentSection({
                           upload_id: null,
                         } as DocumentItem);
                     return (
-                      <div className="h-full overflow-auto [&>div]:!min-h-0 [&>div]:h-full [&_iframe]:!min-h-0 [&_iframe]:h-full">
-                        <DocumentViewer
-                          document={docForViewer}
-                          bare={true}
-                          isFormDocument={false}
-                        />
-                      </div>
+                      <>
+                        <div
+                          className={cn(
+                            "h-full overflow-auto [&>div]:!min-h-0 [&>div]:h-full [&_iframe]:!min-h-0 [&_iframe]:h-full",
+                            isTemplateDocument && "opacity-20"
+                          )}
+                        >
+                          <DocumentViewer
+                            document={docForViewer}
+                            bare={true}
+                            isFormDocument={false}
+                            compact={isTemplateDocument}
+                          />
+                        </div>
+                        {isTemplateDocument && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                            <p className="text-sm font-medium text-foreground px-4 py-2 rounded text-center">
+                              Document will be automatically generated from this
+                              template
+                            </p>
+                          </div>
+                        )}
+                      </>
                     );
                   })()}
                 </div>

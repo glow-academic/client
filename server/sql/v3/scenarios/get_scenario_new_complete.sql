@@ -171,6 +171,16 @@ persona_parameter_mapping AS (
     ) as mapping
     FROM persona_parameter_relationships ppr
 ),
+persona_examples_data AS (
+    -- Get top example per persona (ordered by idx, take first)
+    SELECT DISTINCT ON (pe.persona_id)
+        pe.persona_id,
+        e.example
+    FROM persona_examples pe
+    JOIN examples e ON e.id = pe.example_id
+    WHERE pe.persona_id IN (SELECT id FROM persona_data)
+    ORDER BY pe.persona_id, pe.idx
+),
 persona_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
@@ -192,12 +202,14 @@ persona_mapping_data AS (
                      FROM persona_fields pf
                      WHERE pf.persona_id = p.id AND pf.active = true),
                     '[]'::jsonb
-                )
+                ),
+                'example', CASE WHEN ped.example IS NOT NULL THEN ped.example ELSE NULL END
             )
         ),
         '{}'::jsonb
     ) as mapping
     FROM persona_data p
+    LEFT JOIN persona_examples_data ped ON ped.persona_id = p.id
 ),
 document_data AS (
     -- Department-filtered documents
@@ -502,7 +514,15 @@ document_details_data AS (
                         SELECT jsonb_agg(df.field_id::text)
                         FROM document_fields df
                         WHERE df.document_id = d.id AND df.active = true
-                    ), '[]'::jsonb)
+                    ), '[]'::jsonb),
+                    'is_template', CASE 
+                        WHEN d.template = true THEN true
+                        WHEN EXISTS(
+                            SELECT 1 FROM document_templates dt2 
+                            WHERE dt2.document_id = d.id AND dt2.active = true
+                        ) THEN true
+                        ELSE false
+                    END
                 ) ORDER BY d.name
             )
             FROM documents d

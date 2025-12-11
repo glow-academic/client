@@ -7518,6 +7518,11 @@ export interface components {
             upload_id: string | null;
             /** Field Ids */
             field_ids: string[];
+            /**
+             * Is Template
+             * @default false
+             */
+            is_template: boolean;
         };
         /**
          * DocumentDetailRequest
@@ -9729,6 +9734,8 @@ export interface components {
             parameter_ids?: string[] | null;
             /** Field Ids */
             field_ids?: string[] | null;
+            /** Example */
+            example?: string | null;
         };
         /**
          * PersonaNewRequest

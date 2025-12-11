@@ -5,33 +5,22 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    DocumentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ObjectiveMapping,
-    ObjectiveMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-)
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              DocumentMapping, DocumentMappingItem,
+                              FieldMapping, FieldMappingItem, ObjectiveMapping,
+                              ObjectiveMappingItem, ParameterMapping,
+                              ParameterMappingItem, PersonaMapping,
+                              PersonaMappingItem, SimulationMapping,
+                              SimulationMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 def preserve_order_union(
@@ -143,6 +132,7 @@ class DocumentDetailItem(BaseModel):
     mime_type: str | None
     upload_id: str | None
     field_ids: list[str]  # Renamed from parameter_item_ids for readability
+    is_template: bool = False  # Whether this document is a template
 
 
 class ProblemStatementInfo(BaseModel):
@@ -939,6 +929,7 @@ async def get_scenario_detail(
                         field_ids=[str(f) for f in field_ids]
                         if isinstance(field_ids, list)
                         else None,
+                        example=pdata.get("example"),  # Optional
                     )
 
         document_mapping: DocumentMapping = {}
@@ -1094,6 +1085,7 @@ async def get_scenario_detail(
                             field_ids=doc.get(
                                 "parameter_item_ids", []
                             ),  # Database column name (keeping as-is), renamed to field_ids in model
+                            is_template=doc.get("is_template", False),
                         )
                     )
 
