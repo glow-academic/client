@@ -42019,6 +42019,21 @@
             "type": "object",
             "title": "Document Mapping"
           },
+          "document_details": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Details"
+          },
           "valid_document_ids": {
             "items": {
               "type": "string"

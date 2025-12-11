@@ -655,13 +655,13 @@ export function VideoContentSection({
         )}
 
         {/* Three-Column Layout: Images | Video | Documents */}
-        <div className="flex gap-4">
-          {/* Images Column (Left) */}
+        <div className="flex gap-4 h-[600px]">
+          {/* Images Column (Left) - Only shown when useImage is true */}
           {useImage && (
-            <div className="w-48 space-y-2 flex-shrink-0">
+            <div className="w-48 space-y-2 flex-shrink-0 h-full flex flex-col">
               <Label>Images</Label>
               {images.length > 0 ? (
-                <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                <div className="space-y-2 flex-1 overflow-y-auto">
                   {images.map((img, idx) => (
                     <div key={img.id || idx} className="relative">
                       <img
@@ -715,9 +715,9 @@ export function VideoContentSection({
           )}
 
           {/* Video Column (Center) */}
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-2 h-full flex flex-col">
             <Label>Video</Label>
-            <div className="relative border rounded-lg overflow-hidden min-h-[400px] aspect-video">
+            <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
               {/* Video Player */}
               {isUploadingVideo ? (
                 <div className="absolute inset-0 w-full h-full bg-muted/20 flex items-center justify-center">
@@ -732,7 +732,7 @@ export function VideoContentSection({
                     ref={videoRef}
                     src={generatedVideoUrl || videoObjectUrl || undefined}
                     controls
-                    className="w-full h-full rounded-lg"
+                    className="w-full h-full rounded-lg object-contain"
                   />
                 </div>
               ) : (
@@ -765,31 +765,33 @@ export function VideoContentSection({
             </div>
           </div>
 
-          {/* Documents Column (Right) */}
+          {/* Documents Column (Right) - Only shown when documents are selected */}
           {allPreviewDocumentIds.length > 0 && (
-            <div className="w-80 space-y-2 flex-shrink-0">
+            <div className="w-80 space-y-2 flex-shrink-0 h-full flex flex-col">
               <Label>Documents</Label>
-              <div className="border rounded-lg overflow-hidden max-h-[600px] overflow-y-auto">
-                {allPreviewDocumentIds.map((docId) => {
-                  const doc = documentMapping[docId];
-                  if (!doc) return null;
-                  return (
-                    <div
-                      key={docId}
-                      className={cn(
-                        "p-3 cursor-pointer hover:bg-muted transition-colors border-b last:border-b-0",
-                        videoPreviewDocumentId === docId && "bg-muted"
-                      )}
-                      onClick={() =>
-                        onVideoPreviewDocumentChange(
-                          videoPreviewDocumentId === docId ? null : docId
-                        )
-                      }
-                    >
-                      <div className="font-medium text-sm">{doc.name}</div>
-                    </div>
-                  );
-                })}
+              <div className="border rounded-lg overflow-hidden flex-1 min-h-0 flex flex-col">
+                <div className="overflow-y-auto flex-1">
+                  {allPreviewDocumentIds.map((docId) => {
+                    const doc = documentMapping[docId];
+                    if (!doc) return null;
+                    return (
+                      <div
+                        key={docId}
+                        className={cn(
+                          "p-3 cursor-pointer hover:bg-muted transition-colors border-b last:border-b-0",
+                          videoPreviewDocumentId === docId && "bg-muted"
+                        )}
+                        onClick={() =>
+                          onVideoPreviewDocumentChange(
+                            videoPreviewDocumentId === docId ? null : docId
+                          )
+                        }
+                      >
+                        <div className="font-medium text-sm">{doc.name}</div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               {videoPreviewDocumentId &&
                 (() => {
@@ -797,7 +799,7 @@ export function VideoContentSection({
                     (d) => d.document_id === videoPreviewDocumentId
                   );
                   return previewDoc ? (
-                    <div className="border rounded-lg p-4">
+                    <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
                       <DocumentViewer document={previewDoc as DocumentItem} />
                     </div>
                   ) : null;

@@ -874,6 +874,9 @@ export default function Video({
   const handleResetSection = (section: string) => {
     if (section === "documents") {
       setSelectedDocumentIds([]);
+      setPreviewDocumentId(null);
+      setTemplateDocumentIds([]);
+      setDocumentSearchTerm("");
     } else if (section === "parameters") {
       setCurrentParameterItemIds([]);
     } else if (section === "outline") {
@@ -1265,6 +1268,26 @@ export default function Video({
 
   // Documents state
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [documentSearchTerm, setDocumentSearchTerm] = useState<string>("");
+  const [documentMinMax, setDocumentMinMax] = useState<{
+    min: number;
+    max: number;
+  }>(() => {
+    // Initialize from URL params or default
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const min = params.get("documentMin");
+      const max = params.get("documentMax");
+      if (min !== null && max !== null) {
+        return { min: parseInt(min, 10), max: parseInt(max, 10) };
+      }
+    }
+    return { min: 1, max: 2 };
+  });
+  const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
+    null
+  );
+  const [templateDocumentIds, setTemplateDocumentIds] = useState<string[]>([]);
 
   // Parameter state
   const [currentParameterItemIds, setCurrentParameterItemIds] = useState<
@@ -1574,6 +1597,14 @@ export default function Video({
       // Load documents
       if (videoData.document_ids) {
         setSelectedDocumentIds(videoData.document_ids);
+        // Initialize preview document to first document if available (only on initial load)
+        if (
+          videoData.document_ids.length > 0 &&
+          !formDataInitializedRef.current &&
+          !previewDocumentId
+        ) {
+          setPreviewDocumentId(videoData.document_ids[0] || null);
+        }
       }
 
       // Load video images (all images from array)
@@ -1650,7 +1681,14 @@ export default function Video({
 
       formDataInitializedRef.current = true;
     }
-  }, [videoData, isEditMode, outlineMapping, videoDetail, videoId]);
+  }, [
+    videoData,
+    isEditMode,
+    outlineMapping,
+    videoDetail,
+    videoId,
+    previewDocumentId,
+  ]);
 
   // Auto-select first available outline and question agents if not already selected
   useEffect(() => {
@@ -2343,8 +2381,10 @@ export default function Video({
         validDocumentIds={videoData?.valid_document_ids || []}
         documentMapping={documentMapping}
         selectedDocumentIds={selectedDocumentIds}
-        templateDocumentIds={[]}
-        {...(videoData?.document_details
+        templateDocumentIds={templateDocumentIds}
+        {...(videoData &&
+        "document_details" in videoData &&
+        videoData.document_details
           ? {
               documentDetails: videoData.document_details as Array<{
                 document_id: string;
@@ -2353,14 +2393,14 @@ export default function Video({
               }>,
             }
           : {})}
-        searchTerm=""
-        minMax={{ min: 1, max: 2 }}
-        previewDocumentId={null}
+        searchTerm={documentSearchTerm}
+        minMax={documentMinMax}
+        previewDocumentId={previewDocumentId}
         onDocumentIdsChange={setSelectedDocumentIds}
-        onTemplateDocumentIdsChange={() => {}}
-        onSearchTermChange={() => {}}
-        onMinMaxChange={() => {}}
-        onPreviewDocument={() => {}}
+        onTemplateDocumentIdsChange={setTemplateDocumentIds}
+        onSearchTermChange={setDocumentSearchTerm}
+        onMinMaxChange={setDocumentMinMax}
+        onPreviewDocument={setPreviewDocumentId}
         onRandomize={() => handleRandomizeVideo(["documents"], "documents")}
         onReset={() => handleResetSection("documents")}
         stepStatus={getStepStatus("documents")}

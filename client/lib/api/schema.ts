@@ -16290,6 +16290,10 @@ export interface components {
                     [key: string]: unknown;
                 };
             };
+            /** Document Details */
+            document_details?: {
+                [key: string]: unknown;
+            }[] | null;
             /** Valid Document Ids */
             valid_document_ids: string[];
             /** Video Images */
