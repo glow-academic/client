@@ -1513,6 +1513,23 @@ export default function Video({
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleInputChange = useCallback(
+    <K extends keyof FormData>(field: K, value: FormData[K]) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      // Clear error for this field
+      setErrors((prev) => {
+        if (prev[field]) {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
   const formDataInitializedRef = useRef<boolean>(false);
   // Track last processed randomized_selections to prevent re-processing
   const lastProcessedRandomizedRef = useRef<string | null>(null);
@@ -2329,21 +2346,6 @@ export default function Video({
     formData.imageAgentId,
     formData.videoAgentId,
   ]);
-
-  const handleInputChange = <K extends keyof FormData>(
-    field: K,
-    value: FormData[K]
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
 
   // Clear selections when they become invalid after department changes
   // (but preserve cross-department entities and staged selections)

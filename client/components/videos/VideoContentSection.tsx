@@ -446,19 +446,28 @@ export function VideoContentSection({
 
         {/* Questions List */}
         {questionCount[1] > 0 && (
-          <div className="space-y-2 pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <Label>
-                Questions ({questions.length}/{questionCount[1]})
-              </Label>
-            </div>
+          <div className="space-y-2">
+            {questions.length === 0 && (
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onAddQuestion}
+                  disabled={isReadonly}
+                  size="sm"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Question
+                </Button>
+              </div>
+            )}
             {questions.length > 0 && (
               <div className="space-y-2">
                 {questions.map((question, index) => (
                   <div
                     key={question.question_id || index}
                     className={cn(
-                      "p-3 space-y-2",
+                      "space-y-2",
                       draggedQuestionIndex === index && "opacity-50"
                     )}
                     onDragOver={onDragOverQuestion}
@@ -643,17 +652,21 @@ export function VideoContentSection({
                 ))}
               </div>
             )}
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onAddQuestion}
-                disabled={isReadonly || questions.length >= questionCount[1]}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Question
-              </Button>
-            </div>
+
+            {questions.length < questionCount[1] && questions.length > 0 && (
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onAddQuestion}
+                  disabled={isReadonly}
+                  size="sm"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Question
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
