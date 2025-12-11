@@ -7,7 +7,14 @@
 "use client";
 import { Loader2, RotateCcw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
@@ -553,6 +560,10 @@ export default function Scenario({
   } | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Use transition for smooth UI updates during randomization
+  // This ensures the old UI stays visible while new randomized selections are being applied
+  const [isPending, startTransition] = useTransition();
 
   // Min/max state for randomization (current values, not allowed ranges)
   // Initialize from server's persona_min/persona_max (current values), default to 1
@@ -1277,16 +1288,21 @@ export default function Scenario({
       isApplyingRandomizedRef.current = true;
       lastProcessedRandomizedRef.current = randomizedHash;
 
-      // Update state with randomized selections
-      if (randomized.personaIds) {
-        setSelectedPersonaIds(randomized.personaIds);
-      }
-      if (randomized.documentIds) {
-        setCurrentDocumentIds(randomized.documentIds);
-      }
-      if (randomized.parameterIds) {
-        handleInputChange("parameterIds", randomized.parameterIds);
-      }
+      // Update state with randomized selections using transition for smooth UI updates
+      // This ensures the old UI stays visible while new selections are being applied,
+      // especially important for personas which sort selected ones first
+      startTransition(() => {
+        if (randomized.personaIds) {
+          setSelectedPersonaIds(randomized.personaIds);
+        }
+        if (randomized.documentIds) {
+          setCurrentDocumentIds(randomized.documentIds);
+        }
+        if (randomized.parameterIds) {
+          handleInputChange("parameterIds", randomized.parameterIds);
+        }
+      });
+
       // Compute merged fieldIds if needed (for single parameter randomization)
       let finalFieldIds: string[] | undefined;
       if (randomized.fieldIds && randomized.fieldIds.length > 0) {
@@ -1301,11 +1317,16 @@ export default function Scenario({
             (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
           );
           finalFieldIds = [...otherParamFields, ...randomized.fieldIds];
-          setCurrentFieldIds(finalFieldIds);
+          // Wrap field updates in transition too for smooth transitions
+          startTransition(() => {
+            setCurrentFieldIds(finalFieldIds!);
+          });
         } else {
           // Full randomization (randomize=all): replace all fields
           finalFieldIds = randomized.fieldIds;
-          setCurrentFieldIds(finalFieldIds);
+          startTransition(() => {
+            setCurrentFieldIds(finalFieldIds!);
+          });
         }
       }
 
@@ -1356,46 +1377,88 @@ export default function Scenario({
       const timeoutId = setTimeout(() => {
         // Only process if param is still present (randomized_selections might have already handled it)
         if (searchParams.get("randomize")) {
-          const urlUpdates: Record<string, string | string[] | null> = {
+          // Read randomized values from main fields and update URL params
+          // This ensures URL reflects the randomized state even if randomized_selections didn't process
+          // Use transition for smooth state updates
+          startTransition(() => {
+            if (
+              scenarioData.persona_ids &&
+              scenarioData.persona_ids.length > 0
+            ) {
+              setSelectedPersonaIds(scenarioData.persona_ids);
+            }
+            if (
+              scenarioData.document_ids &&
+              scenarioData.document_ids.length > 0
+            ) {
+              setCurrentDocumentIds(scenarioData.document_ids);
+            }
+            if (
+              scenarioData.scenario_parameter_ids &&
+              scenarioData.scenario_parameter_ids.length > 0
+            ) {
+              handleInputChange(
+                "parameterIds",
+                scenarioData.scenario_parameter_ids
+              );
+            }
+            // For fields, we need to extract from parameters dict or use selected_field_ids
+            const serverData = scenarioData as ScenarioNewOut | undefined;
+            if (
+              serverData?.selected_field_ids &&
+              serverData.selected_field_ids.length > 0
+            ) {
+              setCurrentFieldIds(serverData.selected_field_ids);
+            }
+          });
+
+          const fallbackUrlUpdates: Record<string, string | string[] | null> = {
             randomize: null, // Clear randomize param
           };
 
-          // Read randomized values from main fields and update URL params
-          // This ensures URL reflects the randomized state even if randomized_selections didn't process
+          // Update URL params to reflect randomized state
           if (scenarioData.persona_ids && scenarioData.persona_ids.length > 0) {
-            urlUpdates.personaIds = scenarioData.persona_ids;
+            fallbackUrlUpdates.personaIds = scenarioData.persona_ids;
           }
           if (
             scenarioData.document_ids &&
             scenarioData.document_ids.length > 0
           ) {
-            urlUpdates.documentIds = scenarioData.document_ids;
+            fallbackUrlUpdates.documentIds = scenarioData.document_ids;
           }
           if (
             scenarioData.scenario_parameter_ids &&
             scenarioData.scenario_parameter_ids.length > 0
           ) {
-            urlUpdates.parameterIds = scenarioData.scenario_parameter_ids;
+            fallbackUrlUpdates.parameterIds =
+              scenarioData.scenario_parameter_ids;
           }
           // For fields, we need to extract from parameters dict or use selected_field_ids
-          const serverData = scenarioData as ScenarioNewOut | undefined;
+          const fallbackServerData = scenarioData as ScenarioNewOut | undefined;
           if (
-            serverData?.selected_field_ids &&
-            serverData.selected_field_ids.length > 0
+            fallbackServerData?.selected_field_ids &&
+            fallbackServerData.selected_field_ids.length > 0
           ) {
-            urlUpdates.fieldIds = serverData.selected_field_ids;
+            fallbackUrlUpdates.fieldIds = fallbackServerData.selected_field_ids;
           }
 
           // Reset flags to allow next randomization to be processed
           lastProcessedRandomizedRef.current = null;
           isApplyingRandomizedRef.current = false;
-          updateUrlParams(urlUpdates);
+          updateUrlParams(fallbackUrlUpdates);
         }
       }, 200);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [scenarioData?.randomized, scenarioData, searchParams, updateUrlParams]);
+  }, [
+    scenarioData?.randomized,
+    scenarioData,
+    searchParams,
+    updateUrlParams,
+    startTransition,
+    handleInputChange,
+  ]);
 
   // Debounce timeout ref for URL updates
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -2680,6 +2743,7 @@ export default function Scenario({
           stepDescription={steps[1]?.description || ""}
           stepNumber={2}
           isReadonly={isReadonly}
+          disabled={isPending}
           isEditMode={isEditMode}
         />
 
