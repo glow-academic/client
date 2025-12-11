@@ -778,10 +778,9 @@ export default function Video({
   const handleResetDocuments = () => {
     try {
       // Get default min/max from server or use defaults
-      const serverRanges = videoData?.allowed_ranges;
-      const documentDefault = serverRanges?.document || { min: 0, max: 1 };
-      const defaultMin = documentDefault.min;
-      const defaultMax = documentDefault.max;
+      const newData = videoData as VideoNewOut | undefined;
+      const defaultMin = newData?.document_min ?? 0;
+      const defaultMax = newData?.document_max ?? 1;
 
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
@@ -3255,10 +3254,18 @@ export default function Video({
             personaMapping={personaMapping}
             selectedPersonaIds={formData.personaIds || []}
             searchTerm={personaSearchTerm}
-            minMax={videoData?.allowed_ranges?.persona || { min: 1, max: 3 }}
+            minMax={personaMinMax}
+            allowedRange={
+              videoData?.allowed_ranges?.persona
+                ? {
+                    min: videoData.allowed_ranges.persona.min,
+                    max: videoData.allowed_ranges.persona.max,
+                  }
+                : undefined
+            }
             onPersonaIdsChange={(ids) => handleInputChange("personaIds", ids)}
             onSearchTermChange={setPersonaSearchTerm}
-            onMinMaxChange={() => {}}
+            onMinMaxChange={setPersonaMinMax}
             onRandomize={handleRandomizePersonaClient}
             onReset={handleResetPersona}
             stepStatus={getStepStatus("persona")}
@@ -3293,6 +3300,14 @@ export default function Video({
           : {})}
         searchTerm={documentSearchTerm}
         minMax={documentMinMax}
+        allowedRange={
+          videoData?.allowed_ranges?.document
+            ? {
+                min: videoData.allowed_ranges.document.min,
+                max: videoData.allowed_ranges.document.max,
+              }
+            : undefined
+        }
         previewDocumentId={previewDocumentId}
         onDocumentIdsChange={setSelectedDocumentIds}
         onTemplateDocumentIdsChange={setTemplateDocumentIds}
@@ -3318,12 +3333,18 @@ export default function Video({
         parameterMapping={parameterMapping}
         selectedParameterIds={formData.parameterIds || []}
         searchTerm={parameterSearchTerm}
-        minMax={
-          videoData?.allowed_ranges?.parameter_selection || { min: 0, max: 3 }
+        minMax={parameterSelectionMinMax}
+        allowedRange={
+          videoData?.allowed_ranges?.parameter_selection
+            ? {
+                min: videoData.allowed_ranges.parameter_selection.min,
+                max: videoData.allowed_ranges.parameter_selection.max,
+              }
+            : undefined
         }
         onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
         onSearchTermChange={setParameterSearchTerm}
-        onMinMaxChange={() => {}}
+        onMinMaxChange={setParameterSelectionMinMax}
         onRandomize={handleRandomizeParametersClient}
         onParameterUnselect={(paramId) => {
           // When unselecting a parameter, also remove all its fields
