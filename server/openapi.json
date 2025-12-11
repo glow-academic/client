@@ -15606,7 +15606,14 @@
             "title": "Name"
           },
           "length_seconds": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Length Seconds"
           },
           "upload_id": {
@@ -15749,7 +15756,6 @@
         "type": "object",
         "required": [
           "name",
-          "length_seconds",
           "department_ids"
         ],
         "title": "CreateVideoRequest",
@@ -28579,6 +28585,28 @@
             ],
             "title": "Parameterselectionmax"
           },
+          "objectivesMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectivesmin"
+          },
+          "objectivesMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectivesmax"
+          },
           "fieldRanges": {
             "anyOf": [
               {
@@ -28617,17 +28645,6 @@
               }
             ],
             "title": "Useimage"
-          },
-          "useObjectives": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Useobjectives"
           },
           "imageIds": {
             "anyOf": [
@@ -29100,6 +29117,28 @@
             ],
             "title": "Parameterselectionmax"
           },
+          "objectivesMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectivesmin"
+          },
+          "objectivesMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectivesmax"
+          },
           "fieldRanges": {
             "anyOf": [
               {
@@ -29138,17 +29177,6 @@
               }
             ],
             "title": "Useimage"
-          },
-          "useObjectives": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Useobjectives"
           },
           "imageIds": {
             "anyOf": [
@@ -34481,6 +34509,28 @@
             ],
             "title": "Parameterselectionmax"
           },
+          "questionsMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionsmin"
+          },
+          "questionsMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionsmax"
+          },
           "fieldRanges": {
             "anyOf": [
               {
@@ -34863,6 +34913,28 @@
               }
             ],
             "title": "Parameterselectionmax"
+          },
+          "questionsMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionsmin"
+          },
+          "questionsMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionsmax"
           },
           "fieldRanges": {
             "anyOf": [
@@ -39202,6 +39274,9 @@
               }
             ]
           },
+          "objective_count_range": {
+            "$ref": "#/components/schemas/RangeMinMax"
+          },
           "randomized_selections": {
             "anyOf": [
               {
@@ -39254,7 +39329,8 @@
           "scenario_agent_id",
           "image_agent_id",
           "agent_mapping",
-          "valid_agent_ids"
+          "valid_agent_ids",
+          "objective_count_range"
         ],
         "title": "ScenarioDetailResponse",
         "description": "Detailed scenario response with all fields and metadata."
@@ -39720,6 +39796,9 @@
               }
             ]
           },
+          "objective_count_range": {
+            "$ref": "#/components/schemas/RangeMinMax"
+          },
           "randomized_selections": {
             "anyOf": [
               {
@@ -39956,7 +40035,8 @@
           "scenario_agent_id",
           "image_agent_id",
           "agent_mapping",
-          "valid_agent_ids"
+          "valid_agent_ids",
+          "objective_count_range"
         ],
         "title": "ScenarioDetailResponse",
         "description": "Response for scenario detail."
@@ -41505,6 +41585,9 @@
               }
             ]
           },
+          "question_count_range": {
+            "$ref": "#/components/schemas/RangeMinMax"
+          },
           "randomized_selections": {
             "anyOf": [
               {
@@ -41725,7 +41808,8 @@
           "valid_parameter_ids",
           "persona_ids",
           "persona_mapping",
-          "valid_persona_ids"
+          "valid_persona_ids",
+          "question_count_range"
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."
@@ -42103,6 +42187,9 @@
               }
             ]
           },
+          "question_count_range": {
+            "$ref": "#/components/schemas/RangeMinMax"
+          },
           "randomized_selections": {
             "anyOf": [
               {
@@ -42324,7 +42411,8 @@
           "valid_parameter_ids",
           "persona_ids",
           "persona_mapping",
-          "valid_persona_ids"
+          "valid_persona_ids",
+          "question_count_range"
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."

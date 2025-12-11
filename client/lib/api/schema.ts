@@ -6741,7 +6741,7 @@ export interface components {
             /** Name */
             name: string;
             /** Length Seconds */
-            length_seconds: number;
+            length_seconds?: number | null;
             /** Upload Id */
             upload_id?: string | null;
             /** Department Ids */
@@ -11660,6 +11660,10 @@ export interface components {
             parameterSelectionMin?: number | null;
             /** Parameterselectionmax */
             parameterSelectionMax?: number | null;
+            /** Objectivesmin */
+            objectivesMin?: number | null;
+            /** Objectivesmax */
+            objectivesMax?: number | null;
             /** Fieldranges */
             fieldRanges?: {
                 [key: string]: {
@@ -11670,8 +11674,6 @@ export interface components {
             randomize?: string | null;
             /** Useimage */
             useImage?: boolean | null;
-            /** Useobjectives */
-            useObjectives?: boolean | null;
             /** Imageids */
             imageIds?: string[] | null;
             /** Objectiveids */
@@ -11808,6 +11810,10 @@ export interface components {
             parameterSelectionMin?: number | null;
             /** Parameterselectionmax */
             parameterSelectionMax?: number | null;
+            /** Objectivesmin */
+            objectivesMin?: number | null;
+            /** Objectivesmax */
+            objectivesMax?: number | null;
             /** Fieldranges */
             fieldRanges?: {
                 [key: string]: {
@@ -11818,8 +11824,6 @@ export interface components {
             randomize?: string | null;
             /** Useimage */
             useImage?: boolean | null;
-            /** Useobjectives */
-            useObjectives?: boolean | null;
             /** Imageids */
             imageIds?: string[] | null;
             /** Objectiveids */
@@ -13827,6 +13831,10 @@ export interface components {
             parameterSelectionMin?: number | null;
             /** Parameterselectionmax */
             parameterSelectionMax?: number | null;
+            /** Questionsmin */
+            questionsMin?: number | null;
+            /** Questionsmax */
+            questionsMax?: number | null;
             /** Fieldranges */
             fieldRanges?: {
                 [key: string]: {
@@ -13933,6 +13941,10 @@ export interface components {
             parameterSelectionMin?: number | null;
             /** Parameterselectionmax */
             parameterSelectionMax?: number | null;
+            /** Questionsmin */
+            questionsMin?: number | null;
+            /** Questionsmax */
+            questionsMax?: number | null;
             /** Fieldranges */
             fieldRanges?: {
                 [key: string]: {
@@ -15405,6 +15417,7 @@ export interface components {
             /** Valid General Field Ids */
             valid_general_field_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
+            objective_count_range: components["schemas"]["RangeMinMax"];
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
         };
         /**
@@ -15577,6 +15590,7 @@ export interface components {
             /** Valid General Field Ids */
             valid_general_field_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
+            objective_count_range: components["schemas"]["RangeMinMax"];
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
             /** Selected Persona Ids */
             selected_persona_ids?: string[] | null;
@@ -16154,6 +16168,7 @@ export interface components {
             /** Valid General Field Ids */
             valid_general_field_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
+            question_count_range: components["schemas"]["RangeMinMax"];
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
             /** Selected Persona Ids */
             selected_persona_ids?: string[] | null;
@@ -16334,6 +16349,7 @@ export interface components {
             /** Valid General Field Ids */
             valid_general_field_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
+            question_count_range: components["schemas"]["RangeMinMax"];
             randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
             /** Selected Persona Ids */
             selected_persona_ids?: string[] | null;

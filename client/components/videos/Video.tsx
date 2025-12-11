@@ -1332,12 +1332,23 @@ export default function Video({
   }, [parameterMapping, documentParameterIds]);
 
   const generalVideoParameterMapping = useMemo(() => {
+    // Filter to only show parameters that are selected in formData.parameterIds
+    const selectedParamIds = formData.parameterIds || [];
+
+    // If no parameters selected, show no parameter sections
+    if (selectedParamIds.length === 0) {
+      return {};
+    }
+
+    // Only include selected parameters that are general video parameters (not document parameters)
     return Object.fromEntries(
-      Object.entries(parameterMapping).filter(([paramId]) =>
-        generalVideoParameterIds.includes(paramId)
+      Object.entries(parameterMapping).filter(
+        ([paramId]) =>
+          generalVideoParameterIds.includes(paramId) &&
+          selectedParamIds.includes(paramId)
       )
     );
-  }, [parameterMapping, generalVideoParameterIds]);
+  }, [parameterMapping, generalVideoParameterIds, formData.parameterIds]);
 
   // Outline mapping (for version history) - only exists in VideoDetailOut, not VideoNewOut
   const outlineMapping = useMemo<

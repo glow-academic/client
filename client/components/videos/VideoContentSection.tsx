@@ -4,6 +4,7 @@
  */
 "use client";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
   GripVertical,
@@ -452,7 +453,7 @@ export function VideoContentSection({
                   <div
                     key={question.question_id || index}
                     className={cn(
-                      "border rounded-lg p-3 space-y-2",
+                      "p-3 space-y-2",
                       draggedQuestionIndex === index && "opacity-50"
                     )}
                     onDragOver={onDragOverQuestion}
@@ -509,9 +510,9 @@ export function VideoContentSection({
                           disabled={isReadonly}
                         >
                           {expandedQuestions.has(index) ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
                             <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronUp className="h-4 w-4" />
                           )}
                         </Button>
                       )}
