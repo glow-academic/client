@@ -820,6 +820,18 @@ export function VideoContentSection({
                       (fullDoc as { is_template?: boolean })?.is_template ||
                       templateDocumentIds.includes(docId);
 
+                    // Try to get uploadId from document_mapping as fallback
+                    // The server sends uploadId in document_mapping, but TypeScript interface doesn't include it
+                    const mappedDoc = documentMapping[docId];
+                    const uploadIdFromMapping = mappedDoc
+                      ? (
+                          mappedDoc as {
+                            uploadId?: string;
+                            [key: string]: unknown;
+                          }
+                        ).uploadId || null
+                      : null;
+
                     const docForViewer: DocumentItem = fullDoc
                       ? ({
                           document_id: fullDoc.document_id,
@@ -855,7 +867,7 @@ export function VideoContentSection({
                           department_ids: null,
                           field_ids: [],
                           parameter_item_ids: [],
-                          upload_id: null,
+                          upload_id: uploadIdFromMapping || null,
                         } as DocumentItem);
 
                     return (
