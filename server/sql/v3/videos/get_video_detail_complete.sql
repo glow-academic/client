@@ -197,6 +197,12 @@ document_mapping_data AS (
                      FROM document_fields df
                      WHERE df.document_id = d.id AND df.active = true),
                     '[]'::jsonb
+                ),
+                'parent_document_id', (
+                    SELECT dt.parent_id::text
+                    FROM document_tree dt
+                    WHERE dt.child_id = d.id AND dt.active = true
+                    LIMIT 1
                 )
             )
         ) FILTER (WHERE d.id IS NOT NULL),
@@ -308,6 +314,12 @@ valid_documents_data AS (
                      FROM document_fields df
                      WHERE df.document_id = d.id AND df.active = true),
                     '[]'::jsonb
+                ),
+                'parent_document_id', (
+                    SELECT dt.parent_id::text
+                    FROM document_tree dt
+                    WHERE dt.child_id = d.id AND dt.active = true
+                    LIMIT 1
                 )
             )
         ), '{}'::jsonb) as document_mapping
@@ -315,6 +327,46 @@ valid_documents_data AS (
 ),
 valid_documents AS (
     SELECT document_ids FROM valid_documents_data
+),
+document_details_data AS (
+    SELECT COALESCE(
+        (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'document_id', d.id::text,
+                    'name', d.name,
+                    'updatedAt', d.updated_at::text,
+                    'extension', CASE WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\.([^\.]+)$') ELSE NULL END,
+                    'scenario_ids', '[]'::jsonb,
+                    'can_edit', true,
+                    'can_delete', true,
+                    'active', d.active,
+                    'file_path', u.file_path,
+                    'mime_type', u.mime_type,
+                    'upload_id', u.id::text,
+                    'parameter_item_ids', COALESCE((
+                        SELECT jsonb_agg(df.field_id::text)
+                        FROM document_fields df
+                        WHERE df.document_id = d.id AND df.active = true
+                    ), '[]'::jsonb),
+                    'is_template', CASE 
+                        WHEN d.template = true THEN true
+                        WHEN EXISTS(
+                            SELECT 1 FROM document_templates dt2 
+                            WHERE dt2.document_id = d.id AND dt2.active = true
+                        ) THEN true
+                        ELSE false
+                    END
+                ) ORDER BY d.name
+            )
+            FROM video_documents vd
+            JOIN documents d ON d.id = vd.document_id
+            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+            LEFT JOIN uploads u ON u.id = du.upload_id
+            WHERE vd.video_id = $1 AND vd.active = true AND d.active = true
+        ),
+        '[]'::jsonb
+    ) as document_details
 ),
 video_images_data AS (
     SELECT COALESCE(
@@ -753,6 +805,7 @@ SELECT
         '{}'::jsonb
     ) as document_mapping,
     COALESCE((SELECT document_ids FROM valid_documents_data), ARRAY[]::text[]) as valid_document_ids,
+    COALESCE((SELECT document_details FROM document_details_data), '[]'::jsonb) as document_details,
     COALESCE((SELECT video_images FROM video_images_data), '[]'::jsonb) as video_images,
     COALESCE((SELECT objectives_history FROM objectives_history_data), ARRAY[]::text[]) as objectives_history,
     vp.can_edit,

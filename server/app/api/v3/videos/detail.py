@@ -4,26 +4,18 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    FieldMapping,
-    ParameterMapping,
-    PersonaMapping,
-    PersonaMappingItem,
-)
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              DocumentMapping, FieldMapping, ParameterMapping,
+                              PersonaMapping, PersonaMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 def preserve_order_union_selected_first(
@@ -107,6 +99,25 @@ class ProblemStatementInfo(BaseModel):
     updated_at: str
 
 
+class DocumentDetailItem(BaseModel):
+    """Document detail for preview."""
+
+    document_id: str
+    name: str
+    updatedAt: str
+    extension: str
+    scenario_ids: list[str]
+    can_edit: bool
+    can_delete: bool
+    active: bool
+    department_ids: list[str] | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: str | None
+    field_ids: list[str]  # Renamed from parameter_item_ids for readability
+    is_template: bool = False  # Whether this document is a template
+
+
 class RangeMinMax(BaseModel):
     """Min/max range values."""
 
@@ -150,6 +161,7 @@ class VideoDetailResponse(BaseModel):
     objective_mapping: dict[str, dict[str, str]]
     document_ids: list[str]
     document_mapping: dict[str, dict[str, Any]]
+    document_details: list[DocumentDetailItem]
     valid_document_ids: list[str]
     video_images: list[dict[str, Any]]
     objectives_history: list[str]
@@ -695,6 +707,7 @@ async def get_video_detail(
                 if isinstance(v, dict):
                     parameter_ids = v.get("parameter_ids", [])
                     field_ids = v.get("field_ids", [])
+                    parent_document_id = v.get("parent_document_id")
                     document_mapping_dict[k] = {
                         "name": v.get("name", ""),
                         "description": v.get("description", ""),
@@ -716,6 +729,40 @@ async def get_video_detail(
                         mime_type=v.get("mimeType", ""),
                         parameter_ids=v.get("parameter_ids", []),
                         field_ids=v.get("field_ids", []),
+                        parent_document_id=str(parent_document_id)
+                        if parent_document_id
+                        else None,
+                    )
+
+        # Parse document_details from JSONB
+        document_details: list[DocumentDetailItem] = []
+        doc_details_data = parse_jsonb(video.get("document_details"))
+        if isinstance(doc_details_data, list):
+            for doc in doc_details_data:
+                if isinstance(doc, dict):
+                    document_details.append(
+                        DocumentDetailItem(
+                            document_id=doc.get("document_id", ""),
+                            name=doc.get("name", ""),
+                            updatedAt=doc.get("updatedAt", ""),
+                            extension=doc.get("extension") or "",
+                            scenario_ids=doc.get("scenario_ids", []),
+                            can_edit=doc.get("can_edit", True),
+                            can_delete=doc.get("can_delete", True),
+                            active=doc.get("active", True),
+                            department_ids=[
+                                str(d) for d in doc.get("department_ids", [])
+                            ]
+                            if doc.get("department_ids")
+                            else None,
+                            file_path=doc.get("file_path") or None,
+                            mime_type=doc.get("mime_type") or None,
+                            upload_id=doc.get("upload_id") or None,
+                            field_ids=doc.get(
+                                "parameter_item_ids", []
+                            ),  # Database column name (keeping as-is), renamed to field_ids in model
+                            is_template=doc.get("is_template", False),
+                        )
                     )
 
         # Parse video_images from JSONB
@@ -1214,6 +1261,7 @@ async def get_video_detail(
             objective_mapping=objective_mapping,
             document_ids=[str(did) for did in document_ids],
             document_mapping=document_mapping_dict,
+            document_details=document_details,
             valid_document_ids=filtered_valid_document_ids,
             video_images=video_images,
             objectives_history=[str(obj) for obj in objectives_history],

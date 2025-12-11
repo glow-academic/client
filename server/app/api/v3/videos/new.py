@@ -408,6 +408,25 @@ class QuestionResponse(BaseModel):
     options: list[QuestionOptionResponse]
 
 
+class DocumentDetailItem(BaseModel):
+    """Document detail for preview."""
+
+    document_id: str
+    name: str
+    updatedAt: str
+    extension: str
+    scenario_ids: list[str]
+    can_edit: bool
+    can_delete: bool
+    active: bool
+    department_ids: list[str] | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: str | None
+    field_ids: list[str]  # Renamed from parameter_item_ids for readability
+    is_template: bool = False  # Whether this document is a template
+
+
 class ProblemStatementInfo(BaseModel):
     """Problem statement info for mapping."""
 
@@ -460,7 +479,7 @@ class VideoDetailResponse(BaseModel):
     objective_mapping: dict[str, dict[str, str]]
     document_ids: list[str]
     document_mapping: dict[str, dict[str, Any]]
-    document_details: list[dict[str, Any]] | None = None
+    document_details: list[DocumentDetailItem]
     valid_document_ids: list[str]
     video_images: list[dict[str, Any]]
     objectives_history: list[str]
@@ -635,27 +654,35 @@ async def get_video_new(
             valid_document_ids = []
 
         # Parse document_details from JSONB
-        document_details: list[dict[str, Any]] | None = None
+        document_details: list[DocumentDetailItem] = []
         document_details_data = parse_jsonb(result.get("document_details"))
         if isinstance(document_details_data, list):
-            document_details = []
             for doc in document_details_data:
                 if isinstance(doc, dict):
-                    document_details.append({
-                        "document_id": doc.get("document_id", ""),
-                        "name": doc.get("name", ""),
-                        "updatedAt": doc.get("updatedAt", ""),
-                        "extension": doc.get("extension", ""),
-                        "scenario_ids": doc.get("scenario_ids", []),
-                        "can_edit": doc.get("can_edit", True),
-                        "can_delete": doc.get("can_delete", True),
-                        "active": doc.get("active", True),
-                        "file_path": doc.get("file_path") or None,
-                        "mime_type": doc.get("mime_type") or None,
-                        "upload_id": doc.get("upload_id") or None,
-                        "parameter_item_ids": doc.get("parameter_item_ids", []),
-                        "is_template": doc.get("is_template", False),
-                    })
+                    document_details.append(
+                        DocumentDetailItem(
+                            document_id=doc.get("document_id", ""),
+                            name=doc.get("name", ""),
+                            updatedAt=doc.get("updatedAt", ""),
+                            extension=doc.get("extension") or "",
+                            scenario_ids=doc.get("scenario_ids", []),
+                            can_edit=doc.get("can_edit", True),
+                            can_delete=doc.get("can_delete", True),
+                            active=doc.get("active", True),
+                            department_ids=[
+                                str(d) for d in doc.get("department_ids", [])
+                            ]
+                            if doc.get("department_ids")
+                            else None,
+                            file_path=doc.get("file_path") or None,
+                            mime_type=doc.get("mime_type") or None,
+                            upload_id=doc.get("upload_id") or None,
+                            field_ids=doc.get(
+                                "parameter_item_ids", []
+                            ),  # Database column name (keeping as-is), renamed to field_ids in model
+                            is_template=doc.get("is_template", False),
+                        )
+                    )
 
         # Parse objectives_history
         objectives_history = result.get("objectives_history") or []

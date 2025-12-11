@@ -108,10 +108,12 @@ export default function DocumentViewer({
 
         // Read once
         if (shouldTreatAsText) {
-          setContent(await response.text());
+          const textContent = await response.text();
+          setContent(textContent);
         } else {
           const blob = await response.blob();
-          setContent(URL.createObjectURL(blob));
+          const blobUrl = URL.createObjectURL(blob);
+          setContent(blobUrl);
         }
       } catch (e) {
         setError((e as Error).message);

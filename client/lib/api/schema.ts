@@ -16116,6 +16116,8 @@ export interface components {
                     [key: string]: unknown;
                 };
             };
+            /** Document Details */
+            document_details: components["schemas"]["DocumentDetailItem"][];
             /** Valid Document Ids */
             valid_document_ids: string[];
             /** Video Images */
@@ -16298,9 +16300,7 @@ export interface components {
                 };
             };
             /** Document Details */
-            document_details?: {
-                [key: string]: unknown;
-            }[] | null;
+            document_details: components["schemas"]["DocumentDetailItem"][];
             /** Valid Document Ids */
             valid_document_ids: string[];
             /** Video Images */

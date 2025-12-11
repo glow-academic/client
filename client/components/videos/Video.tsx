@@ -1568,6 +1568,15 @@ export default function Video({
       if (videoIdsFromUrl.length > 0) {
         setUrlVideoIds(videoIdsFromUrl);
       }
+
+      // Initialize template document IDs from URL params
+      const templateDocumentIdsFromUrl = searchParams
+        .get("templateDocumentIds")
+        ?.split(",")
+        .filter(Boolean);
+      if (templateDocumentIdsFromUrl && templateDocumentIdsFromUrl.length > 0) {
+        setTemplateDocumentIds(templateDocumentIdsFromUrl);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, isEditMode]);
@@ -1637,6 +1646,23 @@ export default function Video({
           !previewDocumentId
         ) {
           setPreviewDocumentId(videoData.document_ids[0] || null);
+        }
+      }
+
+      // Load template document IDs from document_details if available
+      if (
+        videoData &&
+        "document_details" in videoData &&
+        videoData.document_details &&
+        Array.isArray(videoData.document_details)
+      ) {
+        const templateIds = videoData.document_details
+          .filter((doc: { is_template?: boolean; document_id?: string }) => {
+            return doc.is_template === true && doc.document_id;
+          })
+          .map((doc: { document_id: string }) => doc.document_id);
+        if (templateIds.length > 0) {
+          setTemplateDocumentIds(templateIds);
         }
       }
 
@@ -2266,6 +2292,77 @@ export default function Video({
   const [videoPreviewDocumentId, setVideoPreviewDocumentId] = useState<
     string | null
   >(null);
+
+  // Initialize/update videoPreviewDocumentId when selectedDocumentIds changes
+  useEffect(() => {
+    if (selectedDocumentIds.length > 0) {
+      // If current preview is not in the selected documents, or no preview is set, select the first one
+      const firstDocId = selectedDocumentIds[0];
+      if (
+        !videoPreviewDocumentId ||
+        (firstDocId && !selectedDocumentIds.includes(videoPreviewDocumentId))
+      ) {
+        setVideoPreviewDocumentId(firstDocId || null);
+      }
+    } else {
+      // No documents selected, clear preview
+      setVideoPreviewDocumentId(null);
+    }
+  }, [selectedDocumentIds, videoPreviewDocumentId]);
+
+  // Extract template document IDs from document_mapping
+  // Template documents are documents that have parent_document_id (generated from a parent)
+  // OR documents that are referenced as parent_document_id by other documents (parent templates)
+  useEffect(() => {
+    if (documentMapping && Object.keys(documentMapping).length > 0) {
+      // First, find all documents that have parent_document_id (generated templates)
+      const generatedTemplateDocIds = Object.entries(documentMapping)
+        .filter(([docId, doc]) => {
+          const docWithParent = doc as DocumentMappingItem;
+          const hasParent = !!(
+            docWithParent?.parent_document_id &&
+            docWithParent.parent_document_id.trim()
+          );
+          return hasParent;
+        })
+        .map(([docId]) => docId);
+
+      // Second, find all documents that are referenced as parent_document_id (parent templates)
+      const parentTemplateDocIds = Object.keys(documentMapping).filter(
+        (docId) => {
+          // Check if any other document has this docId as its parent_document_id
+          return Object.values(documentMapping).some((doc) => {
+            const docWithParent = doc as DocumentMappingItem;
+            return (
+              docWithParent?.parent_document_id === docId &&
+              docWithParent.parent_document_id.trim()
+            );
+          });
+        }
+      );
+
+      // Combine both: generated templates + parent templates
+      const templateDocIds = [
+        ...new Set([...generatedTemplateDocIds, ...parentTemplateDocIds]),
+      ];
+
+      if (templateDocIds.length > 0) {
+        setTemplateDocumentIds(templateDocIds);
+      } else {
+        // Fallback: if no parent_document_id relationships found, check document names
+        // Documents with "Template" in name might be templates
+        const templateByNameDocIds = Object.entries(documentMapping)
+          .filter(([_, doc]) => {
+            const docItem = doc as DocumentMappingItem;
+            return docItem?.name?.toLowerCase().includes("template") ?? false;
+          })
+          .map(([docId]) => docId);
+        if (templateByNameDocIds.length > 0) {
+          setTemplateDocumentIds(templateByNameDocIds);
+        }
+      }
+    }
+  }, [documentMapping]);
 
   // Video upload state
   const videoRef = useRef<HTMLVideoElement | null>(null);

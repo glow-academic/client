@@ -41433,6 +41433,13 @@
             "type": "object",
             "title": "Document Mapping"
           },
+          "document_details": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentDetailItem"
+            },
+            "type": "array",
+            "title": "Document Details"
+          },
           "valid_document_ids": {
             "items": {
               "type": "string"
@@ -41804,6 +41811,7 @@
           "objective_mapping",
           "document_ids",
           "document_mapping",
+          "document_details",
           "valid_document_ids",
           "video_images",
           "objectives_history",
@@ -42036,18 +42044,10 @@
             "title": "Document Mapping"
           },
           "document_details": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": true,
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "$ref": "#/components/schemas/DocumentDetailItem"
+            },
+            "type": "array",
             "title": "Document Details"
           },
           "valid_document_ids": {
@@ -42422,6 +42422,7 @@
           "objective_mapping",
           "document_ids",
           "document_mapping",
+          "document_details",
           "valid_document_ids",
           "video_images",
           "objectives_history",
