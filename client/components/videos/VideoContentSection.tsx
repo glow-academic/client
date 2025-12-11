@@ -103,7 +103,11 @@ export interface VideoContentSectionProps {
   allPreviewDocumentIds: string[];
   documentMapping: Record<string, DocumentMappingItem>;
   videoPreviewDocumentId: string | null;
-  documentDetails?: Array<{ document_id: string; [key: string]: unknown }>;
+  documentDetails?: Array<{
+    document_id: string;
+    upload_id?: string | null;
+    [key: string]: unknown;
+  }>;
   templateDocumentIds?: string[];
 
   // Video
@@ -731,9 +735,18 @@ export function VideoContentSection({
           )}
 
           {/* Video Column (Center) */}
-          <div className="flex-1 space-y-2 h-full flex flex-col">
-            <Label>Video</Label>
-            <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
+          <div
+            className={
+              allPreviewDocumentIds.length > 0
+                ? useImage
+                  ? "w-[calc(70%-13rem)] space-y-4"
+                  : "w-[70%] space-y-4"
+                : useImage
+                  ? "flex-1 space-y-4"
+                  : "w-full space-y-4"
+            }
+          >
+            <div className="relative border rounded-lg overflow-hidden min-h-[400px]">
               {/* Video Player */}
               {isUploadingVideo ? (
                 <div className="absolute inset-0 w-full h-full bg-muted/20 flex items-center justify-center">
@@ -783,7 +796,7 @@ export function VideoContentSection({
 
           {/* Documents Column (Right) - Only shown when documents are selected */}
           {allPreviewDocumentIds.length > 0 && (
-            <div className="w-80 space-y-4 flex-shrink-0 h-full flex flex-col">
+            <div className="w-[30%] space-y-4 flex flex-col h-[400px]">
               {/* DocumentPicker */}
               {allPreviewDocumentIds.length > 1 && (
                 <GenericPicker
@@ -863,113 +876,90 @@ export function VideoContentSection({
               )}
 
               {/* Document Preview Container */}
-              {videoPreviewDocumentId &&
-                allPreviewDocumentIds.includes(videoPreviewDocumentId) && (
-                  <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
-                    {(() => {
-                      const docId = videoPreviewDocumentId;
-                      const fullDoc = documentDetails?.find(
-                        (d) => d.document_id === docId
-                      );
-                      const isTemplateDocument =
-                        Boolean(fullDoc?.["is_template"]) ||
-                        templateDocumentIds.includes(docId);
+              {videoPreviewDocumentId && (
+                <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
+                  {(() => {
+                    const docId = videoPreviewDocumentId;
+                    const fullDoc = documentDetails?.find(
+                      (d) => d.document_id === docId
+                    );
+                    // Derive template status from documentDetails (server data is source of truth)
+                    const isTemplateDocument = Boolean(
+                      fullDoc?.["is_template"]
+                    );
 
-                      // Try to get uploadId from document_mapping as fallback
-                      const mappedDoc = documentMapping[docId];
-                      const uploadIdFromMapping = mappedDoc
-                        ? (
-                            mappedDoc as {
-                              uploadId?: string;
-                              upload_id?: string;
-                              [key: string]: unknown;
-                            }
-                          ).uploadId ||
-                          (
-                            mappedDoc as {
-                              upload_id?: string;
-                              [key: string]: unknown;
-                            }
-                          ).upload_id ||
-                          null
-                        : null;
-
-                      const docForViewer: DocumentItem = fullDoc
-                        ? ({
-                            document_id: fullDoc.document_id,
-                            name:
-                              (fullDoc as { name?: string }).name ||
-                              documentMapping[docId]?.name ||
-                              "Document",
-                            updatedAt:
-                              (fullDoc as { updatedAt?: string }).updatedAt ||
-                              new Date().toISOString(),
-                            extension:
-                              (fullDoc as { extension?: string }).extension ||
-                              "",
-                            scenario_ids:
-                              (fullDoc as { scenario_ids?: string[] })
-                                .scenario_ids || [],
-                            can_edit:
-                              (fullDoc as { can_edit?: boolean }).can_edit ||
-                              false,
-                            can_delete:
-                              (fullDoc as { can_delete?: boolean })
-                                .can_delete || false,
-                            active:
-                              (fullDoc as { active?: boolean }).active ?? true,
-                            department_ids:
-                              (fullDoc as { department_ids?: string[] | null })
-                                .department_ids || null,
-                            upload_id:
-                              fullDoc["upload_id"] ??
-                              uploadIdFromMapping ??
-                              null,
-                            parameter_item_ids: [],
-                            field_ids: [],
-                          } as DocumentItem)
-                        : ({
-                            document_id: docId,
-                            name: documentMapping[docId]?.name || "Document",
-                            updatedAt: new Date().toISOString(),
-                            extension: "",
-                            scenario_ids: [],
-                            can_edit: false,
-                            can_delete: false,
-                            active: true,
-                            department_ids: null,
-                            field_ids: [],
-                            parameter_item_ids: [],
-                            upload_id: uploadIdFromMapping ?? null,
-                          } as DocumentItem);
-                      return (
-                        <>
-                          <div
-                            className={cn(
-                              "h-full overflow-auto [&>div]:!min-h-0 [&>div]:h-full [&_iframe]:!min-h-0 [&_iframe]:h-full",
-                              isTemplateDocument && "opacity-20"
-                            )}
-                          >
-                            <DocumentViewer
-                              document={docForViewer}
-                              bare={true}
-                              isFormDocument={false}
-                              compact={isTemplateDocument}
-                            />
-                          </div>
-                          {isTemplateDocument && (
-                            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                              <p className="text-sm font-medium text-foreground px-4 py-2 rounded text-center">
-                                Document will be automatically generated from
-                                this template
-                              </p>
-                            </div>
+                    const docForViewer: DocumentItem = fullDoc
+                      ? ({
+                          document_id: fullDoc.document_id,
+                          name:
+                            (fullDoc as { name?: string }).name ||
+                            documentMapping[docId]?.name ||
+                            "Document",
+                          updatedAt:
+                            (fullDoc as { updatedAt?: string }).updatedAt ||
+                            new Date().toISOString(),
+                          extension:
+                            (fullDoc as { extension?: string }).extension || "",
+                          scenario_ids:
+                            (fullDoc as { scenario_ids?: string[] })
+                              .scenario_ids || [],
+                          can_edit:
+                            (fullDoc as { can_edit?: boolean }).can_edit ||
+                            false,
+                          can_delete:
+                            (fullDoc as { can_delete?: boolean }).can_delete ||
+                            false,
+                          active:
+                            (fullDoc as { active?: boolean }).active ?? true,
+                          department_ids:
+                            (fullDoc as { department_ids?: string[] | null })
+                              .department_ids || null,
+                          upload_id: fullDoc.upload_id ?? null,
+                          parameter_item_ids: [],
+                          field_ids: [],
+                        } as DocumentItem)
+                      : ({
+                          document_id: docId,
+                          name: documentMapping[docId]?.name || "Document",
+                          updatedAt: new Date().toISOString(),
+                          extension: "",
+                          scenario_ids: [],
+                          can_edit: false,
+                          can_delete: false,
+                          active: true,
+                          department_ids: null,
+                          field_ids: [],
+                          parameter_item_ids: [],
+                          upload_id: null,
+                        } as DocumentItem);
+                    return (
+                      <>
+                        <div
+                          className={cn(
+                            "h-full overflow-auto [&>div]:!min-h-0 [&>div]:h-full [&_iframe]:!min-h-0 [&_iframe]:h-full",
+                            isTemplateDocument && "opacity-20"
                           )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
+                        >
+                          <DocumentViewer
+                            document={docForViewer}
+                            bare={true}
+                            isFormDocument={false}
+                            compact={isTemplateDocument}
+                          />
+                        </div>
+                        {isTemplateDocument && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                            <p className="text-sm font-medium text-foreground px-4 py-2 rounded text-center">
+                              Document will be automatically generated from this
+                              template
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           )}
         </div>

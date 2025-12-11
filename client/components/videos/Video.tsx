@@ -3420,6 +3420,17 @@ export default function Video({
         allPreviewDocumentIds={selectedDocumentIds}
         documentMapping={documentMapping}
         videoPreviewDocumentId={videoPreviewDocumentId}
+        {...(videoData &&
+        "document_details" in videoData &&
+        videoData.document_details
+          ? {
+              documentDetails: videoData.document_details as Array<{
+                document_id: string;
+                upload_id?: string | null;
+                [key: string]: unknown;
+              }>,
+            }
+          : {})}
         templateDocumentIds={templateDocumentIds}
         generatedVideoUrl={generatedVideoUrl}
         uploadedVideoFile={uploadedVideoFile}
