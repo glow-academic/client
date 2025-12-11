@@ -109,8 +109,7 @@ export interface VideoContentSectionProps {
   uploadedVideoFile: File | null;
   videoObjectUrl: string | null;
   isUploadingVideo: boolean;
-  isGeneratingVideo: boolean;
-  isGeneratingOutline: boolean;
+  isGenerating: boolean;
 
   // Callbacks
   onOutlineChange: (value: string) => void;
@@ -159,6 +158,8 @@ export interface VideoContentSectionProps {
   isReadonly: boolean;
   isSubmitting: boolean;
   imageInputRef: React.RefObject<HTMLInputElement | null>;
+  videoInputRef: React.RefObject<HTMLInputElement | null>;
+  onVideoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   draggedQuestionIndex: number | null;
   draggedOptionIndex: { questionIndex: number; optionIndex: number } | null;
@@ -186,7 +187,7 @@ export function VideoContentSection({
   uploadedVideoFile,
   videoObjectUrl,
   isUploadingVideo,
-  isGeneratingVideo,
+  isGenerating,
   onOutlineChange,
   onOutlineVersionSelect,
   onResetOutline,
@@ -219,6 +220,8 @@ export function VideoContentSection({
   isReadonly,
   isSubmitting,
   imageInputRef,
+  videoInputRef,
+  onVideoUpload,
   videoRef,
   draggedQuestionIndex,
   draggedOptionIndex,
@@ -311,14 +314,9 @@ export function VideoContentSection({
             variant="default"
             size="sm"
             onClick={onGenerate}
-            disabled={
-              isSubmitting ||
-              isGeneratingVideo ||
-              isGeneratingOutline ||
-              isReadonly
-            }
+            disabled={isSubmitting || isGenerating || isReadonly}
           >
-            {isGeneratingVideo || isGeneratingOutline ? (
+            {isGenerating ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Generating...
@@ -656,28 +654,6 @@ export function VideoContentSection({
           </div>
         )}
 
-        {/* Use Image Switch */}
-        <div className="space-y-1 pt-2">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="use-image"
-              className="text-sm flex items-center gap-1.5"
-            >
-              <Image className="h-3.5 w-3.5 text-muted-foreground" />
-              Use Images
-            </Label>
-            <Switch
-              id="use-image"
-              checked={useImage}
-              onCheckedChange={onUseImageChange}
-              disabled={isReadonly}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground pl-5">
-            Use video reference images
-          </p>
-        </div>
-
         {/* Three-Column Layout: Images | Video | Documents */}
         <div className="flex gap-4">
           {/* Images Column (Left) */}
@@ -710,59 +686,83 @@ export function VideoContentSection({
                   ))}
                 </div>
               ) : (
-                <div
-                  onClick={() => {
-                    if (!isReadonly && !isUploadingImage) {
-                      imageInputRef.current?.click();
-                    }
-                  }}
-                  className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                >
-                  <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-xs text-muted-foreground">
-                    Click to upload
-                  </p>
-                </div>
+                <>
+                  <div
+                    onClick={() => {
+                      if (!isReadonly && !isUploadingImage) {
+                        imageInputRef.current?.click();
+                      }
+                    }}
+                    className="relative rounded-lg overflow-hidden aspect-square flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center px-4">
+                      Click to upload images or leave blank to auto generate
+                    </p>
+                  </div>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={onImageUpload}
+                    disabled={isReadonly || isUploadingImage}
+                    className="hidden"
+                  />
+                </>
               )}
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={onImageUpload}
-                disabled={isReadonly || isUploadingImage}
-                className="hidden"
-              />
             </div>
           )}
 
           {/* Video Column (Center) */}
           <div className="flex-1 space-y-2">
             <Label>Video</Label>
-            {isUploadingVideo ? (
-              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
-                <div className="flex flex-col items-center gap-2 text-white">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="text-sm">Uploading video...</p>
+            <div className="relative border rounded-lg overflow-hidden min-h-[400px] aspect-video">
+              {/* Video Player */}
+              {isUploadingVideo ? (
+                <div className="absolute inset-0 w-full h-full bg-muted/20 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <p className="text-sm">Uploading video...</p>
+                  </div>
                 </div>
-              </div>
-            ) : generatedVideoUrl || (videoObjectUrl && uploadedVideoFile) ? (
-              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
-                <video
-                  ref={videoRef}
-                  src={generatedVideoUrl || videoObjectUrl || undefined}
-                  controls
-                  className="w-full h-full rounded-lg"
-                />
-              </div>
-            ) : (
-              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative border-2 border-dashed border-muted-foreground/25">
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <Upload className="h-12 w-12" />
-                  <p className="text-sm">No video</p>
+              ) : generatedVideoUrl || (videoObjectUrl && uploadedVideoFile) ? (
+                <div className="absolute inset-0 w-full h-full bg-black">
+                  <video
+                    ref={videoRef}
+                    src={generatedVideoUrl || videoObjectUrl || undefined}
+                    controls
+                    className="w-full h-full rounded-lg"
+                  />
                 </div>
-              </div>
-            )}
+              ) : (
+                <>
+                  {/* Upload Area */}
+                  <div
+                    onClick={() => {
+                      if (!isReadonly && !isUploadingVideo) {
+                        videoInputRef.current?.click();
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center px-4">
+                      Click to upload video or leave empty to auto generate
+                    </p>
+                  </div>
+                  {/* Hidden file input */}
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={onVideoUpload}
+                    disabled={isReadonly || isUploadingVideo}
+                    className="hidden"
+                  />
+                </>
+              )}
+            </div>
           </div>
 
           {/* Documents Column (Right) */}
@@ -804,6 +804,30 @@ export function VideoContentSection({
                 })()}
             </div>
           )}
+        </div>
+
+        {/* Use Image Switch */}
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="use-image"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Image className="h-3.5 w-3.5 text-muted-foreground" />
+                Use Images
+              </Label>
+              <Switch
+                id="use-image"
+                checked={useImage}
+                onCheckedChange={onUseImageChange}
+                disabled={isReadonly}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Use video reference images
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>

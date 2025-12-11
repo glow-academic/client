@@ -406,8 +406,7 @@ export default function Video({
       return;
     }
 
-    setIsGeneratingOutline(true);
-    setIsGeneratingVideo(true);
+    setIsGenerating(true);
 
     // Track generated resources
     const generatedImageIds: string[] = [];
@@ -736,8 +735,7 @@ export default function Video({
         `Failed to generate: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
-      setIsGeneratingOutline(false);
-      setIsGeneratingVideo(false);
+      setIsGenerating(false);
     }
   };
 
@@ -760,7 +758,7 @@ export default function Video({
       return;
     }
 
-    setIsGeneratingVideo(true);
+    setIsGenerating(true);
 
     try {
       // Use first image if available (backend expects single image reference)
@@ -869,7 +867,7 @@ export default function Video({
         `Failed to generate video: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
-      setIsGeneratingVideo(false);
+      setIsGenerating(false);
     }
   };
 
@@ -1263,6 +1261,7 @@ export default function Video({
   >([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
 
   // Documents state
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
@@ -1277,8 +1276,7 @@ export default function Video({
     null
   );
   const [uploadedVideoFile, setUploadedVideoFile] = useState<File | null>(null);
-  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
-  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   // Randomization state
@@ -2468,8 +2466,7 @@ export default function Video({
         uploadedVideoFile={uploadedVideoFile}
         videoObjectUrl={videoObjectUrl}
         isUploadingVideo={isUploadingVideo}
-        isGeneratingVideo={isGeneratingVideo}
-        isGeneratingOutline={isGeneratingOutline}
+        isGenerating={isGenerating}
         onOutlineChange={setOutlineText}
         onOutlineVersionSelect={handleOutlineVersionSelect}
         onResetOutline={handleResetOutline}
@@ -2511,6 +2508,8 @@ export default function Video({
         isReadonly={isReadonly}
         isSubmitting={isSubmitting}
         imageInputRef={imageInputRef}
+        videoInputRef={videoInputRef}
+        onVideoUpload={handleFileSelect}
         videoRef={videoRef}
         draggedQuestionIndex={draggedQuestionIndex}
         draggedOptionIndex={draggedOptionIndex}
