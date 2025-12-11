@@ -51,6 +51,7 @@ scenario_active_problem_statement AS (
     SELECT 
         sps.scenario_id,
         ps.id::text as problem_statement_id,
+        ps.name,
         ps.problem_statement,
         ps.created_at as problem_statement_created_at,
         ps.updated_at as problem_statement_updated_at
@@ -63,6 +64,7 @@ scenario_all_problem_statements AS (
     SELECT 
         sps.scenario_id,
         ps.id::text as problem_statement_id,
+        ps.name,
         ps.problem_statement,
         ps.created_at as problem_statement_created_at,
         ps.updated_at as problem_statement_updated_at
@@ -82,10 +84,11 @@ problem_statement_mapping_data AS (
                     -- Problem statements from scenario
                     SELECT 
                         sps.problem_statement_id as ps_id,
-                jsonb_build_object(
-                    'problem_statement', sps.problem_statement,
-                    'created_at', sps.problem_statement_created_at::text,
-                    'updated_at', sps.problem_statement_updated_at::text
+                        jsonb_build_object(
+                            'name', sps.name,
+                            'problem_statement', sps.problem_statement,
+                            'created_at', sps.problem_statement_created_at::text,
+                            'updated_at', sps.problem_statement_updated_at::text
                         ) as ps_data
                     FROM scenario_all_problem_statements sps
                     UNION ALL
@@ -93,6 +96,7 @@ problem_statement_mapping_data AS (
                     SELECT 
                         ps.id::text as ps_id,
                         jsonb_build_object(
+                            'name', ps.name,
                             'problem_statement', ps.problem_statement,
                             'created_at', ps.created_at::text,
                             'updated_at', ps.updated_at::text
@@ -101,10 +105,10 @@ problem_statement_mapping_data AS (
                     WHERE $6::uuid[] IS NOT NULL
                     AND array_length($6::uuid[], 1) > 0
                     AND ps.id = ANY($6::uuid[])
-                    AND ps.id NOT IN (
-                        SELECT problem_statement_id::uuid 
-                        FROM scenario_all_problem_statements 
-                        WHERE problem_statement_id IS NOT NULL
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM scenario_all_problem_statements saps
+                        WHERE saps.problem_statement_id::uuid = ps.id
                     )
                 ) combined
             ),
@@ -823,7 +827,7 @@ scenario_field_mapping_data AS (
                 'name', f.name,
                 'description', COALESCE(f.description, ''),
                 'parameter_id', fp.parameter_id::text,
-                'parameter_name', p.name,
+                'parameter_name', p.name
             )
         ),
         '{}'::jsonb
@@ -1047,43 +1051,6 @@ objectives_history_data AS (
         ),
         '[]'::jsonb
     ) as objectives_history
-)
-SELECT 
-    sc.id,
-    sc.name,
-    sc.problem_statement,
-    sc.problem_statement_id,
-    sc.active,
-    sc.generated,
-    sc.department_ids,
-    sc.parent_scenario_id,
-    COALESCE(ssa_attr.hints_enabled, false) as hints_enabled,
-    sc.objectives_enabled,
-    sc.image_enabled as image_input_enabled,
-    COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
-    COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
-    COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,
-    COALESCE(ssa.simulation_ids, ARRAY[]::text[]) as simulation_ids,
-    COALESCE(mpd.parameters_json, '{}'::jsonb) as parameters_json,
-    COALESCE(vpd2.valid_persona_ids, ARRAY[]::text[]) as valid_persona_ids,
-    COALESCE(vdd.valid_document_ids, ARRAY[]::text[]) as valid_document_ids,
-    (SELECT dept_ids FROM user_departments) as valid_department_ids,
-    COALESCE(ssa.active_usage_count, 0) as active_usage_count,
-    up.role as user_role,
-    sod.objective_mapping,
-    vpd2.persona_mapping,
-    COALESCE(edmd.document_mapping, vdd.document_mapping) as document_mapping,
-    smd.simulation_mapping,
-    COALESCE(epmd.parameter_mapping, pmd.parameter_mapping) as parameter_mapping,
-    COALESCE(efmd.field_mapping, fmd.field_mapping) as field_mapping,
-    COALESCE(edmdept.department_mapping, dmd.department_mapping) as department_mapping,
-    ddd.document_details,
-    COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
-    COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history,
-    COALESCE((SELECT scenario_images FROM scenario_images_data), '[]'::jsonb) as scenario_images,
-    sc.scenario_agent_id,
-    sc.image_agent_id,
-    COALESCE((SELECT array_agg(parameter_id::text) FROM linked_scenario_parameters), ARRAY[]::text[]) as parameter_ids
 ),
 user_departments_for_agents AS (
     SELECT department_id
@@ -1154,6 +1121,42 @@ valid_agents AS (
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
 )
+SELECT 
+    sc.id,
+    sc.name,
+    sc.problem_statement,
+    sc.problem_statement_id,
+    sc.active,
+    sc.generated,
+    sc.department_ids,
+    sc.parent_scenario_id,
+    COALESCE(ssa_attr.hints_enabled, false) as hints_enabled,
+    sc.objectives_enabled,
+    sc.image_enabled as image_input_enabled,
+    COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
+    COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
+    COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,
+    COALESCE(ssa.simulation_ids, ARRAY[]::text[]) as simulation_ids,
+    COALESCE(mpd.parameters_json, '{}'::jsonb) as parameters_json,
+    COALESCE(vpd2.valid_persona_ids, ARRAY[]::text[]) as valid_persona_ids,
+    COALESCE(vdd.valid_document_ids, ARRAY[]::text[]) as valid_document_ids,
+    (SELECT dept_ids FROM user_departments) as valid_department_ids,
+    COALESCE(ssa.active_usage_count, 0) as active_usage_count,
+    up.role as user_role,
+    sod.objective_mapping,
+    vpd2.persona_mapping,
+    COALESCE(edmd.document_mapping, vdd.document_mapping) as document_mapping,
+    smd.simulation_mapping,
+    COALESCE(epmd.parameter_mapping, pmd.parameter_mapping) as parameter_mapping,
+    COALESCE(efmd.field_mapping, fmd.field_mapping) as field_mapping,
+    COALESCE(edmdept.department_mapping, dmd.department_mapping) as department_mapping,
+    ddd.document_details,
+    COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
+    COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history,
+    COALESCE((SELECT scenario_images FROM scenario_images_data), '[]'::jsonb) as scenario_images,
+    sc.scenario_agent_id,
+    sc.image_agent_id,
+    COALESCE((SELECT array_agg(parameter_id::text) FROM linked_scenario_parameters), ARRAY[]::text[]) as parameter_ids
 FROM scenario_core sc
 CROSS JOIN user_profile up
 LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id

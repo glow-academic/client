@@ -551,9 +551,14 @@ export default function Scenario({
   const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
     string | null
   >(null);
+  // Initialize problem statement IDs from URL params (DHH-style: compute when needed)
   const [currentProblemStatementIds, setCurrentProblemStatementIds] = useState<
     string[]
-  >([]);
+  >(() => {
+    const problemStatementIdsFromUrl =
+      searchParams.get("problemStatementIds")?.split(",").filter(Boolean) || [];
+    return problemStatementIdsFromUrl;
+  });
   const [image, setImage] = useState<{
     id: string;
     name: string;
@@ -869,15 +874,41 @@ export default function Scenario({
   // Merge server problem statement mapping with local versions (for create mode)
   // IDs from database are unique, so just merge - local versions override server versions if same ID
   const problemStatementMapping = useMemo(() => {
-    const serverMapping = scenarioData?.problem_statement_mapping || {};
+    const serverMappingRaw = scenarioData?.problem_statement_mapping || {};
+    // Normalize server mapping to ensure all entries have name field (for backward compatibility)
+    const serverMapping: Record<
+      string,
+      {
+        name: string;
+        problem_statement: string;
+        created_at: string;
+        updated_at: string;
+      }
+    > = {};
+    Object.entries(serverMappingRaw).forEach(([id, entry]) => {
+      serverMapping[id] = {
+        name: (entry as { name?: string }).name || "", // Ensure name field exists
+        problem_statement: (entry as { problem_statement: string })
+          .problem_statement,
+        created_at: (entry as { created_at: string }).created_at,
+        updated_at: (entry as { updated_at: string }).updated_at,
+      };
+    });
+
     const localMapping: Record<
       string,
-      { problem_statement: string; created_at: string; updated_at: string }
+      {
+        name: string;
+        problem_statement: string;
+        created_at: string;
+        updated_at: string;
+      }
     > = {};
 
     // Convert local versions to ProblemStatementInfo format
     localProblemStatementVersions.forEach((version) => {
       localMapping[version.id] = {
+        name: "", // Local versions don't have name, use empty string as fallback
         problem_statement: version.problem_statement,
         created_at: version.created_at,
         updated_at: version.updated_at,
@@ -887,6 +918,26 @@ export default function Scenario({
     // Simple merge: server versions + local versions (local takes precedence if same ID)
     return { ...serverMapping, ...localMapping };
   }, [scenarioData?.problem_statement_mapping, localProblemStatementVersions]);
+
+  // Compute selected problem statement ID for picker (DHH-style: derive from state, not effects)
+  const selectedProblemStatementId = useMemo(() => {
+    // If we have IDs from URL, use the first one
+    if (currentProblemStatementIds.length > 0) {
+      return currentProblemStatementIds[0];
+    }
+    // Otherwise, find the ID that matches the current problem statement text
+    if (formData.problemStatement && formData.problemStatement.trim()) {
+      const matchingId = Object.entries(problemStatementMapping).find(
+        ([_id, info]) => info.problem_statement === formData.problemStatement
+      )?.[0];
+      return matchingId;
+    }
+    return undefined;
+  }, [
+    currentProblemStatementIds,
+    formData.problemStatement,
+    problemStatementMapping,
+  ]);
 
   // Combine currentDocumentIds and templateDocumentIds for preview
   // Use the union that's already computed for templates section
@@ -1269,18 +1320,16 @@ export default function Scenario({
     }
   }, [currentFieldIds, validParameterItemIds]);
 
-  // Sync problem statement IDs from URL params (for server-driven updates after router.refresh())
+  // Sync problem statement IDs from URL params (DHH-style: compute when needed, not in effects)
   useEffect(() => {
     const problemStatementIdsFromUrl =
       searchParams.get("problemStatementIds")?.split(",").filter(Boolean) || [];
-    // Only update if URL params differ from current state (prevents loops)
     const urlIdsSorted = [...problemStatementIdsFromUrl].sort().join(",");
     const currentIdsSorted = [...currentProblemStatementIds].sort().join(",");
     if (urlIdsSorted !== currentIdsSorted) {
       setCurrentProblemStatementIds(problemStatementIdsFromUrl);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only depend on searchParams - currentProblemStatementIds comparison prevents loops
+  }, [searchParams, currentProblemStatementIds]);
 
   // Handle randomized selections from server response
   useEffect(() => {
@@ -1703,8 +1752,20 @@ export default function Scenario({
       // Create mode: initialize from server response (server-driven approach)
       // Server already parsed URL params and returns selected IDs, search terms, ranges
       const newData = scenarioData as ScenarioNewOut;
+      // Preserve problem statement and name if they were set from URL params (don't reset to empty/default)
+      const preservedProblemStatement =
+        formData.problemStatement || initialFormData.problemStatement;
+      // Preserve name if it was set from problem statement (not default "New Scenario")
+      const preservedName =
+        formData.name &&
+        formData.name !== "New Scenario" &&
+        formData.name.trim() !== ""
+          ? formData.name
+          : initialFormData.name;
       setFormData({
         ...initialFormData,
+        problemStatement: preservedProblemStatement,
+        name: preservedName,
         scenarioAgentId: scenarioData.scenario_agent_id || null,
         imageAgentId: scenarioData.image_agent_id || null,
         parameterIds: newData.selected_parameter_ids || [],
@@ -1732,6 +1793,46 @@ export default function Scenario({
         .filter(Boolean);
       if (problemStatementIdsFromUrl && problemStatementIdsFromUrl.length > 0) {
         setCurrentProblemStatementIds(problemStatementIdsFromUrl);
+
+        // Set first as active and update name if needed
+        // Check scenarioData directly for problem_statement_mapping (DHH-style: simple, inline)
+        const mappingRaw = scenarioData?.problem_statement_mapping || {};
+        const firstId = problemStatementIdsFromUrl[0];
+        if (firstId) {
+          const firstProblemStatementRaw = mappingRaw[firstId];
+          if (firstProblemStatementRaw) {
+            // Normalize to ensure name field exists (for backward compatibility)
+            const firstProblemStatement = {
+              name: (firstProblemStatementRaw as { name?: string }).name || "",
+              problem_statement: (
+                firstProblemStatementRaw as { problem_statement: string }
+              ).problem_statement,
+              created_at: (firstProblemStatementRaw as { created_at: string })
+                .created_at,
+              updated_at: (firstProblemStatementRaw as { updated_at: string })
+                .updated_at,
+            };
+            // Set as active
+            if (
+              !formData.problemStatement ||
+              !formData.problemStatement.trim()
+            ) {
+              handleInputChange(
+                "problemStatement",
+                firstProblemStatement.problem_statement
+              );
+            }
+            // Set name in new mode (using name field)
+            const isNewMode =
+              !isEditMode &&
+              (!formData.name ||
+                formData.name === "New Scenario" ||
+                formData.name.trim() === "");
+            if (isNewMode && firstProblemStatement.name) {
+              handleInputChange("name", firstProblemStatement.name);
+            }
+          }
+        }
       }
 
       // Initialize search terms from server response
@@ -1793,6 +1894,7 @@ export default function Scenario({
 
       formDataInitializedRef.current = true;
     }
+    // formData.name, formData.problemStatement, handleInputChange intentionally excluded to prevent loops
   }, [
     scenarioData,
     isEditMode,
@@ -3244,6 +3346,9 @@ export default function Scenario({
               problemStatement={formData.problemStatement || ""}
               problemStatementMapping={problemStatementMapping}
               currentProblemStatementIds={currentProblemStatementIds}
+              {...(selectedProblemStatementId
+                ? { selectedProblemStatementId }
+                : {})}
               hasProblemStatementChanges={hasProblemStatementChanges}
               originalProblemStatement={
                 originalFormData?.problemStatement || ""

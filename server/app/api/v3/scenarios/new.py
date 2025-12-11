@@ -5,29 +5,20 @@ from collections.abc import Sequence
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    DocumentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-)
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              DocumentMapping, DocumentMappingItem,
+                              FieldMapping, FieldMappingItem, ParameterMapping,
+                              ParameterMappingItem, PersonaMapping,
+                              PersonaMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 def preserve_order_union(
@@ -151,6 +142,7 @@ class ObjectiveWithDepartments(BaseModel):
 class ProblemStatementInfo(BaseModel):
     """Problem statement version info."""
 
+    name: str = ""  # Default to empty string for backward compatibility
     problem_statement: str
     created_at: str
     updated_at: str
@@ -1133,6 +1125,7 @@ async def get_scenario_new(
             for psid, psdata in ps_mapping_data.items():
                 if isinstance(psdata, dict):
                     problem_statement_mapping[psid] = ProblemStatementInfo(
+                        name=psdata.get("name", ""),
                         problem_statement=psdata.get("problem_statement", ""),
                         created_at=psdata.get("created_at", ""),
                         updated_at=psdata.get("updated_at", ""),

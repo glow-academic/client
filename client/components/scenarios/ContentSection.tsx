@@ -204,6 +204,7 @@ function ObjectiveInputWithAutocomplete({
 }
 
 export interface ProblemStatementInfo {
+  name: string;
   problem_statement: string;
   created_at: string;
   updated_at: string;
@@ -224,6 +225,7 @@ export interface ContentSectionProps {
   problemStatement: string;
   problemStatementMapping: Record<string, ProblemStatementInfo>;
   currentProblemStatementIds: string[];
+  selectedProblemStatementId?: string | undefined;
   hasProblemStatementChanges: boolean;
   originalProblemStatement: string;
 
@@ -298,6 +300,7 @@ export function ContentSection({
   problemStatement,
   problemStatementMapping,
   currentProblemStatementIds: _currentProblemStatementIds,
+  selectedProblemStatementId,
   hasProblemStatementChanges,
   originalProblemStatement: _originalProblemStatement,
   objectiveCountRange,
@@ -443,7 +446,11 @@ export function ContentSection({
                 <GenericPicker
                   items={problemStatementMapping}
                   itemIds={Object.keys(problemStatementMapping)}
-                  selectedIds={[]}
+                  selectedIds={
+                    selectedProblemStatementId
+                      ? [selectedProblemStatementId]
+                      : []
+                  }
                   onSelect={(ids) => {
                     const id = ids[0] || null;
                     if (id && problemStatementMapping[id]) {

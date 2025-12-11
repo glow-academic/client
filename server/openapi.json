@@ -38999,6 +38999,11 @@
       },
       "app__api__v3__scenarios__detail__ProblemStatementInfo": {
         "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "default": ""
+          },
           "problem_statement": {
             "type": "string",
             "title": "Problem Statement"
@@ -39542,6 +39547,11 @@
       },
       "app__api__v3__scenarios__new__ProblemStatementInfo": {
         "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "default": ""
+          },
           "problem_statement": {
             "type": "string",
             "title": "Problem Statement"

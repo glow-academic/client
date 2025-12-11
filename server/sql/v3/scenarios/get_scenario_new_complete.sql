@@ -610,6 +610,7 @@ problem_statement_mapping_data_default AS (
             SELECT jsonb_object_agg(
                 ps.id::text,
                 jsonb_build_object(
+                    'name', ps.name,
                     'problem_statement', ps.problem_statement,
                     'created_at', ps.created_at::text,
                     'updated_at', ps.updated_at::text

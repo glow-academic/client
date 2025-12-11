@@ -15309,6 +15309,11 @@ export interface components {
          * @description Problem statement information for version history.
          */
         app__api__v3__scenarios__detail__ProblemStatementInfo: {
+            /**
+             * Name
+             * @default
+             */
+            name: string;
             /** Problem Statement */
             problem_statement: string;
             /** Created At */
@@ -15493,6 +15498,11 @@ export interface components {
          * @description Problem statement version info.
          */
         app__api__v3__scenarios__new__ProblemStatementInfo: {
+            /**
+             * Name
+             * @default
+             */
+            name: string;
             /** Problem Statement */
             problem_statement: string;
             /** Created At */
