@@ -331,6 +331,30 @@
         "message": "?string"
       }
     },
+    "questions_tool_complete": {
+      "payload": {
+        "success": "boolean",
+        "question_ids": "string[]",
+        "trace_id": "string",
+        "message": "?string"
+      }
+    },
+    "outline_tool_complete": {
+      "payload": {
+        "success": "boolean",
+        "outline_id": "string",
+        "trace_id": "string",
+        "message": "?string"
+      }
+    },
+    "video_tool_complete": {
+      "payload": {
+        "success": "boolean",
+        "generation_id": "?string",
+        "trace_id": "string",
+        "message": "?string"
+      }
+    },
     "simulation_voice_start_response": {
       "payload": {
         "success": "boolean",

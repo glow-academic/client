@@ -4,12 +4,13 @@ import asyncio
 import uuid
 from typing import Any, Literal
 
+from openai import OpenAI
+from pydantic import BaseModel, ValidationError
+
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from openai import OpenAI
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -102,17 +103,26 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
             # Get agent context AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
             # Note: Video generation doesn't have profile_id in payload, so we use None (defaults to guest)
-            sql_query = load_sql("sql/v3/agents/get_video_run_context_and_create_run.sql")
+            sql_query = load_sql(
+                "sql/v3/agents/get_video_run_context_and_create_run.sql"
+            )
             try:
                 context_row = await conn.fetchrow(sql_query, str(video_id), None)
             except Exception as e:
                 import asyncpg  # type: ignore
-                
+
                 error_msg = str(e)
                 # Check if it's a rate limit error from SQL (PostgreSQL exception)
-                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
                     # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
-                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
                     await video_generation_error(
                         VideoGenerationErrorPayload(
                             success=False,
@@ -150,7 +160,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                     room=sid,
                 )
                 return
-            
+
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(context_row["run_id"])
             department_id = context_row.get("department_id")
@@ -297,7 +307,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                         True,  # active
                         str(model_run_id),  # run_id - now created in SQL
                     )
-                    
+
                     # Emit async pricing event (non-blocking)
                     # Video generation doesn't use LLM tokens, so we set tokens to 0
                     # This handles message logging in background via internal bus
@@ -309,9 +319,13 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                             "inputTextTokens": 0,  # Video generation doesn't use LLM tokens
                             "outputTextTokens": 0,  # Video generation doesn't use LLM tokens
                             "systemPrompt": context_row.get("system_prompt", ""),
-                            "inputItems": [{"role": "user", "content": data.prompt}],  # Simple prompt input
+                            "inputItems": [
+                                {"role": "user", "content": data.prompt}
+                            ],  # Simple prompt input
                             "assistantOutput": f"Video generated: {video_filename}",
-                            "departmentId": str(department_id) if department_id else None,
+                            "departmentId": str(department_id)
+                            if department_id
+                            else None,
                         },
                     )
 

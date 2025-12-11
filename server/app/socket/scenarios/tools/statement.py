@@ -3,10 +3,11 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -45,15 +46,15 @@ async def problem_statement_tool_complete(
         payload.model_dump(),
         room=room,
     )
-    logger.info(
-        f"[scenario_tool_problem_statement_complete] Emitted to room={room}"
-    )
+    logger.info(f"[scenario_tool_problem_statement_complete] Emitted to room={room}")
 
 
 async def problem_statement_tool_error(
     payload: ProblemStatementToolErrorPayload, room: str
 ) -> None:
-    await sio.emit("scenario_tool_problem_statement_error", payload.model_dump(), room=room)
+    await sio.emit(
+        "scenario_tool_problem_statement_error", payload.model_dump(), room=room
+    )
 
 
 async def _scenario_tool_problem_statement_impl(sid: str, data: dict[str, Any]) -> None:
@@ -65,7 +66,9 @@ async def _scenario_tool_problem_statement_impl(sid: str, data: dict[str, Any]) 
     try:
         validated = ProblemStatementToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in scenario_tool_problem_statement for {sid}: {e}")
+        logger.error(
+            f"Validation error in scenario_tool_problem_statement for {sid}: {e}"
+        )
         await problem_statement_tool_error(
             ProblemStatementToolErrorPayload(
                 success=False,
@@ -93,14 +96,20 @@ async def _scenario_tool_problem_statement_impl(sid: str, data: dict[str, Any]) 
     try:
         async with pool.acquire() as conn:
             # Use description as problem_statement, title as name
-            sql = load_sql("sql/v3/problem_statements/insert_problem_statement_complete.sql")
-            scenario_id_uuid = uuid.UUID(validated.scenario_id) if validated.scenario_id else None
+            sql = load_sql(
+                "sql/v3/problem_statements/insert_problem_statement_complete.sql"
+            )
+            scenario_id_uuid = (
+                uuid.UUID(validated.scenario_id) if validated.scenario_id else None
+            )
 
             result = await conn.fetchrow(
                 sql,
                 validated.description,  # problem_statement
                 validated.title,  # problem_statement_name
-                str(scenario_id_uuid) if scenario_id_uuid else None,  # scenario_id (nullable)
+                str(scenario_id_uuid)
+                if scenario_id_uuid
+                else None,  # scenario_id (nullable)
                 True,  # active
             )
 
@@ -134,7 +143,8 @@ async def _scenario_tool_problem_statement_impl(sid: str, data: dict[str, Any]) 
 
     except Exception as e:
         logger.error(
-            f"Error in scenario_tool_problem_statement for {sid}: {str(e)}", exc_info=True
+            f"Error in scenario_tool_problem_statement for {sid}: {str(e)}",
+            exc_info=True,
         )
         await problem_statement_tool_error(
             ProblemStatementToolErrorPayload(
@@ -162,4 +172,3 @@ async def scenario_tool_problem_statement_internal(data: dict[str, Any]) -> None
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}
     await _scenario_tool_problem_statement_impl(sid, payload)
-

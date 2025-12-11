@@ -75,13 +75,19 @@ async def generate_scenario_problem_statement(
         sql,
         department_id,  # Already a UUID object
         persona_id if persona_id else None,  # Already a UUID object or None
-        [str(d) for d in document_ids] if document_ids else [],  # Convert to string list
-        [str(p) for p in parameter_item_ids] if parameter_item_ids else [],  # Convert to string list
+        [str(d) for d in document_ids]
+        if document_ids
+        else [],  # Convert to string list
+        [str(p) for p in parameter_item_ids]
+        if parameter_item_ids
+        else [],  # Convert to string list
         str(agent_id),  # agent_id (required)
     )
 
     if not context_row:
-        raise ValueError(f"Agent {agent_id} not found or not available for department {department_id}")
+        raise ValueError(
+            f"Agent {agent_id} not found or not available for department {department_id}"
+        )
 
     # Parse JSON arrays
     documents = (

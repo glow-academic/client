@@ -56,7 +56,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
     Replaces /simulations/start endpoint
     """
     try:
-        logger.info(f"Received simulation_text_start request from {sid} with data: {data}")
+        logger.info(
+            f"Received simulation_text_start request from {sid} with data: {data}"
+        )
 
         simulation_id = data.simulation_id
         profile_id = data.profile_id
@@ -119,7 +121,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             trace_id = gen_trace_id()
 
             # Create attempt and chat using SQL
-            sql = load_sql("sql/v3/simulations/simulation_text_start_attempt_complete.sql")
+            sql = load_sql(
+                "sql/v3/simulations/simulation_text_start_attempt_complete.sql"
+            )
             row = await conn.fetchrow(
                 sql,
                 simulation_id,

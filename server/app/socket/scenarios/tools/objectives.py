@@ -3,10 +3,11 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -40,9 +41,7 @@ async def objectives_tool_complete(
         f"objective_ids={payload.objective_ids}"
     )
     await sio.emit("scenario_tool_objectives_complete", payload.model_dump(), room=room)
-    logger.info(
-        f"[scenario_tool_objectives_complete] Emitted to room={room}"
-    )
+    logger.info(f"[scenario_tool_objectives_complete] Emitted to room={room}")
 
 
 async def objectives_tool_error(payload: ObjectivesToolErrorPayload, room: str) -> None:
@@ -87,7 +86,9 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
         async with pool.acquire() as conn:
             # Limit to maximum 3 objectives
             objectives = validated.objectives[:3]
-            scenario_id_uuid = uuid.UUID(validated.scenario_id) if validated.scenario_id else None
+            scenario_id_uuid = (
+                uuid.UUID(validated.scenario_id) if validated.scenario_id else None
+            )
 
             sql = load_sql("sql/v3/objectives/insert_objective_complete.sql")
             objective_ids = []
@@ -97,7 +98,9 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
                     sql,
                     objective,  # objective text
                     idx,  # idx
-                    str(scenario_id_uuid) if scenario_id_uuid else None,  # scenario_id (nullable)
+                    str(scenario_id_uuid)
+                    if scenario_id_uuid
+                    else None,  # scenario_id (nullable)
                 )
 
                 if not result:
@@ -139,7 +142,9 @@ async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None
             f"Error in scenario_tool_objectives for {sid}: {str(e)}", exc_info=True
         )
         await objectives_tool_error(
-            ObjectivesToolErrorPayload(success=False, message=str(e), trace_id=trace_id),
+            ObjectivesToolErrorPayload(
+                success=False, message=str(e), trace_id=trace_id
+            ),
             room=sid,
         )
 
@@ -160,4 +165,3 @@ async def scenario_tool_objectives_internal(data: dict[str, Any]) -> None:
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}
     await _scenario_tool_objectives_impl(sid, payload)
-

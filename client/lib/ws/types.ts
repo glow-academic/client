@@ -239,6 +239,24 @@ export type ServerToClientEvents = {
     trace_id: string;
     message?: string;
   }) => void;
+  questions_tool_complete: (payload: {
+    success: boolean;
+    question_ids: string[];
+    trace_id: string;
+    message?: string;
+  }) => void;
+  outline_tool_complete: (payload: {
+    success: boolean;
+    outline_id: string;
+    trace_id: string;
+    message?: string;
+  }) => void;
+  video_tool_complete: (payload: {
+    success: boolean;
+    generation_id?: string;
+    trace_id: string;
+    message?: string;
+  }) => void;
   simulation_voice_start_response: (payload: {
     success: boolean;
     message: string;

@@ -63,7 +63,8 @@ async def simulation_join(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in simulation_join for {sid}: {e}")
         await simulation_join_error(
-            SimulationJoinErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
+            SimulationJoinErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
             room=sid,
         )
-

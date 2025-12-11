@@ -3,10 +3,11 @@
 import uuid
 
 from agents import Tool, function_tool
+from pydantic import Field
+
 from app.main import get_scenario_storage
 from app.utils.logging.db_logger import get_logger
 from app.utils.storage.request_storage import build_storage_key
-from pydantic import Field
 
 logger = get_logger(__name__)
 

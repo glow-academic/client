@@ -27,7 +27,9 @@ async def simulation_voice_user_start_emit(
     await sio.emit("simulation_voice_user_start", payload.model_dump(), room=room)
 
 
-async def _simulation_voice_user_start_impl(sid: str, data: VoiceUserStartPayload) -> None:
+async def _simulation_voice_user_start_impl(
+    sid: str, data: VoiceUserStartPayload
+) -> None:
     """Handle speech started event from Realtime API.
 
     This event is emitted when the user starts speaking. We relay it back

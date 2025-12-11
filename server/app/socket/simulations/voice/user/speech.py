@@ -3,12 +3,15 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import _voice_message_ids, get_internal_sio, get_pool, sio
-from app.socket.simulations.text.send import (SimulationRunCompletePayload,
-                                              simulation_run_complete)
+from app.socket.simulations.text.send import (
+    SimulationRunCompletePayload,
+    simulation_run_complete,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -25,7 +28,9 @@ class VoiceUserSpeechPayload(BaseModel):
     usage: dict[str, Any]
 
 
-async def _simulation_voice_user_speech_impl(sid: str, data: VoiceUserSpeechPayload) -> None:
+async def _simulation_voice_user_speech_impl(
+    sid: str, data: VoiceUserSpeechPayload
+) -> None:
     """Handle response.done event from Realtime API.
 
     Creates runs for accumulated message IDs and tracks token usage with separate
@@ -39,7 +44,9 @@ async def _simulation_voice_user_speech_impl(sid: str, data: VoiceUserSpeechPayl
 
         chat_id = data.chat_id
         if not chat_id:
-            logger.warning(f"Missing chat_id in simulation_voice_user_speech from {sid}")
+            logger.warning(
+                f"Missing chat_id in simulation_voice_user_speech from {sid}"
+            )
             return
 
         chat_id_uuid = uuid.UUID(chat_id)
@@ -321,8 +328,12 @@ async def _simulation_voice_user_speech_impl(sid: str, data: VoiceUserSpeechPayl
                                 "inputAudioTokens": input_audio_tokens,
                                 "inputImageTokens": input_image_tokens,
                                 "outputAudioTokens": output_audio_tokens,
-                                "cachedTextTokens": cached_text_tokens if cached_text_tokens > 0 else None,
-                                "cachedAudioTokens": cached_audio_tokens if cached_audio_tokens > 0 else None,
+                                "cachedTextTokens": cached_text_tokens
+                                if cached_text_tokens > 0
+                                else None,
+                                "cachedAudioTokens": cached_audio_tokens
+                                if cached_audio_tokens > 0
+                                else None,
                                 "systemPrompt": None,  # Voice doesn't use system prompts
                                 "inputItems": None,  # Voice messages are handled separately
                                 "assistantOutput": None,  # Voice responses are handled separately
@@ -371,7 +382,9 @@ async def _simulation_voice_user_speech_impl(sid: str, data: VoiceUserSpeechPayl
         )
 
     except Exception as e:
-        logger.error(f"Error in simulation_voice_user_speech for {sid}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in simulation_voice_user_speech for {sid}: {str(e)}", exc_info=True
+        )
         # Clear accumulator on error to prevent stale data
         if chat_id in _voice_message_ids:
             del _voice_message_ids[chat_id]

@@ -24,7 +24,9 @@ class SimulationLeavePayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_leave_error(payload: SimulationLeaveErrorPayload, room: str) -> None:
+async def simulation_leave_error(
+    payload: SimulationLeaveErrorPayload, room: str
+) -> None:
     await sio.emit("simulation_leave_error", payload.model_dump(), room=room)
 
 
@@ -49,7 +51,8 @@ async def simulation_leave(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in simulation_leave for {sid}: {e}")
         await simulation_leave_error(
-            SimulationLeaveErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
+            SimulationLeaveErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
             room=sid,
         )
-

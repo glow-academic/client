@@ -5,22 +5,33 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              DocumentMapping, DocumentMappingItem,
-                              FieldMapping, FieldMappingItem, ObjectiveMapping,
-                              ObjectiveMappingItem, ParameterMapping,
-                              ParameterMappingItem, PersonaMapping,
-                              PersonaMappingItem, SimulationMapping,
-                              SimulationMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    DocumentMapping,
+    DocumentMappingItem,
+    FieldMapping,
+    FieldMappingItem,
+    ObjectiveMapping,
+    ObjectiveMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 def preserve_order_union(
@@ -335,7 +346,7 @@ def filter_valid_persona_ids(
     # Build filtered result (excluding selected items)
     filtered_result = []
     selected_persona_id_set_for_result = set(selected_persona_ids)
-    
+
     for persona_id in param_filtered:
         # Skip selected personas - they'll be prepended
         if persona_id in selected_persona_id_set_for_filter:
@@ -400,7 +411,9 @@ def filter_valid_document_ids(
     selected_doc_id_set = set(selected_doc_ids)
 
     if len(selected_dept_ids) == 0:
-        dept_filtered_ids = preserve_order_union_selected_first(selected_doc_ids, base_ids)
+        dept_filtered_ids = preserve_order_union_selected_first(
+            selected_doc_ids, base_ids
+        )
     else:
         all_dept_document_ids: set[str] = set()
         for dept_data in department_mapping.values():
@@ -421,7 +434,9 @@ def filter_valid_document_ids(
         ]
 
         # Preserve order: selected items first, then filtered items
-        dept_filtered_ids = preserve_order_union_selected_first(selected_doc_ids, filtered)
+        dept_filtered_ids = preserve_order_union_selected_first(
+            selected_doc_ids, filtered
+        )
 
     current_doc_field_ids = [
         item_id
@@ -779,34 +794,43 @@ async def get_scenario_detail(
     try:
         # Load SQL string (persona query is now merged into main query)
         sql_query = load_sql("sql/v3/scenarios/get_scenario_detail_complete.sql")
-        
+
         # Convert documentIds to UUID array if provided
         document_ids_uuid = None
         if request_data.documentIds:
             import uuid as uuid_lib
+
             try:
-                document_ids_uuid = [uuid_lib.UUID(did) for did in request_data.documentIds]
+                document_ids_uuid = [
+                    uuid_lib.UUID(did) for did in request_data.documentIds
+                ]
             except (ValueError, TypeError):
                 document_ids_uuid = None
-        
+
         # Convert templateDocumentIds to UUID array if provided
         template_document_ids_uuid = None
         if request_data.templateDocumentIds:
             import uuid as uuid_lib
+
             try:
-                template_document_ids_uuid = [uuid_lib.UUID(did) for did in request_data.templateDocumentIds]
+                template_document_ids_uuid = [
+                    uuid_lib.UUID(did) for did in request_data.templateDocumentIds
+                ]
             except (ValueError, TypeError):
                 template_document_ids_uuid = None
-        
+
         # Convert problemStatementIds to UUID array if provided
         problem_statement_ids_uuid = None
         if request_data.problemStatementIds:
             import uuid as uuid_lib
+
             try:
-                problem_statement_ids_uuid = [uuid_lib.UUID(psid) for psid in request_data.problemStatementIds]
+                problem_statement_ids_uuid = [
+                    uuid_lib.UUID(psid) for psid in request_data.problemStatementIds
+                ]
             except (ValueError, TypeError):
                 problem_statement_ids_uuid = None
-        
+
         # Derive useObjectives from objectivesMax for backward compatibility with SQL
         use_objectives = (
             request_data.objectivesMax is not None and request_data.objectivesMax > 0
@@ -936,7 +960,9 @@ async def get_scenario_detail(
                         field_ids=[str(f) for f in field_ids]
                         if isinstance(field_ids, list)
                         else None,
-                        parent_document_id=str(parent_document_id) if parent_document_id else None,
+                        parent_document_id=str(parent_document_id)
+                        if parent_document_id
+                        else None,
                     )
 
         simulation_mapping: SimulationMapping = {}
@@ -1152,12 +1178,16 @@ async def get_scenario_detail(
 
         # valid_parameter_ids are all keys in parameter_mapping
         valid_parameter_ids = list(parameter_mapping.keys())
-        
+
         # Reorder valid_parameter_ids to put selected parameters first
         if request_data.parameterIds:
             selected_param_set = set(request_data.parameterIds)
-            selected_params = [pid for pid in request_data.parameterIds if pid in valid_parameter_ids]
-            other_params = [pid for pid in valid_parameter_ids if pid not in selected_param_set]
+            selected_params = [
+                pid for pid in request_data.parameterIds if pid in valid_parameter_ids
+            ]
+            other_params = [
+                pid for pid in valid_parameter_ids if pid not in selected_param_set
+            ]
             valid_parameter_ids = selected_params + other_params
 
         # Apply filtering based on request parameters

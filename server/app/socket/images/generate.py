@@ -1,16 +1,15 @@
 """WebSocket handler for generate_image event."""
 
-import os
 import re
 import uuid
 from typing import Any
 
-import asyncpg  # type: ignore
+from pydantic import BaseModel
+
 from app.main import IMAGE_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -58,8 +57,10 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
     try:
         async with pool.acquire() as conn:
             # Load SQL query at top (DHH style - one SQL file per route)
-            sql = load_sql("sql/v3/images/get_image_generation_context_and_create_upload.sql")
-            
+            sql = load_sql(
+                "sql/v3/images/get_image_generation_context_and_create_upload.sql"
+            )
+
             # Get context + create run atomically
             sql_query = sql
             sql_params = (
@@ -68,7 +69,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                 profile_id,
                 department_id,
             )
-            
+
             try:
                 context_row = await conn.fetchrow(sql, *sql_params)
             except Exception as e:
@@ -80,7 +81,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                     image_id, room, f"Failed to initialize image generation: {str(e)}"
                 )
                 return
-            
+
             if not context_row:
                 await _emit_image_error(
                     image_id, room, f"Agent {agent_id} not found or inactive"
@@ -125,9 +126,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
 
             # Generate image using litellm
             if not LITELLM_AVAILABLE:
-                await _emit_image_error(
-                    image_id, room, "litellm is not available"
-                )
+                await _emit_image_error(image_id, room, "litellm is not available")
                 return
 
             try:
@@ -179,9 +178,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                         image_bytes = requests_response.content  # type: ignore
 
                 if not image_bytes:
-                    await _emit_image_error(
-                        image_id, room, "Failed to get image bytes"
-                    )
+                    await _emit_image_error(image_id, room, "Failed to get image bytes")
                     return
 
             except Exception as e:
@@ -212,7 +209,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             safe_name = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", name)
             safe_name = re.sub(r"_+", "_", safe_name).strip("_")
             safe_name = safe_name.lower() or "image"
-            
+
             # Append UUID for deduplication
             upload_uuid = uuid.uuid4()
             file_name = f"{safe_name}_{upload_uuid}{file_ext}"
@@ -280,7 +277,8 @@ async def _emit_image_progress(
     """Emit WebSocket event for image generation progress."""
     from app.socket.scenarios.generate import (
         ScenarioImageGenerationProgressPayload,
-        scenario_image_generation_progress)
+        scenario_image_generation_progress,
+    )
 
     if not room:
         logger.warning(
@@ -305,7 +303,9 @@ async def _emit_image_error(
 ) -> None:
     """Emit WebSocket event for image generation error."""
     from app.socket.scenarios.generate import (
-        ScenarioImageGenerationErrorPayload, scenario_image_generation_error)
+        ScenarioImageGenerationErrorPayload,
+        scenario_image_generation_error,
+    )
 
     if not room:
         logger.warning(
@@ -356,7 +356,7 @@ async def generate_image_internal(data: dict[str, Any]) -> None:
     if not room:
         logger.error("[generate_image_internal] Missing 'room' in payload")
         return
-    
+
     try:
         payload = GenerateImagePayload(**data)
         await _generate_image_impl(room, payload)  # Use room as sid for internal calls

@@ -98,7 +98,9 @@ class DocumentMappingItem(MappingItem):
     mimeType: str | None = None
     parameter_ids: list[str] | None = None  # Parameters this document is valid for
     field_ids: list[str] | None = None  # Fields linked to this document
-    parent_document_id: str | None = None  # Parent document ID if this is a template document
+    parent_document_id: str | None = (
+        None  # Parent document ID if this is a template document
+    )
 
 
 class StaffMappingItem(MappingItem):

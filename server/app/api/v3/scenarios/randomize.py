@@ -6,14 +6,16 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
-from app.utils.scenario.generate_problem_statement import \
-    generate_scenario_problem_statement
+from app.utils.scenario.generate_problem_statement import (
+    generate_scenario_problem_statement,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
@@ -394,8 +396,10 @@ async def randomize_scenario_attributes(
             logger.info("No problem statement found, generating via scenario agent")
             scenario_agent_id = parent_scenario_dict.get("scenario_agent_id")
             if not scenario_agent_id:
-                raise ValueError(f"Parent scenario {scenario_id} has no scenario_agent_id configured")
-            
+                raise ValueError(
+                    f"Parent scenario {scenario_id} has no scenario_agent_id configured"
+                )
+
             # Disable image generation for API endpoints (only WebSocket should handle AI)
             generated = await generate_scenario_problem_statement(
                 conn=conn,

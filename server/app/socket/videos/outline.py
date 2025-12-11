@@ -4,13 +4,27 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, gen_trace_id, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.main import (get_internal_sio, get_outline_storage, get_pool,
-                      get_question_storage, sio)
+from pydantic import BaseModel, ValidationError
+
+from app.main import (
+    get_internal_sio,
+    get_outline_storage,
+    get_pool,
+    get_question_storage,
+    sio,
+)
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_outline_tools import create_outline_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
@@ -19,7 +33,6 @@ from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
 from app.utils.video.format_policy_info import format_policy_info
 from app.utils.video.format_question_info import format_question_info
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -114,16 +127,12 @@ async def video_outline_generation_error(
     await sio.emit("video_outline_generation_error", payload.model_dump(), room=room)
 
 
-async def _video_outline_impl(
-    sid: str, data: GenerateVideoOutlinePayload
-) -> None:
+async def _video_outline_impl(sid: str, data: GenerateVideoOutlinePayload) -> None:
     """Handle video outline generation requests via WebSocket."""
     trace_id = gen_trace_id()
 
     try:
-        logger.info(
-            f"Received video_outline request from {sid} with data: {data}"
-        )
+        logger.info(f"Received video_outline request from {sid} with data: {data}")
 
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(data.departmentId)
@@ -196,12 +205,19 @@ async def _video_outline_impl(
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
-                
+
                 error_msg = str(e)
                 # Check if it's a rate limit error from SQL (PostgreSQL exception)
-                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
                     # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
-                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
                     await video_outline_generation_error(
                         VideoOutlineGenerationErrorPayload(
                             success=False,
@@ -266,9 +282,12 @@ async def _video_outline_impl(
                 else context_row.get("video_length_seconds") or 4
             )
 
+            agent_role = context_row.get("agent_role", "outline")
+
             context = {
                 "agent_id": context_row["agent_id"],
                 "agent_name": context_row["agent_name"],
+                "agent_role": agent_role,
                 "system_prompt": context_row["system_prompt"],
                 "temperature": float(context_row["temperature"])
                 if context_row["temperature"] is not None
@@ -353,35 +372,321 @@ async def _video_outline_impl(
                 profile_id if profile_id else context["default_guest_profile_id"]
             )
 
-            # Create outline generation tools
+            # Determine which tools to enable based on agent role
             group_id = None
-            # Use questionsMax to determine if questions should be generated
-            use_questions = (
-                data.questionsMax is not None and data.questionsMax > 0
-            ) if hasattr(data, "questionsMax") else False
+
+            # Determine tool availability based on agent role
+            # Base 'outline' role supports all tools (backward compatibility)
+            # Fine-grained roles indicate specific capabilities
+            agent_role_str = str(agent_role).lower()
+            # Check if questions should be generated based on questionsMax
+            questions_requested = (
+                (data.questionsMax is not None and data.questionsMax > 0)
+                if hasattr(data, "questionsMax")
+                else False
+            )
+            questions_enabled = questions_requested and (
+                agent_role_str == "outline"  # Base role supports all
+                or "questions" in agent_role_str
+            )
+            images_enabled = (
+                agent_role_str == "outline"  # Base role supports all
+                or "image" in agent_role_str
+            )
+            # Documents enabled if agent supports templates AND template documents exist
+            # For now, videos don't have template documents like scenarios, so this is False
+            has_template_documents = (
+                False  # TODO: Add template document support for videos if needed
+            )
+            documents_enabled = has_template_documents and (
+                agent_role_str == "outline"  # Base role supports all
+                or "document" in agent_role_str
+            )
+            # Note: video tool doesn't have separate role flag - it's triggered conditionally
+
+            logger.info(
+                f"Agent role: {agent_role}, questions_enabled: {questions_enabled}, "
+                f"images_enabled: {images_enabled}, documents_enabled: {documents_enabled}"
+            )
 
             # Use video_id as primary_id if available, otherwise trace_id
             primary_id = str(video_id) if video_id else trace_id
 
-            outline_tools = create_outline_tools(
-                group_id=group_id,
-                include_questions=use_questions,
-                profile_id=str(final_profile_id) if final_profile_id else None,
-                primary_id=primary_id,
-            )
+            # Create video outline generation tools inline
+            from pydantic import Field
+
+            outline_tools: list[Tool] = []
+
+            # 1. Outline Tool (always included - replaces create_outline_tools)
+            async def set_outline(
+                name: str = Field(
+                    description="Short, descriptive name for the outline (e.g., 'Video Outline v1')"
+                ),
+                outline: str = Field(
+                    description="The detailed outline content for the video"
+                ),
+                question_timestamps: Any | None = Field(
+                    default=None,
+                    description="REQUIRED if questions were provided - Dictionary mapping question IDs (use exact IDs from the questions section: 1, 2, 3, etc.) to lists of timestamps (in seconds) where each question should appear. Timestamps must be integers between 0 and video_length_seconds (inclusive). Format as JSON object. Example for 4-second video: {'1': [0, 2], '2': [3]}. Example for 60-second video: {'1': [10, 30], '2': [45]}. You MUST assign timestamps to ALL questions that were provided.",
+                ),
+            ) -> str:
+                """Set the outline for the video.
+
+                Args:
+                    name: Short descriptive name for the outline
+                    outline: The detailed outline content
+                    question_timestamps: Optional dictionary mapping question IDs to lists of timestamps
+
+                Returns:
+                    Confirmation message
+                """
+                # Emit to internal bus for outline creation
+                await internal_sio.emit(
+                    "video_tool_outline",
+                    {
+                        "sid": sid,
+                        "trace_id": trace_id,
+                        "name": name,
+                        "outline": outline,
+                        "video_id": data.videoId if data.videoId else None,
+                        "question_timestamps": question_timestamps,
+                    },
+                )
+
+                logger.info(
+                    f"[video_outline] Emitted outline to internal bus: "
+                    f"name={name}, outline_length={len(outline)}"
+                )
+                return "Set outline successfully"
+
+            outline_tools.append(function_tool(set_outline))
+            logger.info("Created outline tool")
+
+            # 2. Questions Tool (if enabled)
+            if questions_enabled:
+
+                async def create_questions(
+                    questions: list[dict[str, Any]] = Field(
+                        description="List of question objects. Each question should have 'question_text', 'allow_multiple' (bool), and 'options' (list of dicts with 'option_text', 'type' ('discrete' or 'freeform'), 'is_correct' (bool)). For multiple choice: allow_multiple=False, one correct option. For multi-select: allow_multiple=True, multiple correct options."
+                    ),
+                    question_timestamps: dict[str, list[int]] | None = Field(
+                        default=None,
+                        description="Dictionary mapping question IDs (use '1', '2', etc. based on question order) to lists of timestamps (in seconds) where each question should appear.",
+                    ),
+                ) -> str:
+                    """Create questions for the video.
+
+                    Args:
+                        questions: List of question objects with text, options, and correct answers
+                        question_timestamps: Optional dictionary mapping question IDs to timestamps
+
+                    Returns:
+                        Confirmation message
+                    """
+                    # Emit to internal bus for questions creation
+                    await internal_sio.emit(
+                        "video_tool_questions",
+                        {
+                            "sid": sid,
+                            "trace_id": trace_id,
+                            "questions": questions,
+                            "video_id": data.videoId if data.videoId else None,
+                            "question_timestamps": question_timestamps,
+                        },
+                    )
+
+                    logger.info(
+                        f"[video_outline] Emitted questions to internal bus: "
+                        f"{len(questions)} questions"
+                    )
+                    return f"Created {len(questions)} questions successfully"
+
+                outline_tools.append(function_tool(create_questions))
+                logger.info("Created questions tool")
+            else:
+                logger.info("Questions tool skipped (questions_enabled=False)")
+
+            # 3. Image Generation Tool (if enabled)
+            if images_enabled:
+                if not final_profile_id:
+                    logger.warning(
+                        "profile_id required for image generation, skipping tool"
+                    )
+                else:
+
+                    async def generate_image(
+                        name: str = Field(
+                            description="Descriptive name for the generated image"
+                        ),
+                        prompt: str = Field(
+                            description="Detailed, descriptive prompt for image generation"
+                        ),
+                    ) -> str:
+                        """Generate an image from a detailed prompt.
+
+                        This tool creates an image using AI image generation based on your detailed prompt.
+                        The image will be saved and linked to the video after generation completes.
+
+                        Args:
+                            name: Descriptive name for the image (required)
+                            prompt: Detailed, descriptive prompt describing what the image should look like (required)
+
+                        Returns:
+                            Confirmation message
+                        """
+                        # Emit to internal bus for image creation
+                        await internal_sio.emit(
+                            "video_tool_image",
+                            {
+                                "sid": sid,
+                                "trace_id": trace_id,
+                                "name": name,
+                                "prompt": prompt,
+                                "agent_id": str(context["agent_id"]),
+                                "department_id": str(department_id)
+                                if department_id
+                                else None,
+                                "profile_id": str(final_profile_id)
+                                if final_profile_id
+                                else None,
+                                "video_id": data.videoId if data.videoId else None,
+                            },
+                        )
+
+                        logger.info(
+                            f"[video_outline] Emitted image to internal bus: "
+                            f"name={name}, prompt_length={len(prompt)}"
+                        )
+                        return f"Image generation initiated for '{name}'. Image will be created and linked when ready."
+
+                    outline_tools.append(function_tool(generate_image))
+                    logger.info("Created image generation tool")
+            else:
+                logger.info("Image generation tool skipped (images_enabled=False)")
+
+            # 4. Video Generation Tool (always available, but conditionally triggered)
+            async def generate_video(
+                prompt: str = Field(
+                    description="The video generation prompt based on the outline"
+                ),
+                image_ids: list[str] | None = Field(
+                    default=None,
+                    description="Optional list of image IDs to use for video generation. If provided, video generation will wait for all images to complete before starting.",
+                ),
+            ) -> str:
+                """Generate a video from the outline prompt.
+
+                If image_ids are provided, video generation will wait for all images to complete
+                before starting. Otherwise, video generation starts immediately.
+
+                Args:
+                    prompt: The video generation prompt
+                    image_ids: Optional list of image IDs (if images are required)
+
+                Returns:
+                    Confirmation message
+                """
+                # Emit to internal bus for video generation
+                await internal_sio.emit(
+                    "video_tool_video",
+                    {
+                        "sid": sid,
+                        "trace_id": trace_id,
+                        "prompt": prompt,
+                        "video_id": data.videoId if data.videoId else "",
+                        "image_ids": image_ids,
+                        "agent_id": str(context["agent_id"]),
+                        "department_id": str(department_id) if department_id else None,
+                    },
+                )
+
+                logger.info(
+                    f"[video_outline] Emitted video generation to internal bus: "
+                    f"prompt_length={len(prompt)}, image_ids={image_ids}"
+                )
+                if image_ids:
+                    return f"Video generation queued. Waiting for {len(image_ids)} image(s) to complete."
+                return "Video generation started."
+
+            outline_tools.append(function_tool(generate_video))
+            logger.info("Created video generation tool")
+
+            # 5. Dynamic Document Tool (if enabled)
+            if documents_enabled:
+                # TODO: Implement document tool for videos when template documents are supported
+                logger.info("Document tool skipped (not yet implemented for videos)")
+            else:
+                logger.info("Dynamic document tool skipped (documents_enabled=False)")
+
+            # Add debug info tool
             outline_tools.append(debug_info_tool)
 
+            logger.info(f"Total video outline tools created: {len(outline_tools)}")
+
             # Create tool use behavior to check when all required tools are called
-            # Note: Progress checking happens synchronously, but storage is async
-            # For now, we'll check progress after tool execution completes
             def tool_use_behavior(
                 tool_context: RunContextWrapper[Any],
                 tool_results: list[FunctionToolResult],
             ) -> ToolsToFinalOutputResult:
-                # This is a limitation of the current tool_use_behavior pattern
-                # Progress will be checked after execution completes
-                completed_required = True  # Will be checked after execution
-                return ToolsToFinalOutputResult(is_final_output=completed_required)
+                """Check if all required tools have been called.
+
+                Required tools:
+                - set_outline (always required)
+                - create_questions (if questions_enabled)
+                """
+                required_tools = ["set_outline"]
+                if questions_enabled:
+                    required_tools.append("create_questions")
+
+                # Check which tools have been called
+                completed_tools = []
+                logger.info(
+                    f"tool_use_behavior called with {len(tool_results)} tool results"
+                )
+
+                for idx, result in enumerate(tool_results):
+                    # Try multiple ways to get tool name
+                    tool_name = None
+
+                    # Try direct attribute access
+                    if hasattr(result, "tool_name"):
+                        tool_name = result.tool_name  # type: ignore[attr-defined]
+                    else:
+                        tool_name = getattr(result, "tool_name", None)  # type: ignore[misc]
+                        if not tool_name:
+                            tool_name = getattr(result, "name", None)  # type: ignore[misc]
+
+                    # Try to get tool name from tool object if result has one
+                    if not tool_name:
+                        tool_obj = getattr(result, "tool", None)  # type: ignore[misc]
+                        if tool_obj:
+                            tool_name = getattr(tool_obj, "name", None)  # type: ignore[misc]
+
+                    if tool_name and isinstance(tool_name, str):
+                        # Normalize tool names
+                        normalized_name = tool_name
+                        if "outline" in tool_name.lower():
+                            normalized_name = "set_outline"
+                        elif "question" in tool_name.lower():
+                            normalized_name = "create_questions"
+                        completed_tools.append(normalized_name)
+                        logger.info(
+                            f"Tool result {idx}: Normalized to {normalized_name}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Tool result {idx}: Could not extract tool name"
+                        )
+
+                # Check if all required tools have been completed
+                all_completed = all(tool in completed_tools for tool in required_tools)
+
+                logger.info(
+                    f"Tool use behavior check: required={required_tools}, "
+                    f"completed={completed_tools}, all_completed={all_completed}"
+                )
+
+                return ToolsToFinalOutputResult(is_final_output=all_completed)
 
             outline_agent_generic = GenericAgent(
                 agent_name=context["agent_name"],
@@ -416,7 +721,7 @@ async def _video_outline_impl(
             # Rate limit validation and run creation are now handled in SQL
             # (get_outline_run_context_and_create_run.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
-            
+
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(context_row["run_id"])
 
@@ -623,9 +928,7 @@ async def _video_outline_impl(
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in video_outline for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in video_outline for {sid}: {str(e)}", exc_info=True)
         await video_outline_generation_error(
             VideoOutlineGenerationErrorPayload(
                 success=False, message=str(e), trace_id=trace_id

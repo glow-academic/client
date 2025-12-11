@@ -1,14 +1,15 @@
 """Build Pydantic models dynamically from template schemas."""
 
-from typing import Any, Type
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from app.utils.logging.db_logger import get_logger
-from pydantic import BaseModel, ConfigDict, Field, create_model
 
 logger = get_logger(__name__)
 
 
-def build_template_model(schema: dict[str, Any]) -> Type[BaseModel]:
+def build_template_model(schema: dict[str, Any]) -> type[BaseModel]:
     """Build a Pydantic model from a template schema.
 
     Args:
@@ -43,7 +44,11 @@ def build_template_model(schema: dict[str, Any]) -> Type[BaseModel]:
         # Build description with placeholder if available
         field_description = description
         if placeholder:
-            field_description = f"{description} (Example: {placeholder})" if description else f"Example: {placeholder}"
+            field_description = (
+                f"{description} (Example: {placeholder})"
+                if description
+                else f"Example: {placeholder}"
+            )
 
         # Map field types to Python types
         python_type: Any
@@ -54,7 +59,9 @@ def build_template_model(schema: dict[str, Any]) -> Type[BaseModel]:
             item_def = field.get("item", {})
             if not item_def:
                 # Fallback: if no item definition, use list[str] (shouldn't happen in practice)
-                logger.warning(f"Array field '{field_name}' has no item definition, defaulting to list[str]")
+                logger.warning(
+                    f"Array field '{field_name}' has no item definition, defaulting to list[str]"
+                )
                 python_type = list[str]
             elif item_def.get("type") == "object":
                 # Array of objects - always build a proper Pydantic model
@@ -95,13 +102,18 @@ def build_template_model(schema: dict[str, Any]) -> Type[BaseModel]:
             nested_fields = field.get("fields", [])
             if nested_fields:
                 # Recursively build nested model
-                nested_schema = {"name": f"{field_name}_nested", "fields": nested_fields}
+                nested_schema = {
+                    "name": f"{field_name}_nested",
+                    "fields": nested_fields,
+                }
                 nested_model = build_template_model(nested_schema)
                 # Store as Any to avoid type checker issues, but it's actually Type[BaseModel]
                 python_type = nested_model  # type: ignore[assignment, misc]
             else:
                 # Empty object - create empty model (shouldn't happen in practice)
-                logger.warning(f"Object field '{field_name}' has no fields definition, creating empty model")
+                logger.warning(
+                    f"Object field '{field_name}' has no fields definition, creating empty model"
+                )
                 empty_model = create_model(
                     f"{field_name}_empty",
                     __base__=BaseModel,
@@ -129,9 +141,10 @@ def build_template_model(schema: dict[str, Any]) -> Type[BaseModel]:
     model = create_model(
         f"{model_name}Args",
         __base__=BaseModel,
-        __config__=ConfigDict(extra="forbid"),  # Disallow extra fields - critical for strict schemas
+        __config__=ConfigDict(
+            extra="forbid"
+        ),  # Disallow extra fields - critical for strict schemas
         **field_definitions,
     )
 
     return model  # type: ignore[return-value]
-

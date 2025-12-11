@@ -131,6 +131,7 @@ context_data AS (
         -- Agent data
         a.id::text as agent_id,
         a.name as agent_name,
+        a.role::text as agent_role,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -310,6 +311,7 @@ SELECT
     -- Context data
     cd.agent_id,
     cd.agent_name,
+    cd.agent_role,
     cd.system_prompt,
     cd.temperature,
     cd.reasoning,

@@ -4,19 +4,26 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              DocumentMapping, DocumentMappingItem,
-                              FieldMapping, FieldMappingItem, ParameterMapping,
-                              PersonaMapping, PersonaMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    DocumentMapping,
+    FieldMapping,
+    ParameterMapping,
+    PersonaMapping,
+    PersonaMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 def preserve_order_union_selected_first(
@@ -166,7 +173,9 @@ def filter_valid_document_ids(
     selected_doc_id_set = set(selected_doc_ids)
 
     if len(selected_dept_ids) == 0:
-        dept_filtered_ids = preserve_order_union_selected_first(selected_doc_ids, base_ids)
+        dept_filtered_ids = preserve_order_union_selected_first(
+            selected_doc_ids, base_ids
+        )
     else:
         all_dept_document_ids: set[str] = set()
         for dept_data in department_mapping.values():
@@ -186,7 +195,9 @@ def filter_valid_document_ids(
             or doc_id not in all_dept_document_ids
         ]
 
-        dept_filtered_ids = preserve_order_union_selected_first(selected_doc_ids, filtered)
+        dept_filtered_ids = preserve_order_union_selected_first(
+            selected_doc_ids, filtered
+        )
 
     dept_filtered = dept_filtered_ids
 
@@ -305,7 +316,11 @@ def filter_valid_general_field_ids(
     if selected_field_ids is None:
         selected_field_ids = []
 
-    if len(selected_param_ids) == 0 and len(selected_persona_ids) == 0 and len(selected_doc_ids) == 0:
+    if (
+        len(selected_param_ids) == 0
+        and len(selected_persona_ids) == 0
+        and len(selected_doc_ids) == 0
+    ):
         return preserve_order_union_selected_first(selected_field_ids, valid_field_ids)
 
     filtered_result: list[str] = []
@@ -476,7 +491,9 @@ class VideoDetailResponse(BaseModel):
     valid_persona_ids: list[str]
     # Filtered valid IDs (replacing client-side filtering)
     valid_field_ids: list[str] | None = None  # Filtered based on departments
-    valid_general_field_ids: list[str] | None = None  # Filtered based on personas/documents/parameters
+    valid_general_field_ids: list[str] | None = (
+        None  # Filtered based on personas/documents/parameters
+    )
     # Allowed ranges (computed from filtered IDs, capped at 5)
     allowed_ranges: AllowedRanges | None = None
     # Question count range (computed from video length)
@@ -598,8 +615,12 @@ async def get_video_new(
                         "filePath": v.get("filePath", ""),
                         "mimeType": v.get("mimeType", ""),
                         "uploadId": v.get("uploadId", ""),
-                        "parameter_ids": [str(p) for p in parameter_ids] if isinstance(parameter_ids, list) else [],
-                        "field_ids": [str(f) for f in field_ids] if isinstance(field_ids, list) else [],
+                        "parameter_ids": [str(p) for p in parameter_ids]
+                        if isinstance(parameter_ids, list)
+                        else [],
+                        "field_ids": [str(f) for f in field_ids]
+                        if isinstance(field_ids, list)
+                        else [],
                         "parent_document_id": v.get("parent_document_id"),
                     }
                     parent_document_id = v.get("parent_document_id")
@@ -610,7 +631,9 @@ async def get_video_new(
                         mime_type=v.get("mimeType", ""),
                         parameter_ids=v.get("parameter_ids", []),
                         field_ids=v.get("field_ids", []),
-                        parent_document_id=str(parent_document_id) if parent_document_id else None,
+                        parent_document_id=str(parent_document_id)
+                        if parent_document_id
+                        else None,
                     )
 
         # Parse valid_document_ids
@@ -738,7 +761,9 @@ async def get_video_new(
 
         # Apply filtering and randomization (matching scenario pattern)
         filtered_valid_persona_ids: list[str] = valid_persona_ids
-        filtered_valid_document_ids: list[str] = [str(did) for did in valid_document_ids]
+        filtered_valid_document_ids: list[str] = [
+            str(did) for did in valid_document_ids
+        ]
         filtered_valid_field_ids: list[str] | None = None
         filtered_valid_general_field_ids: list[str] | None = None
         allowed_ranges: AllowedRanges | None = None
@@ -822,12 +847,16 @@ async def get_video_new(
         max_valid_parameters = min(5, len(valid_parameter_ids))
 
         # Default ranges
-        persona_min = request_data.personaMin if request_data.personaMin is not None else 1
+        persona_min = (
+            request_data.personaMin if request_data.personaMin is not None else 1
+        )
         persona_max = min(
             request_data.personaMax if request_data.personaMax is not None else 2,
             max_valid_personas,
         )
-        document_min = request_data.documentMin if request_data.documentMin is not None else 0
+        document_min = (
+            request_data.documentMin if request_data.documentMin is not None else 0
+        )
         document_max = min(
             request_data.documentMax if request_data.documentMax is not None else 2,
             max_valid_documents,

@@ -62,18 +62,24 @@ class StartVoiceResponsePayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_voice_start_error(payload: StartVoiceErrorPayload, room: str) -> None:
+async def simulation_voice_start_error(
+    payload: StartVoiceErrorPayload, room: str
+) -> None:
     await sio.emit("simulation_voice_start_error", payload.model_dump(), room=room)
 
 
-async def simulation_voice_start_response(payload: StartVoiceResponsePayload, room: str) -> None:
+async def simulation_voice_start_response(
+    payload: StartVoiceResponsePayload, room: str
+) -> None:
     await sio.emit("simulation_voice_start_response", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> None:
     """Handle voice session start requests via WebSocket."""
     try:
-        logger.info(f"Received simulation_voice_start request from {sid} with data: {data}")
+        logger.info(
+            f"Received simulation_voice_start request from {sid} with data: {data}"
+        )
 
         chat_id = data.chat_id
         if not chat_id:
@@ -704,7 +710,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             )
 
     except Exception as e:
-        logger.error(f"Error in simulation_voice_start for {sid}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in simulation_voice_start for {sid}: {str(e)}", exc_info=True
+        )
         await simulation_voice_start_error(
             StartVoiceErrorPayload(success=False, message=str(e)), room=sid
         )

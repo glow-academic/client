@@ -33,7 +33,9 @@ async def simulation_text_ended(payload: ChatStoppedPayload, room: str) -> None:
     await sio.emit("simulation_text_ended", payload.model_dump(), room=room)
 
 
-async def simulation_text_end_error(payload: SimulationTextEndErrorPayload, room: str) -> None:
+async def simulation_text_end_error(
+    payload: SimulationTextEndErrorPayload, room: str
+) -> None:
     await sio.emit("simulation_text_end_error", payload.model_dump(), room=room)
 
 
@@ -59,6 +61,8 @@ async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in simulation_text_end for {sid}: {e}")
         await simulation_text_end_error(
-            SimulationTextEndErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
+            SimulationTextEndErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
             room=sid,
         )

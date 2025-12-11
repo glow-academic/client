@@ -50,7 +50,9 @@ async def voice_tool_call_error(payload: VoiceToolCallErrorPayload, room: str) -
     await sio.emit("voice_tool_call_error", payload.model_dump(), room=room)
 
 
-async def _simulation_voice_assistant_done_impl(sid: str, data: VoiceToolCallDonePayload) -> None:
+async def _simulation_voice_assistant_done_impl(
+    sid: str, data: VoiceToolCallDonePayload
+) -> None:
     """Handle tool call completion from Realtime API.
 
     Finalizes the message and marks it as completed.
@@ -411,7 +413,8 @@ async def _simulation_voice_assistant_done_impl(sid: str, data: VoiceToolCallDon
 
     except Exception as e:
         logger.error(
-            f"Error in simulation_voice_assistant_done for {sid}: {str(e)}", exc_info=True
+            f"Error in simulation_voice_assistant_done for {sid}: {str(e)}",
+            exc_info=True,
         )
         await voice_tool_call_error(
             VoiceToolCallErrorPayload(success=False, message=str(e)), room=sid
@@ -425,7 +428,9 @@ async def simulation_voice_assistant_done(sid: str, data: dict[str, Any]) -> Non
         validated = VoiceToolCallDonePayload(**data)
         await _simulation_voice_assistant_done_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_assistant_done for {sid}: {e}")
+        logger.error(
+            f"Validation error in simulation_voice_assistant_done for {sid}: {e}"
+        )
         await voice_tool_call_error(
             VoiceToolCallErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

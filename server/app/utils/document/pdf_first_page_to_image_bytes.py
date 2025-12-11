@@ -1,7 +1,6 @@
 """Get first page of PDF as PNG image bytes."""
 
 
-
 def pdf_first_page_to_image_bytes(full_path: str) -> bytes | None:
     """Get first page of PDF as PNG image bytes.
 

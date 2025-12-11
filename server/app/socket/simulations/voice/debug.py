@@ -3,10 +3,11 @@
 import uuid
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -33,7 +34,9 @@ async def simulation_voice_debug_info_error(
     await sio.emit("simulation_voice_debug_info_error", payload.model_dump(), room=room)
 
 
-async def _simulation_voice_debug_info_impl(sid: str, data: VoiceDebugInfoPayload) -> None:
+async def _simulation_voice_debug_info_impl(
+    sid: str, data: VoiceDebugInfoPayload
+) -> None:
     """Handle debug_info tool call from Realtime API.
 
     When debug_info tool is called, save it to the current model run.
@@ -97,7 +100,9 @@ async def _simulation_voice_debug_info_impl(sid: str, data: VoiceDebugInfoPayloa
             )
 
     except Exception as e:
-        logger.error(f"Error in simulation_voice_debug_info for {sid}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in simulation_voice_debug_info for {sid}: {str(e)}", exc_info=True
+        )
         await simulation_voice_debug_info_error(
             VoiceDebugInfoErrorPayload(success=False, message=str(e)), room=sid
         )

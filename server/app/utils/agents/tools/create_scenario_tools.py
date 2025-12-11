@@ -241,4 +241,3 @@ def _create_scenario_image_generation_function(
             return f"Error: Failed to start image generation: {str(e)}"
 
     return function_tool(generate_image)
-

@@ -425,7 +425,8 @@ async def _simulation_voice_assistant_delta_impl(
 
     except Exception as e:
         logger.error(
-            f"Error in simulation_voice_assistant_delta for {sid}: {str(e)}", exc_info=True
+            f"Error in simulation_voice_assistant_delta for {sid}: {str(e)}",
+            exc_info=True,
         )
         await voice_tool_call_error(
             VoiceToolCallErrorPayload(success=False, message=str(e)), room=sid
@@ -439,7 +440,9 @@ async def simulation_voice_assistant_delta(sid: str, data: dict[str, Any]) -> No
         validated = VoiceToolCallDeltaPayload(**data)
         await _simulation_voice_assistant_delta_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_assistant_delta for {sid}: {e}")
+        logger.error(
+            f"Validation error in simulation_voice_assistant_delta for {sid}: {e}"
+        )
         await voice_tool_call_error(
             VoiceToolCallErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"

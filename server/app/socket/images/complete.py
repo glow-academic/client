@@ -2,12 +2,15 @@
 
 from typing import Any
 
+from pydantic import BaseModel
+
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.scenarios.tools.image import (ImageToolCompletePayload,
-                                              image_tool_complete)
+from app.socket.scenarios.tools.image import (
+    ImageToolCompletePayload,
+    image_tool_complete,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -45,16 +48,14 @@ async def _image_generation_complete_impl(
         async with pool.acquire() as conn:
             # Load SQL query at top (DHH style - one SQL file per websocket event)
             sql = load_sql("sql/v3/images/complete_image_generation_complete.sql")
-            
+
             sql_query = sql
             sql_params = (image_id, file_path, mime_type, file_size)
-            
+
             result = await conn.fetchrow(sql, *sql_params)
-            
+
             if not result:
-                logger.error(
-                    f"Failed to complete image generation for {image_id}"
-                )
+                logger.error(f"Failed to complete image generation for {image_id}")
                 return
 
             upload_id = result["upload_id"]
@@ -105,12 +106,13 @@ async def image_generation_complete_internal(data: dict[str, Any]) -> None:
     if not room:
         logger.error("[image_generation_complete_internal] Missing 'room' in payload")
         return
-    
+
     try:
         payload = ImageGenerationCompletePayload(**data)
-        await _image_generation_complete_impl(room, payload)  # Use room as sid for internal calls
+        await _image_generation_complete_impl(
+            room, payload
+        )  # Use room as sid for internal calls
     except Exception as e:
         logger.error(
             f"Error in image_generation_complete_internal: {str(e)}", exc_info=True
         )
-

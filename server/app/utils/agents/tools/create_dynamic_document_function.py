@@ -1,14 +1,15 @@
 """Create a function tool for creating dynamic child documents from template parents."""
 
 import uuid
-from typing import Any, Type
+from typing import Any
 
 from agents import Tool, function_tool
+from pydantic import BaseModel, Field
+
 from app.main import get_dynamic_document_storage
 from app.utils.agents.tools.build_template_model import build_template_model
 from app.utils.logging.db_logger import get_logger
 from app.utils.storage.request_storage import build_storage_key
-from pydantic import BaseModel, Field
 
 logger = get_logger(__name__)
 
@@ -30,7 +31,7 @@ def create_dynamic_document_function(
                         If None, falls back to dict parameter.
     """
     # Build Pydantic model from template schema if provided
-    TemplateArgsModel: Type[BaseModel] | None = None
+    TemplateArgsModel: type[BaseModel] | None = None
     if template_schema:
         try:
             TemplateArgsModel = build_template_model(template_schema)
@@ -99,22 +100,26 @@ def create_dynamic_document_function(
             # We'll use exec to create a function with dynamic signature
             param_definitions = []
             param_names = []
-            
+
             for field in fields_data:
                 field_name = field.get("name")
                 if not field_name:
                     continue
-                    
+
                 field_type = field.get("type", "string")
                 required = field.get("required", False)
                 description = field.get("description", "")
                 placeholder = field.get("placeholder", "")
-                
+
                 # Build description with placeholder if available
                 field_description = description
                 if placeholder:
-                    field_description = f"{description} (Example: {placeholder})" if description else f"Example: {placeholder}"
-                
+                    field_description = (
+                        f"{description} (Example: {placeholder})"
+                        if description
+                        else f"Example: {placeholder}"
+                    )
+
                 # Map field types to Python types for type hints
                 python_type_str = "str"
                 if field_type == "number":
@@ -123,31 +128,31 @@ def create_dynamic_document_function(
                     python_type_str = "bool"
                 elif field_type == "array":
                     python_type_str = "list[str]"  # Default to list[str] for arrays
-                
+
                 param_names.append(field_name)
-                
+
                 # Create Field annotation
                 if required:
                     param_def = f"{field_name}: {python_type_str} = Field(..., description={repr(field_description)})"
                 else:
                     param_def = f"{field_name}: {python_type_str} | None = Field(default=None, description={repr(field_description)})"
-                
+
                 param_definitions.append(param_def)
-            
+
             # Build function code
             params_str = ", ".join(param_definitions)
-            
+
             # Create function body that collects parameters into dict
             # Indent with 4 spaces to match function body indentation
             collect_dict_code = "    template_args_dict = {\n"
             for field_name in param_names:
                 collect_dict_code += f"        {repr(field_name)}: {field_name},\n"
             collect_dict_code += "    }\n"
-            
+
             # Remove None values for optional fields
             collect_dict_code += "    # Remove None values for optional fields\n"
             collect_dict_code += "    template_args_dict = {k: v for k, v in template_args_dict.items() if v is not None}\n"
-            
+
             func_code = f"""async def create_document({params_str}) -> str:
     \"\"\"Create a dynamic child document from the available template document.
 
@@ -158,7 +163,7 @@ def create_dynamic_document_function(
     Provide the template argument values as specified by the template schema.
 
     Args:
-        {chr(10).join(f'        {name}: Template argument value' for name in param_names)}
+        {chr(10).join(f"        {name}: Template argument value" for name in param_names)}
 
     Returns:
         Confirmation message
@@ -166,22 +171,22 @@ def create_dynamic_document_function(
 {collect_dict_code}
     return await _create_document_impl(template_args_dict)
 """
-            
+
             # Execute in custom namespace that includes closure variable
             # The key issue is that exec() doesn't preserve closure access to local functions.
             # We need to ensure _create_document_impl is accessible when the function executes.
             # Solution: Create a factory function that captures _create_document_impl in its closure,
             # then use exec() within that factory to create the dynamic function.
-            
+
             # Capture _create_document_impl in outer scope
             impl_ref = _create_document_impl
-            
+
             # Modify function code to reference the captured implementation
             func_code_with_closure = func_code.replace(
                 "return await _create_document_impl(template_args_dict)",
-                "return await _impl_ref(template_args_dict)"
+                "return await _impl_ref(template_args_dict)",
             )
-            
+
             import builtins
 
             # Create namespace with the captured implementation function
@@ -194,18 +199,18 @@ def create_dynamic_document_function(
                 "bool": bool,
                 "list": list,
             }
-            
+
             # Execute function code in the custom namespace
             # Using exec_namespace as both globals and locals ensures the function
             # has access to _impl_ref when it's called later
             exec(func_code_with_closure, exec_namespace, exec_namespace)
             create_document_func = exec_namespace["create_document"]
-            
+
             logger.info(
                 f"Created dynamic document function with {len(param_names)} individual parameters"
             )
             return function_tool(create_document_func)  # type: ignore[arg-type]
-    
+
     # Fallback: create function with dict parameter (for backward compatibility)
     async def create_document_fallback(template_args: dict[str, Any]) -> str:
         """Create a dynamic child document from the available template document.
@@ -223,5 +228,5 @@ def create_dynamic_document_function(
             Confirmation message
         """
         return await _create_document_impl(template_args)
-    
+
     return function_tool(create_document_fallback)  # type: ignore[arg-type]

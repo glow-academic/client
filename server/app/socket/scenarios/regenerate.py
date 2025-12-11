@@ -4,22 +4,30 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, gen_trace_id, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, get_scenario_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_regeneration_messages import \
-    log_regeneration_messages
-from app.utils.scenario.image_generation import (get_image_generation_results,
-                                                 set_image_generation_context)
+from app.utils.messages.log_regeneration_messages import log_regeneration_messages
+from app.utils.scenario.image_generation import (
+    get_image_generation_results,
+    set_image_generation_context,
+)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -218,7 +226,9 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 [str(p) for p in parameter_item_ids] if parameter_item_ids else []
             )
 
-            sql = load_sql("sql/v3/agents/get_scenario_regeneration_run_context_and_create_run.sql")
+            sql = load_sql(
+                "sql/v3/agents/get_scenario_regeneration_run_context_and_create_run.sql"
+            )
             try:
                 context_row = await conn.fetchrow(
                     sql,
@@ -231,12 +241,19 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
-                
+
                 error_msg = str(e)
                 # Check if it's a rate limit error from SQL (PostgreSQL exception)
-                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
                     # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
-                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
                     await scenario_regeneration_error(
                         ScenarioRegenerationErrorPayload(
                             success=False,
@@ -326,8 +343,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             }
 
             # Format input items (same as generation)
-            from app.utils.document.format_document_info import \
-                format_document_info
+            from app.utils.document.format_document_info import format_document_info
             from app.utils.personas import format_persona_info
             from app.utils.scenario import format_parameter_item_info
 
@@ -401,8 +417,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Check if template documents are available (require create_document if so)
             has_template_documents = bool(
-                context["document_templates"]
-                and len(context["document_templates"]) > 0
+                context["document_templates"] and len(context["document_templates"]) > 0
             )
 
             # Create tool use behavior
@@ -424,11 +439,17 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     if tool_name and isinstance(tool_name, str):
                         # Normalize tool names (handle variations like set_title_and_description -> title_description)
                         normalized_name = tool_name
-                        if "title" in tool_name.lower() and "description" in tool_name.lower():
+                        if (
+                            "title" in tool_name.lower()
+                            and "description" in tool_name.lower()
+                        ):
                             normalized_name = "title_description"
                         elif "objective" in tool_name.lower():
                             normalized_name = "objectives"
-                        elif "create_document" in tool_name.lower() or ("create" in tool_name.lower() and "document" in tool_name.lower()):
+                        elif "create_document" in tool_name.lower() or (
+                            "create" in tool_name.lower()
+                            and "document" in tool_name.lower()
+                        ):
                             normalized_name = "create_document"
                         completed_tools.append(normalized_name)
 
@@ -478,7 +499,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             # Rate limit validation and run creation are now handled in SQL
             # (get_scenario_regeneration_run_context_and_create_run.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
-            
+
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(context_row["run_id"])
 

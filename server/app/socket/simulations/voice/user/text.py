@@ -35,7 +35,9 @@ async def simulation_voice_user_text_error(
     await sio.emit("simulation_voice_user_text_error", payload.model_dump(), room=room)
 
 
-async def _simulation_voice_user_text_impl(sid: str, data: VoiceUserMessagePayload) -> None:
+async def _simulation_voice_user_text_impl(
+    sid: str, data: VoiceUserMessagePayload
+) -> None:
     """Handle user message from Realtime API.
 
     When a user sends a message via the Realtime API (typed or spoken),
@@ -191,7 +193,9 @@ async def _simulation_voice_user_text_impl(sid: str, data: VoiceUserMessagePaylo
             )
 
     except ValueError as e:
-        logger.error(f"Invalid UUID format in simulation_voice_user_text for {sid}: {e}")
+        logger.error(
+            f"Invalid UUID format in simulation_voice_user_text for {sid}: {e}"
+        )
         await simulation_voice_user_text_error(
             VoiceUserMessageErrorPayload(
                 success=False, message=f"Invalid chat_id format: {str(e)}"
@@ -199,7 +203,9 @@ async def _simulation_voice_user_text_impl(sid: str, data: VoiceUserMessagePaylo
             room=sid,
         )
     except Exception as e:
-        logger.error(f"Error in simulation_voice_user_text for {sid}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in simulation_voice_user_text for {sid}: {str(e)}", exc_info=True
+        )
         await simulation_voice_user_text_error(
             VoiceUserMessageErrorPayload(success=False, message=str(e)), room=sid
         )

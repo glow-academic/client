@@ -4,19 +4,22 @@ import json
 import uuid
 from typing import Any
 
-from agents.items import TResponseInputItem
+from pydantic import BaseModel, ValidationError
+
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
+
 # Pydantic model for client-to-server event
 class LogRunPayload(BaseModel):
     runId: str
-    operationType: str  # "scenario", "document", "video_outline", "simulation", "voice", etc.
+    operationType: (
+        str  # "scenario", "document", "video_outline", "simulation", "voice", etc.
+    )
     inputTextTokens: int
     outputTextTokens: int
     inputAudioTokens: int | None = None
@@ -151,4 +154,3 @@ async def log_run_internal(data: dict[str, Any]) -> None:
         await _log_run_impl("", validated)
     except ValidationError as e:
         logger.error(f"Validation error in log_run_internal: {e}")
-

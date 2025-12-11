@@ -3,27 +3,32 @@
 import json
 import os
 import uuid
-from typing import Any, Type
+from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
-                    trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
-from app.api.v3.settings.active import (ThemePrimitives, ThemeTokens,
-                                        derive_theme_tokens)
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
+
+from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
-from app.utils.documents.create_dynamic_document import create_dynamic_document
 from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
-from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
-                      create_model)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -132,7 +137,7 @@ async def scenario_image_generation_error(
 
 
 # Helper function to build Pydantic models dynamically from template schemas
-def _build_template_model(schema: dict[str, Any]) -> Type[BaseModel]:
+def _build_template_model(schema: dict[str, Any]) -> type[BaseModel]:
     """Build a Pydantic model from a template schema.
 
     Args:
@@ -226,7 +231,10 @@ def _build_template_model(schema: dict[str, Any]) -> Type[BaseModel]:
             nested_fields = field.get("fields", [])
             if nested_fields:
                 # Recursively build nested model
-                nested_schema = {"name": f"{field_name}_nested", "fields": nested_fields}
+                nested_schema = {
+                    "name": f"{field_name}_nested",
+                    "fields": nested_fields,
+                }
                 nested_model = _build_template_model(nested_schema)
                 # Store as Any to avoid type checker issues, but it's actually Type[BaseModel]
                 python_type = nested_model  # type: ignore[assignment, misc]
@@ -262,7 +270,9 @@ def _build_template_model(schema: dict[str, Any]) -> Type[BaseModel]:
     model = create_model(
         f"{model_name}Args",
         __base__=BaseModel,
-        __config__=ConfigDict(extra="forbid"),  # Disallow extra fields - critical for strict schemas
+        __config__=ConfigDict(
+            extra="forbid"
+        ),  # Disallow extra fields - critical for strict schemas
         **field_definitions,
     )
 
@@ -274,9 +284,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
     trace_id = gen_trace_id()
 
     try:
-        logger.info(
-            f"Received generate_scenario request from {sid} with data: {data}"
-        )
+        logger.info(f"Received generate_scenario request from {sid} with data: {data}")
 
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(data.departmentId)
@@ -287,11 +295,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
         document_ids = (
             [uuid.UUID(d) for d in data.documentIds] if data.documentIds else None
         )
-        field_ids = (
-            [uuid.UUID(f) for f in data.fieldIds]
-            if data.fieldIds
-            else None
-        )
+        field_ids = [uuid.UUID(f) for f in data.fieldIds] if data.fieldIds else None
         profile_id = uuid.UUID(data.profileId) if data.profileId else None
 
         # Filter out empty lists
@@ -326,14 +330,16 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             # Get all context data in a single optimized query using SQL file
             doc_ids_str = [str(d) for d in document_ids] if document_ids else []
-            field_ids_str = (
-                [str(f) for f in field_ids] if field_ids else []
-            )
+            field_ids_str = [str(f) for f in field_ids] if field_ids else []
 
             sql = load_sql("sql/v3/agents/get_scenario_run_context_and_create_run.sql")
             # Agent ID should be provided in payload (UI filters and selects appropriate agent)
-            agent_id = uuid.UUID(data.agentId) if hasattr(data, 'agentId') and data.agentId else None
-            
+            agent_id = (
+                uuid.UUID(data.agentId)
+                if hasattr(data, "agentId") and data.agentId
+                else None
+            )
+
             if not agent_id:
                 await scenario_generation_error(
                     ScenarioGenerationErrorPayload(
@@ -344,7 +350,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     room=sid,
                 )
                 return
-            
+
             try:
                 # Get context AND create run in single atomic transaction
                 # This validates rate limits and creates run atomically
@@ -359,12 +365,19 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
-                
+
                 error_msg = str(e)
                 # Check if it's a rate limit error from SQL (PostgreSQL exception)
-                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
                     # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
-                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
                     await scenario_generation_error(
                         ScenarioGenerationErrorPayload(
                             success=False,
@@ -418,10 +431,10 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             )
 
             agent_role = context_row.get("agent_role", "scenario")
-            
+
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(context_row["run_id"])
-            
+
             context = {
                 "agent_id": context_row["agent_id"],
                 "agent_name": context_row["agent_name"],
@@ -461,7 +474,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     "success": context_row.get("success") or "#10b981",
                     "warning": context_row.get("warning") or "#f59e0b",
                     "error": context_row.get("error") or "#ef4444",
-                    "sidebarBackground": context_row.get("sidebar_background") or "#ffffff",
+                    "sidebarBackground": context_row.get("sidebar_background")
+                    or "#ffffff",
                     "sidebarPrimary": context_row.get("sidebar_primary") or "#000000",
                     "chart1": context_row.get("chart1") or "#8884d8",
                     "chart2": context_row.get("chart2") or "#82ca9d",
@@ -493,21 +507,20 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             # Determine which tools to enable based on agent role
             group_id = None
-            
+
             # Determine tool availability based on agent role
             # Base 'scenario' role supports all tools (backward compatibility)
             # Fine-grained roles indicate specific capabilities
             agent_role_str = str(agent_role).lower()
             # Check if objectives should be generated based on objectivesMax
             objectives_requested = (
-                data.objectivesMax is not None and data.objectivesMax > 0
-            ) if hasattr(data, "objectivesMax") else False
-            objectives_enabled = (
-                objectives_requested
-                and (
-                    agent_role_str == "scenario"  # Base role supports all
-                    or "objectives" in agent_role_str
-                )
+                (data.objectivesMax is not None and data.objectivesMax > 0)
+                if hasattr(data, "objectivesMax")
+                else False
+            )
+            objectives_enabled = objectives_requested and (
+                agent_role_str == "scenario"  # Base role supports all
+                or "objectives" in agent_role_str
             )
             images_enabled = (
                 agent_role_str == "scenario"  # Base role supports all
@@ -515,17 +528,13 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             )
             # Documents enabled if agent supports templates AND template documents exist
             has_template_documents = bool(
-                context["document_templates"]
-                and len(context["document_templates"]) > 0
+                context["document_templates"] and len(context["document_templates"]) > 0
             )
-            documents_enabled = (
-                has_template_documents
-                and (
-                    agent_role_str == "scenario"  # Base role supports all
-                    or "templates" in agent_role_str
-                )
+            documents_enabled = has_template_documents and (
+                agent_role_str == "scenario"  # Base role supports all
+                or "templates" in agent_role_str
             )
-            
+
             logger.info(
                 f"Agent role: {agent_role}, objectives_enabled: {objectives_enabled}, "
                 f"images_enabled: {images_enabled}, documents_enabled: {documents_enabled}"
@@ -588,6 +597,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             # 2. Objectives Tool (if enabled)
             if objectives_enabled:
+
                 async def set_objectives(
                     objectives: list[str] = Field(
                         description="List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
@@ -614,7 +624,10 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     """
                     # Limit objectives based on objectivesMax if provided, otherwise max 3
                     max_objectives = (
-                        min(data.objectivesMax, 5) if hasattr(data, "objectivesMax") and data.objectivesMax is not None else 3
+                        min(data.objectivesMax, 5)
+                        if hasattr(data, "objectivesMax")
+                        and data.objectivesMax is not None
+                        else 3
                     )
                     objectives = objectives[:max_objectives]
 
@@ -675,7 +688,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 )
 
                     # Core implementation function that processes template args
-                    async def _create_document_impl(template_args_dict: dict[str, Any]) -> str:
+                    async def _create_document_impl(
+                        template_args_dict: dict[str, Any],
+                    ) -> str:
                         """Internal implementation that processes template args dict."""
                         if not document_templates or len(document_templates) == 0:
                             return "Error: No template documents are available for dynamic creation."
@@ -683,9 +698,13 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         # Use the first available template (typically there will be only one)
                         parent_template = document_templates[0]
                         parent_document_id = parent_template.get("document_id", "")
-                        template_file_path = parent_template.get("template_file_path", "")
+                        template_file_path = parent_template.get(
+                            "template_file_path", ""
+                        )
                         parent_name = parent_template.get("document_name", "")
-                        parent_description = parent_template.get("document_description", "")
+                        parent_description = parent_template.get(
+                            "document_description", ""
+                        )
                         classify_agent_id = parent_template.get("classify_agent_id", "")
                         document_agent_id = parent_template.get("document_agent_id", "")
 
@@ -693,7 +712,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             return "Error: Could not determine parent template document ID."
 
                         if not template_file_path:
-                            return "Error: Parent template document has no template file."
+                            return (
+                                "Error: Parent template document has no template file."
+                            )
 
                         # Read template HTML file (no SQL needed - file_path already in context)
                         full_template_path = UPLOAD_FOLDER / template_file_path
@@ -705,7 +726,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             template_html = f.read()
 
                         # Derive theme tokens from primitives (already in context)
-                        theme_primitives = ThemePrimitives(**context["theme_primitives"])
+                        theme_primitives = ThemePrimitives(
+                            **context["theme_primitives"]
+                        )
                         theme_tokens = derive_theme_tokens(theme_primitives)
 
                         # Render template HTML with Jinja2
@@ -717,7 +740,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             )
                         except Exception as e:
                             error_msg = f"Error rendering template: {str(e)}"
-                            logger.error(f"Template rendering failed: {error_msg}", exc_info=True)
+                            logger.error(
+                                f"Template rendering failed: {error_msg}", exc_info=True
+                            )
                             return error_msg
 
                         # Save rendered HTML to file
@@ -750,7 +775,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 "child_description": child_description,
                                 "classify_agent_id": classify_agent_id,
                                 "document_agent_id": document_agent_id,
-                                "scenario_id": data.scenarioId if data.scenarioId else None,
+                                "scenario_id": data.scenarioId
+                                if data.scenarioId
+                                else None,
                             },
                         )
 
@@ -763,7 +790,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
                     # If we have a template schema, create a function with individual parameters
                     if template_schema:
-                        TemplateArgsModel: Type[BaseModel] | None = None
+                        TemplateArgsModel: type[BaseModel] | None = None
                         try:
                             TemplateArgsModel = _build_template_model(template_schema)
                             logger.info(
@@ -783,22 +810,26 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 # We'll use exec to create a function with dynamic signature
                                 param_definitions = []
                                 param_names = []
-                                
+
                                 for field in fields_data:
                                     field_name = field.get("name")
                                     if not field_name:
                                         continue
-                                        
+
                                     field_type = field.get("type", "string")
                                     required = field.get("required", False)
                                     description = field.get("description", "")
                                     placeholder = field.get("placeholder", "")
-                                    
+
                                     # Build description with placeholder if available
                                     field_description = description
                                     if placeholder:
-                                        field_description = f"{description} (Example: {placeholder})" if description else f"Example: {placeholder}"
-                                    
+                                        field_description = (
+                                            f"{description} (Example: {placeholder})"
+                                            if description
+                                            else f"Example: {placeholder}"
+                                        )
+
                                     # Map field types to Python types for type hints
                                     python_type_str = "str"
                                     if field_type == "number":
@@ -807,31 +838,35 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                         python_type_str = "bool"
                                     elif field_type == "array":
                                         python_type_str = "list[str]"  # Default to list[str] for arrays
-                                    
+
                                     param_names.append(field_name)
-                                    
+
                                     # Create Field annotation
                                     if required:
                                         param_def = f"{field_name}: {python_type_str} = Field(..., description={repr(field_description)})"
                                     else:
                                         param_def = f"{field_name}: {python_type_str} | None = Field(default=None, description={repr(field_description)})"
-                                    
+
                                     param_definitions.append(param_def)
-                                
+
                                 # Build function code
                                 params_str = ", ".join(param_definitions)
-                                
+
                                 # Create function body that collects parameters into dict
                                 # Indent with 4 spaces to match function body indentation
                                 collect_dict_code = "    template_args_dict = {\n"
                                 for field_name in param_names:
-                                    collect_dict_code += f"        {repr(field_name)}: {field_name},\n"
+                                    collect_dict_code += (
+                                        f"        {repr(field_name)}: {field_name},\n"
+                                    )
                                 collect_dict_code += "    }\n"
-                                
+
                                 # Remove None values for optional fields
-                                collect_dict_code += "    # Remove None values for optional fields\n"
+                                collect_dict_code += (
+                                    "    # Remove None values for optional fields\n"
+                                )
                                 collect_dict_code += "    template_args_dict = {k: v for k, v in template_args_dict.items() if v is not None}\n"
-                                
+
                                 func_code = f"""async def create_document({params_str}) -> str:
     \"\"\"Create a dynamic child document from the available template document.
 
@@ -842,7 +877,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
     Provide the template argument values as specified by the template schema.
 
     Args:
-        {chr(10).join(f'        {name}: Template argument value' for name in param_names)}
+        {chr(10).join(f"        {name}: Template argument value" for name in param_names)}
 
     Returns:
         Confirmation message
@@ -850,20 +885,20 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 {collect_dict_code}
     return await _create_document_impl(template_args_dict)
 """
-                                
+
                                 # Execute in custom namespace that includes closure variable
                                 # The key issue is that exec() doesn't preserve closure access to local functions.
                                 # We need to ensure _create_document_impl is accessible when the function executes.
-                                
+
                                 # Capture _create_document_impl in outer scope
                                 impl_ref = _create_document_impl
-                                
+
                                 # Modify function code to reference the captured implementation
                                 func_code_with_closure = func_code.replace(
                                     "return await _create_document_impl(template_args_dict)",
-                                    "return await _impl_ref(template_args_dict)"
+                                    "return await _impl_ref(template_args_dict)",
                                 )
-                                
+
                                 import builtins
 
                                 # Create namespace with the captured implementation function
@@ -876,20 +911,28 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                     "bool": bool,
                                     "list": list,
                                 }
-                                
+
                                 # Execute function code in the custom namespace
                                 # Using exec_namespace as both globals and locals ensures the function
                                 # has access to _impl_ref when it's called later
-                                exec(func_code_with_closure, exec_namespace, exec_namespace)
+                                exec(
+                                    func_code_with_closure,
+                                    exec_namespace,
+                                    exec_namespace,
+                                )
                                 create_document_func = exec_namespace["create_document"]
-                                
+
                                 logger.info(
                                     f"Created dynamic document function with {len(param_names)} individual parameters"
                                 )
-                                scenario_tools.append(function_tool(create_document_func))  # type: ignore
+                                scenario_tools.append(
+                                    function_tool(create_document_func)
+                                )  # type: ignore
                             else:
                                 # Fallback: create function with dict parameter
-                                async def create_document_fallback(template_args: dict[str, Any]) -> str:
+                                async def create_document_fallback(
+                                    template_args: dict[str, Any],
+                                ) -> str:
                                     """Create a dynamic child document from the available template document.
 
                                     This tool renders the available template document with provided template argument values
@@ -905,11 +948,15 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                         Confirmation message
                                     """
                                     return await _create_document_impl(template_args)
-                                
-                                scenario_tools.append(function_tool(create_document_fallback))  # type: ignore[arg-type]
+
+                                scenario_tools.append(
+                                    function_tool(create_document_fallback)
+                                )  # type: ignore[arg-type]
                         else:
                             # Fallback: create function with dict parameter
-                            async def create_document_fallback(template_args: dict[str, Any]) -> str:
+                            async def create_document_fallback(
+                                template_args: dict[str, Any],
+                            ) -> str:
                                 """Create a dynamic child document from the available template document.
 
                                 This tool renders the available template document with provided template argument values
@@ -925,11 +972,15 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                     Confirmation message
                                 """
                                 return await _create_document_impl(template_args)
-                            
-                            scenario_tools.append(function_tool(create_document_fallback))  # type: ignore[arg-type]
+
+                            scenario_tools.append(
+                                function_tool(create_document_fallback)
+                            )  # type: ignore[arg-type]
                     else:
                         # Fallback: create function with dict parameter (for backward compatibility)
-                        async def create_document_fallback(template_args: dict[str, Any]) -> str:
+                        async def create_document_fallback(
+                            template_args: dict[str, Any],
+                        ) -> str:
                             """Create a dynamic child document from the available template document.
 
                             This tool renders the available template document with provided template argument values
@@ -945,7 +996,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 Confirmation message
                             """
                             return await _create_document_impl(template_args)
-                        
+
                         scenario_tools.append(function_tool(create_document_fallback))  # type: ignore[arg-type]
             else:
                 logger.info("Dynamic document tool skipped (documents_enabled=False)")
@@ -953,10 +1004,15 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # 4. Image Generation Tool (if enabled)
             if images_enabled:
                 if not final_profile_id:
-                    logger.warning("profile_id required for image generation, skipping tool")
+                    logger.warning(
+                        "profile_id required for image generation, skipping tool"
+                    )
                 else:
+
                     async def generate_image(
-                        name: str = Field(description="Descriptive name for the generated image"),
+                        name: str = Field(
+                            description="Descriptive name for the generated image"
+                        ),
                         prompt: str = Field(
                             description="Detailed, descriptive prompt for image generation"
                         ),
@@ -982,9 +1038,15 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                 "name": name,
                                 "prompt": prompt,
                                 "agent_id": str(context["agent_id"]),
-                                "department_id": str(department_id) if department_id else None,
-                                "profile_id": str(final_profile_id) if final_profile_id else None,
-                                "scenario_id": data.scenarioId if data.scenarioId else None,
+                                "department_id": str(department_id)
+                                if department_id
+                                else None,
+                                "profile_id": str(final_profile_id)
+                                if final_profile_id
+                                else None,
+                                "scenario_id": data.scenarioId
+                                if data.scenarioId
+                                else None,
                             },
                         )
 
@@ -1024,51 +1086,75 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
                 # Check which tools have been called
                 completed_tools = []
-                logger.info(f"tool_use_behavior called with {len(tool_results)} tool results")
-                
+                logger.info(
+                    f"tool_use_behavior called with {len(tool_results)} tool results"
+                )
+
                 for idx, result in enumerate(tool_results):
                     logger.info(f"Tool result {idx}: type={type(result)}")
-                    logger.info(f"Tool result {idx} dir: {[x for x in dir(result) if not x.startswith('_')]}")
-                    
+                    logger.info(
+                        f"Tool result {idx} dir: {[x for x in dir(result) if not x.startswith('_')]}"
+                    )
+
                     # Try multiple ways to get tool name (FunctionToolResult structure may vary)
                     tool_name = None
-                    
+
                     # Try direct attribute access (like hint agent)
                     if hasattr(result, "tool_name"):
                         tool_name = result.tool_name  # type: ignore[attr-defined]
-                        logger.info(f"Tool result {idx}: Found tool_name via hasattr: {tool_name}")
+                        logger.info(
+                            f"Tool result {idx}: Found tool_name via hasattr: {tool_name}"
+                        )
                     # Try getattr as fallback
                     else:
                         tool_name = getattr(result, "tool_name", None)  # type: ignore[misc]
                         if tool_name:
-                            logger.info(f"Tool result {idx}: Found tool_name via getattr: {tool_name}")
+                            logger.info(
+                                f"Tool result {idx}: Found tool_name via getattr: {tool_name}"
+                            )
                         else:
                             tool_name = getattr(result, "name", None)  # type: ignore[misc]
                             if tool_name:
-                                logger.info(f"Tool result {idx}: Found name via getattr: {tool_name}")
-                    
+                                logger.info(
+                                    f"Tool result {idx}: Found name via getattr: {tool_name}"
+                                )
+
                     # Try to get tool name from tool object if result has one
                     if not tool_name:
                         tool_obj = getattr(result, "tool", None)  # type: ignore[misc]
                         if tool_obj:
                             tool_name = getattr(tool_obj, "name", None)  # type: ignore[misc]
                             if tool_name:
-                                logger.info(f"Tool result {idx}: Found tool.name: {tool_name}")
-                    
+                                logger.info(
+                                    f"Tool result {idx}: Found tool.name: {tool_name}"
+                                )
+
                     if tool_name and isinstance(tool_name, str):
-                        logger.info(f"Tool result {idx}: Processing tool_name={tool_name}")
+                        logger.info(
+                            f"Tool result {idx}: Processing tool_name={tool_name}"
+                        )
                         # Normalize tool names (handle variations like set_title_and_description -> title_description)
                         normalized_name = tool_name
-                        if "title" in tool_name.lower() and "description" in tool_name.lower():
+                        if (
+                            "title" in tool_name.lower()
+                            and "description" in tool_name.lower()
+                        ):
                             normalized_name = "title_description"
                         elif "objective" in tool_name.lower():
                             normalized_name = "objectives"
-                        elif "create_document" in tool_name.lower() or ("create" in tool_name.lower() and "document" in tool_name.lower()):
+                        elif "create_document" in tool_name.lower() or (
+                            "create" in tool_name.lower()
+                            and "document" in tool_name.lower()
+                        ):
                             normalized_name = "create_document"
                         completed_tools.append(normalized_name)
-                        logger.info(f"Tool result {idx}: Normalized to {normalized_name}")
+                        logger.info(
+                            f"Tool result {idx}: Normalized to {normalized_name}"
+                        )
                     else:
-                        logger.warning(f"Tool result {idx}: Could not extract tool name. tool_name={tool_name}, type={type(tool_name)}")
+                        logger.warning(
+                            f"Tool result {idx}: Could not extract tool name. tool_name={tool_name}, type={type(tool_name)}"
+                        )
                         # Log the actual result object for debugging
                         logger.info(f"Tool result {idx} repr: {repr(result)}")
 
@@ -1080,7 +1166,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     f"completed={completed_tools}, all_completed={all_completed}, "
                     f"tool_results_count={len(tool_results)}"
                 )
-                
+
                 # If no tools detected but we have results, log what we got
                 if len(tool_results) > 0 and len(completed_tools) == 0:
                     logger.warning(
@@ -1176,9 +1262,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in generate_scenario for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in generate_scenario for {sid}: {str(e)}", exc_info=True)
         await scenario_generation_error(
             ScenarioGenerationErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
@@ -1201,4 +1285,3 @@ async def generate_scenario(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

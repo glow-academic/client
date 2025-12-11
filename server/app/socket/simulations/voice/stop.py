@@ -32,18 +32,24 @@ class StopVoiceResponsePayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_voice_stop_error(payload: StopVoiceErrorPayload, room: str) -> None:
+async def simulation_voice_stop_error(
+    payload: StopVoiceErrorPayload, room: str
+) -> None:
     await sio.emit("simulation_voice_stop_error", payload.model_dump(), room=room)
 
 
-async def simulation_voice_stop_response(payload: StopVoiceResponsePayload, room: str) -> None:
+async def simulation_voice_stop_response(
+    payload: StopVoiceResponsePayload, room: str
+) -> None:
     await sio.emit("simulation_voice_stop_response", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
     """Handle voice session stop requests via WebSocket."""
     try:
-        logger.info(f"Received simulation_voice_stop request from {sid} for chat {data.chat_id}")
+        logger.info(
+            f"Received simulation_voice_stop request from {sid} for chat {data.chat_id}"
+        )
 
         chat_id = data.chat_id
         if not chat_id:
@@ -73,7 +79,9 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
         )
 
     except Exception as e:
-        logger.error(f"Error in simulation_voice_stop for {sid}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in simulation_voice_stop for {sid}: {str(e)}", exc_info=True
+        )
         await simulation_voice_stop_error(
             StopVoiceErrorPayload(success=False, message=str(e)), room=sid
         )

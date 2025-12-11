@@ -47,12 +47,16 @@ async def _simulation_voice_user_transcript_impl(
 
         chat_id = data.chat_id
         if not chat_id:
-            logger.warning(f"Missing chat_id in simulation_voice_user_transcript from {sid}")
+            logger.warning(
+                f"Missing chat_id in simulation_voice_user_transcript from {sid}"
+            )
             return
 
         transcript = data.transcript
         if not transcript or not transcript.strip():
-            logger.warning(f"Empty transcript in simulation_voice_user_transcript from {sid}")
+            logger.warning(
+                f"Empty transcript in simulation_voice_user_transcript from {sid}"
+            )
             return
 
         room = f"simulation_{chat_id}"
@@ -218,9 +222,13 @@ async def _simulation_voice_user_transcript_impl(
             )
 
     except ValueError as e:
-        logger.error(f"Invalid UUID format in simulation_voice_user_transcript for {sid}: {e}")
+        logger.error(
+            f"Invalid UUID format in simulation_voice_user_transcript for {sid}: {e}"
+        )
     except Exception as e:
-        logger.error(f"Error handling simulation_voice_user_transcript: {e}", exc_info=True)
+        logger.error(
+            f"Error handling simulation_voice_user_transcript: {e}", exc_info=True
+        )
 
 
 @sio.event  # type: ignore
@@ -230,4 +238,6 @@ async def simulation_voice_user_transcript(sid: str, data: dict[str, Any]) -> No
         validated = VoiceUserTranscriptPayload(**data)
         await _simulation_voice_user_transcript_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_voice_user_transcript for {sid}: {e}")
+        logger.error(
+            f"Validation error in simulation_voice_user_transcript for {sid}: {e}"
+        )

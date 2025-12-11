@@ -7,17 +7,22 @@ from typing import Any
 
 from agents import Runner, trace
 from agents.items import TResponseInputItem
+from pydantic import BaseModel, ValidationError
+
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.build_document_agent import build_document_agent
 from app.utils.agents.tools.create_document_tools import (
-    create_document_tools, document_progress, document_results)
+    create_document_tools,
+    document_progress,
+    document_results,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.debug_info import DebugContext
-from app.utils.document.format_document_template_context import \
-    format_document_template_context
+from app.utils.document.format_document_template_context import (
+    format_document_template_context,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -92,9 +97,7 @@ async def _document_generate_impl(
     )
 
     try:
-        logger.info(
-            f"Received document_generate request from {sid} with data: {data}"
-        )
+        logger.info(f"Received document_generate request from {sid} with data: {data}")
 
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(data.departmentId)
@@ -126,7 +129,9 @@ async def _document_generate_impl(
 
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
-            sql_query = load_sql("sql/v3/agents/get_document_run_context_and_create_run.sql")
+            sql_query = load_sql(
+                "sql/v3/agents/get_document_run_context_and_create_run.sql"
+            )
             try:
                 context_row = await conn.fetchrow(
                     sql_query,
@@ -135,12 +140,19 @@ async def _document_generate_impl(
                 )
             except Exception as e:
                 import asyncpg  # type: ignore
-                
+
                 error_msg = str(e)
                 # Check if it's a rate limit error from SQL (PostgreSQL exception)
-                if isinstance(e, asyncpg.PostgresError) and "RATE_LIMIT_EXCEEDED" in error_msg:
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
                     # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
-                    user_msg = error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1] if "RATE_LIMIT_EXCEEDED: " in error_msg else error_msg
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
                     await document_template_generation_error(
                         DocumentTemplateGenerationErrorPayload(
                             success=False,
@@ -192,7 +204,7 @@ async def _document_generate_impl(
                 "api_key": context_row["api_key"],
                 "profile_id": context_row["profile_id"],
             }
-            
+
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(context_row["run_id"])
 
@@ -446,9 +458,7 @@ async def _document_generate_impl(
             )
 
     except Exception as e:
-        logger.error(
-            f"Error in document_generate for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in document_generate for {sid}: {str(e)}", exc_info=True)
         await document_template_generation_error(
             DocumentTemplateGenerationErrorPayload(
                 success=False, message=str(e), trace_id=trace_id
