@@ -653,6 +653,11 @@ export default function Scenario({
       .map((doc) => doc.document_id);
   }, [scenarioData?.document_details]);
 
+  // Extract mappings from V2 response - defined early so they can be used in buildSearchParams
+  const fieldMapping = useMemo(() => {
+    return scenarioData?.field_mapping || {};
+  }, [scenarioData]);
+
   // Helper function to build search params including filters, search terms, ranges, and randomize param
   const buildSearchParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -691,37 +696,40 @@ export default function Scenario({
       params.set("parameterSearch", parameterSearchTerm);
     }
 
-    // Add range params when different from server-provided defaults
-    const serverRanges = scenarioData?.allowed_ranges;
+    // Add range params when different from server-provided current values
+    // Compare against server's current values (persona_min/persona_max), not allowed_ranges
+    const serverCurrentValues = scenarioData as ScenarioNewOut | undefined;
 
-    // Persona ranges - compare against server defaults
-    const personaDefault = serverRanges?.persona || { min: 1, max: 3 };
+    // Persona ranges - compare against server's current values
+    const serverPersonaMin = serverCurrentValues?.persona_min ?? 1;
+    const serverPersonaMax = serverCurrentValues?.persona_max ?? 1;
     if (
-      personaMinMax.min !== personaDefault.min ||
-      personaMinMax.max !== personaDefault.max
+      personaMinMax.min !== serverPersonaMin ||
+      personaMinMax.max !== serverPersonaMax
     ) {
       params.set("personaMin", personaMinMax.min.toString());
       params.set("personaMax", personaMinMax.max.toString());
     }
 
-    // Document ranges - compare against server defaults
-    const documentDefault = serverRanges?.document || { min: 0, max: 3 };
+    // Document ranges - compare against server's current values
+    const serverDocumentMin = serverCurrentValues?.document_min ?? 0;
+    const serverDocumentMax = serverCurrentValues?.document_max ?? 1;
     if (
-      documentMinMax.min !== documentDefault.min ||
-      documentMinMax.max !== documentDefault.max
+      documentMinMax.min !== serverDocumentMin ||
+      documentMinMax.max !== serverDocumentMax
     ) {
       params.set("documentMin", documentMinMax.min.toString());
       params.set("documentMax", documentMinMax.max.toString());
     }
 
-    // Parameter selection ranges - compare against server defaults
-    const parameterDefault = serverRanges?.parameter_selection || {
-      min: 0,
-      max: 3,
-    };
+    // Parameter selection ranges - compare against server's current values
+    const serverParameterMin =
+      serverCurrentValues?.parameter_selection_min ?? 0;
+    const serverParameterMax =
+      serverCurrentValues?.parameter_selection_max ?? 3;
     if (
-      parameterSelectionMinMax.min !== parameterDefault.min ||
-      parameterSelectionMinMax.max !== parameterDefault.max
+      parameterSelectionMinMax.min !== serverParameterMin ||
+      parameterSelectionMinMax.max !== serverParameterMax
     ) {
       params.set(
         "parameterSelectionMin",
@@ -733,17 +741,23 @@ export default function Scenario({
       );
     }
 
-    // Per-parameter item ranges - compare against server defaults
+    // Per-parameter field ranges - compare against server's current values
     // Include ranges for selected parameters, or for all parameters if randomize=all (server needs ranges for randomized params)
     const selectedParamIds = formData.parameterIds || [];
     const isRandomizing = searchParams.get("randomize") === "all";
+    const serverFieldRanges = serverCurrentValues?.field_ranges || {};
     Object.entries(fieldMinMax).forEach(([fieldId, range]) => {
       // Include range if:
       // 1. Parameter is selected, OR
       // 2. We're randomizing all (server will randomize parameters and need these ranges)
-      // AND range differs from server default
+      // AND range differs from server's current value
       const shouldInclude = isRandomizing || selectedParamIds.includes(fieldId);
-      const fieldDefault = serverRanges?.fields?.[fieldId] || {
+      // Get the parameter_id for this field to find its range in server response
+      const fieldParamId = fieldMapping[fieldId]?.parameter_id;
+      const serverFieldRange = fieldParamId
+        ? serverFieldRanges[fieldParamId]
+        : undefined;
+      const fieldDefault = serverFieldRange || {
         min: 1,
         max: 3,
       };
@@ -761,7 +775,7 @@ export default function Scenario({
 
     return params;
   }, [
-    scenarioData?.allowed_ranges, // Include server ranges in dependencies
+    scenarioData, // Include full scenarioData to access current values (persona_min, persona_max, etc.)
     formData.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
@@ -775,6 +789,7 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     fieldMinMax,
+    fieldMapping, // Used for field ranges comparison
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
     searchParams,
   ]);
@@ -795,10 +810,7 @@ export default function Scenario({
     () => scenarioData?.parameter_mapping || {},
     [scenarioData]
   );
-  // Backend now includes selected fields in field_mapping with all necessary fields
-  const fieldMapping = useMemo(() => {
-    return scenarioData?.field_mapping || {};
-  }, [scenarioData]);
+  // fieldMapping is defined above (before buildSearchParams) so it can be used there
   const simulationMapping = useMemo(
     () => scenarioData?.simulation_mapping || {},
     [scenarioData]
@@ -1233,7 +1245,9 @@ export default function Scenario({
 
   // Handle randomized selections from server response
   useEffect(() => {
-    if (scenarioData?.randomized_selections) {
+    // Only process if randomize param is present (prevents processing stale randomized_selections)
+    const randomizeParam = searchParams.get("randomize");
+    if (scenarioData?.randomized_selections && randomizeParam) {
       const randomized = scenarioData.randomized_selections;
       // Create a hash of the randomized selections to detect if we've already processed this
       const randomizedHash = JSON.stringify({
@@ -1243,8 +1257,19 @@ export default function Scenario({
         fieldIds: randomized.fieldIds,
       });
 
-      // Skip if we've already processed this exact randomized selection
+      // Skip if we're currently applying randomized selections (prevents double-processing)
+      if (isApplyingRandomizedRef.current) {
+        return;
+      }
+
+      // If we've already processed this exact randomized selection, just clear the param and reset hash
+      // (This handles the case where same result comes back - we still need to clear param for next randomization)
       if (lastProcessedRandomizedRef.current === randomizedHash) {
+        // Reset hash so next randomization (even if same result) can be processed
+        lastProcessedRandomizedRef.current = null;
+        updateUrlParams({
+          randomize: null,
+        });
         return;
       }
 
@@ -1252,7 +1277,7 @@ export default function Scenario({
       isApplyingRandomizedRef.current = true;
       lastProcessedRandomizedRef.current = randomizedHash;
 
-      // Update state only - don't update URL params here (let the second useEffect handle it)
+      // Update state with randomized selections
       if (randomized.personaIds) {
         setSelectedPersonaIds(randomized.personaIds);
       }
@@ -1262,23 +1287,115 @@ export default function Scenario({
       if (randomized.parameterIds) {
         handleInputChange("parameterIds", randomized.parameterIds);
       }
-      if (randomized.fieldIds) {
-        setCurrentFieldIds(randomized.fieldIds);
+      // Compute merged fieldIds if needed (for single parameter randomization)
+      let finalFieldIds: string[] | undefined;
+      if (randomized.fieldIds && randomized.fieldIds.length > 0) {
+        const randomizeParam = searchParams.get("randomize");
+        if (randomizeParam && randomizeParam.startsWith("parameter_")) {
+          // Single parameter randomization: keep fields for other parameters, add randomized ones
+          const paramId = randomizeParam.replace("parameter_", "");
+          // Compute merged fields before state update
+          // Note: Using currentFieldIds and fieldMapping from closure - they're stable references
+
+          const otherParamFields = currentFieldIds.filter(
+            (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
+          );
+          finalFieldIds = [...otherParamFields, ...randomized.fieldIds];
+          setCurrentFieldIds(finalFieldIds);
+        } else {
+          // Full randomization (randomize=all): replace all fields
+          finalFieldIds = randomized.fieldIds;
+          setCurrentFieldIds(finalFieldIds);
+        }
       }
 
-      // Clear randomization param immediately, but batch with state updates
-      // Use requestAnimationFrame to ensure this happens after React's state updates
+      // Update URL params with randomized selections AND clear randomize param
+      // This ensures URL reflects the randomized state (URL is source of truth)
       requestAnimationFrame(() => {
-        updateUrlParams({
-          randomize: null,
-        });
+        const urlUpdates: Record<string, string | string[] | null> = {
+          randomize: null, // Clear randomize param
+        };
+
+        // Add randomized IDs to URL params so URL reflects current state
+        if (randomized.personaIds && randomized.personaIds.length > 0) {
+          urlUpdates.personaIds = randomized.personaIds;
+        }
+        if (randomized.documentIds && randomized.documentIds.length > 0) {
+          urlUpdates.documentIds = randomized.documentIds;
+        }
+        if (randomized.parameterIds && randomized.parameterIds.length > 0) {
+          urlUpdates.parameterIds = randomized.parameterIds;
+        }
+        if (finalFieldIds && finalFieldIds.length > 0) {
+          // Use the computed finalFieldIds (already merged if needed)
+          urlUpdates.fieldIds = finalFieldIds;
+        }
+
+        updateUrlParams(urlUpdates);
         // Reset the flag after clearing params (use another frame to ensure URL update completes)
         requestAnimationFrame(() => {
           isApplyingRandomizedRef.current = false;
         });
       });
     }
-  }, [scenarioData?.randomized_selections, updateUrlParams, handleInputChange]);
+  }, [
+    scenarioData?.randomized_selections,
+    searchParams,
+    updateUrlParams,
+    handleInputChange,
+  ]);
+
+  // Also handle randomized flag as fallback (DHH-style: server tells client when to clear param)
+  // This ensures the param is cleared even if randomized_selections processing fails or gets stuck
+  // Also updates URL with randomized IDs from main fields (persona_ids, document_ids, etc.)
+  useEffect(() => {
+    const randomizeParam = searchParams.get("randomize");
+    if (scenarioData?.randomized === true && randomizeParam) {
+      // Server has applied randomization to main fields - update URL with randomized IDs
+      // Use a small delay to ensure randomized_selections useEffect has a chance to run first
+      const timeoutId = setTimeout(() => {
+        // Only process if param is still present (randomized_selections might have already handled it)
+        if (searchParams.get("randomize")) {
+          const urlUpdates: Record<string, string | string[] | null> = {
+            randomize: null, // Clear randomize param
+          };
+
+          // Read randomized values from main fields and update URL params
+          // This ensures URL reflects the randomized state even if randomized_selections didn't process
+          if (scenarioData.persona_ids && scenarioData.persona_ids.length > 0) {
+            urlUpdates.personaIds = scenarioData.persona_ids;
+          }
+          if (
+            scenarioData.document_ids &&
+            scenarioData.document_ids.length > 0
+          ) {
+            urlUpdates.documentIds = scenarioData.document_ids;
+          }
+          if (
+            scenarioData.scenario_parameter_ids &&
+            scenarioData.scenario_parameter_ids.length > 0
+          ) {
+            urlUpdates.parameterIds = scenarioData.scenario_parameter_ids;
+          }
+          // For fields, we need to extract from parameters dict or use selected_field_ids
+          const serverData = scenarioData as ScenarioNewOut | undefined;
+          if (
+            serverData?.selected_field_ids &&
+            serverData.selected_field_ids.length > 0
+          ) {
+            urlUpdates.fieldIds = serverData.selected_field_ids;
+          }
+
+          // Reset flags to allow next randomization to be processed
+          lastProcessedRandomizedRef.current = null;
+          isApplyingRandomizedRef.current = false;
+          updateUrlParams(urlUpdates);
+        }
+      }, 200);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [scenarioData?.randomized, scenarioData, searchParams, updateUrlParams]);
 
   // Debounce timeout ref for URL updates
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1865,17 +1982,20 @@ export default function Scenario({
 
   // Parameter actions - Server-side randomization per parameter
   const handleRandomizeParameterClient = (paramId: string) => {
-    // Clear existing parameter item selections for this parameter
+    // Keep fields for other parameters in URL to avoid flash
+    // Keep existing fields in local state too - randomized ones will merge via randomized_selections useEffect
     const filteredFieldIds = currentFieldIds.filter(
       (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
     );
-    // Update URL with cleared selections and randomize param
+    // Update URL: keep fields for other parameters, add randomize param
+    // Server will randomize fields for this parameter and return them
+    // The randomized_selections useEffect will merge randomized fields with existing ones
     updateUrlParams({
       fieldIds: filteredFieldIds.length > 0 ? filteredFieldIds : null,
       randomize: `parameter_${paramId}`,
     });
-    // Update local state
-    setCurrentFieldIds(filteredFieldIds);
+    // Don't clear local state - keep existing fields until server returns randomized ones
+    // The randomized_selections useEffect will merge and update state
     // Trigger page refresh to get randomized results from server
     router.refresh();
   };
@@ -1903,12 +2023,12 @@ export default function Scenario({
 
   // Persona actions - Server-side randomization
   const handleRandomizePersonaClient = () => {
-    // Clear existing persona selections
+    // Keep existing personaIds in URL to avoid flash of empty state
+    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
     updateUrlParams({
-      personaIds: null,
       randomize: "persona",
     });
-    setSelectedPersonaIds([]);
+    // Don't clear local state - keep existing values until server returns randomized ones
     // Trigger page refresh to get randomized results from server
     router.refresh();
   };
@@ -1930,12 +2050,12 @@ export default function Scenario({
 
   // Documents actions - Server-side randomization
   const handleRandomizeDocumentsClient = () => {
-    // Clear existing document selections
+    // Keep existing documentIds in URL to avoid flash of empty state
+    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
     updateUrlParams({
-      documentIds: null,
       randomize: "document",
     });
-    setCurrentDocumentIds([]);
+    // Don't clear local state - keep existing values until server returns randomized ones
     // Trigger page refresh to get randomized results from server
     router.refresh();
   };
@@ -1957,12 +2077,12 @@ export default function Scenario({
 
   // Parameters actions - Server-side randomization
   const handleRandomizeParametersClient = () => {
-    // Clear existing parameter selections
+    // Keep existing parameterIds in URL to avoid flash of empty state
+    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
     updateUrlParams({
-      parameterIds: null,
       randomize: "parameters",
     });
-    handleInputChange("parameterIds", []);
+    // Don't clear local state - keep existing values until server returns randomized ones
     // Trigger page refresh to get randomized results from server
     router.refresh();
   };
@@ -1987,22 +2107,12 @@ export default function Scenario({
   // Randomize all: personas, documents, and all parameters (server-side via URL params)
   const handleRandomizeAll = () => {
     try {
-      // Clear existing selection params BEFORE adding randomization params
-      // This ensures randomization happens from the full filtered set, not from pre-selected items
-      const clearParams: Record<string, string | null> = {
-        personaIds: null,
-        documentIds: null,
-        parameterIds: null,
-        fieldIds: null,
-      };
-
-      // Set randomize=all and keep range params (min/max values)
-      const randomizeParams: Record<string, string> = {
+      // Keep existing IDs in URL to avoid flash of empty state
+      // Server will randomize and return new values, which will update URL via randomized_selections useEffect
+      // Server randomizes from the full filtered set regardless of existing selections
+      updateUrlParams({
         randomize: "all",
-      };
-
-      // Update URL with cleared selections and randomization param
-      updateUrlParams({ ...clearParams, ...randomizeParams });
+      });
 
       // Trigger page refresh to get randomized results from server
       router.refresh();
