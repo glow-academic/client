@@ -565,6 +565,11 @@ export default function Scenario({
   // This ensures the old UI stays visible while new randomized selections are being applied
   const [isPending, startTransition] = useTransition();
 
+  // Track which section is currently being randomized for loading indicators
+  const [randomizingSection, setRandomizingSection] = useState<
+    "persona" | "document" | "parameters" | `parameter_${string}` | "all" | null
+  >(null);
+
   // Min/max state for randomization (current values, not allowed ranges)
   // Initialize from server's persona_min/persona_max (current values), default to 1
   const [personaMinMax, setPersonaMinMax] = useState(() => {
@@ -1270,6 +1275,8 @@ export default function Scenario({
 
       // Skip if we're currently applying randomized selections (prevents double-processing)
       if (isApplyingRandomizedRef.current) {
+        // Still clear randomizing section to prevent infinite loading
+        setRandomizingSection(null);
         return;
       }
 
@@ -1278,6 +1285,8 @@ export default function Scenario({
       if (lastProcessedRandomizedRef.current === randomizedHash) {
         // Reset hash so next randomization (even if same result) can be processed
         lastProcessedRandomizedRef.current = null;
+        // Clear randomizing section to prevent infinite loading
+        setRandomizingSection(null);
         updateUrlParams({
           randomize: null,
         });
@@ -1301,6 +1310,8 @@ export default function Scenario({
         if (randomized.parameterIds) {
           handleInputChange("parameterIds", randomized.parameterIds);
         }
+        // Clear randomizing section state when randomization completes
+        setRandomizingSection(null);
       });
 
       // Compute merged fieldIds if needed (for single parameter randomization)
@@ -1356,6 +1367,8 @@ export default function Scenario({
         // Reset the flag after clearing params (use another frame to ensure URL update completes)
         requestAnimationFrame(() => {
           isApplyingRandomizedRef.current = false;
+          // Ensure randomizing section is cleared even if transition didn't run
+          setRandomizingSection(null);
         });
       });
     }
@@ -1364,6 +1377,7 @@ export default function Scenario({
     searchParams,
     updateUrlParams,
     handleInputChange,
+    randomizingSection,
   ]);
 
   // Also handle randomized flag as fallback (DHH-style: server tells client when to clear param)
@@ -1445,6 +1459,8 @@ export default function Scenario({
           // Reset flags to allow next randomization to be processed
           lastProcessedRandomizedRef.current = null;
           isApplyingRandomizedRef.current = false;
+          // Clear randomizing section state
+          setRandomizingSection(null);
           updateUrlParams(fallbackUrlUpdates);
         }
       }, 200);
@@ -1464,6 +1480,8 @@ export default function Scenario({
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Track last params string to prevent duplicate updates
   const lastParamsStringRef = useRef<string>("");
+  // Track if we're currently resetting to prevent buildSearchParams from interfering
+  const isResettingRef = useRef<boolean>(false);
 
   // Helper to normalize URLSearchParams for comparison (sort keys and values)
   const normalizeParamsString = (params: URLSearchParams): string => {
@@ -1490,7 +1508,13 @@ export default function Scenario({
     }
 
     // Debounce URL updates (100ms, like analytics)
+    // Skip if we're currently resetting (prevents re-adding params that were just cleared)
     debounceTimeoutRef.current = setTimeout(() => {
+      // Skip buildSearchParams if we're resetting - let reset handlers manage URL directly
+      if (isResettingRef.current) {
+        return;
+      }
+
       const newParams = buildSearchParams();
       const newParamsString = normalizeParamsString(newParams);
       const currentParamsString = normalizeParamsString(searchParams);
@@ -1694,34 +1718,27 @@ export default function Scenario({
 
       // Initialize range values from server response (current values, not allowed ranges)
       // Always set from server response if available, default to 1
+      // Always update to ensure reset works properly (even if values match defaults)
       setPersonaMinMax({
         min: newData.persona_min ?? 1,
         max: newData.persona_max ?? 1,
       });
-      if (
-        newData.document_min !== undefined ||
-        newData.document_max !== undefined
-      ) {
-        setDocumentMinMax({
-          min: newData.document_min ?? 0,
-          max: newData.document_max ?? 1,
-        });
-      }
-      if (
-        newData.parameter_selection_min !== undefined ||
-        newData.parameter_selection_max !== undefined
-      ) {
-        // Use server-provided ranges as source of truth, fallback to current state
-        const parameterDefault =
-          scenarioData?.allowed_ranges?.parameter_selection ||
-          parameterSelectionMinMax;
-        setParameterSelectionMinMax({
-          min: newData.parameter_selection_min ?? parameterDefault.min,
-          max: newData.parameter_selection_max ?? parameterDefault.max,
-        });
-      }
+      // Always update document ranges (not conditional) to ensure reset works
+      setDocumentMinMax({
+        min: newData.document_min ?? 0,
+        max: newData.document_max ?? 1,
+      });
+      // Always update parameter selection ranges to ensure reset works
+      const parameterDefault =
+        scenarioData?.allowed_ranges?.parameter_selection ||
+        parameterSelectionMinMax;
+      setParameterSelectionMinMax({
+        min: newData.parameter_selection_min ?? parameterDefault.min,
+        max: newData.parameter_selection_max ?? parameterDefault.max,
+      });
 
       // Initialize per-parameter item ranges from server response
+      // Always update field ranges (even if empty) to ensure reset works
       if (newData.field_ranges) {
         const result: Record<string, { min: number; max: number }> = {};
         Object.entries(newData.field_ranges).forEach(([paramId, range]) => {
@@ -1733,6 +1750,16 @@ export default function Scenario({
           };
         });
         setFieldMinMax(result);
+      } else {
+        // If no field_ranges in response, initialize with defaults for all parameters
+        // This ensures reset works even if server doesn't return field_ranges
+        // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
+        const defaultFieldRanges: Record<string, { min: number; max: number }> =
+          {};
+        Object.keys(parameterMapping).forEach((paramId) => {
+          defaultFieldRanges[paramId] = { min: 1, max: 3 };
+        });
+        setFieldMinMax(defaultFieldRanges);
       }
 
       formDataInitializedRef.current = true;
@@ -2045,6 +2072,8 @@ export default function Scenario({
 
   // Parameter actions - Server-side randomization per parameter
   const handleRandomizeParameterClient = (paramId: string) => {
+    // Set loading state for this specific parameter section
+    setRandomizingSection(`parameter_${paramId}`);
     // Keep fields for other parameters in URL to avoid flash
     // Keep existing fields in local state too - randomized ones will merge via randomized_selections useEffect
     const filteredFieldIds = currentFieldIds.filter(
@@ -2065,14 +2094,34 @@ export default function Scenario({
 
   const handleResetParameter = (paramId: string) => {
     try {
+      // Get default min/max for this parameter from server or use defaults
+      const newData = scenarioData as ScenarioNewOut | undefined;
+      const serverFieldRanges = newData?.field_ranges || {};
+      const serverRange = serverFieldRanges[paramId];
+      const defaultMin = serverRange?.min ?? 1;
+      const defaultMax = serverRange?.max ?? 3;
+
+      // Reset local state for this parameter's range
+      setFieldMinMax((prev) => ({
+        ...prev,
+        [paramId]: { min: defaultMin, max: defaultMax },
+      }));
+
       // Remove this parameter's items from URL params
       const currentParamItems = currentFieldIds.filter(
         (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
       );
-      updateUrlParams({
+
+      // Build URL updates - clear field IDs and range params for this parameter
+      const urlUpdates: Record<string, string | string[] | null> = {
         fieldIds: currentParamItems.length > 0 ? currentParamItems : null,
         randomize: null,
-      });
+      };
+      // Clear range params for this parameter
+      urlUpdates[`fieldMin_${paramId}`] = null;
+      urlUpdates[`fieldMax_${paramId}`] = null;
+
+      updateUrlParams(urlUpdates);
       // Update local state
       setCurrentFieldIds(currentParamItems);
       router.refresh();
@@ -2086,6 +2135,8 @@ export default function Scenario({
 
   // Persona actions - Server-side randomization
   const handleRandomizePersonaClient = () => {
+    // Set loading state for persona section
+    setRandomizingSection("persona");
     // Keep existing personaIds in URL to avoid flash of empty state
     // Server will randomize and return new values, which will update URL via randomized_selections useEffect
     updateUrlParams({
@@ -2098,21 +2149,49 @@ export default function Scenario({
 
   const handleResetPersona = () => {
     try {
+      // Get default min/max from server or use defaults
+      const newData = scenarioData as ScenarioNewOut | undefined;
+      const defaultMin = newData?.persona_min ?? 1;
+      const defaultMax = newData?.persona_max ?? 1;
+
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Clear URL params FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
       updateUrlParams({
         personaIds: null,
         personaSearch: null,
+        personaMin: null,
+        personaMax: null,
         randomize: null,
       });
-      setSelectedPersonaIds([]);
-      router.refresh();
+
+      // Update local state after URL update completes (next frame)
+      // This ensures URL is cleared before state updates trigger buildSearchParams
+      requestAnimationFrame(() => {
+        setPersonaMinMax({ min: defaultMin, max: defaultMax });
+        setSelectedPersonaIds([]);
+        setPersonaSearchTerm("");
+        // Clear resetting flag after state updates and refresh
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
+
       toast.success("Persona reset");
     } catch {
+      isResettingRef.current = false;
       toast.error("Failed to reset persona");
     }
   };
 
   // Documents actions - Server-side randomization
   const handleRandomizeDocumentsClient = () => {
+    // Set loading state for document section
+    setRandomizingSection("document");
     // Keep existing documentIds in URL to avoid flash of empty state
     // Server will randomize and return new values, which will update URL via randomized_selections useEffect
     updateUrlParams({
@@ -2125,15 +2204,41 @@ export default function Scenario({
 
   const handleResetDocuments = () => {
     try {
+      // Get default min/max from server or use defaults
+      const newData = scenarioData as ScenarioNewOut | undefined;
+      const defaultMin = newData?.document_min ?? 0;
+      const defaultMax = newData?.document_max ?? 1;
+
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Clear URL params FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
       updateUrlParams({
         documentIds: null,
         documentSearch: null,
+        documentMin: null,
+        documentMax: null,
         randomize: null,
       });
-      setCurrentDocumentIds([]);
-      router.refresh();
+
+      // Update local state after URL update completes (next frame)
+      // This ensures URL is cleared before state updates trigger buildSearchParams
+      requestAnimationFrame(() => {
+        setDocumentMinMax({ min: defaultMin, max: defaultMax });
+        setCurrentDocumentIds([]);
+        setDocumentSearchTerm("");
+        // Refresh after state updates to get fresh server data
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
+
       toast.success("Documents reset");
     } catch {
+      isResettingRef.current = false;
       toast.error("Failed to reset documents");
     }
   };
@@ -2152,15 +2257,41 @@ export default function Scenario({
 
   const handleResetParameters = () => {
     try {
+      // Get default min/max from server or use defaults
+      const newData = scenarioData as ScenarioNewOut | undefined;
+      const defaultMin = newData?.parameter_selection_min ?? 0;
+      const defaultMax = newData?.parameter_selection_max ?? 3;
+
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Clear URL params FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
       updateUrlParams({
         parameterIds: null,
         parameterSearch: null,
+        parameterSelectionMin: null,
+        parameterSelectionMax: null,
         randomize: null,
       });
-      handleInputChange("parameterIds", []);
-      router.refresh();
+
+      // Update local state after URL update completes (next frame)
+      // This ensures URL is cleared before state updates trigger buildSearchParams
+      requestAnimationFrame(() => {
+        setParameterSelectionMinMax({ min: defaultMin, max: defaultMax });
+        handleInputChange("parameterIds", []);
+        setParameterSearchTerm("");
+        // Refresh after state updates to get fresh server data
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
+
       toast.success("Parameters reset");
     } catch {
+      isResettingRef.current = false;
       toast.error("Failed to reset parameters");
     }
   };
@@ -2170,6 +2301,8 @@ export default function Scenario({
   // Randomize all: personas, documents, and all parameters (server-side via URL params)
   const handleRandomizeAll = () => {
     try {
+      // Set loading state for all sections
+      setRandomizingSection("all");
       // Keep existing IDs in URL to avoid flash of empty state
       // Server will randomize and return new values, which will update URL via randomized_selections useEffect
       // Server randomizes from the full filtered set regardless of existing selections
@@ -2187,8 +2320,9 @@ export default function Scenario({
   // Reset all: personas, documents, and all parameters (clear URL params)
   const handleResetAll = () => {
     try {
-      // Clear all selection and randomization params from URL - server will return unfiltered/default valid IDs
-      updateUrlParams({
+      // Clear all URL params first - server will return defaults
+      // Build URL updates - clear all params including ranges
+      const urlUpdates: Record<string, string | null> = {
         departmentIds: null,
         personaIds: null,
         documentIds: null,
@@ -2197,17 +2331,78 @@ export default function Scenario({
         personaSearch: null,
         documentSearch: null,
         parameterSearch: null,
+        personaMin: null,
+        personaMax: null,
+        documentMin: null,
+        documentMax: null,
+        parameterSelectionMin: null,
+        parameterSelectionMax: null,
         randomize: null,
+      };
+
+      // Clear all field range params for ALL parameters (including defaults)
+      // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
+      // Also clear any fieldMin_* or fieldMax_* params that might exist in URL but not in current mapping
+      Object.keys(parameterMapping).forEach((paramId) => {
+        urlUpdates[`fieldMin_${paramId}`] = null;
+        urlUpdates[`fieldMax_${paramId}`] = null;
       });
-      // Also reset local state
-      setSelectedPersonaIds([]);
-      setCurrentDocumentIds([]);
-      setCurrentFieldIds([]);
-      handleInputChange("parameterIds", []);
-      // Trigger page refresh to get reset results from server
-      router.refresh();
+
+      // Also clear any fieldMin_* or fieldMax_* params from URL that we might have missed
+      // This handles edge cases where params exist but aren't in current parameterMapping
+      searchParams.forEach((_value, key) => {
+        if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
+          urlUpdates[key] = null;
+        }
+      });
+
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
+
+      // Update URL FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
+      updateUrlParams(urlUpdates);
+
+      // Update local state after URL update completes (next frame)
+      // This ensures URL is cleared before state updates trigger buildSearchParams
+      requestAnimationFrame(() => {
+        // Reset all local state to defaults for instant UI feedback
+        // Server response will sync these values properly via useEffect
+        setPersonaMinMax({ min: 1, max: 1 });
+        setDocumentMinMax({ min: 0, max: 1 });
+        setParameterSelectionMinMax({ min: 0, max: 3 });
+
+        // Reset field ranges to defaults for ALL parameters (including defaults)
+        // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
+        const defaultFieldRanges: Record<string, { min: number; max: number }> =
+          {};
+        Object.keys(parameterMapping).forEach((paramId) => {
+          defaultFieldRanges[paramId] = { min: 1, max: 3 };
+        });
+        setFieldMinMax(defaultFieldRanges);
+
+        // Reset all search terms
+        setPersonaSearchTerm("");
+        setDocumentSearchTerm("");
+        setParameterSearchTerm("");
+
+        // Reset all selections
+        setSelectedPersonaIds([]);
+        setCurrentDocumentIds([]);
+        setCurrentFieldIds([]);
+        handleInputChange("parameterIds", []);
+
+        // Refresh after state updates to get fresh server data
+        // The useEffect at line 1695 will sync state from server response
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
       toast.success("All selections reset");
     } catch {
+      isResettingRef.current = false;
       toast.error("Failed to reset all selections");
     }
   };
@@ -2744,6 +2939,9 @@ export default function Scenario({
           stepNumber={2}
           isReadonly={isReadonly}
           disabled={isPending}
+          isRandomizing={
+            randomizingSection === "persona" || randomizingSection === "all"
+          }
           isEditMode={isEditMode}
         />
 
@@ -2787,6 +2985,9 @@ export default function Scenario({
           stepDescription={steps[2]?.description || ""}
           stepNumber={3}
           isReadonly={isReadonly}
+          isRandomizing={
+            randomizingSection === "document" || randomizingSection === "all"
+          }
           isEditMode={isEditMode}
         />
 
@@ -2823,6 +3024,9 @@ export default function Scenario({
           stepDescription={steps[3]?.description || ""}
           stepNumber={4}
           isReadonly={isReadonly}
+          isRandomizing={
+            randomizingSection === "parameters" || randomizingSection === "all"
+          }
           isEditMode={isEditMode}
         />
 
@@ -2880,6 +3084,10 @@ export default function Scenario({
                 stepStatus={stepStatus}
                 stepNumber={stepIndex + 1}
                 isReadonly={isReadonly}
+                isRandomizing={
+                  randomizingSection === `parameter_${paramId}` ||
+                  randomizingSection === "all"
+                }
                 isEditMode={isEditMode}
               />
             );

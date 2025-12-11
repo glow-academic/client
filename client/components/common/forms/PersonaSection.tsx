@@ -3,7 +3,14 @@
  * Reusable persona selection section component
  */
 "use client";
-import { Brain, Check, RotateCcw, Search, Shuffle } from "lucide-react";
+import {
+  Brain,
+  Check,
+  Loader2,
+  RotateCcw,
+  Search,
+  Shuffle,
+} from "lucide-react";
 import { useMemo } from "react";
 
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
@@ -54,6 +61,7 @@ export interface PersonaSectionProps {
   isReadonly: boolean;
   disabled?: boolean;
   isEditMode?: boolean;
+  isRandomizing?: boolean;
 }
 
 // Utility function to generate gradient from hex color
@@ -96,6 +104,7 @@ export function PersonaSection({
   isReadonly,
   disabled = false,
   isEditMode = false,
+  isRandomizing = false,
 }: PersonaSectionProps) {
   // Use allowedRange for slider limits, minMax for current values
   const sliderMin = allowedRange?.min ?? minMax.min ?? 1;
@@ -167,9 +176,13 @@ export function PersonaSection({
                   variant="ghost"
                   size="icon"
                   onClick={onRandomize}
-                  disabled={isReadonly || disabled}
+                  disabled={isReadonly || disabled || isRandomizing}
                 >
-                  <Shuffle className="h-4 w-4" />
+                  {isRandomizing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Shuffle className="h-4 w-4" />
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Randomize</TooltipContent>

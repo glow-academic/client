@@ -3,7 +3,7 @@
  * Reusable parameter selection section component
  */
 "use client";
-import { Check, RotateCcw, Search, Shuffle } from "lucide-react";
+import { Check, Loader2, RotateCcw, Search, Shuffle } from "lucide-react";
 import { useMemo } from "react";
 
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
@@ -56,6 +56,7 @@ export interface ParameterSectionProps {
   isReadonly: boolean;
   disabled?: boolean;
   isEditMode?: boolean;
+  isRandomizing?: boolean;
 }
 
 export function ParameterSection({
@@ -78,6 +79,7 @@ export function ParameterSection({
   isReadonly,
   disabled = false,
   isEditMode = false,
+  isRandomizing = false,
 }: ParameterSectionProps) {
   // Use allowedRange for slider limits, minMax for current values
   const sliderMin = allowedRange?.min ?? minMax.min ?? 0;
@@ -155,9 +157,13 @@ export function ParameterSection({
                       variant="ghost"
                       size="icon"
                       onClick={onRandomize}
-                      disabled={isReadonly || disabled}
+                      disabled={isReadonly || disabled || isRandomizing}
                     >
-                      <Shuffle className="h-4 w-4" />
+                      {isRandomizing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Shuffle className="h-4 w-4" />
+                      )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Randomize</TooltipContent>

@@ -3,7 +3,7 @@
  * Reusable document selection section component
  */
 "use client";
-import { Check, Eye, RotateCcw, Search, Shuffle } from "lucide-react";
+import { Check, Eye, Loader2, RotateCcw, Search, Shuffle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import DocumentViewer, {
@@ -70,6 +70,7 @@ export interface DocumentSectionProps {
   isReadonly: boolean;
   disabled?: boolean;
   isEditMode?: boolean;
+  isRandomizing?: boolean;
 }
 
 export function DocumentSection({
@@ -96,6 +97,7 @@ export function DocumentSection({
   isReadonly,
   disabled = false,
   isEditMode = false,
+  isRandomizing = false,
 }: DocumentSectionProps) {
   // Use allowedRange for slider limits, minMax for current values
   const sliderMin = allowedRange?.min ?? minMax.min ?? 0;
@@ -191,9 +193,13 @@ export function DocumentSection({
                     variant="ghost"
                     size="icon"
                     onClick={onRandomize}
-                    disabled={isReadonly || disabled}
+                    disabled={isReadonly || disabled || isRandomizing}
                   >
-                    <Shuffle className="h-4 w-4" />
+                    {isRandomizing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Shuffle className="h-4 w-4" />
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Randomize</TooltipContent>
@@ -229,7 +235,7 @@ export function DocumentSection({
           </div>
 
           {/* Filtered documents grid */}
-          <div className="grid grid-cols-3 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
+          <div className="grid grid-cols-4 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
             {filteredDocumentIds.map((docId) => {
               const document = documentMapping[docId];
               if (!document) return null;
