@@ -518,7 +518,23 @@ def filter_valid_document_ids(
 
     # Apply field-based filtering (bidirectional: fields → documents)
     # When specific fields are selected, only show documents that have those exact fields
-    if len(selected_field_ids) == 0:
+    # BUT: Only filter by fields that belong to document parameters
+    # Filter out non-document-parameter fields from selected_field_ids
+    document_parameter_field_ids = []
+    if selected_field_ids:
+        for field_id in selected_field_ids:
+            if not field_id:
+                continue
+            field = field_mapping.get(field_id)
+            if not field or not field.parameter_id:
+                continue
+            # Only include fields that belong to document parameters
+            param = parameter_mapping.get(field.parameter_id)
+            if param and param.document_parameter:
+                document_parameter_field_ids.append(field_id)
+    
+    # Only apply field-based filtering if we have document parameter fields
+    if len(document_parameter_field_ids) == 0:
         return param_filtered
 
     # Always include currently selected documents (for edit mode)
@@ -550,15 +566,15 @@ def filter_valid_document_ids(
         # Combine both sources of field IDs
         all_doc_field_ids = list(set(doc_field_ids + doc_details_field_ids))
 
-        # If document has no fields at all, and we have selected fields, filter it out
-        if len(all_doc_field_ids) == 0 and len(selected_field_ids) > 0:
+        # If document has no fields at all, and we have selected document parameter fields, filter it out
+        if len(all_doc_field_ids) == 0 and len(document_parameter_field_ids) > 0:
             continue
 
         doc_field_set = set(all_doc_field_ids)
 
-        # Check each selected field: document must have the exact selected field
+        # Check each selected document parameter field: document must have the exact selected field
         has_all_fields = True
-        for selected_field_id in selected_field_ids:
+        for selected_field_id in document_parameter_field_ids:
             if not selected_field_id:
                 continue
 
