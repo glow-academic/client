@@ -2720,88 +2720,113 @@ export default function Video({
   const isReadonly = !videoData?.can_edit;
 
   // Calculate step status
-  const getStepStatus = (stepId: string): StepStatus => {
-    switch (stepId) {
-      case "name":
-        // Always completed - name is required
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      // If we have video content, mark all sections as completed
+      if (outlineText && outlineText.trim()) {
         return "completed";
-      case "persona":
-        // Can start immediately, doesn't depend on name
-        return (formData.personaIds?.length || 0) > 0 ? "completed" : "active";
-      case "documents":
-        // Active when personas are selected, completed when documents are selected
-        return (formData.personaIds?.length || 0) === 0
-          ? "pending"
-          : selectedDocumentIds.length > 0
-            ? "completed"
-            : "active";
-      case "parameters":
-        // Active when documents are selected, completed when parameter items are selected
-        return selectedDocumentIds.length === 0
-          ? "pending"
-          : currentFieldIds.length > 0
-            ? "completed"
-            : "active";
-      case "outline":
-        // Active if documents are selected (questions are generated with outline)
-        return selectedDocumentIds.length === 0
-          ? "pending"
-          : selectedOutlineId || outlineText.trim()
-            ? "completed"
-            : "active";
-      case "video_generation":
-        // Active if outline exists
-        return !selectedOutlineId && !outlineText.trim()
-          ? "pending"
-          : uploadedVideoFile ||
-              generatedVideoUrl ||
-              (isEditMode && videoDetail?.upload_id)
-            ? "completed"
-            : "active";
-      default:
-        return "pending";
-    }
-  };
+      }
 
-  const steps: Step[] = [
-    {
-      id: "name",
-      title: "",
-      description: "",
-      status: getStepStatus("name"),
+      switch (stepId) {
+        case "name":
+          // Always completed - name is required
+          return "completed";
+        case "persona":
+          // Can start immediately, doesn't depend on name
+          return (formData.personaIds?.length || 0) > 0
+            ? "completed"
+            : "active";
+        case "documents":
+          return (formData.personaIds?.length || 0) === 0
+            ? "pending"
+            : selectedDocumentIds.length > 0
+              ? "completed"
+              : "active";
+        case "parameters":
+          return (formData.personaIds?.length || 0) === 0
+            ? "pending"
+            : (formData.parameterIds || []).length > 0
+              ? "completed"
+              : "active";
+        case "video":
+          return (formData.personaIds?.length || 0) === 0
+            ? "pending"
+            : "active"; // Always active once personas are selected, user can choose to fill or leave blank
+        default:
+          // Handle individual parameter steps (parameter-{paramId})
+          if (stepId.startsWith("parameter-")) {
+            const paramId = stepId.replace("parameter-", "");
+            const paramItems = currentFieldIds.filter(
+              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
+            );
+            return (formData.personaIds?.length || 0) === 0
+              ? "pending"
+              : paramItems.length > 0
+                ? "completed"
+                : "active";
+          }
+          return "pending";
+      }
     },
-    {
-      id: "persona",
-      title: "Personas",
-      description: "Select personas for this video",
-      status: getStepStatus("persona"),
-    },
-    {
-      id: "documents",
-      title: "Documents",
-      description: "Select documents that will be available for this video",
-      status: getStepStatus("documents"),
-    },
-    {
-      id: "parameters",
-      title: "Parameters",
-      description: "Configure video parameters",
-      status: getStepStatus("parameters"),
-    },
-    {
-      id: "outline",
-      title: "Outline",
+    [
+      formData.personaIds,
+      selectedDocumentIds,
+      currentFieldIds,
+      fieldMapping,
+      formData.parameterIds,
+      outlineText,
+    ]
+  );
+
+  // Dynamic steps array based on available parameters
+  const steps: Step[] = useMemo(() => {
+    const baseSteps: Step[] = [
+      {
+        id: "name",
+        title: "",
+        description: "",
+        status: getStepStatus("name"),
+      },
+      {
+        id: "persona",
+        title: "Personas",
+        description: "Select personas for this video",
+        status: getStepStatus("persona"),
+      },
+      {
+        id: "documents",
+        title: "Documents",
+        description: "Select documents that will be available for this video",
+        status: getStepStatus("documents"),
+      },
+      {
+        id: "parameters",
+        title: "Parameters",
+        description: "Configure video parameters",
+        status: getStepStatus("parameters"),
+      },
+    ];
+
+    // Add individual parameter steps
+    const parameterSteps: Step[] = Object.entries(
+      generalVideoParameterMapping
+    ).map(([paramId, param]) => ({
+      id: `parameter-${paramId}`,
+      title: param.name,
+      description: param.description || "",
+      status: getStepStatus(`parameter-${paramId}`),
+    }));
+
+    const videoStep: Step = {
+      id: "video",
+      title: "Video",
       description:
-        "Generate video outline from documents (questions are generated automatically)",
-      status: getStepStatus("outline"),
-    },
-    {
-      id: "video_generation",
-      title: "Video Generation",
-      description: "Generate video using AI or upload a video file",
-      status: getStepStatus("video_generation"),
-    },
-  ];
+        "This is what will be shown in the video. Leave blank for auto-generation.",
+      status: getStepStatus("video"),
+    };
+
+    return [...baseSteps, ...parameterSteps, videoStep];
+  }, [generalVideoParameterMapping, getStepStatus]);
 
   // New inline question management handlers
   const handleAddQuestion = () => {
@@ -3430,102 +3455,115 @@ export default function Video({
         }
       )}
 
-      {/* Step 5: Content (Outline, Questions, Images, Video) */}
-      <VideoContentSection
-        outline={outlineText}
-        outlineMapping={outlineMapping}
-        currentOutlineIds={currentOutlineIds}
-        hasOutlineChanges={hasOutlineChanges}
-        originalOutline={
-          isEditMode &&
-          videoDetail &&
-          videoDetail.outline_ids &&
-          videoDetail.outline_ids.length > 0
-            ? outlineMapping[videoDetail.outline_ids[0]!]?.outline || ""
-            : ""
-        }
-        questionCountRange={
-          videoData?.question_count_range
-            ? {
-                min: videoData.question_count_range.min,
-                max: videoData.question_count_range.max,
-              }
-            : { min: 0, max: 3 }
-        }
-        questionCount={questionCount}
-        onQuestionCountChange={(min, max) => setQuestionCount([min, max])}
-        questions={questions}
-        useImage={useImage}
-        images={images}
-        imageMapping={imageMapping}
-        isUploadingImage={isUploadingImage}
-        allPreviewDocumentIds={selectedDocumentIds}
-        documentMapping={documentMapping}
-        videoPreviewDocumentId={videoPreviewDocumentId}
-        {...(videoData &&
-        "document_details" in videoData &&
-        videoData.document_details
-          ? {
-              documentDetails: videoData.document_details as Array<{
-                document_id: string;
-                upload_id?: string | null;
-                [key: string]: unknown;
-              }>,
+      {/* Video Step */}
+      {(() => {
+        const videoStepIndex = steps.findIndex((step) => step.id === "video");
+        const videoStepNumber =
+          videoStepIndex >= 0 ? videoStepIndex + 1 : steps.length;
+        return (
+          <VideoContentSection
+            outline={outlineText}
+            outlineMapping={outlineMapping}
+            currentOutlineIds={currentOutlineIds}
+            hasOutlineChanges={hasOutlineChanges}
+            originalOutline={
+              isEditMode &&
+              videoDetail &&
+              videoDetail.outline_ids &&
+              videoDetail.outline_ids.length > 0
+                ? outlineMapping[videoDetail.outline_ids[0]!]?.outline || ""
+                : ""
             }
-          : {})}
-        templateDocumentIds={templateDocumentIds}
-        generatedVideoUrl={generatedVideoUrl}
-        uploadedVideoFile={uploadedVideoFile}
-        videoObjectUrl={videoObjectUrl}
-        isUploadingVideo={isUploadingVideo}
-        isGenerating={isGenerating}
-        onOutlineChange={setOutlineText}
-        onOutlineVersionSelect={handleOutlineVersionSelect}
-        onResetOutline={handleResetOutline}
-        onQuestionsChange={setQuestions}
-        onAddQuestion={handleAddQuestion}
-        onRemoveQuestion={handleRemoveQuestion}
-        onUpdateQuestion={handleUpdateQuestion}
-        onQuestionTimesChange={handleQuestionTimesChange}
-        onOptionChange={handleOptionChange}
-        onAddOption={handleAddOption}
-        onRemoveOption={handleRemoveOption}
-        onToggleOptionCorrect={handleToggleOptionCorrect}
-        onUseImageChange={(checked) => {
-          setUseImage(checked);
-          if (!checked) {
-            setImages([]);
-          }
-        }}
-        onImageSelect={handleImageSelect}
-        onImageUpload={handleImageUpload}
-        onImageRemove={(index) => {
-          setImages((prev) => prev.filter((_, i) => i !== index));
-        }}
-        onVideoPreviewDocumentChange={(docId) =>
-          setVideoPreviewDocumentId(docId)
-        }
-        onGenerate={handleGenerate}
-        onResetContent={handleResetContent}
-        onDragStartQuestion={handleDragStartQuestion}
-        onDragOverQuestion={handleDragOverQuestion}
-        onDropQuestion={handleDropQuestion}
-        onDragStartOption={handleDragStartOption}
-        onDragOverOption={handleDragOverOption}
-        onDropOption={handleDropOption}
-        stepStatus={getStepStatus("outline")}
-        stepTitle={steps[4]?.title || ""}
-        stepDescription={steps[4]?.description || ""}
-        stepNumber={5}
-        isReadonly={isReadonly}
-        isSubmitting={isSubmitting}
-        imageInputRef={imageInputRef}
-        videoInputRef={videoInputRef}
-        onVideoUpload={handleFileSelect}
-        videoRef={videoRef}
-        draggedQuestionIndex={draggedQuestionIndex}
-        draggedOptionIndex={draggedOptionIndex}
-      />
+            questionCountRange={
+              videoData?.question_count_range
+                ? {
+                    min: videoData.question_count_range.min,
+                    max: videoData.question_count_range.max,
+                  }
+                : { min: 0, max: 3 }
+            }
+            questionCount={questionCount}
+            onQuestionCountChange={(min, max) => setQuestionCount([min, max])}
+            questions={questions}
+            useImage={useImage}
+            images={images}
+            imageMapping={imageMapping}
+            isUploadingImage={isUploadingImage}
+            allPreviewDocumentIds={selectedDocumentIds}
+            documentMapping={documentMapping}
+            videoPreviewDocumentId={videoPreviewDocumentId}
+            {...(videoData &&
+            "document_details" in videoData &&
+            videoData.document_details
+              ? {
+                  documentDetails: videoData.document_details as Array<{
+                    document_id: string;
+                    upload_id?: string | null;
+                    [key: string]: unknown;
+                  }>,
+                }
+              : {})}
+            templateDocumentIds={templateDocumentIds}
+            generatedVideoUrl={generatedVideoUrl}
+            uploadedVideoFile={uploadedVideoFile}
+            videoObjectUrl={videoObjectUrl}
+            isUploadingVideo={isUploadingVideo}
+            isGenerating={isGenerating}
+            onOutlineChange={setOutlineText}
+            onOutlineVersionSelect={handleOutlineVersionSelect}
+            onResetOutline={handleResetOutline}
+            onQuestionsChange={setQuestions}
+            onAddQuestion={handleAddQuestion}
+            onRemoveQuestion={handleRemoveQuestion}
+            onUpdateQuestion={handleUpdateQuestion}
+            onQuestionTimesChange={handleQuestionTimesChange}
+            onOptionChange={handleOptionChange}
+            onAddOption={handleAddOption}
+            onRemoveOption={handleRemoveOption}
+            onToggleOptionCorrect={handleToggleOptionCorrect}
+            onUseImageChange={(checked) => {
+              setUseImage(checked);
+              if (!checked) {
+                setImages([]);
+              }
+            }}
+            onImageSelect={handleImageSelect}
+            onImageUpload={handleImageUpload}
+            onImageRemove={(index) => {
+              setImages((prev) => prev.filter((_, i) => i !== index));
+            }}
+            onVideoPreviewDocumentChange={(docId) =>
+              setVideoPreviewDocumentId(docId)
+            }
+            onGenerate={handleGenerate}
+            onResetContent={handleResetContent}
+            onDragStartQuestion={handleDragStartQuestion}
+            onDragOverQuestion={handleDragOverQuestion}
+            onDropQuestion={handleDropQuestion}
+            onDragStartOption={handleDragStartOption}
+            onDragOverOption={handleDragOverOption}
+            onDropOption={handleDropOption}
+            stepStatus={getStepStatus("video")}
+            stepTitle={
+              videoStepIndex >= 0 ? steps[videoStepIndex]?.title || "" : ""
+            }
+            stepDescription={
+              videoStepIndex >= 0
+                ? steps[videoStepIndex]?.description || ""
+                : ""
+            }
+            stepNumber={videoStepNumber}
+            isReadonly={isReadonly}
+            isSubmitting={isSubmitting}
+            imageInputRef={imageInputRef}
+            videoInputRef={videoInputRef}
+            onVideoUpload={handleFileSelect}
+            videoRef={videoRef}
+            draggedQuestionIndex={draggedQuestionIndex}
+            draggedOptionIndex={draggedOptionIndex}
+          />
+        );
+      })()}
 
       {/* Action Buttons */}
       <div className="flex gap-2 justify-end">
