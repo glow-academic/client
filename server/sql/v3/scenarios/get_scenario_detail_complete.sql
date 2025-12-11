@@ -1124,6 +1124,7 @@ expected_agent_role AS (
 valid_agents AS (
     -- Filter agents by department access and expected role
     -- Include agents matching expected role OR base 'scenario' role (backward compatibility)
+    -- AND always include image agents (for image agent picker)
     SELECT 
         COALESCE(
             jsonb_object_agg(
@@ -1145,8 +1146,8 @@ valid_agents AS (
         -- Match expected role OR base scenario role (backward compatibility)
         a.role = ear.role
         OR a.role = 'scenario'
-        -- OR image agents (if image is enabled)
-        OR (ear.role::text LIKE '%image%' AND a.role = 'image')
+        -- OR always include image agents (for image agent picker)
+        OR a.role = 'image'
     )
     GROUP BY a.id, ear.role
     HAVING 

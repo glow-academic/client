@@ -790,6 +790,26 @@ export default function Scenario({
       }
     });
 
+    // Objectives ranges - compare against server's current values
+    const serverObjectiveCountRange =
+      serverCurrentValues?.objective_count_range;
+    const serverObjectiveMin = serverObjectiveCountRange?.min ?? 0;
+    const serverObjectiveMax = serverObjectiveCountRange?.max ?? 3;
+    if (
+      objectiveCount[0] !== serverObjectiveMin ||
+      objectiveCount[1] !== serverObjectiveMax
+    ) {
+      params.set("objectivesMin", objectiveCount[0].toString());
+      params.set("objectivesMax", objectiveCount[1].toString());
+    }
+
+    // Use Image flag - compare against server's current value
+    const serverImageEnabled =
+      serverCurrentValues?.image_input_enabled ?? false;
+    if (useImage !== serverImageEnabled) {
+      params.set("useImage", useImage ? "true" : "false");
+    }
+
     // Note: randomize param is set separately by randomize handlers, not here
     // This function builds the base URL state (filters, searches, ranges)
 
@@ -810,6 +830,8 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     fieldMinMax,
+    objectiveCount, // Include objectiveCount for objectivesMin/objectivesMax
+    useImage, // Include useImage for useImage flag
     fieldMapping, // Used for field ranges comparison
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
     searchParams,
@@ -1561,6 +1583,8 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     fieldMinMax,
+    objectiveCount, // Include objectiveCount to trigger URL updates when objectives change
+    useImage, // Include useImage to trigger URL updates when useImage changes
     pathname,
   ]);
 

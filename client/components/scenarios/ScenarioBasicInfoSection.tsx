@@ -7,10 +7,7 @@ import { Check, Power, RotateCcw, Shuffle } from "lucide-react";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -21,7 +18,8 @@ import {
 import type { components } from "@/lib/api/schema";
 
 type AgentMappingItem = components["schemas"]["AgentMappingItem"];
-type DepartmentMappingItem = components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+type DepartmentMappingItem =
+  components["schemas"]["app__utils__schema__DepartmentMappingItem"];
 
 export interface ScenarioBasicInfoSectionProps {
   // Data
@@ -92,9 +90,15 @@ export function ScenarioBasicInfoSection({
       return agent?.roles?.includes("image");
     }) || [];
 
+  // TODO: Temporarily showing agent sections to debug which agent is being selected
+  // TODO: Revert to only showing when there's more than one option after debugging
   // Only show agent pickers if there's more than one option
-  const showScenarioPicker = filteredScenarioAgentIds.length > 1;
-  const showImagePicker = imageAgentIds.length > 1;
+  // const showScenarioPicker = filteredScenarioAgentIds.length > 1;
+  // const showImagePicker = imageAgentIds.length > 1;
+
+  // TEMPORARY: Show sections even with single option to see which agent is selected
+  const showScenarioPicker = filteredScenarioAgentIds.length > 0;
+  const showImagePicker = imageAgentIds.length > 0;
 
   return (
     <Card className="transition-all">
@@ -321,8 +325,3 @@ export function ScenarioBasicInfoSection({
     </Card>
   );
 }
-
-
-
-
-

@@ -719,7 +719,7 @@ default_image_agent AS (
 ),
 agent_filtered AS (
     -- Filter agents by department access and expected role
-    -- Include agents matching expected role (or image agents if image is enabled)
+    -- Include agents matching expected role AND always include image agents
     SELECT a.id, a.name, a.description, a.role
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -728,8 +728,8 @@ agent_filtered AS (
     AND (
         -- Match expected role only (no fallback to base scenario)
         a.role = ear.role
-        -- OR image agents (if image is enabled)
-        OR (ear.role::text LIKE '%image%' AND a.role = 'image')
+        -- OR always include image agents (for image agent picker)
+        OR a.role = 'image'
     )
     GROUP BY a.id, a.name, a.description, a.role, ear.role
     HAVING 

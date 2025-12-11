@@ -56,16 +56,6 @@ async function updateScenario(
   return api.post("/scenarios/update", input);
 }
 
-// generateAIScenario removed - component now uses WebSocket directly
-
-async function randomizeScenario(
-  input: RandomizeScenarioIn
-): Promise<RandomizeScenarioOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/randomize", input);
-}
-
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Scenario",
@@ -151,6 +141,15 @@ export default async function NewScenarioPage({
   const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
     ? parseInt(searchParamsObj.get("parameterSelectionMax") || "3", 10)
     : undefined;
+  const objectivesMin = searchParamsObj.get("objectivesMin")
+    ? parseInt(searchParamsObj.get("objectivesMin") || "0", 10)
+    : undefined;
+  const objectivesMax = searchParamsObj.get("objectivesMax")
+    ? parseInt(searchParamsObj.get("objectivesMax") || "0", 10)
+    : undefined;
+  const useImage = searchParamsObj.get("useImage")
+    ? searchParamsObj.get("useImage") === "true"
+    : undefined;
 
   // Parse field ranges (format: fieldMin_{paramId}, fieldMax_{paramId})
   const fieldRanges: // Renamed from parameterItemRanges
@@ -203,8 +202,11 @@ export default async function NewScenarioPage({
       documentMax: documentMax || null,
       parameterSelectionMin: parameterSelectionMin || null,
       parameterSelectionMax: parameterSelectionMax || null,
+      objectivesMin: objectivesMin || null,
+      objectivesMax: objectivesMax || null,
       fieldRanges: fieldRanges || null, // Renamed from parameterItemRanges
       randomize: randomize || null,
+      useImage: useImage || null,
       imageIds: imageIds || null,
       objectiveIds: objectiveIds || null,
       problemStatementIds: problemStatementIds || null,
@@ -222,7 +224,6 @@ export default async function NewScenarioPage({
         scenarioDetailDefault={scenarioDetailDefault}
         createScenarioAction={createScenario}
         updateScenarioAction={updateScenario}
-        randomizeScenarioAction={randomizeScenario}
       />
     </div>
   );

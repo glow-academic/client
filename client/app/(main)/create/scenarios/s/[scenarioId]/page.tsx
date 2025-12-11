@@ -69,11 +69,14 @@ const getScenario = async (
     documentMax?: number;
     parameterSelectionMin?: number;
     parameterSelectionMax?: number;
+    objectivesMin?: number;
+    objectivesMax?: number;
     parameterItemRanges?: Record<string, { min: number; max: number }>;
     randomizePersonas?: string;
     randomizeDocuments?: string;
     randomizeParameters?: string;
     randomizeParameterItems?: Record<string, string>;
+    useImage?: boolean;
     imageIds?: string[];
     objectiveIds?: string[];
     problemStatementIds?: string[];
@@ -136,16 +139,6 @@ async function updateScenario(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/scenarios/update", input);
-}
-
-// generateAIScenario removed - component now uses WebSocket directly
-
-async function randomizeScenario(
-  input: RandomizeScenarioIn
-): Promise<RandomizeScenarioOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/randomize", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -229,6 +222,15 @@ export default async function EditScenarioPage({
   const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
     ? parseInt(searchParamsObj.get("parameterSelectionMax") || "3", 10)
     : undefined;
+  const objectivesMin = searchParamsObj.get("objectivesMin")
+    ? parseInt(searchParamsObj.get("objectivesMin") || "0", 10)
+    : undefined;
+  const objectivesMax = searchParamsObj.get("objectivesMax")
+    ? parseInt(searchParamsObj.get("objectivesMax") || "0", 10)
+    : undefined;
+  const useImage = searchParamsObj.get("useImage")
+    ? searchParamsObj.get("useImage") === "true"
+    : undefined;
 
   // Parse parameter item ranges
   const parameterItemRanges:
@@ -295,11 +297,17 @@ export default async function EditScenarioPage({
       documentMax,
       parameterSelectionMin,
       parameterSelectionMax,
+      objectivesMin,
+      objectivesMax,
       parameterItemRanges,
       randomizePersonas,
       randomizeDocuments,
       randomizeParameters,
       randomizeParameterItems,
+      useImage,
+      imageIds,
+      objectiveIds,
+      problemStatementIds,
     });
 
     return (
@@ -314,7 +322,6 @@ export default async function EditScenarioPage({
           scenarioDetail={scenarioDetail}
           createScenarioAction={createScenario}
           updateScenarioAction={updateScenario}
-          randomizeScenarioAction={randomizeScenario}
         />
       </div>
     );

@@ -491,7 +491,7 @@ export function ContentSection({
                             </span>
                           </div>
                         </div>
-                        <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        <span className="text-xs mt-1 line-clamp-2">
                           {preview}
                           {item.problem_statement.length > 100 ? "..." : ""}
                         </span>
