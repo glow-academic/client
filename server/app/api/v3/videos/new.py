@@ -853,10 +853,26 @@ async def get_video_new(
     try:
         # Load SQL query
         sql_query = load_sql("sql/v3/videos/get_video_new_complete.sql")
-        sql_params = (request_data.profileId,)
+        
+        # Convert templateDocumentIds to UUID array if provided
+        template_document_ids_uuid = None
+        if request_data.templateDocumentIds:
+            import uuid as uuid_lib
+
+            try:
+                template_document_ids_uuid = [
+                    uuid_lib.UUID(did) for did in request_data.templateDocumentIds
+                ]
+            except (ValueError, TypeError):
+                template_document_ids_uuid = None
+        
+        sql_params = (
+            request_data.profileId,
+            template_document_ids_uuid,
+        )
 
         # Execute query
-        result = await conn.fetchrow(sql_query, request_data.profileId)
+        result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
             raise ValueError("Failed to fetch default video data")

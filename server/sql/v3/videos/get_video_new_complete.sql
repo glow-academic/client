@@ -134,7 +134,7 @@ problem_statement_mapping_data AS (
     ) as mapping
     FROM problem_statement_data ps
 ),
--- Documents (filtered by department access, exclude scenario_parameter documents)
+-- Documents (filtered by department access, require video_parameter = true, exclude scenario_parameter documents)
 valid_documents_filtered AS (
     SELECT DISTINCT
         d.id,
@@ -149,6 +149,18 @@ valid_documents_filtered AS (
         (
             COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
             OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        )
+        -- Require at least one parameter with video_parameter = true (matching scenarios pattern which excludes video_parameter)
+        AND EXISTS (
+            SELECT 1 
+            FROM document_fields df
+            JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+            JOIN parameters param ON param.id = pfield.parameter_id
+            WHERE df.document_id = d.id
+            AND df.active = true
+            AND pfield.active = true
+            AND param.active = true
+            AND param.video_parameter = true
         )
         -- Exclude documents with scenario_parameter = true
         AND NOT EXISTS (
@@ -182,6 +194,41 @@ document_data AS (
     LEFT JOIN document_templates dt ON dt.document_id = vdf.id AND dt.active = true
     LEFT JOIN templates t ON t.id = dt.template_id
     LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+    UNION
+    -- Include provided templateDocumentIds even if they don't match department filters
+    SELECT DISTINCT
+        d.id,
+        d.name,
+        '' as description,
+        COALESCE(u.file_path, template_u.file_path, '') as file_path,
+        COALESCE(u.mime_type, template_u.mime_type, '') as mime_type,
+        COALESCE(du.upload_id::text, template_u.id::text, '') as upload_id
+    FROM documents d
+    LEFT JOIN (
+        SELECT DISTINCT ON (du.document_id) du.document_id, du.upload_id
+        FROM document_uploads du
+        WHERE du.active = true
+        ORDER BY du.document_id, du.created_at DESC
+    ) du ON du.document_id = d.id
+    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+    LEFT JOIN templates t ON t.id = dt.template_id
+    LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+    WHERE d.active = true
+    AND $2::uuid[] IS NOT NULL
+    AND array_length($2::uuid[], 1) > 0
+    AND d.id = ANY($2::uuid[])
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM document_fields df
+        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+        JOIN parameters param ON param.id = pfield.parameter_id
+        WHERE df.document_id = d.id
+        AND df.active = true
+        AND pfield.active = true
+        AND param.active = true
+        AND param.scenario_parameter = true
+    )
 ),
 -- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
 document_parameter_relationships AS (
@@ -303,6 +350,13 @@ document_details_data AS (
             FROM document_data dd
             JOIN documents d ON d.id = dd.id
             WHERE d.active = true
+            -- When templateDocumentIds are provided, only include those specific template documents
+            AND (
+                $2::uuid[] IS NULL
+                OR array_length($2::uuid[], 1) IS NULL
+                OR array_length($2::uuid[], 1) = 0
+                OR dd.id = ANY($2::uuid[])
+            )
         ),
         '[]'::jsonb
     ) as document_details

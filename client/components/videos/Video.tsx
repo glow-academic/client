@@ -2094,6 +2094,7 @@ export default function Video({
           [key: string]: unknown;
         }>;
       };
+
       const templateDocIds =
         videoDataWithDetails.document_details
           ?.filter((doc) => doc.is_template === true)
