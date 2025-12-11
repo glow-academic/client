@@ -76,7 +76,8 @@ function ObjectiveInputWithAutocomplete({
   onDrop,
   onRemove,
   totalObjectives,
-  objectivesEnabled,
+  objectiveCount,
+  objectivesEnabled: _objectivesEnabled,
 }: {
   index: number;
   value: string;
@@ -90,8 +91,10 @@ function ObjectiveInputWithAutocomplete({
   onDrop: (e: React.DragEvent) => void;
   onRemove: () => void;
   totalObjectives: number;
+  objectiveCount: [number, number];
   objectivesEnabled: boolean;
 }) {
+  // objectivesEnabled is kept for API compatibility but not used {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -308,7 +311,7 @@ export function ContentSection({
   onProblemStatementChange,
   onProblemStatementVersionSelect: _onProblemStatementVersionSelect,
   onResetProblemStatement,
-  onObjectivesChange,
+  onObjectivesChange: _onObjectivesChange,
   onAddObjective,
   onRemoveObjective,
   onUpdateObjective,
@@ -558,6 +561,7 @@ export function ContentSection({
                 onDrop={(e) => onDropObjective(e, index)}
                 onRemove={() => onRemoveObjective(index)}
                 totalObjectives={objectives.length}
+                objectiveCount={objectiveCount}
                 objectivesEnabled={objectiveCount[1] > 0}
               />
             ))}
@@ -891,7 +895,7 @@ export function ContentSection({
                       (d) => d.document_id === docId
                     );
                     const isTemplateDocument =
-                      fullDoc?.is_template ||
+                      Boolean(fullDoc?.["is_template"]) ||
                       templateDocumentIds.includes(docId);
 
                     const docForViewer: DocumentItem = fullDoc

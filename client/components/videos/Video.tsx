@@ -5,8 +5,8 @@
  * 01/21/2025
  */
 "use client";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
@@ -140,6 +140,8 @@ export default function Video({
   generateVideoAction: _generateVideoAction,
 }: VideoProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { effectiveProfile, socket, isConnected } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isEditMode = mode === "edit" && !!videoId;
@@ -261,7 +263,6 @@ export default function Video({
       return;
     }
 
-    setIsRandomizing(true);
     try {
       const body: RandomizeVideoIn["body"] = {
         profileId: effectiveProfile.id,
@@ -373,8 +374,6 @@ export default function Video({
       toast.error(
         `Failed to randomize: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-    } finally {
-      setIsRandomizing(false);
     }
   };
 
@@ -411,7 +410,6 @@ export default function Video({
     // Track generated resources
     const generatedImageIds: string[] = [];
     const generatedQuestionIds: string[] = [];
-    let generatedOutlineId: string | null = null;
     let generatedVideoUrl: string | null = null;
 
     try {
@@ -495,6 +493,16 @@ export default function Video({
         }) => {
           if (data.success) {
             generatedQuestionIds.push(...data.question_ids);
+            // Update URL params with generated question IDs
+            setUrlQuestionIds((prev) => {
+              const newIds = [...prev];
+              data.question_ids.forEach((id) => {
+                if (!newIds.includes(id)) {
+                  newIds.push(id);
+                }
+              });
+              return newIds;
+            });
           }
         };
 
@@ -505,7 +513,13 @@ export default function Video({
           message?: string;
         }) => {
           if (data.success) {
-            generatedOutlineId = data.outline_id;
+            // Update URL params with generated outline ID
+            setUrlOutlineIds((prev) => {
+              if (prev.includes(data.outline_id)) {
+                return prev;
+              }
+              return [...prev, data.outline_id];
+            });
           }
         };
 
@@ -520,7 +534,7 @@ export default function Video({
           }
         };
 
-        const handleVideoComplete = (data: {
+        const handleVideoComplete = (_data: {
           success: boolean;
           generation_id?: string;
           trace_id?: string;
@@ -529,7 +543,7 @@ export default function Video({
           // Video generation completion is handled separately via video_generation_complete
         };
 
-        const handleDocumentComplete = (data: {
+        const handleDocumentComplete = (_data: {
           success: boolean;
           document_id: string;
           parent_document_id: string;
@@ -548,6 +562,15 @@ export default function Video({
         }) => {
           if (data.success && data.videoUrl) {
             generatedVideoUrl = data.videoUrl;
+            // Update URL params with generated video ID if provided
+            if (data.videoId) {
+              setUrlVideoIds((prev) => {
+                if (prev.includes(data.videoId!)) {
+                  return prev;
+                }
+                return [...prev, data.videoId!];
+              });
+            }
           }
         };
 
@@ -680,6 +703,13 @@ export default function Video({
         // Set outline ID if provided (when videoId exists, outline is saved to DB)
         if (result.outline_id) {
           setSelectedOutlineId(result.outline_id);
+          // Update URL params with outline ID
+          setUrlOutlineIds((prev) => {
+            if (prev.includes(result.outline_id!)) {
+              return prev;
+            }
+            return [...prev, result.outline_id!];
+          });
         }
         // Update video name if provided by the agent
         if (result.video_name) {
@@ -733,138 +763,6 @@ export default function Video({
     } catch (error) {
       toast.error(
         `Failed to generate: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // Keep handleGenerateOutline for backward compatibility (can be removed later)
-  const handleGenerateOutline = handleGenerate;
-
-  const handleGenerateVideo = async () => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected");
-      return;
-    }
-
-    if (!outlineText.trim()) {
-      toast.error("Please generate or enter an outline first");
-      return;
-    }
-
-    if (!videoId) {
-      toast.error("Please create the video first by clicking 'Create Video'");
-      return;
-    }
-
-    setIsGenerating(true);
-
-    try {
-      // Use first image if available (backend expects single image reference)
-      const imageId = images.length > 0 && images[0] ? images[0].id : null;
-
-      // WebSocket payload type (not using GenerateVideoIn since it's never)
-      const body = {
-        videoId: videoId,
-        prompt: outlineText,
-        imageReferenceId: imageId ?? null,
-      };
-
-      const result = await new Promise<{
-        success: boolean;
-        message: string;
-        videoUrl?: string;
-        videoId?: string;
-      }>((resolve, reject) => {
-        const handleProgress = (data: {
-          type: string;
-          message?: string;
-          status?: string;
-          progress?: number;
-          video_id?: string;
-        }) => {
-          if (data.type === "start") {
-            toast.info(data.message || "Starting video generation...");
-          } else if (data.type === "polling" && data.status) {
-            // Show progress updates
-            const progressMsg =
-              data.progress !== undefined
-                ? `${Math.round(data.progress * 100)}%`
-                : data.status;
-            toast.info(`Video generation: ${progressMsg}`, {
-              id: "video-progress",
-            });
-          }
-        };
-
-        const handleComplete = (data: {
-          success: boolean;
-          message: string;
-          videoUrl?: string;
-          videoId?: string;
-        }) => {
-          socket.off("video_generation_progress", handleProgress);
-          socket.off("video_generation_complete", handleComplete);
-          socket.off("video_generation_error", handleError);
-          toast.dismiss("video-progress");
-
-          if (data.success) {
-            const result: {
-              success: boolean;
-              message: string;
-              videoUrl?: string;
-              videoId?: string;
-            } = {
-              success: true,
-              message: data.message,
-            };
-            if (data.videoUrl) result.videoUrl = data.videoUrl;
-            if (data.videoId) result.videoId = data.videoId;
-            resolve(result);
-          } else {
-            reject(new Error(data.message || "Video generation failed"));
-          }
-        };
-
-        const handleError = (data: {
-          success: boolean;
-          message: string;
-          video_id?: string;
-        }) => {
-          socket.off("video_generation_progress", handleProgress);
-          socket.off("video_generation_complete", handleComplete);
-          socket.off("video_generation_error", handleError);
-          toast.dismiss("video-progress");
-
-          reject(new Error(data.message || "Video generation failed"));
-        };
-
-        socket.on("video_generation_progress", handleProgress);
-        socket.on("video_generation_complete", handleComplete);
-        socket.on("video_generation_error", handleError);
-
-        socket.emit("video_generate", {
-          videoId: body.videoId,
-          prompt: body.prompt,
-          imageReferenceId: body.imageReferenceId,
-        });
-      });
-
-      if (result.success) {
-        if (result.videoUrl) {
-          setGeneratedVideoUrl(result.videoUrl);
-          // Clear uploaded video when generated video replaces it
-          setUploadedVideoFile(null);
-          setVideoObjectUrl(null);
-          toast.success("Video generated successfully!");
-        } else {
-          toast.info(result.message || "Video generation completed");
-        }
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to generate video: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsGenerating(false);
@@ -1175,8 +1073,7 @@ export default function Video({
                 questions: currentVideo.questions || [],
                 outline_agent_id: currentVideo.outline_agent_id || null,
                 image_agent_id: currentVideo.image_agent_id || null,
-                parameter_item_ids:
-                  (currentVideo as any).parameter_item_ids || [],
+                parameter_item_ids: currentVideo?.parameter_item_ids || [],
               },
             });
 
@@ -1302,9 +1199,6 @@ export default function Video({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
-  // Randomization state
-  const [isRandomizing, setIsRandomizing] = useState(false);
-
   const initialFormData: FormData = useMemo(
     () => ({
       name: "New Video",
@@ -1423,25 +1317,6 @@ export default function Video({
     );
   }, [parameterMapping]);
 
-  // Filter parameter item IDs by parameter type
-  const documentParameterItemIds = useMemo(() => {
-    return currentParameterItemIds.filter((itemId) => {
-      const item = fieldMapping[itemId];
-      if (!item) return false;
-      const paramId = item.parameter_id;
-      return documentParameterIds.includes(paramId);
-    });
-  }, [currentParameterItemIds, fieldMapping, documentParameterIds]);
-
-  const generalVideoParameterItemIds = useMemo(() => {
-    return currentParameterItemIds.filter((itemId) => {
-      const item = fieldMapping[itemId];
-      if (!item) return false;
-      const paramId = item.parameter_id;
-      return generalVideoParameterIds.includes(paramId);
-    });
-  }, [currentParameterItemIds, fieldMapping, generalVideoParameterIds]);
-
   // Filter valid parameter item IDs by parameter type
   const validParameterItemIds = useMemo(() => {
     // Get all parameter item IDs from mapping that belong to video parameters
@@ -1473,14 +1348,6 @@ export default function Video({
   }, [validParameterItemIds, fieldMapping, generalVideoParameterIds]);
 
   // Build parameter mappings filtered by type
-  const documentParameterMapping = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(parameterMapping).filter(([paramId]) =>
-        documentParameterIds.includes(paramId)
-      )
-    );
-  }, [parameterMapping, documentParameterIds]);
-
   const generalVideoParameterMapping = useMemo(() => {
     // Filter to only show parameters that are selected in formData.parameterIds
     const selectedParamIds = formData.parameterIds || [];
@@ -1541,6 +1408,170 @@ export default function Video({
     return mapping;
   }, [images]);
 
+  // Generated resource IDs state (for URL tracking) - must be declared before buildSearchParams
+  const [urlOutlineIds, setUrlOutlineIds] = useState<string[]>([]);
+  const [urlQuestionIds, setUrlQuestionIds] = useState<string[]>([]);
+  const [urlVideoIds, setUrlVideoIds] = useState<string[]>([]);
+
+  // Build search params from current state
+  const buildSearchParams = useCallback(() => {
+    const params = new URLSearchParams();
+
+    // Add filter params (always include if non-empty)
+    // Use comma-separated values to match how page.tsx reads them (searchParams.get().split(","))
+    if (formData.departmentIds && formData.departmentIds.length > 0) {
+      params.set("departmentIds", formData.departmentIds.join(","));
+    }
+    if (formData.personaIds && formData.personaIds.length > 0) {
+      params.set("personaIds", formData.personaIds.join(","));
+    }
+    if (selectedDocumentIds.length > 0) {
+      params.set("documentIds", selectedDocumentIds.join(","));
+    }
+    if (templateDocumentIds.length > 0) {
+      params.set("templateDocumentIds", templateDocumentIds.join(","));
+    }
+    if (formData.parameterIds && formData.parameterIds.length > 0) {
+      params.set("parameterIds", formData.parameterIds.join(","));
+    }
+    if (currentParameterItemIds.length > 0) {
+      params.set("parameterItemIds", currentParameterItemIds.join(","));
+    }
+    if (urlOutlineIds.length > 0) {
+      params.set("outlineIds", urlOutlineIds.join(","));
+    }
+    if (urlQuestionIds.length > 0) {
+      params.set("questionIds", urlQuestionIds.join(","));
+    }
+    if (urlVideoIds.length > 0) {
+      params.set("videoIds", urlVideoIds.join(","));
+    }
+
+    // Add search params when non-empty
+    if (documentSearchTerm.trim()) {
+      params.set("documentSearch", documentSearchTerm);
+    }
+
+    // Add range params when different from defaults
+    // Document ranges (default: min=1, max=2)
+    if (documentMinMax.min !== 1 || documentMinMax.max !== 2) {
+      params.set("documentMin", documentMinMax.min.toString());
+      params.set("documentMax", documentMinMax.max.toString());
+    }
+    // Question ranges (default: min=0, max=3)
+    if (questionCount[0] !== 0 || questionCount[1] !== 3) {
+      params.set("questionMin", questionCount[0].toString());
+      params.set("questionMax", questionCount[1].toString());
+    }
+
+    return params;
+  }, [
+    formData.departmentIds,
+    formData.personaIds,
+    formData.parameterIds,
+    selectedDocumentIds,
+    templateDocumentIds,
+    currentParameterItemIds,
+    urlOutlineIds,
+    urlQuestionIds,
+    urlVideoIds,
+    documentSearchTerm,
+    documentMinMax,
+    questionCount,
+  ]);
+
+  // Debounce timeout ref for URL updates
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track last params string to prevent duplicate updates
+  const lastParamsStringRef = useRef<string>("");
+
+  // Helper to normalize URLSearchParams for comparison (sort keys and values)
+  const normalizeParamsString = (params: URLSearchParams): string => {
+    const sorted = Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join("&");
+    return sorted;
+  };
+
+  // Update URL params when selections change (for server-driven filtering)
+  // Follows analytics pattern: Form state → URL → router.refresh() → Server re-fetch → Filtered data
+  // Server already parses URL params and returns filtered data, so no need for URL → Form sync
+  useEffect(() => {
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Debounce URL updates (100ms, like analytics)
+    debounceTimeoutRef.current = setTimeout(() => {
+      const newParams = buildSearchParams();
+      const newParamsString = normalizeParamsString(newParams);
+      const currentParamsString = normalizeParamsString(searchParams);
+
+      // Only update URL if params actually changed (prevents unnecessary updates and loops)
+      if (
+        newParamsString !== currentParamsString &&
+        newParamsString !== lastParamsStringRef.current
+      ) {
+        lastParamsStringRef.current = newParamsString;
+        router.replace(`${pathname}?${newParams.toString()}`, {
+          scroll: false,
+        });
+        // Force server components to re-render with updated search params (like analytics)
+        router.refresh();
+      }
+    }, 100);
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    formData.departmentIds,
+    formData.personaIds,
+    selectedDocumentIds,
+    templateDocumentIds,
+    formData.parameterIds,
+    currentParameterItemIds,
+    urlOutlineIds,
+    urlQuestionIds,
+    urlVideoIds,
+    documentSearchTerm,
+    documentMinMax,
+    questionCount,
+    pathname,
+  ]);
+
+  // Sync URL params to state on initial load (for create mode)
+  useEffect(() => {
+    if (!isEditMode && videoData) {
+      // Initialize outline IDs from URL params
+      const outlineIdsFromUrl =
+        searchParams.get("outlineIds")?.split(",").filter(Boolean) || [];
+      if (outlineIdsFromUrl.length > 0) {
+        setUrlOutlineIds(outlineIdsFromUrl);
+      }
+
+      // Initialize question IDs from URL params
+      const questionIdsFromUrl =
+        searchParams.get("questionIds")?.split(",").filter(Boolean) || [];
+      if (questionIdsFromUrl.length > 0) {
+        setUrlQuestionIds(questionIdsFromUrl);
+      }
+
+      // Initialize video IDs from URL params
+      const videoIdsFromUrl =
+        searchParams.get("videoIds")?.split(",").filter(Boolean) || [];
+      if (videoIdsFromUrl.length > 0) {
+        setUrlVideoIds(videoIdsFromUrl);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isEditMode]);
+
   // Load video data from server response
   useEffect(() => {
     if (videoData && isEditMode && !formDataInitializedRef.current) {
@@ -1577,6 +1608,7 @@ export default function Video({
         if (videoDetail.outline_ids && videoDetail.outline_ids.length > 0) {
           const outlineId = videoDetail.outline_ids[0]!;
           setSelectedOutlineId(outlineId);
+          setUrlOutlineIds(videoDetail.outline_ids);
           if (outlineMapping[outlineId]) {
             setOutlineText(outlineMapping[outlineId]?.["outline"] || "");
           }
@@ -1590,6 +1622,7 @@ export default function Video({
           if (outlineData?.["outline"]) {
             setOutlineText(outlineData["outline"]);
             setSelectedOutlineId(firstOutlineId);
+            setUrlOutlineIds([firstOutlineId]);
           }
         }
       }
@@ -1660,6 +1693,10 @@ export default function Video({
         setGeneratedVideoUrl(
           `/api/v3/uploads/download/${videoDetail.upload_id}`
         );
+        // Add video ID to URL params if videoId exists
+        if (videoId) {
+          setUrlVideoIds([videoId]);
+        }
       }
 
       // Load questions from server data (already strongly typed from API)
@@ -1677,6 +1714,13 @@ export default function Video({
           })),
         }));
         setQuestions(loadedQuestions);
+        // Extract question IDs for URL params
+        const questionIds = loadedQuestions
+          .map((q) => q.question_id)
+          .filter((id): id is string => !!id);
+        if (questionIds.length > 0) {
+          setUrlQuestionIds(questionIds);
+        }
       }
 
       formDataInitializedRef.current = true;
@@ -2148,22 +2192,6 @@ export default function Video({
     setDraggedOptionIndex(null);
   };
 
-  // Format time for display
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  // Get all question times for timeline markers (kept for compatibility, but timeline removed)
-  const allQuestionTimes = useMemo(() => {
-    const times = new Set<number>();
-    questions.forEach((q) => {
-      q.times.forEach((t) => times.add(t));
-    });
-    return Array.from(times).sort((a, b) => a - b);
-  }, [questions]);
-
   // Handler for image selection (converting ImageMappingItem to expected format)
   const handleImageSelect = (imageId: string | null) => {
     if (imageId && imageMapping[imageId]) {
@@ -2234,77 +2262,34 @@ export default function Video({
     setVideoObjectUrl(null);
   };
 
-  // Handler for video preview document change
-  const handleVideoPreviewDocumentChange = (docId: string | null) => {
-    // This can be used to track which document is being previewed
-    // For now, we'll just store it in state if needed
-  };
-
   // Video preview document ID state
   const [videoPreviewDocumentId, setVideoPreviewDocumentId] = useState<
     string | null
   >(null);
 
-  // Video upload state (placeholder for now)
-  const [isDragActive, setIsDragActive] = useState(false);
+  // Video upload state
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
-  const hasSetLengthRef = useRef<boolean>(false);
 
   // Create object URL when file changes
   useEffect(() => {
     if (uploadedVideoFile) {
       const url = URL.createObjectURL(uploadedVideoFile);
       setVideoObjectUrl(url);
-      hasSetLengthRef.current = false;
       return () => {
         URL.revokeObjectURL(url);
       };
     } else {
       setVideoObjectUrl(null);
-      hasSetLengthRef.current = false;
       return undefined;
     }
   }, [uploadedVideoFile]);
-
-  const handleVideoLoadedMetadata = () => {
-    if (videoRef.current && !hasSetLengthRef.current) {
-      const duration = Math.floor(videoRef.current.duration);
-      if (duration > 0 && !isNaN(duration)) {
-        hasSetLengthRef.current = true;
-        handleInputChange("length_seconds", duration);
-      }
-    }
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith("video/")) {
       handleVideoUpload(file);
     }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragActive(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(false);
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("video/")) {
-      handleVideoUpload(file);
-    }
-  };
-
-  const handleRemoveVideo = () => {
-    setUploadedVideoFile(null);
-    handleInputChange("length_seconds", 0);
   };
 
   // Compute expected agent roles

@@ -30,13 +30,51 @@ type GenerateVideoOut = never;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getVideoDefault = async (input: VideoNewIn): Promise<VideoNewOut> => {
-  return api.post("/videos/new", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
+const getVideoDefault = async (
+  profileId: string,
+  filterParams?: {
+    departmentIds?: string[];
+    personaIds?: string[];
+    documentIds?: string[];
+    templateDocumentIds?: string[];
+    parameterIds?: string[];
+    parameterItemIds?: string[];
+    personaSearch?: string;
+    documentSearch?: string;
+    parameterSearch?: string;
+    personaMin?: number;
+    personaMax?: number;
+    documentMin?: number;
+    documentMax?: number;
+    parameterSelectionMin?: number;
+    parameterSelectionMax?: number;
+    questionMin?: number;
+    questionMax?: number;
+    parameterItemRanges?: Record<string, { min: number; max: number }>;
+    randomizePersonas?: string;
+    randomizeDocuments?: string;
+    randomizeParameters?: string;
+    randomizeParameterItems?: Record<string, string>;
+    outlineIds?: string[];
+    questionIds?: string[];
+    videoIds?: string[];
+  }
+): Promise<VideoNewOut> => {
+  return api.post(
+    "/videos/new",
+    {
+      body: {
+        profileId,
+        ...(filterParams || {}),
+      },
     },
-  });
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -70,14 +108,177 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function NewVideoPage() {
+export default async function NewVideoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch default video detail server-side
-  const videoDetailDefault = await getVideoDefault({
-    body: { profileId },
+  // Parse search params
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
   });
+
+  // Extract filter params
+  const departmentIds = searchParamsObj
+    .get("departmentIds")
+    ?.split(",")
+    .filter(Boolean);
+  const personaIds = searchParamsObj
+    .get("personaIds")
+    ?.split(",")
+    .filter(Boolean);
+  const documentIds = searchParamsObj
+    .get("documentIds")
+    ?.split(",")
+    .filter(Boolean);
+  const templateDocumentIds = searchParamsObj
+    .get("templateDocumentIds")
+    ?.split(",")
+    .filter(Boolean);
+  const parameterIds = searchParamsObj
+    .get("parameterIds")
+    ?.split(",")
+    .filter(Boolean);
+  const parameterItemIds = searchParamsObj
+    .get("parameterItemIds")
+    ?.split(",")
+    .filter(Boolean);
+  // Extract URL parameters for linking generated resources (parsed but not passed to API - just for URL tracking)
+  const _outlineIds = searchParamsObj
+    .get("outlineIds")
+    ?.split(",")
+    .filter(Boolean);
+  const _questionIds = searchParamsObj
+    .get("questionIds")
+    ?.split(",")
+    .filter(Boolean);
+  const _videoIds = searchParamsObj.get("videoIds")?.split(",").filter(Boolean);
+  const personaSearch = searchParamsObj.get("personaSearch") || undefined;
+  const documentSearch = searchParamsObj.get("documentSearch") || undefined;
+  const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
+  const personaMin = searchParamsObj.get("personaMin")
+    ? parseInt(searchParamsObj.get("personaMin") || "1", 10)
+    : undefined;
+  const personaMax = searchParamsObj.get("personaMax")
+    ? parseInt(searchParamsObj.get("personaMax") || "2", 10)
+    : undefined;
+  const documentMin = searchParamsObj.get("documentMin")
+    ? parseInt(searchParamsObj.get("documentMin") || "0", 10)
+    : undefined;
+  const documentMax = searchParamsObj.get("documentMax")
+    ? parseInt(searchParamsObj.get("documentMax") || "2", 10)
+    : undefined;
+  const parameterSelectionMin = searchParamsObj.get("parameterSelectionMin")
+    ? parseInt(searchParamsObj.get("parameterSelectionMin") || "0", 10)
+    : undefined;
+  const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
+    ? parseInt(searchParamsObj.get("parameterSelectionMax") || "5", 10)
+    : undefined;
+  const questionMin = searchParamsObj.get("questionMin")
+    ? parseInt(searchParamsObj.get("questionMin") || "0", 10)
+    : undefined;
+  const questionMax = searchParamsObj.get("questionMax")
+    ? parseInt(searchParamsObj.get("questionMax") || "3", 10)
+    : undefined;
+
+  // Parse parameter item ranges
+  const parameterItemRanges:
+    | Record<string, { min: number; max: number }>
+    | undefined = (() => {
+    const ranges: Record<string, { min: number; max: number }> = {};
+    let hasRanges = false;
+    for (const [key, value] of searchParamsObj.entries()) {
+      if (key.startsWith("parameterItemMin_")) {
+        const paramId = key.replace("parameterItemMin_", "");
+        const min = parseInt(value, 10);
+        if (!isNaN(min)) {
+          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
+          ranges[paramId].min = min;
+          hasRanges = true;
+        }
+      } else if (key.startsWith("parameterItemMax_")) {
+        const paramId = key.replace("parameterItemMax_", "");
+        const max = parseInt(value, 10);
+        if (!isNaN(max)) {
+          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
+          ranges[paramId].max = max;
+          hasRanges = true;
+        }
+      }
+    }
+    return hasRanges ? ranges : undefined;
+  })();
+
+  // Parse randomization params
+  const randomizePersonas =
+    searchParamsObj.get("randomizePersonas") || undefined;
+  const randomizeDocuments =
+    searchParamsObj.get("randomizeDocuments") || undefined;
+  const randomizeParameters =
+    searchParamsObj.get("randomizeParameters") || undefined;
+
+  const randomizeParameterItems: Record<string, string> | undefined = (() => {
+    const items: Record<string, string> = {};
+    for (const [key, value] of searchParamsObj.entries()) {
+      if (key.startsWith("randomizeParameterItems_")) {
+        const paramId = key.replace("randomizeParameterItems_", "");
+        items[paramId] = value;
+      }
+    }
+    return Object.keys(items).length > 0 ? items : undefined;
+  })();
+
+  // Fetch default video detail server-side with filter params
+  const filterParams: Parameters<typeof getVideoDefault>[1] = {};
+  if (departmentIds && departmentIds.length > 0)
+    filterParams.departmentIds = departmentIds;
+  if (personaIds && personaIds.length > 0) filterParams.personaIds = personaIds;
+  if (documentIds && documentIds.length > 0)
+    filterParams.documentIds = documentIds;
+  if (templateDocumentIds && templateDocumentIds.length > 0)
+    filterParams.templateDocumentIds = templateDocumentIds;
+  if (parameterIds && parameterIds.length > 0)
+    filterParams.parameterIds = parameterIds;
+  if (parameterItemIds && parameterItemIds.length > 0)
+    filterParams.parameterItemIds = parameterItemIds;
+  if (personaSearch) filterParams.personaSearch = personaSearch;
+  if (documentSearch) filterParams.documentSearch = documentSearch;
+  if (parameterSearch) filterParams.parameterSearch = parameterSearch;
+  if (personaMin !== undefined) filterParams.personaMin = personaMin;
+  if (personaMax !== undefined) filterParams.personaMax = personaMax;
+  if (documentMin !== undefined) filterParams.documentMin = documentMin;
+  if (documentMax !== undefined) filterParams.documentMax = documentMax;
+  if (parameterSelectionMin !== undefined)
+    filterParams.parameterSelectionMin = parameterSelectionMin;
+  if (parameterSelectionMax !== undefined)
+    filterParams.parameterSelectionMax = parameterSelectionMax;
+  if (questionMin !== undefined) filterParams.questionMin = questionMin;
+  if (questionMax !== undefined) filterParams.questionMax = questionMax;
+  if (parameterItemRanges)
+    filterParams.parameterItemRanges = parameterItemRanges;
+  if (randomizePersonas) filterParams.randomizePersonas = randomizePersonas;
+  if (randomizeDocuments) filterParams.randomizeDocuments = randomizeDocuments;
+  if (randomizeParameters)
+    filterParams.randomizeParameters = randomizeParameters;
+  if (randomizeParameterItems)
+    filterParams.randomizeParameterItems = randomizeParameterItems;
+  // Note: outlineIds, questionIds, videoIds are for URL tracking only, not passed to API
+
+  const videoDetailDefault = await getVideoDefault(
+    profileId,
+    Object.keys(filterParams).length > 0 ? filterParams : undefined
+  );
 
   return (
     <div
