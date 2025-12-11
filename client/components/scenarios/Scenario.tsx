@@ -535,7 +535,7 @@ export default function Scenario({
   const [useImage, setUseImage] = useState(false);
   // Objective count state: [min, max] - initialized from server or URL params
   const [objectiveCount, setObjectiveCount] = useState<[number, number]>([
-    1, 1,
+    0, 0,
   ]);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
@@ -545,8 +545,8 @@ export default function Scenario({
   const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
   const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
-  // templateDocumentIds is derived from server documentDetails (is_template field)
-  // No state variable needed - derived via useMemo
+  // templateDocumentIds comes from URL params (single source of truth)
+  const [templateDocumentIds, setTemplateDocumentIds] = useState<string[]>([]);
   const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
     string | null
   >(null);
@@ -659,15 +659,12 @@ export default function Scenario({
     []
   );
 
-  // Derive templateDocumentIds from server documentDetails (only from server data)
-  // This is the source of truth - no brittle useEffect needed
-  // Defined early so it can be used in useCallback below
-  const templateDocumentIds = useMemo(() => {
-    if (!scenarioData?.document_details) return [];
-    return scenarioData.document_details
-      .filter((doc) => doc.is_template === true)
-      .map((doc) => doc.document_id);
-  }, [scenarioData?.document_details]);
+  // Union of currentDocumentIds + templateDocumentIds for templates section (deduplicated)
+  // This is used in ContentSection to show all documents that should appear in templates section
+  const allTemplateDocumentIds = useMemo(() => {
+    const combined = [...currentDocumentIds, ...templateDocumentIds];
+    return [...new Set(combined)];
+  }, [currentDocumentIds, templateDocumentIds]);
 
   // Extract mappings from V2 response - defined early so they can be used in buildSearchParams
   const fieldMapping = useMemo(() => {
@@ -689,7 +686,9 @@ export default function Scenario({
     if (currentDocumentIds.length > 0) {
       params.set("documentIds", currentDocumentIds.join(","));
     }
-    // Template document IDs are derived from server - no need to sync to URL
+    if (templateDocumentIds.length > 0) {
+      params.set("templateDocumentIds", templateDocumentIds.join(","));
+    }
     if (formData.parameterIds && formData.parameterIds.length > 0) {
       params.set("parameterIds", formData.parameterIds.join(","));
     }
@@ -795,6 +794,7 @@ export default function Scenario({
     formData.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
+    templateDocumentIds,
     formData.parameterIds,
     currentFieldIds,
     currentProblemStatementIds,
@@ -862,12 +862,8 @@ export default function Scenario({
   }, [scenarioData?.problem_statement_mapping, localProblemStatementVersions]);
 
   // Combine currentDocumentIds and templateDocumentIds for preview
-  // Include all selected documents and template documents from server
-  const allPreviewDocumentIds = useMemo(() => {
-    const combined = [...currentDocumentIds, ...templateDocumentIds];
-    // Remove duplicates
-    return [...new Set(combined)];
-  }, [currentDocumentIds, templateDocumentIds]);
+  // Use the union that's already computed for templates section
+  const allPreviewDocumentIds = allTemplateDocumentIds;
 
   // Extract image mapping from scenario_images array
   type ImageMappingItem = {
@@ -1545,6 +1541,7 @@ export default function Scenario({
     formData.departmentIds,
     selectedPersonaIds,
     currentDocumentIds,
+    templateDocumentIds,
     formData.parameterIds,
     currentFieldIds, // Renamed from currentParameterItemIds
     currentProblemStatementIds,
@@ -1579,9 +1576,13 @@ export default function Scenario({
       setSelectedPersonaIds(scenarioData.persona_ids || []);
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
-      setCurrentDocumentIds(scenarioData.document_ids);
-      // Template document IDs are derived from documentDetails (is_template field)
-      // No need to set currentTemplateDocumentIds here - it's derived from server data
+      setCurrentDocumentIds(scenarioData.document_ids || []);
+      // Extract template document IDs from documentDetails (is_template field) for edit mode
+      const templateDocIds =
+        scenarioData.document_details
+          ?.filter((doc) => doc.is_template === true)
+          .map((doc) => doc.document_id) || [];
+      setTemplateDocumentIds(templateDocIds);
       setCurrentFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setCurrentObjectives(
         getObjectivesFromMapping(
@@ -1606,11 +1607,11 @@ export default function Scenario({
         }>;
       };
       // Documents are always enabled (no switch)
-      // Initialize objective count from server data or default to [1, 1]
+      // Initialize objective count from server data or default to [0, 0]
       if (scenarioDataWithFlags?.objective_count_range) {
         setObjectiveCount([
-          scenarioDataWithFlags.objective_count_range.min ?? 1,
-          scenarioDataWithFlags.objective_count_range.max ?? 1,
+          scenarioDataWithFlags.objective_count_range.min ?? 0,
+          scenarioDataWithFlags.objective_count_range.max ?? 0,
         ]);
       }
       // Load image_enabled and scenario image (single image - take first if exists)
@@ -1651,13 +1652,9 @@ export default function Scenario({
         imageAgentId: scenarioData.image_agent_id || null,
         parameterIds: scenarioData.scenario_parameter_ids || [],
       });
-      setOriginalDocumentIds(scenarioData.document_ids);
-      // Extract template document IDs from documentDetails (is_template field) for original tracking
-      const originalTemplateDocIds =
-        scenarioData.document_details
-          ?.filter((doc) => doc.is_template === true)
-          .map((doc) => doc.document_id) || [];
-      setOriginalTemplateDocumentIds(originalTemplateDocIds);
+      setOriginalDocumentIds(scenarioData.document_ids || []);
+      // Store template document IDs for original tracking (already extracted above as templateDocIds)
+      setOriginalTemplateDocumentIds(templateDocIds);
       setOriginalFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setOriginalObjectives(
         getObjectivesFromMapping(
@@ -1687,8 +1684,10 @@ export default function Scenario({
       if (newData.selected_document_ids) {
         setCurrentDocumentIds(newData.selected_document_ids);
       }
-      // Template document IDs are derived from documentDetails (is_template field)
-      // No need to set from selected_template_document_ids - derive from server data
+      // Template document IDs come from URL params (server returns selected_template_document_ids)
+      if (newData.selected_template_document_ids) {
+        setTemplateDocumentIds(newData.selected_template_document_ids);
+      }
       if (newData.selected_field_ids) {
         setCurrentFieldIds(newData.selected_field_ids);
       }
@@ -1701,9 +1700,6 @@ export default function Scenario({
       if (problemStatementIdsFromUrl && problemStatementIdsFromUrl.length > 0) {
         setCurrentProblemStatementIds(problemStatementIdsFromUrl);
       }
-
-      // Template document IDs are derived from server documentDetails (is_template field)
-      // No URL param handling needed - server is source of truth
 
       // Initialize search terms from server response
       if (newData.persona_search) {
@@ -2101,13 +2097,10 @@ export default function Scenario({
       const defaultMin = serverRange?.min ?? 1;
       const defaultMax = serverRange?.max ?? 3;
 
-      // Reset local state for this parameter's range
-      setFieldMinMax((prev) => ({
-        ...prev,
-        [paramId]: { min: defaultMin, max: defaultMax },
-      }));
+      // Set resetting flag to prevent buildSearchParams from interfering
+      isResettingRef.current = true;
 
-      // Remove this parameter's items from URL params
+      // Remove this parameter's items from URL params and local state
       const currentParamItems = currentFieldIds.filter(
         (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
       );
@@ -2121,14 +2114,31 @@ export default function Scenario({
       urlUpdates[`fieldMin_${paramId}`] = null;
       urlUpdates[`fieldMax_${paramId}`] = null;
 
+      // Clear URL params FIRST, then update state after URL update completes
       updateUrlParams(urlUpdates);
-      // Update local state
-      setCurrentFieldIds(currentParamItems);
-      router.refresh();
+
+      // Update local state after URL update completes (next frame)
+      requestAnimationFrame(() => {
+        // Reset local state for this parameter's range
+        setFieldMinMax((prev) => ({
+          ...prev,
+          [paramId]: { min: defaultMin, max: defaultMax },
+        }));
+        // Update local state - remove this parameter's fields
+        setCurrentFieldIds(currentParamItems);
+        // Refresh after state updates to get fresh server data
+        router.refresh();
+        // Reset flag after refresh completes
+        setTimeout(() => {
+          isResettingRef.current = false;
+        }, 200);
+      });
+
       toast.success(
         `${generalParameterMapping[paramId]?.name || "Parameter"} reset`
       );
     } catch {
+      isResettingRef.current = false;
       toast.error("Failed to reset parameter");
     }
   };
@@ -2265,15 +2275,33 @@ export default function Scenario({
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
 
-      // Clear URL params FIRST, then update state after URL update completes
-      // This prevents buildSearchParams useEffect from re-adding params
-      updateUrlParams({
+      // Build URL updates - clear parameter IDs, search, ranges, and ALL field IDs
+      const urlUpdates: Record<string, string | string[] | null> = {
         parameterIds: null,
         parameterSearch: null,
         parameterSelectionMin: null,
         parameterSelectionMax: null,
+        fieldIds: null, // Clear all field IDs when resetting parameters
         randomize: null,
+      };
+
+      // Clear all field range params for ALL parameters (including defaults)
+      // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
+      Object.keys(parameterMapping).forEach((paramId) => {
+        urlUpdates[`fieldMin_${paramId}`] = null;
+        urlUpdates[`fieldMax_${paramId}`] = null;
       });
+
+      // Also clear any fieldMin_* or fieldMax_* params from URL that we might have missed
+      searchParams.forEach((_value, key) => {
+        if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
+          urlUpdates[key] = null;
+        }
+      });
+
+      // Clear URL params FIRST, then update state after URL update completes
+      // This prevents buildSearchParams useEffect from re-adding params
+      updateUrlParams(urlUpdates);
 
       // Update local state after URL update completes (next frame)
       // This ensures URL is cleared before state updates trigger buildSearchParams
@@ -2281,6 +2309,15 @@ export default function Scenario({
         setParameterSelectionMinMax({ min: defaultMin, max: defaultMax });
         handleInputChange("parameterIds", []);
         setParameterSearchTerm("");
+        // Clear all field IDs and ranges when resetting parameters
+        setCurrentFieldIds([]);
+        // Reset field ranges to defaults for ALL parameters
+        const defaultFieldRanges: Record<string, { min: number; max: number }> =
+          {};
+        Object.keys(parameterMapping).forEach((paramId) => {
+          defaultFieldRanges[paramId] = { min: 1, max: 3 };
+        });
+        setFieldMinMax(defaultFieldRanges);
         // Refresh after state updates to get fresh server data
         router.refresh();
         // Reset flag after refresh completes
@@ -2434,8 +2471,12 @@ export default function Scenario({
 
   // Objective handlers
   const addObjective = () => {
-    // Use server-provided range as source of truth
-    const maxObjectives = scenarioData?.objective_count_range?.max ?? 3;
+    // Use current slider max value (objectiveCount[1]) as the limit
+    const maxObjectives = objectiveCount[1];
+    if (maxObjectives === 0) {
+      // Objectives disabled
+      return;
+    }
     if (currentObjectives.length >= maxObjectives) {
       toast.error(`Maximum ${maxObjectives} objectives allowed`);
       return;
@@ -2458,6 +2499,71 @@ export default function Scenario({
       return next;
     });
   };
+
+  // Smart objectives management: automatically add/remove objectives based on slider changes
+  useEffect(() => {
+    const [min, max] = objectiveCount;
+    const currentLength = currentObjectives.length;
+
+    // If objectives are disabled (max === 0), clear all objectives
+    if (max === 0) {
+      if (currentLength > 0) {
+        setCurrentObjectives([]);
+      }
+      return;
+    }
+
+    // Ensure we have at least minimum objectives (add blank ones if needed)
+    if (currentLength < min) {
+      const blankObjectivesToAdd = min - currentLength;
+      setCurrentObjectives((prev) => [
+        ...prev,
+        ...Array(blankObjectivesToAdd).fill(""),
+      ]);
+      return;
+    }
+
+    // If maximum decreased, remove objectives (empty ones first, then filled ones)
+    if (currentLength > max) {
+      setCurrentObjectives((prev) => {
+        const next = [...prev];
+        const toRemove = currentLength - max;
+
+        // First, find and remove empty objectives
+        const emptyIndices: number[] = [];
+        for (let i = next.length - 1; i >= 0; i--) {
+          const objective = next[i];
+          if (!objective || objective.trim() === "") {
+            emptyIndices.push(i);
+            if (emptyIndices.length >= toRemove) break;
+          }
+        }
+
+        // Remove empty objectives first
+        let removed = 0;
+        for (const idx of emptyIndices) {
+          if (removed < toRemove) {
+            next.splice(idx, 1);
+            removed++;
+          }
+        }
+
+        // If we still need to remove more, remove from the end (filled ones)
+        while (next.length > max && removed < toRemove) {
+          next.pop();
+          removed++;
+        }
+
+        return next;
+      });
+      return;
+    }
+
+    // Ensure we don't exceed maximum (shouldn't happen with UI controls, but safety check)
+    if (currentLength > max) {
+      setCurrentObjectives((prev) => prev.slice(0, max));
+    }
+  }, [objectiveCount, currentObjectives.length]); // Only depend on length, not content, to avoid loops
 
   const handleDragStartObjective = (e: React.DragEvent, index: number) => {
     setDraggedObjectiveIndex(index);
@@ -2972,9 +3078,7 @@ export default function Scenario({
           }
           previewDocumentId={previewDocumentId}
           onDocumentIdsChange={setCurrentDocumentIds}
-          onTemplateDocumentIdsChange={() => {
-            // Template document IDs are derived from server - no manual updates needed
-          }}
+          onTemplateDocumentIdsChange={setTemplateDocumentIds}
           onSearchTermChange={setDocumentSearchTerm}
           onMinMaxChange={setDocumentMinMax}
           onPreviewDocument={setPreviewDocumentId}
@@ -3116,7 +3220,7 @@ export default function Scenario({
                       min: scenarioData.objective_count_range.min,
                       max: scenarioData.objective_count_range.max,
                     }
-                  : { min: 1, max: 3 }
+                  : { min: 0, max: 3 }
               }
               objectiveCount={objectiveCount}
               onObjectiveCountChange={(min, max) =>

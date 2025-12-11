@@ -1611,6 +1611,10 @@ async def get_scenario_new(
                 fieldIds=randomized_field_ids,  # Renamed from parameterItemIds
             )
 
+        # Save filtered_valid_document_ids before search filter for selected_document_ids intersection
+        # Search term should only affect valid_document_ids for display, not selected_document_ids
+        filtered_valid_document_ids_before_search = filtered_valid_document_ids
+
         # Apply search filtering if search terms provided
         if request_data.personaSearch:
             search_lower = request_data.personaSearch.lower()
@@ -1665,11 +1669,12 @@ async def get_scenario_new(
             ]
 
         if request_data.documentIds:
-            # Intersect requested IDs with valid filtered IDs
+            # Intersect requested IDs with valid filtered IDs (before search filter)
+            # Search term should only affect display, not selected documents
             selected_document_ids = [
                 did
                 for did in request_data.documentIds
-                if did in filtered_valid_document_ids
+                if did in filtered_valid_document_ids_before_search
             ]
 
         if request_data.parameterIds:
@@ -1746,7 +1751,7 @@ async def get_scenario_new(
             valid_general_field_ids=filtered_valid_general_field_ids,  # Renamed from valid_general_parameter_item_ids
             allowed_ranges=allowed_ranges,
             # Objectives: 0-3 (default: 1) - fixed range
-            objective_count_range=RangeMinMax(min=1, max=3),
+            objective_count_range=RangeMinMax(min=0, max=3),
             randomized_selections=randomized_selections,
             randomized=randomization_occurred,
             # Objectives (empty defaults)

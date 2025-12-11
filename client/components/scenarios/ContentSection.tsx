@@ -178,7 +178,15 @@ function ObjectiveInputWithAutocomplete({
             </div>
           )}
         </div>
-        {!(objectiveCount[1] > 0 && totalObjectives === 1) && (
+        {/* Hide delete button if:
+            1. Objectives disabled (max === 0), OR
+            2. Only one objective and objectives enabled, OR
+            3. Index is below minimum (can't delete required objectives) */}
+        {!(
+          objectiveCount[1] === 0 ||
+          (objectiveCount[1] > 0 && totalObjectives === 1) ||
+          index < objectiveCount[0]
+        ) && (
           <Button
             type="button"
             variant="outline"
@@ -566,7 +574,7 @@ export function ContentSection({
               />
             ))}
 
-            {objectives.length < 3 && objectives.length > 0 && (
+            {objectives.length < objectiveCount[1] && objectives.length > 0 && (
               <div>
                 <Button
                   type="button"

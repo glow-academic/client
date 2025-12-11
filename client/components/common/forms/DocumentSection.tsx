@@ -276,15 +276,10 @@ export function DocumentSection({
                     if (isReadonly || disabled) return;
                     const newIds = isSelected
                       ? selectedDocumentIds.filter((id) => id !== docId)
-                      : [...selectedDocumentIds, docId].slice(0, minMax.max); // Max documents from range slider
+                      : [...selectedDocumentIds, docId]; // Allow selecting more than max - max is for randomization, not a hard limit
                     onDocumentIdsChange(newIds);
                   }}
-                  disabled={
-                    isReadonly ||
-                    disabled ||
-                    (!isSelected &&
-                      selectedDocumentIds.length >= (minMax.max ?? 2))
-                  }
+                  disabled={isReadonly || disabled}
                   className={cn(
                     "relative aspect-square rounded-xl border bg-card text-card-foreground shadow-sm transition-all overflow-hidden",
                     "hover:shadow-md",
