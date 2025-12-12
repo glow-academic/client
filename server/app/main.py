@@ -63,6 +63,10 @@ AUDIO_FOLDER.mkdir(parents=True, exist_ok=True)
 IMAGE_FOLDER = UPLOAD_FOLDER / "image"
 IMAGE_FOLDER.mkdir(parents=True, exist_ok=True)
 
+# Directory for storing video uploads
+VIDEO_FOLDER = UPLOAD_FOLDER / "video"
+VIDEO_FOLDER.mkdir(parents=True, exist_ok=True)
+
 # Directory for storing tus uploads in progress
 TUS_UPLOADS_DIR = UPLOAD_FOLDER / "tus_uploads"
 TUS_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
@@ -961,7 +965,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                 decrypt_api_key
 
                             providers_query = """
-                                SELECT id, slug, provider_id, name 
+                                SELECT id, slug, auth_type as provider_id, name 
                                 FROM auth 
                                 WHERE active = true
                             """

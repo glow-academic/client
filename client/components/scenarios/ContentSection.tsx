@@ -5,6 +5,8 @@
 "use client";
 import {
   Check,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   GripVertical,
   Image,
@@ -15,7 +17,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import DocumentViewer, {
   type DocumentItem,
@@ -23,8 +25,6 @@ import DocumentViewer, {
 import ImageViewer from "@/components/common/chat/viewers/ImageViewer";
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { RangeSlider } from "@/components/common/forms/RangeSlider";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,6 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { components } from "@/lib/api/schema";
@@ -84,8 +85,7 @@ function ObjectiveInputWithAutocomplete({
   onDrop,
   onRemove,
   totalObjectives,
-  objectiveCount,
-  objectivesEnabled: _objectivesEnabled,
+  maxObjectives,
 }: {
   index: number;
   value: string;
@@ -99,8 +99,7 @@ function ObjectiveInputWithAutocomplete({
   onDrop: (e: React.DragEvent) => void;
   onRemove: () => void;
   totalObjectives: number;
-  objectiveCount: [number, number];
-  objectivesEnabled: boolean;
+  maxObjectives: number;
 }) {
   // objectivesEnabled is kept for API compatibility but not used {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -186,26 +185,17 @@ function ObjectiveInputWithAutocomplete({
             </div>
           )}
         </div>
-        {/* Hide delete button if:
-            1. Objectives disabled (max === 0), OR
-            2. Only one objective and objectives enabled, OR
-            3. Index is below minimum (can't delete required objectives) */}
-        {!(
-          objectiveCount[1] === 0 ||
-          (objectiveCount[1] > 0 && totalObjectives === 1) ||
-          index < objectiveCount[0]
-        ) && (
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onRemove}
-            className="h-8 w-8 shrink-0"
-            disabled={disabled}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
+        {/* Show delete button for all objectives */}
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={onRemove}
+          className="h-8 w-8 shrink-0"
+          disabled={disabled}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
@@ -238,9 +228,6 @@ export interface ContentSectionProps {
   originalProblemStatement: string;
 
   // Objectives
-  objectiveCountRange: { min: number; max: number };
-  objectiveCount: [number, number]; // [min, max]
-  onObjectiveCountChange: (min: number, max: number) => void;
   objectives: string[];
   objectivesHistory: string[];
 
@@ -311,9 +298,6 @@ export function ContentSection({
   selectedProblemStatementId,
   hasProblemStatementChanges,
   originalProblemStatement: _originalProblemStatement,
-  objectiveCountRange,
-  objectiveCount,
-  onObjectiveCountChange,
   objectives,
   objectivesHistory,
   useImage,
@@ -361,6 +345,59 @@ export function ContentSection({
     null
   );
 
+  // State for document navigation
+  const currentDocumentIndex = useMemo(() => {
+    if (!scenarioPreviewDocumentId || allPreviewDocumentIds.length === 0) {
+      return 0;
+    }
+    const index = allPreviewDocumentIds.indexOf(scenarioPreviewDocumentId);
+    return index >= 0 ? index : 0;
+  }, [scenarioPreviewDocumentId, allPreviewDocumentIds]);
+
+  // State for document name truncation
+  const documentNameRef = useRef<HTMLSpanElement>(null);
+  const [isDocumentNameTruncated, setIsDocumentNameTruncated] = useState(false);
+
+  const currentDocumentName =
+    documentMapping[scenarioPreviewDocumentId || ""]?.name || "Document";
+
+  useEffect(() => {
+    const checkTruncation = () => {
+      if (documentNameRef.current) {
+        const isOverflowing =
+          documentNameRef.current.scrollWidth >
+          documentNameRef.current.clientWidth;
+        setIsDocumentNameTruncated(isOverflowing);
+      }
+    };
+
+    // Use setTimeout to ensure DOM is fully rendered
+    const timeoutId = setTimeout(() => {
+      checkTruncation();
+    }, 0);
+
+    // Recheck on window resize and when document changes
+    window.addEventListener("resize", checkTruncation);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", checkTruncation);
+    };
+  }, [currentDocumentName, scenarioPreviewDocumentId]);
+
+  const goToPreviousDocument = () => {
+    if (currentDocumentIndex > 0) {
+      const previousDocId = allPreviewDocumentIds[currentDocumentIndex - 1];
+      onScenarioPreviewDocumentChange(previousDocId);
+    }
+  };
+
+  const goToNextDocument = () => {
+    if (currentDocumentIndex < allPreviewDocumentIds.length - 1) {
+      const nextDocId = allPreviewDocumentIds[currentDocumentIndex + 1];
+      onScenarioPreviewDocumentChange(nextDocId);
+    }
+  };
+
   return (
     <Card
       className={cn(
@@ -400,16 +437,6 @@ export function ContentSection({
             onChange={onImageUpload}
             disabled={isUploadingImage || isReadonly}
             className="hidden"
-          />
-          <RangeSlider
-            min={objectiveCountRange.min}
-            max={objectiveCountRange.max}
-            value={objectiveCount}
-            onValueChange={([min, max]) =>
-              onObjectiveCountChange(min ?? 0, max ?? 0)
-            }
-            disabled={isReadonly}
-            className="w-[200px] mr-4"
           />
           <Button
             variant="default"
@@ -563,56 +590,54 @@ export function ContentSection({
         </div>
 
         {/* Objectives List */}
-        {objectiveCount[1] > 0 && (
-          <div className="space-y-2">
-            {objectives.length === 0 && (
-              <div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={onAddObjective}
-                  disabled={isReadonly}
-                  size="sm"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-                </Button>
-              </div>
-            )}
-            {objectives.map((objective, index) => (
-              <ObjectiveInputWithAutocomplete
-                key={`objective-${index}`}
-                index={index}
-                value={objective || ""}
-                onChange={(value) => onUpdateObjective(index, value)}
-                placeholder={`Learning objective ${index + 1}`}
-                suggestions={objectivesHistory}
+        <div className="space-y-2">
+          <Label>Objectives</Label>
+          {objectives.length === 0 && (
+            <div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onAddObjective}
                 disabled={isReadonly}
-                draggedObjectiveIndex={draggedObjectiveIndex}
-                onDragStart={(e) => onDragStartObjective(e, index)}
-                onDragOver={onDragOverObjective}
-                onDrop={(e) => onDropObjective(e, index)}
-                onRemove={() => onRemoveObjective(index)}
-                totalObjectives={objectives.length}
-                objectiveCount={objectiveCount}
-                objectivesEnabled={objectiveCount[1] > 0}
-              />
-            ))}
+                size="sm"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+              </Button>
+            </div>
+          )}
+          {objectives.map((objective, index) => (
+            <ObjectiveInputWithAutocomplete
+              key={`objective-${index}`}
+              index={index}
+              value={objective || ""}
+              onChange={(value) => onUpdateObjective(index, value)}
+              placeholder={`Learning objective ${index + 1}`}
+              suggestions={objectivesHistory}
+              disabled={isReadonly}
+              draggedObjectiveIndex={draggedObjectiveIndex}
+              onDragStart={(e) => onDragStartObjective(e, index)}
+              onDragOver={onDragOverObjective}
+              onDrop={(e) => onDropObjective(e, index)}
+              onRemove={() => onRemoveObjective(index)}
+              totalObjectives={objectives.length}
+              maxObjectives={3}
+            />
+          ))}
 
-            {objectives.length < objectiveCount[1] && objectives.length > 0 && (
-              <div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={onAddObjective}
-                  disabled={isReadonly}
-                  size="sm"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+          {objectives.length < 3 && objectives.length > 0 && (
+            <div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onAddObjective}
+                disabled={isReadonly}
+                size="sm"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+              </Button>
+            </div>
+          )}
+        </div>
 
         {/* Documents and Image Preview Section */}
         <div className="flex gap-4 items-stretch">
@@ -839,88 +864,8 @@ export function ContentSection({
 
           {/* Documents Preview Section */}
           {allPreviewDocumentIds.length > 0 && (
-            <div className="w-[30%] space-y-2 flex flex-col self-stretch">
-              {/* DocumentPicker */}
-              <GenericPicker
-                items={documentMapping}
-                itemIds={allPreviewDocumentIds}
-                selectedIds={
-                  scenarioPreviewDocumentId ? [scenarioPreviewDocumentId] : []
-                }
-                onSelect={(ids) => {
-                  const docId = ids[0] || null;
-                  if (docId) {
-                    onScenarioPreviewDocumentChange(docId);
-                  }
-                }}
-                getId={(item) => {
-                  const itemWithId = item as DocumentMappingItem & {
-                    id: string;
-                  };
-                  return itemWithId.id || "";
-                }}
-                getLabel={(item) => {
-                  const docItem = item as DocumentMappingItem;
-                  return docItem?.name || "Document";
-                }}
-                getSearchText={(item) => {
-                  const docItem = item as DocumentMappingItem;
-                  return `${docItem?.name || ""} ${docItem?.description || ""}`;
-                }}
-                renderButton={(selectedItems) => {
-                  if (selectedItems.length === 0) {
-                    return "Select document...";
-                  }
-                  const selectedDoc = selectedItems[0] as DocumentMappingItem;
-                  return selectedDoc?.name || "Select document...";
-                }}
-                renderItem={(item, isSelected) => {
-                  const docItem = item as DocumentMappingItem;
-                  const itemWithId = item as DocumentMappingItem & {
-                    id: string;
-                  };
-                  const docId = itemWithId.id || "";
-                  // Derive template status from documentDetails (server data)
-                  const fullDoc = documentDetails?.find(
-                    (d) => d.document_id === docId
-                  );
-                  const isTemplateDocument =
-                    Boolean(fullDoc?.["is_template"]) ||
-                    templateDocumentIds.includes(docId); // Fallback for compatibility
-                  return (
-                    <div className="flex flex-col items-start py-3 w-full">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <Check
-                            className={cn(
-                              "h-4 w-4",
-                              isSelected ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          <span className="font-medium">{docItem.name}</span>
-                          {isTemplateDocument && (
-                            <Badge variant="secondary" className="text-xs">
-                              Template
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      {docItem.description && (
-                        <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {docItem.description}
-                        </span>
-                      )}
-                    </div>
-                  );
-                }}
-                disabled={isReadonly}
-                multiSelect={false}
-                hideSelectedChips={true}
-                buttonClassName="h-8 justify-between w-full"
-                compact={true}
-                groupHeading="Documents"
-                placeholder="Select document..."
-              />
+            <div className="w-[30%] min-w-[30%] max-w-[30%] space-y-2 flex flex-col self-stretch">
+              <Label>Documents</Label>
 
               {/* Document Preview Container */}
               {scenarioPreviewDocumentId &&
@@ -1059,6 +1004,71 @@ export function ContentSection({
                     </div>
                   );
                 })()}
+
+              {/* Document Navigation */}
+              {scenarioPreviewDocumentId &&
+                allPreviewDocumentIds.length > 1 && (
+                  <div className="px-4 py-2 flex items-center gap-2 bg-background">
+                    {/* Left - Previous Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-8 w-8 p-0 shrink-0"
+                      onClick={goToPreviousDocument}
+                      disabled={currentDocumentIndex === 0 || isReadonly}
+                    >
+                      <span className="sr-only">Go to previous document</span>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+
+                    {/* Center - Document Name + Count */}
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {isDocumentNameTruncated ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                ref={documentNameRef}
+                                className="text-sm font-medium truncate cursor-help"
+                              >
+                                {currentDocumentName}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-sm">{currentDocumentName}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span
+                          ref={documentNameRef}
+                          className="text-sm font-medium truncate"
+                        >
+                          {currentDocumentName}
+                        </span>
+                      )}
+                      <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">
+                        ({currentDocumentIndex + 1}/
+                        {allPreviewDocumentIds.length})
+                      </span>
+                    </div>
+
+                    {/* Right - Next Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-8 w-8 p-0 shrink-0"
+                      onClick={goToNextDocument}
+                      disabled={
+                        currentDocumentIndex >=
+                          allPreviewDocumentIds.length - 1 || isReadonly
+                      }
+                    >
+                      <span className="sr-only">Go to next document</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
             </div>
           )}
         </div>

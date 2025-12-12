@@ -5,6 +5,8 @@ history/*.sql
 .venv/
 uploads/tus_uploads/
 uploads/audio/
+uploads/image
+uploads/video/
 keycloak/
 
 # Server cache and coverage files

@@ -10,7 +10,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 
-from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, get_db
+from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.mime.get_content_type import get_content_type
@@ -86,6 +86,9 @@ async def tus_finalize(
         if subfolder == "audio":
             target_folder = AUDIO_FOLDER
             final_file_path = f"audio/{upload_uuid}{ext}"
+        elif subfolder == "video":
+            target_folder = VIDEO_FOLDER
+            final_file_path = f"video/{upload_uuid}{ext}"
         else:
             target_folder = UPLOAD_FOLDER
             final_file_path = f"{upload_uuid}{ext}"

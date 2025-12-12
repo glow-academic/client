@@ -141,12 +141,6 @@ export default async function NewScenarioPage({
   const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
     ? parseInt(searchParamsObj.get("parameterSelectionMax") || "3", 10)
     : undefined;
-  const objectivesMin = searchParamsObj.get("objectivesMin")
-    ? parseInt(searchParamsObj.get("objectivesMin") || "0", 10)
-    : undefined;
-  const objectivesMax = searchParamsObj.get("objectivesMax")
-    ? parseInt(searchParamsObj.get("objectivesMax") || "0", 10)
-    : undefined;
   const useImage = searchParamsObj.get("useImage")
     ? searchParamsObj.get("useImage") === "true"
     : undefined;
@@ -202,8 +196,6 @@ export default async function NewScenarioPage({
       documentMax: documentMax || null,
       parameterSelectionMin: parameterSelectionMin || null,
       parameterSelectionMax: parameterSelectionMax || null,
-      objectivesMin: objectivesMin || null,
-      objectivesMax: objectivesMax || null,
       fieldRanges: fieldRanges || null, // Renamed from parameterItemRanges
       randomize: randomize || null,
       useImage: useImage || null,

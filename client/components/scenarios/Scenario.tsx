@@ -463,8 +463,6 @@ export default function Scenario({
         fieldIds: body.fieldIds, // Renamed from parameterItemIds
         profileId: body.profileId,
         scenarioId: scenarioId || undefined, // Pass scenarioId if in edit mode
-        objectivesMin: objectiveCount[0] > 0 ? objectiveCount[0] : undefined,
-        objectivesMax: objectiveCount[1] > 0 ? objectiveCount[1] : undefined,
       });
     });
   };
@@ -553,15 +551,6 @@ export default function Scenario({
   const [useImage, setUseImage] = useState(() => {
     const useImageFromUrl = searchParams.get("useImage");
     return useImageFromUrl === "true";
-  });
-  // Objective count state: [min, max] - initialized from URL params (DHH-style: compute when needed)
-  const [objectiveCount, setObjectiveCount] = useState<[number, number]>(() => {
-    const objectivesMinFromUrl = searchParams.get("objectivesMin");
-    const objectivesMaxFromUrl = searchParams.get("objectivesMax");
-    const min = objectivesMinFromUrl ? parseInt(objectivesMinFromUrl, 10) : 0;
-    const max = objectivesMaxFromUrl ? parseInt(objectivesMaxFromUrl, 10) : 0;
-    // Return [min, max] but ensure valid numbers
-    return [isNaN(min) ? 0 : min, isNaN(max) ? 0 : max];
   });
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
@@ -831,19 +820,6 @@ export default function Scenario({
       }
     });
 
-    // Objectives ranges - compare against server's current values
-    const serverObjectiveCountRange =
-      serverCurrentValues?.objective_count_range;
-    const serverObjectiveMin = serverObjectiveCountRange?.min ?? 0;
-    const serverObjectiveMax = serverObjectiveCountRange?.max ?? 3;
-    if (
-      objectiveCount[0] !== serverObjectiveMin ||
-      objectiveCount[1] !== serverObjectiveMax
-    ) {
-      params.set("objectivesMin", objectiveCount[0].toString());
-      params.set("objectivesMax", objectiveCount[1].toString());
-    }
-
     // Use Image flag - compare against server's current value
     const serverImageEnabled =
       serverCurrentValues?.image_input_enabled ?? false;
@@ -872,7 +848,6 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     fieldMinMax,
-    objectiveCount, // Include objectiveCount for objectivesMin/objectivesMax
     useImage, // Include useImage for useImage flag
     fieldMapping, // Used for field ranges comparison
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
@@ -1470,23 +1445,6 @@ export default function Scenario({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
 
-  // Sync objective count from URL params (DHH-style: compute when needed, not in effects)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
-  useEffect(() => {
-    const objectivesMinFromUrl = searchParams.get("objectivesMin");
-    const objectivesMaxFromUrl = searchParams.get("objectivesMax");
-    const min = objectivesMinFromUrl ? parseInt(objectivesMinFromUrl, 10) : 0;
-    const max = objectivesMaxFromUrl ? parseInt(objectivesMaxFromUrl, 10) : 0;
-    const urlMin = isNaN(min) ? 0 : min;
-    const urlMax = isNaN(max) ? 0 : max;
-    // Only update if different from current state
-    if (objectiveCount[0] !== urlMin || objectiveCount[1] !== urlMax) {
-      setObjectiveCount([urlMin, urlMax]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
   // Sync useImage from URL params (DHH-style: URL as source of truth)
   // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
   // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
@@ -1865,7 +1823,6 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     fieldMinMax,
-    objectiveCount, // Include objectiveCount to trigger URL updates when objectives change
     useImage, // Include useImage to trigger URL updates when useImage changes
     pathname,
   ]);
@@ -1922,13 +1879,6 @@ export default function Scenario({
         }>;
       };
       // Documents are always enabled (no switch)
-      // Initialize objective count from server data or default to [0, 0]
-      if (scenarioDataWithFlags?.objective_count_range) {
-        setObjectiveCount([
-          scenarioDataWithFlags.objective_count_range.min ?? 0,
-          scenarioDataWithFlags.objective_count_range.max ?? 0,
-        ]);
-      }
       // Load image_enabled and scenario image (single image - take first if exists)
       const imageEnabled = scenarioDataWithFlags.image_enabled ?? false;
       setUseImage(imageEnabled);
@@ -2236,10 +2186,15 @@ export default function Scenario({
     const documentsEnabled = currentDocumentIds.length > 0;
     return getScenarioAgentRole(
       useImage,
-      objectiveCount[1] > 0,
+      currentObjectives.length > 0,
       documentsEnabled
     );
-  }, [useImage, objectiveCount, currentDocumentIds, getScenarioAgentRole]);
+  }, [
+    useImage,
+    currentObjectives.length,
+    currentDocumentIds,
+    getScenarioAgentRole,
+  ]);
 
   // Reset initialization flag when switching between edit/create modes or scenario changes
   useEffect(() => {
@@ -2901,12 +2856,7 @@ export default function Scenario({
 
   // Objective handlers
   const addObjective = () => {
-    // Use current slider max value (objectiveCount[1]) as the limit
-    const maxObjectives = objectiveCount[1];
-    if (maxObjectives === 0) {
-      // Objectives disabled
-      return;
-    }
+    const maxObjectives = 3; // Hardcoded max of 3
     if (currentObjectives.length >= maxObjectives) {
       toast.error(`Maximum ${maxObjectives} objectives allowed`);
       return;
@@ -2929,71 +2879,6 @@ export default function Scenario({
       return next;
     });
   };
-
-  // Smart objectives management: automatically add/remove objectives based on slider changes
-  useEffect(() => {
-    const [min, max] = objectiveCount;
-    const currentLength = currentObjectives.length;
-
-    // If objectives are disabled (max === 0), clear all objectives
-    if (max === 0) {
-      if (currentLength > 0) {
-        setCurrentObjectives([]);
-      }
-      return;
-    }
-
-    // Ensure we have at least minimum objectives (add blank ones if needed)
-    if (currentLength < min) {
-      const blankObjectivesToAdd = min - currentLength;
-      setCurrentObjectives((prev) => [
-        ...prev,
-        ...Array(blankObjectivesToAdd).fill(""),
-      ]);
-      return;
-    }
-
-    // If maximum decreased, remove objectives (empty ones first, then filled ones)
-    if (currentLength > max) {
-      setCurrentObjectives((prev) => {
-        const next = [...prev];
-        const toRemove = currentLength - max;
-
-        // First, find and remove empty objectives
-        const emptyIndices: number[] = [];
-        for (let i = next.length - 1; i >= 0; i--) {
-          const objective = next[i];
-          if (!objective || objective.trim() === "") {
-            emptyIndices.push(i);
-            if (emptyIndices.length >= toRemove) break;
-          }
-        }
-
-        // Remove empty objectives first
-        let removed = 0;
-        for (const idx of emptyIndices) {
-          if (removed < toRemove) {
-            next.splice(idx, 1);
-            removed++;
-          }
-        }
-
-        // If we still need to remove more, remove from the end (filled ones)
-        while (next.length > max && removed < toRemove) {
-          next.pop();
-          removed++;
-        }
-
-        return next;
-      });
-      return;
-    }
-
-    // Ensure we don't exceed maximum (shouldn't happen with UI controls, but safety check)
-    if (currentLength > max) {
-      setCurrentObjectives((prev) => prev.slice(0, max));
-    }
-  }, [objectiveCount, currentObjectives.length]); // Only depend on length, not content, to avoid loops
 
   const handleDragStartObjective = (e: React.DragEvent, index: number) => {
     setDraggedObjectiveIndex(index);
@@ -3309,7 +3194,7 @@ export default function Scenario({
             ...payload,
             documents_enabled: useDocuments,
             document_vision_enabled: documentVisionEnabled,
-            objectives_enabled: objectiveCount[1] > 0,
+            objectives_enabled: currentObjectives.length > 0,
             image_enabled: useImage,
           });
           toast.success("Scenario updated successfully!");
@@ -3327,7 +3212,7 @@ export default function Scenario({
             ...payload,
             documents_enabled: useDocuments,
             document_vision_enabled: documentVisionEnabled,
-            objectives_enabled: objectiveCount[1] > 0,
+            objectives_enabled: currentObjectives.length > 0,
             image_enabled: useImage,
           });
           // Clear local versions after successful creation
@@ -3646,18 +3531,6 @@ export default function Scenario({
               hasProblemStatementChanges={hasProblemStatementChanges}
               originalProblemStatement={
                 originalFormData?.problemStatement || ""
-              }
-              objectiveCountRange={
-                scenarioData?.objective_count_range
-                  ? {
-                      min: scenarioData.objective_count_range.min,
-                      max: scenarioData.objective_count_range.max,
-                    }
-                  : { min: 0, max: 3 }
-              }
-              objectiveCount={objectiveCount}
-              onObjectiveCountChange={(min, max) =>
-                setObjectiveCount([min, max])
               }
               objectives={currentObjectives}
               objectivesHistory={objectivesHistory}

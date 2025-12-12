@@ -69,8 +69,6 @@ const getScenario = async (
     documentMax?: number;
     parameterSelectionMin?: number;
     parameterSelectionMax?: number;
-    objectivesMin?: number;
-    objectivesMax?: number;
     parameterItemRanges?: Record<string, { min: number; max: number }>;
     randomizePersonas?: string;
     randomizeDocuments?: string;
@@ -297,8 +295,6 @@ export default async function EditScenarioPage({
       documentMax,
       parameterSelectionMin,
       parameterSelectionMax,
-      objectivesMin,
-      objectivesMax,
       parameterItemRanges,
       randomizePersonas,
       randomizeDocuments,
