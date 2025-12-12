@@ -5,6 +5,7 @@
 "use client";
 import {
   Check,
+  Eye,
   GripVertical,
   Image,
   Loader2,
@@ -32,6 +33,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -348,6 +356,11 @@ export function ContentSection({
   imageInputRef,
   isEditMode = false,
 }: ContentSectionProps) {
+  // State for document preview dialog
+  const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
+    null
+  );
+
   return (
     <Card
       className={cn(
@@ -457,6 +470,9 @@ export function ContentSection({
                       onProblemStatementChange(
                         problemStatementMapping[id].problem_statement
                       );
+                    } else if (!id) {
+                      // Clear selection - show blank problem statement
+                      onProblemStatementChange("");
                     }
                   }}
                   getId={(item) => (item as unknown as { id: string }).id}
@@ -511,6 +527,7 @@ export function ContentSection({
                   buttonClassName="h-8 justify-between"
                   groupHeading="Version History"
                   placeholder="Select problem statement version..."
+                  clearActionLabel="New Statement"
                 />
                 {hasProblemStatementChanges && (
                   <Tooltip>
@@ -598,91 +615,106 @@ export function ContentSection({
         )}
 
         {/* Documents and Image Preview Section */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-stretch">
           {/* Image Preview Section */}
           <div
             className={
               allPreviewDocumentIds.length > 0
-                ? "w-[70%] space-y-4"
-                : "w-full space-y-4"
+                ? "w-[70%] space-y-2 flex flex-col"
+                : "w-full space-y-2 flex flex-col"
             }
           >
             {/* ImagePicker */}
-            {useImage && Object.keys(imageMapping).length > 0 && (
-              <div className="flex items-center justify-between">
-                <div></div>
-                <GenericPicker
-                  items={imageMapping}
-                  itemIds={Object.keys(imageMapping)}
-                  selectedIds={image ? [image.id] : []}
-                  onSelect={(ids) => {
-                    const imageId = ids[0] || null;
-                    if (imageId && imageMapping[imageId]) {
-                      const selectedImage = imageMapping[imageId];
-                      onImageSelect({
-                        id: selectedImage.upload_id || selectedImage.id,
-                        name: selectedImage.name,
-                        upload_id: selectedImage.upload_id || selectedImage.id,
-                      });
-                    }
-                  }}
-                  getId={(item) => {
-                    const imgItem = item as unknown as ImageMappingItem;
-                    return imgItem.id;
-                  }}
-                  getLabel={(item) => {
-                    const imgItem = item as unknown as ImageMappingItem;
-                    const date = new Date(imgItem.updated_at);
-                    return `${imgItem.name} - ${date.toLocaleDateString()}`;
-                  }}
-                  getSearchText={(item) => {
-                    const imgItem = item as unknown as ImageMappingItem;
-                    const date = new Date(imgItem.updated_at);
-                    return `${imgItem.name} ${date.toLocaleDateString()}`;
-                  }}
-                  renderButton={(selectedItems) => {
-                    if (selectedItems.length === 0) {
-                      return "Select image...";
-                    }
-                    const selectedImage =
-                      selectedItems[0] as unknown as ImageMappingItem;
-                    return selectedImage?.name || "Select image...";
-                  }}
-                  renderItem={(item, isSelected) => {
-                    const imgItem = item as unknown as ImageMappingItem;
-                    const date = new Date(imgItem.updated_at);
-                    return (
-                      <div className="flex flex-col items-start py-3 w-full">
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2">
-                            <Check
-                              className={cn(
-                                "h-4 w-4",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span className="font-medium">{imgItem.name}</span>
+            {useImage && (
+              <>
+                {Object.keys(imageMapping).length > 0 ? (
+                  <div className="flex items-center justify-between">
+                    <Label>Preview</Label>
+                    <GenericPicker
+                      items={imageMapping}
+                      itemIds={Object.keys(imageMapping)}
+                      selectedIds={image ? [image.id] : []}
+                      onSelect={(ids) => {
+                        const imageId = ids[0] || null;
+                        if (imageId && imageMapping[imageId]) {
+                          const selectedImage = imageMapping[imageId];
+                          onImageSelect({
+                            id: selectedImage.upload_id || selectedImage.id,
+                            name: selectedImage.name,
+                            upload_id:
+                              selectedImage.upload_id || selectedImage.id,
+                          });
+                        } else if (!imageId) {
+                          // Clear selection - show upload UI
+                          onImageSelect(null);
+                        }
+                      }}
+                      getId={(item) => {
+                        const imgItem = item as unknown as ImageMappingItem;
+                        return imgItem.id;
+                      }}
+                      getLabel={(item) => {
+                        const imgItem = item as unknown as ImageMappingItem;
+                        const date = new Date(imgItem.updated_at);
+                        return `${imgItem.name} - ${date.toLocaleDateString()}`;
+                      }}
+                      getSearchText={(item) => {
+                        const imgItem = item as unknown as ImageMappingItem;
+                        const date = new Date(imgItem.updated_at);
+                        return `${imgItem.name} ${date.toLocaleDateString()}`;
+                      }}
+                      renderButton={(selectedItems) => {
+                        if (selectedItems.length === 0) {
+                          return "Select image...";
+                        }
+                        const selectedImage =
+                          selectedItems[0] as unknown as ImageMappingItem;
+                        return selectedImage?.name || "Select image...";
+                      }}
+                      renderItem={(item, isSelected) => {
+                        const imgItem = item as unknown as ImageMappingItem;
+                        const date = new Date(imgItem.updated_at);
+                        return (
+                          <div className="flex flex-col items-start py-3 w-full">
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2">
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4",
+                                    isSelected ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span className="font-medium">
+                                  {imgItem.name}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-xs text-muted-foreground mt-1">
+                              {date.toLocaleDateString()}{" "}
+                              {date.toLocaleTimeString()}
+                            </span>
                           </div>
-                        </div>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {date.toLocaleDateString()}{" "}
-                          {date.toLocaleTimeString()}
-                        </span>
-                      </div>
-                    );
-                  }}
-                  disabled={isReadonly}
-                  multiSelect={false}
-                  hideSelectedChips={true}
-                  buttonClassName="h-8 justify-between"
-                  groupHeading="Images"
-                  placeholder="Select image..."
-                />
-              </div>
+                        );
+                      }}
+                      disabled={isReadonly}
+                      multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="h-8 justify-between"
+                      compact={true}
+                      groupHeading="Images"
+                      placeholder="Select image..."
+                      clearActionLabel="New Image"
+                    />
+                  </div>
+                ) : (
+                  <Label>Preview</Label>
+                )}
+              </>
             )}
+            {!useImage && <Label>Preview</Label>}
 
             {/* Combined Image and Chat Preview Container */}
-            <div className="relative border rounded-lg overflow-hidden min-h-[400px]">
+            <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1">
               {/* Background Image */}
               {useImage && image && (
                 <div className="absolute inset-0 w-full h-full">
@@ -802,109 +834,93 @@ export function ContentSection({
                   </div>
                 </div>
               )}
-
-              {/* Image actions overlay */}
-              {useImage && image && !isReadonly && (
-                <div className="absolute top-2 right-2 z-20">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={onImageRemove}
-                    className="h-8 w-8 p-0 bg-background/90 backdrop-blur-sm shadow-md"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Documents Preview Section */}
           {allPreviewDocumentIds.length > 0 && (
-            <div className="w-[30%] space-y-4 flex flex-col h-[400px]">
+            <div className="w-[30%] space-y-2 flex flex-col self-stretch">
               {/* DocumentPicker */}
-              {allPreviewDocumentIds.length > 1 && (
-                <GenericPicker
-                  items={documentMapping}
-                  itemIds={allPreviewDocumentIds}
-                  selectedIds={
-                    scenarioPreviewDocumentId ? [scenarioPreviewDocumentId] : []
+              <GenericPicker
+                items={documentMapping}
+                itemIds={allPreviewDocumentIds}
+                selectedIds={
+                  scenarioPreviewDocumentId ? [scenarioPreviewDocumentId] : []
+                }
+                onSelect={(ids) => {
+                  const docId = ids[0] || null;
+                  if (docId) {
+                    onScenarioPreviewDocumentChange(docId);
                   }
-                  onSelect={(ids) => {
-                    const docId = ids[0] || null;
-                    if (docId) {
-                      onScenarioPreviewDocumentChange(docId);
-                    }
-                  }}
-                  getId={(item) => {
-                    const itemWithId = item as DocumentMappingItem & {
-                      id: string;
-                    };
-                    return itemWithId.id || "";
-                  }}
-                  getLabel={(item) => {
-                    const docItem = item as DocumentMappingItem;
-                    return docItem?.name || "Document";
-                  }}
-                  getSearchText={(item) => {
-                    const docItem = item as DocumentMappingItem;
-                    return `${docItem?.name || ""} ${docItem?.description || ""}`;
-                  }}
-                  renderButton={(selectedItems) => {
-                    if (selectedItems.length === 0) {
-                      return "Select document...";
-                    }
-                    const selectedDoc = selectedItems[0] as DocumentMappingItem;
-                    return selectedDoc?.name || "Select document...";
-                  }}
-                  renderItem={(item, isSelected) => {
-                    const docItem = item as DocumentMappingItem;
-                    const itemWithId = item as DocumentMappingItem & {
-                      id: string;
-                    };
-                    const docId = itemWithId.id || "";
-                    // Derive template status from documentDetails (server data)
-                    const fullDoc = documentDetails?.find(
-                      (d) => d.document_id === docId
-                    );
-                    const isTemplateDocument =
-                      Boolean(fullDoc?.["is_template"]) ||
-                      templateDocumentIds.includes(docId); // Fallback for compatibility
-                    return (
-                      <div className="flex flex-col items-start py-3 w-full">
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2">
-                            <Check
-                              className={cn(
-                                "h-4 w-4",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span className="font-medium">{docItem.name}</span>
-                            {isTemplateDocument && (
-                              <Badge variant="secondary" className="text-xs">
-                                Template
-                              </Badge>
+                }}
+                getId={(item) => {
+                  const itemWithId = item as DocumentMappingItem & {
+                    id: string;
+                  };
+                  return itemWithId.id || "";
+                }}
+                getLabel={(item) => {
+                  const docItem = item as DocumentMappingItem;
+                  return docItem?.name || "Document";
+                }}
+                getSearchText={(item) => {
+                  const docItem = item as DocumentMappingItem;
+                  return `${docItem?.name || ""} ${docItem?.description || ""}`;
+                }}
+                renderButton={(selectedItems) => {
+                  if (selectedItems.length === 0) {
+                    return "Select document...";
+                  }
+                  const selectedDoc = selectedItems[0] as DocumentMappingItem;
+                  return selectedDoc?.name || "Select document...";
+                }}
+                renderItem={(item, isSelected) => {
+                  const docItem = item as DocumentMappingItem;
+                  const itemWithId = item as DocumentMappingItem & {
+                    id: string;
+                  };
+                  const docId = itemWithId.id || "";
+                  // Derive template status from documentDetails (server data)
+                  const fullDoc = documentDetails?.find(
+                    (d) => d.document_id === docId
+                  );
+                  const isTemplateDocument =
+                    Boolean(fullDoc?.["is_template"]) ||
+                    templateDocumentIds.includes(docId); // Fallback for compatibility
+                  return (
+                    <div className="flex flex-col items-start py-3 w-full">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <Check
+                            className={cn(
+                              "h-4 w-4",
+                              isSelected ? "opacity-100" : "opacity-0"
                             )}
-                          </div>
+                          />
+                          <span className="font-medium">{docItem.name}</span>
+                          {isTemplateDocument && (
+                            <Badge variant="secondary" className="text-xs">
+                              Template
+                            </Badge>
+                          )}
                         </div>
-                        {docItem.description && (
-                          <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {docItem.description}
-                          </span>
-                        )}
                       </div>
-                    );
-                  }}
-                  disabled={isReadonly}
-                  multiSelect={false}
-                  hideSelectedChips={true}
-                  buttonClassName="h-8 justify-between w-full"
-                  groupHeading="Documents"
-                  placeholder="Select document..."
-                />
-              )}
+                      {docItem.description && (
+                        <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {docItem.description}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }}
+                disabled={isReadonly}
+                multiSelect={false}
+                hideSelectedChips={true}
+                buttonClassName="h-8 justify-between w-full"
+                compact={true}
+                groupHeading="Documents"
+                placeholder="Select document..."
+              />
 
               {/* Document Preview Container */}
               {scenarioPreviewDocumentId &&
@@ -990,20 +1006,46 @@ export function ContentSection({
                       } as DocumentItem);
 
                   return (
-                    <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
+                    <div className="relative border rounded-lg overflow-hidden flex-1 min-h-[400px]">
+                      {/* Preview button - top left */}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewDocumentId(docId);
+                        }}
+                        className="absolute top-2 left-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setPreviewDocumentId(docId);
+                          }
+                        }}
+                      >
+                        <Eye className="h-3.5 w-3.5 text-primary-foreground" />
+                      </div>
                       <>
                         <div
                           className={cn(
-                            "h-full overflow-auto [&>div]:!min-h-0 [&>div]:h-full [&_iframe]:!min-h-0 [&_iframe]:h-full",
+                            "h-full overflow-auto flex items-center justify-center [&>div]:!min-h-0 [&_iframe]:!min-h-0",
                             isTemplateDocument && "opacity-20"
                           )}
+                          style={{
+                            // Allow horizontal scrolling for HTML documents that exceed container width
+                            overflowX: "auto",
+                            overflowY: "auto",
+                          }}
                         >
-                          <DocumentViewer
-                            document={docForViewer}
-                            bare={true}
-                            isFormDocument={false}
-                            compact={isTemplateDocument}
-                          />
+                          <div className="w-full h-auto max-h-full">
+                            <DocumentViewer
+                              document={docForViewer}
+                              bare={true}
+                              isFormDocument={false}
+                              compact={true}
+                            />
+                          </div>
                         </div>
                         {isTemplateDocument && (
                           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
@@ -1052,6 +1094,102 @@ export function ContentSection({
             </p>
           </div>
         </div>
+
+        {/* Document Preview Dialog */}
+        <Dialog
+          open={previewDocumentId !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPreviewDocumentId(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>
+                {previewDocumentId
+                  ? documentMapping[previewDocumentId]?.name ||
+                    documentDetails?.find(
+                      (d) => d.document_id === previewDocumentId
+                    )?.name ||
+                    "Document Preview"
+                  : "Document Preview"}
+              </DialogTitle>
+              <DialogDescription>Preview document content</DialogDescription>
+            </DialogHeader>
+            {previewDocumentId &&
+              (() => {
+                const docId = previewDocumentId;
+                const fullDoc = documentDetails?.find(
+                  (d) => d.document_id === docId
+                );
+
+                // Check if this is a child document
+                const parentDocumentId = (
+                  fullDoc as {
+                    parent_document_id?: string;
+                  }
+                )?.parent_document_id;
+                const isChildDocument = Boolean(parentDocumentId);
+                const isTemplateDocument =
+                  !isChildDocument && Boolean(fullDoc?.["is_template"]);
+
+                const docForViewer: DocumentItem = fullDoc
+                  ? ({
+                      document_id: fullDoc.document_id,
+                      name:
+                        (fullDoc as { name?: string }).name ||
+                        documentMapping[docId]?.name ||
+                        "Document",
+                      updatedAt:
+                        (fullDoc as { updatedAt?: string }).updatedAt ||
+                        new Date().toISOString(),
+                      extension:
+                        (fullDoc as { extension?: string }).extension || "",
+                      scenario_ids:
+                        (fullDoc as { scenario_ids?: string[] }).scenario_ids ||
+                        [],
+                      can_edit:
+                        (fullDoc as { can_edit?: boolean }).can_edit || false,
+                      can_delete:
+                        (fullDoc as { can_delete?: boolean }).can_delete ||
+                        false,
+                      active: (fullDoc as { active?: boolean }).active ?? true,
+                      department_ids:
+                        (fullDoc as { department_ids?: string[] | null })
+                          .department_ids || null,
+                      upload_id: fullDoc.upload_id ?? null,
+                      parameter_item_ids: [],
+                      field_ids: [],
+                    } as DocumentItem)
+                  : ({
+                      document_id: docId,
+                      name: documentMapping[docId]?.name || "Document",
+                      updatedAt: new Date().toISOString(),
+                      extension: "",
+                      scenario_ids: [],
+                      can_edit: false,
+                      can_delete: false,
+                      active: true,
+                      department_ids: null,
+                      field_ids: [],
+                      parameter_item_ids: [],
+                      upload_id: null,
+                    } as DocumentItem);
+
+                return (
+                  <div className="w-full h-[calc(90vh-120px)] overflow-auto">
+                    <DocumentViewer
+                      document={docForViewer}
+                      bare={true}
+                      isFormDocument={false}
+                      compact={false}
+                    />
+                  </div>
+                );
+              })()}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

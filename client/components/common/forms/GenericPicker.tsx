@@ -68,6 +68,7 @@ export interface GenericPickerProps<T> extends PopoverProps {
   description?: string;
   compact?: boolean;
   showClearAction?: boolean;
+  clearActionLabel?: string; // Custom label for clear action (e.g., "New Statement", "New Image")
   popoverContentClassName?: string;
   maxHeight?: string;
   /** Where to render the selected badges relative to the button */
@@ -101,6 +102,7 @@ export function GenericPicker<T>({
   description,
   compact = false,
   showClearAction = true,
+  clearActionLabel,
   popoverContentClassName,
   maxHeight = "max-h-[250px]",
   badgesPosition = "below",
@@ -329,7 +331,8 @@ export function GenericPicker<T>({
                       onSelect={handleClear}
                       className="text-muted-foreground"
                     >
-                      Clear {multiSelect ? "All" : "Selection"}
+                      {clearActionLabel ||
+                        `Clear ${multiSelect ? "All" : "Selection"}`}
                     </CommandItem>
                   </CommandGroup>
                 )}
