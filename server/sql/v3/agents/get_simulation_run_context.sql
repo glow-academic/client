@@ -104,13 +104,46 @@ dept_specific_settings AS (
       AND sd.active = true
     LIMIT 1
 ),
+settings_with_keys AS (
+    -- Settings that have at least one active provider key
+    SELECT DISTINCT spk.settings_id
+    FROM setting_provider_keys spk
+    JOIN keys k ON k.id = spk.key_id
+    WHERE spk.active = true AND k.active = true
+),
+dept_specific_settings_with_keys AS (
+    -- Department-specific settings that have keys
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE s.active = true AND sd.active = true
+    LIMIT 1
+),
+default_settings_with_keys AS (
+    -- Default settings that have keys
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
 active_settings AS (
-    -- Prefer department-specific, then default, then any active
+    -- Prefer department-specific with keys, then default with keys, then any with keys, then fallback
+    -- Only use department-specific/default settings if they have keys, otherwise prefer any settings with keys
     SELECT 
         COALESCE(
-            (SELECT settings_id FROM dept_specific_settings),
-            (SELECT settings_id FROM default_settings),
-            (SELECT id FROM settings WHERE active = true LIMIT 1)
+            (SELECT settings_id FROM dept_specific_settings_with_keys),
+            (SELECT settings_id FROM default_settings_with_keys),
+            (SELECT settings_id FROM settings_with_keys LIMIT 1),  -- Any with keys
+            (SELECT settings_id FROM dept_specific_settings),  -- Original fallback (no keys available)
+            (SELECT settings_id FROM default_settings),  -- Original fallback (no keys available)
+            (SELECT id FROM settings WHERE active = true LIMIT 1)  -- Last resort
         ) as settings_id
 )
 SELECT 

@@ -23,18 +23,8 @@ type UpdateChatCreatedAtOut = OutputOf<
   "/api/v3/attempts/chats/update-created-at",
   "post"
 >;
-type CreateQuizIn = InputOf<"/api/v3/attempts/quizzes/create", "post">;
-type CreateQuizOut = OutputOf<"/api/v3/attempts/quizzes/create", "post">;
-type SubmitQuizResponseIn = InputOf<
-  "/api/v3/attempts/quizzes/submit-response",
-  "post"
->;
-type SubmitQuizResponseOut = OutputOf<
-  "/api/v3/attempts/quizzes/submit-response",
-  "post"
->;
-type CompleteQuizIn = InputOf<"/api/v3/attempts/quizzes/complete", "post">;
-type CompleteQuizOut = OutputOf<"/api/v3/attempts/quizzes/complete", "post">;
+// Quiz operations are now handled via WebSocket events
+// See client/lib/ws/types.ts for WebSocket types
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
@@ -88,23 +78,6 @@ async function updateChatCreatedAt(
   return api.post("/attempts/chats/update-created-at", input);
 }
 
-async function createQuiz(input: CreateQuizIn): Promise<CreateQuizOut> {
-  "use server";
-  return api.post("/attempts/quizzes/create", input);
-}
-
-async function submitQuizResponse(
-  input: SubmitQuizResponseIn,
-): Promise<SubmitQuizResponseOut> {
-  "use server";
-  return api.post("/attempts/quizzes/submit-response", input);
-}
-
-async function completeQuiz(input: CompleteQuizIn): Promise<CompleteQuizOut> {
-  "use server";
-  return api.post("/attempts/quizzes/complete", input);
-}
-
 /** ---- Page component ---- */
 export default async function AttemptPage({
   params,
@@ -128,9 +101,6 @@ export default async function AttemptPage({
           attemptId={attemptId}
           attemptData={attemptData}
           updateChatCreatedAtAction={updateChatCreatedAt}
-          createQuizAction={createQuiz}
-          submitQuizResponseAction={submitQuizResponse}
-          completeQuizAction={completeQuiz}
         />
       </div>
     );
@@ -157,10 +127,4 @@ export type {
   AttemptFullOut,
   UpdateChatCreatedAtIn,
   UpdateChatCreatedAtOut,
-  CreateQuizIn,
-  CreateQuizOut,
-  SubmitQuizResponseIn,
-  SubmitQuizResponseOut,
-  CompleteQuizIn,
-  CompleteQuizOut,
 };

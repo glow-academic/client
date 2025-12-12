@@ -4263,66 +4263,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/attempts/quizzes/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Quiz
-         * @description Create quiz for attempt + video if doesn't exist.
-         */
-        post: operations["create_quiz_api_v3_attempts_quizzes_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/attempts/quizzes/submit-response": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Submit Quiz Response
-         * @description Submit quiz response for question + option.
-         */
-        post: operations["submit_quiz_response_api_v3_attempts_quizzes_submit_response_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/attempts/quizzes/complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Complete Quiz
-         * @description Complete quiz - marks as completed and validates all answers are correct.
-         */
-        post: operations["complete_quiz_api_v3_attempts_quizzes_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/full": {
         parameters: {
             query?: never;
@@ -5412,7 +5352,7 @@ export interface components {
         /** ChatItem */
         ChatItem: {
             /** Id */
-            id: string;
+            id?: string | null;
             /** Createdat */
             createdAt: string;
             /** Updatedat */
@@ -5420,7 +5360,7 @@ export interface components {
             /** Title */
             title: string;
             /** Scenarioid */
-            scenarioId: string;
+            scenarioId?: string | null;
             /** Parentscenarioid */
             parentScenarioId?: string | null;
             /** Attemptid */
@@ -5869,20 +5809,6 @@ export interface components {
             department_options: {
                 [key: string]: string;
             }[];
-        };
-        /** CompleteQuizRequest */
-        CompleteQuizRequest: {
-            /** Quizid */
-            quizId: string;
-        };
-        /** CompleteQuizResponse */
-        CompleteQuizResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Allcorrect */
-            allCorrect: boolean;
         };
         /**
          * ContinuationOption
@@ -6508,22 +6434,6 @@ export interface components {
             providerId: string;
             /** Message */
             message: string;
-        };
-        /** CreateQuizRequest */
-        CreateQuizRequest: {
-            /** Attemptid */
-            attemptId: string;
-            /** Videoid */
-            videoId: string;
-        };
-        /** CreateQuizResponse */
-        CreateQuizResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Quizid */
-            quizId?: string | null;
         };
         /**
          * CreateRubricRequest
@@ -12794,24 +12704,6 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
-        /** SubmitQuizResponseRequest */
-        SubmitQuizResponseRequest: {
-            /** Quizid */
-            quizId: string;
-            /** Questionid */
-            questionId: string;
-            /** Optionid */
-            optionId: string;
-        };
-        /** SubmitQuizResponseResponse */
-        SubmitQuizResponseResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Iscorrect */
-            isCorrect: boolean;
-        };
         /**
          * TemplateInfo
          * @description Template version information.
@@ -14272,10 +14164,6 @@ export interface components {
             videoDocuments: components["schemas"]["VideoDocumentItem"][];
             /** Questions */
             questions: components["schemas"]["QuestionItem-Output"][];
-            /** Showproblemstatement */
-            showProblemStatement: boolean;
-            /** Showobjectives */
-            showObjectives: boolean;
             /** Showimage */
             showImage: boolean;
         };
@@ -23248,105 +23136,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttemptFullResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_quiz_api_v3_attempts_quizzes_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateQuizRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateQuizResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_quiz_response_api_v3_attempts_quizzes_submit_response_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmitQuizResponseRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmitQuizResponseResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    complete_quiz_api_v3_attempts_quizzes_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CompleteQuizRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompleteQuizResponse"];
                 };
             };
             /** @description Validation Error */

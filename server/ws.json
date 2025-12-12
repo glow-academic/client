@@ -17,6 +17,24 @@
         "chat_id": "string",
         "chat_type": "?string"
       }
+    },
+    "quiz_create": {
+      "payload": {
+        "attemptId": "string",
+        "videoId": "string"
+      }
+    },
+    "quiz_submit_response": {
+      "payload": {
+        "quizId": "string",
+        "questionId": "string",
+        "optionId": "string"
+      }
+    },
+    "quiz_complete": {
+      "payload": {
+        "quizId": "string"
+      }
     }
   },
   "serverToClient": {
@@ -416,6 +434,45 @@
       }
     },
     "voice_tool_call_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "quiz_create_response": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "quizId": "?string"
+      }
+    },
+    "quiz_create_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "quiz_submit_response_response": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "isCorrect": "boolean"
+      }
+    },
+    "quiz_submit_response_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "quiz_complete_response": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "allCorrect": "boolean"
+      }
+    },
+    "quiz_complete_error": {
       "payload": {
         "success": "boolean",
         "message": "string"

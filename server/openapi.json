@@ -9381,159 +9381,6 @@
         ]
       }
     },
-    "/api/v3/attempts/quizzes/create": {
-      "post": {
-        "tags": [
-          "v3",
-          "attempts",
-          "attempts",
-          "quizzes"
-        ],
-        "summary": "Create Quiz",
-        "description": "Create quiz for attempt + video if doesn't exist.",
-        "operationId": "create_quiz_api_v3_attempts_quizzes_create_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateQuizRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateQuizResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "attempts",
-          "attempts",
-          "quizzes"
-        ]
-      }
-    },
-    "/api/v3/attempts/quizzes/submit-response": {
-      "post": {
-        "tags": [
-          "v3",
-          "attempts",
-          "attempts",
-          "quizzes"
-        ],
-        "summary": "Submit Quiz Response",
-        "description": "Submit quiz response for question + option.",
-        "operationId": "submit_quiz_response_api_v3_attempts_quizzes_submit_response_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmitQuizResponseRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubmitQuizResponseResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "attempts",
-          "attempts",
-          "quizzes"
-        ]
-      }
-    },
-    "/api/v3/attempts/quizzes/complete": {
-      "post": {
-        "tags": [
-          "v3",
-          "attempts",
-          "attempts",
-          "quizzes"
-        ],
-        "summary": "Complete Quiz",
-        "description": "Complete quiz - marks as completed and validates all answers are correct.",
-        "operationId": "complete_quiz_api_v3_attempts_quizzes_complete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompleteQuizRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompleteQuizResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "attempts",
-          "attempts",
-          "quizzes"
-        ]
-      }
-    },
     "/api/v3/full": {
       "post": {
         "tags": [
@@ -12267,7 +12114,14 @@
       "ChatItem": {
         "properties": {
           "id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Id"
           },
           "createdAt": {
@@ -12283,7 +12137,14 @@
             "title": "Title"
           },
           "scenarioId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Scenarioid"
           },
           "parentScenarioId": {
@@ -12337,11 +12198,9 @@
         },
         "type": "object",
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "title",
-          "scenarioId",
           "attemptId",
           "completed",
           "completedAt",
@@ -13353,42 +13212,6 @@
         ],
         "title": "CohortsListResponse",
         "description": "Response for cohorts list."
-      },
-      "CompleteQuizRequest": {
-        "properties": {
-          "quizId": {
-            "type": "string",
-            "title": "Quizid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "quizId"
-        ],
-        "title": "CompleteQuizRequest"
-      },
-      "CompleteQuizResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "allCorrect": {
-            "type": "boolean",
-            "title": "Allcorrect"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "allCorrect"
-        ],
-        "title": "CompleteQuizResponse"
       },
       "ContinuationOption": {
         "properties": {
@@ -14995,53 +14818,6 @@
         ],
         "title": "CreateProviderResponse",
         "description": "Response from create provider."
-      },
-      "CreateQuizRequest": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "videoId": {
-            "type": "string",
-            "title": "Videoid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId",
-          "videoId"
-        ],
-        "title": "CreateQuizRequest"
-      },
-      "CreateQuizResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "quizId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Quizid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "CreateQuizResponse"
       },
       "CreateRubricRequest": {
         "properties": {
@@ -31539,52 +31315,6 @@
         "title": "StudentSimReportResponse",
         "description": "Response with student simulation report."
       },
-      "SubmitQuizResponseRequest": {
-        "properties": {
-          "quizId": {
-            "type": "string",
-            "title": "Quizid"
-          },
-          "questionId": {
-            "type": "string",
-            "title": "Questionid"
-          },
-          "optionId": {
-            "type": "string",
-            "title": "Optionid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "quizId",
-          "questionId",
-          "optionId"
-        ],
-        "title": "SubmitQuizResponseRequest"
-      },
-      "SubmitQuizResponseResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "isCorrect": {
-            "type": "boolean",
-            "title": "Iscorrect"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "isCorrect"
-        ],
-        "title": "SubmitQuizResponseResponse"
-      },
       "TemplateInfo": {
         "properties": {
           "template_args": {
@@ -35958,14 +35688,6 @@
             "type": "array",
             "title": "Questions"
           },
-          "showProblemStatement": {
-            "type": "boolean",
-            "title": "Showproblemstatement"
-          },
-          "showObjectives": {
-            "type": "boolean",
-            "title": "Showobjectives"
-          },
           "showImage": {
             "type": "boolean",
             "title": "Showimage"
@@ -35979,8 +35701,6 @@
           "uploadId",
           "videoDocuments",
           "questions",
-          "showProblemStatement",
-          "showObjectives",
           "showImage"
         ],
         "title": "VideoItem"

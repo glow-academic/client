@@ -93,8 +93,6 @@
                 v.length_seconds,
                 vu.upload_id,
                 svl.position,
-                svl.show_problem_statement,
-                svl.show_objectives,
                 svl.show_image,
                 -- Get documents connected to this video
                 COALESCE(
@@ -1079,8 +1077,6 @@
                         'uploadId', CASE WHEN vd.upload_id IS NOT NULL THEN vd.upload_id::text ELSE NULL END,
                         'videoDocuments', vd.videoDocuments,
                         'questions', vd.questions,
-                        'showProblemStatement', vd.show_problem_statement,
-                        'showObjectives', vd.show_objectives,
                         'showImage', vd.show_image
                     ),
                     'quiz', CASE 

@@ -77,7 +77,16 @@ async def check_keycloak() -> ServiceCheckResult:
         ServiceCheckResult with ok status, latency, and error message
     """
     start = time.perf_counter()
-    keycloak_url = os.getenv("KEYCLOAK_URL", "http://localhost:8080").rstrip("/")
+    # Construct Keycloak URL: if KEYCLOAK_URL is explicitly set, use it;
+    # otherwise, construct from APP_PREFIX to match Makefile configuration
+    app_prefix = os.getenv("APP_PREFIX", "")
+    explicit_keycloak_url = os.getenv("KEYCLOAK_URL")
+    if explicit_keycloak_url:
+        keycloak_url = explicit_keycloak_url.rstrip("/")
+    else:
+        # Match Makefile: KC_HTTP_RELATIVE_PATH=${APP_PREFIX}/auth
+        base_url = "http://localhost:8080"
+        keycloak_url = f"{base_url}{app_prefix}/auth"
     realm = os.getenv("KEYCLOAK_REALM", "glow")
     well_known = f"{keycloak_url}/realms/{realm}/.well-known/openid-configuration"
 

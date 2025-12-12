@@ -305,6 +305,33 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
+  quiz_create_response: (payload: {
+    success: boolean;
+    message: string;
+    quizId?: string;
+  }) => void;
+  quiz_create_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  quiz_submit_response_response: (payload: {
+    success: boolean;
+    message: string;
+    isCorrect: boolean;
+  }) => void;
+  quiz_submit_response_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  quiz_complete_response: (payload: {
+    success: boolean;
+    message: string;
+    allCorrect: boolean;
+  }) => void;
+  quiz_complete_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
 };
 
 export type ClientToServerEvents = {
@@ -319,5 +346,17 @@ export type ClientToServerEvents = {
   simulation_text_end: (payload: {
     chat_id: string;
     chat_type?: string;
+  }) => void;
+  quiz_create: (payload: {
+    attemptId: string;
+    videoId: string;
+  }) => void;
+  quiz_submit_response: (payload: {
+    quizId: string;
+    questionId: string;
+    optionId: string;
+  }) => void;
+  quiz_complete: (payload: {
+    quizId: string;
   }) => void;
 };

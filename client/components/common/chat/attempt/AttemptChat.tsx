@@ -15,12 +15,6 @@ import { ImperativePanelGroupHandle } from "react-resizable-panels";
 
 import type {
   AttemptFullOut,
-  CompleteQuizIn,
-  CompleteQuizOut,
-  CreateQuizIn,
-  CreateQuizOut,
-  SubmitQuizResponseIn,
-  SubmitQuizResponseOut,
   UpdateChatCreatedAtIn,
   UpdateChatCreatedAtOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
@@ -57,20 +51,12 @@ interface AttemptChatProps {
   updateChatCreatedAtAction?: (
     input: UpdateChatCreatedAtIn,
   ) => Promise<UpdateChatCreatedAtOut>;
-  createQuizAction?: (input: CreateQuizIn) => Promise<CreateQuizOut>;
-  submitQuizResponseAction?: (
-    input: SubmitQuizResponseIn,
-  ) => Promise<SubmitQuizResponseOut>;
-  completeQuizAction?: (input: CompleteQuizIn) => Promise<CompleteQuizOut>;
 }
 
 export default function AttemptChat({
   attemptId,
   attemptData: initialAttemptData,
   updateChatCreatedAtAction,
-  createQuizAction: _createQuizAction,
-  submitQuizResponseAction,
-  completeQuizAction,
 }: AttemptChatProps) {
   const router = useRouter();
   const { effectiveProfile, activeProfile, socket, isConnected } = useProfile();
@@ -1260,6 +1246,50 @@ export default function AttemptChat({
     socket.on("simulation_grading_progress", handleSimulationGradingProgress);
     socket.on("hint_generation_progress", handleHintGenerationProgress);
 
+    // Quiz event handlers
+    const handleQuizCompleteResponse = (data: {
+      success: boolean;
+      message: string;
+      allCorrect: boolean;
+    }) => {
+      if (data.success) {
+        router.refresh();
+      } else {
+        toast.error(data.message || "Failed to complete quiz");
+      }
+    };
+
+    const handleQuizCompleteError = (data: {
+      success: boolean;
+      message: string;
+    }) => {
+      toast.error(data.message || "Failed to complete quiz");
+    };
+
+    const handleQuizSubmitResponseResponse = (data: {
+      success: boolean;
+      message: string;
+      isCorrect: boolean;
+    }) => {
+      if (data.success) {
+        router.refresh();
+      } else {
+        toast.error(data.message || "Failed to submit quiz response");
+      }
+    };
+
+    const handleQuizSubmitResponseError = (data: {
+      success: boolean;
+      message: string;
+    }) => {
+      toast.error(data.message || "Failed to submit quiz response");
+    };
+
+    socket.on("quiz_complete_response", handleQuizCompleteResponse);
+    socket.on("quiz_complete_error", handleQuizCompleteError);
+    socket.on("quiz_submit_response_response", handleQuizSubmitResponseResponse);
+    socket.on("quiz_submit_response_error", handleQuizSubmitResponseError);
+
     return () => {
       socket.off("simulation_new_message", handleSimulationNewMessage);
       socket.off("message_sent", handleMessageSent);
@@ -1287,6 +1317,13 @@ export default function AttemptChat({
         handleSimulationGradingProgress,
       );
       socket.off("hint_generation_progress", handleHintGenerationProgress);
+      socket.off("quiz_complete_response", handleQuizCompleteResponse);
+      socket.off("quiz_complete_error", handleQuizCompleteError);
+      socket.off(
+        "quiz_submit_response_response",
+        handleQuizSubmitResponseResponse,
+      );
+      socket.off("quiz_submit_response_error", handleQuizSubmitResponseError);
 
       // Clean up refresh timeout on unmount
       if (refreshTimeoutRef.current) {
@@ -1586,15 +1623,19 @@ export default function AttemptChat({
   // Helper function to handle quiz completion
   const handleVideoComplete = useCallback(
     async (quizId: string) => {
-      if (!completeQuizAction) return;
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
       try {
-        await completeQuizAction({ body: { quizId } });
-        router.refresh();
-      } catch {
-        // Error handling - quiz completion failed silently
+        socket.emit("quiz_complete", {
+          quizId,
+        });
+      } catch (error) {
+        toast.error(`Failed to complete quiz: ${error}`);
       }
     },
-    [completeQuizAction, router],
+    [socket, isConnected],
   );
 
   // Helper function to handle quiz response submission
@@ -1605,17 +1646,21 @@ export default function AttemptChat({
       optionId: string,
       _isCorrect: boolean,
     ) => {
-      if (!submitQuizResponseAction) return;
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
       try {
-        await submitQuizResponseAction({
-          body: { quizId, questionId, optionId },
+        socket.emit("quiz_submit_response", {
+          quizId,
+          questionId,
+          optionId,
         });
-        router.refresh();
-      } catch {
-        // Error handling - quiz response submission failed silently
+      } catch (error) {
+        toast.error(`Failed to submit quiz response: ${error}`);
       }
     },
-    [submitQuizResponseAction, router],
+    [socket, isConnected],
   );
 
   if (!chats || chats.length === 0) {
@@ -1699,9 +1744,9 @@ export default function AttemptChat({
   // If video content type, render VideoAttemptView
   if (contentType === "video" && currentContentItem) {
     // Get documents - video documents come from video.videoDocuments in contentItem
-    // scenarioDocuments may also contain policy documents, so combine both sources
+    // scenarioDocuments may also contain documents, so combine both sources
     const videoDocuments = currentContentItem.video?.videoDocuments || [];
-    const scenarioPolicyDocuments = scenarioDocuments.filter(
+    const scenarioDocumentsForVideo = scenarioDocuments.filter(
       (doc) =>
         doc.type === "policy" ||
         (doc.field_ids &&
@@ -1710,22 +1755,24 @@ export default function AttemptChat({
     );
     // Combine and deduplicate by document_id
     // videoDocuments are VideoDocumentItem (has 'id'), scenarioDocuments are ScenarioDocumentItem (has 'document_id')
-    const allPolicyDocuments = [
+    const allDocuments = [
       ...videoDocuments.map((doc) => ({ ...doc, document_id: doc.id })),
-      ...scenarioPolicyDocuments,
+      ...scenarioDocumentsForVideo,
     ];
-    const uniquePolicyDocuments = Array.from(
-      new Map(allPolicyDocuments.map((doc) => [doc.document_id, doc])).values(),
+    const uniqueDocuments = Array.from(
+      new Map(allDocuments.map((doc) => [doc.document_id, doc])).values(),
     ) as typeof scenarioDocuments;
 
     return (
       <VideoAttemptView
         attemptId={attemptId}
         contentItem={currentContentItem}
-        policies={uniquePolicyDocuments}
+        documents={uniqueDocuments}
         currentContentIndex={currentContentIndex}
         expectedContentCount={expectedContentCount}
         isAttemptOwner={isAttemptOwner}
+        timer={timer}
+        currentChat={currentContentItem.chat}
         onVideoComplete={handleVideoComplete}
         onSubmitQuizResponse={handleSubmitQuizResponse}
         onContinue={() => {

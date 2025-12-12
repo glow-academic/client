@@ -14,11 +14,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -40,16 +35,15 @@ import {
 
 // Icons
 import {
-  Clock,
   FileText,
-  ListChecks,
   Pause,
   Play,
   Volume2,
   VolumeX,
 } from "lucide-react";
 
-import PolicyViewer from "@/components/common/chat/viewers/PolicyViewer";
+import DocumentSelect from "@/components/common/chat/DocumentSelect";
+import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { formatTime } from "@/utils/time";
 import VideoQuestionPopover from "./VideoQuestionPopover";
 type VideoItem = NonNullable<ContentItem["video"]>;
@@ -60,10 +54,16 @@ type QuizResponseItem = NonNullable<QuizItem>["responses"][number];
 interface VideoAttemptViewProps {
   attemptId: string;
   contentItem: ContentItem;
-  policies: AttemptFullOut["scenarioDocuments"];
+  documents: AttemptFullOut["scenarioDocuments"];
   currentContentIndex: number;
   expectedContentCount: number;
   isAttemptOwner: boolean;
+  timer: {
+    elapsed: number;
+    remaining: number | null;
+    expired: boolean;
+  };
+  currentChat: ContentItem["chat"] | null;
   onVideoComplete: (quizId: string) => void;
   onSubmitQuizResponse: (
     quizId: string,
@@ -78,10 +78,12 @@ interface VideoAttemptViewProps {
 export default function VideoAttemptView({
   attemptId,
   contentItem,
-  policies,
+  documents,
   currentContentIndex,
   expectedContentCount,
   isAttemptOwner,
+  timer,
+  currentChat,
   onVideoComplete,
   onSubmitQuizResponse,
   onContinue,
@@ -92,20 +94,54 @@ export default function VideoAttemptView({
   const quiz = contentItem.quiz;
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Get documents from video.videoDocuments or fallback to policies prop
+  // Get documents from video.videoDocuments or fallback to documents prop
   // video.videoDocuments contains documents linked to the video
-  // policies prop contains scenario documents filtered by type='policy'
-  const videoPolicies = useMemo(() => {
+  // documents prop contains scenario documents
+  const videoDocuments = useMemo(() => {
     if (
       video?.videoDocuments &&
       Array.isArray(video.videoDocuments) &&
       video.videoDocuments.length > 0
     ) {
-      return video.videoDocuments;
+      // Convert VideoDocumentItem to ScenarioDocumentItem format
+      return video.videoDocuments.map((doc) => ({
+        document_id: doc.id,
+        name: doc.name,
+        updatedAt: doc.description || "",
+        extension: doc.extension || "",
+        scenario_ids: [],
+        can_edit: false,
+        can_delete: false,
+        active: true,
+        department_ids: null,
+        file_path: doc.filePath || null,
+        mime_type: doc.mimeType || null,
+        upload_id: doc.uploadId || null,
+        field_ids: [],
+      }));
     }
-    // Fallback to policies prop (scenario documents filtered by type='policy')
-    return policies || [];
-  }, [video?.videoDocuments, policies]);
+    // Fallback to documents prop (scenario documents)
+    return documents || [];
+  }, [video?.videoDocuments, documents]);
+
+  // State variables for document display
+  const [showDocuments, setShowDocuments] = useState(true);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
+    null,
+  );
+
+  // Initialize selectedDocumentId to first document's ID
+  useEffect(() => {
+    if (videoDocuments.length > 0 && !selectedDocumentId) {
+      setSelectedDocumentId(videoDocuments[0].document_id);
+    }
+  }, [videoDocuments, selectedDocumentId]);
+
+  // Handle continue button click
+  const handleContinue = useCallback(() => {
+    onContinue();
+  }, [onContinue]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -279,127 +315,60 @@ export default function VideoAttemptView({
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Video Area */}
         <ResizablePanel
-          defaultSize={showPolicies && videoPolicies.length > 0 ? 70 : 100}
+          defaultSize={showDocuments && videoDocuments.length > 0 ? 70 : 100}
           className="md:flex-none"
         >
           <Card className="h-full flex flex-col py-2 border-0 rounded-t-xl rounded-b-none">
             <TooltipProvider>
               <div className="h-full flex flex-col">
-                {/* Header with title, timer, and controls */}
-                <Collapsible
-                  open={showObjectives}
-                  onOpenChange={setShowObjectives}
-                  className="border-b"
-                >
-                  <div className="p-2 pt-0 flex flex-col gap-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-start gap-2">
-                          <span className="font-medium">
-                            {video.title || currentChat?.title}
-                          </span>
-                        </div>
+                {/* Header with title and controls */}
+                <div className="border-b p-2 pt-0 flex flex-col gap-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-start gap-2">
+                        <span className="font-medium">
+                          {video.title || currentChat?.title}
+                        </span>
                       </div>
-                      <div className="flex items-start justify-end gap-2">
-                        <div className="flex items-center gap-4">
-                          {/* Objectives Toggle */}
-                          {video.showObjectives && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <CollapsibleTrigger asChild>
-                                  <Button
-                                    variant={
-                                      showObjectives ? "default" : "outline"
-                                    }
-                                    size="sm"
-                                    onClick={(e) => {
-                                      if (window.innerWidth < 768) {
-                                        e.preventDefault();
-                                        setShowObjectivesModal(true);
-                                      }
-                                    }}
-                                    className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
-                                  >
-                                    <ListChecks className="h-4 w-4" />
-                                  </Button>
-                                </CollapsibleTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {showObjectives
-                                    ? "Hide Objectives"
-                                    : "Show Objectives"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-
-                          {/* Policies Toggle */}
-                          {videoPolicies.length > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant={
-                                    showPolicies || showPolicyModal
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  size="sm"
-                                  onClick={() => {
-                                    if (window.innerWidth < 768) {
-                                      setShowPolicyModal(true);
-                                    } else {
-                                      setShowPolicies(!showPolicies);
-                                    }
-                                  }}
-                                  className={`p-2 ${showPolicies || showPolicyModal ? "bg-primary text-primary-foreground" : ""}`}
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {showPolicies || showPolicyModal
-                                    ? "Hide Policies"
-                                    : "Show Policies"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-
-                          {/* Timer */}
+                    </div>
+                    <div className="flex items-start justify-end gap-2">
+                      <div className="flex items-center gap-4">
+                        {/* Documents Toggle */}
+                        {videoDocuments.length > 0 && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-muted">
-                                <Clock className="h-4 w-4 flex-shrink-0" />
-                                <span
-                                  className="text-sm font-medium"
-                                  data-testid="timer"
-                                >
-                                  {timer.remaining !== null
-                                    ? formatTime(timer.remaining)
-                                    : formatTime(timer.elapsed)}
-                                </span>
-                              </div>
+                              <Button
+                                variant={
+                                  showDocuments || showDocumentModal
+                                    ? "default"
+                                    : "outline"
+                                }
+                                size="sm"
+                                onClick={() => {
+                                  if (window.innerWidth < 768) {
+                                    setShowDocumentModal(true);
+                                  } else {
+                                    setShowDocuments(!showDocuments);
+                                  }
+                                }}
+                                className={`p-2 ${showDocuments || showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
                             </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {showDocuments || showDocumentModal
+                                  ? "Hide Documents"
+                                  : "Show Documents"}
+                              </p>
+                            </TooltipContent>
                           </Tooltip>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
-
-                  {/* Objectives Collapsible Content */}
-                  {video.showObjectives && (
-                    <CollapsibleContent className="pt-2">
-                      <div className="px-4 pb-2">
-                        <p className="text-sm text-muted-foreground">
-                          Video objectives will be displayed here when
-                          available.
-                        </p>
-                      </div>
-                    </CollapsibleContent>
-                  )}
-                </Collapsible>
+                </div>
 
                 {/* Video Player Area */}
                 <div className="flex-1 flex flex-col min-h-0 relative">
@@ -493,15 +462,6 @@ export default function VideoAttemptView({
                       </p>
                     </div>
                   )}
-
-                  {/* Problem Statement (if show_problem_statement is true) */}
-                  {video.showProblemStatement && (
-                    <div className="mt-4 px-4">
-                      <p className="text-sm text-muted-foreground">
-                        Problem statement will be displayed here when available.
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 {/* Continue/Previous Buttons */}
@@ -527,8 +487,8 @@ export default function VideoAttemptView({
           </Card>
         </ResizablePanel>
 
-        {/* Right Panel - Policies */}
-        {showPolicies && videoPolicies.length > 0 && (
+        {/* Right Panel - Documents */}
+        {showDocuments && videoDocuments.length > 0 && (
           <>
             <ResizableHandle className="bg-transparent hidden md:block" />
             <ResizablePanel
@@ -539,41 +499,28 @@ export default function VideoAttemptView({
             >
               <Card className="h-full flex flex-col ml-2 p-0 border-0 border-l-0 shadow-none rounded-l-none">
                 <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
-                  {/* Policy Select dropdown */}
-                  {videoPolicies.length > 1 && (
+                  {/* Document Select dropdown */}
+                  {videoDocuments.length > 1 && (
                     <div className="p-2 pb-1.5 border-b">
-                      <select
-                        value={selectedPolicyId || videoPolicies[0]?.id || ""}
-                        onChange={(e) => setSelectedPolicyId(e.target.value)}
-                        className="w-full p-2 border rounded"
-                      >
-                        {videoPolicies.map((policy) => (
-                          <option key={policy.id} value={policy.id}>
-                            {policy.name}
-                          </option>
-                        ))}
-                      </select>
+                      <DocumentSelect
+                        documents={videoDocuments}
+                        selectedDocumentId={selectedDocumentId}
+                        onDocumentSelect={setSelectedDocumentId}
+                      />
                     </div>
                   )}
-                  {/* Policy viewer */}
+                  {/* Document viewer */}
                   <div className="flex-1 min-h-0 px-1 py-3">
-                    {selectedPolicyId &&
+                    {selectedDocumentId &&
                       (() => {
-                        const policy =
-                          videoPolicies.find(
-                            (p) => p.id === selectedPolicyId,
-                          ) || videoPolicies[0];
-                        return policy ? (
-                          <PolicyViewer
-                            key={selectedPolicyId}
-                            policy={{
-                              policy_id: policy.id,
-                              name: policy.name,
-                              description: policy.description,
-                              file_path: policy.filePath || null,
-                              mime_type: policy.mimeType || null,
-                              upload_id: policy.uploadId || null,
-                            }}
+                        const document =
+                          videoDocuments.find(
+                            (d) => d.document_id === selectedDocumentId,
+                          ) || videoDocuments[0];
+                        return document ? (
+                          <DocumentViewer
+                            key={selectedDocumentId}
+                            document={document}
                           />
                         ) : null;
                       })()}
@@ -585,93 +532,57 @@ export default function VideoAttemptView({
         )}
       </ResizablePanelGroup>
 
-      {/* Policy Modal - Mobile Only */}
-      <Dialog open={showPolicyModal} onOpenChange={setShowPolicyModal}>
+      {/* Document Modal - Mobile Only */}
+      <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
         <DialogContent className="sm:max-w-4xl max-h-[80vh] md:overflow-hidden overflow-auto flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              {videoPolicies.find((p) => p.id === selectedPolicyId)?.name ||
-                videoPolicies[0]?.name ||
-                "Policy"}
+              {videoDocuments.find(
+                (d) => d.document_id === selectedDocumentId,
+              )?.name ||
+                videoDocuments[0]?.name ||
+                "Document"}
             </DialogTitle>
-            <DialogDescription>View policy document</DialogDescription>
+            <DialogDescription>View document</DialogDescription>
           </DialogHeader>
 
-          {/* Policy selector (if multiple policies) */}
-          {videoPolicies.length > 1 && (
+          {/* Document selector (if multiple documents) */}
+          {videoDocuments.length > 1 && (
             <div className="pb-3">
-              <select
-                value={selectedPolicyId || videoPolicies[0]?.id || ""}
-                onChange={(e) => setSelectedPolicyId(e.target.value)}
-                className="w-full p-2 border rounded"
-              >
-                {videoPolicies.map((policy) => (
-                  <option key={policy.id} value={policy.id}>
-                    {policy.name}
-                  </option>
-                ))}
-              </select>
+              <DocumentSelect
+                documents={videoDocuments}
+                selectedDocumentId={selectedDocumentId}
+                onDocumentSelect={setSelectedDocumentId}
+              />
             </div>
           )}
 
-          {/* Policy viewer */}
-          {selectedPolicyId && (
+          {/* Document viewer */}
+          {selectedDocumentId && (
             <div className="flex-1 overflow-auto">
               {(() => {
-                const policy =
-                  videoPolicies.find((p) => p.id === selectedPolicyId) ||
-                  videoPolicies[0];
-                return policy ? (
-                  <PolicyViewer
-                    policy={{
-                      policy_id: policy.id,
-                      name: policy.name,
-                      description: policy.description,
-                      file_path: policy.filePath || null,
-                      mime_type: policy.mimeType || null,
-                      upload_id: null,
-                    }}
-                    bare={true}
-                  />
+                const document =
+                  videoDocuments.find(
+                    (d) => d.document_id === selectedDocumentId,
+                  ) || videoDocuments[0];
+                return document ? (
+                  <DocumentViewer document={document} bare={true} />
                 ) : null;
               })()}
             </div>
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPolicyModal(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Objectives Modal - Mobile Only */}
-      <Dialog open={showObjectivesModal} onOpenChange={setShowObjectivesModal}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-auto flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Learning Objectives</DialogTitle>
-            <DialogDescription>
-              View the learning objectives for this video
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-auto py-4">
-            <p className="text-sm text-muted-foreground italic">
-              Video objectives will be displayed here when available.
-            </p>
-          </div>
-
-          <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowObjectivesModal(false)}
+              onClick={() => setShowDocumentModal(false)}
             >
               Close
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

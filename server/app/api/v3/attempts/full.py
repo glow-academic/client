@@ -59,11 +59,11 @@ class AttemptProfileItem(BaseModel):
 
 
 class ChatItem(BaseModel):
-    id: str
+    id: str | None = None
     createdAt: str
     updatedAt: str
     title: str
-    scenarioId: str
+    scenarioId: str | None = None
     parentScenarioId: str | None = None
     attemptId: str
     completed: bool
@@ -193,8 +193,6 @@ class VideoItem(BaseModel):
     uploadId: str | None
     videoDocuments: list[VideoDocumentItem]
     questions: list[QuestionItem]
-    showProblemStatement: bool
-    showObjectives: bool
     showImage: bool
 
 
@@ -557,8 +555,6 @@ async def get_attempt_full(
                     uploadId=video_data.get("uploadId"),
                     videoDocuments=video_documents,
                     questions=questions,
-                    showProblemStatement=video_data.get("showProblemStatement", True),
-                    showObjectives=video_data.get("showObjectives", True),
                     showImage=video_data.get("showImage", True),
                 )
 

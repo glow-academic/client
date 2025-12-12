@@ -1513,7 +1513,6 @@ export default function Video({
       name: "New Video",
       length_seconds: 0,
       departmentIds: defaultDepartmentIds,
-      problemStatement: "",
       active: true,
       outlineAgentId: null,
       imageAgentId: null,

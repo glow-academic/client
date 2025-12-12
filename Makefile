@@ -231,7 +231,24 @@ run: check-venv
 		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
 	else \
 		echo "🚀 Creating new Keycloak container (persistent, use 'make stop-keycloak' to stop)..."; \
-		docker run -d --name glow-keycloak -p $(KEYCLOAK_PORT):8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin -e KC_HOSTNAME=localhost -e KC_HOSTNAME_STRICT=false -v $(PWD)/keycloak:/opt/keycloak/data/h2 quay.io/keycloak/keycloak:24.0 start-dev >/dev/null 2>&1; \
+		DB_USER=$${DB_USER:-myuser}; \
+		DB_PASSWORD=$${DB_PASSWORD:-mypassword}; \
+		CLIENT_PORT=$${CLIENT_PORT:-3000}; \
+		APP_PREFIX=$${APP_PREFIX:-}; \
+		docker run -d --name glow-keycloak -p $(KEYCLOAK_PORT):8080 \
+			-e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+			-e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+			-e KC_DB=postgres \
+			-e KC_DB_URL=jdbc:postgresql://host.docker.internal:5432/keycloak \
+			-e KC_DB_USERNAME=$$DB_USER \
+			-e KC_DB_PASSWORD=$$DB_PASSWORD \
+			-e KC_PROXY=none \
+			-e KC_HTTP_ENABLED=true \
+			-e KC_HTTP_RELATIVE_PATH=$${APP_PREFIX}/auth \
+			-e KC_HOSTNAME=http://localhost:$$CLIENT_PORT$${APP_PREFIX}/auth \
+			-e KC_HOSTNAME_STRICT=false \
+			-e KC_HOSTNAME_STRICT_BACKCHANNEL=false \
+			quay.io/keycloak/keycloak:26.0 start-dev >/dev/null 2>&1; \
 		sleep 1; \
 		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
 	fi; \
@@ -275,7 +292,12 @@ stop:
 # Stop Keycloak container
 stop-keycloak:
 	@echo "Stopping Keycloak..."
-	@docker stop glow-keycloak 2>/dev/null && echo "✅ Keycloak stopped" || echo "⚠️  Keycloak not found or already stopped"
+	@if docker ps -a --filter name=glow-keycloak --format "{{.Names}}" | grep -q "^glow-keycloak$$"; then \
+		docker stop glow-keycloak >/dev/null 2>&1 && echo "✅ Keycloak stopped" || echo "⚠️  Failed to stop Keycloak"; \
+		docker rm glow-keycloak >/dev/null 2>&1 && echo "✅ Keycloak container removed" || echo "⚠️  Failed to remove Keycloak container"; \
+	else \
+		echo "⚠️  Keycloak container not found"; \
+	fi
 
 # Clean up generated files and cache
 cleanup:

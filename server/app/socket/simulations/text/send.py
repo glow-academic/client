@@ -830,6 +830,24 @@ async def _simulation_text_send_impl(
                         ],
                     }
 
+                    # Validate API key before proceeding
+                    if not context.get("api_key"):
+                        error_msg = (
+                            f"API key not configured for provider '{context.get('provider_name', 'unknown')}' "
+                            f"in settings. Model: {context.get('model_name', 'unknown')}, "
+                            f"Persona: {context.get('persona_name', 'unknown')}. "
+                            f"Please configure a provider key in settings."
+                        )
+                        await simulation_text_send_error(
+                            SendSimulationMessageErrorPayload(
+                                success=False,
+                                message=error_msg,
+                            ),
+                            room=sid,
+                        )
+                        logger.error(f"Missing API key for chat {chat_id_uuid}: {error_msg}")
+                        return
+
                     # Extract department_id from context
                     # SQL query includes fallback: scenario -> profile -> any active department
                     # department_id should always be present due to SQL fallback logic

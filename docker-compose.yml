@@ -42,6 +42,47 @@ services:
       - internal
 
   # --------------------
+  # Keycloak
+  # --------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    command: ["start-dev"] # switch to "start" + TLS in real prod
+    environment:
+      # Admin bootstrap (Keycloak 26.0 uses KC_BOOTSTRAP_* instead of KEYCLOAK_*)
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+
+      # DB connection (uses existing database service, separate keycloak database)
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://database:5432/keycloak
+      KC_DB_USERNAME: ${DB_USER}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+
+      # IMPORTANT: run behind nginx at ${APP_PREFIX}/auth
+      KC_PROXY: edge
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: ${APP_PREFIX}/auth
+
+      # Tell Keycloak its public URL (Keycloak 26.0 uses KC_HOSTNAME instead of KC_HOSTNAME_URL)
+      KC_HOSTNAME: ${ORIGIN}${APP_PREFIX}/auth
+
+      # Less strict for local dev
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/auth/realms/master >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - internal
+      - public_net
+
+  # --------------------
   # PgBouncer - Connection Pooler (Session Mode for Prepared Statements)
   # --------------------
   pgbouncer:
@@ -142,6 +183,8 @@ services:
       retries: 5
       start_period: 30s
     depends_on:
+      keycloak:
+        condition: service_healthy
       pgbouncer:
         condition: service_healthy
       redis:
@@ -206,6 +249,7 @@ services:
     depends_on:
       - client
       - server
+      - keycloak
     networks:
       - internal
       - public_net
