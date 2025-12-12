@@ -10,12 +10,12 @@ WITH active_settings AS (
     LIMIT 1
 ),
 -- Get settings for the department (if department_id provided)
+-- Note: Include department-specific settings even if inactive (they're linked via department_settings)
 dept_settings AS (
     SELECT DISTINCT s.id as settings_id
     FROM settings s
     JOIN department_settings ds ON ds.settings_id = s.id
-    WHERE s.active = true
-      AND ds.active = true
+    WHERE ds.active = true
       AND ($1::uuid IS NULL OR ds.department_id = $1::uuid)
 ),
 -- Get default settings (no department links)
@@ -58,9 +58,10 @@ WHERE a.active = true
   AND (
       -- Include if department_id not provided (show all auths from all settings)
       $1::uuid IS NULL
-      -- OR include if it's linked to default settings
-      OR EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id)
-      -- OR include if it's linked to department-specific settings
-      OR EXISTS (SELECT 1 FROM dept_auths da WHERE da.id = a.id)
+      -- OR if department_id is provided, ONLY include department-specific auths (exclude default ones)
+      OR (
+          $1::uuid IS NOT NULL
+          AND EXISTS (SELECT 1 FROM dept_auths da WHERE da.id = a.id)
+      )
   )
 ORDER BY a.name;

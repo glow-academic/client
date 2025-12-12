@@ -5,20 +5,29 @@ from collections.abc import Sequence
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AgentMapping, AgentMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              DocumentMapping, DocumentMappingItem,
-                              FieldMapping, FieldMappingItem, ParameterMapping,
-                              ParameterMappingItem, PersonaMapping,
-                              PersonaMappingItem)
+from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    DocumentMapping,
+    DocumentMappingItem,
+    FieldMapping,
+    FieldMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 def preserve_order_union(
@@ -130,7 +139,9 @@ class DocumentDetailItem(BaseModel):
     upload_id: str | None
     field_ids: list[str]  # Renamed from parameter_item_ids for readability
     is_template: bool = False  # Whether this document is a template
-    parent_document_id: str | None = None  # Parent document ID if this is a child document
+    parent_document_id: str | None = (
+        None  # Parent document ID if this is a child document
+    )
 
 
 class ObjectiveWithDepartments(BaseModel):
@@ -1005,9 +1016,7 @@ async def get_scenario_new(
             import uuid as uuid_lib
 
             try:
-                image_ids_uuid = [
-                    uuid_lib.UUID(iid) for iid in request_data.imageIds
-                ]
+                image_ids_uuid = [uuid_lib.UUID(iid) for iid in request_data.imageIds]
             except (ValueError, TypeError):
                 image_ids_uuid = None
 

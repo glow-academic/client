@@ -81,8 +81,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     typeof departmentParam === "string" ? departmentParam : undefined;
 
   // Fetch login data (providers + departments) from consolidated endpoint
+  // First fetch without department to get default_department_id and departments list
   // Explicit type annotation needed because TypeScript can't infer from generic api.post return
-  const loginData: LoginDataOut = await getLoginData(departmentIdFromQuery);
+  const loginDataWithoutDept: LoginDataOut = await getLoginData(undefined);
+
+  // Determine which department ID to use for fetching providers
+  // Priority: 1) Query param, 2) Default department from settings, 3) First department
+  // Note: We use default department for API even if not in query params (keeps URL clean)
+  const departmentIdForApi =
+    departmentIdFromQuery ||
+    loginDataWithoutDept.default_department_id ||
+    (loginDataWithoutDept.departments.length > 0
+      ? loginDataWithoutDept.departments[0]?.id
+      : undefined);
+
+  // Fetch login data with the determined department ID to get correct providers
+  // This ensures we always filter providers by department, even if default (not in URL)
+  const loginData: LoginDataOut = await getLoginData(departmentIdForApi);
 
   // Fetch settings separately (like settings page pattern)
   // Always use guest-profile-id for login page (unauthenticated users)

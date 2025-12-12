@@ -529,9 +529,10 @@ export default function Login({
                       setSelectedDepartmentId(value);
                       // Update URL with department parameter and trigger server-side refetch
                       // If selected department is the default, remove query param to keep URL clean
+                      // The server will still use the default department ID for the API call
                       const url = new URL(window.location.href);
                       if (value && value === defaultDepartmentId) {
-                        // Remove query param if it's the default department
+                        // Remove query param if it's the default department (keeps URL clean)
                         url.searchParams.delete("department");
                       } else if (value) {
                         // Set query param for non-default departments

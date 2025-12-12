@@ -5,10 +5,19 @@ import os
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
-                    trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
+
 from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
@@ -21,8 +30,6 @@ from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.scenario.image_generation import set_image_generation_context
 from app.utils.sql_helper import load_sql
-from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
-                      create_model)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()

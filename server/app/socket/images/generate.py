@@ -4,11 +4,12 @@ import re
 import uuid
 from typing import Any
 
+from pydantic import BaseModel
+
 from app.main import IMAGE_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -402,7 +403,8 @@ async def _emit_image_progress(
     """Emit WebSocket event for image generation progress."""
     from app.socket.scenarios.generate import (
         ScenarioImageGenerationProgressPayload,
-        scenario_image_generation_progress)
+        scenario_image_generation_progress,
+    )
 
     if not room:
         logger.warning(
@@ -427,7 +429,9 @@ async def _emit_image_error(
 ) -> None:
     """Emit WebSocket event for image generation error."""
     from app.socket.scenarios.generate import (
-        ScenarioImageGenerationErrorPayload, scenario_image_generation_error)
+        ScenarioImageGenerationErrorPayload,
+        scenario_image_generation_error,
+    )
 
     if not room:
         logger.warning(

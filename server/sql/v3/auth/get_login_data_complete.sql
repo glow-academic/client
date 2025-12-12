@@ -3,12 +3,7 @@
 -- Returns: Single row with providers_json and departments_json
 -- This follows DHH style: one SQL file returns all login-related data
 
-WITH active_settings AS (
-    SELECT guest_login_enabled
-    FROM settings
-    WHERE active = true
-    LIMIT 1
-),
+WITH
 -- Get default department from settings_default_department table
 default_department_from_settings AS (
     SELECT sdd.department_id
@@ -18,17 +13,17 @@ default_department_from_settings AS (
     LIMIT 1
 ),
 -- Get settings for the department (if department_id provided)
+-- Note: Include department-specific settings even if inactive (they're linked via department_settings)
 dept_settings AS (
-    SELECT DISTINCT s.id as settings_id
+    SELECT DISTINCT s.id as settings_id, s.guest_login_enabled
     FROM settings s
     JOIN department_settings ds ON ds.settings_id = s.id
-    WHERE s.active = true
-      AND ds.active = true
+    WHERE ds.active = true
       AND ($1::uuid IS NULL OR ds.department_id = $1::uuid)
 ),
 -- Get default settings (no department links)
 default_settings AS (
-    SELECT s.id as settings_id
+    SELECT s.id as settings_id, s.guest_login_enabled
     FROM settings s
     WHERE s.active = true
       AND NOT EXISTS (
@@ -36,6 +31,17 @@ default_settings AS (
           WHERE ds.settings_id = s.id AND ds.active = true
       )
     LIMIT 1
+),
+-- Get guest_login_enabled from department-specific settings if department_id provided, otherwise from default settings
+active_settings AS (
+    SELECT COALESCE(
+        CASE 
+            WHEN $1::uuid IS NOT NULL THEN (SELECT guest_login_enabled FROM dept_settings LIMIT 1)
+            ELSE NULL
+        END,
+        (SELECT guest_login_enabled FROM default_settings LIMIT 1),
+        true
+    ) as guest_login_enabled
 ),
 -- Get auths linked to department settings or default settings
 dept_auths AS (
@@ -74,10 +80,11 @@ providers_data AS (
       AND (
           -- Include if department_id not provided (show all auths from all settings)
           $1::uuid IS NULL
-          -- OR include if it's linked to default settings
-          OR EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id)
-          -- OR include if it's linked to department-specific settings
-          OR EXISTS (SELECT 1 FROM dept_auths da WHERE da.id = a.id)
+          -- OR if department_id is provided, ONLY include department-specific auths (exclude default ones)
+          OR (
+              $1::uuid IS NOT NULL
+              AND EXISTS (SELECT 1 FROM dept_auths da WHERE da.id = a.id)
+          )
       )
 ),
 -- Ensure providers_data always returns a row

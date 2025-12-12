@@ -142,9 +142,8 @@ CREATE TABLE settings (
 CREATE INDEX ON settings (created_at);
 CREATE INDEX ON settings (active);
 
--- Enforce only one active settings row
-CREATE UNIQUE INDEX settings_one_active
-  ON settings(active) WHERE active = true;
+-- Note: Multiple active settings are allowed (one per department + one global)
+-- The unique constraint settings_one_active was removed in migration 86
 
 -- Settings → Departments binary relationship table
 -- Tracks which settings are available to departments
