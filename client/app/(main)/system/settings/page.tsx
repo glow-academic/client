@@ -142,7 +142,7 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6" data-page="settings-index">
       <Settings
-        settingsList={listResult.settings}
+        settingsList={listResult.settings as SettingsDetailOut[]}
         settingsDetail={settingsDetail}
         selectedSettingsId={selectedSettingsId}
         profileId={profileId}

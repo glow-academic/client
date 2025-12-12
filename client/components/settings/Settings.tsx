@@ -242,23 +242,23 @@ export default function Settings({
           provider_key_mapping:
             Object.keys(providerKeyMapping).length > 0
               ? providerKeyMapping
-              : undefined,
+              : null,
           provider_enabled:
             Object.keys(providerEnabled).length > 0
               ? providerEnabled
-              : undefined,
+              : null,
           auth_enabled:
             Object.keys(authEnabled).length > 0
               ? authEnabled
-              : undefined,
+              : null,
           auth_value_mapping:
             Object.keys(authValueMapping).length > 0
               ? authValueMapping
-              : undefined,
+              : null,
           auth_key_mapping:
-            Object.keys(authKeyMapping).length > 0 ? authKeyMapping : undefined,
-          default_admin_profile_id: formData.default_admin_profile_id || undefined,
-          default_guest_profile_id: formData.default_guest_profile_id || undefined,
+            Object.keys(authKeyMapping).length > 0 ? authKeyMapping : null,
+          default_admin_profile_id: formData.default_admin_profile_id || null,
+          default_guest_profile_id: formData.default_guest_profile_id || null,
         },
       });
 
@@ -305,6 +305,7 @@ export default function Settings({
                 return "Select settings version...";
               }
               const setting = selectedItems[0];
+              if (!setting) return "Select settings version...";
               const date = new Date(setting.created_at);
               const isDefault =
                 !setting.department_ids || setting.department_ids.length === 0;
@@ -324,7 +325,7 @@ export default function Settings({
                 </div>
               );
             }}
-            renderItem={(item, isSelected) => {
+            renderItem={(item) => {
               const date = new Date(item.created_at);
               const isDefault =
                 !item.department_ids || item.department_ids.length === 0;

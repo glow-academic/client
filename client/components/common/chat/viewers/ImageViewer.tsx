@@ -17,7 +17,7 @@ export default function ImageViewer({
   name,
   mimeType,
   bare = true,
-  compact = false,
+  compact: _compact = false,
 }: ImageViewerProps) {
   const [content, setContent] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(mimeType || null);
@@ -27,14 +27,15 @@ export default function ImageViewer({
   // Load image
   useEffect(() => {
     let blobUrl: string | null = null;
+    let previousBlobUrl: string | null = null;
 
     const loadImage = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Clear previous content when loading new image
-        if (content && content.startsWith("blob:")) {
-          URL.revokeObjectURL(content);
+        // Clear previous blob URL when loading new image
+        if (previousBlobUrl && previousBlobUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(previousBlobUrl);
         }
         setContent(null);
 
@@ -61,6 +62,7 @@ export default function ImageViewer({
 
         const blob = await response.blob();
         blobUrl = URL.createObjectURL(blob);
+        previousBlobUrl = blobUrl;
         setContent(blobUrl);
       } catch (e) {
         setError((e as Error).message);
@@ -77,7 +79,7 @@ export default function ImageViewer({
         URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [imageId]); // Only depend on imageId, not content
+  }, [imageId]); // Only depend on imageId
 
   const renderContent = () => {
     if (loading) {

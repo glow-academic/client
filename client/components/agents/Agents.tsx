@@ -46,6 +46,7 @@ import {
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useProfile } from "@/contexts/profile-context";
 
 export interface AgentsProps {
   // Server-provided data (for server-side rendering)
@@ -62,6 +63,7 @@ export default function Agents({
   duplicateAgentAction,
   deleteAgentAction,
 }: AgentsProps) {
+  const { effectiveProfile } = useProfile();
   const router = useRouter();
 
   // Delete dialog state
@@ -243,10 +245,10 @@ export default function Agents({
   };
 
   const handleDuplicate = async (id: string) => {
-    if (!duplicateAgentAction) return;
+    if (!duplicateAgentAction || !effectiveProfile?.id) return;
 
     try {
-      await duplicateAgentAction({ body: { agentId: id } });
+      await duplicateAgentAction({ body: { agentId: id, profileId: effectiveProfile.id } });
       toast.success("Agent duplicated successfully");
       router.refresh();
     } catch {
@@ -255,11 +257,11 @@ export default function Agents({
   };
 
   const handleDelete = async () => {
-    if (!deleteItem || !deleteAgentAction) return;
+    if (!deleteItem || !deleteAgentAction || !effectiveProfile?.id) return;
 
     setIsDeleting(true);
     try {
-      await deleteAgentAction({ body: { agentId: deleteItem.id } });
+      await deleteAgentAction({ body: { agentId: deleteItem.id, profileId: effectiveProfile.id } });
       toast.success("Agent deleted successfully");
       router.refresh();
     } catch {

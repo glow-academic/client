@@ -35,6 +35,7 @@ class DepartmentMappingItem(MappingItem):
     rubric_ids: list[str] | None = None
     parameter_ids: list[str] | None = None
     parameter_item_ids: list[str] | None = None
+    field_ids: list[str] | None = None
     agent_ids: list[str] | None = None
     staff_ids: list[str] | None = None
     cohort_ids: list[str] | None = None

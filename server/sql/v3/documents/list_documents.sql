@@ -30,7 +30,7 @@ document_scenarios AS (
 document_fields_cte AS (
     SELECT 
         df.document_id,
-        ARRAY_AGG(df.field_id) as parameter_item_ids
+        ARRAY_AGG(df.field_id) as field_ids
     FROM document_fields df
     WHERE df.active = true
     GROUP BY df.document_id
@@ -56,7 +56,7 @@ document_data AS (
         d.document_agent_id::text,
         COALESCE(ddd.department_ids, NULL) as department_ids,
         COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
-        COALESCE(dfc.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
+        COALESCE(dfc.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(dasl.active_scenario_count, 0) as active_scenario_count,
         COALESCE(dasl_all.total_scenario_links, 0) as total_scenario_links
     FROM documents d
@@ -69,7 +69,7 @@ document_data AS (
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
     GROUP BY d.id, d.name, d.updated_at, du.upload_id, u.mime_type, u.file_path, d.active, 
-             ddd.department_ids, ds.scenario_ids, dfc.parameter_item_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
+             ddd.department_ids, ds.scenario_ids, dfc.field_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
     HAVING 
         COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
@@ -93,7 +93,7 @@ scenario_mapping_data AS (
                 'persona_mapping', '{}'::jsonb,
                 'document_mapping', '{}'::jsonb,
                 'field_mapping', '{}'::jsonb,
-                'parameter_item_ids', ARRAY[]::text[],
+                'field_ids', ARRAY[]::text[],
                 'document_ids', ARRAY[]::text[]
             )
         ) FILTER (WHERE s.id IS NOT NULL),
@@ -162,10 +162,10 @@ cross_department_items AS (
         AND fd.active = true
     )
 ),
-department_parameter_item_ids AS (
+department_field_ids AS (
     SELECT 
         d.id as department_id,
-        COALESCE(ARRAY_AGG(f.id::text ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
+        COALESCE(ARRAY_AGG(f.id::text ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::text[]) as field_ids
     FROM departments d
     LEFT JOIN (
         -- Fields assigned to this specific department
@@ -193,14 +193,14 @@ department_mapping_data AS (
                 'name', d.title,
                 'description', COALESCE(d.description, ''),
                 'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END,
-                'parameter_item_ids', CASE WHEN dparamitems.parameter_item_ids IS NOT NULL AND array_length(dparamitems.parameter_item_ids, 1) > 0 THEN to_jsonb(dparamitems.parameter_item_ids) ELSE NULL END
+                'field_ids', CASE WHEN dparamitems.field_ids IS NOT NULL AND array_length(dparamitems.field_ids, 1) > 0 THEN to_jsonb(dparamitems.field_ids) ELSE NULL END
             )
         ) FILTER (WHERE d.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
     FROM departments d
     LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
-    LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
+    LEFT JOIN department_field_ids dparamitems ON dparamitems.department_id = d.id
     WHERE d.id IN (SELECT department_id FROM user_departments)
 ),
 parameter_data AS (
@@ -241,13 +241,13 @@ parameter_mapping_data AS (
     ) as mapping
     FROM parameter_data p
 ),
-document_valid_parameter_items AS (
+document_valid_fields AS (
     SELECT 
         dd.document_id,
         COALESCE(
             ARRAY_AGG(DISTINCT f.id::text ORDER BY f.id::text) FILTER (WHERE f.id IS NOT NULL),
             ARRAY[]::text[]
-        ) as valid_parameter_item_ids
+        ) as valid_field_ids
     FROM document_data dd
     LEFT JOIN parameter_fields pf ON pf.parameter_id IN (SELECT id FROM parameters WHERE active = true) AND pf.active = true
     LEFT JOIN fields f ON f.id = pf.field_id AND f.active = true
@@ -291,7 +291,7 @@ SELECT
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
     END as can_delete,
-    COALESCE(dvpi.valid_parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
+    COALESCE(dvf.valid_field_ids, ARRAY[]::text[]) as valid_field_ids,
     sm.mapping as scenario_mapping,
     fm.mapping as field_mapping,
     dm.mapping as department_mapping,
@@ -302,6 +302,6 @@ CROSS JOIN scenario_mapping_data sm
 CROSS JOIN field_mapping_data fm
 CROSS JOIN department_mapping_data dm
 CROSS JOIN parameter_mapping_data pm
-LEFT JOIN document_valid_parameter_items dvpi ON dvpi.document_id = dd.document_id
+LEFT JOIN document_valid_fields dvf ON dvf.document_id = dd.document_id
 ORDER BY dd.updated_at DESC
 

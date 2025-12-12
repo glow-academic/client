@@ -83,7 +83,7 @@ class ModelDetailResponse(BaseModel):
     pricing: list[PricingItem]
     modalities: ModalitiesItem
     reasoning_levels: list[str]
-    voices: list[dict]  # List of {id, voice} objects
+    voices: list[dict[str, Any]]  # List of {id, voice} objects
     qualities: list[str]
     units: list[UnitItem]
 
@@ -278,7 +278,7 @@ async def get_model_detail(
             reasoning_levels = [str(r) for r in reasoning_levels_raw if r]
 
         # Parse voices
-        voices: list[dict] = []
+        voices: list[dict[str, Any]] = []
         voices_raw = model.get("voices")
         if isinstance(voices_raw, str):
             voices_raw = json.loads(voices_raw)

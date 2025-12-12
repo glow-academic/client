@@ -12,7 +12,7 @@ import { PopoverProps } from "@radix-ui/react-popover";
 import { Check, Eye, X } from "lucide-react";
 import * as React from "react";
 
-import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
+import DocumentViewer, { type DocumentItem as DocumentViewerItem } from "@/components/common/chat/viewers/DocumentViewer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,8 +48,8 @@ type DocumentItem = {
   department_ids: string[] | null;
   file_path: string | null;
   mime_type: string | null;
-  parameter_item_ids: string[];
-  upload_id?: string;
+  field_ids: string[];
+  upload_id?: string | null;
 };
 
 // Extended mapping item for documents with tags
@@ -179,7 +179,7 @@ export function DocumentPicker<
                       return (
                         <div className="w-full h-full">
                           <DocumentViewer
-                            document={fullDoc}
+                            document={fullDoc as DocumentViewerItem}
                             bare={true}
                             isFormDocument={false}
                             compact={true}
@@ -189,7 +189,7 @@ export function DocumentPicker<
                     }
                     // Fallback: create minimal DocumentItem from mapping so DocumentViewer can fetch it
                     if (id) {
-                      const minimalDoc: DocumentItem = {
+                      const minimalDoc = {
                         document_id: id,
                         name: document.name || "Document",
                         updatedAt: new Date().toISOString(),
@@ -201,9 +201,9 @@ export function DocumentPicker<
                         department_ids: [],
                         file_path: document.filePath || "",
                         mime_type: document.mimeType || "",
-                        parameter_item_ids: [],
-                        upload_id: id,
-                      };
+                        field_ids: [],
+                        upload_id: id || null,
+                      } as DocumentViewerItem;
                       return (
                         <div className="w-full h-full">
                           <DocumentViewer
@@ -327,7 +327,7 @@ export function DocumentPicker<
                 {fullDoc ? (
                   <div className="w-full h-full">
                     <DocumentViewer
-                      document={fullDoc}
+                      document={fullDoc as DocumentViewerItem}
                       bare={true}
                       isFormDocument={false}
                       compact={true}
@@ -347,9 +347,9 @@ export function DocumentPicker<
                       department_ids: [],
                       file_path: item.filePath || "",
                       mime_type: item.mimeType || "",
-                      parameter_item_ids: [],
-                      upload_id: id,
-                    };
+                      field_ids: [],
+                      upload_id: id || null,
+                    } as DocumentViewerItem;
                     return (
                       <div className="w-full h-full">
                         <DocumentViewer
@@ -409,7 +409,7 @@ export function DocumentPicker<
                 return (
                   <div className="flex-1 min-h-0">
                     <DocumentViewer
-                      document={fullDoc}
+                      document={fullDoc as DocumentViewerItem}
                       bare={true}
                       isFormDocument={false}
                     />
@@ -433,9 +433,9 @@ export function DocumentPicker<
                   department_ids: [],
                   file_path: mappedDoc.filePath || "",
                   mime_type: mappedDoc.mimeType || "",
-                  parameter_item_ids: [],
-                  upload_id: previewDocumentId,
-                };
+                  field_ids: [],
+                  upload_id: previewDocumentId || null,
+                } as DocumentViewerItem;
                 return (
                   <div className="flex-1 min-h-0">
                     <DocumentViewer

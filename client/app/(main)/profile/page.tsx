@@ -5,10 +5,7 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import { Profile } from "@/components/profile/Profile";
-import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {

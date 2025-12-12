@@ -97,7 +97,7 @@ export function ImagePreviewCard({
             <ImageViewer
               imageId={image.id}
               name={image.name}
-              mimeType={image.mime_type}
+              {...(image.mime_type && { mimeType: image.mime_type })}
               bare={true}
             />
           </div>
@@ -120,7 +120,7 @@ export function ImagePreviewCard({
             <ImageViewer
               imageId={image.id}
               name={image.name}
-              mimeType={image.mime_type}
+              {...(image.mime_type && { mimeType: image.mime_type })}
               bare={true}
             />
           </div>

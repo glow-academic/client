@@ -231,9 +231,8 @@ async def check_simulation_service(conn: asyncpg.Connection) -> HealthCheckItem:
                 system_prompt=agent["system_prompt"] or "You are a helpful assistant.",
                 temperature=agent["temperature"] or 0.7,
                 model_name=agent["model_name"],
-                model_provider=agent["provider_name"],
+                provider=agent["provider_name"],
                 api_key=agent["api_key"],
-                custom_model=agent["custom_model"],
                 base_url=agent["base_url"],
                 reasoning=agent["reasoning"],
             )
@@ -304,9 +303,8 @@ async def check_assistant_service(conn: asyncpg.Connection) -> HealthCheckItem:
                     or "You are a helpful assistant.",
                     temperature=agent["temperature"] or 0.7,
                     model_name=agent["model_name"],
-                    model_provider=agent["provider_name"],
+                    provider=agent["provider_name"],
                     api_key=agent["api_key"],
-                    custom_model=agent["custom_model"],
                     base_url=agent["base_url"],
                     reasoning=agent["reasoning"],
                 )

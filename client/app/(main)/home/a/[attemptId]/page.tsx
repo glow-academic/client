@@ -30,8 +30,8 @@ type UpdateChatCreatedAtOut = OutputOf<
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
  */
 const getAttemptFull = async (
-  attemptId: string,
-  input: AttemptFullIn,
+  _attemptId: string,
+  input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
   return api.post("/attempts/full", input, {
     cache: "no-store",
@@ -44,7 +44,7 @@ const getAttemptFull = async (
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { attemptId } = await params;
 
@@ -71,7 +71,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateChatCreatedAt(
-  input: UpdateChatCreatedAtIn,
+  input: UpdateChatCreatedAtIn
 ): Promise<UpdateChatCreatedAtOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

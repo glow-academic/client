@@ -22,6 +22,8 @@ interface DepartmentAccessDeniedProps {
     | "simulation"
     | "cohort"
     | "persona"
+    | "document"
+    | "provider"
     | "department"
     | "agent"
     | "rubric"

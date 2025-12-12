@@ -417,7 +417,7 @@ export default function ActiveAttemptView({
                     <AttemptMessages
                       isAttemptOwner={isAttemptOwner}
                       messages={currentMessages}
-                      currentChat={currentChat}
+                      currentChat={currentChat ? { id: currentChat.id || "", completed: currentChat.completed } : null}
                       sendMessage={sendMessage}
                       isSendingMessage={isSendingMessage}
                       isActive={!timer.expired}

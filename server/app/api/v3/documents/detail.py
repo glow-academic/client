@@ -78,8 +78,8 @@ class DocumentDetailResponse(BaseModel):
     department_ids: list[str] | None
     valid_department_ids: list[str]
     department_mapping: dict[str, DepartmentMappingItem]
-    parameter_item_ids: list[str]
-    valid_parameter_item_ids: list[str]
+    field_ids: list[str]
+    valid_field_ids: list[str]
     field_mapping: dict[str, FieldMappingItem]
     parameter_mapping: ParameterMapping
     linked_parameter_ids: list[str]
@@ -177,17 +177,17 @@ async def get_document_detail(
         valid_department_ids = [
             str(did) for did in (row.get("valid_department_ids") or [])
         ]
-        valid_parameter_item_ids = [
-            str(pid) for pid in (row.get("valid_parameter_item_ids") or [])
+        valid_field_ids = [
+            str(pid) for pid in (row.get("valid_field_ids") or [])
         ]
         dept_ids = None
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]
 
-        # Parse parameter_item_ids (fields) from document_fields
-        parameter_item_ids: list[str] = []
-        if row.get("parameter_item_ids"):
-            parameter_item_ids = [str(pid) for pid in row["parameter_item_ids"]]
+        # Parse field_ids from document_fields
+        field_ids: list[str] = []
+        if row.get("field_ids"):
+            field_ids = [str(pid) for pid in row["field_ids"]]
 
         # Parse parameter mapping
         parameter_mapping: ParameterMapping = {}
@@ -341,8 +341,8 @@ async def get_document_detail(
             department_ids=dept_ids,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
-            parameter_item_ids=parameter_item_ids,
-            valid_parameter_item_ids=valid_parameter_item_ids,
+            field_ids=field_ids,
+            valid_field_ids=valid_field_ids,
             field_mapping=field_mapping,
             parameter_mapping=parameter_mapping,
             linked_parameter_ids=linked_parameter_ids,

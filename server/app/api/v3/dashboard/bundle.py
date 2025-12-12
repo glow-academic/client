@@ -737,8 +737,6 @@ def _compute_persona_insight(
     else:
         return f"Performance at {round(current_score)}% needs attention - review fundamentals and provide additional support."
 
-    return None
-
 
 def _compute_rubric_heatmap_insight(matrices: list[RubricMatrixPackage]) -> str | None:
     """Compute actionable insight from rubric heatmap data."""

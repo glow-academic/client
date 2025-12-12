@@ -49,7 +49,10 @@ const getDocumentsList = async (
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function finalizeUpload(uploadId: string): Promise<FinalizeUploadOut> {
   "use server";
-  return api.post(`/uploads/upload/${uploadId}/finalize`, {});
+  return api.post("/uploads/upload/{upload_id}/finalize", {
+    path: { upload_id: uploadId },
+    body: {},
+  } as FinalizeUploadIn);
 }
 
 async function createDocument(

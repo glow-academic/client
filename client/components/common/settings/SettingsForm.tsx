@@ -6,7 +6,14 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import type {
+  KeysListOut,
+  SettingsDetailOut,
+} from "@/app/(main)/system/settings/page";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { AuthsTable } from "@/components/common/settings/AuthsTable";
+import { ProvidersTable } from "@/components/common/settings/ProvidersTable";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,13 +21,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { AuthsTable } from "@/components/common/settings/AuthsTable";
-import { ProvidersTable } from "@/components/common/settings/ProvidersTable";
-import type { SettingsDetailOut, KeysListOut } from "@/app/(main)/system/settings/page";
+import { Switch } from "@/components/ui/switch";
+import { useEffect, useMemo, useState } from "react";
 
 export interface ProfileMappingItem {
   profile_id: string;
@@ -68,6 +71,11 @@ export interface SettingsFormProps {
     authItemId: string,
     keyId: string | null
   ) => void;
+  onAuthValueChange?: (
+    authId: string,
+    authItemId: string,
+    value: string
+  ) => void;
   onDefaultAdminChange?: (profileId: string | null) => void;
   onDefaultGuestChange?: (profileId: string | null) => void;
   isSubmitting?: boolean;
@@ -107,7 +115,7 @@ export function SettingsForm({
   onProviderEnabledChange,
   onAuthEnabledChange,
   onAuthKeyChange,
-  onAuthValueChange,
+  onAuthValueChange: _onAuthValueChange,
   onDefaultAdminChange,
   onDefaultGuestChange,
   isSubmitting = false,
@@ -208,19 +216,26 @@ export function SettingsForm({
     }> = [];
 
     settingsDetail.all_auth_ids.forEach((authId) => {
-      const auth = settingsDetail.all_auth_mapping?.[authId] || settingsDetail.auth_mapping?.[authId];
+      const auth =
+        settingsDetail.all_auth_mapping?.[authId] ||
+        settingsDetail.auth_mapping?.[authId];
       const enabled = authEnabled[authId] ?? false;
-      
+
       // Get ALL items (encrypted and non-encrypted)
       const authItems = settingsDetail.auth_items_mapping?.[authId] || [];
-      
+
       // If no items, still show the auth row
       if (authItems.length === 0) {
+        const authName = typeof auth?.["name"] === "string" ? auth["name"] : "";
+        const authDesc =
+          typeof auth?.["description"] === "string" ? auth["description"] : "";
+        const authSlug =
+          typeof auth?.["slug"] === "string" ? auth["slug"] : null;
         data.push({
           auth_id: authId,
-          auth_name: auth?.name || "",
-          auth_description: auth?.description || "",
-          auth_slug: auth?.slug || null,
+          auth_name: authName,
+          auth_description: authDesc,
+          auth_slug: authSlug,
           auth_item_id: "",
           auth_item_name: "",
           auth_item_description: "",
@@ -231,28 +246,46 @@ export function SettingsForm({
         });
       } else {
         // Show all items (encrypted and non-encrypted)
-        authItems.forEach((item: {
-          auth_item_id: string;
-          name: string;
-          description?: string;
-          encrypted?: boolean;
-        }) => {
+        authItems.forEach((item: { [key: string]: unknown }) => {
+          const authItemId =
+            typeof item["auth_item_id"] === "string"
+              ? item["auth_item_id"]
+              : "";
+          const itemName = typeof item["name"] === "string" ? item["name"] : "";
+          const itemDesc =
+            typeof item["description"] === "string" ? item["description"] : "";
+          const itemEncrypted =
+            typeof item["encrypted"] === "boolean" ? item["encrypted"] : false;
+
           const itemKeyMapping = authKeyMapping[authId] || {};
-          const itemValueMapping = settingsDetail.auth_value_mapping?.[authId] || {};
-          const selectedKeyId = item.encrypted ? (itemKeyMapping[item.auth_item_id] || null) : null;
-          const value = !item.encrypted ? (itemValueMapping[item.auth_item_id] || null) : null;
-          
+          const itemValueMapping =
+            settingsDetail.auth_value_mapping?.[authId] || {};
+          const selectedKeyId = itemEncrypted
+            ? itemKeyMapping[authItemId] || null
+            : null;
+          const value = !itemEncrypted
+            ? itemValueMapping[authItemId] || null
+            : null;
+
+          const authName =
+            typeof auth?.["name"] === "string" ? auth["name"] : "";
+          const authDesc =
+            typeof auth?.["description"] === "string"
+              ? auth["description"]
+              : "";
+          const authSlug =
+            typeof auth?.["slug"] === "string" ? auth["slug"] : null;
           data.push({
             auth_id: authId,
-            auth_name: auth?.name || "",
-            auth_description: auth?.description || "",
-            auth_slug: auth?.slug || null,
-            auth_item_id: item.auth_item_id,
-            auth_item_name: item.name,
-            auth_item_description: item.description || "",
+            auth_name: authName,
+            auth_description: authDesc,
+            auth_slug: authSlug,
+            auth_item_id: authItemId,
+            auth_item_name: itemName,
+            auth_item_description: itemDesc || "",
             selected_key_id: selectedKeyId,
             value: value,
-            encrypted: item.encrypted ?? false,
+            encrypted: itemEncrypted,
             enabled,
           });
         });
@@ -269,11 +302,19 @@ export function SettingsForm({
       const provider = settingsDetail.all_provider_mapping[providerId];
       const selectedKeyId = providerKeyMapping[providerId] || null;
       const enabled = providerEnabled[providerId] ?? false;
+      const providerName =
+        typeof provider?.["name"] === "string" ? provider["name"] : "";
+      const providerDesc =
+        typeof provider?.["description"] === "string"
+          ? provider["description"]
+          : "";
+      const providerValue =
+        typeof provider?.["value"] === "string" ? provider["value"] : null;
       return {
         provider_id: providerId,
-        provider_name: provider?.name || "",
-        provider_description: provider?.description || "",
-        provider_value: provider?.value || null,
+        provider_name: providerName,
+        provider_description: providerDesc,
+        provider_value: providerValue,
         selected_key_id: selectedKeyId,
         enabled,
       };
@@ -281,7 +322,10 @@ export function SettingsForm({
   }, [settingsDetail, providerKeyMapping, providerEnabled]);
 
   // Handle provider enable/disable
-  const handleProviderEnabledChange = (providerId: string, enabled: boolean) => {
+  const handleProviderEnabledChange = (
+    providerId: string,
+    enabled: boolean
+  ) => {
     setProviderEnabled((prev) => ({
       ...prev,
       [providerId]: enabled,
@@ -430,9 +474,7 @@ export function SettingsForm({
                       ? [formData.default_guest_profile_id]
                       : []
                   }
-                  onSelect={(ids) =>
-                    onDefaultGuestChange(ids[0] || null)
-                  }
+                  onSelect={(ids) => onDefaultGuestChange(ids[0] || null)}
                   getId={(item) => {
                     const profile = item as ProfileMappingItem;
                     return profile.profile_id;
@@ -488,9 +530,7 @@ export function SettingsForm({
                       ? [formData.default_admin_profile_id]
                       : []
                   }
-                  onSelect={(ids) =>
-                    onDefaultAdminChange(ids[0] || null)
-                  }
+                  onSelect={(ids) => onDefaultAdminChange(ids[0] || null)}
                   getId={(item) => {
                     const profile = item as ProfileMappingItem;
                     return profile.profile_id;
@@ -536,19 +576,22 @@ export function SettingsForm({
           </div>
 
           {/* Auth Methods Table */}
-          {settingsDetail && settingsDetail.all_auth_ids && settingsDetail.all_auth_ids.length > 0 && (
-            <div className="space-y-2">
-              <Label>Authentication Methods</Label>
-              <AuthsTable
-                data={authTableData}
-                keyMapping={keyMapping}
-                validKeyIds={validKeyIds}
-                onKeyChange={onAuthKeyChange}
-                onEnabledChange={handleAuthEnabledChange}
-                readonly={isSubmitting || readonly}
-              />
-            </div>
-          )}
+          {settingsDetail &&
+            settingsDetail.all_auth_ids &&
+            settingsDetail.all_auth_ids.length > 0 && (
+              <div className="space-y-2">
+                <Label>Authentication Methods</Label>
+                <AuthsTable
+                  data={authTableData}
+                  keyMapping={keyMapping}
+                  validKeyIds={validKeyIds}
+                  onKeyChange={onAuthKeyChange}
+                  onValueChange={_onAuthValueChange || (() => {})}
+                  onEnabledChange={handleAuthEnabledChange}
+                  readonly={isSubmitting || readonly}
+                />
+              </div>
+            )}
         </div>
       </div>
 
@@ -575,7 +618,9 @@ export function SettingsForm({
         <div className="space-y-6">
           {/* Core Brand Colors */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Core Brand Colors</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Core Brand Colors
+            </h4>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               <ColorPicker
                 label="Primary Color"
@@ -592,7 +637,9 @@ export function SettingsForm({
 
           {/* Layout Colors */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Layout Colors</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Layout Colors
+            </h4>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               <ColorPicker
                 label="Background"
@@ -609,7 +656,9 @@ export function SettingsForm({
 
           {/* Status Colors */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Status Colors</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Status Colors
+            </h4>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
               <ColorPicker
                 label="Success"
@@ -631,7 +680,9 @@ export function SettingsForm({
 
           {/* Sidebar Colors */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Sidebar Colors</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Sidebar Colors
+            </h4>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               <ColorPicker
                 label="Sidebar Background"
@@ -648,7 +699,9 @@ export function SettingsForm({
 
           {/* Chart Colors */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Chart Colors</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Chart Colors
+            </h4>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               <ColorPicker
                 label="Chart 1"
@@ -741,4 +794,3 @@ export function SettingsForm({
     </div>
   );
 }
-

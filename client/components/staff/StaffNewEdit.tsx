@@ -25,14 +25,13 @@ import type {
 } from "@/app/(main)/management/staff/p/[profileId]/page";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
-import { Check, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { CheckCircle2, Clock, PlusCircle, Trash2, User } from "lucide-react";
+import { Check, CheckCircle2, Clock, PlusCircle, Trash2, User } from "lucide-react";
 
 interface FormData {
   firstName?: string;
@@ -130,7 +129,7 @@ export default function StaffNewEdit({
       const primaryIndex =
         emails.length > 0
           ? emails.findIndex(
-              (e) => e === staffData.primary_email || e === emails[0],
+              (e) => e === (staffData as { primary_email?: string | null })?.primary_email || e === emails[0],
             )
           : 0;
       setFormData({
@@ -152,7 +151,7 @@ export default function StaffNewEdit({
         firstName: staffData.first_name || "",
         lastName: staffData.last_name || "",
         emails: staffData.emails || [""],
-        role: staffData.role || initialFormData.role,
+        role: staffData.role || initialFormData.role || "",
         primaryDepartmentId: staffData.primary_department_id || "",
         active: staffData.active ?? true,
       });
@@ -274,6 +273,7 @@ export default function StaffNewEdit({
             last_name: formData.lastName,
             emails: validEmails,
             primary_email_index:
+              formData.primaryEmailIndex != null &&
               formData.primaryEmailIndex >= 0 &&
               formData.primaryEmailIndex < validEmails.length
                 ? formData.primaryEmailIndex
@@ -301,6 +301,7 @@ export default function StaffNewEdit({
             lastName: formData.lastName,
             emails: validEmails,
             primary_email_index:
+              formData.primaryEmailIndex != null &&
               formData.primaryEmailIndex >= 0 &&
               formData.primaryEmailIndex < validEmails.length
                 ? formData.primaryEmailIndex
@@ -446,7 +447,7 @@ export default function StaffNewEdit({
                         >
                           <CheckCircle2 className="h-4 w-4" />
                         </Button>
-                        {formData.emails.length > 1 && (
+                        {formData?.emails && formData.emails.length > 1 && (
                           <Button
                             type="button"
                             variant="outline"
@@ -531,8 +532,8 @@ export default function StaffNewEdit({
                         </div>
                       );
                     }}
-                    renderButton={(selectedItems, placeholder) => {
-                      if (selectedItems.length === 0) return placeholder;
+                    renderButton={(selectedItems) => {
+                      if (selectedItems.length === 0) return "Select role...";
                       const role = selectedItems[0];
                       const IconComponent = role?.icon || User;
                       const hexColor = role?.color || "#64748b";
@@ -604,9 +605,9 @@ export default function StaffNewEdit({
                       id="reqPerDay"
                       type="number"
                       value={
-                        formData.reqPerDay === ""
+                        formData?.reqPerDay === ""
                           ? ""
-                          : String(formData.reqPerDay)
+                          : String(formData?.reqPerDay || "")
                       }
                       onChange={(e) => {
                         const val = e.target.value;

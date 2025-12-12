@@ -65,17 +65,17 @@ export function GlowLogo({
         <GlowIconComponent
           size={iconSize}
           className="shadow-lg"
-          config={
-            lightBackground || invertColors
-              ? {
+          {...(lightBackground || invertColors
+            ? {
+                config: {
                   gradientColors: {
                     start: "#3B82F6",
                     middle: "#2563EB",
                     end: "#1D4ED8",
                   },
-                }
-              : undefined
-          }
+                },
+              }
+            : {})}
         />
       </div>
       <h1

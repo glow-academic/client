@@ -45,9 +45,6 @@ async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
   return {
     title: "New Key",
     description: "Create a new API key for teaching assistant training platform. Generate secure access credentials, configure API integrations, and maintain platform security for educational institutions and L&D programs.",

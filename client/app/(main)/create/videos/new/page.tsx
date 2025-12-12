@@ -150,16 +150,6 @@ export default async function NewVideoPage({
   const fieldIds = searchParamsObj.get("fieldIds")?.split(",").filter(Boolean);
   // Parse single randomize param (matching scenarios pattern)
   const randomize = searchParamsObj.get("randomize") || undefined;
-  // Extract URL parameters for linking generated resources (parsed but not passed to API - just for URL tracking)
-  const _outlineIds = searchParamsObj
-    .get("outlineIds")
-    ?.split(",")
-    .filter(Boolean);
-  const _questionIds = searchParamsObj
-    .get("questionIds")
-    ?.split(",")
-    .filter(Boolean);
-  const _videoIds = searchParamsObj.get("videoIds")?.split(",").filter(Boolean);
   const personaSearch = searchParamsObj.get("personaSearch") || undefined;
   const documentSearch = searchParamsObj.get("documentSearch") || undefined;
   const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;

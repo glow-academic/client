@@ -94,7 +94,7 @@ export function AuthsTable({
             </TooltipContent>
           </Tooltip>
         ),
-        cell: ({ row, table }) => {
+        cell: ({ row, table: _table }) => {
           const item = row.original;
           // Only show switch for first row of each auth (group by auth_id)
           // Use data array index to check previous row

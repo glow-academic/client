@@ -5261,10 +5261,10 @@ export interface components {
             /** Department Id */
             department_id?: string | null;
             /**
-             * Parameter Item Ids
+             * Field Ids
              * @default []
              */
-            parameter_item_ids: string[];
+            field_ids: string[];
         };
         /**
          * BulkUpdateDocumentsResponse
@@ -7388,10 +7388,10 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+            /** Valid Field Ids */
+            valid_field_ids: string[];
             /** Field Mapping */
             field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
@@ -7444,10 +7444,10 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+            /** Valid Field Ids */
+            valid_field_ids: string[];
             /** Field Mapping */
             field_mapping: {
                 [key: string]: components["schemas"]["FieldMappingItem"];
@@ -7510,10 +7510,10 @@ export interface components {
             department_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[];
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+            /** Valid Field Ids */
+            valid_field_ids: string[];
             /** Active Scenario Count */
             active_scenario_count: number;
             /** Total Scenario Links */
@@ -12090,6 +12090,8 @@ export interface components {
                     [key: string]: string | boolean;
                 };
             };
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * SettingsItem
@@ -13028,10 +13030,10 @@ export interface components {
             /** Department Id */
             department_id?: string | null;
             /**
-             * Parameter Item Ids
+             * Field Ids
              * @default []
              */
-            parameter_item_ids: string[];
+            field_ids: string[];
             /** Parameter Ids */
             parameter_ids?: string[] | null;
             /** Classify Agent Id */
@@ -16528,6 +16530,8 @@ export interface components {
             parameter_ids?: string[] | null;
             /** Parameter Item Ids */
             parameter_item_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
             /** Agent Ids */
             agent_ids?: string[] | null;
             /** Staff Ids */

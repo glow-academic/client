@@ -39,8 +39,8 @@ class DocumentItem(BaseModel):
     extension: str | None = None
     department_ids: list[str] | None = None
     scenario_ids: list[str]
-    parameter_item_ids: list[str]
-    valid_parameter_item_ids: list[str]
+    field_ids: list[str]
+    valid_field_ids: list[str]
     active_scenario_count: int
     total_scenario_links: int
     can_edit: bool
@@ -133,8 +133,8 @@ async def get_documents_list(
                             persona_ids=[],
                             persona_mapping={},
                             document_mapping={},
-                            parameter_item_mapping={},  # Field name in ScenarioMappingItem still uses old name
-                            parameter_item_ids=[],
+                            field_mapping={},
+                            field_ids=[],
                             document_ids=[],
                         )
 
@@ -163,7 +163,7 @@ async def get_documents_list(
                     if isinstance(ddata, dict):
                         # Parse optional ID arrays (replicate v2 logic)
                         parameter_ids = ddata.get("parameter_ids")
-                        parameter_item_ids = ddata.get("parameter_item_ids")
+                        field_ids = ddata.get("field_ids")
 
                         def to_str_list(value: Any) -> list[str] | None:  # noqa: ANN401
                             if value is None:
@@ -176,7 +176,7 @@ async def get_documents_list(
                             name=ddata.get("name", ""),
                             description=ddata.get("description", ""),
                             parameter_ids=to_str_list(parameter_ids),
-                            parameter_item_ids=to_str_list(parameter_item_ids),
+                            field_ids=to_str_list(field_ids),
                         )
 
             # Parse parameter mapping from JSONB (replicate v2 logic)
@@ -198,9 +198,9 @@ async def get_documents_list(
 
         for row in rows:
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
-            parameter_item_ids = [str(pid) for pid in (row["parameter_item_ids"] or [])]
-            valid_parameter_item_ids = [
-                str(pid) for pid in (row.get("valid_parameter_item_ids") or [])
+            field_ids = [str(pid) for pid in (row["field_ids"] or [])]
+            valid_field_ids = [
+                str(pid) for pid in (row.get("valid_field_ids") or [])
             ]
             dept_ids = None
             if row.get("department_ids"):
@@ -221,8 +221,8 @@ async def get_documents_list(
                     extension=extension,
                     department_ids=dept_ids,
                     scenario_ids=scenario_ids,
-                    parameter_item_ids=parameter_item_ids,
-                    valid_parameter_item_ids=valid_parameter_item_ids,
+                    field_ids=field_ids,
+                    valid_field_ids=valid_field_ids,
                     active_scenario_count=row["active_scenario_count"],
                     total_scenario_links=row["total_scenario_links"],
                     can_edit=row["can_edit"],

@@ -489,7 +489,7 @@ async def _run_grade_agent_inline(
             system_prompt=agent["system_prompt"],
             temperature=agent["temperature"],
             model_name=model["name"],
-            model_provider=provider["name"],
+            provider=provider["name"],
             base_url=provider["base_url"],
             api_key=provider["api_key"],
             reasoning=agent["reasoning"],

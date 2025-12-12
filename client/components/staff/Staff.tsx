@@ -2235,8 +2235,8 @@ export default function Staff({
                                           </div>
                                         );
                                       }}
-                                      renderButton={(selectedItems, placeholder) => {
-                                        if (selectedItems.length === 0) return placeholder;
+                                      renderButton={(selectedItems) => {
+                                        if (selectedItems.length === 0) return "Select role...";
                                         const role = selectedItems[0];
                                         const IconComponent = role?.icon || UserIcon;
                                         const hexColor = role?.color || "#64748b";

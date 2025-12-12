@@ -310,9 +310,9 @@ def filter_valid_persona_ids(
 
     selected_dept_persona_ids: set[str] = set()
     for dept_id in selected_dept_ids:
-        dept_data = department_mapping.get(dept_id)
-        if dept_data and dept_data.persona_ids is not None:
-            selected_dept_persona_ids.update(dept_data.persona_ids)
+        selected_dept = department_mapping.get(dept_id)
+        if selected_dept is not None and selected_dept.persona_ids is not None:
+            selected_dept_persona_ids.update(selected_dept.persona_ids)
 
     filtered = [
         pid
@@ -426,9 +426,9 @@ def filter_valid_document_ids(
 
         selected_dept_document_ids: set[str] = set()
         for dept_id in selected_dept_ids:
-            dept_data = department_mapping.get(dept_id)
-            if dept_data and dept_data.document_ids is not None:
-                selected_dept_document_ids.update(dept_data.document_ids)
+            selected_dept = department_mapping.get(dept_id)
+            if selected_dept is not None and selected_dept.document_ids is not None:
+                selected_dept_document_ids.update(selected_dept.document_ids)
 
         filtered = [
             doc_id
@@ -641,11 +641,11 @@ def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
 
     selected_dept_field_ids: set[str] = set()
     for dept_id in selected_dept_ids:
-        dept_data = department_mapping.get(dept_id)
+        selected_dept = department_mapping.get(dept_id)
         if (
-            dept_data and dept_data.field_ids is not None
+            selected_dept is not None and selected_dept.field_ids is not None
         ):  # Renamed from parameter_item_ids
-            selected_dept_field_ids.update(dept_data.field_ids)
+            selected_dept_field_ids.update(selected_dept.field_ids)
 
     filtered = [
         item_id

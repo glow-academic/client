@@ -377,13 +377,13 @@ async def get_simulation_detail(
                                 )
 
                     # Parse nested field mapping
-                    field_mapping = {}
+                    scenario_field_mapping = {}
                     if sdata.get("field_mapping") and isinstance(
                         sdata["field_mapping"], dict
                     ):
                         for piid, pidata in sdata["field_mapping"].items():
                             if isinstance(pidata, dict):
-                                field_mapping[piid] = FieldMappingItem(
+                                scenario_field_mapping[piid] = FieldMappingItem(
                                     name=pidata.get("name", ""),
                                     description=pidata.get("description", ""),
                                     parameter_id=pidata.get("parameter_id", ""),
@@ -407,7 +407,7 @@ async def get_simulation_detail(
                         persona_ids=persona_ids,
                         persona_mapping=persona_mapping,
                         document_mapping=document_mapping,
-                        parameter_item_mapping=field_mapping,
+                        parameter_item_mapping=scenario_field_mapping,
                         parameter_item_ids=sdata.get("parameter_item_ids", []),
                         document_ids=sdata.get("document_ids", []),
                     )

@@ -11821,12 +11821,12 @@
             ],
             "title": "Department Id"
           },
-          "parameter_item_ids": {
+          "field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Parameter Item Ids",
+            "title": "Field Ids",
             "default": []
           }
         },
@@ -17228,19 +17228,19 @@
             "type": "object",
             "title": "Department Mapping"
           },
-          "parameter_item_ids": {
+          "field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Parameter Item Ids"
+            "title": "Field Ids"
           },
-          "valid_parameter_item_ids": {
+          "valid_field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Parameter Item Ids"
+            "title": "Valid Field Ids"
           },
           "field_mapping": {
             "additionalProperties": {
@@ -17257,8 +17257,8 @@
           "department_ids",
           "valid_department_ids",
           "department_mapping",
-          "parameter_item_ids",
-          "valid_parameter_item_ids",
+          "field_ids",
+          "valid_field_ids",
           "field_mapping"
         ],
         "title": "DocumentDetailBulkResponse",
@@ -17381,19 +17381,19 @@
             "type": "object",
             "title": "Department Mapping"
           },
-          "parameter_item_ids": {
+          "field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Parameter Item Ids"
+            "title": "Field Ids"
           },
-          "valid_parameter_item_ids": {
+          "valid_field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Parameter Item Ids"
+            "title": "Valid Field Ids"
           },
           "field_mapping": {
             "additionalProperties": {
@@ -17524,8 +17524,8 @@
           "department_ids",
           "valid_department_ids",
           "department_mapping",
-          "parameter_item_ids",
-          "valid_parameter_item_ids",
+          "field_ids",
+          "valid_field_ids",
           "field_mapping",
           "parameter_mapping",
           "linked_parameter_ids",
@@ -17605,19 +17605,19 @@
             "type": "array",
             "title": "Scenario Ids"
           },
-          "parameter_item_ids": {
+          "field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Parameter Item Ids"
+            "title": "Field Ids"
           },
-          "valid_parameter_item_ids": {
+          "valid_field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Parameter Item Ids"
+            "title": "Valid Field Ids"
           },
           "active_scenario_count": {
             "type": "integer",
@@ -17643,8 +17643,8 @@
           "updated_at",
           "active",
           "scenario_ids",
-          "parameter_item_ids",
-          "valid_parameter_item_ids",
+          "field_ids",
+          "valid_field_ids",
           "active_scenario_count",
           "total_scenario_links",
           "can_edit",
@@ -29783,6 +29783,20 @@
             },
             "type": "object",
             "title": "All Auth Mapping"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           }
         },
         "type": "object",
@@ -32141,12 +32155,12 @@
             ],
             "title": "Department Id"
           },
-          "parameter_item_ids": {
+          "field_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Parameter Item Ids",
+            "title": "Field Ids",
             "default": []
           },
           "parameter_ids": {
@@ -43014,6 +43028,20 @@
               }
             ],
             "title": "Parameter Item Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
           },
           "agent_ids": {
             "anyOf": [

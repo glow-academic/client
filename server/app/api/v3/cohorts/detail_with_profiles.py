@@ -103,12 +103,17 @@ async def get_cohort_detail_with_profiles(
                             )
                             else None
                         )
+                        emails_list = p.get("emails", [])
+                        if not isinstance(emails_list, list):
+                            emails_list = [p.get("email", "")] if p.get("email") else []
+                        primary_email_val = emails_list[0] if emails_list else None
                         available_profiles.append(
                             StaffItem(
                                 profile_id=p.get("profile_id", ""),
                                 first_name=p.get("first_name", ""),
                                 last_name=p.get("last_name", ""),
-                                email=p.get("email", ""),
+                                emails=emails_list,
+                                primary_email=primary_email_val,
                                 name=p.get("name", ""),
                                 role=p.get("role", ""),
                                 initials=p.get("initials", ""),

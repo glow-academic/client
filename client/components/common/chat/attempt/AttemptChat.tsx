@@ -306,7 +306,9 @@ export default function AttemptChat({
     if (!attemptData?.chats) return {};
     const map: Record<string, ChatDataType["scenario"]> = {};
     attemptData.chats.forEach((chatData) => {
-      map[chatData.chat.id] = chatData.scenario;
+      if (chatData.chat.id) {
+        map[chatData.chat.id] = chatData.scenario;
+      }
     });
     return map;
   }, [attemptData]);
@@ -334,7 +336,7 @@ export default function AttemptChat({
     // First, add server data
     if (attemptData?.chats) {
       attemptData.chats.forEach((chatData) => {
-        if (chatData.gradingState) {
+        if (chatData.gradingState && chatData.chat.id) {
           map[chatData.chat.id] = chatData.gradingState;
         }
       });
@@ -428,7 +430,7 @@ export default function AttemptChat({
       (c) => c.chat.id === currentChat.id,
     );
     const serverHints = chatData?.hints || [];
-    const optimisticChatHints = optimisticHints[currentChat.id] || [];
+    const optimisticChatHints = currentChat.id ? (optimisticHints[currentChat.id] || []) : [];
 
     // Merge server hints with optimistic hints
     // Prefer server hints when they have content, use optimistic hints as fallback
@@ -579,7 +581,7 @@ export default function AttemptChat({
   useEffect(() => {
     let timerTimeout: NodeJS.Timeout | null = null;
 
-    if (currentChat?.completed && !showResults) {
+    if (currentChat?.completed && !showResults && currentChat.id) {
       const isFresh = freshlyCompletedChatsRef.current.has(currentChat.id);
 
       if (isFresh) {
@@ -1442,6 +1444,7 @@ export default function AttemptChat({
         </SelectTrigger>
         <SelectContent>
           {chats?.map((chat: Chat) => {
+            if (!chat.id) return null;
             // Find rubric result for this chat
             const rubricResult = allDynamicRubrics.find(
               (rubric) => rubric.chatId === chat.id,
@@ -1540,7 +1543,7 @@ export default function AttemptChat({
       if (chat.completed) return;
 
       // Check if we've already reset timestamps for this chat to prevent infinite loops
-      if (resetChatTimestampsRef.current.has(chat.id)) return;
+      if (!chat.id || resetChatTimestampsRef.current.has(chat.id)) return;
 
       const createdAt = new Date(chat.createdAt);
       const updatedAt = new Date(chat.updatedAt);
@@ -1549,16 +1552,20 @@ export default function AttemptChat({
       const timeDiff = Math.abs(createdAt.getTime() - updatedAt.getTime());
       if (timeDiff <= 1000) {
         // Mark this chat as processed to prevent infinite loops
-        resetChatTimestampsRef.current.add(chat.id);
+        if (chat.id) {
+          resetChatTimestampsRef.current.add(chat.id);
+        }
 
         // Reset createdAt to current time ONLY - never update updatedAt
         const now = new Date();
 
         try {
-          await updateChatCreatedAt({
-            chatId: chat.id,
-            createdAt: now.toISOString(),
-          });
+          if (chat.id) {
+            await updateChatCreatedAt({
+              chatId: chat.id,
+              createdAt: now.toISOString(),
+            });
+          }
         } catch {
           // Error handling - timestamp reset failed silently
         }

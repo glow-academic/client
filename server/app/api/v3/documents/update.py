@@ -23,7 +23,7 @@ class UpdateDocumentRequest(BaseModel):
     active: bool | None = None
     template: bool | None = None  # Enable/disable template mode
     department_id: str | None = None
-    parameter_item_ids: list[str] = []
+    field_ids: list[str] = []
     parameter_ids: list[str] | None = None
     classify_agent_id: str | None = None
     document_agent_id: str | None = None
@@ -63,8 +63,8 @@ async def update_document(
 
             # Update document with department links and parameter items in a single transaction
             sql_query = load_sql("sql/v3/documents/update_document_complete.sql")
-            # Ensure parameter_item_ids is always an array (empty if None)
-            param_item_ids = request.parameter_item_ids or []
+            # Ensure field_ids is always an array (empty if None)
+            field_ids_list = request.field_ids or []
             # Ensure parameter_ids is always an array (empty if None)
             param_ids = request.parameter_ids if request.parameter_ids else []
             sql_params = (
@@ -74,7 +74,7 @@ async def update_document(
                 request.active,
                 request.template,
                 uuid.UUID(request.department_id) if request.department_id else None,
-                param_item_ids,
+                field_ids_list,
                 uuid.UUID(request.classify_agent_id)
                 if request.classify_agent_id
                 else None,

@@ -298,7 +298,7 @@ export function SimulationScenariosTable({
                           </div>
                         </div>
                       )}
-                      renderItem={(item, isSelected) => (
+                      renderItem={(item, _isSelected) => (
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <div className="flex-1 min-w-0">

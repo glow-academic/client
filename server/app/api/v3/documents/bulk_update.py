@@ -19,7 +19,7 @@ class BulkUpdateDocumentsRequest(BaseModel):
     documentIds: list[str]
     type: str
     department_id: str | None = None
-    parameter_item_ids: list[str] = []
+    field_ids: list[str] = []
 
 
 class BulkUpdateDocumentsResponse(BaseModel):
@@ -49,20 +49,20 @@ async def bulk_update_documents(
         async with transaction(conn):
             # Bulk update documents with department links and parameter items in a single transaction
             sql_query = load_sql("sql/v3/documents/bulk_update_documents_complete.sql")
-            # Ensure parameter_item_ids is always an array (empty if None)
-            param_item_ids = request.parameter_item_ids or []
+            # Ensure field_ids is always an array (empty if None)
+            field_ids_list = request.field_ids or []
             sql_params = (
                 [uuid.UUID(did) for did in request.documentIds],
                 request.type,
                 uuid.UUID(request.department_id) if request.department_id else None,
-                param_item_ids,
+                field_ids_list,
             )
             await conn.execute(
                 sql_query,
                 [uuid.UUID(did) for did in request.documentIds],
                 request.type,
                 uuid.UUID(request.department_id) if request.department_id else None,
-                param_item_ids,
+                field_ids_list,
             )
 
         result = BulkUpdateDocumentsResponse(

@@ -84,8 +84,8 @@ function ObjectiveInputWithAutocomplete({
   onDragOver,
   onDrop,
   onRemove,
-  totalObjectives,
-  maxObjectives,
+  totalObjectives: _totalObjectives,
+  maxObjectives: _maxObjectives,
 }: {
   index: number;
   value: string;
@@ -308,7 +308,7 @@ export function ContentSection({
   documentMapping,
   scenarioPreviewDocumentId,
   documentDetails,
-  templateDocumentIds,
+  templateDocumentIds: _templateDocumentIds,
   selectedPersonaIds,
   personaMapping,
   onProblemStatementChange,
@@ -324,7 +324,7 @@ export function ContentSection({
   onUseImageChange,
   onImageSelect,
   onImageUpload,
-  onImageRemove,
+  onImageRemove: _onImageRemove,
   onScenarioPreviewDocumentChange,
   onGenerate,
   onResetContent,
@@ -387,14 +387,14 @@ export function ContentSection({
   const goToPreviousDocument = () => {
     if (currentDocumentIndex > 0) {
       const previousDocId = allPreviewDocumentIds[currentDocumentIndex - 1];
-      onScenarioPreviewDocumentChange(previousDocId);
+      onScenarioPreviewDocumentChange(previousDocId ?? null);
     }
   };
 
   const goToNextDocument = () => {
     if (currentDocumentIndex < allPreviewDocumentIds.length - 1) {
       const nextDocId = allPreviewDocumentIds[currentDocumentIndex + 1];
-      onScenarioPreviewDocumentChange(nextDocId);
+      onScenarioPreviewDocumentChange(nextDocId ?? null);
     }
   };
 
@@ -1118,10 +1118,10 @@ export function ContentSection({
             <DialogHeader>
               <DialogTitle>
                 {previewDocumentId
-                  ? documentMapping[previewDocumentId]?.name ||
+                  ? documentMapping[previewDocumentId]?.["name"] ||
                     documentDetails?.find(
                       (d) => d.document_id === previewDocumentId
-                    )?.name ||
+                    )?.["name"] ||
                     "Document Preview"
                   : "Document Preview"}
               </DialogTitle>
@@ -1140,9 +1140,7 @@ export function ContentSection({
                     parent_document_id?: string;
                   }
                 )?.parent_document_id;
-                const isChildDocument = Boolean(parentDocumentId);
-                const isTemplateDocument =
-                  !isChildDocument && Boolean(fullDoc?.["is_template"]);
+                const _isChildDocument = Boolean(parentDocumentId);
 
                 const docForViewer: DocumentItem = fullDoc
                   ? ({

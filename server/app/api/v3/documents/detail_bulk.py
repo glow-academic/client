@@ -32,8 +32,8 @@ class DocumentDetailBulkResponse(BaseModel):
     department_ids: list[str]
     valid_department_ids: list[str]
     department_mapping: dict[str, DepartmentMappingItem]
-    parameter_item_ids: list[str]
-    valid_parameter_item_ids: list[str]
+    field_ids: list[str]
+    valid_field_ids: list[str]
     field_mapping: dict[str, FieldMappingItem]
 
 
@@ -129,8 +129,8 @@ async def get_document_detail_bulk(
         valid_department_ids = [
             str(did) for did in (row.get("valid_department_ids") or [])
         ]
-        valid_parameter_item_ids = [
-            str(pid) for pid in (row.get("valid_parameter_item_ids") or [])
+        valid_field_ids = [
+            str(pid) for pid in (row.get("valid_field_ids") or [])
         ]
 
         # Document type options
@@ -142,8 +142,8 @@ async def get_document_detail_bulk(
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
-            parameter_item_ids=[],  # Not included in bulk query
-            valid_parameter_item_ids=valid_parameter_item_ids,
+            field_ids=[],  # Not included in bulk query
+            valid_field_ids=valid_field_ids,
             field_mapping=field_mapping,
         )
 

@@ -220,12 +220,6 @@ export default async function EditScenarioPage({
   const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
     ? parseInt(searchParamsObj.get("parameterSelectionMax") || "3", 10)
     : undefined;
-  const objectivesMin = searchParamsObj.get("objectivesMin")
-    ? parseInt(searchParamsObj.get("objectivesMin") || "0", 10)
-    : undefined;
-  const objectivesMax = searchParamsObj.get("objectivesMax")
-    ? parseInt(searchParamsObj.get("objectivesMax") || "0", 10)
-    : undefined;
   const useImage = searchParamsObj.get("useImage")
     ? searchParamsObj.get("useImage") === "true"
     : undefined;
@@ -279,32 +273,33 @@ export default async function EditScenarioPage({
 
   // Fetch scenario detail (always fresh - source of truth) with filter params
   try {
-    const scenarioDetail = await getScenario(scenarioId, profileId, {
-      departmentIds: departmentIds || undefined,
-      personaIds: personaIds || undefined,
-      documentIds: documentIds || undefined,
-      templateDocumentIds: templateDocumentIds || undefined,
-      parameterIds: parameterIds || undefined,
-      parameterItemIds: parameterItemIds || undefined,
-      personaSearch,
-      documentSearch,
-      parameterSearch,
-      personaMin,
-      personaMax,
-      documentMin,
-      documentMax,
-      parameterSelectionMin,
-      parameterSelectionMax,
-      parameterItemRanges,
-      randomizePersonas,
-      randomizeDocuments,
-      randomizeParameters,
-      randomizeParameterItems,
-      useImage,
-      imageIds,
-      objectiveIds,
-      problemStatementIds,
-    });
+    const filterParams: Parameters<typeof getScenario>[2] = {};
+    if (departmentIds) filterParams.departmentIds = departmentIds;
+    if (personaIds) filterParams.personaIds = personaIds;
+    if (documentIds) filterParams.documentIds = documentIds;
+    if (templateDocumentIds) filterParams.templateDocumentIds = templateDocumentIds;
+    if (parameterIds) filterParams.parameterIds = parameterIds;
+    if (parameterItemIds) filterParams.parameterItemIds = parameterItemIds;
+    if (personaSearch) filterParams.personaSearch = personaSearch;
+    if (documentSearch) filterParams.documentSearch = documentSearch;
+    if (parameterSearch) filterParams.parameterSearch = parameterSearch;
+    if (personaMin !== undefined) filterParams.personaMin = personaMin;
+    if (personaMax !== undefined) filterParams.personaMax = personaMax;
+    if (documentMin !== undefined) filterParams.documentMin = documentMin;
+    if (documentMax !== undefined) filterParams.documentMax = documentMax;
+    if (parameterSelectionMin !== undefined) filterParams.parameterSelectionMin = parameterSelectionMin;
+    if (parameterSelectionMax !== undefined) filterParams.parameterSelectionMax = parameterSelectionMax;
+    if (parameterItemRanges) filterParams.parameterItemRanges = parameterItemRanges;
+    if (randomizePersonas) filterParams.randomizePersonas = randomizePersonas;
+    if (randomizeDocuments) filterParams.randomizeDocuments = randomizeDocuments;
+    if (randomizeParameters) filterParams.randomizeParameters = randomizeParameters;
+    if (randomizeParameterItems) filterParams.randomizeParameterItems = randomizeParameterItems;
+    if (useImage !== undefined) filterParams.useImage = useImage;
+    if (imageIds) filterParams.imageIds = imageIds;
+    if (objectiveIds) filterParams.objectiveIds = objectiveIds;
+    if (problemStatementIds) filterParams.problemStatementIds = problemStatementIds;
+    
+    const scenarioDetail = await getScenario(scenarioId, profileId, Object.keys(filterParams).length > 0 ? filterParams : undefined);
 
     return (
       <div

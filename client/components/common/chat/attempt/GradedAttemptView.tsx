@@ -168,7 +168,7 @@ export default function GradedAttemptView({
   currentChatHints,
   personas,
   isAttemptOwner,
-  chatPicker,
+  chatPicker: _chatPicker,
   selectedScenario,
   calculateChatTimeTaken,
   calculateAdjustedTimeLimit,
@@ -762,10 +762,10 @@ export default function GradedAttemptView({
                       /* Show chat messages for both single and multi-chat attempts */
                       <div className="space-y-4">
                         <AttemptMessages
-                          chatId={displayChat.id}
+                          chatId={displayChat.id || undefined}
                           isAttemptOwner={isAttemptOwner}
                           messages={currentMessages}
-                          currentChat={currentChat}
+                          currentChat={currentChat ? { id: currentChat.id || "", completed: currentChat.completed } : null}
                           sendMessage={() => {}}
                           isSendingMessage={false}
                           isActive={false}

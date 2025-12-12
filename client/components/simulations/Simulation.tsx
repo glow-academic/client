@@ -199,11 +199,11 @@ export default function Simulation({
   );
   // Extract agent mapping
   const agentMapping = useMemo(
-    () => simulationData?.agent_mapping || {},
+    () => (simulationData as { agent_mapping?: Record<string, unknown> })?.agent_mapping || {},
     [simulationData],
   );
   const validAgentIds = useMemo(
-    () => simulationData?.valid_agent_ids || [],
+    () => (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [],
     [simulationData],
   );
 
@@ -453,7 +453,7 @@ export default function Simulation({
 
     // Add scenarios from server data
     if (simulationData?.scenarios) {
-      simulationData.scenarios.forEach((scenario: ScenarioInSimulation) => {
+      simulationData.scenarios.forEach((scenario) => {
         const key = `scenario:${scenario.scenario_id}`;
         const switchState = contentSwitchStates[key];
         items.push({
@@ -563,7 +563,9 @@ export default function Simulation({
           copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
           text_enabled?: boolean;
-          show_scenario?: boolean;
+          show_problem_statement?: boolean;
+          show_objectives?: boolean;
+          show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -577,7 +579,9 @@ export default function Simulation({
           copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
           text_enabled?: boolean;
-          show_scenario?: boolean;
+          show_problem_statement?: boolean;
+          show_objectives?: boolean;
+          show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -585,7 +589,7 @@ export default function Simulation({
 
       // Initialize active states and switch states from scenarios
       if (simulationData.scenarios) {
-        simulationData.scenarios.forEach((scenario: ScenarioInSimulation) => {
+        simulationData.scenarios.forEach((scenario) => {
           const key = `scenario:${scenario.scenario_id}`;
           newActiveStates[key] = scenario.active;
           newOriginalActiveStates[key] = scenario.active;
@@ -1329,15 +1333,15 @@ export default function Simulation({
         return {
           type: "video" as const,
           id: videoId,
-          title: videoData?.name || "Unnamed Video",
-          description: videoData?.description || "",
+          title: videoData?.["name"] || "Unnamed Video",
+          description: videoData?.["description"] || "",
           active: true,
           position: maxPosition + idx + 1,
           usage_count: 0,
           success_rate: 0,
           last_used: null,
           can_remove: true,
-          length_seconds: videoData?.length_seconds || 0,
+          length_seconds: videoData?.["length_seconds"] || 0,
           isNew: true,
         };
       });
@@ -1561,7 +1565,7 @@ export default function Simulation({
           <div className="space-y-2">
             <SimulationVideosTable
               data={currentContentItems}
-              videoMapping={simulationData?.video_mapping || {}}
+              videoMapping={(simulationData?.video_mapping || {}) as Record<string, { name: string; description: string; length_seconds: number }>}
               validVideoIds={simulationData?.valid_video_ids || []}
               selectedVideoIds={currentContentItems
                 .filter((item) => item.type === "video")

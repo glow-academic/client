@@ -80,6 +80,8 @@ async def get_auth_new(
                             name=item_data.get("name", ""),
                             description=item_data.get("description", ""),
                             value_masked=item_data.get("value_masked", "****"),
+                            key_id=item_data.get("key_id"),
+                            encrypted=item_data.get("encrypted", True),
                         )
                     )
 

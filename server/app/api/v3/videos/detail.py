@@ -19,6 +19,7 @@ from app.utils.schema import (
     DepartmentMapping,
     DepartmentMappingItem,
     DocumentMapping,
+    DocumentMappingItem,
     FieldMapping,
     ParameterMapping,
     PersonaMapping,
@@ -246,9 +247,9 @@ def filter_valid_persona_ids(
 
     selected_dept_persona_ids: set[str] = set()
     for dept_id in selected_dept_ids:
-        dept_data = department_mapping.get(dept_id)
-        if dept_data and dept_data.persona_ids is not None:
-            selected_dept_persona_ids.update(dept_data.persona_ids)
+        selected_dept = department_mapping.get(dept_id)
+        if selected_dept is not None and selected_dept.persona_ids is not None:
+            selected_dept_persona_ids.update(selected_dept.persona_ids)
 
     filtered = [
         pid
@@ -361,9 +362,9 @@ def filter_valid_document_ids(
         # Get union of document_ids from selected departments
         selected_dept_document_ids: set[str] = set()
         for dept_id in selected_dept_ids:
-            dept_data = department_mapping.get(dept_id)
-            if dept_data and dept_data.document_ids is not None:
-                selected_dept_document_ids.update(dept_data.document_ids)
+            selected_dept = department_mapping.get(dept_id)
+            if selected_dept is not None and selected_dept.document_ids is not None:
+                selected_dept_document_ids.update(selected_dept.document_ids)
 
         # Include items that are:
         # 1. In selected departments
@@ -485,13 +486,13 @@ def filter_valid_document_ids(
             continue
 
         # Get fields from documentMapping (not document_details)
-        doc = document_mapping.get(doc_id)
+        doc: DocumentMappingItem | None = document_mapping.get(doc_id)
         doc_field_ids: list[str] = []
         if doc and doc.field_ids:
             doc_field_ids = doc.field_ids
 
         # Get fields from document_details (field_ids)
-        doc_details = next(
+        doc_details: DocumentDetailItem | None = next(
             (d for d in document_details if d.document_id == doc_id), None
         )
         doc_details_field_ids = (
@@ -587,9 +588,9 @@ def filter_valid_field_ids(
 
     selected_dept_field_ids: set[str] = set()
     for dept_id in selected_dept_ids:
-        dept_data = department_mapping.get(dept_id)
-        if dept_data and dept_data.parameter_item_ids is not None:
-            selected_dept_field_ids.update(dept_data.parameter_item_ids)
+        selected_dept = department_mapping.get(dept_id)
+        if selected_dept is not None and selected_dept.field_ids is not None:
+            selected_dept_field_ids.update(selected_dept.field_ids)
 
     filtered = [
         item_id
@@ -948,7 +949,7 @@ async def get_video_detail(
         from app.utils.schema import DocumentMappingItem
 
         document_mapping_data = parse_jsonb(video.get("document_mapping"))
-        document_mapping_dict: dict[str, dict[str, str]] = {}
+        document_mapping_dict: dict[str, dict[str, Any]] = {}
         document_mapping: DocumentMapping = {}
         if isinstance(document_mapping_data, dict):
             for k, v in document_mapping_data.items():

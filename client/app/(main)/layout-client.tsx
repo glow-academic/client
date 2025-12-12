@@ -88,11 +88,10 @@ function MainLayoutContent({
   const { getEntityName } = useBreadcrumbContext();
 
   // Check if we're on the staff management pages
-  const isStaffPage = pathname === "/management/staff";
   const isStaffManagementPage = pathname?.startsWith("/management/staff");
 
   // Extract mappings from initialCreateStaffData for CreateStaffButton
-  const departmentMapping = React.useMemo(() => {
+  const _departmentMapping = React.useMemo(() => {
     if (!initialCreateStaffData?.department_mapping) return {};
     const mapping: Record<
       string,
@@ -111,7 +110,7 @@ function MainLayoutContent({
     return mapping;
   }, [initialCreateStaffData?.department_mapping]);
 
-  const cohortMapping = React.useMemo(() => {
+  const _cohortMapping = React.useMemo(() => {
     if (!initialCreateStaffData?.cohort_mapping) return {};
     const mapping: Record<
       string,
@@ -130,15 +129,6 @@ function MainLayoutContent({
     return mapping;
   }, [initialCreateStaffData?.cohort_mapping]);
 
-  const validDepartmentIds = React.useMemo(
-    () => Object.keys(departmentMapping),
-    [departmentMapping],
-  );
-
-  const validCohortIds = React.useMemo(
-    () => Object.keys(cohortMapping),
-    [cohortMapping],
-  );
 
   // Generate breadcrumbs client-side and enrich with entity names from context
   const breadcrumbs = useMemo(() => {
@@ -456,8 +446,8 @@ export function MainLayoutClient({
   createFeedbackAction,
   refreshAnalyticsAction,
   searchSimulatableProfilesAction,
-  processCSVAction,
-  bulkCreateOrUpdateStaffAction,
+  processCSVAction: _processCSVAction,
+  bulkCreateOrUpdateStaffAction: _bulkCreateOrUpdateStaffAction,
   initialCreateStaffData,
 }: {
   children: React.ReactNode;
@@ -496,11 +486,11 @@ export function MainLayoutClient({
               createFeedbackAction={createFeedbackAction}
               refreshAnalyticsAction={refreshAnalyticsAction}
               searchSimulatableProfilesAction={searchSimulatableProfilesAction}
-              {...(processCSVAction !== undefined && {
-                processCSVAction,
+              {...(_processCSVAction !== undefined && {
+                processCSVAction: _processCSVAction,
               })}
-              {...(bulkCreateOrUpdateStaffAction !== undefined && {
-                bulkCreateOrUpdateStaffAction,
+              {...(_bulkCreateOrUpdateStaffAction !== undefined && {
+                bulkCreateOrUpdateStaffAction: _bulkCreateOrUpdateStaffAction,
               })}
               {...(initialCreateStaffData !== undefined &&
                 initialCreateStaffData !== null && {

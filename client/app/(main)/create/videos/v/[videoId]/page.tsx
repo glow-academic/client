@@ -148,16 +148,6 @@ export default async function EditVideoPage({
   const fieldIds = searchParamsObj.get("fieldIds")?.split(",").filter(Boolean);
   // Parse single randomize param (matching scenarios pattern)
   const randomize = searchParamsObj.get("randomize") || undefined;
-  // Extract URL parameters for linking generated resources (parsed but not passed to API - just for URL tracking)
-  const _outlineIds = searchParamsObj
-    .get("outlineIds")
-    ?.split(",")
-    .filter(Boolean);
-  const _questionIds = searchParamsObj
-    .get("questionIds")
-    ?.split(",")
-    .filter(Boolean);
-  const _videoIds = searchParamsObj.get("videoIds")?.split(",").filter(Boolean);
   const personaSearch = searchParamsObj.get("personaSearch") || undefined;
   const documentSearch = searchParamsObj.get("documentSearch") || undefined;
   const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
@@ -212,25 +202,6 @@ export default async function EditVideoPage({
       }
       return hasRanges ? ranges : undefined;
     })();
-
-  // Parse randomization params
-  const randomizePersonas =
-    searchParamsObj.get("randomizePersonas") || undefined;
-  const randomizeDocuments =
-    searchParamsObj.get("randomizeDocuments") || undefined;
-  const randomizeParameters =
-    searchParamsObj.get("randomizeParameters") || undefined;
-
-  const randomizeParameterItems: Record<string, string> | undefined = (() => {
-    const items: Record<string, string> = {};
-    for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("randomizeParameterItems_")) {
-        const paramId = key.replace("randomizeParameterItems_", "");
-        items[paramId] = value;
-      }
-    }
-    return Object.keys(items).length > 0 ? items : undefined;
-  })();
 
   // Fetch video detail (always fresh - source of truth) with filter params
   try {

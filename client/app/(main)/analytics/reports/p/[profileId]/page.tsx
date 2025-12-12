@@ -28,7 +28,7 @@ type ReportsHistoryOut = OutputOf<"/api/v3/reports/history", "post">;
  * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
  */
 const getProfileDetail = async (
-  profileId: string,
+  _profileId: string,
   input: ProfileDetailIn,
 ): Promise<ProfileDetailOut> => {
   return api.post("/profile/staff/detail", input, {
@@ -177,7 +177,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { profileId } = await params;
   const session = await getSession();
-  const currentProfileId = session?.effectiveProfileId || profileId;
+  session?.effectiveProfileId || profileId; // Used for metadata context
 
   try {
     const profileData = await getProfileDetail(profileId, {
@@ -469,4 +469,4 @@ export type {
 };
 
 // Export ProfileItem type derived from server response
-export type ProfileItem = ProfileDetailOut["profile"];
+export type ProfileItem = ProfileDetailOut;

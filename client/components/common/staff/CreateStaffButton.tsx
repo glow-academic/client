@@ -55,9 +55,9 @@ export function CreateStaffButton({
   validDepartmentIds,
   validCohortIds,
   isScoped = false,
-  showCSVImport = true,
-  showSearchExisting = true,
-  showManualAdd = true,
+  showCSVImport: _showCSVImport = true,
+  showSearchExisting: _showSearchExisting = true,
+  showManualAdd: _showManualAdd = true,
 }: CreateStaffButtonProps) {
   const [showManualModal, setShowManualModal] = React.useState(false);
   const [showCSVModal, setShowCSVModal] = React.useState(false);

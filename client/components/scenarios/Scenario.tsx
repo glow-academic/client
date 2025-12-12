@@ -1483,13 +1483,15 @@ export default function Scenario({
         scenarioImages.length > 0
       ) {
         const firstImage = scenarioImages[0];
-        const uploadId = firstImage.upload_id || firstImage.id;
-        if (uploadId) {
-          setImage({
-            id: uploadId,
-            name: firstImage.name || "",
-            upload_id: uploadId,
-          });
+        if (firstImage) {
+          const uploadId = firstImage.upload_id || firstImage.id;
+          if (uploadId) {
+            setImage({
+              id: uploadId,
+              name: firstImage.name || "",
+              upload_id: uploadId,
+            });
+          }
         }
       }
     }
@@ -1999,13 +2001,15 @@ export default function Scenario({
         scenarioImages.length > 0
       ) {
         const firstImage = scenarioImages[0];
-        const uploadId = firstImage.upload_id || firstImage.id;
-        if (uploadId) {
-          setImage({
-            id: uploadId,
-            name: firstImage.name || "",
-            upload_id: uploadId,
-          });
+        if (firstImage) {
+          const uploadId = firstImage.upload_id || firstImage.id;
+          if (uploadId) {
+            setImage({
+              id: uploadId,
+              name: firstImage.name || "",
+              upload_id: uploadId,
+            });
+          }
         }
       }
 

@@ -67,6 +67,7 @@ async def get_login_providers(
             departments=[],
             guest_login_enabled=True,
             show_default_account=False,
+            default_department_id=None,
         )
 
     # Parse JSON fields - asyncpg may return JSON as strings

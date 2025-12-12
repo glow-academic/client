@@ -63,8 +63,7 @@ async function leaveCohort(input: LeaveCohortIn): Promise<LeaveCohortOut> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  await getSession(); // Session check for metadata context
 
   return {
     title: "Cohorts",

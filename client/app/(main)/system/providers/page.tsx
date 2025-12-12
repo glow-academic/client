@@ -48,9 +48,6 @@ async function deleteProvider(input: DeleteProviderIn): Promise<DeleteProviderOu
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
   return {
     title: "Providers",
     description: "Manage AI providers and their configurations for teaching assistant training platform. Configure provider settings, API endpoints, and maintain platform integrations for educational institutions and L&D programs.",

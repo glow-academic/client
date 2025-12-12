@@ -220,7 +220,7 @@ export function SimulationVideosTable({
                     </div>
                   );
                 }}
-                renderItem={(item, isSelected) => {
+                renderItem={(item, _isSelected) => {
                   const formatLength = (seconds: number) => {
                     const mins = Math.floor(seconds / 60);
                     const secs = seconds % 60;

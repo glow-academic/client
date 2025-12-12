@@ -11,7 +11,6 @@ import Feedback from "@/components/feedback/Feedback";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */

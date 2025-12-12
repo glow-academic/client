@@ -21,7 +21,7 @@ import type { Metadata, ResolvingMetadata } from "next";
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
  */
 const getAttemptFull = async (
-  attemptId: string,
+  _attemptId: string,
   input: AttemptFullIn,
 ): Promise<AttemptFullOut> => {
   return api.post("/attempts/full", input, {

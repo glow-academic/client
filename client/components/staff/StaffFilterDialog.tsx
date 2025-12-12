@@ -24,7 +24,6 @@ type ProfileListItem = {
   email: string;
   name: string;
   role: string;
-  email: string;
   initials: string;
   active: boolean;
   last_active: string | null;

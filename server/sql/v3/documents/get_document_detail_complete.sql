@@ -8,7 +8,7 @@ WITH document_data AS (
         d.classify_agent_id::text,
         d.document_agent_id::text,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
-        (SELECT ARRAY_AGG(df.field_id::text) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as parameter_item_ids,
+        (SELECT ARRAY_AGG(df.field_id::text) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
         (SELECT t.upload_id::text FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_upload_id,
         (SELECT t.args FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_args,
@@ -156,7 +156,7 @@ valid_param_items AS (
             ),
             '{}'::jsonb
         ) as param_item_mapping,
-        array_agg(f.id::text ORDER BY f.name) as param_item_ids
+        array_agg(f.id::text ORDER BY f.name) as field_ids
     FROM linked_parameters lp
     JOIN parameter_fields pf ON pf.parameter_id = lp.parameter_id AND pf.active = true
     JOIN fields f ON f.id = pf.field_id AND f.active = true
@@ -176,7 +176,7 @@ valid_param_items AS (
               AND fd.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
           )
           -- Include fields already assigned to this document even if they don't pass department filter
-          OR f.id::text = ANY(COALESCE(dd.parameter_item_ids, ARRAY[]::text[]))
+          OR f.id::text = ANY(COALESCE(dd.field_ids, ARRAY[]::text[]))
       )
 ),
 user_departments_for_agents AS (
@@ -231,7 +231,7 @@ SELECT
     COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
     COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
     vpi.param_item_mapping as field_mapping,
-    vpi.param_item_ids as valid_parameter_item_ids,
+    vpi.field_ids as valid_field_ids,
     COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
     COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     COALESCE(dat.template_id, NULL) as template_id,

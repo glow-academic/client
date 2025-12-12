@@ -74,6 +74,7 @@ class SettingsDetailResponse(BaseModel):
     all_auth_mapping: dict[
         str, dict[str, str | bool]
     ]  # All auths mapping (auth_id -> {name, description, slug, active})
+    department_ids: list[str] | None = None  # Linked department IDs
 
 
 router = APIRouter()
@@ -234,6 +235,12 @@ async def get_settings_detail(
                 for aid, amap in all_auth_mapping_data.items()
             }
 
+        # Parse department_ids from array
+        department_ids: list[str] | None = None
+        department_ids_raw = settings.get("department_ids")
+        if department_ids_raw and isinstance(department_ids_raw, (list, tuple)):
+            department_ids = [str(did) for did in department_ids_raw if did]
+
         response_data = SettingsDetailResponse(
             settings_id=settings["settings_id"],
             created_at=settings["created_at"].isoformat()
@@ -274,6 +281,7 @@ async def get_settings_detail(
             all_provider_mapping=all_provider_mapping,
             all_auth_ids=all_auth_ids,
             all_auth_mapping=all_auth_mapping,
+            department_ids=department_ids,
         )
 
         # Cache response

@@ -77,8 +77,7 @@ async def create_dynamic_document(
     theme_tokens: ThemeTokens
     if http_request and profile_id:
         settings_request = SettingsActiveRequest(
-            profileId=str(profile_id),
-            departmentId=str(department_id) if department_id else None,
+            profileId=str(profile_id)
         )
         dummy_response = Response()
         settings_response = await get_active_settings(
@@ -133,8 +132,7 @@ async def create_dynamic_document(
     merged_args = template_args.copy()
     if http_request and profile_id:
         settings_request = SettingsActiveRequest(
-            profileId=str(profile_id),
-            departmentId=str(department_id) if department_id else None,
+            profileId=str(profile_id)
         )
         dummy_response = Response()
         settings_response = await get_active_settings(

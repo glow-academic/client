@@ -48,9 +48,6 @@ async function deleteKey(input: DeleteKeyIn): Promise<DeleteKeyOut> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
   return {
     title: "Keys",
     description: "Manage API keys and authentication credentials for teaching assistant training platform. Configure secure access keys, manage API integrations, and maintain platform security for educational institutions and L&D programs.",

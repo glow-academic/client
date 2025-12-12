@@ -58,6 +58,7 @@ export default function TotalRequestsKPI({
 
   // Generate gradient style from color
   const gradientStyle = useMemo(() => {
+    if (!chartColor) return { background: "", borderColor: "" };
     return {
       background: `linear-gradient(to bottom right, ${colorToRgba(chartColor, 0.1)}, ${colorToRgba(chartColor, 0.2)})`,
       borderColor: colorToRgba(chartColor, 0.3),

@@ -36,7 +36,7 @@ type DocumentItem = {
   department_ids: string[] | null;
   file_path: string | null;
   mime_type: string | null;
-  parameter_item_ids: string[];
+  field_ids: string[];
 };
 
 export interface DocumentSelectProps {

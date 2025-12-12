@@ -59,7 +59,6 @@ const GUEST_PROFILE: ProfileItem = {
   updatedAt: new Date().toISOString(),
   lastLogin: new Date().toISOString(),
   lastActive: new Date().toISOString(),
-  defaultProfile: false,
   reqPerDay: null,
   primaryDepartmentId: null,
 };

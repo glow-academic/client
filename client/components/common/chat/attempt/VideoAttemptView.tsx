@@ -79,10 +79,10 @@ export default function VideoAttemptView({
   attemptId,
   contentItem,
   documents,
-  currentContentIndex,
-  expectedContentCount,
-  isAttemptOwner,
-  timer,
+  currentContentIndex: _currentContentIndex,
+  expectedContentCount: _expectedContentCount,
+  isAttemptOwner: _isAttemptOwner,
+  timer: _timer,
   currentChat,
   onVideoComplete,
   onSubmitQuizResponse,
@@ -144,12 +144,19 @@ export default function VideoAttemptView({
   }, [onContinue]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [volume, _setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+
+  // Set video volume via ref (volume prop not in React types)
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(
     new Set(),
   );
-  const [questionAnswers, setQuestionAnswers] = useState<
+  const [_questionAnswers, setQuestionAnswers] = useState<
     Record<string, string>
   >({});
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
@@ -382,7 +389,6 @@ export default function VideoAttemptView({
                         onEnded={handleVideoEnded}
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
-                        volume={isMuted ? 0 : volume}
                         muted={isMuted}
                       />
 

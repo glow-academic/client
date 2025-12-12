@@ -109,7 +109,7 @@ export default function PolicyViewer({
     };
 
     loadPolicy();
-  }, [policy.policy_id, policy.file_path, policy.name, isFormPolicy]);
+  }, [policy.policy_id, policy.upload_id, policy.name, isFormPolicy]);
 
   const typeInfo = getPolicyTypeInfo(policy.type || "policy");
 

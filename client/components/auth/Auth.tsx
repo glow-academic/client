@@ -64,6 +64,9 @@ interface AuthProps {
   authDetailDefault?: AuthNewOut;
   createAuthAction?: (input: CreateAuthIn) => Promise<CreateAuthOut>;
   updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
+  createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
+  decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
+  updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
 }
 
 export default function Auth({
@@ -168,7 +171,7 @@ export default function Auth({
           id: item.auth_item_id,
           name: item.name,
           description: item.description,
-          value: item.encrypted ? undefined : (item.value_masked || ""), // Show value for non-encrypted items
+          ...(item.encrypted ? {} : { value: item.value_masked || "" }), // Show value for non-encrypted items
           encrypted: item.encrypted ?? false,
           isNew: false,
           isDeleted: false,
@@ -202,7 +205,7 @@ export default function Auth({
           id: item.auth_item_id,
           name: item.name,
           description: item.description,
-          value: item.encrypted ? undefined : (item.value_masked || ""), // Show value for non-encrypted items
+          ...(item.encrypted ? {} : { value: item.value_masked || "" }), // Show value for non-encrypted items
           encrypted: item.encrypted ?? false,
           isNew: false,
           isDeleted: false,
@@ -352,7 +355,7 @@ export default function Auth({
       if (field === "encrypted") {
         if (value === true) {
           // Switching to encrypted: clear value (keys managed at settings level)
-          updatedItem.value = undefined;
+          delete updatedItem.value;
         }
       }
       newItems[index] = updatedItem;

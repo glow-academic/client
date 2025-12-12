@@ -45,9 +45,6 @@ async function createProvider(input: CreateProviderIn): Promise<CreateProviderOu
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-
   return {
     title: "New Provider",
     description: "Create a new AI provider configuration for teaching assistant training platform. Configure provider settings, API endpoints, and maintain platform integrations for educational institutions and L&D programs.",

@@ -331,6 +331,11 @@ export function SimulationControls({
     return attemptData?.chats.find((c) => c.chat.id === currentChat?.id);
   }, [attemptData?.chats, currentChat?.id]);
 
+  // Check if current content is a video
+  const isVideo = useMemo(() => {
+    return currentChatData?.contentType === "video";
+  }, [currentChatData]);
+
   // Get available continuation options from server
   const continuationOptions = useMemo(() => {
     return attemptData?.availableContinuationOptions || null;
@@ -491,7 +496,7 @@ export function SimulationControls({
   // Must be before early returns to maintain hook order
   // Practice simulations never have better previous attempts (must always go through manual grading)
   const currentGrade = currentChatData?.dynamicRubric;
-  const hasBetterPreviousAttempt = useMemo(() => {
+  const _hasBetterPreviousAttempt = useMemo(() => {
     if (isPracticeSimulation || !hasPreviousChats || !currentGrade)
       return false;
 
@@ -577,102 +582,142 @@ export function SimulationControls({
     endAllChats();
   };
 
+  // Handle Next Video button click
+  const handleNextVideo = useCallback(async () => {
+    if (!currentChatId || !socket) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
+    setEndChatLoading(true);
+    setEndingAction("endChat");
+
+    try {
+      socket.emit("simulation_text_next", {
+        chat_id: currentChatId,
+        attempt_id: attemptId,
+        end_all: false,
+      });
+    } catch (error) {
+      toast.error(`Failed to advance to next video: ${error}`);
+      setEndChatLoading(false);
+      setEndingAction(null);
+    }
+  }, [currentChatId, socket, attemptId]);
+
   // Use server-side calculation for isLastRemainingScenario
-  const isLastRemainingScenario =
+  const _isLastRemainingScenario =
     attemptData?.isLastRemainingScenario ?? remainingScenarios.length === 1;
 
   return (
     <>
       <div className="flex gap-2">
-        {/* Infinite mode: Always show both buttons for cycling/ending */}
-        {isInfiniteMode ? (
-          <>
-            {/* Use Previous button - only show if options are available */}
-            {shouldShowUsePrevious && (
-              <Button
-                type="button"
-                variant={isGrading ? "outline" : "secondary"}
-                onClick={handleUsePrevious}
-                disabled={endChatLoading}
-                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-              >
-                {/* Grading progress overlay - fills from left to right */}
-                {isGrading && gradingProgress ? (
-                  <span
-                    className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
-                    style={{
-                      width: `${gradingProgress.displayedProgress}%`,
-                    }}
-                  />
-                ) : null}
-
-                {/* Button text */}
-                <span className="relative z-10">
-                  {endChatLoading && endingAction === "endChat"
-                    ? "Ending..."
-                    : "Use Previous"}
-                </span>
-              </Button>
-            )}
-
-            {/* End Session button - always visible in infinite mode to stop cycling */}
-            <Button
-              type="button"
-              variant="default"
-              onClick={handleEndSession}
-              disabled={endChatLoading}
-              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-            >
-              {endChatLoading && endingAction === "endAll"
-                ? "Ending..."
-                : "End Session"}
-            </Button>
-          </>
+        {/* Video mode: Show Next Video button */}
+        {isVideo ? (
+          <Button
+            type="button"
+            variant="default"
+            onClick={handleNextVideo}
+            disabled={endChatLoading}
+            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+          >
+            {endChatLoading && endingAction === "endChat"
+              ? "Advancing..."
+              : "Next Video"}
+          </Button>
         ) : (
           <>
-            {/* Normal mode */}
-            {/* Use Previous button - only show if options are available */}
-            {shouldShowUsePrevious && shouldShowControls && (
-              <Button
-                type="button"
-                variant={isGrading ? "outline" : "secondary"}
-                onClick={handleUsePrevious}
-                disabled={endChatLoading}
-                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-                data-tour-end-chat
-              >
-                {/* Grading progress overlay - fills from left to right */}
-                {isGrading && gradingProgress ? (
-                  <span
-                    className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
-                    style={{
-                      width: `${gradingProgress.displayedProgress}%`,
-                    }}
-                  />
-                ) : null}
+            {/* Infinite mode: Always show both buttons for cycling/ending */}
+            {isInfiniteMode ? (
+              <>
+                {/* Use Previous button - only show if options are available */}
+                {shouldShowUsePrevious && (
+                  <Button
+                    type="button"
+                    variant={isGrading ? "outline" : "secondary"}
+                    onClick={handleUsePrevious}
+                    disabled={endChatLoading}
+                    className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                  >
+                    {/* Grading progress overlay - fills from left to right */}
+                    {isGrading && gradingProgress ? (
+                      <span
+                        className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
+                        style={{
+                          width: `${gradingProgress.displayedProgress}%`,
+                        }}
+                      />
+                    ) : null}
 
-                {/* Button text */}
-                <span className="relative z-10">
-                  {endChatLoading && endingAction === "endChat"
+                    {/* Button text */}
+                    <span className="relative z-10">
+                      {endChatLoading && endingAction === "endChat"
+                        ? "Ending..."
+                        : "Use Previous"}
+                    </span>
+                  </Button>
+                )}
+
+                {/* End Session button - always visible in infinite mode to stop cycling */}
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={handleEndSession}
+                  disabled={endChatLoading}
+                  className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                >
+                  {endChatLoading && endingAction === "endAll"
                     ? "Ending..."
-                    : "Use Previous"}
-                </span>
-              </Button>
-            )}
+                    : "End Session"}
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* Normal mode */}
+                {/* Use Previous button - only show if options are available */}
+                {shouldShowUsePrevious && shouldShowControls && (
+                  <Button
+                    type="button"
+                    variant={isGrading ? "outline" : "secondary"}
+                    onClick={handleUsePrevious}
+                    disabled={endChatLoading}
+                    className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                    data-tour-end-chat
+                  >
+                    {/* Grading progress overlay - fills from left to right */}
+                    {isGrading && gradingProgress ? (
+                      <span
+                        className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
+                        style={{
+                          width: `${gradingProgress.displayedProgress}%`,
+                        }}
+                      />
+                    ) : null}
 
-            {/* End Session button - always visible */}
-            <Button
-              type="button"
-              variant={shouldShowControls ? "default" : "outline"}
-              onClick={handleEndSession}
-              disabled={endChatLoading}
-              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-              data-tour-end-all
-            >
-              {endChatLoading && endingAction === "endAll"
-                ? "Ending..."
-                : "End Session"}
-            </Button>
+                    {/* Button text */}
+                    <span className="relative z-10">
+                      {endChatLoading && endingAction === "endChat"
+                        ? "Ending..."
+                        : "Use Previous"}
+                    </span>
+                  </Button>
+                )}
+
+                {/* End Session button - always visible */}
+                <Button
+                  type="button"
+                  variant={shouldShowControls ? "default" : "outline"}
+                  onClick={handleEndSession}
+                  disabled={endChatLoading}
+                  className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                  data-tour-end-all
+                >
+                  {endChatLoading && endingAction === "endAll"
+                    ? "Ending..."
+                    : "End Session"}
+                </Button>
+              </>
+            )}
           </>
         )}
       </div>

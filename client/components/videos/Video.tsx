@@ -893,8 +893,8 @@ export default function Video({
       const newData = videoData as VideoNewOut | undefined;
       const serverFieldRanges = newData?.field_ranges || {};
       const serverRange = serverFieldRanges[paramId];
-      const defaultMin = serverRange?.min ?? 1;
-      const defaultMax = serverRange?.max ?? 3;
+      const defaultMin = serverRange?.["min"] ?? 1;
+      const defaultMax = serverRange?.["max"] ?? 3;
 
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
@@ -1867,7 +1867,7 @@ export default function Video({
       };
       if (
         shouldInclude &&
-        (range.min !== fieldDefault.min || range.max !== fieldDefault.max)
+        (range.min !== fieldDefault["min"] || range.max !== fieldDefault["max"])
       ) {
         params.set(`fieldMin_${fieldId}`, range.min.toString());
         params.set(`fieldMax_${fieldId}`, range.max.toString());
@@ -2492,17 +2492,17 @@ export default function Video({
 
         // Add randomized IDs to URL params so URL reflects current state
         if (randomized.personaIds && randomized.personaIds.length > 0) {
-          urlUpdates.personaIds = randomized.personaIds;
+          urlUpdates["personaIds"] = randomized.personaIds;
         }
         if (randomized.documentIds && randomized.documentIds.length > 0) {
-          urlUpdates.documentIds = randomized.documentIds;
+          urlUpdates["documentIds"] = randomized.documentIds;
         }
         if (randomized.parameterIds && randomized.parameterIds.length > 0) {
-          urlUpdates.parameterIds = randomized.parameterIds;
+          urlUpdates["parameterIds"] = randomized.parameterIds;
         }
         if (finalFieldIds && finalFieldIds.length > 0) {
           // Use the computed finalFieldIds (already merged if needed)
-          urlUpdates.fieldIds = finalFieldIds;
+          urlUpdates["fieldIds"] = finalFieldIds;
         }
 
         updateUrlParams(urlUpdates);
@@ -2565,16 +2565,16 @@ export default function Video({
 
           // Update URL params to reflect randomized state
           if (videoData.persona_ids && videoData.persona_ids.length > 0) {
-            fallbackUrlUpdates.personaIds = videoData.persona_ids;
+            fallbackUrlUpdates["personaIds"] = videoData.persona_ids;
           }
           if (videoData.document_ids && videoData.document_ids.length > 0) {
-            fallbackUrlUpdates.documentIds = videoData.document_ids;
+            fallbackUrlUpdates["documentIds"] = videoData.document_ids;
           }
           if (
             videoData.video_parameter_ids &&
             videoData.video_parameter_ids.length > 0
           ) {
-            fallbackUrlUpdates.parameterIds = videoData.video_parameter_ids;
+            fallbackUrlUpdates["parameterIds"] = videoData.video_parameter_ids;
           }
           // For fields, we need to use selected_field_ids
           const fallbackServerData = videoData as VideoNewOut | undefined;
@@ -2582,7 +2582,7 @@ export default function Video({
             fallbackServerData?.selected_field_ids &&
             fallbackServerData.selected_field_ids.length > 0
           ) {
-            fallbackUrlUpdates.fieldIds = fallbackServerData.selected_field_ids;
+            fallbackUrlUpdates["fieldIds"] = fallbackServerData.selected_field_ids;
           }
 
           // Reset flags to allow next randomization to be processed

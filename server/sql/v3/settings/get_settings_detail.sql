@@ -191,6 +191,13 @@ settings_default_guest_data AS (
     JOIN profiles p ON p.id = sdg.profile_id
     WHERE sdg.settings_id = $1::uuid AND sdg.active = true
     LIMIT 1
+),
+settings_departments_data AS (
+    -- Get linked departments for this settings
+    SELECT 
+        ARRAY_AGG(ds.department_id::text ORDER BY ds.created_at) as department_ids
+    FROM department_settings ds
+    WHERE ds.settings_id = $1::uuid AND ds.active = true
 )
 SELECT 
     s.id::text as settings_id,
@@ -229,7 +236,8 @@ SELECT
     apd.all_provider_ids,
     apd.all_provider_mapping,
     aad.all_auth_ids,
-    aad.all_auth_mapping
+    aad.all_auth_mapping,
+    COALESCE(sdd.department_ids, NULL) as department_ids
 FROM settings s
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
@@ -241,6 +249,7 @@ LEFT JOIN settings_default_account_data sdad ON true
 LEFT JOIN settings_default_guest_data sdgd ON true
 LEFT JOIN all_providers_data apd ON true
 LEFT JOIN all_auths_data aad ON true
+LEFT JOIN settings_departments_data sdd ON true
 WHERE s.id = $1::uuid
 LIMIT 1
 
