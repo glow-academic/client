@@ -251,6 +251,10 @@ export default function Settings({
             Object.keys(authEnabled).length > 0
               ? authEnabled
               : undefined,
+          auth_value_mapping:
+            Object.keys(authValueMapping).length > 0
+              ? authValueMapping
+              : undefined,
           auth_key_mapping:
             Object.keys(authKeyMapping).length > 0 ? authKeyMapping : undefined,
           default_admin_profile_id: formData.default_admin_profile_id || undefined,

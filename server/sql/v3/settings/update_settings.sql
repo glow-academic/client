@@ -26,6 +26,7 @@
 --   $23 = default_guest_profile_id (text, optional) - Default guest profile ID
 --   $24 = provider_enabled (jsonb, optional) - {provider_id: enabled (boolean)}
 --   $25 = auth_enabled (jsonb, optional) - {auth_id: enabled (boolean)}
+--   $26 = auth_value_mapping (jsonb, optional) - {auth_id: {auth_item_id: value}} for non-encrypted items
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -181,8 +182,25 @@ copy_setting_auths_fallback AS (
         active = COALESCE(EXCLUDED.active, setting_auths.active),
         updated_at = NOW()
 ),
-copy_setting_auth_values AS (
-    -- Copy setting_auth_values links from old settings to new (for non-encrypted items)
+manage_setting_auth_values AS (
+    -- Manage auth values based on auth_value_mapping (for non-encrypted items)
+    INSERT INTO setting_auth_values (settings_id, auth_id, auth_item_id, value, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        (auth_id)::uuid,
+        (auth_item_id)::uuid,
+        (value::text),
+        NOW(),
+        NOW()
+    FROM jsonb_each($26::jsonb) AS auth_level(auth_id, auth_items)
+    CROSS JOIN jsonb_each_text(auth_items) AS item_level(auth_item_id, value)
+    WHERE auth_id IS NOT NULL AND auth_id != '' AND auth_item_id IS NOT NULL AND auth_item_id != ''
+    ON CONFLICT (settings_id, auth_id, auth_item_id) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+copy_setting_auth_values_fallback AS (
+    -- Fallback: Copy setting_auth_values from old settings to new (if auth_value_mapping not provided)
     INSERT INTO setting_auth_values (settings_id, auth_id, auth_item_id, value, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1)::uuid,

@@ -33857,6 +33857,23 @@
             ],
             "title": "Auth Key Mapping"
           },
+          "auth_value_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Value Mapping"
+          },
           "default_admin_profile_id": {
             "anyOf": [
               {

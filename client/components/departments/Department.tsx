@@ -675,6 +675,9 @@ export default function Department({
               onAuthKeyChange={() => {
                 // Read-only in department context
               }}
+              onAuthValueChange={() => {
+                // Read-only in department context
+              }}
               isSubmitting={isSubmitting}
               readonly={true}
             />

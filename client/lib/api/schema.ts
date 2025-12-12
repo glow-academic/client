@@ -13654,6 +13654,12 @@ export interface components {
                     [key: string]: string;
                 };
             } | null;
+            /** Auth Value Mapping */
+            auth_value_mapping?: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            } | null;
             /** Default Admin Profile Id */
             default_admin_profile_id?: string | null;
             /** Default Guest Profile Id */

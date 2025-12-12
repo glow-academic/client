@@ -264,6 +264,7 @@ async def get_settings_detail(
             provider_mapping=provider_mapping,
             provider_key_mapping=provider_key_mapping,
             auth_key_mapping=auth_key_mapping,
+            auth_value_mapping=auth_value_mapping,
             auth_items_mapping=auth_items_mapping,
             default_admin_profile_id=settings.get("default_admin_profile_id"),
             default_admin_name=settings.get("default_admin_name"),

@@ -45,7 +45,10 @@ class UpdateSettingsRequest(BaseModel):
         None  # Auth enabled mapping (auth_id -> enabled)
     )
     auth_key_mapping: dict[str, dict[str, str]] | None = (
-        None  # Auth key mapping (auth_id -> auth_item_id -> key_id)
+        None  # Auth key mapping (auth_id -> auth_item_id -> key_id) for encrypted items
+    )
+    auth_value_mapping: dict[str, dict[str, str]] | None = (
+        None  # Auth value mapping (auth_id -> auth_item_id -> value) for non-encrypted items
     )
     default_admin_profile_id: str | None = (
         None  # Default admin/superadmin profile ID
@@ -88,6 +91,8 @@ async def update_settings(
             provider_enabled_json = json.dumps(request.provider_enabled or {})
             auth_enabled_json = json.dumps(request.auth_enabled or {})
             auth_key_mapping_json = json.dumps(request.auth_key_mapping or {})
+            auth_value_mapping_json = json.dumps(request.auth_value_mapping or {})
+            auth_value_mapping_json = json.dumps(request.auth_value_mapping or {})
 
             # Update settings: deactivate current active, insert new active row
             sql_query = load_sql("sql/v3/settings/update_settings.sql")
@@ -117,6 +122,7 @@ async def update_settings(
                 request.default_guest_profile_id or None,
                 provider_enabled_json,
                 auth_enabled_json,
+                auth_value_mapping_json,
             )
             result = await conn.fetchrow(
                 sql_query,
@@ -145,6 +151,7 @@ async def update_settings(
                 request.default_guest_profile_id or None,
                 provider_enabled_json,
                 auth_enabled_json,
+                auth_value_mapping_json,
             )
 
             if not result:
