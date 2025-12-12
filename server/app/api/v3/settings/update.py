@@ -38,8 +38,20 @@ class UpdateSettingsRequest(BaseModel):
     provider_key_mapping: dict[str, str] | None = (
         None  # Provider key mapping (provider_id -> key_id)
     )
+    provider_enabled: dict[str, bool] | None = (
+        None  # Provider enabled mapping (provider_id -> enabled)
+    )
+    auth_enabled: dict[str, bool] | None = (
+        None  # Auth enabled mapping (auth_id -> enabled)
+    )
     auth_key_mapping: dict[str, dict[str, str]] | None = (
         None  # Auth key mapping (auth_id -> auth_item_id -> key_id)
+    )
+    default_admin_profile_id: str | None = (
+        None  # Default admin/superadmin profile ID
+    )
+    default_guest_profile_id: str | None = (
+        None  # Default guest profile ID
     )
 
 
@@ -73,6 +85,8 @@ async def update_settings(
             import json
 
             provider_key_mapping_json = json.dumps(request.provider_key_mapping or {})
+            provider_enabled_json = json.dumps(request.provider_enabled or {})
+            auth_enabled_json = json.dumps(request.auth_enabled or {})
             auth_key_mapping_json = json.dumps(request.auth_key_mapping or {})
 
             # Update settings: deactivate current active, insert new active row
@@ -99,6 +113,10 @@ async def update_settings(
                 request.profileId,
                 provider_key_mapping_json,
                 auth_key_mapping_json,
+                request.default_admin_profile_id or None,
+                request.default_guest_profile_id or None,
+                provider_enabled_json,
+                auth_enabled_json,
             )
             result = await conn.fetchrow(
                 sql_query,
@@ -123,6 +141,10 @@ async def update_settings(
                 request.profileId,
                 provider_key_mapping_json,
                 auth_key_mapping_json,
+                request.default_admin_profile_id or None,
+                request.default_guest_profile_id or None,
+                provider_enabled_json,
+                auth_enabled_json,
             )
 
             if not result:

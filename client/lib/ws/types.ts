@@ -28,7 +28,6 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
     attempt_id: string;
-    chat_id: string;
   }) => void;
   simulation_message_cancelled: (payload: {
     message_id: string;

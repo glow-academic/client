@@ -43,7 +43,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description: "Manage user feedback and feature requests for teaching assistant training platform. Collect and review platform feedback, prioritize improvements, and enhance user experience for educational institutions and L&D programs.",
   };
 }
-}
 
 export default async function FeedbackPage() {
   const session = await getSession();

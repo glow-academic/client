@@ -54,8 +54,7 @@
       "payload": {
         "success": "boolean",
         "message": "string",
-        "attempt_id": "string",
-        "chat_id": "string"
+        "attempt_id": "string"
       }
     },
     "simulation_message_cancelled": {

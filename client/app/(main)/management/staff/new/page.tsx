@@ -14,35 +14,30 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffNewIn = InputOf<"/api/v3/profile/staff/new", "post">;
 type StaffNewOut = OutputOf<"/api/v3/profile/staff/new", "post">;
 type CreateStaffIn = InputOf<"/api/v3/profile/staff/create", "post">;
 type CreateStaffOut = OutputOf<"/api/v3/profile/staff/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getStaffNew = cache(
-  async (profileId: string): Promise<StaffNewOut> => {
-    return api.post(
-      "/profile/staff/new",
-      { body: { profileId } },
-      {
-        cache: "no-store",
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
-      }
-    );
-  }
-);
+const getStaffNew = cache(async (profileId: string): Promise<StaffNewOut> => {
+  return api.post(
+    "/profile/staff/new",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+});
 
 /** ---- Strongly-typed server actions ---- */
 async function createStaff(input: CreateStaffIn): Promise<CreateStaffOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
 
   return api.post("/profile/staff/create", {
-    body: { ...input.body, profileId },
+    body: { ...input.body },
   });
 }
 
@@ -50,9 +45,9 @@ async function createStaff(input: CreateStaffIn): Promise<CreateStaffOut> {
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Staff",
-    description: "Add a new teaching staff member to the training platform. Create staff profiles, assign roles and permissions, and configure access to learning cohorts and educational resources for teaching assistant development programs.",
+    description:
+      "Add a new teaching staff member to the training platform. Create staff profiles, assign roles and permissions, and configure access to learning cohorts and educational resources for teaching assistant development programs.",
   };
-}
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -80,4 +75,3 @@ export default async function NewStaffPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type { CreateStaffIn, CreateStaffOut, StaffNewOut };
-

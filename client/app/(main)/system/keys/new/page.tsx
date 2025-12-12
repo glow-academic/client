@@ -53,7 +53,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description: "Create a new API key for teaching assistant training platform. Generate secure access credentials, configure API integrations, and maintain platform security for educational institutions and L&D programs.",
   };
 }
-}
 
 export default async function NewKeyPage() {
   const session = await getSession();

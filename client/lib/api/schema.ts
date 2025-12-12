@@ -12150,6 +12150,30 @@ export interface components {
                     [key: string]: unknown;
                 }[];
             };
+            /** Default Admin Profile Id */
+            default_admin_profile_id: string | null;
+            /** Default Admin Name */
+            default_admin_name: string | null;
+            /** Default Guest Profile Id */
+            default_guest_profile_id: string | null;
+            /** Default Guest Name */
+            default_guest_name: string | null;
+            /** All Provider Ids */
+            all_provider_ids: string[];
+            /** All Provider Mapping */
+            all_provider_mapping: {
+                [key: string]: {
+                    [key: string]: string | boolean;
+                };
+            };
+            /** All Auth Ids */
+            all_auth_ids: string[];
+            /** All Auth Mapping */
+            all_auth_mapping: {
+                [key: string]: {
+                    [key: string]: string | boolean;
+                };
+            };
         };
         /**
          * SettingsItem
@@ -13610,12 +13634,24 @@ export interface components {
             provider_key_mapping?: {
                 [key: string]: string;
             } | null;
+            /** Provider Enabled */
+            provider_enabled?: {
+                [key: string]: boolean;
+            } | null;
+            /** Auth Enabled */
+            auth_enabled?: {
+                [key: string]: boolean;
+            } | null;
             /** Auth Key Mapping */
             auth_key_mapping?: {
                 [key: string]: {
                     [key: string]: string;
                 };
             } | null;
+            /** Default Admin Profile Id */
+            default_admin_profile_id?: string | null;
+            /** Default Guest Profile Id */
+            default_guest_profile_id?: string | null;
         };
         /**
          * UpdateSettingsResponse
@@ -16160,18 +16196,6 @@ export interface components {
             is_template: boolean;
         };
         /**
-         * ProblemStatementInfo
-         * @description Problem statement info for mapping.
-         */
-        app__api__v3__videos__detail__ProblemStatementInfo: {
-            /** Problem Statement */
-            problem_statement: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-        };
-        /**
          * VideoDetailResponse
          * @description Response for video detail.
          */
@@ -16194,20 +16218,6 @@ export interface components {
             outline_ids: string[];
             /** Outline Mapping */
             outline_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Problem Statement Ids */
-            problem_statement_ids: string[];
-            /** Problem Statement Mapping */
-            problem_statement_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__detail__ProblemStatementInfo"];
-            };
-            /** Objective Ids */
-            objective_ids: string[];
-            /** Objective Mapping */
-            objective_mapping: {
                 [key: string]: {
                     [key: string]: string;
                 };
@@ -16385,18 +16395,6 @@ export interface components {
             is_template: boolean;
         };
         /**
-         * ProblemStatementInfo
-         * @description Problem statement info for mapping.
-         */
-        app__api__v3__videos__new__ProblemStatementInfo: {
-            /** Problem Statement */
-            problem_statement: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-        };
-        /**
          * VideoDetailResponse
          * @description Response for video detail.
          */
@@ -16421,20 +16419,6 @@ export interface components {
             outline_ids: string[];
             /** Outline Mapping */
             outline_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Problem Statement Ids */
-            problem_statement_ids: string[];
-            /** Problem Statement Mapping */
-            problem_statement_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__new__ProblemStatementInfo"];
-            };
-            /** Objective Ids */
-            objective_ids: string[];
-            /** Objective Mapping */
-            objective_mapping: {
                 [key: string]: {
                     [key: string]: string;
                 };

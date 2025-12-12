@@ -16,6 +16,8 @@ type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
 type UpdateSettingsIn = InputOf<"/api/v3/settings/update", "post">;
 type UpdateSettingsOut = OutputOf<"/api/v3/settings/update", "post">;
 type KeysListOut = OutputOf<"/api/v3/keys/list", "post">;
+type StaffListIn = InputOf<"/api/v3/profile/staff/list", "post">;
+type StaffListOut = OutputOf<"/api/v3/profile/staff/list", "post">;
 
 /** ---- Direct fetch for settings list ---- */
 const getSettingsList = async (profileId: string): Promise<SettingsListOut> => {
@@ -62,6 +64,20 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
   );
 };
 
+/** ---- Direct fetch for staff list (for profile selection) ---- */
+const getStaffList = async (profileId: string): Promise<StaffListOut> => {
+  return api.post(
+    "/profile/staff/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    },
+  );
+};
+
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateSettings(
   input: UpdateSettingsIn,
@@ -86,6 +102,11 @@ async function getSettingsDetailAction(
 async function getKeysListAction(profileId: string): Promise<KeysListOut> {
   "use server";
   return getKeysList(profileId);
+}
+
+async function getStaffListAction(profileId: string): Promise<StaffListOut> {
+  "use server";
+  return getStaffList(profileId);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -115,6 +136,9 @@ export default async function SettingsPage() {
   // Fetch keys list
   const keysList = await getKeysList(profileId);
 
+  // Fetch staff list for profile selection
+  const staffList = await getStaffList(profileId);
+
   return (
     <div className="space-y-6" data-page="settings-index">
       <Settings
@@ -123,8 +147,10 @@ export default async function SettingsPage() {
         selectedSettingsId={selectedSettingsId}
         profileId={profileId}
         keysList={keysList}
+        staffList={staffList}
         getSettingsDetailAction={getSettingsDetailAction}
         getKeysListAction={getKeysListAction}
+        getStaffListAction={getStaffListAction}
         updateSettingsAction={updateSettings}
       />
     </div>
@@ -140,4 +166,6 @@ export type {
   UpdateSettingsIn,
   UpdateSettingsOut,
   KeysListOut,
+  StaffListIn,
+  StaffListOut,
 };

@@ -1,7 +1,7 @@
 /**
  * Settings.tsx
  * Used to view and update application settings
- * Minimal design with left-aligned fields
+ * Uses shared SettingsForm component
  */
 
 "use client";
@@ -13,14 +13,8 @@ import { toast } from "sonner";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
+import { SettingsForm, type ProfileMappingItem } from "../common/settings/SettingsForm";
 
 // Type-only import from server pages
 import type {
@@ -28,8 +22,8 @@ import type {
   SettingsDetailOut,
   UpdateSettingsIn,
   UpdateSettingsOut,
+  StaffListOut,
 } from "@/app/(main)/system/settings/page";
-import { AuthsTable } from "../common/settings/AuthsTable";
 
 export interface SettingsProps {
   settingsList: SettingsDetailOut[];
@@ -37,11 +31,13 @@ export interface SettingsProps {
   selectedSettingsId: string | null;
   profileId: string;
   keysList: KeysListOut;
+  staffList: StaffListOut;
   getSettingsDetailAction: (
     settingsId: string,
     profileId: string
   ) => Promise<SettingsDetailOut>;
   getKeysListAction: (profileId: string) => Promise<KeysListOut>;
+  getStaffListAction?: (profileId: string) => Promise<StaffListOut>;
   updateSettingsAction?: (
     input: UpdateSettingsIn
   ) => Promise<UpdateSettingsOut>;
@@ -53,21 +49,21 @@ export default function Settings({
   selectedSettingsId: initialSelectedSettingsId,
   profileId,
   keysList: initialKeysList,
+  staffList: initialStaffList,
   getSettingsDetailAction,
   getKeysListAction,
+  getStaffListAction,
   updateSettingsAction,
 }: SettingsProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [colorPickerOpenStates, setColorPickerOpenStates] = useState<
-    Record<string, boolean>
-  >({});
   const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(
     initialSelectedSettingsId
   );
   const [settingsDetail, setSettingsDetail] =
     useState<SettingsDetailOut | null>(initialSettingsDetail);
   const [keysList, setKeysList] = useState<KeysListOut>(initialKeysList);
+  const [staffList, setStaffList] = useState<StaffListOut>(initialStaffList);
 
   // Key mappings state
   const [providerKeyMapping, setProviderKeyMapping] = useState<
@@ -75,6 +71,14 @@ export default function Settings({
   >({});
   const [authKeyMapping, setAuthKeyMapping] = useState<
     Record<string, Record<string, string>>
+  >({});
+  // Provider enabled state
+  const [providerEnabled, setProviderEnabled] = useState<
+    Record<string, boolean>
+  >({});
+  // Auth enabled state
+  const [authEnabled, setAuthEnabled] = useState<
+    Record<string, boolean>
   >({});
 
   // Build settings mapping for picker
@@ -85,6 +89,25 @@ export default function Settings({
     });
     return mapping;
   }, [settingsList]);
+
+  // Build profile mapping from staff list
+  const profileMapping = useMemo(() => {
+    const mapping: Record<string, ProfileMappingItem> = {};
+    staffList.staff.forEach((staff) => {
+      mapping[staff.profile_id] = {
+        profile_id: staff.profile_id,
+        name: staff.name,
+        role: staff.role,
+        first_name: staff.first_name,
+        last_name: staff.last_name,
+      };
+    });
+    return mapping;
+  }, [staffList]);
+
+  const validProfileIds = useMemo(() => {
+    return staffList.staff.map((staff) => staff.profile_id);
+  }, [staffList]);
 
   // Form data state with all ThemePrimitives and new settings
   const [formData, setFormData] = useState({
@@ -106,56 +129,9 @@ export default function Settings({
     success_threshold: 85,
     warning_threshold: 80,
     danger_threshold: 70,
+    default_admin_profile_id: null as string | null | undefined,
+    default_guest_profile_id: null as string | null | undefined,
   });
-
-  // Preset colors (same as persona colors)
-  const presetColors = [
-    "#ef4444",
-    "#f97316",
-    "#f59e0b",
-    "#eab308",
-    "#84cc16",
-    "#22c55e",
-    "#10b981",
-    "#14b8a6",
-    "#06b6d4",
-    "#0ea5e9",
-    "#3b82f6",
-    "#6366f1",
-    "#8b5cf6",
-    "#a855f7",
-    "#d946ef",
-    "#ec4899",
-    "#f43f5e",
-  ];
-
-  // Build key mapping for KeyPicker
-  const keyMapping = useMemo(() => {
-    const mapping: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        key_masked: string;
-        active: boolean;
-        department_ids: string[] | null;
-      }
-    > = {};
-    keysList.keys.forEach((key) => {
-      mapping[key.key_id] = {
-        name: key.name,
-        description: key.description || "",
-        key_masked: key.key_masked,
-        active: key.active,
-        department_ids: key.department_ids || null,
-      };
-    });
-    return mapping;
-  }, [keysList]);
-
-  const validKeyIds = useMemo(() => {
-    return keysList.keys.map((key) => key.key_id);
-  }, [keysList]);
 
   // Update form data and key mappings when settings detail changes
   useEffect(() => {
@@ -179,11 +155,27 @@ export default function Settings({
         success_threshold: settingsDetail.success_threshold ?? 85,
         warning_threshold: settingsDetail.warning_threshold ?? 80,
         danger_threshold: settingsDetail.danger_threshold ?? 70,
+        default_admin_profile_id: settingsDetail.default_admin_profile_id ?? null,
+        default_guest_profile_id: settingsDetail.default_guest_profile_id ?? null,
       });
 
       // Initialize key mappings from settings detail
       setProviderKeyMapping(settingsDetail.provider_key_mapping || {});
       setAuthKeyMapping(settingsDetail.auth_key_mapping || {});
+      
+      // Initialize provider enabled state
+      const enabled: Record<string, boolean> = {};
+      settingsDetail.all_provider_ids.forEach((providerId) => {
+        enabled[providerId] = settingsDetail.provider_ids.includes(providerId);
+      });
+      setProviderEnabled(enabled);
+      
+      // Initialize auth enabled state
+      const authEnabledState: Record<string, boolean> = {};
+      settingsDetail.all_auth_ids?.forEach((authId) => {
+        authEnabledState[authId] = settingsDetail.auth_ids?.includes(authId) ?? false;
+      });
+      setAuthEnabled(authEnabledState);
     }
   }, [settingsDetail]);
 
@@ -199,9 +191,13 @@ export default function Settings({
     try {
       const detailResult = await getSettingsDetailAction(settingsId, profileId);
       setSettingsDetail(detailResult);
-      // Refresh keys list
+      // Refresh keys list and staff list
       const freshKeysList = await getKeysListAction(profileId);
       setKeysList(freshKeysList);
+      if (getStaffListAction) {
+        const freshStaffList = await getStaffListAction(profileId);
+        setStaffList(freshStaffList);
+      }
     } catch {
       toast.error("Failed to load settings detail");
     }
@@ -243,8 +239,18 @@ export default function Settings({
             Object.keys(providerKeyMapping).length > 0
               ? providerKeyMapping
               : undefined,
+          provider_enabled:
+            Object.keys(providerEnabled).length > 0
+              ? providerEnabled
+              : undefined,
+          auth_enabled:
+            Object.keys(authEnabled).length > 0
+              ? authEnabled
+              : undefined,
           auth_key_mapping:
             Object.keys(authKeyMapping).length > 0 ? authKeyMapping : undefined,
+          default_admin_profile_id: formData.default_admin_profile_id || undefined,
+          default_guest_profile_id: formData.default_guest_profile_id || undefined,
         },
       });
 
@@ -264,103 +270,6 @@ export default function Settings({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Helper function to create a color picker
-  const ColorPicker = ({
-    label,
-    fieldName,
-    value,
-  }: {
-    label: string;
-    fieldName: keyof typeof formData;
-    value: string;
-  }) => {
-    const isOpen = colorPickerOpenStates[fieldName] || false;
-    const setOpen = (open: boolean) => {
-      setColorPickerOpenStates((prev) => ({ ...prev, [fieldName]: open }));
-    };
-
-    return (
-      <div className="space-y-2">
-        <Label htmlFor={fieldName}>{label}</Label>
-        <Popover open={isOpen} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-start text-left font-normal"
-              disabled={isSubmitting}
-              type="button"
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-4 h-4 rounded border"
-                  style={{ backgroundColor: value }}
-                />
-                <span>{value}</span>
-              </div>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor={`${fieldName}Input`}>Hex Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id={`${fieldName}Input`}
-                    value={value}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      // Allow any hex value (with or without #, any length)
-                      if (
-                        newValue === "" ||
-                        /^#?[0-9A-Fa-f]*$/.test(newValue)
-                      ) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          [fieldName]:
-                            newValue.startsWith("#") || newValue === ""
-                              ? newValue
-                              : `#${newValue}`,
-                        }));
-                      }
-                    }}
-                    placeholder="#000000"
-                    className="flex-1"
-                  />
-                  <div
-                    className="w-10 h-10 rounded border"
-                    style={{ backgroundColor: value }}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Preset Colors</Label>
-                <div className="grid grid-cols-8 gap-2">
-                  {presetColors.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      className="w-8 h-8 rounded border-2 border-gray-200 hover:border-gray-400 transition-colors"
-                      style={{ backgroundColor: color }}
-                      onClick={() => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          [fieldName]: color,
-                        }));
-                        setOpen(false);
-                      }}
-                      data-testid={`preset-color-${fieldName}`}
-                      data-color={color}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
-    );
   };
 
   return (
@@ -448,254 +357,61 @@ export default function Settings({
           />
         </div>
 
-        {/* Core Brand Colors */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Core Brand Colors</h3>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <ColorPicker
-              label="Primary Color"
-              fieldName="primary_color"
-              value={formData.primary_color}
-            />
-            <ColorPicker
-              label="Accent"
-              fieldName="accent"
-              value={formData.accent}
-            />
-          </div>
-        </div>
-
-        {/* Layout Colors */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Layout Colors</h3>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <ColorPicker
-              label="Background"
-              fieldName="background"
-              value={formData.background}
-            />
-            <ColorPicker
-              label="Surface"
-              fieldName="surface"
-              value={formData.surface}
-            />
-          </div>
-        </div>
-
-        {/* Status Colors */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Status Colors</h3>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-            <ColorPicker
-              label="Success"
-              fieldName="success"
-              value={formData.success}
-            />
-            <ColorPicker
-              label="Warning"
-              fieldName="warning"
-              value={formData.warning}
-            />
-            <ColorPicker
-              label="Error"
-              fieldName="error"
-              value={formData.error}
-            />
-          </div>
-        </div>
-
-        {/* Sidebar Colors */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Sidebar Colors</h3>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <ColorPicker
-              label="Sidebar Background"
-              fieldName="sidebar_background"
-              value={formData.sidebar_background}
-            />
-            <ColorPicker
-              label="Sidebar Primary"
-              fieldName="sidebar_primary"
-              value={formData.sidebar_primary}
-            />
-          </div>
-        </div>
-
-        {/* Chart Colors */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Chart Colors</h3>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            <ColorPicker
-              label="Chart 1"
-              fieldName="chart1"
-              value={formData.chart1}
-            />
-            <ColorPicker
-              label="Chart 2"
-              fieldName="chart2"
-              value={formData.chart2}
-            />
-            <ColorPicker
-              label="Chart 3"
-              fieldName="chart3"
-              value={formData.chart3}
-            />
-            <ColorPicker
-              label="Chart 4"
-              fieldName="chart4"
-              value={formData.chart4}
-            />
-            <ColorPicker
-              label="Chart 5"
-              fieldName="chart5"
-              value={formData.chart5}
-            />
-          </div>
-        </div>
-
-        {/* Linked Auths & Providers */}
+        {/* Settings Form */}
         {settingsDetail && (
-          <div className="space-y-6">
-            {/* Authentication Methods Table */}
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Authentication Methods</h3>
-              <AuthsTable
-                data={authTableData}
-                keyMapping={keyMapping}
-                validKeyIds={validKeyIds}
-                onKeyChange={(authId, authItemId, keyId) => {
-                  setAuthKeyMapping((prev) => ({
-                    ...prev,
-                    [authId]: {
-                      ...(prev[authId] || {}),
-                      [authItemId]: keyId ?? "",
-                    },
-                  }));
-                }}
-                readonly={isSubmitting}
-              />
-            </div>
-
-            {/* AI Providers Table */}
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">AI Providers</h3>
-              <ProvidersTable
-                data={providerTableData}
-                keyMapping={keyMapping}
-                validKeyIds={validKeyIds}
-                onKeyChange={(providerId, keyId) => {
-                  setProviderKeyMapping((prev) => ({
-                    ...prev,
-                    [providerId]: keyId ?? "",
-                  }));
-                }}
-                readonly={isSubmitting}
-              />
-            </div>
-          </div>
+          <SettingsForm
+            settingsDetail={settingsDetail}
+            keysList={keysList}
+            profileMapping={profileMapping}
+            validProfileIds={validProfileIds}
+            formData={formData}
+            providerKeyMapping={providerKeyMapping}
+            authKeyMapping={authKeyMapping}
+            onFormDataChange={(field, value) => {
+              setFormData((prev) => ({ ...prev, [field]: value }));
+            }}
+            onProviderKeyChange={(providerId, keyId) => {
+              setProviderKeyMapping((prev) => ({
+                ...prev,
+                [providerId]: keyId ?? "",
+              }));
+            }}
+            onProviderEnabledChange={(providerId, enabled) => {
+              setProviderEnabled((prev) => ({
+                ...prev,
+                [providerId]: enabled,
+              }));
+            }}
+            onAuthEnabledChange={(authId, enabled) => {
+              setAuthEnabled((prev) => ({
+                ...prev,
+                [authId]: enabled,
+              }));
+            }}
+            onAuthKeyChange={(authId, authItemId, keyId) => {
+              setAuthKeyMapping((prev) => ({
+                ...prev,
+                [authId]: {
+                  ...(prev[authId] || {}),
+                  [authItemId]: keyId ?? "",
+                },
+              }));
+            }}
+            onDefaultAdminChange={(profileId) => {
+              setFormData((prev) => ({
+                ...prev,
+                default_admin_profile_id: profileId,
+              }));
+            }}
+            onDefaultGuestChange={(profileId) => {
+              setFormData((prev) => ({
+                ...prev,
+                default_guest_profile_id: profileId,
+              }));
+            }}
+            isSubmitting={isSubmitting}
+          />
         )}
-
-        {/* Authentication & Analytics */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Authentication & Analytics</h3>
-
-          {/* Guest Login Enabled */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="guest_login_enabled">Enable Guest Login</Label>
-              <Switch
-                id="guest_login_enabled"
-                checked={formData.guest_login_enabled}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    guest_login_enabled: checked,
-                  }))
-                }
-                disabled={isSubmitting}
-              />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              When enabled, users can access the application as a guest without
-              signing in.
-            </p>
-          </div>
-
-          {/* Analytics Thresholds */}
-          <div className="space-y-4">
-            <h4 className="text-md font-medium">Analytics Thresholds</h4>
-            <p className="text-sm text-muted-foreground">
-              Configure thresholds for dashboard metrics (0-100). These values
-              determine when metrics are displayed as success, warning, or
-              danger.
-            </p>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="success_threshold">Success Threshold</Label>
-                <Input
-                  id="success_threshold"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.success_threshold}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      success_threshold: Math.min(
-                        100,
-                        Math.max(0, parseInt(e.target.value) || 85)
-                      ),
-                    }))
-                  }
-                  disabled={isSubmitting}
-                  className="max-w-md"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="warning_threshold">Warning Threshold</Label>
-                <Input
-                  id="warning_threshold"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.warning_threshold}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      warning_threshold: Math.min(
-                        100,
-                        Math.max(0, parseInt(e.target.value) || 80)
-                      ),
-                    }))
-                  }
-                  disabled={isSubmitting}
-                  className="max-w-md"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="danger_threshold">Danger Threshold</Label>
-                <Input
-                  id="danger_threshold"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.danger_threshold}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      danger_threshold: Math.min(
-                        100,
-                        Math.max(0, parseInt(e.target.value) || 70)
-                      ),
-                    }))
-                  }
-                  disabled={isSubmitting}
-                  className="max-w-md"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Update Button - Bottom Right */}
         <div className="flex justify-end gap-4">

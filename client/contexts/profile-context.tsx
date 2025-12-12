@@ -241,7 +241,6 @@ export function ProfileProviderClient({
           success: boolean;
           message: string;
           attempt_id: string;
-          chat_id: string;
         }) => {
           setStartingSimulationId(null);
           if (data.success) {

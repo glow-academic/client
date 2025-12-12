@@ -210,7 +210,7 @@ async def test_get_practice_overview_items_structure(
 async def test_get_practice_overview_filters_practice_parameters(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test that practice overview only returns parameters with practice_parameter = true."""
+    """Test that practice overview only returns parameters with simulation_parameter = true."""
     profile_id = await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
 
@@ -229,19 +229,19 @@ async def test_get_practice_overview_filters_practice_parameters(
     assert isinstance(data.get("parameter_mapping"), dict)
     assert isinstance(data.get("parameter_item_mapping"), dict)
 
-    # If parameters exist, verify they have practice_parameter = true
+    # If parameters exist, verify they have simulation_parameter = true
     if data.get("parameter_mapping"):
         parameter_ids = list(data["parameter_mapping"].keys())
         params_from_db = await db.fetch(
-            "SELECT id, name, practice_parameter FROM parameters WHERE id = ANY($1::uuid[])",
+            "SELECT id, name, simulation_parameter FROM parameters WHERE id = ANY($1::uuid[])",
             parameter_ids,
         )
 
-        # Verify all parameters have practice_parameter = true
+        # Verify all parameters have simulation_parameter = true
         for param in params_from_db:
-            assert param["practice_parameter"] is True, (
+            assert param["simulation_parameter"] is True, (
                 f"Parameter {param['name']} (id: {param['id']}) "
-                f"has practice_parameter = {param['practice_parameter']}, expected True"
+                f"has simulation_parameter = {param['simulation_parameter']}, expected True"
             )
 
     # If parameter items exist, verify they belong to practice parameters
@@ -249,7 +249,7 @@ async def test_get_practice_overview_filters_practice_parameters(
         parameter_item_ids = list(data["parameter_item_mapping"].keys())
         items_from_db = await db.fetch(
             """
-            SELECT pi.id, pi.name, p.practice_parameter
+            SELECT pi.id, pi.name, p.simulation_parameter
             FROM parameter_items pi
             JOIN parameters p ON pi.parameter_id = p.id
             WHERE pi.id = ANY($1::uuid[])
@@ -259,7 +259,7 @@ async def test_get_practice_overview_filters_practice_parameters(
 
         # Verify all parameter items belong to practice parameters
         for item in items_from_db:
-            assert item["practice_parameter"] is True, (
+            assert item["simulation_parameter"] is True, (
                 f"Parameter item {item['name']} (id: {item['id']}) "
-                f"belongs to a parameter with practice_parameter = {item['practice_parameter']}, expected True"
+                f"belongs to a parameter with simulation_parameter = {item['simulation_parameter']}, expected True"
             )

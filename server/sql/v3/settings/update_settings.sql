@@ -22,6 +22,10 @@
 --   $19 = profile_id (uuid or "guest-profile-id")
 --   $20 = provider_key_mapping (jsonb, optional) - {provider_id: key_id}
 --   $21 = auth_key_mapping (jsonb, optional) - {auth_id: {auth_item_id: key_id}}
+--   $22 = default_admin_profile_id (text, optional) - Default admin/superadmin profile ID
+--   $23 = default_guest_profile_id (text, optional) - Default guest profile ID
+--   $24 = provider_enabled (jsonb, optional) - {provider_id: enabled (boolean)}
+--   $25 = auth_enabled (jsonb, optional) - {auth_id: enabled (boolean)}
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -105,8 +109,24 @@ insert_new AS (
     )
     RETURNING id::text as settings_id
 ),
-copy_setting_providers AS (
-    -- Copy setting_providers links from old settings to new
+manage_setting_providers AS (
+    -- Manage provider links based on provider_enabled mapping
+    -- If provider_enabled is provided, use it; otherwise copy from old settings
+    INSERT INTO setting_providers (settings_id, provider_id, active, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        (provider_id)::uuid,
+        (enabled::boolean),
+        NOW(),
+        NOW()
+    FROM jsonb_each_text(COALESCE($24::jsonb, '{}'::jsonb)) AS t(provider_id, enabled)
+    WHERE provider_id IS NOT NULL AND provider_id != ''
+    ON CONFLICT (settings_id, provider_id) DO UPDATE SET
+        active = (EXCLUDED.active),
+        updated_at = NOW()
+),
+copy_setting_providers_fallback AS (
+    -- Fallback: Copy setting_providers links from old settings to new (if provider_enabled not provided)
     INSERT INTO setting_providers (settings_id, provider_id, active, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
@@ -117,12 +137,32 @@ copy_setting_providers AS (
     FROM old_settings_id osi
     CROSS JOIN setting_providers sp
     WHERE sp.settings_id = osi.old_id::uuid AND sp.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM jsonb_each_text(COALESCE($24::jsonb, '{}'::jsonb)) AS t(provider_id, enabled)
+          WHERE t.provider_id = sp.provider_id::text
+      )
     ON CONFLICT (settings_id, provider_id) DO UPDATE SET
-        active = true,
+        active = COALESCE(EXCLUDED.active, setting_providers.active),
         updated_at = NOW()
 ),
-copy_setting_auths AS (
-    -- Copy setting_auths links from old settings to new
+manage_setting_auths AS (
+    -- Manage auth links based on auth_enabled mapping
+    -- If auth_enabled is provided, use it; otherwise copy from old settings
+    INSERT INTO setting_auths (settings_id, auth_id, active, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        (auth_id)::uuid,
+        (enabled::boolean),
+        NOW(),
+        NOW()
+    FROM jsonb_each_text(COALESCE($25::jsonb, '{}'::jsonb)) AS t(auth_id, enabled)
+    WHERE auth_id IS NOT NULL AND auth_id != ''
+    ON CONFLICT (settings_id, auth_id) DO UPDATE SET
+        active = (EXCLUDED.active),
+        updated_at = NOW()
+),
+copy_setting_auths_fallback AS (
+    -- Fallback: Copy setting_auths links from old settings to new (if auth_enabled not provided)
     INSERT INTO setting_auths (settings_id, auth_id, active, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
@@ -133,8 +173,12 @@ copy_setting_auths AS (
     FROM old_settings_id osi
     CROSS JOIN setting_auths sa
     WHERE sa.settings_id = osi.old_id::uuid AND sa.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM jsonb_each_text(COALESCE($25::jsonb, '{}'::jsonb)) AS t(auth_id, enabled)
+          WHERE t.auth_id = sa.auth_id::text
+      )
     ON CONFLICT (settings_id, auth_id) DO UPDATE SET
-        active = true,
+        active = COALESCE(EXCLUDED.active, setting_auths.active),
         updated_at = NOW()
 ),
 copy_setting_auth_values AS (
@@ -152,6 +196,82 @@ copy_setting_auth_values AS (
     WHERE sav.settings_id = osi.old_id::uuid
     ON CONFLICT (settings_id, auth_id, auth_item_id) DO UPDATE SET
         value = EXCLUDED.value,
+        updated_at = NOW()
+),
+copy_setting_default_account AS (
+    -- Copy default admin account from old settings to new (if not provided)
+    INSERT INTO settings_default_account (settings_id, profile_id, active, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        sda.profile_id,
+        CASE WHEN $22::text IS NULL OR $22::text = '' THEN sda.active ELSE false END,
+        NOW(),
+        NOW()
+    FROM old_settings_id osi
+    CROSS JOIN settings_default_account sda
+    WHERE sda.settings_id = osi.old_id::uuid AND sda.active = true
+      AND ($22::text IS NULL OR $22::text = '')
+    ON CONFLICT (settings_id, profile_id) DO UPDATE SET
+        active = EXCLUDED.active,
+        updated_at = NOW()
+),
+copy_setting_default_guest AS (
+    -- Copy default guest account from old settings to new (if not provided)
+    INSERT INTO settings_default_guest (settings_id, profile_id, active, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        sdg.profile_id,
+        CASE WHEN $23::text IS NULL OR $23::text = '' THEN sdg.active ELSE false END,
+        NOW(),
+        NOW()
+    FROM old_settings_id osi
+    CROSS JOIN settings_default_guest sdg
+    WHERE sdg.settings_id = osi.old_id::uuid AND sdg.active = true
+      AND ($23::text IS NULL OR $23::text = '')
+    ON CONFLICT (settings_id, profile_id) DO UPDATE SET
+        active = EXCLUDED.active,
+        updated_at = NOW()
+),
+apply_default_admin_account AS (
+    -- Apply new default admin account (deactivate old, activate new)
+    UPDATE settings_default_account
+    SET active = false, updated_at = NOW()
+    WHERE settings_id = (SELECT settings_id FROM insert_new LIMIT 1)::uuid
+      AND ($22::text IS NOT NULL AND $22::text != '')
+),
+insert_default_admin_account AS (
+    -- Insert new default admin account
+    INSERT INTO settings_default_account (settings_id, profile_id, active, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        $22::uuid,
+        true,
+        NOW(),
+        NOW()
+    WHERE $22::text IS NOT NULL AND $22::text != ''
+    ON CONFLICT (settings_id, profile_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+apply_default_guest_account AS (
+    -- Apply new default guest account (deactivate old, activate new)
+    UPDATE settings_default_guest
+    SET active = false, updated_at = NOW()
+    WHERE settings_id = (SELECT settings_id FROM insert_new LIMIT 1)::uuid
+      AND ($23::text IS NOT NULL AND $23::text != '')
+),
+insert_default_guest_account AS (
+    -- Insert new default guest account
+    INSERT INTO settings_default_guest (settings_id, profile_id, active, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        $23::uuid,
+        true,
+        NOW(),
+        NOW()
+    WHERE $23::text IS NOT NULL AND $23::text != ''
+    ON CONFLICT (settings_id, profile_id) DO UPDATE SET
+        active = true,
         updated_at = NOW()
 ),
 apply_provider_keys AS (

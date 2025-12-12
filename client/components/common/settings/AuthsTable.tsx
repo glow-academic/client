@@ -23,7 +23,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Key, Lock, Tag } from "lucide-react";
+import { Key, Lock, Power, Tag } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 export interface AuthTableItem {
   auth_id: string;
@@ -34,6 +35,7 @@ export interface AuthTableItem {
   auth_item_name: string;
   auth_item_description: string;
   selected_key_id: string | null;
+  enabled: boolean;
 }
 
 export interface AuthsTableProps {
@@ -54,6 +56,7 @@ export interface AuthsTableProps {
     authItemId: string,
     keyId: string | null
   ) => void;
+  onEnabledChange: (authId: string, enabled: boolean) => void;
   readonly?: boolean;
 }
 
@@ -62,11 +65,53 @@ export function AuthsTable({
   keyMapping,
   validKeyIds,
   onKeyChange,
+  onEnabledChange,
   readonly = false,
 }: AuthsTableProps) {
   // Columns definition
   const columns: ColumnDef<AuthTableItem>[] = React.useMemo(
     () => [
+      {
+        accessorKey: "enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Power className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Enabled</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Enable or disable this auth method</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row, table }) => {
+          const item = row.original;
+          // Only show switch for first row of each auth (group by auth_id)
+          // Use data array index to check previous row
+          const rowIndex = data.findIndex((d) => d.auth_id === item.auth_id && d.auth_item_id === item.auth_item_id);
+          const isFirstRowForAuth = 
+            rowIndex === 0 || 
+            (rowIndex > 0 && data[rowIndex - 1]?.auth_id !== item.auth_id);
+          
+          if (!isFirstRowForAuth) {
+            return <div className="flex items-center justify-center">—</div>;
+          }
+          
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.enabled}
+                onCheckedChange={(checked) =>
+                  onEnabledChange(item.auth_id, checked)
+                }
+                disabled={readonly}
+              />
+            </div>
+          );
+        },
+      },
       {
         accessorKey: "auth_name",
         header: () => (
@@ -182,6 +227,14 @@ export function AuthsTable({
         ),
         cell: ({ row }) => {
           const item = row.original;
+          // Only show API key picker when auth is enabled and has an item_id
+          if (!item.enabled || !item.auth_item_id) {
+            return (
+              <div className="flex items-center justify-center px-2">
+                <span className="text-sm text-muted-foreground">—</span>
+              </div>
+            );
+          }
           return (
             <div className="flex items-center justify-center px-2">
               <GenericPicker
@@ -241,7 +294,7 @@ export function AuthsTable({
         },
       },
     ],
-    [keyMapping, validKeyIds, onKeyChange, readonly]
+    [keyMapping, validKeyIds, onKeyChange, onEnabledChange, readonly, data]
   );
 
   const table = useReactTable({
@@ -281,11 +334,15 @@ export function AuthsTable({
             </TableHeader>
             <TableBody>
               {tableRows?.length ? (
-                tableRows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
+                tableRows.map((row) => {
+                  const item = row.original;
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className={`hover:bg-muted/30 transition-colors ${
+                        !item.enabled ? "opacity-50" : ""
+                      }`}
+                    >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}
@@ -298,7 +355,8 @@ export function AuthsTable({
                       </TableCell>
                     ))}
                   </TableRow>
-                ))
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell

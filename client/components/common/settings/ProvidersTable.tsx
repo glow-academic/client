@@ -23,7 +23,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Bot, Key, Tag } from "lucide-react";
+import { Bot, Key, Power, Tag } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 export interface ProviderTableItem {
   provider_id: string;
@@ -31,6 +32,7 @@ export interface ProviderTableItem {
   provider_description: string;
   provider_value: string | null;
   selected_key_id: string | null;
+  enabled: boolean;
 }
 
 export interface ProvidersTableProps {
@@ -47,6 +49,7 @@ export interface ProvidersTableProps {
   >;
   validKeyIds: string[];
   onKeyChange: (providerId: string, keyId: string | null) => void;
+  onEnabledChange: (providerId: string, enabled: boolean) => void;
   readonly?: boolean;
 }
 
@@ -55,11 +58,42 @@ export function ProvidersTable({
   keyMapping,
   validKeyIds,
   onKeyChange,
+  onEnabledChange,
   readonly = false,
 }: ProvidersTableProps) {
   // Columns definition
   const columns: ColumnDef<ProviderTableItem>[] = React.useMemo(
     () => [
+      {
+        accessorKey: "enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Power className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Enabled</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Enable or disable this provider</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.enabled}
+                onCheckedChange={(checked) =>
+                  onEnabledChange(item.provider_id, checked)
+                }
+                disabled={readonly}
+              />
+            </div>
+          );
+        },
+      },
       {
         accessorKey: "provider_name",
         header: () => (
@@ -141,6 +175,14 @@ export function ProvidersTable({
         ),
         cell: ({ row }) => {
           const item = row.original;
+          // Only show API key picker when provider is enabled
+          if (!item.enabled) {
+            return (
+              <div className="flex items-center justify-center px-2">
+                <span className="text-sm text-muted-foreground">—</span>
+              </div>
+            );
+          }
           return (
             <div className="flex items-center justify-center px-2">
               <GenericPicker
@@ -200,7 +242,7 @@ export function ProvidersTable({
         },
       },
     ],
-    [keyMapping, validKeyIds, onKeyChange, readonly]
+    [keyMapping, validKeyIds, onKeyChange, onEnabledChange, readonly]
   );
 
   const table = useReactTable({
@@ -240,11 +282,15 @@ export function ProvidersTable({
             </TableHeader>
             <TableBody>
               {tableRows?.length ? (
-                tableRows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
+                tableRows.map((row) => {
+                  const item = row.original;
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className={`hover:bg-muted/30 transition-colors ${
+                        !item.enabled ? "opacity-50" : ""
+                      }`}
+                    >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}
@@ -257,7 +303,8 @@ export function ProvidersTable({
                       </TableCell>
                     ))}
                   </TableRow>
-                ))
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell
@@ -265,7 +312,7 @@ export function ProvidersTable({
                     className="h-24 text-center px-6"
                   >
                     <p className="text-sm text-muted-foreground">
-                      No AI providers linked to this settings version.
+                      No AI providers available.
                     </p>
                   </TableCell>
                 </TableRow>

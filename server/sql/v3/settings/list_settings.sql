@@ -1,5 +1,5 @@
--- Get all settings ordered by created_at DESC (for picker)
--- Includes department_ids array (NULL for default settings with no department links)
+-- Get default settings only (no department links) ordered by created_at DESC
+-- For Settings.tsx page - only show global/default settings, not department-specific ones
 WITH settings_departments_data AS (
     SELECT 
         ds.settings_id,
@@ -26,8 +26,9 @@ SELECT
     s.chart3,
     s.chart4,
     s.chart5,
-    sdd.department_ids
+    NULL::text[] as department_ids  -- Always NULL for default settings
 FROM settings s
 LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
+WHERE sdd.department_ids IS NULL  -- Only return settings with no department links
 ORDER BY s.created_at DESC
 

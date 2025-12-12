@@ -23,7 +23,7 @@ async def test_create_parameter(
             "numerical": False,
             "active": True,
             "document_parameter": False,
-            "practice_parameter": False,
+            "simulation_parameter": False,
             "department_ids": [str(dept_id)],
             "parameter_items": [
                 {
@@ -99,7 +99,7 @@ async def test_create_parameter_minimal(
             "numerical": True,
             "active": True,
             "document_parameter": False,
-            "practice_parameter": False,
+            "simulation_parameter": False,
             "department_ids": None,
             "parameter_items": [],
         },

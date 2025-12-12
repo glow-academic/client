@@ -16,7 +16,7 @@ async def test_get_parameter_detail(
 
     # Create a parameter first
     parameter_id = await db.fetchval(
-        "INSERT INTO parameters(name, description, numerical, active, document_parameter, practice_parameter) "
+        "INSERT INTO parameters(name, description, numerical, active, document_parameter, simulation_parameter) "
         "VALUES ('Test Parameter', 'Test Description', false, true, false, false) RETURNING id"
     )
 
@@ -34,7 +34,7 @@ async def test_get_parameter_detail(
     assert "numerical" in data
     assert "active" in data
     assert "document_parameter" in data
-    assert "practice_parameter" in data
+    assert "simulation_parameter" in data
     assert "department_ids" in data
     assert "parameter_items" in data
     assert "department_mapping" in data

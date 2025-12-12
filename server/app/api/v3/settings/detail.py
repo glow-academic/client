@@ -59,6 +59,18 @@ class SettingsDetailResponse(BaseModel):
     auth_items_mapping: dict[
         str, list[dict[str, Any]]
     ]  # Auth items mapping (auth_id -> list of auth_items)
+    default_admin_profile_id: str | None  # Default admin/superadmin profile ID
+    default_admin_name: str | None  # Default admin/superadmin profile name
+    default_guest_profile_id: str | None  # Default guest profile ID
+    default_guest_name: str | None  # Default guest profile name
+    all_provider_ids: list[str]  # All available provider IDs
+    all_provider_mapping: dict[
+        str, dict[str, str | bool]
+    ]  # All providers mapping (provider_id -> {name, description, value, active})
+    all_auth_ids: list[str]  # All available auth IDs
+    all_auth_mapping: dict[
+        str, dict[str, str | bool]
+    ]  # All auths mapping (auth_id -> {name, description, slug, active})
 
 
 router = APIRouter()
@@ -163,6 +175,46 @@ async def get_settings_detail(
                 for auth_id, items in auth_items_mapping_data.items()
             }
 
+        # Parse all provider IDs and mapping
+        all_provider_ids: list[str] = []
+        all_provider_ids_raw = settings.get("all_provider_ids")
+        if all_provider_ids_raw and isinstance(all_provider_ids_raw, (list, tuple)):
+            all_provider_ids = [str(pid) for pid in all_provider_ids_raw if pid]
+
+        all_provider_mapping: dict[str, dict[str, str | bool]] = {}
+        all_provider_mapping_data = settings.get("all_provider_mapping")
+        if isinstance(all_provider_mapping_data, str):
+            all_provider_mapping_data = json.loads(all_provider_mapping_data)
+        if all_provider_mapping_data and isinstance(all_provider_mapping_data, dict):
+            all_provider_mapping = {
+                str(pid): {
+                    str(k): v for k, v in pmap.items()
+                }
+                if isinstance(pmap, dict)
+                else {}
+                for pid, pmap in all_provider_mapping_data.items()
+            }
+
+        # Parse all auth IDs and mapping
+        all_auth_ids: list[str] = []
+        all_auth_ids_raw = settings.get("all_auth_ids")
+        if all_auth_ids_raw and isinstance(all_auth_ids_raw, (list, tuple)):
+            all_auth_ids = [str(aid) for aid in all_auth_ids_raw if aid]
+
+        all_auth_mapping: dict[str, dict[str, str | bool]] = {}
+        all_auth_mapping_data = settings.get("all_auth_mapping")
+        if isinstance(all_auth_mapping_data, str):
+            all_auth_mapping_data = json.loads(all_auth_mapping_data)
+        if all_auth_mapping_data and isinstance(all_auth_mapping_data, dict):
+            all_auth_mapping = {
+                str(aid): {
+                    str(k): v for k, v in amap.items()
+                }
+                if isinstance(amap, dict)
+                else {}
+                for aid, amap in all_auth_mapping_data.items()
+            }
+
         response_data = SettingsDetailResponse(
             settings_id=settings["settings_id"],
             created_at=settings["created_at"].isoformat()
@@ -194,6 +246,14 @@ async def get_settings_detail(
             provider_key_mapping=provider_key_mapping,
             auth_key_mapping=auth_key_mapping,
             auth_items_mapping=auth_items_mapping,
+            default_admin_profile_id=settings.get("default_admin_profile_id"),
+            default_admin_name=settings.get("default_admin_name"),
+            default_guest_profile_id=settings.get("default_guest_profile_id"),
+            default_guest_name=settings.get("default_guest_name"),
+            all_provider_ids=all_provider_ids,
+            all_provider_mapping=all_provider_mapping,
+            all_auth_ids=all_auth_ids,
+            all_auth_mapping=all_auth_mapping,
         )
 
         # Cache response

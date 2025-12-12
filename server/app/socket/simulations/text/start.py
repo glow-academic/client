@@ -27,7 +27,6 @@ class SimulationStartedPayload(BaseModel):
     success: bool
     message: str
     attempt_id: str
-    chat_id: str
 
 
 # Pydantic model for client-to-server event
@@ -122,7 +121,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
             # Create attempt and chat using SQL
             sql = load_sql(
-                "sql/v3/simulations/simulation_text_start_attempt_complete.sql"
+                "sql/v3/simulations/start_simulation_attempt_complete.sql"
             )
             row = await conn.fetchrow(
                 sql,
@@ -149,192 +148,184 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             content_type = row.get("content_type", "scenario")
             video_id = row.get("video_id")
 
-            # Handle video case - navigate to video page
+            # Handle video case - skip scenario-specific logic
             if content_type == "video" and video_id:
                 logger.info(
-                    f"Simulation {simulation_id} has video content, navigating to video {video_id}"
+                    f"Simulation {simulation_id} has video content, starting with video {video_id}"
                 )
-                # Emit video navigation event
-                await sio.emit(
-                    "simulation_video_navigation",
-                    {
-                        "success": True,
-                        "attempt_id": row["attempt_id"],
-                        "video_id": video_id,
-                        "simulation_id": simulation_id,
+                # Videos don't have chats initially, so skip scenario generation and room joining
+                # Build minimal payload for videos
+                start_payload = {
+                    "attempt_id": row["attempt_id"],
+                    "chat_id": None,  # Videos don't have chats initially
+                }
+            else:
+                # Parse JSONB fields if they're strings (only for scenarios)
+                simulation_data = row["simulation_data"]
+                scenario_metadata = row["scenario_metadata"]
+                if isinstance(simulation_data, str):
+                    simulation_data = json.loads(simulation_data)
+                if isinstance(scenario_metadata, str):
+                    scenario_metadata = json.loads(scenario_metadata)
+
+                # Check if scenario needs generation
+                needs_generation = row.get("needs_generation", False)
+                scenario_id_raw = row.get("scenario_id")
+                if not scenario_id_raw:
+                    await simulation_text_start_error(
+                        StartSimulationErrorPayload(
+                            success=False, message="No scenario found for simulation"
+                        ),
+                        room=sid,
+                    )
+                    logger.error(f"Emitted error to {sid}: No scenario found")
+                    return
+                # Convert asyncpg UUID to Python UUID
+                scenario_id = uuid.UUID(str(scenario_id_raw))
+
+                # Handle scenario generation if needed
+                if needs_generation:
+                    logger.info(
+                        f"Scenario {scenario_id} needs generation, starting agent..."
+                    )
+
+                    # Get profile_id from attempt
+                    sql = load_sql("sql/v3/attempts/get_attempt_with_profile.sql")
+                    attempt_with_profile = await conn.fetchrow(sql, row["attempt_id"])
+                    attempt_profile_id_raw = (
+                        attempt_with_profile["profile_id"] if attempt_with_profile else None
+                    )
+                    # Convert asyncpg UUID to Python UUID if needed
+                    attempt_profile_id = (
+                        str(attempt_profile_id_raw) if attempt_profile_id_raw else None
+                    )
+
+                    # Get department_id from scenario_departments
+                    sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
+                    scenario_dept_rows = await conn.fetch(sql, scenario_id)
+                    department_id = None
+
+                    if scenario_dept_rows and len(scenario_dept_rows) > 0:
+                        # Use first department from scenario
+                        dept_id_raw = scenario_dept_rows[0]["department_id"]
+                        department_id = uuid.UUID(str(dept_id_raw))
+                        logger.info(f"Using department_id from scenario: {department_id}")
+                    elif attempt_profile_id:
+                        # Fallback to profile's departments
+                        sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
+                        profile_dept_rows = await conn.fetch(sql, attempt_profile_id)
+                        if profile_dept_rows and len(profile_dept_rows) > 0:
+                            dept_id_raw = profile_dept_rows[0]["id"]
+                            department_id = uuid.UUID(str(dept_id_raw))
+                            logger.info(
+                                f"Using department_id from profile: {department_id}"
+                            )
+
+                    if not department_id:
+                        # Last resort: get any active department
+                        sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
+                        all_dept_rows = await conn.fetch(sql)
+                        if all_dept_rows and len(all_dept_rows) > 0:
+                            dept_id_raw = all_dept_rows[0]["id"]
+                            department_id = uuid.UUID(str(dept_id_raw))
+                            logger.info(f"Using first active department: {department_id}")
+
+                    if not department_id:
+                        logger.warning(
+                            "Cannot generate scenario: no department_id available, continuing with parent scenario"
+                        )
+                    else:
+                        # Use randomization function to select attributes and create child scenario
+                        from app.api.v3.scenarios.randomize import (
+                            randomize_scenario_attributes,
+                        )
+
+                        attempt_profile_uuid = (
+                            uuid.UUID(attempt_profile_id) if attempt_profile_id else None
+                        )
+
+                        try:
+                            # Call randomization function which handles attribute selection and child creation
+                            randomized_result = await randomize_scenario_attributes(
+                                conn=conn,
+                                persona_ids=None,
+                                document_ids=None,
+                                parameter_item_ids=None,
+                                department_ids=[
+                                    department_id
+                                ],  # Use the department we already selected
+                                scenario_id=scenario_id,
+                                profile_id=attempt_profile_uuid,
+                                targets=None,  # Randomize all
+                            )
+
+                            new_scenario_id = randomized_result["child_scenario_id"]
+                            if not new_scenario_id:
+                                raise ValueError("Failed to create child scenario")
+
+                            logger.info(
+                                f"Created child scenario variant {new_scenario_id} for parent {scenario_id} "
+                                f"with persona_id={randomized_result['persona_id']}, "
+                                f"document_ids={randomized_result['document_ids']}, "
+                                f"parameter_item_ids={randomized_result['parameter_item_ids']}"
+                            )
+
+                            # Update chat to use child scenario instead of parent
+                            sql = load_sql("sql/v3/simulations/update_chat_scenario_id.sql")
+                            await conn.execute(sql, row["chat_id"], new_scenario_id)
+                            logger.info(
+                                f"Updated chat {row['chat_id']} to use child scenario {new_scenario_id}"
+                            )
+
+                            # Update scenario_id for result - use child scenario
+                            scenario_id = new_scenario_id
+
+                            # Fetch child scenario data for result
+                            sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
+                            child_scenario = await conn.fetchrow(sql, new_scenario_id)
+                            if child_scenario:
+                                # Get problem statement from child
+                                sql = load_sql(
+                                    "sql/v3/scenarios/get_scenario_problem_statement_active.sql"
+                                )
+                                problem_row = await conn.fetchrow(sql, new_scenario_id)
+                                child_problem_statement = (
+                                    problem_row.get("problem_statement")
+                                    if problem_row
+                                    else None
+                                )
+
+                                # Update row data for result (convert Record to dict first)
+                                row_dict = dict(row)
+                                row_dict["scenario_id"] = new_scenario_id
+                                row_dict["scenario_name"] = child_scenario.get("name", "")
+                                row_dict["problem_statement"] = (
+                                    child_problem_statement or ""
+                                )
+                                row = row_dict
+                                scenario_metadata["generated"] = True
+
+                        except Exception as gen_error:
+                            # Log error but don't fail the entire simulation start
+                            logger.error(
+                                f"Failed to generate scenario {scenario_id}: {str(gen_error)}",
+                                exc_info=True,
+                            )
+                            # Continue with existing scenario (may have no problem statement)
+
+                # Build payload for scenarios
+                start_payload = {
+                    "attempt_id": row["attempt_id"],
+                    "chat_id": row["chat_id"],
+                    "chat_title": row["chat_title"],
+                    "scenario": {
+                        "id": str(row["scenario_id"]),
+                        "name": row["scenario_name"],
+                        "problem_statement": row["problem_statement"],
+                        "active": scenario_metadata.get("active"),
+                        "generated": scenario_metadata.get("generated"),
                     },
-                    room=sid,
-                )
-                logger.info(
-                    f"Emitted video navigation event to {sid}: video_id={video_id}, attempt_id={row['attempt_id']}"
-                )
-                return
-
-            # Parse JSONB fields if they're strings (only for scenarios)
-            simulation_data = row["simulation_data"]
-            scenario_metadata = row["scenario_metadata"]
-            if isinstance(simulation_data, str):
-                simulation_data = json.loads(simulation_data)
-            if isinstance(scenario_metadata, str):
-                scenario_metadata = json.loads(scenario_metadata)
-
-            # Check if scenario needs generation
-            needs_generation = row.get("needs_generation", False)
-            scenario_id_raw = row.get("scenario_id")
-            if not scenario_id_raw:
-                await simulation_text_start_error(
-                    StartSimulationErrorPayload(
-                        success=False, message="No scenario found for simulation"
-                    ),
-                    room=sid,
-                )
-                logger.error(f"Emitted error to {sid}: No scenario found")
-                return
-            # Convert asyncpg UUID to Python UUID
-            scenario_id = uuid.UUID(str(scenario_id_raw))
-
-            # Handle scenario generation if needed
-            if needs_generation:
-                logger.info(
-                    f"Scenario {scenario_id} needs generation, starting agent..."
-                )
-
-                # Get profile_id from attempt
-                sql = load_sql("sql/v3/attempts/get_attempt_with_profile.sql")
-                attempt_with_profile = await conn.fetchrow(sql, row["attempt_id"])
-                attempt_profile_id_raw = (
-                    attempt_with_profile["profile_id"] if attempt_with_profile else None
-                )
-                # Convert asyncpg UUID to Python UUID if needed
-                attempt_profile_id = (
-                    str(attempt_profile_id_raw) if attempt_profile_id_raw else None
-                )
-
-                # Get department_id from scenario_departments
-                sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
-                scenario_dept_rows = await conn.fetch(sql, scenario_id)
-                department_id = None
-
-                if scenario_dept_rows and len(scenario_dept_rows) > 0:
-                    # Use first department from scenario
-                    dept_id_raw = scenario_dept_rows[0]["department_id"]
-                    department_id = uuid.UUID(str(dept_id_raw))
-                    logger.info(f"Using department_id from scenario: {department_id}")
-                elif attempt_profile_id:
-                    # Fallback to profile's departments
-                    sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
-                    profile_dept_rows = await conn.fetch(sql, attempt_profile_id)
-                    if profile_dept_rows and len(profile_dept_rows) > 0:
-                        dept_id_raw = profile_dept_rows[0]["id"]
-                        department_id = uuid.UUID(str(dept_id_raw))
-                        logger.info(
-                            f"Using department_id from profile: {department_id}"
-                        )
-
-                if not department_id:
-                    # Last resort: get any active department
-                    sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
-                    all_dept_rows = await conn.fetch(sql)
-                    if all_dept_rows and len(all_dept_rows) > 0:
-                        dept_id_raw = all_dept_rows[0]["id"]
-                        department_id = uuid.UUID(str(dept_id_raw))
-                        logger.info(f"Using first active department: {department_id}")
-
-                if not department_id:
-                    logger.warning(
-                        "Cannot generate scenario: no department_id available, continuing with parent scenario"
-                    )
-                else:
-                    # Use randomization function to select attributes and create child scenario
-                    from app.api.v3.scenarios.randomize import (
-                        randomize_scenario_attributes,
-                    )
-
-                    attempt_profile_uuid = (
-                        uuid.UUID(attempt_profile_id) if attempt_profile_id else None
-                    )
-
-                    try:
-                        # Call randomization function which handles attribute selection and child creation
-                        randomized_result = await randomize_scenario_attributes(
-                            conn=conn,
-                            persona_ids=None,
-                            document_ids=None,
-                            parameter_item_ids=None,
-                            department_ids=[
-                                department_id
-                            ],  # Use the department we already selected
-                            scenario_id=scenario_id,
-                            profile_id=attempt_profile_uuid,
-                            targets=None,  # Randomize all
-                        )
-
-                        new_scenario_id = randomized_result["child_scenario_id"]
-                        if not new_scenario_id:
-                            raise ValueError("Failed to create child scenario")
-
-                        logger.info(
-                            f"Created child scenario variant {new_scenario_id} for parent {scenario_id} "
-                            f"with persona_id={randomized_result['persona_id']}, "
-                            f"document_ids={randomized_result['document_ids']}, "
-                            f"parameter_item_ids={randomized_result['parameter_item_ids']}"
-                        )
-
-                        # Update chat to use child scenario instead of parent
-                        sql = load_sql("sql/v3/simulations/update_chat_scenario_id.sql")
-                        await conn.execute(sql, row["chat_id"], new_scenario_id)
-                        logger.info(
-                            f"Updated chat {row['chat_id']} to use child scenario {new_scenario_id}"
-                        )
-
-                        # Update scenario_id for result - use child scenario
-                        scenario_id = new_scenario_id
-
-                        # Fetch child scenario data for result
-                        sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
-                        child_scenario = await conn.fetchrow(sql, new_scenario_id)
-                        if child_scenario:
-                            # Get problem statement from child
-                            sql = load_sql(
-                                "sql/v3/scenarios/get_scenario_problem_statement_active.sql"
-                            )
-                            problem_row = await conn.fetchrow(sql, new_scenario_id)
-                            child_problem_statement = (
-                                problem_row.get("problem_statement")
-                                if problem_row
-                                else None
-                            )
-
-                            # Update row data for result (convert Record to dict first)
-                            row_dict = dict(row)
-                            row_dict["scenario_id"] = new_scenario_id
-                            row_dict["scenario_name"] = child_scenario.get("name", "")
-                            row_dict["problem_statement"] = (
-                                child_problem_statement or ""
-                            )
-                            row = row_dict
-                            scenario_metadata["generated"] = True
-
-                    except Exception as gen_error:
-                        # Log error but don't fail the entire simulation start
-                        logger.error(
-                            f"Failed to generate scenario {scenario_id}: {str(gen_error)}",
-                            exc_info=True,
-                        )
-                        # Continue with existing scenario (may have no problem statement)
-
-            start_payload = {
-                "attempt_id": row["attempt_id"],
-                "chat_id": row["chat_id"],
-                "chat_title": row["chat_title"],
-                "scenario": {
-                    "id": str(row["scenario_id"]),
-                    "name": row["scenario_name"],
-                    "problem_statement": row["problem_statement"],
-                    "active": scenario_metadata.get("active"),
-                    "generated": scenario_metadata.get("generated"),
-                },
-            }
+                }
 
             logger.info(
                 f"Created attempt {start_payload['attempt_id']} for simulation {simulation_id}"
@@ -375,10 +366,11 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                     exc_info=True,
                 )
 
-            # Join the client to the simulation room for real-time updates
-            simulation_room = f"simulation_{start_payload['chat_id']}"
-            await sio.enter_room(sid, simulation_room)
-            logger.info(f"Client {sid} joined simulation room {simulation_room}")
+            # Join the client to the simulation room for real-time updates (only for scenarios with chats)
+            if start_payload.get("chat_id"):
+                simulation_room = f"simulation_{start_payload['chat_id']}"
+                await sio.enter_room(sid, simulation_room)
+                logger.info(f"Client {sid} joined simulation room {simulation_room}")
 
             # Emit success response
             await simulation_started(
@@ -386,13 +378,12 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                     success=True,
                     message="Simulation started successfully",
                     attempt_id=str(start_payload["attempt_id"]),
-                    chat_id=str(start_payload["chat_id"]),
                 ),
                 room=sid,
             )
 
             logger.info(
-                f"Simulation started successfully for {sid}: attempt={start_payload['attempt_id']}, chat={start_payload['chat_id']}"
+                f"Simulation started successfully for {sid}: attempt={start_payload['attempt_id']}"
             )
 
     except Exception as e:

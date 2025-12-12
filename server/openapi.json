@@ -29905,6 +29905,98 @@
             },
             "type": "object",
             "title": "Auth Items Mapping"
+          },
+          "default_admin_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Admin Profile Id"
+          },
+          "default_admin_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Admin Name"
+          },
+          "default_guest_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Guest Profile Id"
+          },
+          "default_guest_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Guest Name"
+          },
+          "all_provider_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "All Provider Ids"
+          },
+          "all_provider_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "All Provider Mapping"
+          },
+          "all_auth_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "All Auth Ids"
+          },
+          "all_auth_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "All Auth Mapping"
           }
         },
         "type": "object",
@@ -29936,7 +30028,15 @@
           "provider_mapping",
           "provider_key_mapping",
           "auth_key_mapping",
-          "auth_items_mapping"
+          "auth_items_mapping",
+          "default_admin_profile_id",
+          "default_admin_name",
+          "default_guest_profile_id",
+          "default_guest_name",
+          "all_provider_ids",
+          "all_provider_mapping",
+          "all_auth_ids",
+          "all_auth_mapping"
         ],
         "title": "SettingsDetailResponse",
         "description": "Detailed settings response."
@@ -33701,6 +33801,34 @@
             ],
             "title": "Provider Key Mapping"
           },
+          "provider_enabled": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Enabled"
+          },
+          "auth_enabled": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Enabled"
+          },
           "auth_key_mapping": {
             "anyOf": [
               {
@@ -33717,6 +33845,28 @@
               }
             ],
             "title": "Auth Key Mapping"
+          },
+          "default_admin_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Admin Profile Id"
+          },
+          "default_guest_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Guest Profile Id"
           }
         },
         "type": "object",
@@ -41589,30 +41739,6 @@
         "title": "DocumentDetailItem",
         "description": "Document detail for preview."
       },
-      "app__api__v3__videos__detail__ProblemStatementInfo": {
-        "properties": {
-          "problem_statement": {
-            "type": "string",
-            "title": "Problem Statement"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "problem_statement",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "ProblemStatementInfo",
-        "description": "Problem statement info for mapping."
-      },
       "app__api__v3__videos__detail__VideoDetailResponse": {
         "properties": {
           "name": {
@@ -41686,37 +41812,6 @@
             },
             "type": "object",
             "title": "Outline Mapping"
-          },
-          "problem_statement_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Problem Statement Ids"
-          },
-          "problem_statement_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__detail__ProblemStatementInfo"
-            },
-            "type": "object",
-            "title": "Problem Statement Mapping"
-          },
-          "objective_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objective Ids"
-          },
-          "objective_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Objective Mapping"
           },
           "document_ids": {
             "items": {
@@ -42124,10 +42219,6 @@
           "valid_department_ids",
           "outline_ids",
           "outline_mapping",
-          "problem_statement_ids",
-          "problem_statement_mapping",
-          "objective_ids",
-          "objective_mapping",
           "document_ids",
           "document_mapping",
           "document_details",
@@ -42337,30 +42428,6 @@
         "title": "DocumentDetailItem",
         "description": "Document detail for preview."
       },
-      "app__api__v3__videos__new__ProblemStatementInfo": {
-        "properties": {
-          "problem_statement": {
-            "type": "string",
-            "title": "Problem Statement"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "problem_statement",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "ProblemStatementInfo",
-        "description": "Problem statement info for mapping."
-      },
       "app__api__v3__videos__new__VideoDetailResponse": {
         "properties": {
           "name": {
@@ -42431,37 +42498,6 @@
             },
             "type": "object",
             "title": "Outline Mapping"
-          },
-          "problem_statement_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Problem Statement Ids"
-          },
-          "problem_statement_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__new__ProblemStatementInfo"
-            },
-            "type": "object",
-            "title": "Problem Statement Mapping"
-          },
-          "objective_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objective Ids"
-          },
-          "objective_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Objective Mapping"
           },
           "document_ids": {
             "items": {
@@ -42870,10 +42906,6 @@
           "valid_department_ids",
           "outline_ids",
           "outline_mapping",
-          "problem_statement_ids",
-          "problem_statement_mapping",
-          "objective_ids",
-          "objective_mapping",
           "document_ids",
           "document_mapping",
           "document_details",

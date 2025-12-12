@@ -19,7 +19,7 @@ def create_parameter_via_ui(
     numerical: bool = False,
     active: bool = True,
     document_parameter: bool = False,
-    practice_parameter: bool = False,
+    simulation_parameter: bool = False,
 ) -> tuple[str, str]:
     """Create a parameter via UI and return (parameter_name, parameter_id)."""
     parameter_name = name or generate_unique_parameter_name("UI Parameter")
@@ -51,10 +51,10 @@ def create_parameter_via_ui(
         if document_switch.count() and not document_switch.is_checked():
             document_switch.click()
 
-    if practice_parameter:
-        practice_switch = page.get_by_test_id("switch-parameter-practice")
-        if practice_switch.count() and not practice_switch.is_checked():
-            practice_switch.click()
+    if simulation_parameter:
+        simulation_switch = page.get_by_test_id("switch-parameter-simulation")
+        if simulation_switch.count() and not simulation_switch.is_checked():
+            simulation_switch.click()
 
     submit_button = page.get_by_test_id("btn-submit-parameter")
     submit_button.click()

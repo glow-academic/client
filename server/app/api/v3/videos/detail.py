@@ -101,14 +101,6 @@ class QuestionResponse(BaseModel):
     options: list[QuestionOptionResponse]
 
 
-class ProblemStatementInfo(BaseModel):
-    """Problem statement info for mapping."""
-
-    problem_statement: str
-    created_at: str
-    updated_at: str
-
-
 class DocumentDetailItem(BaseModel):
     """Document detail for preview."""
 
@@ -165,10 +157,6 @@ class VideoDetailResponse(BaseModel):
     valid_department_ids: list[str]
     outline_ids: list[str]
     outline_mapping: dict[str, dict[str, str]]
-    problem_statement_ids: list[str]
-    problem_statement_mapping: dict[str, ProblemStatementInfo]
-    objective_ids: list[str]
-    objective_mapping: dict[str, dict[str, str]]
     document_ids: list[str]
     document_mapping: dict[str, dict[str, Any]]
     document_details: list[DocumentDetailItem]
@@ -942,29 +930,6 @@ async def get_video_detail(
         if not isinstance(valid_dept_ids, list):
             valid_dept_ids = []
 
-        # Parse problem_statement_mapping from JSONB
-        problem_statement_mapping_data = parse_jsonb(
-            video.get("problem_statement_mapping")
-        )
-        problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
-        if isinstance(problem_statement_mapping_data, dict):
-            for k, v in problem_statement_mapping_data.items():
-                if isinstance(v, dict):
-                    problem_statement_mapping[k] = ProblemStatementInfo(
-                        problem_statement=v.get("problem_statement", ""),
-                        created_at=v.get("created_at", ""),
-                        updated_at=v.get("updated_at", ""),
-                    )
-
-        # Parse objective_mapping from JSONB
-        objective_mapping_data = parse_jsonb(video.get("objective_mapping"))
-        objective_mapping: dict[str, dict[str, str]] = {}
-        if isinstance(objective_mapping_data, dict):
-            objective_mapping = {
-                k: {"name": v.get("name", ""), "description": v.get("description", "")}
-                for k, v in objective_mapping_data.items()
-            }
-
         # Parse outline_mapping from JSONB
         outline_mapping_data = parse_jsonb(video.get("outline_mapping"))
         outline_mapping: dict[str, dict[str, str]] = {}
@@ -1054,8 +1019,9 @@ async def get_video_detail(
         if isinstance(video_images_data, list):
             video_images = [
                 {
-                    "id": img.get("id", ""),
+                    "id": img.get("upload_id") or img.get("id", ""),
                     "name": img.get("name", ""),
+                    "upload_id": img.get("upload_id") or img.get("id", ""),
                     "file_path": img.get("file_path", ""),
                     "mime_type": img.get("mime_type", ""),
                     "active": img.get("active", True),
@@ -1067,14 +1033,6 @@ async def get_video_detail(
         outline_ids = video.get("outline_ids") or []
         if not isinstance(outline_ids, list):
             outline_ids = []
-
-        problem_statement_ids = video.get("problem_statement_ids") or []
-        if not isinstance(problem_statement_ids, list):
-            problem_statement_ids = []
-
-        objective_ids = video.get("objective_ids") or []
-        if not isinstance(objective_ids, list):
-            objective_ids = []
 
         document_ids = video.get("document_ids") or []
         if not isinstance(document_ids, list):
@@ -1703,10 +1661,6 @@ async def get_video_detail(
             valid_department_ids=[str(did) for did in valid_dept_ids],
             outline_ids=[str(oid) for oid in outline_ids],
             outline_mapping=outline_mapping,
-            problem_statement_ids=[str(psid) for psid in problem_statement_ids],
-            problem_statement_mapping=problem_statement_mapping,
-            objective_ids=[str(oid) for oid in objective_ids],
-            objective_mapping=objective_mapping,
             # document_ids will be set below with final values
             document_mapping=document_mapping_dict,
             document_details=document_details,

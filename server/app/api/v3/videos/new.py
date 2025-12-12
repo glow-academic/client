@@ -749,14 +749,6 @@ class DocumentDetailItem(BaseModel):
     is_template: bool = False  # Whether this document is a template
 
 
-class ProblemStatementInfo(BaseModel):
-    """Problem statement info for mapping."""
-
-    problem_statement: str
-    created_at: str
-    updated_at: str
-
-
 class RangeMinMax(BaseModel):
     """Min/max range values."""
 
@@ -795,10 +787,6 @@ class VideoDetailResponse(BaseModel):
     valid_department_ids: list[str]
     outline_ids: list[str]
     outline_mapping: dict[str, dict[str, str]]
-    problem_statement_ids: list[str]
-    problem_statement_mapping: dict[str, ProblemStatementInfo]
-    objective_ids: list[str]
-    objective_mapping: dict[str, dict[str, str]]
     document_ids: list[str]
     document_mapping: dict[str, dict[str, Any]]
     document_details: list[DocumentDetailItem]
@@ -955,20 +943,6 @@ async def get_video_new(
                         parameter_item_ids=to_str_list(
                             ddata.get("parameter_item_ids")
                         ),  # Database column name (keeping as-is)
-                    )
-
-        # Parse problem_statement_mapping from JSONB
-        problem_statement_mapping_data = parse_jsonb(
-            result.get("problem_statement_mapping")
-        )
-        problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
-        if isinstance(problem_statement_mapping_data, dict):
-            for k, v in problem_statement_mapping_data.items():
-                if isinstance(v, dict):
-                    problem_statement_mapping[k] = ProblemStatementInfo(
-                        problem_statement=v.get("problem_statement", ""),
-                        created_at=v.get("created_at", ""),
-                        updated_at=v.get("updated_at", ""),
                     )
 
         # Parse document_mapping from JSONB
@@ -1636,13 +1610,9 @@ async def get_video_new(
             # Department
             department_ids=default_department_ids,
             valid_department_ids=dept_ids,
-            # Problem statement and objectives (empty for default)
+            # Outlines (empty for default)
             outline_ids=[],
             outline_mapping={},
-            problem_statement_ids=[],
-            problem_statement_mapping=problem_statement_mapping,
-            objective_ids=[],
-            objective_mapping={},
             document_mapping=document_mapping_dict,
             document_details=document_details,
             valid_document_ids=filtered_valid_document_ids,

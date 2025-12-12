@@ -563,9 +563,6 @@ export default function StaffEditModal({
                       hideSelectedChips={true}
                       buttonClassName="w-full"
                     />
-                      disabled={isSubmitting}
-                      buttonClassName="h-10"
-                    />
                     <p className="text-xs text-muted-foreground">
                       Set the primary department for this staff member
                     </p>

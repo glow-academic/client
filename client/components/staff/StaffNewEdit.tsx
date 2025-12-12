@@ -660,9 +660,6 @@ export default function StaffNewEdit({
                       hideSelectedChips={true}
                       buttonClassName="w-full"
                     />
-                      disabled={isReadonly || isSubmitting}
-                      buttonClassName="h-10"
-                    />
                   ) : null}
                   <p className="text-xs text-muted-foreground">
                     Set the primary department for this staff member

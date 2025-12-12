@@ -17,7 +17,7 @@ async def test_duplicate_parameter(
 
     # Create an original parameter
     original_parameter_id = await db.fetchval(
-        "INSERT INTO parameters(name, description, numerical, active, document_parameter, practice_parameter) "
+        "INSERT INTO parameters(name, description, numerical, active, document_parameter, simulation_parameter) "
         "VALUES ('Original Parameter', 'Original Description', false, true, false, false) RETURNING id"
     )
 
@@ -109,7 +109,7 @@ async def test_duplicate_parameter_without_department_links(
     """Test duplicating a parameter that has no department links."""
     # Create an original parameter without department links
     original_parameter_id = await db.fetchval(
-        "INSERT INTO parameters(name, description, numerical, active, document_parameter, practice_parameter) "
+        "INSERT INTO parameters(name, description, numerical, active, document_parameter, simulation_parameter) "
         "VALUES ('No Dept Parameter', 'Test Description', false, true, false, false) RETURNING id"
     )
 

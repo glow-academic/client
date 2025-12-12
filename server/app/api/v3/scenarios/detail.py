@@ -1215,8 +1215,9 @@ async def get_scenario_detail(
         if isinstance(scenario_images_data, list):
             scenario_images = [
                 {
-                    "id": img.get("id", ""),
+                    "id": img.get("upload_id") or img.get("id", ""),
                     "name": img.get("name", ""),
+                    "upload_id": img.get("upload_id") or img.get("id", ""),
                     "file_path": img.get("file_path", ""),
                     "mime_type": img.get("mime_type", ""),
                     "active": img.get("active", True),

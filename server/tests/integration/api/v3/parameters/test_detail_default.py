@@ -43,7 +43,7 @@ async def test_get_parameter_new(
     assert "numerical" in data
     assert "active" in data
     assert "document_parameter" in data
-    assert "practice_parameter" in data
+    assert "simulation_parameter" in data
     assert "department_ids" in data
     assert "parameter_items" in data
     assert "department_mapping" in data

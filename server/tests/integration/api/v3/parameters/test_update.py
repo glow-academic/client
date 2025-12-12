@@ -17,7 +17,7 @@ async def test_update_parameter(
 
     # Create a parameter first
     parameter_id = await db.fetchval(
-        "INSERT INTO parameters(name, description, numerical, active, document_parameter, practice_parameter) "
+        "INSERT INTO parameters(name, description, numerical, active, document_parameter, simulation_parameter) "
         "VALUES ('Original Parameter', 'Original Description', false, true, false, false) RETURNING id"
     )
 
@@ -37,7 +37,7 @@ async def test_update_parameter(
             "numerical": True,
             "active": False,
             "document_parameter": True,
-            "practice_parameter": True,
+            "simulation_parameter": True,
             "department_ids": [str(dept_id)],
             "parameter_items": [
                 {
@@ -72,7 +72,7 @@ async def test_update_parameter(
     assert parameter["numerical"] is True
     assert parameter["active"] is False
     assert parameter["document_parameter"] is True
-    assert parameter["practice_parameter"] is True
+    assert parameter["simulation_parameter"] is True
 
     # Verify old item was deleted and new items were created
     old_item = await db.fetchrow("SELECT * FROM parameter_items WHERE id = $1", item_id)
@@ -102,7 +102,7 @@ async def test_update_parameter_not_found(
             "numerical": False,
             "active": True,
             "document_parameter": False,
-            "practice_parameter": False,
+            "simulation_parameter": False,
             "department_ids": None,
             "parameter_items": [],
         },

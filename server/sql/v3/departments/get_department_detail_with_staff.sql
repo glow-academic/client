@@ -260,11 +260,25 @@ model_key_mapping_data AS (
     FROM model_key_associations mka
 ),
 department_current_settings AS (
-    -- Get current settings_id for this department (if any)
-    SELECT ds.settings_id::text as settings_id
-    FROM department_settings ds
-    WHERE ds.department_id = $1::uuid AND ds.active = true
-    LIMIT 1
+    -- Get current settings_id for this department (department-specific first, then default)
+    SELECT COALESCE(
+        -- Department-specific settings for this department
+        (SELECT ds.settings_id::text
+         FROM department_settings ds
+         WHERE ds.department_id = $1::uuid AND ds.active = true
+         LIMIT 1),
+        -- Fallback to default settings (no department links)
+        (SELECT s.id::text
+         FROM settings s
+         WHERE s.active = true
+         AND NOT EXISTS (
+             SELECT 1 FROM department_settings ds2 
+             WHERE ds2.settings_id = s.id 
+             AND ds2.active = true
+         )
+         ORDER BY s.created_at DESC
+         LIMIT 1)
+    ) as settings_id
 ),
 all_settings_ids AS (
     -- Get all settings IDs for mapping
@@ -282,6 +296,7 @@ settings_departments_data AS (
     GROUP BY ds.settings_id
 ),
 settings_mapping_data AS (
+    -- Only return department-specific settings for this department + default settings
     SELECT COALESCE(
         jsonb_object_agg(
             s.id::text,
@@ -297,6 +312,22 @@ settings_mapping_data AS (
     FROM settings s
     LEFT JOIN settings_departments_data sdd ON sdd.settings_id::text = s.id::text
     WHERE s.active = true
+    AND (
+        -- Include department-specific settings for this department
+        EXISTS (
+            SELECT 1 FROM department_settings ds 
+            WHERE ds.settings_id = s.id 
+            AND ds.department_id = $1::uuid 
+            AND ds.active = true
+        )
+        OR
+        -- Include default settings (no department links)
+        NOT EXISTS (
+            SELECT 1 FROM department_settings ds2 
+            WHERE ds2.settings_id = s.id 
+            AND ds2.active = true
+        )
+    )
 )
 SELECT 
     d.id::text as department_id,

@@ -164,7 +164,7 @@ def create_parameter_api(
     numerical: bool = False,
     active: bool = True,
     document_parameter: bool = False,
-    practice_parameter: bool = False,
+    simulation_parameter: bool = False,
     department_ids: list[str] | None = None,
     parameter_items: list[dict[str, Any]] | None = None,
     profile_id: str = PROFILE_ID,
@@ -191,7 +191,7 @@ def create_parameter_api(
         "numerical": numerical,
         "active": active,
         "document_parameter": document_parameter,
-        "practice_parameter": practice_parameter,
+        "simulation_parameter": simulation_parameter,
         "department_ids": department_ids,
         "parameter_items": parameter_items,
     }

@@ -13,7 +13,7 @@ async def test_delete_parameter(
     """Test deleting a parameter that is not in use."""
     # Create a parameter with items
     parameter_id = await db.fetchval(
-        "INSERT INTO parameters(name, description, numerical, active, document_parameter, practice_parameter) "
+        "INSERT INTO parameters(name, description, numerical, active, document_parameter, simulation_parameter) "
         "VALUES ('Test Parameter', 'Test Description', false, true, false, false) RETURNING id"
     )
 
@@ -54,7 +54,7 @@ async def test_delete_parameter_in_use(
     """Test deleting a parameter that is in use by scenarios."""
     # Create a parameter
     parameter_id = await db.fetchval(
-        "INSERT INTO parameters(name, description, numerical, active, document_parameter, practice_parameter) "
+        "INSERT INTO parameters(name, description, numerical, active, document_parameter, simulation_parameter) "
         "VALUES ('In Use Parameter', 'Test Description', false, true, false, false) RETURNING id"
     )
 

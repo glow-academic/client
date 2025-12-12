@@ -407,7 +407,7 @@ parameter_data AS (
     JOIN parameter_fields fp ON fp.parameter_id = par.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE par.active = true
-      AND par.practice_parameter = true
+      AND par.simulation_parameter = true
     GROUP BY par.id, par.name, par.description
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($2::uuid[])) > 0)
@@ -437,7 +437,7 @@ parameter_item_data AS (
     JOIN parameters par ON par.id = fp.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE par.active = true
-      AND par.practice_parameter = true
+      AND par.simulation_parameter = true
     GROUP BY f.id, f.name, f.description, fp.parameter_id, par.id, par.name
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($2::uuid[])) > 0)

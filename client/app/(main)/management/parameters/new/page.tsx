@@ -77,7 +77,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description: "Create a new system parameter for teaching assistant training platform. Configure platform-wide parameters, learning environment settings, and system-wide configurations for effective L&D program administration.",
   };
 }
-}
 
 export default async function NewParameterPage() {
   const session = await getSession();

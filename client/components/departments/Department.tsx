@@ -31,6 +31,7 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { Loader2, Power, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { SettingsForm } from "@/components/common/settings/SettingsForm";
 // Import types from new page (create action)
 import type {
   CreateDepartmentIn,
@@ -149,12 +150,15 @@ export default function Department({
     SettingsDetailOut | null | undefined
   >(initialSettingsDetail);
 
-  // Key mappings state
+  // Key mappings state (for SettingsForm)
   const [providerKeyMapping, setProviderKeyMapping] = useState<
     Record<string, string>
   >({});
   const [authKeyMapping, setAuthKeyMapping] = useState<
     Record<string, Record<string, string>>
+  >({});
+  const [providerEnabled, setProviderEnabled] = useState<
+    Record<string, boolean>
   >({});
 
   // Use server-provided data (no React Query needed when server data is provided)
@@ -233,14 +237,16 @@ export default function Department({
         const hasChanged =
           prev?.title !== departmentFormData.title ||
           prev?.description !== departmentFormData.description ||
-          prev?.active !== departmentFormData.active;
+          prev?.active !== departmentFormData.active ||
+          prev?.settingsId !== departmentFormData.settingsId;
         return hasChanged ? departmentFormData : prev;
       });
       setOriginalFormData((prev) => {
         const hasChanged =
           prev?.title !== departmentFormData.title ||
           prev?.description !== departmentFormData.description ||
-          prev?.active !== departmentFormData.active;
+          prev?.active !== departmentFormData.active ||
+          prev?.settingsId !== departmentFormData.settingsId;
         return hasChanged ? departmentFormData : prev;
       });
     } else if (!isEditMode && departmentData) {
@@ -335,40 +341,19 @@ export default function Department({
     }
   };
 
-  // Build key mapping for KeyPicker
-  const keyMapping = useMemo(() => {
-    if (!keysList) return {};
-    const mapping: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        key_masked: string;
-        active: boolean;
-        department_ids: string[] | null;
-      }
-    > = {};
-    keysList.keys.forEach((key) => {
-      mapping[key.key_id] = {
-        name: key.name,
-        description: key.description || "",
-        key_masked: key.key_masked,
-        active: key.active,
-        department_ids: key.department_ids || null,
-      };
-    });
-    return mapping;
-  }, [keysList]);
 
-  const validKeyIds = useMemo(() => {
-    return keysList?.keys.map((key) => key.key_id) || [];
-  }, [keysList]);
-
-  // Initialize key mappings from settings detail
+  // Initialize key mappings and provider enabled state from settings detail
   useEffect(() => {
     if (settingsDetail) {
       setProviderKeyMapping(settingsDetail.provider_key_mapping || {});
       setAuthKeyMapping(settingsDetail.auth_key_mapping || {});
+      
+      // Initialize provider enabled state
+      const enabled: Record<string, boolean> = {};
+      settingsDetail.all_provider_ids.forEach((providerId) => {
+        enabled[providerId] = settingsDetail.provider_ids.includes(providerId);
+      });
+      setProviderEnabled(enabled);
     }
   }, [settingsDetail]);
 
@@ -637,242 +622,62 @@ export default function Department({
           </div>
         )}
 
-        {/* Key Pickers for Linked Settings */}
+        {/* Settings Configuration - Using Shared SettingsForm */}
         {isEditMode && settingsDetail && keysList && formData?.settingsId && (
           <div className="space-y-4 border-t pt-4">
-            <h3 className="text-lg font-semibold">
-              Settings Key Configuration
-            </h3>
-
-            {/* Provider Keys */}
-            {settingsDetail.provider_ids &&
-              settingsDetail.provider_ids.length > 0 && (
-                <div className="space-y-2">
-                  <Label>AI Provider Keys</Label>
-                  <div className="space-y-4">
-                    {settingsDetail.provider_ids.map((providerId) => {
-                      const provider =
-                        settingsDetail.provider_mapping?.[providerId];
-                      const selectedKeyId =
-                        providerKeyMapping[providerId] || null;
-                      return provider ? (
-                        <div
-                          key={providerId}
-                          className="p-3 border rounded-lg bg-muted/50 space-y-2"
-                        >
-                          <div className="font-medium">{provider["name"]}</div>
-                          {provider["description"] && (
-                            <div className="text-sm text-muted-foreground">
-                              {provider["description"]}
-                            </div>
-                          )}
-                          <div className="space-y-1">
-                            <Label className="text-xs">API Key</Label>
-                            <GenericPicker
-                              items={keyMapping}
-                              itemIds={validKeyIds}
-                              selectedIds={selectedKeyId ? [selectedKeyId] : []}
-                              onSelect={(ids: string[]) => {
-                                setProviderKeyMapping((prev) => ({
-                                  ...prev,
-                                  [providerId]: ids[0] || "",
-                                }));
-                              }}
-                              getId={(item) =>
-                                (item as unknown as { id: string }).id
-                              }
-                              getLabel={(item) => item["name"] || ""}
-                              getSearchText={(item) =>
-                                `${item["name"]} ${item["description"] || ""}`
-                              }
-                              renderButton={(selectedItems) => {
-                                if (selectedItems.length === 0) {
-                                  return "Select key...";
-                                }
-                                return (
-                                  selectedItems[0]?.["name"] || "Select key..."
-                                );
-                              }}
-                              renderItem={(item, _isSelected) => (
-                                <div className="flex items-center gap-3 w-full">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate">
-                                      {item["name"] || "Unnamed Key"}
-                                    </div>
-                                    {item["description"] && (
-                                      <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                        {item["description"]}
-                                      </div>
-                                    )}
-                                    {item["department_ids"] &&
-                                      Array.isArray(item["department_ids"]) &&
-                                      item["department_ids"].length > 0 && (
-                                        <div className="text-xs text-muted-foreground mt-1">
-                                          {item["department_ids"].length}{" "}
-                                          department
-                                          {item["department_ids"].length !== 1
-                                            ? "s"
-                                            : ""}
-                                        </div>
-                                      )}
-                                    {!item["active"] && (
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        Inactive
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              placeholder="Select key..."
-                              disabled={isReadonly || isSubmitting}
-                              multiSelect={false}
-                              hideSelectedChips={true}
-                              compact={true}
-                              buttonClassName="h-7 px-2 text-xs justify-between w-full"
-                            />
-                          </div>
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              )}
-
-            {/* Auth Keys */}
-            {settingsDetail.auth_ids && settingsDetail.auth_ids.length > 0 && (
-              <div className="space-y-2">
-                <Label>Authentication Method Keys</Label>
-                <div className="space-y-4">
-                  {settingsDetail.auth_ids.map((authId) => {
-                    const auth = settingsDetail.auth_mapping?.[authId];
-                    const authItems =
-                      settingsDetail.auth_items_mapping?.[authId] || [];
-                    const encryptedItems = authItems.filter(
-                      (item: { encrypted?: boolean }) => item.encrypted === true
-                    );
-                    return auth ? (
-                      <div
-                        key={authId}
-                        className="p-3 border rounded-lg bg-muted/50 space-y-3"
-                      >
-                        <div>
-                          <div className="font-medium">{auth["name"]}</div>
-                          {auth["description"] && (
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {auth["description"]}
-                            </div>
-                          )}
-                        </div>
-                        {encryptedItems.length > 0 && (
-                          <div className="space-y-2">
-                            <Label className="text-xs">Encrypted Items</Label>
-                            {encryptedItems.map((item, _index: number) => {
-                              const typedItem = item as {
-                                auth_item_id: string;
-                                name: string;
-                                description?: string;
-                              };
-                              const itemKeyMapping =
-                                authKeyMapping[authId] || {};
-                              const selectedKeyId =
-                                itemKeyMapping[typedItem.auth_item_id] || null;
-                              return (
-                                <div
-                                  key={typedItem.auth_item_id}
-                                  className="space-y-1"
-                                >
-                                  <Label className="text-xs text-muted-foreground">
-                                    {typedItem.name}
-                                    {typedItem.description && (
-                                      <span className="ml-1 text-xs text-muted-foreground">
-                                        - {typedItem.description}
-                                      </span>
-                                    )}
-                                  </Label>
-                                  <GenericPicker
-                                    items={keyMapping}
-                                    itemIds={validKeyIds}
-                                    selectedIds={
-                                      selectedKeyId ? [selectedKeyId] : []
-                                    }
-                                    onSelect={(ids) => {
-                                      setAuthKeyMapping((prev) => ({
-                                        ...prev,
-                                        [authId]: {
-                                          ...(prev[authId] || {}),
-                                          [typedItem.auth_item_id]:
-                                            ids[0] || "",
-                                        },
-                                      }));
-                                    }}
-                                    getId={(item) =>
-                                      (item as unknown as { id: string }).id
-                                    }
-                                    getLabel={(item) => item["name"] || ""}
-                                    getSearchText={(item) =>
-                                      `${item["name"]} ${item["description"] || ""}`
-                                    }
-                                    renderButton={(selectedItems) => {
-                                      if (selectedItems.length === 0) {
-                                        return "Select key...";
-                                      }
-                                      return (
-                                        selectedItems[0]?.["name"] ||
-                                        "Select key..."
-                                      );
-                                    }}
-                                    renderItem={(item, _isSelected) => (
-                                      <div className="flex items-center gap-3 w-full">
-                                        <div className="flex-1 min-w-0">
-                                          <div className="font-medium truncate">
-                                            {item.name || "Unnamed Key"}
-                                          </div>
-                                          {item.description && (
-                                            <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                              {item.description}
-                                            </div>
-                                          )}
-                                          {item.department_ids &&
-                                            item.department_ids.length > 0 && (
-                                              <div className="text-xs text-muted-foreground mt-1">
-                                                {item.department_ids.length}{" "}
-                                                department
-                                                {item.department_ids.length !==
-                                                1
-                                                  ? "s"
-                                                  : ""}
-                                              </div>
-                                            )}
-                                          {!item.active && (
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                              Inactive
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    placeholder="Select key..."
-                                    disabled={isReadonly || isSubmitting}
-                                    multiSelect={false}
-                                    hideSelectedChips={true}
-                                    compact={true}
-                                    buttonClassName="h-7 px-2 text-xs justify-between w-full"
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-            )}
-
-            <p className="text-xs text-muted-foreground">
-              Note: Key changes will update the linked settings version.
-            </p>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Department Settings</h3>
+              <p className="text-sm text-muted-foreground">
+                View and configure settings for this department. Settings changes
+                affect the linked settings version.
+              </p>
+            </div>
+            <SettingsForm
+              settingsDetail={settingsDetail}
+              keysList={keysList}
+              formData={{
+                primary_color: settingsDetail.primary_color || "#171717",
+                accent: settingsDetail.accent || "#f5f5f5",
+                background: settingsDetail.background || "#ffffff",
+                surface: settingsDetail.surface || "#ffffff",
+                success: settingsDetail.success || "#009e34",
+                warning: settingsDetail.warning || "#ea8100",
+                error: settingsDetail.error || "#e7000b",
+                sidebar_background:
+                  settingsDetail.sidebar_background || "#fafafa",
+                sidebar_primary: settingsDetail.sidebar_primary || "#171717",
+                chart1: settingsDetail.chart1 || "#f54900",
+                chart2: settingsDetail.chart2 || "#009689",
+                chart3: settingsDetail.chart3 || "#104e64",
+                chart4: settingsDetail.chart4 || "#ffb900",
+                chart5: settingsDetail.chart5 || "#fe9a00",
+                guest_login_enabled:
+                  settingsDetail.guest_login_enabled ?? true,
+                success_threshold: settingsDetail.success_threshold ?? 85,
+                warning_threshold: settingsDetail.warning_threshold ?? 80,
+                danger_threshold: settingsDetail.danger_threshold ?? 70,
+                default_admin_profile_id:
+                  settingsDetail.default_admin_profile_id || null,
+                default_guest_profile_id:
+                  settingsDetail.default_guest_profile_id || null,
+              }}
+              providerKeyMapping={providerKeyMapping}
+              authKeyMapping={authKeyMapping}
+              onFormDataChange={() => {
+                // Read-only in department context
+              }}
+              onProviderKeyChange={() => {
+                // Read-only in department context
+              }}
+              onProviderEnabledChange={() => {
+                // Read-only in department context
+              }}
+              onAuthKeyChange={() => {
+                // Read-only in department context
+              }}
+              isSubmitting={isSubmitting}
+              readonly={true}
+            />
           </div>
         )}
 

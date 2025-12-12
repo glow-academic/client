@@ -78,7 +78,8 @@ video_core AS (
         vu.upload_id::text,
         COALESCE(vdd.department_ids, NULL) as department_ids,
         v.outline_agent_id::text,
-        v.image_agent_id::text
+        v.image_agent_id::text,
+        v.video_agent_id::text
     FROM videos v
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
     LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
@@ -372,15 +373,23 @@ video_images_data AS (
     SELECT COALESCE(
         jsonb_agg(
             jsonb_build_object(
-                'id', vi.upload_id::text,
-                'name', vi.name,
-                'upload_id', vi.upload_id::text,
+                'id', iu.upload_id::text,
+                'name', i.name,
+                'upload_id', iu.upload_id::text,
                 'active', vi.active
             )
-        ) FILTER (WHERE vi.upload_id IS NOT NULL),
+        ) FILTER (WHERE iu.upload_id IS NOT NULL),
         '[]'::jsonb
     ) as video_images
     FROM video_images vi
+    JOIN images i ON i.id = vi.image_id
+    LEFT JOIN LATERAL (
+        SELECT upload_id 
+        FROM image_uploads iu2 
+        WHERE iu2.image_id = i.id AND iu2.active = true 
+        ORDER BY iu2.created_at DESC 
+        LIMIT 1
+    ) iu ON true
     WHERE vi.video_id = $1 AND vi.active = true
 ),
 video_all_simulation_links AS (
@@ -829,6 +838,7 @@ SELECT
     COALESCE((SELECT questions FROM questions_json), '[]'::jsonb) as questions,
     vc.outline_agent_id,
     vc.image_agent_id,
+    vc.video_agent_id,
     COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
     COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     COALESCE((SELECT parameter_mapping FROM enhanced_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,

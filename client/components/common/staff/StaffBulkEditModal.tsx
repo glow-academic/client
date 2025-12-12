@@ -500,7 +500,6 @@ export default function StaffBulkEditModal({
                             }
                             buttonClassName="h-10"
                           />
-                          />
                         </TableCell>
                       )}
                     </TableRow>

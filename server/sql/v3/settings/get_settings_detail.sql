@@ -40,6 +40,44 @@ settings_providers_data AS (
     JOIN providers p ON p.id = sp.provider_id AND p.active = true
     WHERE s.id = $1::uuid
 ),
+all_providers_data AS (
+    -- Get ALL providers (not just linked ones)
+    SELECT 
+        ARRAY_AGG(p.id::text ORDER BY p.name) as all_provider_ids,
+        COALESCE(
+            jsonb_object_agg(
+                p.id::text,
+                jsonb_build_object(
+                    'name', p.name,
+                    'description', COALESCE(p.description, ''),
+                    'value', p.value,
+                    'active', p.active
+                )
+            ),
+            '{}'::jsonb
+        ) as all_provider_mapping
+    FROM providers p
+    WHERE p.active = true
+),
+all_auths_data AS (
+    -- Get ALL auths (not just linked ones)
+    SELECT 
+        ARRAY_AGG(a.id::text ORDER BY a.name) as all_auth_ids,
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'slug', a.slug,
+                    'active', a.active
+                )
+            ),
+            '{}'::jsonb
+        ) as all_auth_mapping
+    FROM auth a
+    WHERE a.active = true
+),
 settings_provider_keys_data AS (
     -- Get provider key mappings for this settings
     SELECT COALESCE(
@@ -77,7 +115,7 @@ settings_auth_keys_data AS (
     ) sak_grouped
 ),
 auth_items_data AS (
-    -- Get auth items for each linked auth (to know which items are encrypted)
+    -- Get auth items for ALL auths (not just linked ones) - to show all available auths
     SELECT 
         a.id::text as auth_id,
         COALESCE(
@@ -92,11 +130,9 @@ auth_items_data AS (
             ) FILTER (WHERE ai.id IS NOT NULL),
             '[]'::jsonb
         ) as items
-    FROM settings s
-    JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auth a ON a.id = sa.auth_id AND a.active = true
+    FROM auth a
     LEFT JOIN auth_items ai ON ai.auth_id = a.id
-    WHERE s.id = $1::uuid
+    WHERE a.active = true
     GROUP BY a.id
 ),
 auth_items_mapping_data AS (
@@ -109,6 +145,28 @@ auth_items_mapping_data AS (
         '{}'::jsonb
     ) as auth_items_mapping
     FROM auth_items_data aid
+),
+settings_default_account_data AS (
+    -- Get default admin/superadmin account for this settings
+    SELECT 
+        sda.profile_id::text as default_admin_profile_id,
+        p.first_name || ' ' || p.last_name as default_admin_name,
+        p.role as default_admin_role
+    FROM settings_default_account sda
+    JOIN profiles p ON p.id = sda.profile_id
+    WHERE sda.settings_id = $1::uuid AND sda.active = true
+    LIMIT 1
+),
+settings_default_guest_data AS (
+    -- Get default guest account for this settings
+    SELECT 
+        sdg.profile_id::text as default_guest_profile_id,
+        p.first_name || ' ' || p.last_name as default_guest_name,
+        p.role as default_guest_role
+    FROM settings_default_guest sdg
+    JOIN profiles p ON p.id = sdg.profile_id
+    WHERE sdg.settings_id = $1::uuid AND sdg.active = true
+    LIMIT 1
 )
 SELECT 
     s.id::text as settings_id,
@@ -138,13 +196,25 @@ SELECT
     COALESCE(spd.provider_mapping, '{}'::jsonb) as provider_mapping,
     COALESCE(spkd.provider_key_mapping, '{}'::jsonb) as provider_key_mapping,
     COALESCE(sakd.auth_key_mapping, '{}'::jsonb) as auth_key_mapping,
-    COALESCE(aimd.auth_items_mapping, '{}'::jsonb) as auth_items_mapping
+    COALESCE(aimd.auth_items_mapping, '{}'::jsonb) as auth_items_mapping,
+    sdad.default_admin_profile_id,
+    sdad.default_admin_name,
+    sdgd.default_guest_profile_id,
+    sdgd.default_guest_name,
+    apd.all_provider_ids,
+    apd.all_provider_mapping,
+    aad.all_auth_ids,
+    aad.all_auth_mapping
 FROM settings s
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
 LEFT JOIN settings_provider_keys_data spkd ON true
 LEFT JOIN settings_auth_keys_data sakd ON true
 LEFT JOIN auth_items_mapping_data aimd ON true
+LEFT JOIN settings_default_account_data sdad ON true
+LEFT JOIN settings_default_guest_data sdgd ON true
+LEFT JOIN all_providers_data apd ON true
+LEFT JOIN all_auths_data aad ON true
 WHERE s.id = $1::uuid
 LIMIT 1
 

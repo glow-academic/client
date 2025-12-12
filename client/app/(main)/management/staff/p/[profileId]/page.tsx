@@ -111,7 +111,7 @@ export default async function StaffEditPage({
     ) {
       return (
         <DepartmentAccessDenied
-          resourceType="staff"
+          resourceType="department"
           redirectPath="/management/staff"
         />
       );
