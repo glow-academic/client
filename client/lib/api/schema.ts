@@ -12144,6 +12144,12 @@ export interface components {
                     [key: string]: string;
                 };
             };
+            /** Auth Value Mapping */
+            auth_value_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
             /** Auth Items Mapping */
             auth_items_mapping: {
                 [key: string]: {

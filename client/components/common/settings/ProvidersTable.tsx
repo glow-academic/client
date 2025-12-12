@@ -285,12 +285,12 @@ export function ProvidersTable({
                 tableRows.map((row) => {
                   const item = row.original;
                   return (
-                    <TableRow
-                      key={row.id}
+                  <TableRow
+                    key={row.id}
                       className={`hover:bg-muted/30 transition-colors ${
                         !item.enabled ? "opacity-50" : ""
                       }`}
-                    >
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}

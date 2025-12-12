@@ -625,13 +625,13 @@ export default function Department({
         {/* Settings Configuration - Using Shared SettingsForm */}
         {isEditMode && settingsDetail && keysList && formData?.settingsId && (
           <div className="space-y-4 border-t pt-4">
-            <div className="space-y-2">
+                <div className="space-y-2">
               <h3 className="text-lg font-semibold">Department Settings</h3>
               <p className="text-sm text-muted-foreground">
                 View and configure settings for this department. Settings changes
                 affect the linked settings version.
               </p>
-            </div>
+                            </div>
             <SettingsForm
               settingsDetail={settingsDetail}
               keysList={keysList}

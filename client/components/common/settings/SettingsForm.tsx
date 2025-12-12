@@ -107,6 +107,7 @@ export function SettingsForm({
   onProviderEnabledChange,
   onAuthEnabledChange,
   onAuthKeyChange,
+  onAuthValueChange,
   onDefaultAdminChange,
   onDefaultGuestChange,
   isSubmitting = false,
@@ -189,7 +190,7 @@ export function SettingsForm({
     }
   }, [settingsDetail]);
 
-  // Build auth table data - use ALL auths, not just linked ones
+  // Build auth table data - use ALL auths, show ALL items (encrypted and non-encrypted)
   const authTableData = useMemo(() => {
     if (!settingsDetail || !settingsDetail.all_auth_ids) return [];
     const data: Array<{
@@ -201,6 +202,8 @@ export function SettingsForm({
       auth_item_name: string;
       auth_item_description: string;
       selected_key_id: string | null;
+      value: string | null;
+      encrypted: boolean;
       enabled: boolean;
     }> = [];
 
@@ -208,14 +211,11 @@ export function SettingsForm({
       const auth = settingsDetail.all_auth_mapping?.[authId] || settingsDetail.auth_mapping?.[authId];
       const enabled = authEnabled[authId] ?? false;
       
-      // Only show items for enabled auths, or show auth row even if no items
+      // Get ALL items (encrypted and non-encrypted)
       const authItems = settingsDetail.auth_items_mapping?.[authId] || [];
-      const encryptedItems = authItems.filter(
-        (item: { encrypted?: boolean }) => item.encrypted === true
-      );
-
-      // If no encrypted items, still show the auth row
-      if (encryptedItems.length === 0) {
+      
+      // If no items, still show the auth row
+      if (authItems.length === 0) {
         data.push({
           auth_id: authId,
           auth_name: auth?.name || "",
@@ -225,16 +225,23 @@ export function SettingsForm({
           auth_item_name: "",
           auth_item_description: "",
           selected_key_id: null,
+          value: null,
+          encrypted: false,
           enabled,
         });
       } else {
-        encryptedItems.forEach((item: {
+        // Show all items (encrypted and non-encrypted)
+        authItems.forEach((item: {
           auth_item_id: string;
           name: string;
           description?: string;
+          encrypted?: boolean;
         }) => {
           const itemKeyMapping = authKeyMapping[authId] || {};
-          const selectedKeyId = itemKeyMapping[item.auth_item_id] || null;
+          const itemValueMapping = settingsDetail.auth_value_mapping?.[authId] || {};
+          const selectedKeyId = item.encrypted ? (itemKeyMapping[item.auth_item_id] || null) : null;
+          const value = !item.encrypted ? (itemValueMapping[item.auth_item_id] || null) : null;
+          
           data.push({
             auth_id: authId,
             auth_name: auth?.name || "",
@@ -244,6 +251,8 @@ export function SettingsForm({
             auth_item_name: item.name,
             auth_item_description: item.description || "",
             selected_key_id: selectedKeyId,
+            value: value,
+            encrypted: item.encrypted ?? false,
             enabled,
           });
         });

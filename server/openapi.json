@@ -29895,6 +29895,16 @@
             "type": "object",
             "title": "Auth Key Mapping"
           },
+          "auth_value_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Auth Value Mapping"
+          },
           "auth_items_mapping": {
             "additionalProperties": {
               "items": {
@@ -30028,6 +30038,7 @@
           "provider_mapping",
           "provider_key_mapping",
           "auth_key_mapping",
+          "auth_value_mapping",
           "auth_items_mapping",
           "default_admin_profile_id",
           "default_admin_name",

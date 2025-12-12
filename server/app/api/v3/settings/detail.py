@@ -56,6 +56,9 @@ class SettingsDetailResponse(BaseModel):
     auth_key_mapping: dict[
         str, dict[str, str]
     ]  # Auth key mapping (auth_id -> auth_item_id -> key_id)
+    auth_value_mapping: dict[
+        str, dict[str, str]
+    ]  # Auth value mapping (auth_id -> auth_item_id -> value) for non-encrypted items
     auth_items_mapping: dict[
         str, list[dict[str, Any]]
     ]  # Auth items mapping (auth_id -> list of auth_items)
@@ -162,6 +165,22 @@ async def get_settings_detail(
                 if isinstance(item_mapping, dict)
                 else {}
                 for auth_id, item_mapping in auth_key_mapping_data.items()
+            }
+
+        # Parse auth value mapping (for non-encrypted items)
+        auth_value_mapping: dict[str, dict[str, str]] = {}
+        auth_value_mapping_data = settings.get("auth_value_mapping")
+        if isinstance(auth_value_mapping_data, str):
+            auth_value_mapping_data = json.loads(auth_value_mapping_data)
+        if auth_value_mapping_data and isinstance(auth_value_mapping_data, dict):
+            auth_value_mapping = {
+                str(auth_id): {
+                    str(item_id): str(value)
+                    for item_id, value in item_mapping.items()
+                }
+                if isinstance(item_mapping, dict)
+                else {}
+                for auth_id, item_mapping in auth_value_mapping_data.items()
             }
 
         # Parse auth items mapping

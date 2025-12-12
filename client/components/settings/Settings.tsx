@@ -80,6 +80,10 @@ export default function Settings({
   const [authEnabled, setAuthEnabled] = useState<
     Record<string, boolean>
   >({});
+  // Auth value mapping (for non-encrypted items)
+  const [authValueMapping, setAuthValueMapping] = useState<
+    Record<string, Record<string, string>>
+  >({});
 
   // Build settings mapping for picker
   const settingsMapping = useMemo(() => {
@@ -394,6 +398,15 @@ export default function Settings({
                 [authId]: {
                   ...(prev[authId] || {}),
                   [authItemId]: keyId ?? "",
+                },
+              }));
+            }}
+            onAuthValueChange={(authId, authItemId, value) => {
+              setAuthValueMapping((prev) => ({
+                ...prev,
+                [authId]: {
+                  ...(prev[authId] || {}),
+                  [authItemId]: value,
                 },
               }));
             }}

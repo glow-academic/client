@@ -114,6 +114,30 @@ settings_auth_keys_data AS (
         GROUP BY sak.auth_id
     ) sak_grouped
 ),
+settings_auth_values_data AS (
+    -- Get auth value mappings (auth_id -> auth_item_id -> value) for non-encrypted items
+    SELECT COALESCE(
+        jsonb_object_agg(
+            auth_id::text,
+            item_value_mapping
+        ),
+        '{}'::jsonb
+    ) as auth_value_mapping
+    FROM (
+        SELECT 
+            sav.auth_id,
+            COALESCE(
+                jsonb_object_agg(
+                    sav.auth_item_id::text,
+                    sav.value
+                ) FILTER (WHERE sav.auth_item_id IS NOT NULL),
+                '{}'::jsonb
+            ) as item_value_mapping
+        FROM setting_auth_values sav
+        WHERE sav.settings_id = $1::uuid
+        GROUP BY sav.auth_id
+    ) sav_grouped
+),
 auth_items_data AS (
     -- Get auth items for ALL auths (not just linked ones) - to show all available auths
     SELECT 
@@ -196,6 +220,7 @@ SELECT
     COALESCE(spd.provider_mapping, '{}'::jsonb) as provider_mapping,
     COALESCE(spkd.provider_key_mapping, '{}'::jsonb) as provider_key_mapping,
     COALESCE(sakd.auth_key_mapping, '{}'::jsonb) as auth_key_mapping,
+    COALESCE(savd.auth_value_mapping, '{}'::jsonb) as auth_value_mapping,
     COALESCE(aimd.auth_items_mapping, '{}'::jsonb) as auth_items_mapping,
     sdad.default_admin_profile_id,
     sdad.default_admin_name,
@@ -210,6 +235,7 @@ LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
 LEFT JOIN settings_provider_keys_data spkd ON true
 LEFT JOIN settings_auth_keys_data sakd ON true
+LEFT JOIN settings_auth_values_data savd ON true
 LEFT JOIN auth_items_mapping_data aimd ON true
 LEFT JOIN settings_default_account_data sdad ON true
 LEFT JOIN settings_default_guest_data sdgd ON true

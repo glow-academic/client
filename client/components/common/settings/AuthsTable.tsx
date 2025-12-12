@@ -35,6 +35,8 @@ export interface AuthTableItem {
   auth_item_name: string;
   auth_item_description: string;
   selected_key_id: string | null;
+  value: string | null; // For non-encrypted items
+  encrypted: boolean;
   enabled: boolean;
 }
 
@@ -56,6 +58,11 @@ export interface AuthsTableProps {
     authItemId: string,
     keyId: string | null
   ) => void;
+  onValueChange: (
+    authId: string,
+    authItemId: string,
+    value: string
+  ) => void;
   onEnabledChange: (authId: string, enabled: boolean) => void;
   readonly?: boolean;
 }
@@ -65,6 +72,7 @@ export function AuthsTable({
   keyMapping,
   validKeyIds,
   onKeyChange,
+  onValueChange,
   onEnabledChange,
   readonly = false,
 }: AuthsTableProps) {
@@ -217,17 +225,17 @@ export function AuthsTable({
             <TooltipTrigger asChild>
               <div className="flex flex-col items-center gap-1 cursor-help">
                 <Key className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">API Key</span>
+                <span className="text-xs">API Key / Value</span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Select API key for this encrypted item</p>
+              <p>API key picker for encrypted items, text field for non-encrypted items</p>
             </TooltipContent>
           </Tooltip>
         ),
         cell: ({ row }) => {
           const item = row.original;
-          // Only show API key picker when auth is enabled and has an item_id
+          // Only show when auth is enabled and has an item_id
           if (!item.enabled || !item.auth_item_id) {
             return (
               <div className="flex items-center justify-center px-2">
@@ -235,66 +243,86 @@ export function AuthsTable({
               </div>
             );
           }
-          return (
-            <div className="flex items-center justify-center px-2">
-              <GenericPicker
-                items={keyMapping}
-                itemIds={validKeyIds}
-                selectedIds={item.selected_key_id ? [item.selected_key_id] : []}
-                onSelect={(ids: string[]) => {
-                  onKeyChange(item.auth_id, item.auth_item_id, ids[0] || null);
-                }}
-                getId={(item) => (item as unknown as { id: string }).id}
-                getLabel={(item) => item["name"] || ""}
-                getSearchText={(item) =>
-                  `${item["name"]} ${item["description"] || ""}`
-                }
-                renderButton={(selectedItems) => {
-                  if (selectedItems.length === 0) {
-                    return "Select key...";
+          
+          // Show API key picker for encrypted items
+          if (item.encrypted) {
+            return (
+              <div className="flex items-center justify-center px-2">
+                <GenericPicker
+                  items={keyMapping}
+                  itemIds={validKeyIds}
+                  selectedIds={item.selected_key_id ? [item.selected_key_id] : []}
+                  onSelect={(ids: string[]) => {
+                    onKeyChange(item.auth_id, item.auth_item_id, ids[0] || null);
+                  }}
+                  getId={(item) => (item as unknown as { id: string }).id}
+                  getLabel={(item) => item["name"] || ""}
+                  getSearchText={(item) =>
+                    `${item["name"]} ${item["description"] || ""}`
                   }
-                  return selectedItems[0]?.["name"] || "Select key...";
-                }}
-                renderItem={(item, _isSelected) => (
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">
-                        {item["name"] || "Unnamed Key"}
-                      </div>
-                      {item["description"] && (
-                        <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                          {item["description"]}
+                  renderButton={(selectedItems) => {
+                    if (selectedItems.length === 0) {
+                      return "Select key...";
+                    }
+                    return selectedItems[0]?.["name"] || "Select key...";
+                  }}
+                  renderItem={(item, _isSelected) => (
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">
+                          {item["name"] || "Unnamed Key"}
                         </div>
-                      )}
-                      {item["department_ids"] &&
-                        Array.isArray(item["department_ids"]) &&
-                        item["department_ids"].length > 0 && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {item["department_ids"].length} department
-                            {item["department_ids"].length !== 1 ? "s" : ""}
+                        {item["description"] && (
+                          <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                            {item["description"]}
                           </div>
                         )}
-                      {!item["active"] && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Inactive
-                        </div>
-                      )}
+                        {item["department_ids"] &&
+                          Array.isArray(item["department_ids"]) &&
+                          item["department_ids"].length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {item["department_ids"].length} department
+                              {item["department_ids"].length !== 1 ? "s" : ""}
+                            </div>
+                          )}
+                        {!item["active"] && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Inactive
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-                placeholder="Select key..."
+                  )}
+                  placeholder="Select key..."
+                  disabled={readonly}
+                  multiSelect={false}
+                  hideSelectedChips={true}
+                  compact={true}
+                  buttonClassName="h-7 px-2 text-xs justify-between w-full"
+                />
+              </div>
+            );
+          }
+          
+          // Show text input for non-encrypted items
+          return (
+            <div className="flex items-center justify-center px-2">
+              <input
+                type="text"
+                value={item.value || ""}
+                onChange={(e) => {
+                  onValueChange(item.auth_id, item.auth_item_id, e.target.value);
+                }}
                 disabled={readonly}
-                multiSelect={false}
-                hideSelectedChips={true}
-                compact={true}
-                buttonClassName="h-7 px-2 text-xs justify-between w-full"
+                placeholder="Enter value..."
+                className="h-7 px-2 text-xs border rounded-md w-full bg-background disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           );
         },
       },
     ],
-    [keyMapping, validKeyIds, onKeyChange, onEnabledChange, readonly, data]
+    [keyMapping, validKeyIds, onKeyChange, onValueChange, onEnabledChange, readonly, data]
   );
 
   const table = useReactTable({
