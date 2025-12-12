@@ -270,6 +270,10 @@ export default function Scenario({
         );
         if (data.success) {
           objectiveIds = data.objective_ids;
+          // Update state to trigger URL sync
+          setCurrentObjectiveIds(() => {
+            return data.objective_ids;
+          });
         }
       };
 
@@ -295,22 +299,34 @@ export default function Scenario({
         if (data.success) {
           documentIds.push(data.document_id);
 
-          // Add document to currentDocumentIds
-          // Template status will be determined from server documentDetails when data refreshes
           const parentDocumentId = data.parent_document_id;
           if (parentDocumentId) {
+            // Document has a parent - this is a dynamic child document (created from a template)
+            // Add child to currentDocumentIds and remove parent from templateDocumentIds
             // eslint-disable-next-line no-console
-            console.log("[Scenario] Adding document with parent:", {
+            console.log("[Scenario] Adding dynamic child document:", {
               parent_id: parentDocumentId,
               document_id: data.document_id,
             });
-            // Keep parent document in currentDocumentIds (don't replace)
-            // Template status will be derived from server documentDetails
+            // Add child document to currentDocumentIds
+            // Keep parent in URL (for persistence) but add child for display
+            setCurrentDocumentIds((prev) => {
+              // Add child if not already present
+              if (prev.includes(data.document_id)) {
+                return prev;
+              }
+              return [...prev, data.document_id];
+            });
+            // Note: We keep parent in templateDocumentIds for URL persistence
+            // The display logic will filter/show child instead of parent
+          } else {
+            // Regular document (no parent) - add to currentDocumentIds
+            // eslint-disable-next-line no-console
+            console.log("[Scenario] Adding new document:", data.document_id);
+            setCurrentDocumentIds((prev) => {
+              return [...prev, data.document_id];
+            });
           }
-          // Add the new document ID to regular documents
-          // eslint-disable-next-line no-console
-          console.log("[Scenario] Adding new document:", data.document_id);
-          setCurrentDocumentIds((prev) => [...prev, data.document_id]);
         } else {
           // eslint-disable-next-line no-console
           console.error("[Scenario] Document completion failed:", data.message);
@@ -533,11 +549,20 @@ export default function Scenario({
   // Documents are always enabled (no switch)
   const useDocuments = true;
   const documentVisionEnabled = false;
-  const [useImage, setUseImage] = useState(false);
-  // Objective count state: [min, max] - initialized from server or URL params
-  const [objectiveCount, setObjectiveCount] = useState<[number, number]>([
-    0, 0,
-  ]);
+  // Use Image flag - initialized from URL params (DHH-style: URL as source of truth)
+  const [useImage, setUseImage] = useState(() => {
+    const useImageFromUrl = searchParams.get("useImage");
+    return useImageFromUrl === "true";
+  });
+  // Objective count state: [min, max] - initialized from URL params (DHH-style: compute when needed)
+  const [objectiveCount, setObjectiveCount] = useState<[number, number]>(() => {
+    const objectivesMinFromUrl = searchParams.get("objectivesMin");
+    const objectivesMaxFromUrl = searchParams.get("objectivesMax");
+    const min = objectivesMinFromUrl ? parseInt(objectivesMinFromUrl, 10) : 0;
+    const max = objectivesMaxFromUrl ? parseInt(objectivesMaxFromUrl, 10) : 0;
+    // Return [min, max] but ensure valid numbers
+    return [isNaN(min) ? 0 : min, isNaN(max) ? 0 : max];
+  });
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
@@ -547,7 +572,14 @@ export default function Scenario({
   const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
   // templateDocumentIds comes from URL params (single source of truth)
-  const [templateDocumentIds, setTemplateDocumentIds] = useState<string[]>([]);
+  const [templateDocumentIds, setTemplateDocumentIds] = useState<string[]>(
+    () => {
+      const templateDocumentIdsFromUrl =
+        searchParams.get("templateDocumentIds")?.split(",").filter(Boolean) ||
+        [];
+      return templateDocumentIdsFromUrl;
+    }
+  );
   const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
     string | null
   >(null);
@@ -559,6 +591,14 @@ export default function Scenario({
       searchParams.get("problemStatementIds")?.split(",").filter(Boolean) || [];
     return problemStatementIdsFromUrl;
   });
+  // Initialize objective IDs from URL params (DHH-style: compute when needed)
+  const [currentObjectiveIds, setCurrentObjectiveIds] = useState<string[]>(
+    () => {
+      const objectiveIdsFromUrl =
+        searchParams.get("objectiveIds")?.split(",").filter(Boolean) || [];
+      return objectiveIdsFromUrl;
+    }
+  );
   const [image, setImage] = useState<{
     id: string;
     name: string;
@@ -665,13 +705,6 @@ export default function Scenario({
     []
   );
 
-  // Union of currentDocumentIds + templateDocumentIds for templates section (deduplicated)
-  // This is used in ContentSection to show all documents that should appear in templates section
-  const allTemplateDocumentIds = useMemo(() => {
-    const combined = [...currentDocumentIds, ...templateDocumentIds];
-    return [...new Set(combined)];
-  }, [currentDocumentIds, templateDocumentIds]);
-
   // Extract mappings from V2 response - defined early so they can be used in buildSearchParams
   const fieldMapping = useMemo(() => {
     return scenarioData?.field_mapping || {};
@@ -704,6 +737,9 @@ export default function Scenario({
     }
     if (currentProblemStatementIds.length > 0) {
       params.set("problemStatementIds", currentProblemStatementIds.join(","));
+    }
+    if (currentObjectiveIds.length > 0) {
+      params.set("objectiveIds", currentObjectiveIds.join(","));
     }
 
     // Add search params when non-empty
@@ -828,6 +864,7 @@ export default function Scenario({
     formData.parameterIds,
     currentFieldIds,
     currentProblemStatementIds,
+    currentObjectiveIds,
     personaSearchTerm,
     documentSearchTerm,
     parameterSearchTerm,
@@ -940,8 +977,76 @@ export default function Scenario({
   ]);
 
   // Combine currentDocumentIds and templateDocumentIds for preview
-  // Use the union that's already computed for templates section
-  const allPreviewDocumentIds = allTemplateDocumentIds;
+  // Filter out parent template documents if we have their children (dynamic documents)
+  // Also filter templateDocumentIds to exclude parents of children
+  const filteredTemplateDocumentIds = useMemo(() => {
+    // Get parent_document_id for each document in currentDocumentIds
+    const childParentIds = new Set<string>();
+    currentDocumentIds.forEach((docId) => {
+      const docDetail = scenarioData?.document_details?.find(
+        (d) => d.document_id === docId
+      );
+      const parentId = (docDetail as { parent_document_id?: string })
+        ?.parent_document_id;
+      if (parentId) {
+        childParentIds.add(parentId);
+      }
+    });
+    // Filter out parent documents from templateDocumentIds if we have their children
+    return templateDocumentIds.filter((docId) => !childParentIds.has(docId));
+  }, [currentDocumentIds, templateDocumentIds, scenarioData?.document_details]);
+
+  // For display: replace parent template documents with their children
+  // This ensures we show the actual dynamic document instead of the template
+  const allPreviewDocumentIds = useMemo(() => {
+    // Build a map of parent -> child for quick lookup
+    // Check ALL document_details, not just currentDocumentIds, to find children
+    const parentToChildMap = new Map<string, string>();
+    if (scenarioData?.document_details) {
+      scenarioData.document_details.forEach((docDetail) => {
+        const parentId = (docDetail as { parent_document_id?: string })
+          ?.parent_document_id;
+        if (parentId) {
+          // If we already have a child for this parent, keep the most recent one
+          // (or we could keep the first one - either way, we just need one child)
+          if (!parentToChildMap.has(parentId)) {
+            parentToChildMap.set(parentId, docDetail.document_id);
+          }
+        }
+      });
+    }
+
+    // Start with all currentDocumentIds (includes children)
+    const result = [...currentDocumentIds];
+
+    // Replace any parent templates in currentDocumentIds with their children
+    const resultWithChildren = result.map((docId) => {
+      const childId = parentToChildMap.get(docId);
+      return childId || docId; // Use child if exists, otherwise keep original
+    });
+
+    // Add templateDocumentIds, but replace parents with their children if children exist
+    filteredTemplateDocumentIds.forEach((templateDocId) => {
+      const childId = parentToChildMap.get(templateDocId);
+      if (childId) {
+        // Parent has a child - use child instead
+        if (!resultWithChildren.includes(childId)) {
+          resultWithChildren.push(childId);
+        }
+      } else {
+        // No child exists - add template document
+        if (!resultWithChildren.includes(templateDocId)) {
+          resultWithChildren.push(templateDocId);
+        }
+      }
+    });
+
+    return resultWithChildren;
+  }, [
+    currentDocumentIds,
+    filteredTemplateDocumentIds,
+    scenarioData?.document_details,
+  ]);
 
   // Extract image mapping from scenario_images array
   type ImageMappingItem = {
@@ -1289,14 +1394,17 @@ export default function Scenario({
     }
   }, [currentDocumentIds, validDocumentIds]);
 
-  // Initialize/update scenarioPreviewDocumentId when currentDocumentIds changes
+  // Initialize/update scenarioPreviewDocumentId when allPreviewDocumentIds changes
+  // Use allPreviewDocumentIds (not currentDocumentIds) because it already handles parent->child replacement
+  // This ensures we preview the actual child document instead of the parent template
   useEffect(() => {
-    if (currentDocumentIds.length > 0) {
-      // If current preview is not in the selected documents, or no preview is set, select the first one
-      const firstDocId = currentDocumentIds[0];
+    if (allPreviewDocumentIds.length > 0) {
+      // If current preview is not in the preview documents, or no preview is set, select the first one
+      const firstDocId = allPreviewDocumentIds[0];
       if (
         !scenarioPreviewDocumentId ||
-        (firstDocId && !currentDocumentIds.includes(scenarioPreviewDocumentId))
+        (firstDocId &&
+          !allPreviewDocumentIds.includes(scenarioPreviewDocumentId))
       ) {
         setScenarioPreviewDocumentId(firstDocId || null);
       }
@@ -1304,7 +1412,7 @@ export default function Scenario({
       // No documents selected, clear preview
       setScenarioPreviewDocumentId(null);
     }
-  }, [currentDocumentIds, scenarioPreviewDocumentId]);
+  }, [allPreviewDocumentIds, scenarioPreviewDocumentId]);
 
   // Note: Document/persona parameter syncing removed - parameters are now selected independently
   // Filtering happens automatically via validGeneralParameterItemIds based on selected personas/documents
@@ -1321,6 +1429,8 @@ export default function Scenario({
   }, [currentFieldIds, validParameterItemIds]);
 
   // Sync problem statement IDs from URL params (DHH-style: compute when needed, not in effects)
+  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
+  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
   useEffect(() => {
     const problemStatementIdsFromUrl =
       searchParams.get("problemStatementIds")?.split(",").filter(Boolean) || [];
@@ -1329,7 +1439,129 @@ export default function Scenario({
     if (urlIdsSorted !== currentIdsSorted) {
       setCurrentProblemStatementIds(problemStatementIdsFromUrl);
     }
-  }, [searchParams, currentProblemStatementIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync objective IDs from URL params (DHH-style: compute when needed, not in effects)
+  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
+  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
+  useEffect(() => {
+    const objectiveIdsFromUrl =
+      searchParams.get("objectiveIds")?.split(",").filter(Boolean) || [];
+    const urlIdsSorted = [...objectiveIdsFromUrl].sort().join(",");
+    const currentIdsSorted = [...currentObjectiveIds].sort().join(",");
+    if (urlIdsSorted !== currentIdsSorted) {
+      setCurrentObjectiveIds(objectiveIdsFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync template document IDs from URL params (DHH-style: compute when needed, not in effects)
+  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
+  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
+  useEffect(() => {
+    const templateDocumentIdsFromUrl =
+      searchParams.get("templateDocumentIds")?.split(",").filter(Boolean) || [];
+    const urlIdsSorted = [...templateDocumentIdsFromUrl].sort().join(",");
+    const currentIdsSorted = [...templateDocumentIds].sort().join(",");
+    if (urlIdsSorted !== currentIdsSorted) {
+      setTemplateDocumentIds(templateDocumentIdsFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync objective count from URL params (DHH-style: compute when needed, not in effects)
+  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
+  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
+  useEffect(() => {
+    const objectivesMinFromUrl = searchParams.get("objectivesMin");
+    const objectivesMaxFromUrl = searchParams.get("objectivesMax");
+    const min = objectivesMinFromUrl ? parseInt(objectivesMinFromUrl, 10) : 0;
+    const max = objectivesMaxFromUrl ? parseInt(objectivesMaxFromUrl, 10) : 0;
+    const urlMin = isNaN(min) ? 0 : min;
+    const urlMax = isNaN(max) ? 0 : max;
+    // Only update if different from current state
+    if (objectiveCount[0] !== urlMin || objectiveCount[1] !== urlMax) {
+      setObjectiveCount([urlMin, urlMax]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync useImage from URL params (DHH-style: URL as source of truth)
+  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
+  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
+  useEffect(() => {
+    const useImageFromUrl = searchParams.get("useImage");
+    const urlUseImage = useImageFromUrl === "true";
+    // Only update if different from current state
+    if (useImage !== urlUseImage) {
+      setUseImage(urlUseImage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Initialize image from scenario_images when they become available (similar to objectives)
+  // This handles the case where imageIds are in URL but scenario_images loads asynchronously
+  useEffect(() => {
+    if (!isEditMode && useImage && scenarioData) {
+      const scenarioImages = (
+        scenarioData as ScenarioDetailOut & {
+          scenario_images?: Array<{
+            id?: string;
+            name?: string;
+            upload_id?: string;
+            file_path?: string;
+            mime_type?: string;
+            active?: boolean;
+            created_at?: string;
+            updated_at?: string;
+          }>;
+        }
+      )?.scenario_images;
+      if (
+        !image && // Only set if image isn't already set
+        scenarioImages &&
+        Array.isArray(scenarioImages) &&
+        scenarioImages.length > 0
+      ) {
+        const firstImage = scenarioImages[0];
+        const uploadId = firstImage.upload_id || firstImage.id;
+        if (uploadId) {
+          setImage({
+            id: uploadId,
+            name: firstImage.name || "",
+            upload_id: uploadId,
+          });
+        }
+      }
+    }
+  }, [useImage, scenarioData, image, isEditMode]);
+
+  // Populate currentObjectives from currentObjectiveIds when objective_mapping becomes available
+  // This handles the case where objectiveIds are loaded from URL before scenarioData is available
+  useEffect(() => {
+    if (
+      currentObjectiveIds.length > 0 &&
+      scenarioData?.objective_mapping &&
+      Object.keys(scenarioData.objective_mapping).length > 0
+    ) {
+      const objectiveMapping = (scenarioData.objective_mapping || {}) as Record<
+        string,
+        { name: string }
+      >;
+      const objectivesFromIds = getObjectivesFromMapping(
+        currentObjectiveIds,
+        objectiveMapping
+      );
+      // Only update if different (avoid unnecessary re-renders)
+      const currentObjectivesString = JSON.stringify(currentObjectives);
+      const newObjectivesString = JSON.stringify(objectivesFromIds);
+      if (currentObjectivesString !== newObjectivesString) {
+        setCurrentObjectives(objectivesFromIds);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentObjectiveIds, scenarioData?.objective_mapping]);
 
   // Handle randomized selections from server response
   useEffect(() => {
@@ -1625,6 +1857,7 @@ export default function Scenario({
     formData.parameterIds,
     currentFieldIds, // Renamed from currentParameterItemIds
     currentProblemStatementIds,
+    currentObjectiveIds,
     personaSearchTerm,
     documentSearchTerm,
     parameterSearchTerm,
@@ -1778,12 +2011,73 @@ export default function Scenario({
       if (newData.selected_document_ids) {
         setCurrentDocumentIds(newData.selected_document_ids);
       }
-      // Template document IDs come from URL params (server returns selected_template_document_ids)
-      if (newData.selected_template_document_ids) {
+      // Template document IDs: prioritize URL params over server response
+      // URL params are the source of truth (DHH-style)
+      const templateDocumentIdsFromUrl =
+        searchParams.get("templateDocumentIds")?.split(",").filter(Boolean) ||
+        [];
+      if (templateDocumentIdsFromUrl.length > 0) {
+        // URL params take precedence
+        setTemplateDocumentIds(templateDocumentIdsFromUrl);
+      } else if (newData.selected_template_document_ids) {
+        // Fallback to server response if no URL params
         setTemplateDocumentIds(newData.selected_template_document_ids);
       }
       if (newData.selected_field_ids) {
         setCurrentFieldIds(newData.selected_field_ids);
+      }
+
+      // Initialize image from scenario_images if available (when imageIds in URL)
+      const scenarioImages = (
+        scenarioData as ScenarioDetailOut & {
+          scenario_images?: Array<{
+            id?: string;
+            name?: string;
+            upload_id?: string;
+            file_path?: string;
+            mime_type?: string;
+            active?: boolean;
+            created_at?: string;
+            updated_at?: string;
+          }>;
+        }
+      )?.scenario_images;
+      if (
+        useImage &&
+        scenarioImages &&
+        Array.isArray(scenarioImages) &&
+        scenarioImages.length > 0
+      ) {
+        const firstImage = scenarioImages[0];
+        const uploadId = firstImage.upload_id || firstImage.id;
+        if (uploadId) {
+          setImage({
+            id: uploadId,
+            name: firstImage.name || "",
+            upload_id: uploadId,
+          });
+        }
+      }
+
+      // Initialize objective IDs from URL params (server doesn't return selected_objective_ids)
+      // URL params are the source of truth (DHH-style)
+      const objectiveIdsFromUrl = searchParams
+        .get("objectiveIds")
+        ?.split(",")
+        .filter(Boolean);
+      if (objectiveIdsFromUrl && objectiveIdsFromUrl.length > 0) {
+        setCurrentObjectiveIds(objectiveIdsFromUrl);
+        // Populate currentObjectives from objective IDs using objective_mapping
+        // Note: objective_mapping might not be available yet, so we'll populate in a separate useEffect
+        const objectiveMapping = (scenarioData?.objective_mapping ||
+          {}) as Record<string, { name: string }>;
+        if (Object.keys(objectiveMapping).length > 0) {
+          const objectivesFromIds = getObjectivesFromMapping(
+            objectiveIdsFromUrl,
+            objectiveMapping
+          );
+          setCurrentObjectives(objectivesFromIds);
+        }
       }
 
       // Initialize problem statement IDs from URL params (server doesn't return selected_problem_statement_ids)
@@ -3383,7 +3677,7 @@ export default function Scenario({
                     }>,
                   }
                 : {})}
-              templateDocumentIds={templateDocumentIds}
+              templateDocumentIds={filteredTemplateDocumentIds}
               selectedPersonaIds={selectedPersonaIds}
               personaMapping={personaMapping}
               onProblemStatementChange={(value) =>

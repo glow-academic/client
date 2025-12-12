@@ -51,7 +51,7 @@ context_data AS (
         a.id::text as agent_id,
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(p.value::text, '') as provider,
+        COALESCE(p_prov.value::text, '') as provider,
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
         fp.final_profile_id

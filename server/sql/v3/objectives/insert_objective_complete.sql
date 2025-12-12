@@ -13,14 +13,14 @@ all_obj AS (
     SELECT objective_id FROM existing_obj
     UNION ALL
     SELECT objective_id FROM create_obj
+),
+link_scenario AS (
+    INSERT INTO scenario_objectives (scenario_id, objective_id, idx, created_at)
+    SELECT $3::uuid, objective_id, $2, NOW()
+    FROM all_obj
+    WHERE $3 IS NOT NULL
+    RETURNING objective_id
 )
-INSERT INTO scenario_objectives (scenario_id, objective_id, idx, created_at)
-SELECT $3::uuid, objective_id, $2, NOW()
-FROM all_obj
-WHERE $3 IS NOT NULL
-RETURNING objective_id::text as objective_id
-UNION ALL
 SELECT objective_id::text as objective_id
 FROM all_obj
-WHERE $3 IS NULL
 

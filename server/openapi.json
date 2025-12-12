@@ -17488,122 +17488,6 @@
         "title": "DocumentDetailBulkResponse",
         "description": "Bulk document detail response."
       },
-      "DocumentDetailItem": {
-        "properties": {
-          "document_id": {
-            "type": "string",
-            "title": "Document Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "extension": {
-            "type": "string",
-            "title": "Extension"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "file_path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Path"
-          },
-          "mime_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mime Type"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "field_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Field Ids"
-          },
-          "is_template": {
-            "type": "boolean",
-            "title": "Is Template",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "document_id",
-          "name",
-          "updatedAt",
-          "extension",
-          "scenario_ids",
-          "can_edit",
-          "can_delete",
-          "active",
-          "department_ids",
-          "file_path",
-          "mime_type",
-          "upload_id",
-          "field_ids"
-        ],
-        "title": "DocumentDetailItem",
-        "description": "Document detail for preview."
-      },
       "DocumentDetailRequest": {
         "properties": {
           "documentId": {
@@ -38975,6 +38859,122 @@
         "title": "StandardItem",
         "description": "Standard item for update."
       },
+      "app__api__v3__scenarios__detail__DocumentDetailItem": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "extension": {
+            "type": "string",
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "field_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          },
+          "is_template": {
+            "type": "boolean",
+            "title": "Is Template",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "updatedAt",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
+          "active",
+          "department_ids",
+          "file_path",
+          "mime_type",
+          "upload_id",
+          "field_ids"
+        ],
+        "title": "DocumentDetailItem",
+        "description": "Document detail for preview."
+      },
       "app__api__v3__scenarios__detail__ObjectiveWithDepartments": {
         "properties": {
           "objective": {
@@ -39176,7 +39176,7 @@
           },
           "document_details": {
             "items": {
-              "$ref": "#/components/schemas/DocumentDetailItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__detail__DocumentDetailItem"
             },
             "type": "array",
             "title": "Document Details"
@@ -39523,6 +39523,133 @@
         "title": "ScenarioItem",
         "description": "Individual scenario item in the response."
       },
+      "app__api__v3__scenarios__new__DocumentDetailItem": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "extension": {
+            "type": "string",
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "field_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          },
+          "is_template": {
+            "type": "boolean",
+            "title": "Is Template",
+            "default": false
+          },
+          "parent_document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Document Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "updatedAt",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
+          "active",
+          "department_ids",
+          "file_path",
+          "mime_type",
+          "upload_id",
+          "field_ids"
+        ],
+        "title": "DocumentDetailItem",
+        "description": "Document detail for preview."
+      },
       "app__api__v3__scenarios__new__ObjectiveWithDepartments": {
         "properties": {
           "objective": {
@@ -39696,6 +39823,14 @@
             "type": "array",
             "title": "Objectives History"
           },
+          "scenario_images": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenario Images"
+          },
           "parameters": {
             "additionalProperties": {
               "$ref": "#/components/schemas/ParameterDetail"
@@ -39712,7 +39847,7 @@
           },
           "document_details": {
             "items": {
-              "$ref": "#/components/schemas/DocumentDetailItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__new__DocumentDetailItem"
             },
             "type": "array",
             "title": "Document Details"
@@ -40080,6 +40215,7 @@
           "objective_ids",
           "valid_objectives",
           "objectives_history",
+          "scenario_images",
           "parameters",
           "active_simulation_ids",
           "document_details",
@@ -41337,6 +41473,122 @@
         "title": "QuestionItem",
         "description": "Question item in create request."
       },
+      "app__api__v3__videos__detail__DocumentDetailItem": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "extension": {
+            "type": "string",
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "field_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          },
+          "is_template": {
+            "type": "boolean",
+            "title": "Is Template",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "updatedAt",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
+          "active",
+          "department_ids",
+          "file_path",
+          "mime_type",
+          "upload_id",
+          "field_ids"
+        ],
+        "title": "DocumentDetailItem",
+        "description": "Document detail for preview."
+      },
       "app__api__v3__videos__detail__ProblemStatementInfo": {
         "properties": {
           "problem_statement": {
@@ -41483,7 +41735,7 @@
           },
           "document_details": {
             "items": {
-              "$ref": "#/components/schemas/DocumentDetailItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__detail__DocumentDetailItem"
             },
             "type": "array",
             "title": "Document Details"
@@ -41969,6 +42221,122 @@
         "title": "VideoItem",
         "description": "Individual video item in the response."
       },
+      "app__api__v3__videos__new__DocumentDetailItem": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "extension": {
+            "type": "string",
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "field_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          },
+          "is_template": {
+            "type": "boolean",
+            "title": "Is Template",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "updatedAt",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
+          "active",
+          "department_ids",
+          "file_path",
+          "mime_type",
+          "upload_id",
+          "field_ids"
+        ],
+        "title": "DocumentDetailItem",
+        "description": "Document detail for preview."
+      },
       "app__api__v3__videos__new__ProblemStatementInfo": {
         "properties": {
           "problem_statement": {
@@ -42112,7 +42480,7 @@
           },
           "document_details": {
             "items": {
-              "$ref": "#/components/schemas/DocumentDetailItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__new__DocumentDetailItem"
             },
             "type": "array",
             "title": "Document Details"

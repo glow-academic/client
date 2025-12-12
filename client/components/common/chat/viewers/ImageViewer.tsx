@@ -38,7 +38,7 @@ export default function ImageViewer({
         }
         setContent(null);
 
-        const response = await fetch(`/api/images/download/${imageId}`, {
+        const response = await fetch(`/api/uploads/download/${imageId}`, {
           method: "GET",
           credentials: "include",
         });

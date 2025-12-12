@@ -7488,43 +7488,6 @@ export interface components {
             };
         };
         /**
-         * DocumentDetailItem
-         * @description Document detail for preview.
-         */
-        DocumentDetailItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Extension */
-            extension: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Field Ids */
-            field_ids: string[];
-            /**
-             * Is Template
-             * @default false
-             */
-            is_template: boolean;
-        };
-        /**
          * DocumentDetailRequest
          * @description Request to get document details.
          */
@@ -15295,6 +15258,43 @@ export interface components {
             points: number;
         };
         /**
+         * DocumentDetailItem
+         * @description Document detail for preview.
+         */
+        app__api__v3__scenarios__detail__DocumentDetailItem: {
+            /** Document Id */
+            document_id: string;
+            /** Name */
+            name: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Extension */
+            extension: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Field Ids */
+            field_ids: string[];
+            /**
+             * Is Template
+             * @default false
+             */
+            is_template: boolean;
+        };
+        /**
          * ObjectiveWithDepartments
          * @description Objective with associated department IDs.
          */
@@ -15375,7 +15375,7 @@ export interface components {
             /** Active Simulation Ids */
             active_simulation_ids: string[];
             /** Document Details */
-            document_details: components["schemas"]["DocumentDetailItem"][];
+            document_details: components["schemas"]["app__api__v3__scenarios__detail__DocumentDetailItem"][];
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -15484,6 +15484,45 @@ export interface components {
             updated_at: string;
         };
         /**
+         * DocumentDetailItem
+         * @description Document detail for preview.
+         */
+        app__api__v3__scenarios__new__DocumentDetailItem: {
+            /** Document Id */
+            document_id: string;
+            /** Name */
+            name: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Extension */
+            extension: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Field Ids */
+            field_ids: string[];
+            /**
+             * Is Template
+             * @default false
+             */
+            is_template: boolean;
+            /** Parent Document Id */
+            parent_document_id?: string | null;
+        };
+        /**
          * ObjectiveWithDepartments
          * @description Objective with department IDs.
          */
@@ -15551,6 +15590,10 @@ export interface components {
             valid_objectives: string[];
             /** Objectives History */
             objectives_history: components["schemas"]["app__api__v3__scenarios__new__ObjectiveWithDepartments"][];
+            /** Scenario Images */
+            scenario_images: {
+                [key: string]: unknown;
+            }[];
             /** Parameters */
             parameters: {
                 [key: string]: components["schemas"]["ParameterDetail"];
@@ -15558,7 +15601,7 @@ export interface components {
             /** Active Simulation Ids */
             active_simulation_ids: string[];
             /** Document Details */
-            document_details: components["schemas"]["DocumentDetailItem"][];
+            document_details: components["schemas"]["app__api__v3__scenarios__new__DocumentDetailItem"][];
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -16080,6 +16123,43 @@ export interface components {
             options: components["schemas"]["QuestionOption"][];
         };
         /**
+         * DocumentDetailItem
+         * @description Document detail for preview.
+         */
+        app__api__v3__videos__detail__DocumentDetailItem: {
+            /** Document Id */
+            document_id: string;
+            /** Name */
+            name: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Extension */
+            extension: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Field Ids */
+            field_ids: string[];
+            /**
+             * Is Template
+             * @default false
+             */
+            is_template: boolean;
+        };
+        /**
          * ProblemStatementInfo
          * @description Problem statement info for mapping.
          */
@@ -16141,7 +16221,7 @@ export interface components {
                 };
             };
             /** Document Details */
-            document_details: components["schemas"]["DocumentDetailItem"][];
+            document_details: components["schemas"]["app__api__v3__videos__detail__DocumentDetailItem"][];
             /** Valid Document Ids */
             valid_document_ids: string[];
             /** Video Images */
@@ -16268,6 +16348,43 @@ export interface components {
             updated_at: string;
         };
         /**
+         * DocumentDetailItem
+         * @description Document detail for preview.
+         */
+        app__api__v3__videos__new__DocumentDetailItem: {
+            /** Document Id */
+            document_id: string;
+            /** Name */
+            name: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Extension */
+            extension: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Field Ids */
+            field_ids: string[];
+            /**
+             * Is Template
+             * @default false
+             */
+            is_template: boolean;
+        };
+        /**
          * ProblemStatementInfo
          * @description Problem statement info for mapping.
          */
@@ -16331,7 +16448,7 @@ export interface components {
                 };
             };
             /** Document Details */
-            document_details: components["schemas"]["DocumentDetailItem"][];
+            document_details: components["schemas"]["app__api__v3__videos__new__DocumentDetailItem"][];
             /** Valid Document Ids */
             valid_document_ids: string[];
             /** Video Images */

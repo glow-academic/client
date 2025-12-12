@@ -530,10 +530,21 @@ from app.socket.connect import connect  # type: ignore
 from app.socket.disconnect import disconnect  # type: ignore
 from app.socket.documents.generate import \
     document_generate  # noqa: E402; type: ignore
+from app.socket.images.complete import image_generation_complete  # noqa: F401
+# Import image modules to register internal_sio handlers
+from app.socket.images.generate import generate_image  # noqa: F401
 # Import log module to register internal_sio handler
 from app.socket.log import log_run  # noqa: F401
 from app.socket.scenarios.generate import \
     generate_scenario  # noqa: E402; type: ignore
+# Import scenario tools to register internal_sio handlers
+from app.socket.scenarios.tools.document import \
+    scenario_tool_document  # noqa: F401
+from app.socket.scenarios.tools.image import scenario_tool_image  # noqa: F401
+from app.socket.scenarios.tools.objectives import \
+    scenario_tool_objectives  # noqa: F401
+from app.socket.scenarios.tools.statement import \
+    scenario_tool_problem_statement  # noqa: F401
 from app.socket.simulations import simulation_join  # type: ignore
 from app.socket.simulations import simulation_leave
 from app.socket.simulations.text.end import \

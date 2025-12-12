@@ -528,7 +528,13 @@ document_details_data AS (
                             WHERE dt2.document_id = d.id AND dt2.active = true
                         ) THEN true
                         ELSE false
-                    END
+                    END,
+                    'parent_document_id', (
+                        SELECT dtree.parent_id::text
+                        FROM document_tree dtree
+                        WHERE dtree.child_id = d.id AND dtree.active = true
+                        LIMIT 1
+                    )
                 ) ORDER BY d.name
             )
             FROM documents d
@@ -543,6 +549,17 @@ document_details_data AS (
                     $4::uuid[] IS NOT NULL
                     AND array_length($4::uuid[], 1) > 0
                     AND d.id = ANY($4::uuid[])
+                )
+                OR (
+                    -- Include child documents when their parent is requested
+                    $4::uuid[] IS NOT NULL
+                    AND array_length($4::uuid[], 1) > 0
+                    AND EXISTS (
+                        SELECT 1 FROM document_tree dtree
+                        WHERE dtree.child_id = d.id
+                        AND dtree.parent_id = ANY($4::uuid[])
+                        AND dtree.active = true
+                    )
                 )
             )
             AND d.active = true
@@ -793,5 +810,40 @@ SELECT
          AND d.id = ANY($6::uuid[])
          AND d.id IN (SELECT id FROM document_data)),
         ARRAY[]::text[]
-    ) as selected_template_document_ids
+    ) as selected_template_document_ids,
+    -- Objective mapping from provided objective IDs
+    COALESCE(
+        (SELECT jsonb_object_agg(
+            o.id::text,
+            jsonb_build_object('name', o.objective, 'description', o.objective)
+        )
+        FROM objectives o
+        WHERE $7::uuid[] IS NOT NULL
+        AND array_length($7::uuid[], 1) > 0
+        AND o.id = ANY($7::uuid[])),
+        '{}'::jsonb
+    ) as objective_mapping,
+    -- Scenario images from provided image IDs
+    COALESCE(
+        (SELECT jsonb_agg(
+            jsonb_build_object(
+                'id', COALESCE(iu.upload_id::text, i.id::text),
+                'name', i.name,
+                'upload_id', COALESCE(iu.upload_id::text, i.id::text),
+                'file_path', u.file_path,
+                'mime_type', u.mime_type,
+                'active', i.active,
+                'created_at', i.created_at::text,
+                'updated_at', i.updated_at::text
+            )
+        )
+        FROM images i
+        LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
+        LEFT JOIN uploads u ON u.id = iu.upload_id
+        WHERE $8::uuid[] IS NOT NULL
+        AND array_length($8::uuid[], 1) > 0
+        AND i.id = ANY($8::uuid[])
+        AND i.active = true),
+        '[]'::jsonb
+    ) as scenario_images
 

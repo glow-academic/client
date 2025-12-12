@@ -296,7 +296,7 @@ developer_messages_processed AS (
         message_content_hash(dcf.content, 'developer') as hash
     FROM developer_contents_filtered dcf
 ),
-existing_developer_messages AS (
+existing_developer_messages_with_rn AS (
     SELECT 
         dmp.content,
         dmp.first_idx,
@@ -305,6 +305,13 @@ existing_developer_messages AS (
     FROM developer_messages_processed dmp
     JOIN messages m ON m.role = 'developer' 
         AND message_content_hash(m.content, 'developer') = dmp.hash
+),
+existing_developer_messages AS (
+    SELECT 
+        content,
+        first_idx,
+        message_id
+    FROM existing_developer_messages_with_rn
     WHERE rn = 1
 ),
 new_developer_messages AS (

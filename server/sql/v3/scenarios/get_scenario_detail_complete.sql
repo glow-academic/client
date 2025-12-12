@@ -623,7 +623,13 @@ document_details_data AS (
                             WHERE dt2.document_id = d.id AND dt2.active = true
                         ) THEN true
                         ELSE false
-                    END
+                    END,
+                    'parent_document_id', (
+                        SELECT dt.parent_id::text
+                        FROM document_tree dt
+                        WHERE dt.child_id = d.id AND dt.active = true
+                        LIMIT 1
+                    )
                 ) ORDER BY d.name
             )
             FROM (

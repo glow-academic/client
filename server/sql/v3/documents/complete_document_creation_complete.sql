@@ -4,8 +4,10 @@
 --             $8=document_agent_id (uuid), $9=scenario_id (uuid, nullable)
 -- Returns: child_document_id (text), upload_id (text)
 -- Creates child document, upload record, links document to upload, links parent→child in document_tree,
--- copies document_fields, document_departments, and parameter_documents from parent,
 -- and optionally links to scenario - all atomically
+-- NOTE: Child documents are "bare" - they do NOT copy document_fields or parameter_documents
+-- from the parent template to avoid collisions in scenarios/videos.
+-- We DO copy document_departments for proper department filtering.
 WITH create_child_document AS (
     -- Create child document (not a template)
     INSERT INTO documents (
@@ -42,24 +44,8 @@ link_document_tree AS (
         updated_at = NOW()
     RETURNING child_id
 ),
-copy_document_fields AS (
-    -- Copy document_fields from parent to child
-    INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
-    SELECT 
-        ccd.id,
-        df.field_id,
-        df.active,
-        NOW(),
-        NOW()
-    FROM create_child_document ccd
-    CROSS JOIN document_fields df
-    WHERE df.document_id = $1::uuid AND df.active = true
-    ON CONFLICT (document_id, field_id) DO UPDATE SET
-        active = EXCLUDED.active,
-        updated_at = NOW()
-),
 copy_document_departments AS (
-    -- Copy document_departments from parent to child
+    -- Copy document_departments from parent to child (for department filtering)
     INSERT INTO document_departments (document_id, department_id, active, created_at, updated_at)
     SELECT 
         ccd.id,
@@ -74,22 +60,10 @@ copy_document_departments AS (
         active = EXCLUDED.active,
         updated_at = NOW()
 ),
-copy_parameter_documents AS (
-    -- Copy parameter_documents from parent to child
-    INSERT INTO parameter_documents (parameter_id, document_id, active, created_at, updated_at)
-    SELECT 
-        pd.parameter_id,
-        ccd.id,
-        pd.active,
-        NOW(),
-        NOW()
-    FROM create_child_document ccd
-    CROSS JOIN parameter_documents pd
-    WHERE pd.document_id = $1::uuid AND pd.active = true
-    ON CONFLICT (parameter_id, document_id) DO UPDATE SET
-        active = EXCLUDED.active,
-        updated_at = NOW()
-),
+-- NOTE: Child documents are "bare" - we do NOT copy document_fields or parameter_documents 
+-- from parent template to avoid collisions in scenarios/videos.
+-- We DO copy document_departments for proper department filtering.
+-- The child document exists only as a dynamic instance linked to the parent via document_tree
 link_scenario AS (
     -- Optionally link to scenario if scenario_id provided
     INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)

@@ -907,63 +907,90 @@ export function ContentSection({
               )}
 
               {/* Document Preview Container */}
-              {scenarioPreviewDocumentId && (
-                <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
-                  {(() => {
-                    const docId = scenarioPreviewDocumentId;
-                    const fullDoc = documentDetails?.find(
-                      (d) => d.document_id === docId
-                    );
-                    // Derive template status from documentDetails (server data is source of truth)
-                    const isTemplateDocument = Boolean(
-                      fullDoc?.["is_template"]
-                    );
+              {scenarioPreviewDocumentId &&
+                (() => {
+                  // scenarioPreviewDocumentId should already be the child (if exists) due to allPreviewDocumentIds logic
+                  // But add defensive check: if it's still a parent template, find its child
+                  let previewDocId = scenarioPreviewDocumentId;
+                  const previewDoc = documentDetails?.find(
+                    (d) => d.document_id === previewDocId
+                  );
 
-                    const docForViewer: DocumentItem = fullDoc
-                      ? ({
-                          document_id: fullDoc.document_id,
-                          name:
-                            (fullDoc as { name?: string }).name ||
-                            documentMapping[docId]?.name ||
-                            "Document",
-                          updatedAt:
-                            (fullDoc as { updatedAt?: string }).updatedAt ||
-                            new Date().toISOString(),
-                          extension:
-                            (fullDoc as { extension?: string }).extension || "",
-                          scenario_ids:
-                            (fullDoc as { scenario_ids?: string[] })
-                              .scenario_ids || [],
-                          can_edit:
-                            (fullDoc as { can_edit?: boolean }).can_edit ||
-                            false,
-                          can_delete:
-                            (fullDoc as { can_delete?: boolean }).can_delete ||
-                            false,
-                          active:
-                            (fullDoc as { active?: boolean }).active ?? true,
-                          department_ids:
-                            (fullDoc as { department_ids?: string[] | null })
-                              .department_ids || null,
-                          upload_id: fullDoc.upload_id ?? null,
-                          parameter_item_ids: [],
-                          field_ids: [],
-                        } as DocumentItem)
-                      : ({
-                          document_id: docId,
-                          name: documentMapping[docId]?.name || "Document",
-                          updatedAt: new Date().toISOString(),
-                          extension: "",
-                          scenario_ids: [],
-                          can_edit: false,
-                          can_delete: false,
-                          active: true,
-                          department_ids: null,
-                          field_ids: [],
-                          parameter_item_ids: [],
-                          upload_id: null,
-                        } as DocumentItem);
-                    return (
+                  // If preview doc is a template, check if we have a child for it
+                  if (previewDoc?.["is_template"]) {
+                    const childDoc = documentDetails?.find(
+                      (d) =>
+                        (d as { parent_document_id?: string })
+                          ?.parent_document_id === previewDocId
+                    );
+                    if (childDoc) {
+                      // Use child instead of parent template
+                      previewDocId = childDoc.document_id;
+                    }
+                  }
+
+                  const docId = previewDocId;
+                  const fullDoc = documentDetails?.find(
+                    (d) => d.document_id === docId
+                  );
+                  // Check if this is a child document (dynamic document created from template)
+                  const parentDocumentId = (
+                    fullDoc as {
+                      parent_document_id?: string;
+                    }
+                  )?.parent_document_id;
+                  const isChildDocument = Boolean(parentDocumentId);
+                  // Derive template status from documentDetails (server data is source of truth)
+                  // Child documents are NOT templates (they're the actual documents)
+                  const isTemplateDocument =
+                    !isChildDocument && Boolean(fullDoc?.["is_template"]);
+
+                  const docForViewer: DocumentItem = fullDoc
+                    ? ({
+                        document_id: fullDoc.document_id,
+                        name:
+                          (fullDoc as { name?: string }).name ||
+                          documentMapping[docId]?.name ||
+                          "Document",
+                        updatedAt:
+                          (fullDoc as { updatedAt?: string }).updatedAt ||
+                          new Date().toISOString(),
+                        extension:
+                          (fullDoc as { extension?: string }).extension || "",
+                        scenario_ids:
+                          (fullDoc as { scenario_ids?: string[] })
+                            .scenario_ids || [],
+                        can_edit:
+                          (fullDoc as { can_edit?: boolean }).can_edit || false,
+                        can_delete:
+                          (fullDoc as { can_delete?: boolean }).can_delete ||
+                          false,
+                        active:
+                          (fullDoc as { active?: boolean }).active ?? true,
+                        department_ids:
+                          (fullDoc as { department_ids?: string[] | null })
+                            .department_ids || null,
+                        upload_id: fullDoc.upload_id ?? null,
+                        parameter_item_ids: [],
+                        field_ids: [],
+                      } as DocumentItem)
+                    : ({
+                        document_id: docId,
+                        name: documentMapping[docId]?.name || "Document",
+                        updatedAt: new Date().toISOString(),
+                        extension: "",
+                        scenario_ids: [],
+                        can_edit: false,
+                        can_delete: false,
+                        active: true,
+                        department_ids: null,
+                        field_ids: [],
+                        parameter_item_ids: [],
+                        upload_id: null,
+                      } as DocumentItem);
+
+                  return (
+                    <div className="relative border rounded-lg overflow-hidden flex-1 min-h-0">
                       <>
                         <div
                           className={cn(
@@ -987,10 +1014,9 @@ export function ContentSection({
                           </div>
                         )}
                       </>
-                    );
-                  })()}
-                </div>
-              )}
+                    </div>
+                  );
+                })()}
             </div>
           )}
         </div>

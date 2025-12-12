@@ -6,18 +6,16 @@ import urllib.parse
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse, Response
-
 from app.api.v3.settings.active import ThemeTokens
-from app.main import AUDIO_FOLDER, UPLOAD_FOLDER, get_db
-from app.utils.document.pdf_first_page_to_image_bytes import (
-    pdf_first_page_to_image_bytes,
-)
+from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+from app.utils.document.pdf_first_page_to_image_bytes import \
+    pdf_first_page_to_image_bytes
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.jinja_renderer import render_template
 from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import FileResponse, Response
 
 router = APIRouter()
 
@@ -41,10 +39,12 @@ async def download_upload(
         if not result:
             raise HTTPException(status_code=404, detail="Upload not found")
 
-        # Handle subfolder paths (e.g., "audio/uuid.ext")
+        # Handle subfolder paths (e.g., "audio/uuid.ext", "image/sc.png")
         stored_path = result["file_path"]
         if stored_path.startswith("audio/"):
             file_path = os.path.join(AUDIO_FOLDER, os.path.basename(stored_path))
+        elif stored_path.startswith("image/"):
+            file_path = os.path.join(IMAGE_FOLDER, os.path.basename(stored_path))
         else:
             file_path = os.path.join(UPLOAD_FOLDER, stored_path)
 

@@ -130,6 +130,7 @@ class DocumentDetailItem(BaseModel):
     upload_id: str | None
     field_ids: list[str]  # Renamed from parameter_item_ids for readability
     is_template: bool = False  # Whether this document is a template
+    parent_document_id: str | None = None  # Parent document ID if this is a child document
 
 
 class ObjectiveWithDepartments(BaseModel):
@@ -196,6 +197,7 @@ class ScenarioDetailResponse(BaseModel):
     objective_ids: list[str]
     valid_objectives: list[str]
     objectives_history: list[ObjectiveWithDepartments]
+    scenario_images: list[dict[str, Any]]
     parameters: dict[str, ParameterDetail]
     active_simulation_ids: list[str]
     document_details: list[DocumentDetailItem]
@@ -985,6 +987,30 @@ async def get_scenario_new(
             except (ValueError, TypeError):
                 problem_statement_ids_uuid = None
 
+        # Convert objectiveIds to UUID array if provided
+        objective_ids_uuid = None
+        if request_data.objectiveIds:
+            import uuid as uuid_lib
+
+            try:
+                objective_ids_uuid = [
+                    uuid_lib.UUID(oid) for oid in request_data.objectiveIds
+                ]
+            except (ValueError, TypeError):
+                objective_ids_uuid = None
+
+        # Convert imageIds to UUID array if provided
+        image_ids_uuid = None
+        if request_data.imageIds:
+            import uuid as uuid_lib
+
+            try:
+                image_ids_uuid = [
+                    uuid_lib.UUID(iid) for iid in request_data.imageIds
+                ]
+            except (ValueError, TypeError):
+                image_ids_uuid = None
+
         # Derive useObjectives from objectivesMax for backward compatibility with SQL
         use_objectives = (
             request_data.objectivesMax is not None and request_data.objectivesMax > 0
@@ -996,6 +1022,8 @@ async def get_scenario_new(
             document_ids_uuid,
             problem_statement_ids_uuid,
             template_document_ids_uuid,
+            objective_ids_uuid,
+            image_ids_uuid,
         )
 
         # Execute query
@@ -1018,6 +1046,8 @@ async def get_scenario_new(
 
         # Parse JSONB mappings (may be string or dict)
         persona_mapping_data = parse_jsonb(result.get("persona_mapping"))
+        objective_mapping_data = parse_jsonb(result.get("objective_mapping"))
+        scenario_images_data = parse_jsonb(result.get("scenario_images"))
         persona_mapping: PersonaMapping = {}
         if isinstance(persona_mapping_data, dict):
             for pid, pdata in persona_mapping_data.items():
@@ -1204,6 +1234,7 @@ async def get_scenario_new(
                                 "parameter_item_ids", []
                             ),  # Database column name (keeping as-is), renamed to field_ids in model
                             is_template=doc.get("is_template", False),
+                            parent_document_id=doc.get("parent_document_id") or None,
                         )
                     )
 
@@ -1802,6 +1833,27 @@ async def get_scenario_new(
             else (selected_field_ids if selected_field_ids else [])
         )
 
+        # Get objective_mapping from SQL result (already parsed)
+        objective_mapping_from_sql = objective_mapping_data or {}
+
+        # Parse scenario_images from SQL result
+        scenario_images: list[dict[str, Any]] = []
+        if isinstance(scenario_images_data, list):
+            scenario_images = [
+                {
+                    "id": img.get("id", ""),
+                    "name": img.get("name", ""),
+                    "upload_id": img.get("upload_id", ""),
+                    "file_path": img.get("file_path", ""),
+                    "mime_type": img.get("mime_type", ""),
+                    "active": img.get("active", True),
+                    "created_at": img.get("created_at", ""),
+                    "updated_at": img.get("updated_at", ""),
+                }
+                for img in scenario_images_data
+                if isinstance(img, dict)
+            ]
+
         response_data = ScenarioDetailResponse(
             # Basic fields (empty defaults)
             name="",
@@ -1832,6 +1884,8 @@ async def get_scenario_new(
             objective_ids=[],
             valid_objectives=[],
             objectives_history=objectives_history,
+            # Images from provided imageIds
+            scenario_images=scenario_images,
             # Parameters (with valid options for creation)
             parameters=parameters_dict,
             # Simulations (empty defaults)
@@ -1848,7 +1902,8 @@ async def get_scenario_new(
             simulation_mapping={},
             persona_mapping=persona_mapping,
             document_mapping=document_mapping,
-            objective_mapping={},
+            # Objective mapping from SQL (built from objectiveIds if provided)
+            objective_mapping=objective_mapping_from_sql,
             department_mapping=department_mapping,
             problem_statement_mapping=problem_statement_mapping,
             scenario_parameter_ids=final_parameter_ids,
