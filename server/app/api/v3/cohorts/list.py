@@ -13,16 +13,53 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    DepartmentMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    ProfileMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-    SimulationMappingItem,
-)
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
+
+    name: str
+    description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+
+
+class ProfileMappingItem(BaseModel):
+    """Profile mapping item."""
+
+    name: str
+    description: str
+
+
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item."""
+
+    name: str
+    description: str
+
+
+class SimulationMappingItem(BaseModel):
+    """Simulation mapping item."""
+
+    name: str
+    description: str
+    time_limit: int | None = None
+    department_ids: list[str] | None = None
+
+
+# Type aliases for Dict mappings
+PersonaMapping = dict[str, PersonaMappingItem]
+ScenarioMapping = dict[str, ScenarioMappingItem]
 
 
 class CohortsListRequest(BaseModel):

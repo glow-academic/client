@@ -37,6 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useProfile } from "@/contexts/profile-context";
 
 import {
   ColumnDef,
@@ -81,6 +82,7 @@ export default function Parameters({
   deleteParameterAction,
 }: ParametersProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -267,7 +269,10 @@ export default function Parameters({
     setIsDuplicating(parameter.parameter_id);
     try {
       await duplicateParameterAction({
-        body: { parameterId: parameter.parameter_id },
+        body: {
+          parameterId: parameter.parameter_id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
       });
       toast.success(`Parameter "${parameter.name}" duplicated successfully`);
       router.refresh();
@@ -286,7 +291,12 @@ export default function Parameters({
     if (!deleteItem || !deleteParameterAction) return;
 
     try {
-      await deleteParameterAction({ body: { parameterId: deleteItem.id } });
+      await deleteParameterAction({
+        body: {
+          parameterId: deleteItem.id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
+      });
       toast.success(`Parameter "${deleteItem.name}" deleted successfully`);
       router.refresh();
     } catch (error) {

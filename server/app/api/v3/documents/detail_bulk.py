@@ -13,8 +13,35 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import DepartmentMappingItem, FieldMappingItem
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item - extends MappingItem with optional entity ID arrays."""
+
+    name: str
+    description: str
+    scenario_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    rubric_ids: list[str] | None = None
+    parameter_ids: list[str] | None = None
+    parameter_item_ids: list[str] | None = None
+    field_ids: list[str] | None = None
+    agent_ids: list[str] | None = None
+    staff_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
 
 
 class DocumentDetailBulkRequest(BaseModel):
@@ -129,9 +156,7 @@ async def get_document_detail_bulk(
         valid_department_ids = [
             str(did) for did in (row.get("valid_department_ids") or [])
         ]
-        valid_field_ids = [
-            str(pid) for pid in (row.get("valid_field_ids") or [])
-        ]
+        valid_field_ids = [str(pid) for pid in (row.get("valid_field_ids") or [])]
 
         # Document type options
         document_type_options = ["homework", "exam", "lab", "project"]

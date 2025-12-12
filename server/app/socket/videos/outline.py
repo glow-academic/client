@@ -781,10 +781,10 @@ async def _video_outline_impl(sid: str, data: GenerateVideoOutlinePayload) -> No
                 )
                 return
 
-            # Extract questions from storage (only if useQuestions was True)
+            # Extract questions from storage (only if questions_enabled was True)
             questions_data: list[GeneratedQuestion] = []
 
-            if use_questions:
+            if questions_enabled:
                 question_storage = get_question_storage()
                 question_storage_key = build_storage_key(
                     operation_type="question_generation",
@@ -913,7 +913,7 @@ async def _video_outline_impl(sid: str, data: GenerateVideoOutlinePayload) -> No
                     success=True,
                     message=(
                         "Outline and questions generated successfully"
-                        if use_questions
+                        if questions_enabled
                         else "Outline generated successfully"
                     ),
                     name=name,
@@ -921,7 +921,9 @@ async def _video_outline_impl(sid: str, data: GenerateVideoOutlinePayload) -> No
                     outline_id=outline_id,
                     video_name=video_name,
                     questions=questions_data if questions_data else None,
-                    question_timestamps=converted_timestamps if use_questions else None,
+                    question_timestamps=converted_timestamps
+                    if questions_enabled
+                    else None,
                     trace_id=trace_id,
                 ),
                 room=sid,

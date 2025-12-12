@@ -212,13 +212,12 @@ export function ParameterItemPicker<
       return;
     }
 
-    // Enforce uniqueness of value (which equals name) within this parameter
-    const proposedValue = newName.trim();
+    // Enforce uniqueness of name within this parameter
     const duplicate = items.some(
-      (i) => i.name?.trim().toLowerCase() === proposedValue.toLowerCase(),
+      (i) => i.name?.trim().toLowerCase() === newName.trim().toLowerCase(),
     );
     if (duplicate) {
-      toast.error("An item with the same value already exists");
+      toast.error("An item with the same name already exists");
       return;
     }
     try {
@@ -228,7 +227,6 @@ export function ParameterItemPicker<
           parameterId: parameterId,
           name: newName.trim(),
           description: newDescription.trim(),
-          value: proposedValue,
         },
       });
 

@@ -50,12 +50,8 @@ class UpdateSettingsRequest(BaseModel):
     auth_value_mapping: dict[str, dict[str, str]] | None = (
         None  # Auth value mapping (auth_id -> auth_item_id -> value) for non-encrypted items
     )
-    default_admin_profile_id: str | None = (
-        None  # Default admin/superadmin profile ID
-    )
-    default_guest_profile_id: str | None = (
-        None  # Default guest profile ID
-    )
+    default_admin_profile_id: str | None = None  # Default admin/superadmin profile ID
+    default_guest_profile_id: str | None = None  # Default guest profile ID
 
 
 class UpdateSettingsResponse(BaseModel):

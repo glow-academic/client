@@ -45,11 +45,23 @@ WITH user_departments AS (
                 NULL::boolean as default_scenario,
                 NULL::integer as position,
                 NULL::boolean as hints_enabled,
-                NULL::boolean as objectives_enabled,
-                NULL::boolean as image_input_enabled,
+                NULL::boolean as copy_paste_allowed,
+                NULL::boolean as audio_enabled,
+                NULL::boolean as text_enabled,
+                NULL::boolean as show_problem_statement,
+                NULL::boolean as show_objectives,
+                NULL::boolean as show_image,
                 NULL::uuid as rubric_id,
+                NULL::uuid as hint_agent_id,
                 NULL::integer as time_limit_seconds,
                 ARRAY[]::uuid[] as parameter_item_ids
+            WHERE false  -- This ensures no rows are returned
+        ),
+        simulation_scenarios_grade_agents_data AS (
+            SELECT 
+                NULL::uuid as simulation_id,
+                NULL::uuid as scenario_id,
+                ARRAY[]::text[] as grade_agent_ids
             WHERE false  -- This ensures no rows are returned
         ),
         scenario_statistics AS (
@@ -72,9 +84,15 @@ WITH user_departments AS (
                         'default_scenario', COALESCE(sb.default_scenario, false),
                         'position', sb.position,
                         'hints_enabled', sb.hints_enabled,
-                        'objectives_enabled', sb.objectives_enabled,
-                        'image_input_enabled', sb.image_input_enabled,
+                        'copy_paste_allowed', sb.copy_paste_allowed,
+                        'audio_enabled', sb.audio_enabled,
+                        'text_enabled', sb.text_enabled,
+                        'show_problem_statement', sb.show_problem_statement,
+                        'show_objectives', sb.show_objectives,
+                        'show_image', sb.show_image,
                         'rubric_id', sb.rubric_id::text,
+                        'hint_agent_id', sb.hint_agent_id::text,
+                        'grade_agent_ids', COALESCE(ssgad.grade_agent_ids, ARRAY[]::text[]),
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
@@ -91,6 +109,7 @@ WITH user_departments AS (
             COALESCE(ARRAY_AGG(sb.scenario_id::text), ARRAY[]::text[]) as scenario_ids
             FROM simulation_scenarios_base sb
             LEFT JOIN scenario_statistics stats ON stats.scenario_id = sb.scenario_id
+            LEFT JOIN simulation_scenarios_grade_agents_data ssgad ON ssgad.scenario_id = sb.scenario_id
         ),
         valid_scenarios_list AS (
             SELECT DISTINCT
@@ -404,6 +423,36 @@ WITH user_departments AS (
             FROM user_departments_for_mapping ud
             LEFT JOIN department_scenario_ids_default dsci ON dsci.department_id = ud.id
             LEFT JOIN department_rubric_ids_default dri ON dri.department_id = ud.id
+        ),
+        user_departments_for_agents AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        valid_agents AS (
+            -- Get agents with roles 'hint' or 'grade'
+            -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        a.id::text,
+                        jsonb_build_object(
+                            'name', a.name,
+                            'description', COALESCE(a.description, ''),
+                            'roles', ARRAY[a.role::text]
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as agent_mapping,
+                array_agg(a.id::text ORDER BY a.name) as agent_ids
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.active = true 
+            AND a.role IN ('hint', 'grade')
+            GROUP BY a.id
+            HAVING 
+                COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
         )
         SELECT 
             sb.title,
@@ -436,7 +485,10 @@ WITH user_departments AS (
             pmd.parameter_mapping,
             fmd.field_mapping,
             pild.parameter_items_list,
-            pdi.department_id as primary_department_id
+            pdi.department_id as primary_department_id,
+            -- Agent mapping
+            COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
+            COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
         FROM simulation_base sb
         CROSS JOIN user_context uc
         LEFT JOIN primary_department_id pdi ON true
@@ -451,3 +503,4 @@ WITH user_departments AS (
         LEFT JOIN scenario_mapping_complete smc ON true
         LEFT JOIN video_mapping_data vmd ON true
         LEFT JOIN department_mapping_data dmd ON true
+        LEFT JOIN valid_agents va ON true

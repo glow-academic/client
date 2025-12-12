@@ -17,6 +17,7 @@ class DeleteAuthRequest(BaseModel):
     """Request to delete auth."""
 
     authId: str
+    profileId: str
 
 
 class DeleteAuthResponse(BaseModel):

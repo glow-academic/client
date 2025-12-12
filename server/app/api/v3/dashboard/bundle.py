@@ -13,23 +13,146 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AttemptHistoryRow,
-    DataPoint,
-    FieldMapping,
-    FieldMappingItem,
-    Method,
-    MetricResponse,
-    ParameterMapping,
-    ParameterMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    SimulationFilter,
-    SimulationMapping,
-    SimulationMappingItem,
-    TrendData,
-)
 from app.utils.sql_helper import load_sql
+from enum import Enum
+from typing import Literal
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+
+
+class ParameterMappingItem(BaseModel):
+    """Parameter mapping item."""
+
+    name: str
+    description: str
+    numerical: bool
+    document_parameter: bool
+    persona_parameter: bool
+
+
+class RubricMappingItem(BaseModel):
+    """Rubric mapping item."""
+
+    name: str
+    description: str
+
+
+class SimulationMappingItem(BaseModel):
+    """Simulation mapping item."""
+
+    name: str
+    description: str
+    time_limit: int | None = None
+    department_ids: list[str] | None = None
+
+
+# Type aliases for Dict mappings
+FieldMapping = dict[str, FieldMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+RubricMapping = dict[str, RubricMappingItem]
+SimulationMapping = dict[str, SimulationMappingItem]
+
+
+# Analytics types
+class Method(str, Enum):
+    """Analytics computation methods."""
+
+    AVG = "avg"
+    MAX = "max"
+    SUM = "sum"
+    RATE = "rate"
+    COUNT_DISTINCT = "countDistinct"
+    MIN = "min"
+    SLOPE = "slope"
+
+
+class SimulationFilter(str, Enum):
+    """Simulation filter types."""
+
+    GENERAL = "general"
+    PRACTICE = "practice"
+    ARCHIVED = "archived"
+
+
+class TrendData(BaseModel):
+    """Trend data point."""
+
+    date: str
+    value: float
+    count: int
+
+
+class DataPoint(BaseModel):
+    """Individual data point."""
+
+    profileId: str
+    date: str | None = None
+    value: float | None = None
+    attemptId: str | None = None
+    simulationId: str | None = None
+    scenarioId: str | None = None
+    count: int | None = None
+
+
+class MetricResponse(BaseModel):
+    """Standard metric response."""
+
+    hasData: bool
+    method: Method
+    currentValue: int
+    status: Literal["success", "warning", "danger", "neutral"]
+    trendAnalysis: str | None = None
+    valueField: str | None = None
+    keyField: str | None = None
+    trendData: list[TrendData]
+    dataPoints: list[DataPoint]
+    hover: dict[str, Any] | None = None
+
+
+class AttemptHistoryRow(BaseModel):
+    """Attempt history row."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    attemptId: str
+    date: str
+    profileId: str
+    profileName: str
+    simulationName: str
+    numScenarios: int | None = None
+    numScenariosCompleted: int
+    infiniteMode: bool
+    timeLimit: int | None = None
+    personaNames: list[str]
+    personaColors: list[str]
+    score: int | None = None
+    scoreStatus: str | None = None
+    simulation_id: str
+    scenario_ids: list[str]
+    scenario_titles: list[str]
+    isArchived: bool
+    showView: bool
+    showContinue: bool
+    practiceSimulation: bool
+    passPct: int | None = None
+    department_ids: list[str] | None = None
+    cohortNames: list[str]
+    practiceScenarioId: str | None = None
 
 router = APIRouter()
 
@@ -56,9 +179,6 @@ class DashboardBundleFilters(BaseModel):
         if isinstance(v, list):
             return v
         return [str(v)] if v else None
-
-
-# AttemptHistoryRow is imported from app.utils.schema
 
 
 AttemptHistoryResponse = list[AttemptHistoryRow]

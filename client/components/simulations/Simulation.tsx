@@ -52,8 +52,8 @@ import { useRouter } from "next/navigation";
 import type {
   CreateSimulationIn,
   CreateSimulationOut,
-  SimulationNewOut,
   SimulationDetailOut,
+  SimulationNewOut,
   UpdateSimulationIn,
   UpdateSimulationOut,
 } from "@/app/(main)/create/simulations/s/[simulationId]/page";
@@ -64,10 +64,10 @@ export interface SimulationProps {
   simulationDetail?: SimulationDetailOut;
   simulationDetailDefault?: SimulationNewOut;
   createSimulationAction?: (
-    input: CreateSimulationIn,
+    input: CreateSimulationIn
   ) => Promise<CreateSimulationOut>;
   updateSimulationAction?: (
-    input: UpdateSimulationIn,
+    input: UpdateSimulationIn
   ) => Promise<UpdateSimulationOut>;
 }
 
@@ -99,7 +99,7 @@ export default function Simulation({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null,
+    null
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -112,13 +112,6 @@ export default function Simulation({
   const simulationData = isEditMode
     ? simulationDetail
     : simulationDetailDefault;
-
-  // Extract strongly typed scenario from SimulationDetailOut or SimulationNewOut
-  type ScenarioInSimulation = NonNullable<
-    SimulationDetailOut["scenarios"]
-  >[number] extends infer S
-    ? S
-    : NonNullable<SimulationNewOut["scenarios"]>[number];
 
   // Extract body types from server action types for type safety
   type CreateSimulationBody = CreateSimulationIn extends { body: infer B }
@@ -165,9 +158,9 @@ export default function Simulation({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primaryDepartmentId ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = useMemo(
@@ -179,7 +172,7 @@ export default function Simulation({
       practiceSimulation: false,
       departmentIds: defaultDepartmentIds,
     }),
-    [defaultDepartmentIds],
+    [defaultDepartmentIds]
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -195,24 +188,27 @@ export default function Simulation({
   // Extract department mapping
   const departmentMapping = useMemo(
     () => simulationData?.department_mapping || {},
-    [simulationData],
+    [simulationData]
   );
   // Extract agent mapping
   const agentMapping = useMemo(
-    () => (simulationData as { agent_mapping?: Record<string, unknown> })?.agent_mapping || {},
-    [simulationData],
+    () =>
+      (simulationData as { agent_mapping?: Record<string, unknown> })
+        ?.agent_mapping || {},
+    [simulationData]
   );
   const validAgentIds = useMemo(
-    () => (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [],
-    [simulationData],
+    () =>
+      (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [],
+    [simulationData]
   );
 
   // State for managing unified content (scenarios + videos)
   const [currentContentItems, setCurrentContentItems] = useState<ContentItem[]>(
-    [],
+    []
   );
   const [stagedContentItems, setStagedContentItems] = useState<ContentItem[]>(
-    [],
+    []
   ); // New items not yet saved
   const [contentActiveStates, setContentActiveStates] = useState<
     Record<string, boolean>
@@ -417,23 +413,12 @@ export default function Simulation({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | number | boolean | string[] | null,
+    value: string | number | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  };
-
-  // Legacy drag-and-drop handlers - replaced by table's up/down buttons
-  const _handleDragStartScenario = (e: React.DragEvent, scenarioId: string) => {
-    setDraggedScenario(scenarioId);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const _handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
   };
 
   // Staged selections per department (preserved when departments are deselected)
@@ -445,7 +430,7 @@ export default function Simulation({
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
-    [],
+    []
   );
   // Convert server data to unified ContentItem format
   const unifiedContentItems = useMemo(() => {
@@ -706,12 +691,12 @@ export default function Simulation({
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id),
+      (id) => !currentDeptIds.includes(id)
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id),
+      (id) => !prevDeptIds.includes(id)
     );
 
     // Save selections for deselected departments
@@ -739,7 +724,7 @@ export default function Simulation({
             if (staged.scenario_ids && staged.scenario_ids.length > 0) {
               const validScenarioSet = new Set(validScenarioIds);
               const validScenarios = staged.scenario_ids.filter((id) =>
-                validScenarioSet.has(id),
+                validScenarioSet.has(id)
               );
               if (validScenarios.length > 0) {
                 setCurrentScenarioIds((prevScenarios) => {
@@ -800,28 +785,6 @@ export default function Simulation({
 
   // Note: rubric_id is now per-scenario, not simulation-level, so we don't clear it here
 
-  // Legacy drag-and-drop handler - replaced by table's up/down buttons
-  const _handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
-    e.preventDefault();
-
-    if (!draggedScenario) return;
-
-    const newOrder = [...currentScenarioIds];
-    const draggedIndex = newOrder.findIndex((id) => id === draggedScenario);
-    const targetIndex = newOrder.findIndex((id) => id === targetScenarioId);
-
-    if (draggedIndex !== -1 && targetIndex !== -1) {
-      const [removed] = newOrder.splice(draggedIndex, 1);
-      const insertIndex =
-        draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
-      newOrder.splice(insertIndex, 0, removed!);
-
-      setCurrentScenarioIds(newOrder);
-    }
-
-    setDraggedScenario(null);
-  };
-
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -853,7 +816,7 @@ export default function Simulation({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData?.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds,
+        validDepartmentIds
       );
 
       const targetSimulationId = simulationId || editingSimulationId;
@@ -928,7 +891,7 @@ export default function Simulation({
           }
 
           return baseItem;
-        },
+        }
       );
 
       if (targetSimulationId) {
@@ -969,7 +932,7 @@ export default function Simulation({
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -993,11 +956,6 @@ export default function Simulation({
   // Handler for editing scenario - opens in new tab
   const editScenario = (scenarioId: string) => {
     window.open(`/create/scenarios/s/${scenarioId}`, "_blank");
-  };
-
-  // Legacy handler - not used in table-based interface
-  const _handleScenarioSelection = (scenarioIds: string[]) => {
-    setCurrentScenarioIds(scenarioIds);
   };
 
   // Check if form has changes
@@ -1046,24 +1004,6 @@ export default function Simulation({
     originalContentSwitchStates,
   ]);
 
-  // Helper function to format last used date (not currently used in table)
-  const _formatLastUsed = (date: string | null): string => {
-    if (!date) return "Never";
-    const d = new Date(date);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  // Helper function to remove a scenario (legacy - replaced by handleContentRemove)
-  // Kept for backward compatibility but not used
-  const _handleRemoveScenario = (scenarioId: string) => {
-    setCurrentScenarioIds((prev) => prev.filter((id) => id !== scenarioId));
-    // Active states are now handled via contentActiveStates in handleContentRemove
-  };
-
   const handleContentActiveToggle = useCallback(
     (contentId: string, active: boolean) => {
       setContentActiveStates((prev) => ({
@@ -1071,7 +1011,7 @@ export default function Simulation({
         [contentId]: active,
       }));
     },
-    [],
+    []
   );
 
   // Switch toggle handlers
@@ -1085,7 +1025,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleHintAgentChange = useCallback(
@@ -1098,7 +1038,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleGradeAgentsChange = useCallback(
@@ -1111,7 +1051,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleCopyPasteToggle = useCallback(
@@ -1124,7 +1064,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleRubricChange = useCallback(
@@ -1137,7 +1077,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleTimeLimitChange = useCallback(
@@ -1152,13 +1092,13 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleContentMoveUp = useCallback((contentId: string) => {
     setCurrentContentItems((prev) => {
       const index = prev.findIndex(
-        (item) => `${item.type}:${item.id}` === contentId,
+        (item) => `${item.type}:${item.id}` === contentId
       );
       if (index <= 0) return prev;
       const newItems = [...prev];
@@ -1174,7 +1114,7 @@ export default function Simulation({
   const handleContentMoveDown = useCallback((contentId: string) => {
     setCurrentContentItems((prev) => {
       const index = prev.findIndex(
-        (item) => `${item.type}:${item.id}` === contentId,
+        (item) => `${item.type}:${item.id}` === contentId
       );
       if (index < 0 || index >= prev.length - 1) return prev;
       const newItems = [...prev];
@@ -1193,10 +1133,10 @@ export default function Simulation({
       setCurrentScenarioIds((prev) => prev.filter((sid) => sid !== id));
     }
     setCurrentContentItems((prev) =>
-      prev.filter((item) => `${item.type}:${item.id}` !== contentId),
+      prev.filter((item) => `${item.type}:${item.id}` !== contentId)
     );
     setStagedContentItems((prev) =>
-      prev.filter((item) => `${item.type}:${item.id}` !== contentId),
+      prev.filter((item) => `${item.type}:${item.id}` !== contentId)
     );
     setContentActiveStates((prev) => {
       const newStates = { ...prev };
@@ -1215,7 +1155,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleTextToggle = useCallback(
@@ -1228,7 +1168,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleShowProblemStatementToggle = useCallback(
@@ -1241,7 +1181,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleShowObjectivesToggle = useCallback(
@@ -1254,7 +1194,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   const handleShowImageToggle = useCallback(
@@ -1267,7 +1207,7 @@ export default function Simulation({
         },
       }));
     },
-    [],
+    []
   );
 
   // Handler for scenario picker selection - adds scenarios directly
@@ -1277,17 +1217,17 @@ export default function Simulation({
       const existingScenarioIds = new Set(
         currentContentItems
           .filter((item) => item.type === "scenario")
-          .map((item) => item.id),
+          .map((item) => item.id)
       );
       const newScenarioIds = scenarioIds.filter(
-        (id) => !existingScenarioIds.has(id),
+        (id) => !existingScenarioIds.has(id)
       );
 
       if (newScenarioIds.length === 0) return;
 
       const maxPosition = Math.max(
         ...currentContentItems.map((item) => item.position),
-        0,
+        0
       );
       const newItems: ContentItem[] = newScenarioIds.map((scenarioId, idx) => {
         const scenarioData = simulationData?.scenario_mapping?.[scenarioId];
@@ -1308,7 +1248,7 @@ export default function Simulation({
       setStagedContentItems((prev) => [...prev, ...newItems]);
       setCurrentScenarioIds((prev) => [...prev, ...newScenarioIds]);
     },
-    [currentContentItems, simulationData?.scenario_mapping],
+    [currentContentItems, simulationData?.scenario_mapping]
   );
 
   // Handler for video picker selection - adds videos directly
@@ -1318,7 +1258,7 @@ export default function Simulation({
       const existingVideoIds = new Set(
         currentContentItems
           .filter((item) => item.type === "video")
-          .map((item) => item.id),
+          .map((item) => item.id)
       );
       const newVideoIds = videoIds.filter((id) => !existingVideoIds.has(id));
 
@@ -1326,7 +1266,7 @@ export default function Simulation({
 
       const maxPosition = Math.max(
         ...currentContentItems.map((item) => item.position),
-        0,
+        0
       );
       const newItems: ContentItem[] = newVideoIds.map((videoId, idx) => {
         const videoData = simulationData?.video_mapping?.[videoId];
@@ -1347,7 +1287,7 @@ export default function Simulation({
       });
       setStagedContentItems((prev) => [...prev, ...newItems]);
     },
-    [currentContentItems, simulationData?.video_mapping],
+    [currentContentItems, simulationData?.video_mapping]
   );
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
@@ -1437,7 +1377,9 @@ export default function Simulation({
                   onSelect={(ids) => handleInputChange("departmentIds", ids)}
                   getId={(dept) => (dept as unknown as { id: string }).id}
                   getLabel={(dept) => dept.name || ""}
-                  getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                  getSearchText={(dept) =>
+                    `${dept.name} ${dept.description || ""}`
+                  }
                   placeholder="All Departments"
                   disabled={isReadonly}
                   multiSelect={true}
@@ -1565,7 +1507,12 @@ export default function Simulation({
           <div className="space-y-2">
             <SimulationVideosTable
               data={currentContentItems}
-              videoMapping={(simulationData?.video_mapping || {}) as Record<string, { name: string; description: string; length_seconds: number }>}
+              videoMapping={
+                (simulationData?.video_mapping || {}) as Record<
+                  string,
+                  { name: string; description: string; length_seconds: number }
+                >
+              }
               validVideoIds={simulationData?.valid_video_ids || []}
               selectedVideoIds={currentContentItems
                 .filter((item) => item.type === "video")

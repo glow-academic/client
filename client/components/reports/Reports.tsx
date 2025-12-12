@@ -1382,7 +1382,7 @@ export default function Reports({
                         </div>
                       </div>
                     )}
-                    renderItem={(item, isSelected) => {
+                    renderItem={(item, _isSelected) => {
                       const IconComponent = item.icon;
                       return (
                         <div className="flex items-center gap-3 w-full">

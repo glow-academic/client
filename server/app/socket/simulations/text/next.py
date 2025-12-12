@@ -216,6 +216,9 @@ async def _run_grade_agent_inline(
     conn: asyncpg.Connection,
 ) -> str:
     """Inlined grading agent logic."""
+    # Initialize grading tracking dictionaries
+    grading_results: dict[str, Any] = {}
+    grading_progress: dict[str, bool] = {}
     try:
         # Clear previous results
         grading_results.clear()
@@ -465,6 +468,8 @@ async def _run_grade_agent_inline(
             tool_context: RunContextWrapper[Any],
             tool_results: list[FunctionToolResult],
         ) -> ToolsToFinalOutputResult:
+            # Use grading_progress from outer scope
+            nonlocal grading_progress
             required_tools = ["summary"]
             for group in standard_groups:
                 safe_name = create_safe_field_name(group["short_name"])
@@ -496,7 +501,6 @@ async def _run_grade_agent_inline(
             tools=grading_tools,
             parallel_tool_calls=False,
             tool_use_behavior=tool_use_behavior,
-            custom_model=model["custom_model"],
         )
 
         agent_instance = grading_agent.agent()
@@ -558,8 +562,8 @@ async def _run_grade_agent_inline(
         # This handles token updates and message logging in background
         usage = result.context_wrapper.usage
         assistant_output = getattr(result, "final_output", None) or ""
-        rubric_dev_content = rubric_input["content"]
-        time_dev_content = time_message["content"]
+        rubric_dev_content = str(rubric_input.get("content", ""))
+        time_dev_content = str(time_message.get("content", ""))
         # Create input_items with developer messages for logging
         input_items_with_dev = input_items + [
             {"role": "developer", "content": rubric_dev_content},

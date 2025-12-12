@@ -4709,7 +4709,7 @@ export interface components {
         };
         /**
          * AgentMappingItem
-         * @description Agent mapping item - extends MappingItem with role information
+         * @description Agent mapping item with role information.
          */
         AgentMappingItem: {
             /** Name */
@@ -4735,11 +4735,11 @@ export interface components {
             agents: components["schemas"]["AgentItem"][];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__agents__list__ModelMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__agents__list__DepartmentMappingItem"];
             };
         };
         /** AggregatedResults */
@@ -5435,7 +5435,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__add_staff__DepartmentMappingItem"];
             };
         };
         /**
@@ -5531,7 +5531,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__detail__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping?: {
@@ -5539,7 +5539,7 @@ export interface components {
             } | null;
             /** Department Mapping For Staff */
             department_mapping_for_staff?: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__detail__DepartmentMappingItem"];
             } | null;
         };
         /**
@@ -5573,7 +5573,7 @@ export interface components {
             available_profiles: components["schemas"]["app__api__v3__cohorts__detail__StaffItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__detail_with_profiles__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -5600,7 +5600,7 @@ export interface components {
         };
         /**
          * CohortMappingItem
-         * @description Cohort mapping item - extends MappingItem
+         * @description Cohort mapping item.
          */
         CohortMappingItem: {
             /** Name */
@@ -5729,7 +5729,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__search_profile__DepartmentMappingItem"];
             };
         };
         /**
@@ -5787,7 +5787,7 @@ export interface components {
             };
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__list__ScenarioMappingItem"];
             };
             /** Simulation Scenario Mapping */
             simulation_scenario_mapping: {
@@ -5795,7 +5795,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__list__DepartmentMappingItem"];
             };
             /** Profile Options */
             profile_options: {
@@ -5881,6 +5881,8 @@ export interface components {
             active: boolean;
             /** Auth Items */
             auth_items: components["schemas"]["AuthItemCreate"][];
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateAuthResponse
@@ -6604,7 +6606,7 @@ export interface components {
             staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__profile__staff__create_staff_data__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -6733,7 +6735,7 @@ export interface components {
             secondary: components["schemas"]["DashboardSecondaryMetrics"];
             footer: components["schemas"]["DashboardFooterMetrics"];
             /** History */
-            history: components["schemas"]["app__utils__schema__AttemptHistoryRow"][];
+            history: components["schemas"]["app__api__v3__dashboard__bundle__AttemptHistoryRow"][];
             insights: components["schemas"]["DashboardInsights"];
             thresholds: components["schemas"]["Thresholds"];
             /** Simulation Mapping */
@@ -6746,11 +6748,11 @@ export interface components {
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__dashboard__bundle__ParameterMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__dashboard__bundle__FieldMappingItem"];
             };
         };
         /**
@@ -6768,16 +6770,16 @@ export interface components {
          * @description Header metrics (10 total).
          */
         DashboardHeaderMetrics: {
-            averageScore: components["schemas"]["MetricResponse"];
-            completionPercentage: components["schemas"]["MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["MetricResponse"];
-            highestScore: components["schemas"]["MetricResponse"];
-            messagesPerSession: components["schemas"]["MetricResponse"];
-            personaResponseTimes: components["schemas"]["MetricResponse"];
-            sessionEfficiency: components["schemas"]["MetricResponse"];
-            stagnationRate: components["schemas"]["MetricResponse"];
-            timeSpent: components["schemas"]["MetricResponse"];
-            totalAttempts: components["schemas"]["MetricResponse"];
+            averageScore: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            completionPercentage: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            firstAttemptPassRate: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            highestScore: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            messagesPerSession: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            personaResponseTimes: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            sessionEfficiency: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            stagnationRate: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            timeSpent: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            totalAttempts: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
         };
         /**
          * DashboardHistoryFilters
@@ -6833,7 +6835,7 @@ export interface components {
          */
         DashboardHistoryResponse: {
             /** Data */
-            data: components["schemas"]["app__utils__schema__AttemptHistoryRow"][];
+            data: components["schemas"]["app__api__v3__dashboard__history__AttemptHistoryRow"][];
             /** Totalcount */
             totalCount: number;
             /** Archivedcount */
@@ -6982,6 +6984,8 @@ export interface components {
         DeleteAuthRequest: {
             /** Authid */
             authId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DeleteAuthResponse
@@ -7386,7 +7390,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__detail_bulk__DepartmentMappingItem"];
             };
             /** Field Ids */
             field_ids: string[];
@@ -7394,7 +7398,7 @@ export interface components {
             valid_field_ids: string[];
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__detail_bulk__FieldMappingItem"];
             };
         };
         /**
@@ -7442,7 +7446,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__detail__DepartmentMappingItem"];
             };
             /** Field Ids */
             field_ids: string[];
@@ -7450,11 +7454,11 @@ export interface components {
             valid_field_ids: string[];
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__detail__FieldMappingItem"];
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__detail__ParameterMappingItem"];
             };
             /** Linked Parameter Ids */
             linked_parameter_ids: string[];
@@ -7524,26 +7528,6 @@ export interface components {
             can_delete: boolean;
         };
         /**
-         * DocumentMappingItem
-         * @description Document mapping item - extends MappingItem with file metadata
-         */
-        DocumentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Filepath */
-            filePath?: string | null;
-            /** Mimetype */
-            mimeType?: string | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Parent Document Id */
-            parent_document_id?: string | null;
-        };
-        /**
          * DocumentsListRequest
          * @description Request for documents list.
          */
@@ -7560,19 +7544,19 @@ export interface components {
             documents: components["schemas"]["DocumentItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__list__ScenarioMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__list__FieldMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__list__DepartmentMappingItem"];
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__list__ParameterMappingItem"];
             };
             /** Scenario Options */
             scenario_options: {
@@ -7610,6 +7594,8 @@ export interface components {
         DuplicateAuthRequest: {
             /** Authid */
             authId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DuplicateAuthResponse
@@ -7930,7 +7916,7 @@ export interface components {
             model_runs: components["schemas"]["app__api__v3__evals__detail__ModelRunItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__evals__detail__DepartmentMappingItem"];
             };
             /** Agent Mapping */
             agent_mapping: {
@@ -8006,7 +7992,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__evals__list__DepartmentMappingItem"];
             };
             /** Agent Mapping */
             agent_mapping: {
@@ -8029,7 +8015,7 @@ export interface components {
         };
         /**
          * ExampleMappingItem
-         * @description Example mapping item - extends MappingItem
+         * @description Example mapping item.
          */
         ExampleMappingItem: {
             /** Name */
@@ -8170,22 +8156,6 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean;
         };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item - extends MappingItem with parameter context
-         */
-        FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[] | null;
-        };
         /** FieldNewRequest */
         FieldNewRequest: {
             /** Profileid */
@@ -8233,7 +8203,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__fields__list__DepartmentMappingItem"];
             };
             /** Parameter Options */
             parameter_options: {
@@ -8574,7 +8544,7 @@ export interface components {
          */
         HomeHistoryResponse: {
             /** Data */
-            data: components["schemas"]["app__utils__schema__AttemptHistoryRow"][];
+            data: components["schemas"]["app__api__v3__home__history__AttemptHistoryRow"][];
             /** Totalcount */
             totalCount: number;
             /** Page */
@@ -8614,7 +8584,7 @@ export interface components {
             history: components["schemas"]["app__api__v3__home__overview__AttemptHistoryRow"][];
             /** Standard Groups Mapping */
             standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__home__overview__StandardGroupMappingItem"];
             };
             /** Standards Mapping */
             standards_mapping: {
@@ -8717,7 +8687,7 @@ export interface components {
             can_edit: boolean;
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__keys__detail__DepartmentMappingItem"];
             };
             /** Model Mapping */
             model_mapping: {
@@ -8837,7 +8807,7 @@ export interface components {
              * @default {}
              */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__leaderboard__bundle__ScenarioMappingItem"];
             };
             /**
              * Primary Color
@@ -9121,36 +9091,6 @@ export interface components {
          */
         Method: "avg" | "max" | "sum" | "rate" | "countDistinct" | "min" | "slope";
         /**
-         * MetricResponse
-         * @description Standard metric response.
-         */
-        MetricResponse: {
-            /** Hasdata */
-            hasData: boolean;
-            method: components["schemas"]["Method"];
-            /** Currentvalue */
-            currentValue: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "success" | "warning" | "danger" | "neutral";
-            /** Trendanalysis */
-            trendAnalysis?: string | null;
-            /** Valuefield */
-            valueField?: string | null;
-            /** Keyfield */
-            keyField?: string | null;
-            /** Trenddata */
-            trendData: components["schemas"]["app__utils__schema__TrendData"][];
-            /** Datapoints */
-            dataPoints: components["schemas"]["DataPoint"][];
-            /** Hover */
-            hover?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /**
          * MetricsDataPoint
          * @description App metrics data point.
          */
@@ -9433,7 +9373,7 @@ export interface components {
         };
         /**
          * ObjectiveMappingItem
-         * @description Objective mapping item - extends MappingItem
+         * @description Objective mapping item.
          */
         ObjectiveMappingItem: {
             /** Name */
@@ -9557,7 +9497,7 @@ export interface components {
             parameters: components["schemas"]["app__api__v3__parameters__list__ParameterItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__parameters__list__ScenarioMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -9567,7 +9507,7 @@ export interface components {
             };
             /** Document Mapping */
             document_mapping: {
-                [key: string]: components["schemas"]["DocumentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__parameters__list__DocumentMappingItem"];
             };
             /** Scenario Options */
             scenario_options: {
@@ -9587,28 +9527,6 @@ export interface components {
             personaId: string;
             /** Profileid */
             profileId: string;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields
-         */
-        PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Example */
-            example?: string | null;
         };
         /**
          * PersonaNewRequest
@@ -9754,7 +9672,7 @@ export interface components {
             personas: components["schemas"]["app__api__v3__personas__list__PersonaItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__list__ScenarioMappingItem"];
             };
             /** Agent Mapping */
             agent_mapping: {
@@ -9762,7 +9680,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__list__DepartmentMappingItem"];
             };
             /** Scenario Options */
             scenario_options: {
@@ -9837,7 +9755,7 @@ export interface components {
          */
         PracticeHistoryResponse: {
             /** Data */
-            data: components["schemas"]["app__utils__schema__AttemptHistoryRow"][];
+            data: components["schemas"]["app__api__v3__practice__history__AttemptHistoryRow"][];
             /** Totalcount */
             totalCount: number;
             /** Page */
@@ -9877,7 +9795,7 @@ export interface components {
             history: components["schemas"]["app__api__v3__practice__overview__AttemptHistoryRow"][];
             /** Standard Groups Mapping */
             standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__practice__overview__StandardGroupMappingItem"];
             };
             /** Standards Mapping */
             standards_mapping: {
@@ -9889,23 +9807,23 @@ export interface components {
             };
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__practice__overview__ScenarioMappingItem"];
             };
             /** Persona Mapping */
             persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__practice__overview__PersonaMappingItem"];
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__practice__overview__ParameterMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__practice__overview__FieldMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__practice__overview__DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
@@ -10318,7 +10236,7 @@ export interface components {
         };
         /**
          * ProfileMappingItem
-         * @description Profile mapping item - extends MappingItem
+         * @description Profile mapping item.
          */
         ProfileMappingItem: {
             /** Name */
@@ -10331,16 +10249,16 @@ export interface components {
          * @description Profile metrics - each metric is a full MetricResponse object.
          */
         ProfileMetrics: {
-            averageScore: components["schemas"]["MetricResponse"];
-            completionPercentage: components["schemas"]["MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["MetricResponse"];
-            highestScore: components["schemas"]["MetricResponse"];
-            messagesPerSession: components["schemas"]["MetricResponse"];
-            personaResponseTimes: components["schemas"]["MetricResponse"];
-            sessionEfficiency: components["schemas"]["MetricResponse"];
-            stagnationRate: components["schemas"]["MetricResponse"];
-            timeSpent: components["schemas"]["MetricResponse"];
-            totalAttempts: components["schemas"]["MetricResponse"];
+            averageScore: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            completionPercentage: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            firstAttemptPassRate: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            highestScore: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            messagesPerSession: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            personaResponseTimes: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            sessionEfficiency: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            stagnationRate: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            timeSpent: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
+            totalAttempts: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
         };
         /**
          * ProfileOverviewRequest
@@ -10427,7 +10345,7 @@ export interface components {
             can_edit: boolean;
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__prompts__detail__DepartmentMappingItem"];
             };
             /** Agent Mapping */
             agent_mapping: {
@@ -10531,7 +10449,7 @@ export interface components {
             }[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__prompts__list__DepartmentMappingItem"];
             };
             /** Agent Mapping */
             agent_mapping: {
@@ -10876,7 +10794,7 @@ export interface components {
         };
         /**
          * ReasoningMappingItem
-         * @description Reasoning mapping item - extends MappingItem
+         * @description Reasoning mapping item.
          */
         ReasoningMappingItem: {
             /** Name */
@@ -11053,7 +10971,7 @@ export interface components {
             scenarioOptions: components["schemas"]["FilterOption"][];
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__reports__bundle__ScenarioMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -11215,7 +11133,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__rubrics__detail__DepartmentMappingItem"];
             };
         };
         /**
@@ -11291,7 +11209,7 @@ export interface components {
         };
         /**
          * RubricMappingItem
-         * @description Rubric mapping item - extends MappingItem
+         * @description Rubric mapping item.
          */
         RubricMappingItem: {
             /** Name */
@@ -11357,7 +11275,7 @@ export interface components {
             rubrics: components["schemas"]["RubricItem"][];
             /** Standard Groups Mapping */
             standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__rubrics__list__StandardGroupMappingItem"];
             };
             /** Standards Mapping */
             standards_mapping: {
@@ -11365,7 +11283,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__rubrics__list__DepartmentMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -11626,34 +11544,6 @@ export interface components {
             active: boolean;
         };
         /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data
-         */
-        ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /** Document Mapping */
-            document_mapping: {
-                [key: string]: components["schemas"]["DocumentMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
-            };
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Document Ids */
-            document_ids: string[];
-        };
-        /**
          * ScenarioNewRequest
          * @description Request to get default scenario details.
          */
@@ -11808,7 +11698,7 @@ export interface components {
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__list__FieldMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -11816,7 +11706,7 @@ export interface components {
             };
             /** Persona Mapping */
             persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__list__PersonaMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -11824,7 +11714,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__list__DepartmentMappingItem"];
             };
             /** Persona Options */
             persona_options: {
@@ -11894,7 +11784,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__profile__staff__search_staff__DepartmentMappingItem"];
             };
         };
         /**
@@ -12263,7 +12153,7 @@ export interface components {
         };
         /**
          * SimulationMappingItem
-         * @description Simulation mapping item - extends MappingItem with time_limit
+         * @description Simulation mapping item.
          */
         SimulationMappingItem: {
             /** Name */
@@ -12405,7 +12295,7 @@ export interface components {
             simulations: components["schemas"]["app__api__v3__simulations__list__SimulationItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__list__ScenarioMappingItem"];
             };
             /** Rubric Mapping */
             rubric_mapping: {
@@ -12413,7 +12303,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__list__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -12534,7 +12424,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__profile__staff__detail__DepartmentMappingItem"];
             };
         };
         /**
@@ -12558,13 +12448,13 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__profile__staff__list__DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
             /** Trend Data */
             trend_data: {
-                [key: string]: components["schemas"]["app__utils__schema__TrendData"][];
+                [key: string]: components["schemas"]["app__api__v3__profile__staff__list__TrendData"][];
             };
             /** Role Options */
             role_options: {
@@ -12614,7 +12504,7 @@ export interface components {
             role_options: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__profile__staff__new__DepartmentMappingItem"];
             };
         };
         /**
@@ -12645,7 +12535,7 @@ export interface components {
         };
         /**
          * StandardMappingItem
-         * @description Standard mapping item with points
+         * @description Standard mapping item with points.
          */
         StandardMappingItem: {
             /** Name */
@@ -12915,6 +12805,8 @@ export interface components {
             active: boolean;
             /** Auth Items */
             auth_items: components["schemas"]["AuthItemUpdate"][];
+            /** Profileid */
+            profileId: string;
         };
         /**
          * UpdateAuthResponse
@@ -13905,7 +13797,7 @@ export interface components {
             videos: components["schemas"]["app__api__v3__videos__list__VideoItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__list__DepartmentMappingItem"];
             };
             /** Department Options */
             department_options: {
@@ -13964,7 +13856,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__agents__detail__DepartmentMappingItem"];
             };
             /** Department Prompt Links */
             department_prompt_links: {
@@ -13978,7 +13870,7 @@ export interface components {
             debug_info: components["schemas"]["app__api__v3__agents__detail__DebugInfoItem"][];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__agents__detail__ModelMappingItem"];
             };
             /** Reasoning Mapping */
             reasoning_mapping: {
@@ -13998,6 +13890,46 @@ export interface components {
             model_id: string;
             /** Content */
             content: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__agents__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * ModelMappingItem
+         * @description Model mapping item.
+         */
+        app__api__v3__agents__detail__ModelMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__agents__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * ModelMappingItem
+         * @description Model mapping item.
+         */
+        app__api__v3__agents__list__ModelMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /** AgentDetailResponse */
         app__api__v3__agents__new__AgentDetailResponse: {
@@ -14033,7 +13965,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__agents__new__DepartmentMappingItem"];
             };
             /** Department Prompt Links */
             department_prompt_links: {
@@ -14051,7 +13983,7 @@ export interface components {
             }[];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__agents__new__ModelMappingItem"];
             };
             /** Reasoning Mapping */
             reasoning_mapping: {
@@ -14059,6 +13991,26 @@ export interface components {
             };
             /** Can Edit */
             can_edit: boolean;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__agents__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * ModelMappingItem
+         * @description Model mapping item.
+         */
+        app__api__v3__agents__new__ModelMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /** PersonaItem */
         app__api__v3__attempts__full__PersonaItem: {
@@ -14170,6 +14122,26 @@ export interface components {
             showImage: boolean;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__cohorts__add_staff__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__cohorts__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * StaffItem
          * @description Staff item for cohort detail.
          */
@@ -14214,6 +14186,16 @@ export interface components {
             can_remove: boolean;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__cohorts__detail_with_profiles__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * CohortItem
          * @description Cohort item for list view.
          */
@@ -14246,6 +14228,216 @@ export interface components {
             can_leave: boolean;
             /** Updated At */
             updated_at: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__cohorts__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__cohorts__list__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__cohorts__search_profile__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * AttemptHistoryRow
+         * @description Attempt history row.
+         */
+        app__api__v3__dashboard__bundle__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Scorestatus */
+            scoreStatus?: string | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__dashboard__bundle__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
+         * MetricResponse
+         * @description Standard metric response.
+         */
+        app__api__v3__dashboard__bundle__MetricResponse: {
+            /** Hasdata */
+            hasData: boolean;
+            method: components["schemas"]["Method"];
+            /** Currentvalue */
+            currentValue: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
+            /** Trendanalysis */
+            trendAnalysis?: string | null;
+            /** Valuefield */
+            valueField?: string | null;
+            /** Keyfield */
+            keyField?: string | null;
+            /** Trenddata */
+            trendData: components["schemas"]["app__api__v3__dashboard__bundle__TrendData"][];
+            /** Datapoints */
+            dataPoints: components["schemas"]["DataPoint"][];
+            /** Hover */
+            hover?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__dashboard__bundle__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+        };
+        /**
+         * TrendData
+         * @description Trend data point.
+         */
+        app__api__v3__dashboard__bundle__TrendData: {
+            /** Date */
+            date: string;
+            /** Value */
+            value: number;
+            /** Count */
+            count: number;
+        };
+        /**
+         * AttemptHistoryRow
+         * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
+         */
+        app__api__v3__dashboard__history__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Scorestatus */
+            scoreStatus?: string | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /**
          * DepartmentDetailResponse
@@ -14282,7 +14474,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__departments__detail__DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
@@ -14302,6 +14494,16 @@ export interface components {
             model_key_mapping: {
                 [key: string]: string;
             };
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__departments__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * KeyMappingItem
@@ -14392,8 +14594,142 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__departments__new__DepartmentMappingItem"];
             };
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__departments__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__documents__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__documents__detail__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__documents__detail__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__documents__detail_bulk__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__documents__detail_bulk__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__documents__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__documents__list__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__documents__list__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__documents__list__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__evals__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * ModelRunItem
@@ -14434,6 +14770,16 @@ export interface components {
             grade_passed: boolean | null;
             /** Grade Created At */
             grade_created_at: string | null;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__evals__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * ModelRunItem
@@ -14480,6 +14826,16 @@ export interface components {
             /** Author Profile Id */
             author_profile_id: string;
         };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__fields__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
         /** DepartmentMappingItem */
         app__api__v3__fields__new__DepartmentMappingItem: {
             /** Name */
@@ -14493,6 +14849,60 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * AttemptHistoryRow
+         * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
+         */
+        app__api__v3__home__history__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Scorestatus */
+            scoreStatus?: string | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -14545,6 +14955,40 @@ export interface components {
             cohortNames: string[];
             /** Practicescenarioid */
             practiceScenarioId?: string | null;
+        };
+        /**
+         * StandardGroupMappingItem
+         * @description Standard group mapping item with rubric context.
+         */
+        app__api__v3__home__overview__StandardGroupMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__keys__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__leaderboard__bundle__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * FeedbackItem
@@ -14688,6 +15132,16 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
+        /**
+         * DocumentMappingItem
+         * @description Document mapping item.
+         */
+        app__api__v3__parameters__list__DocumentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
         /** ParameterItem */
         app__api__v3__parameters__list__ParameterItem: {
             /** Parameter Id */
@@ -14716,6 +15170,16 @@ export interface components {
             can_duplicate: boolean;
         };
         /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__parameters__list__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * DebugInfoItem
          * @description Debug info item.
          */
@@ -14724,6 +15188,56 @@ export interface components {
             timestamp: string;
             /** Message */
             message: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__personas__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__personas__detail__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__personas__detail__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
         };
         /**
          * PersonaDetailResponse
@@ -14774,15 +15288,15 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__detail__DepartmentMappingItem"];
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__detail__ParameterMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__detail__FieldMappingItem"];
             };
             /** Example Mapping */
             example_mapping: {
@@ -14800,6 +15314,16 @@ export interface components {
             examples_history: components["schemas"]["ExampleWithDepartments"][];
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__detail__DebugInfoItem"][];
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__personas__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * PersonaItem
@@ -14850,6 +15374,16 @@ export interface components {
             updated_at: string;
         };
         /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__personas__list__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * DebugInfoItem
          * @description Debug info item.
          */
@@ -14858,6 +15392,56 @@ export interface components {
             timestamp: string;
             /** Message */
             message: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__personas__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__personas__new__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__personas__new__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
         };
         /**
          * PersonaDetailResponse
@@ -14908,15 +15492,15 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__new__DepartmentMappingItem"];
             };
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__new__ParameterMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__new__FieldMappingItem"];
             };
             /** Valid Parameter Ids */
             valid_parameter_ids: string[];
@@ -14924,6 +15508,60 @@ export interface components {
             valid_parameter_item_ids: string[];
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__new__DebugInfoItem"][];
+        };
+        /**
+         * AttemptHistoryRow
+         * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
+         */
+        app__api__v3__practice__history__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Scorestatus */
+            scoreStatus?: string | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -14976,6 +15614,86 @@ export interface components {
             cohortNames: string[];
             /** Practicescenarioid */
             practiceScenarioId?: string | null;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__practice__overview__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__practice__overview__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__practice__overview__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__practice__overview__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__practice__overview__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * StandardGroupMappingItem
+         * @description Standard group mapping item with rubric context.
+         */
+        app__api__v3__practice__overview__StandardGroupMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
         };
         /**
          * DebugInfoItem
@@ -15088,6 +15806,36 @@ export interface components {
             updatedAt: string;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__profile__staff__create_staff_data__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__profile__staff__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__profile__staff__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * StaffItem
          * @description Staff item in list response.
          */
@@ -15130,6 +15878,110 @@ export interface components {
             can_delete: boolean;
         };
         /**
+         * TrendData
+         * @description Trend data point.
+         */
+        app__api__v3__profile__staff__list__TrendData: {
+            /** Date */
+            date: string;
+            /** Value */
+            value: number;
+            /** Count */
+            count: number;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__profile__staff__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__profile__staff__search_staff__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__prompts__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__prompts__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * MetricResponse
+         * @description Standard metric response.
+         */
+        app__api__v3__reports__bundle__MetricResponse: {
+            /** Hasdata */
+            hasData: boolean;
+            method: components["schemas"]["Method"];
+            /** Currentvalue */
+            currentValue: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
+            /** Trendanalysis */
+            trendAnalysis?: string | null;
+            /** Valuefield */
+            valueField?: string | null;
+            /** Keyfield */
+            keyField?: string | null;
+            /** Trenddata */
+            trendData: components["schemas"]["app__api__v3__reports__bundle__TrendData"][];
+            /** Datapoints */
+            dataPoints: components["schemas"]["DataPoint"][];
+            /** Hover */
+            hover?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__reports__bundle__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * TrendData
+         * @description Trend data point.
+         */
+        app__api__v3__reports__bundle__TrendData: {
+            /** Date */
+            date: string;
+            /** Value */
+            value: number;
+            /** Count */
+            count: number;
+        };
+        /**
          * StandardGroupItem
          * @description Standard group item for create.
          */
@@ -15163,6 +16015,36 @@ export interface components {
             points: number;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__rubrics__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__rubrics__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * StandardGroupMappingItem
+         * @description Standard group mapping item.
+         */
+        app__api__v3__rubrics__list__StandardGroupMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * StandardGroupItem
          * @description Standard group item for update.
          */
@@ -15194,6 +16076,38 @@ export interface components {
             description?: string | null;
             /** Points */
             points: number;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
+         */
+        app__api__v3__scenarios__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Staff Ids */
+            staff_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
         };
         /**
          * DocumentDetailItem
@@ -15233,6 +16147,42 @@ export interface components {
             is_template: boolean;
         };
         /**
+         * DocumentMappingItem
+         * @description Document mapping item - extends MappingItem with file metadata.
+         */
+        app__api__v3__scenarios__detail__DocumentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Filepath */
+            filePath?: string | null;
+            /** Mimetype */
+            mimeType?: string | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Parent Document Id */
+            parent_document_id?: string | null;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__scenarios__detail__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
+        };
+        /**
          * ObjectiveWithDepartments
          * @description Objective with associated department IDs.
          */
@@ -15241,6 +16191,54 @@ export interface components {
             objective: string;
             /** Department Ids */
             department_ids: string[];
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__scenarios__detail__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__scenarios__detail__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Example */
+            example?: string | null;
         };
         /**
          * ProblemStatementInfo
@@ -15322,11 +16320,11 @@ export interface components {
             can_delete: boolean;
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__detail__ParameterMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__detail__FieldMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -15334,11 +16332,11 @@ export interface components {
             };
             /** Persona Mapping */
             persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__detail__PersonaMappingItem"];
             };
             /** Document Mapping */
             document_mapping: {
-                [key: string]: components["schemas"]["DocumentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__detail__DocumentMappingItem"];
             };
             /** Objective Mapping */
             objective_mapping: {
@@ -15346,7 +16344,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__detail__DepartmentMappingItem"];
             };
             /** Problem Statement Mapping */
             problem_statement_mapping: {
@@ -15380,6 +16378,46 @@ export interface components {
             randomized: boolean;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__scenarios__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__scenarios__list__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__scenarios__list__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+        };
+        /**
          * ScenarioItem
          * @description Individual scenario item in the response.
          */
@@ -15405,7 +16443,7 @@ export interface components {
             /** Parameter Item Ids */
             parameter_item_ids: string[];
             /** Parameter Items */
-            parameter_items: components["schemas"]["FieldMappingItem"][];
+            parameter_items: components["schemas"]["app__api__v3__scenarios__list__FieldMappingItem"][];
             /** Simulation Ids */
             simulation_ids: string[];
             /** Num Simulations */
@@ -15420,6 +16458,38 @@ export interface components {
             cohort_ids: string[];
             /** Updated At */
             updated_at: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
+         */
+        app__api__v3__scenarios__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Staff Ids */
+            staff_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
         };
         /**
          * DocumentDetailItem
@@ -15461,6 +16531,42 @@ export interface components {
             parent_document_id?: string | null;
         };
         /**
+         * DocumentMappingItem
+         * @description Document mapping item - extends MappingItem with file metadata.
+         */
+        app__api__v3__scenarios__new__DocumentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Filepath */
+            filePath?: string | null;
+            /** Mimetype */
+            mimeType?: string | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Parent Document Id */
+            parent_document_id?: string | null;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__scenarios__new__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
+        };
+        /**
          * ObjectiveWithDepartments
          * @description Objective with department IDs.
          */
@@ -15469,6 +16575,54 @@ export interface components {
             objective: string;
             /** Department Ids */
             department_ids: string[];
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__scenarios__new__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__scenarios__new__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Example */
+            example?: string | null;
         };
         /**
          * ProblemStatementInfo
@@ -15548,11 +16702,11 @@ export interface components {
             can_delete: boolean;
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__new__ParameterMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__new__FieldMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -15560,11 +16714,11 @@ export interface components {
             };
             /** Persona Mapping */
             persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__new__PersonaMappingItem"];
             };
             /** Document Mapping */
             document_mapping: {
-                [key: string]: components["schemas"]["DocumentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__new__DocumentMappingItem"];
             };
             /** Objective Mapping */
             objective_mapping: {
@@ -15572,7 +16726,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__new__DepartmentMappingItem"];
             };
             /** Problem Statement Mapping */
             problem_statement_mapping: {
@@ -15671,6 +16825,46 @@ export interface components {
             time_limit_seconds?: number | null;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__simulations__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+        };
+        /**
+         * DocumentMappingItem
+         * @description Document mapping item.
+         */
+        app__api__v3__simulations__detail__DocumentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__simulations__detail__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
          * ParameterItem
          * @description Parameter data for dropdown.
          */
@@ -15697,6 +16891,38 @@ export interface components {
             description: string | null;
             /** Parameter Id */
             parameter_id: string;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__simulations__detail__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__simulations__detail__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
         };
         /**
          * ScenarioInSimulation
@@ -15745,6 +16971,34 @@ export interface components {
             last_used: string | null;
             /** Can Remove */
             can_remove: boolean;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item with extended fields for nested data.
+         */
+        app__api__v3__simulations__detail__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__simulations__detail__PersonaMappingItem"];
+            };
+            /** Document Mapping */
+            document_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__simulations__detail__DocumentMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__simulations__detail__FieldMappingItem"];
+            };
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Document Ids */
+            document_ids: string[];
         };
         /**
          * SimulationDetailResponse
@@ -15797,11 +17051,11 @@ export interface components {
             parameter_items: components["schemas"]["app__api__v3__simulations__detail__ParameterItemDetail"][];
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__detail__ParameterMappingItem"];
             };
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__detail__ScenarioMappingItem"];
             };
             /** Video Mapping */
             video_mapping: {
@@ -15815,11 +17069,11 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__detail__DepartmentMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__detail__FieldMappingItem"];
             };
             /** Agent Mapping */
             agent_mapping: {
@@ -15829,6 +17083,26 @@ export interface components {
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__simulations__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__simulations__list__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * SimulationItem
@@ -15867,6 +17141,40 @@ export interface components {
             updated_at: string;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__simulations__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DocumentMappingItem
+         * @description Document mapping item.
+         */
+        app__api__v3__simulations__new__DocumentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__simulations__new__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+        };
+        /**
          * ParameterItem
          * @description Parameter data for dropdown.
          */
@@ -15893,6 +17201,38 @@ export interface components {
             description: string | null;
             /** Parameter Id */
             parameter_id: string;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__simulations__new__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__simulations__new__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
         };
         /**
          * ScenarioInSimulation
@@ -15929,6 +17269,34 @@ export interface components {
             last_used: string | null;
             /** Can Remove */
             can_remove: boolean;
+        };
+        /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item with extended fields for nested data.
+         */
+        app__api__v3__simulations__new__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__simulations__new__PersonaMappingItem"];
+            };
+            /** Document Mapping */
+            document_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__simulations__new__DocumentMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__simulations__new__FieldMappingItem"];
+            };
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Document Ids */
+            document_ids: string[];
         };
         /**
          * SimulationDetailResponse
@@ -15983,11 +17351,11 @@ export interface components {
             parameter_items: components["schemas"]["app__api__v3__simulations__new__ParameterItemDetail"][];
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__new__ParameterMappingItem"];
             };
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__new__ScenarioMappingItem"];
             };
             /** Video Mapping */
             video_mapping: {
@@ -16001,11 +17369,11 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__new__DepartmentMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__simulations__new__FieldMappingItem"];
             };
         };
         /**
@@ -16061,6 +17429,38 @@ export interface components {
             options: components["schemas"]["QuestionOption"][];
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
+         */
+        app__api__v3__videos__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Staff Ids */
+            staff_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+        };
+        /**
          * DocumentDetailItem
          * @description Document detail for preview.
          */
@@ -16096,6 +17496,70 @@ export interface components {
              * @default false
              */
             is_template: boolean;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__videos__detail__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__videos__detail__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__videos__detail__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Example */
+            example?: string | null;
         };
         /**
          * VideoDetailResponse
@@ -16150,7 +17614,7 @@ export interface components {
             can_delete: boolean;
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__detail__DepartmentMappingItem"];
             };
             /** Questions */
             questions: components["schemas"]["QuestionResponse"][];
@@ -16168,11 +17632,11 @@ export interface components {
             valid_agent_ids: string[];
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__detail__ParameterMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__detail__FieldMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
@@ -16184,7 +17648,7 @@ export interface components {
             persona_ids: string[];
             /** Persona Mapping */
             persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__detail__PersonaMappingItem"];
             };
             /** Valid Persona Ids */
             valid_persona_ids: string[];
@@ -16236,6 +17700,16 @@ export interface components {
             } | null;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__videos__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * VideoItem
          * @description Individual video item in the response.
          */
@@ -16258,6 +17732,38 @@ export interface components {
             can_duplicate: boolean;
             /** Updated At */
             updated_at: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
+         */
+        app__api__v3__videos__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Staff Ids */
+            staff_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
         };
         /**
          * DocumentDetailItem
@@ -16295,6 +17801,70 @@ export interface components {
              * @default false
              */
             is_template: boolean;
+        };
+        /**
+         * FieldMappingItem
+         * @description Field mapping item with parameter context.
+         */
+        app__api__v3__videos__new__FieldMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameter Id */
+            parameter_id: string;
+            /** Parameter Name */
+            parameter_name: string;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
+        };
+        /**
+         * ParameterMappingItem
+         * @description Parameter mapping item.
+         */
+        app__api__v3__videos__new__ParameterMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__videos__new__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Example */
+            example?: string | null;
         };
         /**
          * VideoDetailResponse
@@ -16351,7 +17921,7 @@ export interface components {
             can_delete: boolean;
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__new__DepartmentMappingItem"];
             };
             /** Questions */
             questions: components["schemas"]["QuestionResponse"][];
@@ -16369,11 +17939,11 @@ export interface components {
             valid_agent_ids: string[];
             /** Parameter Mapping */
             parameter_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ParameterMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__new__ParameterMappingItem"];
             };
             /** Field Mapping */
             field_mapping: {
-                [key: string]: components["schemas"]["FieldMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__new__FieldMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
@@ -16385,7 +17955,7 @@ export interface components {
             persona_ids: string[];
             /** Persona Mapping */
             persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__new__PersonaMappingItem"];
             };
             /** Valid Persona Ids */
             valid_persona_ids: string[];
@@ -16452,154 +18022,6 @@ export interface components {
             times: number[];
             /** Options */
             options: components["schemas"]["QuestionOption"][];
-        };
-        /**
-         * AttemptHistoryRow
-         * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
-         */
-        app__utils__schema__AttemptHistoryRow: {
-            /** Attemptid */
-            attemptId: string;
-            /** Date */
-            date: string;
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /** Simulationname */
-            simulationName: string;
-            /** Numscenarios */
-            numScenarios?: number | null;
-            /** Numscenarioscompleted */
-            numScenariosCompleted: number;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Personanames */
-            personaNames: string[];
-            /** Personacolors */
-            personaColors: string[];
-            /** Score */
-            score?: number | null;
-            /** Scorestatus */
-            scoreStatus?: string | null;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Titles */
-            scenario_titles: string[];
-            /** Isarchived */
-            isArchived: boolean;
-            /** Showview */
-            showView: boolean;
-            /** Showcontinue */
-            showContinue: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Passpct */
-            passPct?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohortnames */
-            cohortNames: string[];
-            /** Practicescenarioid */
-            practiceScenarioId?: string | null;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item - extends MappingItem with optional entity ID arrays
-         */
-        app__utils__schema__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Staff Ids */
-            staff_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-        };
-        /**
-         * ModelMappingItem
-         * @description Model mapping item - extends MappingItem
-         */
-        app__utils__schema__ModelMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item - extends MappingItem
-         */
-        app__utils__schema__ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-            /**
-             * Scenario Parameter
-             * @default false
-             */
-            scenario_parameter: boolean;
-            /**
-             * Video Parameter
-             * @default false
-             */
-            video_parameter: boolean;
-        };
-        /**
-         * StandardGroupMappingItem
-         * @description Standard group mapping item with rubric context
-         */
-        app__utils__schema__StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
-        /**
-         * TrendData
-         * @description Trend data point.
-         */
-        app__utils__schema__TrendData: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number;
-            /** Count */
-            count: number;
         };
     };
     responses: never;

@@ -1,9 +1,7 @@
 "use client";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Brain, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +23,7 @@ type PracticeOverviewOut = OutputOf<"/api/v3/practice/overview", "post">;
 type ScenarioMapping = PracticeOverviewOut["scenario_mapping"];
 type PersonaMapping = PracticeOverviewOut["persona_mapping"];
 type ParameterMapping = PracticeOverviewOut["parameter_mapping"];
-type ParameterItemMapping = PracticeOverviewOut["parameter_item_mapping"];
+type ParameterItemMapping = PracticeOverviewOut["field_mapping"];
 type SimulationMapping = PracticeOverviewOut["simulation_mapping"];
 type DepartmentMapping = PracticeOverviewOut["department_mapping"];
 

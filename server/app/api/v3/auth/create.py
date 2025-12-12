@@ -30,6 +30,7 @@ class CreateAuthRequest(BaseModel):
     description: str
     active: bool
     auth_items: list[AuthItemCreate]
+    profileId: str
 
 
 class CreateAuthResponse(BaseModel):

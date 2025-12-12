@@ -10387,7 +10387,7 @@
           "roles"
         ],
         "title": "AgentMappingItem",
-        "description": "Agent mapping item - extends MappingItem with role information"
+        "description": "Agent mapping item with role information."
       },
       "AgentNewRequest": {
         "properties": {
@@ -10426,14 +10426,14 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__agents__list__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__agents__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -12329,7 +12329,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__cohorts__add_staff__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -12561,7 +12561,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__cohorts__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -12584,7 +12584,7 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+                  "$ref": "#/components/schemas/app__api__v3__cohorts__detail__DepartmentMappingItem"
                 },
                 "type": "object"
               },
@@ -12684,7 +12684,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__cohorts__detail_with_profiles__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -12765,7 +12765,7 @@
           "description"
         ],
         "title": "CohortMappingItem",
-        "description": "Cohort mapping item - extends MappingItem"
+        "description": "Cohort mapping item."
       },
       "CohortNewRequest": {
         "properties": {
@@ -13020,7 +13020,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__cohorts__search_profile__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -13145,7 +13145,7 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__cohorts__list__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
@@ -13162,7 +13162,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__cohorts__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -13439,6 +13439,10 @@
             },
             "type": "array",
             "title": "Auth Items"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -13446,7 +13450,8 @@
           "name",
           "description",
           "active",
-          "auth_items"
+          "auth_items",
+          "profileId"
         ],
         "title": "CreateAuthRequest",
         "description": "Request to create auth with nested items."
@@ -15267,7 +15272,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__profile__staff__create_staff_data__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -15682,7 +15687,7 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/app__utils__schema__AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__AttemptHistoryRow"
             },
             "type": "array",
             "title": "History"
@@ -15709,14 +15714,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -15767,34 +15772,34 @@
       "DashboardHeaderMetrics": {
         "properties": {
           "averageScore": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "completionPercentage": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "firstAttemptPassRate": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "highestScore": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "messagesPerSession": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "personaResponseTimes": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "sessionEfficiency": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "stagnationRate": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "timeSpent": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           },
           "totalAttempts": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__MetricResponse"
           }
         },
         "type": "object",
@@ -15976,7 +15981,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/app__utils__schema__AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__api__v3__dashboard__history__AttemptHistoryRow"
             },
             "type": "array",
             "title": "Data"
@@ -16443,11 +16448,16 @@
           "authId": {
             "type": "string",
             "title": "Authid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "authId"
+          "authId",
+          "profileId"
         ],
         "title": "DeleteAuthRequest",
         "description": "Request to delete auth."
@@ -17223,7 +17233,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__detail_bulk__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -17244,7 +17254,7 @@
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__detail_bulk__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -17376,7 +17386,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -17397,14 +17407,14 @@
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__detail__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__detail__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -17653,86 +17663,6 @@
         "title": "DocumentItem",
         "description": "Document item for list view."
       },
-      "DocumentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "filePath": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Filepath"
-          },
-          "mimeType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mimetype"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          },
-          "parent_document_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Document Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DocumentMappingItem",
-        "description": "Document mapping item - extends MappingItem with file metadata"
-      },
       "DocumentsListRequest": {
         "properties": {
           "profileId": {
@@ -17758,28 +17688,28 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__list__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__list__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__documents__list__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
@@ -17880,11 +17810,16 @@
           "authId": {
             "type": "string",
             "title": "Authid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "authId"
+          "authId",
+          "profileId"
         ],
         "title": "DuplicateAuthRequest",
         "description": "Request to duplicate auth."
@@ -18520,7 +18455,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__evals__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -18709,7 +18644,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__evals__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -18783,7 +18718,7 @@
           "description"
         ],
         "title": "ExampleMappingItem",
-        "description": "Example mapping item - extends MappingItem"
+        "description": "Example mapping item."
       },
       "ExampleWithDepartments": {
         "properties": {
@@ -19150,49 +19085,6 @@
         "title": "FieldItem",
         "description": "Field item for list view."
       },
-      "FieldMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "parameter_id": {
-            "type": "string",
-            "title": "Parameter Id"
-          },
-          "parameter_name": {
-            "type": "string",
-            "title": "Parameter Name"
-          },
-          "conditional_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conditional Parameter Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "parameter_id",
-          "parameter_name"
-        ],
-        "title": "FieldMappingItem",
-        "description": "Field mapping item - extends MappingItem with parameter context"
-      },
       "FieldNewRequest": {
         "properties": {
           "profileId": {
@@ -19298,7 +19190,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__fields__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -20160,7 +20052,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/app__utils__schema__AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__api__v3__home__history__AttemptHistoryRow"
             },
             "type": "array",
             "title": "Data"
@@ -20278,7 +20170,7 @@
           },
           "standard_groups_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__StandardGroupMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__home__overview__StandardGroupMappingItem"
             },
             "type": "object",
             "title": "Standard Groups Mapping"
@@ -20606,7 +20498,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__keys__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -20902,7 +20794,7 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__leaderboard__bundle__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping",
@@ -21611,101 +21503,6 @@
         ],
         "title": "Method",
         "description": "Analytics computation methods."
-      },
-      "MetricResponse": {
-        "properties": {
-          "hasData": {
-            "type": "boolean",
-            "title": "Hasdata"
-          },
-          "method": {
-            "$ref": "#/components/schemas/Method"
-          },
-          "currentValue": {
-            "type": "integer",
-            "title": "Currentvalue"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "success",
-              "warning",
-              "danger",
-              "neutral"
-            ],
-            "title": "Status"
-          },
-          "trendAnalysis": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trendanalysis"
-          },
-          "valueField": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valuefield"
-          },
-          "keyField": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Keyfield"
-          },
-          "trendData": {
-            "items": {
-              "$ref": "#/components/schemas/app__utils__schema__TrendData"
-            },
-            "type": "array",
-            "title": "Trenddata"
-          },
-          "dataPoints": {
-            "items": {
-              "$ref": "#/components/schemas/DataPoint"
-            },
-            "type": "array",
-            "title": "Datapoints"
-          },
-          "hover": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hover"
-          }
-        },
-        "type": "object",
-        "required": [
-          "hasData",
-          "method",
-          "currentValue",
-          "status",
-          "trendData",
-          "dataPoints"
-        ],
-        "title": "MetricResponse",
-        "description": "Standard metric response."
       },
       "MetricsDataPoint": {
         "properties": {
@@ -22512,7 +22309,7 @@
           "description"
         ],
         "title": "ObjectiveMappingItem",
-        "description": "Objective mapping item - extends MappingItem"
+        "description": "Objective mapping item."
       },
       "OptionItem": {
         "properties": {
@@ -22813,7 +22610,7 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__parameters__list__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
@@ -22828,7 +22625,7 @@
           },
           "document_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DocumentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__parameters__list__DocumentMappingItem"
             },
             "type": "object",
             "title": "Document Mapping"
@@ -22883,85 +22680,6 @@
         ],
         "title": "PersonaDetailRequest",
         "description": "Request to get persona details."
-      },
-      "PersonaMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "image_model": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Model"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          },
-          "example": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Example"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "color",
-          "icon"
-        ],
-        "title": "PersonaMappingItem",
-        "description": "Persona mapping item with custom color and icon fields"
       },
       "PersonaNewRequest": {
         "properties": {
@@ -23265,7 +22983,7 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__list__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
@@ -23279,7 +22997,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -23472,7 +23190,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/app__utils__schema__AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__api__v3__practice__history__AttemptHistoryRow"
             },
             "type": "array",
             "title": "Data"
@@ -23586,7 +23304,7 @@
           },
           "standard_groups_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__StandardGroupMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__practice__overview__StandardGroupMappingItem"
             },
             "type": "object",
             "title": "Standard Groups Mapping"
@@ -23607,35 +23325,35 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__practice__overview__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
           },
           "persona_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__practice__overview__PersonaMappingItem"
             },
             "type": "object",
             "title": "Persona Mapping"
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__practice__overview__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__practice__overview__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__practice__overview__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -24923,39 +24641,39 @@
           "description"
         ],
         "title": "ProfileMappingItem",
-        "description": "Profile mapping item - extends MappingItem"
+        "description": "Profile mapping item."
       },
       "ProfileMetrics": {
         "properties": {
           "averageScore": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "completionPercentage": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "firstAttemptPassRate": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "highestScore": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "messagesPerSession": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "personaResponseTimes": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "sessionEfficiency": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "stagnationRate": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "timeSpent": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           },
           "totalAttempts": {
-            "$ref": "#/components/schemas/MetricResponse"
+            "$ref": "#/components/schemas/app__api__v3__reports__bundle__MetricResponse"
           }
         },
         "type": "object",
@@ -25189,7 +24907,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__prompts__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -25453,7 +25171,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__prompts__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -26364,7 +26082,7 @@
           "description"
         ],
         "title": "ReasoningMappingItem",
-        "description": "Reasoning mapping item - extends MappingItem"
+        "description": "Reasoning mapping item."
       },
       "RecentAppLogsRequest": {
         "properties": {
@@ -26786,7 +26504,7 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__reports__bundle__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
@@ -27338,7 +27056,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__rubrics__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -27569,7 +27287,7 @@
           "description"
         ],
         "title": "RubricMappingItem",
-        "description": "Rubric mapping item - extends MappingItem"
+        "description": "Rubric mapping item."
       },
       "RubricMatrixPackage": {
         "properties": {
@@ -27695,7 +27413,7 @@
           },
           "standard_groups_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__StandardGroupMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__rubrics__list__StandardGroupMappingItem"
             },
             "type": "object",
             "title": "Standard Groups Mapping"
@@ -27709,7 +27427,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__rubrics__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -28537,73 +28255,6 @@
         "title": "ScenarioInRequest",
         "description": "Scenario in request format."
       },
-      "ScenarioMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          },
-          "document_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DocumentMappingItem"
-            },
-            "type": "object",
-            "title": "Document Mapping"
-          },
-          "parameter_item_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Item Mapping"
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "persona_ids",
-          "persona_mapping",
-          "document_mapping",
-          "parameter_item_mapping",
-          "parameter_item_ids",
-          "document_ids"
-        ],
-        "title": "ScenarioMappingItem",
-        "description": "Scenario mapping item with extended fields for nested data"
-      },
       "ScenarioNewRequest": {
         "properties": {
           "profileId": {
@@ -29141,7 +28792,7 @@
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__list__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -29155,7 +28806,7 @@
           },
           "persona_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__list__PersonaMappingItem"
             },
             "type": "object",
             "title": "Persona Mapping"
@@ -29169,7 +28820,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -29344,7 +28995,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__profile__staff__search_staff__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -30321,7 +29972,7 @@
           "description"
         ],
         "title": "SimulationMappingItem",
-        "description": "Simulation mapping item - extends MappingItem with time_limit"
+        "description": "Simulation mapping item."
       },
       "SimulationNewRequest": {
         "properties": {
@@ -30604,7 +30255,7 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__list__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
@@ -30618,7 +30269,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -30924,7 +30575,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__profile__staff__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -30981,7 +30632,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__profile__staff__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -30996,7 +30647,7 @@
           "trend_data": {
             "additionalProperties": {
               "items": {
-                "$ref": "#/components/schemas/app__utils__schema__TrendData"
+                "$ref": "#/components/schemas/app__api__v3__profile__staff__list__TrendData"
               },
               "type": "array"
             },
@@ -31129,7 +30780,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__profile__staff__new__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -31236,7 +30887,7 @@
           "points"
         ],
         "title": "StandardMappingItem",
-        "description": "Standard mapping item with points"
+        "description": "Standard mapping item with points."
       },
       "StopEvalRequest": {
         "properties": {
@@ -31871,6 +31522,10 @@
             },
             "type": "array",
             "title": "Auth Items"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -31879,7 +31534,8 @@
           "name",
           "description",
           "active",
-          "auth_items"
+          "auth_items",
+          "profileId"
         ],
         "title": "UpdateAuthRequest",
         "description": "Request to update auth with nested items."
@@ -34910,7 +34566,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -35091,7 +34747,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__agents__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -35119,7 +34775,7 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__agents__detail__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
@@ -35192,6 +34848,82 @@
         ],
         "title": "DebugInfoItem",
         "description": "Debug information item."
+      },
+      "app__api__v3__agents__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__agents__detail__ModelMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ModelMappingItem",
+        "description": "Model mapping item."
+      },
+      "app__api__v3__agents__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__agents__list__ModelMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ModelMappingItem",
+        "description": "Model mapping item."
       },
       "app__api__v3__agents__new__AgentDetailResponse": {
         "properties": {
@@ -35283,7 +35015,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__agents__new__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -35313,7 +35045,7 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__agents__new__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
@@ -35356,6 +35088,44 @@
           "can_edit"
         ],
         "title": "AgentDetailResponse"
+      },
+      "app__api__v3__agents__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__agents__new__ModelMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ModelMappingItem",
+        "description": "Model mapping item."
       },
       "app__api__v3__attempts__full__PersonaItem": {
         "properties": {
@@ -35719,6 +35489,44 @@
         ],
         "title": "VideoItem"
       },
+      "app__api__v3__cohorts__add_staff__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__cohorts__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
       "app__api__v3__cohorts__detail__StaffItem": {
         "properties": {
           "profile_id": {
@@ -35851,6 +35659,25 @@
         "title": "StaffItem",
         "description": "Staff item for cohort detail."
       },
+      "app__api__v3__cohorts__detail_with_profiles__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
       "app__api__v3__cohorts__list__CohortItem": {
         "properties": {
           "cohort_id": {
@@ -35945,6 +35772,623 @@
         "title": "CohortItem",
         "description": "Cohort item for list view."
       },
+      "app__api__v3__cohorts__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__cohorts__list__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
+      },
+      "app__api__v3__cohorts__search_profile__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__dashboard__bundle__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "scoreStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scorestatus"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row."
+      },
+      "app__api__v3__dashboard__bundle__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__dashboard__bundle__MetricResponse": {
+        "properties": {
+          "hasData": {
+            "type": "boolean",
+            "title": "Hasdata"
+          },
+          "method": {
+            "$ref": "#/components/schemas/Method"
+          },
+          "currentValue": {
+            "type": "integer",
+            "title": "Currentvalue"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
+          },
+          "trendAnalysis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trendanalysis"
+          },
+          "valueField": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuefield"
+          },
+          "keyField": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyfield"
+          },
+          "trendData": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__TrendData"
+            },
+            "type": "array",
+            "title": "Trenddata"
+          },
+          "dataPoints": {
+            "items": {
+              "$ref": "#/components/schemas/DataPoint"
+            },
+            "type": "array",
+            "title": "Datapoints"
+          },
+          "hover": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hover"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hasData",
+          "method",
+          "currentValue",
+          "status",
+          "trendData",
+          "dataPoints"
+        ],
+        "title": "MetricResponse",
+        "description": "Standard metric response."
+      },
+      "app__api__v3__dashboard__bundle__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__dashboard__bundle__TrendData": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "count"
+        ],
+        "title": "TrendData",
+        "description": "Trend data point."
+      },
+      "app__api__v3__dashboard__history__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "scoreStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scorestatus"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row - shared across dashboard, home, reports, and practice history endpoints."
+      },
       "app__api__v3__departments__detail__DepartmentDetailResponse": {
         "properties": {
           "title": {
@@ -36010,7 +36454,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__departments__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -36082,6 +36526,25 @@
         ],
         "title": "DepartmentDetailResponse",
         "description": "Response for department detail."
+      },
+      "app__api__v3__departments__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
       },
       "app__api__v3__departments__detail__KeyMappingItem": {
         "properties": {
@@ -36271,7 +36734,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__departments__new__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -36295,6 +36758,275 @@
         ],
         "title": "DepartmentDetailResponse",
         "description": "Response for department detail."
+      },
+      "app__api__v3__departments__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__documents__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__documents__detail__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__documents__detail__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__documents__detail_bulk__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__documents__detail_bulk__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__documents__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__documents__list__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__documents__list__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__documents__list__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
+      },
+      "app__api__v3__evals__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
       },
       "app__api__v3__evals__detail__ModelRunItem": {
         "properties": {
@@ -36467,6 +37199,25 @@
         "title": "ModelRunItem",
         "description": "Model run item in eval detail."
       },
+      "app__api__v3__evals__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
       "app__api__v3__evals__model_runs__ModelRunItem": {
         "properties": {
           "model_run_id": {
@@ -36637,6 +37388,25 @@
         ],
         "title": "FeedbackItem"
       },
+      "app__api__v3__fields__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
       "app__api__v3__fields__new__DepartmentMappingItem": {
         "properties": {
           "name": {
@@ -36672,6 +37442,195 @@
           "description"
         ],
         "title": "ParameterMappingItem"
+      },
+      "app__api__v3__home__history__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "scoreStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scorestatus"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row - shared across dashboard, home, reports, and practice history endpoints."
       },
       "app__api__v3__home__overview__AttemptHistoryRow": {
         "properties": {
@@ -36850,6 +37809,73 @@
         ],
         "title": "AttemptHistoryRow",
         "description": "Attempt history row."
+      },
+      "app__api__v3__home__overview__StandardGroupMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "passPoints": {
+            "type": "integer",
+            "title": "Passpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "points",
+          "passPoints"
+        ],
+        "title": "StandardGroupMappingItem",
+        "description": "Standard group mapping item with rubric context."
+      },
+      "app__api__v3__keys__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__leaderboard__bundle__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
       },
       "app__api__v3__logs__bundle__FeedbackItem": {
         "properties": {
@@ -37232,6 +38258,25 @@
         ],
         "title": "ParameterItemDetail"
       },
+      "app__api__v3__parameters__list__DocumentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DocumentMappingItem",
+        "description": "Document mapping item."
+      },
       "app__api__v3__parameters__list__ParameterItem": {
         "properties": {
           "parameter_id": {
@@ -37319,6 +38364,25 @@
         ],
         "title": "ParameterItem"
       },
+      "app__api__v3__parameters__list__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
+      },
       "app__api__v3__personas__detail__DebugInfoItem": {
         "properties": {
           "timestamp": {
@@ -37337,6 +38401,98 @@
         ],
         "title": "DebugInfoItem",
         "description": "Debug info item."
+      },
+      "app__api__v3__personas__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__personas__detail__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__personas__detail__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter",
+            "default": false
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
       },
       "app__api__v3__personas__detail__PersonaDetailResponse": {
         "properties": {
@@ -37471,21 +38627,21 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__detail__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__detail__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -37575,6 +38731,25 @@
         ],
         "title": "PersonaDetailResponse",
         "description": "Detailed persona response with all fields and metadata."
+      },
+      "app__api__v3__personas__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
       },
       "app__api__v3__personas__list__PersonaItem": {
         "properties": {
@@ -37745,6 +38920,25 @@
         "title": "PersonaItem",
         "description": "Individual persona item in the response."
       },
+      "app__api__v3__personas__list__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
+      },
       "app__api__v3__personas__new__DebugInfoItem": {
         "properties": {
           "timestamp": {
@@ -37763,6 +38957,98 @@
         ],
         "title": "DebugInfoItem",
         "description": "Debug info item."
+      },
+      "app__api__v3__personas__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__personas__new__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__personas__new__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter",
+            "default": false
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
       },
       "app__api__v3__personas__new__PersonaDetailResponse": {
         "properties": {
@@ -37897,21 +39183,21 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__new__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__new__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__new__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -37969,6 +39255,195 @@
         ],
         "title": "PersonaDetailResponse",
         "description": "Detailed persona response with all fields and metadata."
+      },
+      "app__api__v3__practice__history__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "scoreStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scorestatus"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row - shared across dashboard, home, reports, and practice history endpoints."
       },
       "app__api__v3__practice__overview__AttemptHistoryRow": {
         "properties": {
@@ -38147,6 +39622,176 @@
         ],
         "title": "AttemptHistoryRow",
         "description": "Attempt history row."
+      },
+      "app__api__v3__practice__overview__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__practice__overview__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__practice__overview__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__practice__overview__PersonaMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "PersonaMappingItem",
+        "description": "Persona mapping item with custom color and icon fields."
+      },
+      "app__api__v3__practice__overview__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
+      },
+      "app__api__v3__practice__overview__StandardGroupMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "passPoints": {
+            "type": "integer",
+            "title": "Passpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "points",
+          "passPoints"
+        ],
+        "title": "StandardGroupMappingItem",
+        "description": "Standard group mapping item with rubric context."
       },
       "app__api__v3__pricing__analytics__DebugInfoItem": {
         "properties": {
@@ -38474,6 +40119,63 @@
         "title": "DepartmentItem",
         "description": "Department item."
       },
+      "app__api__v3__profile__staff__create_staff_data__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__profile__staff__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__profile__staff__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
       "app__api__v3__profile__staff__list__StaffItem": {
         "properties": {
           "profile_id": {
@@ -38603,6 +40305,244 @@
         "title": "StaffItem",
         "description": "Staff item in list response."
       },
+      "app__api__v3__profile__staff__list__TrendData": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "count"
+        ],
+        "title": "TrendData",
+        "description": "Trend data point."
+      },
+      "app__api__v3__profile__staff__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__profile__staff__search_staff__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__prompts__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__prompts__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__reports__bundle__MetricResponse": {
+        "properties": {
+          "hasData": {
+            "type": "boolean",
+            "title": "Hasdata"
+          },
+          "method": {
+            "$ref": "#/components/schemas/Method"
+          },
+          "currentValue": {
+            "type": "integer",
+            "title": "Currentvalue"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
+          },
+          "trendAnalysis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trendanalysis"
+          },
+          "valueField": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuefield"
+          },
+          "keyField": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyfield"
+          },
+          "trendData": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__reports__bundle__TrendData"
+            },
+            "type": "array",
+            "title": "Trenddata"
+          },
+          "dataPoints": {
+            "items": {
+              "$ref": "#/components/schemas/DataPoint"
+            },
+            "type": "array",
+            "title": "Datapoints"
+          },
+          "hover": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hover"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hasData",
+          "method",
+          "currentValue",
+          "status",
+          "trendData",
+          "dataPoints"
+        ],
+        "title": "MetricResponse",
+        "description": "Standard metric response."
+      },
+      "app__api__v3__reports__bundle__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
+      },
+      "app__api__v3__reports__bundle__TrendData": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "count"
+        ],
+        "title": "TrendData",
+        "description": "Trend data point."
+      },
       "app__api__v3__rubrics__create__StandardGroupItem": {
         "properties": {
           "name": {
@@ -38687,6 +40627,63 @@
         "title": "StandardItem",
         "description": "Standard item for create."
       },
+      "app__api__v3__rubrics__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__rubrics__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__rubrics__list__StandardGroupMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "StandardGroupMappingItem",
+        "description": "Standard group mapping item."
+      },
       "app__api__v3__rubrics__update__StandardGroupItem": {
         "properties": {
           "name": {
@@ -38770,6 +40767,179 @@
         ],
         "title": "StandardItem",
         "description": "Standard item for update."
+      },
+      "app__api__v3__scenarios__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Ids"
+          },
+          "staff_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item - extends MappingItem with optional entity ID arrays."
       },
       "app__api__v3__scenarios__detail__DocumentDetailItem": {
         "properties": {
@@ -38887,6 +41057,129 @@
         "title": "DocumentDetailItem",
         "description": "Document detail for preview."
       },
+      "app__api__v3__scenarios__detail__DocumentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "filePath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filepath"
+          },
+          "mimeType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mimetype"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "parent_document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Document Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DocumentMappingItem",
+        "description": "Document mapping item - extends MappingItem with file metadata."
+      },
+      "app__api__v3__scenarios__detail__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
       "app__api__v3__scenarios__detail__ObjectiveWithDepartments": {
         "properties": {
           "objective": {
@@ -38908,6 +41201,129 @@
         ],
         "title": "ObjectiveWithDepartments",
         "description": "Objective with associated department IDs."
+      },
+      "app__api__v3__scenarios__detail__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter",
+            "default": false
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__scenarios__detail__PersonaMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "example": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "PersonaMappingItem",
+        "description": "Persona mapping item with custom color and icon fields."
       },
       "app__api__v3__scenarios__detail__ProblemStatementInfo": {
         "properties": {
@@ -39107,14 +41523,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__detail__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__detail__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -39128,14 +41544,14 @@
           },
           "persona_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__detail__PersonaMappingItem"
             },
             "type": "object",
             "title": "Persona Mapping"
           },
           "document_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DocumentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__detail__DocumentMappingItem"
             },
             "type": "object",
             "title": "Document Mapping"
@@ -39149,7 +41565,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -39301,6 +41717,94 @@
         "title": "ScenarioDetailResponse",
         "description": "Detailed scenario response with all fields and metadata."
       },
+      "app__api__v3__scenarios__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__scenarios__list__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__scenarios__list__PersonaMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "PersonaMappingItem",
+        "description": "Persona mapping item with custom color and icon fields."
+      },
       "app__api__v3__scenarios__list__ScenarioItem": {
         "properties": {
           "scenario_id": {
@@ -39371,7 +41875,7 @@
           },
           "parameter_items": {
             "items": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__list__FieldMappingItem"
             },
             "type": "array",
             "title": "Parameter Items"
@@ -39434,6 +41938,179 @@
         ],
         "title": "ScenarioItem",
         "description": "Individual scenario item in the response."
+      },
+      "app__api__v3__scenarios__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Ids"
+          },
+          "staff_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item - extends MappingItem with optional entity ID arrays."
       },
       "app__api__v3__scenarios__new__DocumentDetailItem": {
         "properties": {
@@ -39562,6 +42239,129 @@
         "title": "DocumentDetailItem",
         "description": "Document detail for preview."
       },
+      "app__api__v3__scenarios__new__DocumentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "filePath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filepath"
+          },
+          "mimeType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mimetype"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "parent_document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Document Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DocumentMappingItem",
+        "description": "Document mapping item - extends MappingItem with file metadata."
+      },
+      "app__api__v3__scenarios__new__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
       "app__api__v3__scenarios__new__ObjectiveWithDepartments": {
         "properties": {
           "objective": {
@@ -39583,6 +42383,129 @@
         ],
         "title": "ObjectiveWithDepartments",
         "description": "Objective with department IDs."
+      },
+      "app__api__v3__scenarios__new__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter",
+            "default": false
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__scenarios__new__PersonaMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "example": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "PersonaMappingItem",
+        "description": "Persona mapping item with custom color and icon fields."
       },
       "app__api__v3__scenarios__new__ProblemStatementInfo": {
         "properties": {
@@ -39778,14 +42701,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__new__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__new__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -39797,14 +42720,14 @@
           },
           "persona_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__new__PersonaMappingItem"
             },
             "type": "object",
             "title": "Persona Mapping"
           },
           "document_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DocumentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__new__DocumentMappingItem"
             },
             "type": "object",
             "title": "Document Mapping"
@@ -39816,7 +42739,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__new__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -40265,6 +43188,115 @@
         "title": "ContentItemInRequest",
         "description": "Unified content item (scenario or video) in request format."
       },
+      "app__api__v3__simulations__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__simulations__detail__DocumentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DocumentMappingItem",
+        "description": "Document mapping item."
+      },
+      "app__api__v3__simulations__detail__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
       "app__api__v3__simulations__detail__ParameterItem": {
         "properties": {
           "id": {
@@ -40336,6 +43368,80 @@
         ],
         "title": "ParameterItemDetail",
         "description": "Full parameter item details."
+      },
+      "app__api__v3__simulations__detail__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__simulations__detail__PersonaMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "PersonaMappingItem",
+        "description": "Persona mapping item with custom color and icon fields."
       },
       "app__api__v3__simulations__detail__ScenarioInSimulation": {
         "properties": {
@@ -40478,6 +43584,73 @@
         "title": "ScenarioInSimulation",
         "description": "Scenario with position in simulation."
       },
+      "app__api__v3__simulations__detail__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail__PersonaMappingItem"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          },
+          "document_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail__DocumentMappingItem"
+            },
+            "type": "object",
+            "title": "Document Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail__FieldMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "persona_ids",
+          "persona_mapping",
+          "document_mapping",
+          "parameter_item_mapping",
+          "parameter_item_ids",
+          "document_ids"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item with extended fields for nested data."
+      },
       "app__api__v3__simulations__detail__SimulationDetailResponse": {
         "properties": {
           "name": {
@@ -40617,14 +43790,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
@@ -40646,14 +43819,14 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -40709,6 +43882,44 @@
         ],
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."
+      },
+      "app__api__v3__simulations__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__simulations__list__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
       },
       "app__api__v3__simulations__list__SimulationItem": {
         "properties": {
@@ -40817,6 +44028,73 @@
         "title": "SimulationItem",
         "description": "Simulation item in list response."
       },
+      "app__api__v3__simulations__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__simulations__new__DocumentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DocumentMappingItem",
+        "description": "Document mapping item."
+      },
+      "app__api__v3__simulations__new__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
       "app__api__v3__simulations__new__ParameterItem": {
         "properties": {
           "id": {
@@ -40888,6 +44166,80 @@
         ],
         "title": "ParameterItemDetail",
         "description": "Full parameter item details."
+      },
+      "app__api__v3__simulations__new__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__simulations__new__PersonaMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "PersonaMappingItem",
+        "description": "Persona mapping item with custom color and icon fields."
       },
       "app__api__v3__simulations__new__ScenarioInSimulation": {
         "properties": {
@@ -40996,6 +44348,73 @@
         ],
         "title": "ScenarioInSimulation",
         "description": "Scenario with position in simulation."
+      },
+      "app__api__v3__simulations__new__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__PersonaMappingItem"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          },
+          "document_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__DocumentMappingItem"
+            },
+            "type": "object",
+            "title": "Document Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__FieldMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "persona_ids",
+          "persona_mapping",
+          "document_mapping",
+          "parameter_item_mapping",
+          "parameter_item_ids",
+          "document_ids"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item with extended fields for nested data."
       },
       "app__api__v3__simulations__new__SimulationDetailResponse": {
         "properties": {
@@ -41137,14 +44556,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ScenarioMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"
@@ -41166,14 +44585,14 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -41385,6 +44804,179 @@
         "title": "QuestionItem",
         "description": "Question item in create request."
       },
+      "app__api__v3__videos__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Ids"
+          },
+          "staff_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item - extends MappingItem with optional entity ID arrays."
+      },
       "app__api__v3__videos__detail__DocumentDetailItem": {
         "properties": {
           "document_id": {
@@ -41500,6 +45092,172 @@
         ],
         "title": "DocumentDetailItem",
         "description": "Document detail for preview."
+      },
+      "app__api__v3__videos__detail__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__videos__detail__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter",
+            "default": false
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__videos__detail__PersonaMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "example": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "PersonaMappingItem",
+        "description": "Persona mapping item with custom color and icon fields."
       },
       "app__api__v3__videos__detail__VideoDetailResponse": {
         "properties": {
@@ -41633,7 +45391,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__detail__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -41673,14 +45431,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__detail__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__detail__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -41715,7 +45473,7 @@
           },
           "persona_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__detail__PersonaMappingItem"
             },
             "type": "object",
             "title": "Persona Mapping"
@@ -42010,6 +45768,25 @@
         "title": "VideoDetailResponse",
         "description": "Response for video detail."
       },
+      "app__api__v3__videos__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
       "app__api__v3__videos__list__VideoItem": {
         "properties": {
           "video_id": {
@@ -42073,6 +45850,179 @@
         ],
         "title": "VideoItem",
         "description": "Individual video item in the response."
+      },
+      "app__api__v3__videos__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Ids"
+          },
+          "staff_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item - extends MappingItem with optional entity ID arrays."
       },
       "app__api__v3__videos__new__DocumentDetailItem": {
         "properties": {
@@ -42189,6 +46139,172 @@
         ],
         "title": "DocumentDetailItem",
         "description": "Document detail for preview."
+      },
+      "app__api__v3__videos__new__FieldMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameter_id": {
+            "type": "string",
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "type": "string",
+            "title": "Parameter Name"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "FieldMappingItem",
+        "description": "Field mapping item with parameter context."
+      },
+      "app__api__v3__videos__new__ParameterMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "numerical": {
+            "type": "boolean",
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "type": "boolean",
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "type": "boolean",
+            "title": "Scenario Parameter",
+            "default": false
+          },
+          "video_parameter": {
+            "type": "boolean",
+            "title": "Video Parameter",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter"
+        ],
+        "title": "ParameterMappingItem",
+        "description": "Parameter mapping item."
+      },
+      "app__api__v3__videos__new__PersonaMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "example": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "color",
+          "icon"
+        ],
+        "title": "PersonaMappingItem",
+        "description": "Persona mapping item with custom color and icon fields."
       },
       "app__api__v3__videos__new__VideoDetailResponse": {
         "properties": {
@@ -42319,7 +46435,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__new__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -42359,14 +46475,14 @@
           },
           "parameter_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ParameterMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__new__ParameterMappingItem"
             },
             "type": "object",
             "title": "Parameter Mapping"
           },
           "field_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/FieldMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__new__FieldMappingItem"
             },
             "type": "object",
             "title": "Field Mapping"
@@ -42401,7 +46517,7 @@
           },
           "persona_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__new__PersonaMappingItem"
             },
             "type": "object",
             "title": "Persona Mapping"
@@ -42731,484 +46847,6 @@
         ],
         "title": "QuestionItem",
         "description": "Question item in update request."
-      },
-      "app__utils__schema__AttemptHistoryRow": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "profileName": {
-            "type": "string",
-            "title": "Profilename"
-          },
-          "simulationName": {
-            "type": "string",
-            "title": "Simulationname"
-          },
-          "numScenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Numscenarios"
-          },
-          "numScenariosCompleted": {
-            "type": "integer",
-            "title": "Numscenarioscompleted"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "personaNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personanames"
-          },
-          "personaColors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personacolors"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "scoreStatus": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scorestatus"
-          },
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Titles"
-          },
-          "isArchived": {
-            "type": "boolean",
-            "title": "Isarchived"
-          },
-          "showView": {
-            "type": "boolean",
-            "title": "Showview"
-          },
-          "showContinue": {
-            "type": "boolean",
-            "title": "Showcontinue"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          },
-          "passPct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passpct"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohortNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohortnames"
-          },
-          "practiceScenarioId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practicescenarioid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId",
-          "date",
-          "profileId",
-          "profileName",
-          "simulationName",
-          "numScenariosCompleted",
-          "infiniteMode",
-          "personaNames",
-          "personaColors",
-          "simulation_id",
-          "scenario_ids",
-          "scenario_titles",
-          "isArchived",
-          "showView",
-          "showContinue",
-          "practiceSimulation",
-          "cohortNames"
-        ],
-        "title": "AttemptHistoryRow",
-        "description": "Attempt history row - shared across dashboard, home, reports, and practice history endpoints."
-      },
-      "app__utils__schema__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Ids"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          },
-          "agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Ids"
-          },
-          "staff_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Staff Ids"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item - extends MappingItem with optional entity ID arrays"
-      },
-      "app__utils__schema__ModelMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ModelMappingItem",
-        "description": "Model mapping item - extends MappingItem"
-      },
-      "app__utils__schema__ParameterMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "type": "boolean",
-            "title": "Persona Parameter"
-          },
-          "scenario_parameter": {
-            "type": "boolean",
-            "title": "Scenario Parameter",
-            "default": false
-          },
-          "video_parameter": {
-            "type": "boolean",
-            "title": "Video Parameter",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "numerical",
-          "document_parameter",
-          "persona_parameter"
-        ],
-        "title": "ParameterMappingItem",
-        "description": "Parameter mapping item - extends MappingItem"
-      },
-      "app__utils__schema__StandardGroupMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "integer",
-            "title": "Passpoints"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "points",
-          "passPoints"
-        ],
-        "title": "StandardGroupMappingItem",
-        "description": "Standard group mapping item with rubric context"
-      },
-      "app__utils__schema__TrendData": {
-        "properties": {
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "date",
-          "value",
-          "count"
-        ],
-        "title": "TrendData",
-        "description": "Trend data point."
       }
     }
   }

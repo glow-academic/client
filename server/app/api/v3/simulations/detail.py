@@ -13,19 +13,84 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-)
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+    scenario_ids: list[str] | None = None
+    rubric_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+
+
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
+
+    name: str
+    description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+
+
+class DocumentMappingItem(BaseModel):
+    """Document mapping item."""
+
+    name: str
+    description: str
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+
+
+class ParameterMappingItem(BaseModel):
+    """Parameter mapping item."""
+
+    name: str
+    description: str
+    numerical: bool
+    document_parameter: bool
+    persona_parameter: bool
+
+
+class RubricMappingItem(BaseModel):
+    """Rubric mapping item."""
+
+    name: str
+    description: str
+
+
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item with extended fields for nested data."""
+
+    name: str
+    description: str
+    persona_ids: list[str]
+    persona_mapping: "PersonaMapping"
+    document_mapping: "DocumentMapping"
+    parameter_item_mapping: "FieldMapping"
+    parameter_item_ids: list[str]
+    document_ids: list[str]
+
+
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+PersonaMapping = dict[str, PersonaMappingItem]
+DocumentMapping = dict[str, DocumentMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+RubricMapping = dict[str, RubricMappingItem]
+ScenarioMapping = dict[str, ScenarioMappingItem]
 
 
 # Inline schemas
@@ -346,12 +411,10 @@ async def get_simulation_detail(
             for sid, sdata in scenario_mapping_data.items():
                 if isinstance(sdata, dict):
                     # Parse nested persona mapping
-                    persona_mapping = {}
+                    persona_mapping: PersonaMapping = {}
                     if sdata.get("persona_mapping") and isinstance(
                         sdata["persona_mapping"], dict
                     ):
-                        from app.utils.schema import PersonaMappingItem
-
                         for pid, pdata in sdata["persona_mapping"].items():
                             if isinstance(pdata, dict):
                                 persona_mapping[pid] = PersonaMappingItem(
@@ -363,12 +426,10 @@ async def get_simulation_detail(
                                 )
 
                     # Parse nested document mapping
-                    document_mapping = {}
+                    document_mapping: DocumentMapping = {}
                     if sdata.get("document_mapping") and isinstance(
                         sdata["document_mapping"], dict
                     ):
-                        from app.utils.schema import DocumentMappingItem
-
                         for did, ddata in sdata["document_mapping"].items():
                             if isinstance(ddata, dict):
                                 document_mapping[did] = DocumentMappingItem(

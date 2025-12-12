@@ -184,7 +184,7 @@ export function SimulationControls({
       setEndChatLoading(true);
       setEndingAction("endAll");
       // Close confirmation dialog if still open
-      setConfirmEndAllOpen(false);
+      setConfirmEndChatOpen(false);
     };
 
     const handleEndChatStarted = (data: {
@@ -492,26 +492,6 @@ export function SimulationControls({
   // For practice simulations, never show previous chats (must always go through manual grading)
   const hasPreviousChats = !isPracticeSimulation && previousChats.length > 0;
 
-  // Check if there's a better previous attempt (higher score or passed when current failed)
-  // Must be before early returns to maintain hook order
-  // Practice simulations never have better previous attempts (must always go through manual grading)
-  const currentGrade = currentChatData?.dynamicRubric;
-  const _hasBetterPreviousAttempt = useMemo(() => {
-    if (isPracticeSimulation || !hasPreviousChats || !currentGrade)
-      return false;
-
-    const currentScore = currentGrade.score || 0;
-    const currentPassed = currentGrade.passed || false;
-
-    // Check if any previous chat has better score or passed when current failed
-    return previousChats.some((prevChat) => {
-      const prevScore = prevChat.score || 0;
-      const prevPassed = prevChat.passed || false;
-
-      // Better if: previous passed and current didn't, OR previous has higher score
-      return (prevPassed && !currentPassed) || prevScore > currentScore;
-    });
-  }, [isPracticeSimulation, hasPreviousChats, currentGrade, previousChats]);
 
   // Don't show buttons if attemptData is not available
   if (!attemptData) {
@@ -605,9 +585,6 @@ export function SimulationControls({
     }
   }, [currentChatId, socket, attemptId]);
 
-  // Use server-side calculation for isLastRemainingScenario
-  const _isLastRemainingScenario =
-    attemptData?.isLastRemainingScenario ?? remainingScenarios.length === 1;
 
   return (
     <>

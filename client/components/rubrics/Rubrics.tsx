@@ -38,6 +38,7 @@ import type {
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { useProfile } from "@/contexts/profile-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +71,7 @@ export default function Rubrics({
   deleteRubricAction,
 }: RubricsProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -291,7 +293,12 @@ export default function Rubrics({
 
     setIsDeleting(true);
     try {
-      await deleteRubricAction({ body: { rubricId: deleteItem.id } });
+      await deleteRubricAction({
+        body: {
+          rubricId: deleteItem.id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
+      });
       toast.success("Rubric deleted successfully");
       router.refresh();
     } catch {
@@ -311,7 +318,12 @@ export default function Rubrics({
 
     setIsDuplicating(rubric.rubric_id);
     try {
-      await duplicateRubricAction({ body: { rubricId: rubric.rubric_id } });
+      await duplicateRubricAction({
+        body: {
+          rubricId: rubric.rubric_id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
+      });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
       router.refresh();
     } catch {

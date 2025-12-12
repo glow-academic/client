@@ -5,33 +5,115 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    DocumentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ObjectiveMapping,
-    ObjectiveMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item - extends MappingItem with optional entity ID arrays."""
+
+    name: str
+    description: str
+    scenario_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    rubric_ids: list[str] | None = None
+    parameter_ids: list[str] | None = None
+    parameter_item_ids: list[str] | None = None
+    field_ids: list[str] | None = None
+    agent_ids: list[str] | None = None
+    staff_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+
+
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
+
+    name: str
+    description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+    parameter_ids: list[str] | None = None
+    field_ids: list[str] | None = None
+    example: str | None = None
+
+
+class DocumentMappingItem(BaseModel):
+    """Document mapping item - extends MappingItem with file metadata."""
+
+    name: str
+    description: str
+    filePath: str | None = None
+    mimeType: str | None = None
+    parameter_ids: list[str] | None = None
+    field_ids: list[str] | None = None
+    parent_document_id: str | None = None
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+    conditional_parameter_ids: list[str] | None = None
+
+
+class ParameterMappingItem(BaseModel):
+    """Parameter mapping item."""
+
+    name: str
+    description: str
+    numerical: bool
+    document_parameter: bool
+    persona_parameter: bool
+    scenario_parameter: bool = False
+    video_parameter: bool = False
+
+
+class ObjectiveMappingItem(BaseModel):
+    """Objective mapping item."""
+
+    name: str
+    description: str
+
+
+class SimulationMappingItem(BaseModel):
+    """Simulation mapping item."""
+
+    name: str
+    description: str
+    time_limit: int | None = None
+    department_ids: list[str] | None = None
+
+
+class AgentMappingItem(BaseModel):
+    """Agent mapping item with role information."""
+
+    name: str
+    description: str
+    roles: list[str]
+
+
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+PersonaMapping = dict[str, PersonaMappingItem]
+DocumentMapping = dict[str, DocumentMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+ObjectiveMapping = dict[str, ObjectiveMappingItem]
+SimulationMapping = dict[str, SimulationMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
 
 
 def preserve_order_union(

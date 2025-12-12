@@ -5,27 +5,91 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+    scenario_ids: list[str] | None = None
+    rubric_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+
+
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
+
+    name: str
+    description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+
+
+class DocumentMappingItem(BaseModel):
+    """Document mapping item."""
+
+    name: str
+    description: str
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+
+
+class ParameterMappingItem(BaseModel):
+    """Parameter mapping item."""
+
+    name: str
+    description: str
+    numerical: bool
+    document_parameter: bool
+    persona_parameter: bool
+
+
+class RubricMappingItem(BaseModel):
+    """Rubric mapping item."""
+
+    name: str
+    description: str
+
+
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item with extended fields for nested data."""
+
+    name: str
+    description: str
+    persona_ids: list[str]
+    persona_mapping: "PersonaMapping"
+    document_mapping: "DocumentMapping"
+    parameter_item_mapping: "FieldMapping"
+    parameter_item_ids: list[str]
+    document_ids: list[str]
+
+
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+PersonaMapping = dict[str, PersonaMappingItem]
+DocumentMapping = dict[str, DocumentMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+RubricMapping = dict[str, RubricMappingItem]
+ScenarioMapping = dict[str, ScenarioMappingItem]
 
 
 # Inline schemas
@@ -41,14 +105,44 @@ class ScenarioInSimulation(BaseModel):
 
     # Switch fields from simulation_scenarios junction table
     hints_enabled: bool
-    objectives_enabled: bool
-    image_input_enabled: bool
+    copy_paste_allowed: bool
+    audio_enabled: bool
+    text_enabled: bool
+    show_problem_statement: bool
+    show_objectives: bool
+    show_image: bool
     rubric_id: str | None
     time_limit_seconds: int | None  # Per-scenario time limit in seconds
+
+    # Agent IDs
+    hint_agent_id: str
+    grade_agent_ids: list[str]  # Array of grade agent IDs from junction table
 
     # Statistics fields
     usage_count: int  # Number of all chats (regardless of completion)
     success_rate: int  # Percentage (0-100) of completed chats that passed
+    last_used: str | None  # ISO timestamp or None
+    can_remove: bool  # True if usage_count == 0
+
+
+class VideoInSimulation(BaseModel):
+    """Video with position in simulation."""
+
+    video_id: str
+    title: str
+    description: str
+    active: bool
+    position: int  # From simulation_videos junction table
+    length_seconds: int  # Video length in seconds
+
+    # Switch fields from simulation_videos junction table
+    show_problem_statement: bool
+    show_objectives: bool
+    show_image: bool
+
+    # Statistics fields
+    usage_count: int  # Number of attempts that included this video via quizzes
+    success_rate: int  # Percentage (0-100) of quiz responses that match correct answers
     last_used: str | None  # ISO timestamp or None
     can_remove: bool  # True if usage_count == 0
 
@@ -109,7 +203,7 @@ class SimulationDetailResponse(BaseModel):
 
     # Full scenario objects
     scenarios: list[ScenarioInSimulation]
-    videos: list[dict[str, Any]]  # Videos list (empty for default)
+    videos: list[VideoInSimulation]
 
     # Parameter data
     parameters: list[ParameterItem]
@@ -122,6 +216,8 @@ class SimulationDetailResponse(BaseModel):
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
     field_mapping: FieldMapping
+    agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format
+    valid_agent_ids: list[str]
 
 
 router = APIRouter()
@@ -219,16 +315,50 @@ async def get_simulation_new(
                             position=s_data.get("position", 0),
                             parameter_item_ids=s_data.get("parameter_item_ids", []),
                             hints_enabled=s_data.get("hints_enabled", False),
-                            objectives_enabled=s_data.get("objectives_enabled", True),
-                            image_input_enabled=s_data.get(
-                                "image_input_enabled", False
+                            copy_paste_allowed=s_data.get("copy_paste_allowed", False),
+                            audio_enabled=s_data.get("audio_enabled", False),
+                            text_enabled=s_data.get("text_enabled", True),
+                            show_problem_statement=s_data.get(
+                                "show_problem_statement", True
                             ),
+                            show_objectives=s_data.get("show_objectives", True),
+                            show_image=s_data.get("show_image", True),
                             rubric_id=s_data.get("rubric_id"),
+                            hint_agent_id=s_data.get("hint_agent_id", ""),
+                            grade_agent_ids=s_data.get("grade_agent_ids", []),
                             time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),
                             success_rate=s_data.get("success_rate", 0),
                             last_used=s_data.get("last_used"),
                             can_remove=s_data.get("can_remove", True),
+                        )
+                    )
+
+        # Parse videos list from JSONB (empty for new simulations, but parse structure)
+        videos_list: list[VideoInSimulation] = []
+        videos_list_data = result.get("videos_list")
+        if isinstance(videos_list_data, str):
+            videos_list_data = json.loads(videos_list_data)
+        if videos_list_data and isinstance(videos_list_data, list):
+            for v_data in videos_list_data:
+                if isinstance(v_data, dict):
+                    videos_list.append(
+                        VideoInSimulation(
+                            video_id=v_data.get("video_id", ""),
+                            title=v_data.get("title", ""),
+                            description=v_data.get("description", ""),
+                            active=v_data.get("active", False),
+                            position=v_data.get("position", 0),
+                            length_seconds=v_data.get("length_seconds", 0),
+                            show_problem_statement=v_data.get(
+                                "show_problem_statement", True
+                            ),
+                            show_objectives=v_data.get("show_objectives", True),
+                            show_image=v_data.get("show_image", True),
+                            usage_count=v_data.get("usage_count", 0),
+                            success_rate=v_data.get("success_rate", 0),
+                            last_used=v_data.get("last_used"),
+                            can_remove=v_data.get("can_remove", True),
                         )
                     )
 
@@ -264,12 +394,10 @@ async def get_simulation_new(
             for sid, sdata in scenario_mapping_data.items():
                 if isinstance(sdata, dict):
                     # Parse nested mappings
-                    persona_mapping = {}
+                    persona_mapping: PersonaMapping = {}
                     if sdata.get("persona_mapping") and isinstance(
                         sdata["persona_mapping"], dict
                     ):
-                        from app.utils.schema import PersonaMappingItem
-
                         for pid, pdata in sdata["persona_mapping"].items():
                             if isinstance(pdata, dict):
                                 persona_mapping[pid] = PersonaMappingItem(
@@ -280,12 +408,10 @@ async def get_simulation_new(
                                     image_model=pdata.get("image_model", False),
                                 )
 
-                    document_mapping = {}
+                    document_mapping: DocumentMapping = {}
                     if sdata.get("document_mapping") and isinstance(
                         sdata["document_mapping"], dict
                     ):
-                        from app.utils.schema import DocumentMappingItem
-
                         for did, ddata in sdata["document_mapping"].items():
                             if isinstance(ddata, dict):
                                 document_mapping[did] = DocumentMappingItem(
@@ -400,6 +526,28 @@ async def get_simulation_new(
                         )
                     )
 
+        # Parse agent_mapping (empty for new simulations, but parse structure)
+        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
+        if isinstance(agent_mapping_data, dict):
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, str):
+                        try:
+                            roles = json.loads(roles)
+                        except json.JSONDecodeError:
+                            roles = []
+                    if not isinstance(roles, list):
+                        roles = []
+                    agent_mapping[agent_id] = {
+                        "name": adata.get("name", ""),
+                        "description": adata.get("description", ""),
+                        "roles": [str(r) for r in roles],
+                    }
+
+        valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
+
         # Get user role and primary department for default behavior
         user_role_from_result = result.get("user_role", "trainee")
         is_superadmin = user_role_from_result == "superadmin"
@@ -435,7 +583,7 @@ async def get_simulation_new(
             in_use=total_cohort_links > 0,  # In use if has any cohort links
             cohort_count=total_cohort_links,  # Return total for display
             scenarios=scenarios_list,
-            videos=[],  # Default simulation has no videos
+            videos=videos_list,  # Empty list for new simulations
             parameters=parameters_list,
             parameter_items=parameter_items_list,
             parameter_mapping=parameter_mapping,
@@ -444,6 +592,8 @@ async def get_simulation_new(
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
             field_mapping=field_mapping,
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response

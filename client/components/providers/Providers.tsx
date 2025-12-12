@@ -3,7 +3,7 @@
  * Used to display the providers page with table-based filtering and card layout.
  */
 "use client";
-import { Edit, Eye, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { Edit, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -289,9 +289,6 @@ export default function Providers({
     router.push(`/system/providers/p/${id}`);
   };
 
-  const handleView = (id: string) => {
-    router.push(`/system/providers/p/${id}`);
-  };
 
   const handleCreateNew = () => {
     router.push("/system/providers/new");

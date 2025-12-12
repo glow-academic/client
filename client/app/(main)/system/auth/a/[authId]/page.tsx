@@ -78,7 +78,6 @@ async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/create", {
-    ...input,
     body: { ...input.body, profileId },
   });
 }
@@ -89,7 +88,6 @@ async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
   const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/update", {
-    ...input,
     body: { ...input.body, profileId },
   });
 }

@@ -91,7 +91,7 @@ export default function Personas({
   duplicatePersonaAction,
   deletePersonaAction,
 }: PersonasProps) {
-  const { departmentIds } = useProfile();
+  const { departmentIds, effectiveProfile } = useProfile();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -329,7 +329,12 @@ export default function Personas({
 
     setIsDeleting(true);
     try {
-      await deletePersonaAction({ body: { personaId: deleteItem.id } });
+      await deletePersonaAction({
+        body: {
+          personaId: deleteItem.id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
+      });
       toast.success("Persona deleted successfully");
       // Refresh page to get updated data
       router.refresh();
@@ -347,7 +352,12 @@ export default function Personas({
 
     setIsDuplicating(personaId);
     try {
-      await duplicatePersonaAction({ body: { personaId } });
+      await duplicatePersonaAction({
+        body: {
+          personaId,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
+      });
       toast.success(`Persona "${personaName}" duplicated successfully`);
       // Refresh page to get updated data
       router.refresh();

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Power, Trash2 } from "lucide-react";
+import { useProfile } from "@/contexts/profile-context";
 
 // Type-only import from server page
 import type {
@@ -251,6 +252,7 @@ export default function Auth({
           description: formData.description!,
           active: formData.active || false,
           auth_items,
+          profileId: effectiveProfile?.id || "guest-profile-id",
         });
 
         toast.success("Auth updated successfully!");
@@ -260,6 +262,7 @@ export default function Auth({
           description: formData.description!,
           active: formData.active || false,
           auth_items,
+          profileId: effectiveProfile?.id || "guest-profile-id",
         });
 
         toast.success("Auth created successfully!");

@@ -448,7 +448,7 @@ export default function ActiveAttemptView({
                     onHeightChange={onHeightChange}
                     currentMessages={currentMessages}
                     currentChatHints={currentChatHints}
-                    currentChat={currentChat}
+                    currentChat={currentChat ? { id: currentChat.id || "", completed: currentChat.completed } : null}
                     sendMessage={sendMessage}
                     stopMessage={stopMessage}
                     isSendingMessage={isSendingMessage}

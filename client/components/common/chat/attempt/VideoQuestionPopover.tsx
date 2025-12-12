@@ -27,7 +27,6 @@ import type { AttemptFullOut } from "@/app/(main)/home/a/[attemptId]/page";
 
 type ContentItem = AttemptFullOut["content"][number];
 type QuestionItem = ContentItem["questions"][number];
-type OptionItem = QuestionItem["options"][number];
 type QuizResponseItem = NonNullable<ContentItem["quiz"]>["responses"][number];
 
 interface VideoQuestionPopoverProps {

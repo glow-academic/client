@@ -95,9 +95,7 @@ async def _quiz_submit_response_impl(sid: str, data: QuizSubmitResponsePayload) 
                 sql_query = load_sql(
                     "sql/v3/attempts/quizzes/submit_response_complete.sql"
                 )
-                result = await conn.fetchrow(
-                    sql_query, quiz_id, question_id, option_id
-                )
+                result = await conn.fetchrow(sql_query, quiz_id, question_id, option_id)
 
                 if not result:
                     await quiz_submit_response_error(
@@ -161,4 +159,3 @@ async def quiz_submit_response(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

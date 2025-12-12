@@ -12,8 +12,22 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import CohortMappingItem, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class CohortMappingItem(BaseModel):
+    """Cohort mapping item."""
+
+    name: str
+    description: str
 
 
 class DepartmentNewRequest(BaseModel):

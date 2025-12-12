@@ -845,7 +845,9 @@ async def _simulation_text_send_impl(
                             ),
                             room=sid,
                         )
-                        logger.error(f"Missing API key for chat {chat_id_uuid}: {error_msg}")
+                        logger.error(
+                            f"Missing API key for chat {chat_id_uuid}: {error_msg}"
+                        )
                         return
 
                     # Extract department_id from context

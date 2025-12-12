@@ -90,44 +90,6 @@ function MainLayoutContent({
   // Check if we're on the staff management pages
   const isStaffManagementPage = pathname?.startsWith("/management/staff");
 
-  // Extract mappings from initialCreateStaffData for CreateStaffButton
-  const _departmentMapping = React.useMemo(() => {
-    if (!initialCreateStaffData?.department_mapping) return {};
-    const mapping: Record<
-      string,
-      { name: string; description?: string | null }
-    > = {};
-    Object.entries(initialCreateStaffData.department_mapping).forEach(
-      ([id, dept]) => {
-        if (dept && typeof dept === "object" && "name" in dept) {
-          mapping[id] = {
-            name: String(dept.name),
-            description: dept.description ? String(dept.description) : null,
-          };
-        }
-      },
-    );
-    return mapping;
-  }, [initialCreateStaffData?.department_mapping]);
-
-  const _cohortMapping = React.useMemo(() => {
-    if (!initialCreateStaffData?.cohort_mapping) return {};
-    const mapping: Record<
-      string,
-      { name: string; description?: string | null }
-    > = {};
-    Object.entries(initialCreateStaffData.cohort_mapping).forEach(
-      ([id, cohort]) => {
-        if (cohort && typeof cohort === "object" && "name" in cohort) {
-          mapping[id] = {
-            name: String(cohort.name),
-            description: cohort.description ? String(cohort.description) : null,
-          };
-        }
-      },
-    );
-    return mapping;
-  }, [initialCreateStaffData?.cohort_mapping]);
 
 
   // Generate breadcrumbs client-side and enrich with entity names from context

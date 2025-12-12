@@ -36,19 +36,9 @@ router = APIRouter()
 
 async def _emit_eval_progress(event_data: dict[str, Any]) -> None:
     """Emit eval progress event via WebSocket."""
-    # Import here to avoid circular dependency
-    from app.socket.evals.run import eval_progress
-
-    await eval_progress(
-        {
-            "eval_id": event_data.get("eval_id"),
-            "run_id": event_data.get("run_id"),
-            "status": event_data.get("status"),
-            "message": event_data.get("message"),
-            "grade_id": event_data.get("grade_id"),
-        },
-        room=f"eval_{event_data.get('eval_id')}",
-    )
+    # TODO: Create app.socket.evals.run module with eval_progress function
+    # For now, this is a no-op until the WebSocket handler is implemented
+    pass
 
 
 @router.post("/run", response_model=RunEvalResponse)

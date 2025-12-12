@@ -176,8 +176,7 @@ async def get_settings_detail(
         if auth_value_mapping_data and isinstance(auth_value_mapping_data, dict):
             auth_value_mapping = {
                 str(auth_id): {
-                    str(item_id): str(value)
-                    for item_id, value in item_mapping.items()
+                    str(item_id): str(value) for item_id, value in item_mapping.items()
                 }
                 if isinstance(item_mapping, dict)
                 else {}
@@ -207,9 +206,7 @@ async def get_settings_detail(
             all_provider_mapping_data = json.loads(all_provider_mapping_data)
         if all_provider_mapping_data and isinstance(all_provider_mapping_data, dict):
             all_provider_mapping = {
-                str(pid): {
-                    str(k): v for k, v in pmap.items()
-                }
+                str(pid): {str(k): v for k, v in pmap.items()}
                 if isinstance(pmap, dict)
                 else {}
                 for pid, pmap in all_provider_mapping_data.items()
@@ -227,9 +224,7 @@ async def get_settings_detail(
             all_auth_mapping_data = json.loads(all_auth_mapping_data)
         if all_auth_mapping_data and isinstance(all_auth_mapping_data, dict):
             all_auth_mapping = {
-                str(aid): {
-                    str(k): v for k, v in amap.items()
-                }
+                str(aid): {str(k): v for k, v in amap.items()}
                 if isinstance(amap, dict)
                 else {}
                 for aid, amap in all_auth_mapping_data.items()

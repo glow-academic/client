@@ -31,6 +31,7 @@ class UpdateAuthRequest(BaseModel):
     description: str
     active: bool
     auth_items: list[AuthItemUpdate]
+    profileId: str
 
 
 class UpdateAuthResponse(BaseModel):

@@ -1445,8 +1445,6 @@ export default function Video({
     null
   );
   const [templateDocumentIds, setTemplateDocumentIds] = useState<string[]>([]);
-  const [originalTemplateDocumentIds, setOriginalTemplateDocumentIds] =
-    useState<string[]>([]);
 
   // Parameter state
   const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
@@ -1678,24 +1676,6 @@ export default function Video({
     });
     return allVideoParamItemIds;
   }, [videoData?.valid_field_ids, fieldMapping, parameterMapping]);
-
-  const _validDocumentParameterItemIds = useMemo(() => {
-    return validParameterItemIds.filter((itemId) => {
-      const item = fieldMapping[itemId];
-      if (!item) return false;
-      const paramId = item.parameter_id;
-      return documentParameterIds.includes(paramId);
-    });
-  }, [validParameterItemIds, fieldMapping, documentParameterIds]);
-
-  const _validGeneralVideoParameterItemIds = useMemo(() => {
-    return validParameterItemIds.filter((itemId) => {
-      const item = fieldMapping[itemId];
-      if (!item) return false;
-      const paramId = item.parameter_id;
-      return generalVideoParameterIds.includes(paramId);
-    });
-  }, [validParameterItemIds, fieldMapping, generalVideoParameterIds]);
 
   // Build parameter mappings filtered by type
   const generalVideoParameterMapping = useMemo(() => {
@@ -2114,8 +2094,6 @@ export default function Video({
           ?.filter((doc) => doc.is_template === true)
           .map((doc) => doc.document_id) || [];
       setTemplateDocumentIds(templateDocIds);
-      // Store template document IDs for original tracking (already extracted above as templateDocIds)
-      setOriginalTemplateDocumentIds(templateDocIds);
 
       // Load video images (all images from array)
       if (

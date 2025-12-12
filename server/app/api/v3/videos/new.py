@@ -13,19 +13,90 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    DocumentMappingItem,
-    FieldMapping,
-    ParameterMapping,
-    PersonaMapping,
-    PersonaMappingItem,
-)
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item - extends MappingItem with optional entity ID arrays."""
+
+    name: str
+    description: str
+    scenario_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    rubric_ids: list[str] | None = None
+    parameter_ids: list[str] | None = None
+    parameter_item_ids: list[str] | None = None
+    field_ids: list[str] | None = None
+    agent_ids: list[str] | None = None
+    staff_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+
+
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
+
+    name: str
+    description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+    parameter_ids: list[str] | None = None
+    field_ids: list[str] | None = None
+    example: str | None = None
+
+
+class DocumentMappingItem(BaseModel):
+    """Document mapping item - extends MappingItem with file metadata."""
+
+    name: str
+    description: str
+    filePath: str | None = None
+    mimeType: str | None = None
+    parameter_ids: list[str] | None = None
+    field_ids: list[str] | None = None
+    parent_document_id: str | None = None
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+    conditional_parameter_ids: list[str] | None = None
+
+
+class ParameterMappingItem(BaseModel):
+    """Parameter mapping item."""
+
+    name: str
+    description: str
+    numerical: bool
+    document_parameter: bool
+    persona_parameter: bool
+    scenario_parameter: bool = False
+    video_parameter: bool = False
+
+
+class AgentMappingItem(BaseModel):
+    """Agent mapping item with role information."""
+
+    name: str
+    description: str
+    roles: list[str]
+
+
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+PersonaMapping = dict[str, PersonaMappingItem]
+DocumentMapping = dict[str, DocumentMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
 
 
 class DocumentDetailItem(BaseModel):
@@ -928,8 +999,6 @@ async def get_video_new(
                     )
 
         # Parse document_mapping from JSONB
-        from app.utils.schema import DocumentMappingItem
-
         document_mapping_data = parse_jsonb(result.get("document_mapping"))
         document_mapping: DocumentMapping = {}
         document_mapping_dict: dict[str, dict[str, Any]] = {}
@@ -951,7 +1020,9 @@ async def get_video_new(
                         "field_ids": [str(f) for f in field_ids]
                         if isinstance(field_ids, list)
                         else [],
-                        "parent_document_id": v.get("parent_document_id"),
+                        "parent_document_id": str(v.get("parent_document_id", ""))
+                        if v.get("parent_document_id")
+                        else None,
                     }
                     parent_document_id = v.get("parent_document_id")
                     document_mapping[k] = DocumentMappingItem(
@@ -1030,8 +1101,6 @@ async def get_video_new(
         valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
 
         # Parse parameter_mapping from JSONB
-        from app.utils.schema import ParameterMappingItem
-
         parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
         parameter_mapping: ParameterMapping = {}
         if isinstance(parameter_mapping_data, dict):
@@ -1048,8 +1117,6 @@ async def get_video_new(
                     )
 
         # Parse parameter_item_mapping from JSONB
-        from app.utils.schema import FieldMappingItem
-
         field_mapping_data = parse_jsonb(result.get("field_mapping"))
         field_mapping: FieldMapping = {}
         if isinstance(field_mapping_data, dict):

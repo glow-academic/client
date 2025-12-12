@@ -75,8 +75,8 @@ export default function Practice({
     [bundle?.parameter_mapping],
   );
   const parameterItemMapping = useMemo(
-    () => bundle?.parameter_item_mapping || {},
-    [bundle?.parameter_item_mapping],
+    () => bundle?.field_mapping || {},
+    [bundle?.field_mapping],
   );
   const simulationMapping = useMemo(
     () => bundle?.simulation_mapping || {},

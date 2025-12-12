@@ -7,7 +7,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -1202,7 +1202,7 @@ export default function Persona({
                           </div>
                         </div>
                       )}
-                      renderItem={(item, isSelected) => (
+                      renderItem={(item, _isSelected) => (
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <div className="flex-1 min-w-0">
@@ -1261,7 +1261,7 @@ export default function Persona({
                           </div>
                         </div>
                       )}
-                      renderItem={(item, isSelected) => (
+                      renderItem={(item, _isSelected) => (
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <div className="flex-1 min-w-0">

@@ -12,21 +12,66 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    CohortMapping,
-    CohortMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ObjectiveMapping,
-    ObjectiveMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-)
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class CohortMappingItem(BaseModel):
+    """Cohort mapping item."""
+
+    name: str
+    description: str
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+
+
+class ObjectiveMappingItem(BaseModel):
+    """Objective mapping item."""
+
+    name: str
+    description: str
+
+
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
+
+    name: str
+    description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+
+
+class SimulationMappingItem(BaseModel):
+    """Simulation mapping item."""
+
+    name: str
+    description: str
+    time_limit: int | None = None
+    department_ids: list[str] | None = None
+
+
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+CohortMapping = dict[str, CohortMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+ObjectiveMapping = dict[str, ObjectiveMappingItem]
+PersonaMapping = dict[str, PersonaMappingItem]
+SimulationMapping = dict[str, SimulationMappingItem]
 
 
 # Inline request/response schemas

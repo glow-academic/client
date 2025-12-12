@@ -597,7 +597,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 await set_image_generation_context(
                     agent_id=str(image_agent_id),
                     profile_id=str(final_profile_id),
-                    primary_id=primary_id,
+                    primary_id=primary_id if primary_id else "",
                     department_id=str(department_id) if department_id else None,
                     room=sid,  # WebSocket room for emitting events
                 )

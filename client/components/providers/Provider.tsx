@@ -57,7 +57,7 @@ export interface ProviderProps {
 
 export default function Provider({
   providerId,
-  providerDetailDefault,
+  providerDetailDefault: _providerDetailDefault,
   providerDetail: serverProviderDetail,
   createProviderAction,
   updateProviderAction,
@@ -185,6 +185,7 @@ export default function Provider({
           value: formData.value!,
           active: formData.active ?? true,
           base_url: formData.base_url || null,
+          profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
         toast.success("Provider updated successfully!");
@@ -196,6 +197,7 @@ export default function Provider({
           value: formData.value!,
           active: formData.active ?? true,
           base_url: formData.base_url || null,
+          profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
         toast.success("Provider created successfully!");

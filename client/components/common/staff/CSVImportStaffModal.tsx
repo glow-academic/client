@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Check,
   CheckCircle2,
   ChevronsUpDown,
   Download,
@@ -18,8 +17,7 @@ import type {
 } from "@/app/(main)/management/staff/page";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
-import { Check, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { User } from "lucide-react";
 import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,

@@ -250,14 +250,6 @@ export default function Rubric({
     return !rubricData.can_edit;
   }, [isEditMode, rubricData]);
 
-  const defaultDepartmentIds = useMemo(
-    () =>
-      getDefaultDepartmentIds(
-        isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
-      ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
-  );
 
   // Unified update helper
   const updateRubricUnified = useCallback(
@@ -567,6 +559,10 @@ export default function Rubric({
       // In a true grid, standards would appear in all groups, but for now
       // we assign to one group and display across all groups
       const firstGroup = standardGroups[0];
+      if (!firstGroup) {
+        toast.error("No standard group available");
+        return;
+      }
       const newStandard: Standard = {
         id: `temp-${Date.now()}`,
         name: standardFormData.name,
@@ -694,7 +690,7 @@ export default function Rubric({
           <DataTableColumnHeader column={column} title="Standard Group" />
         ),
         accessorFn: (row) => `${row.name} ${row.description}`,
-        filterFn: (row, id, value) => {
+        filterFn: (row, _id, value) => {
           const searchValue = String(value).toLowerCase();
           const name = String(row.original.name).toLowerCase();
           const description = String(row.original.description).toLowerCase();

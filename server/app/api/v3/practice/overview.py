@@ -12,23 +12,88 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    FieldMapping,
-    FieldMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-    StandardGroupsMapping,
-    StandardsMapping,
-)
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+
+
+class ParameterMappingItem(BaseModel):
+    """Parameter mapping item."""
+
+    name: str
+    description: str
+    numerical: bool
+    document_parameter: bool
+    persona_parameter: bool
+
+
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
+
+    name: str
+    description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+
+
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item."""
+
+    name: str
+    description: str
+
+
+class SimulationMappingItem(BaseModel):
+    """Simulation mapping item."""
+
+    name: str
+    description: str
+    time_limit: int | None = None
+    department_ids: list[str] | None = None
+
+
+class StandardGroupMappingItem(BaseModel):
+    """Standard group mapping item with rubric context."""
+
+    name: str
+    description: str
+    points: int
+    passPoints: int
+
+
+class StandardMappingItem(BaseModel):
+    """Standard mapping item with points."""
+
+    name: str
+    description: str
+    points: int
+
+
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+PersonaMapping = dict[str, PersonaMappingItem]
+ScenarioMapping = dict[str, ScenarioMappingItem]
+SimulationMapping = dict[str, SimulationMappingItem]
+StandardGroupsMapping = dict[str, StandardGroupMappingItem]
+StandardsMapping = dict[str, StandardMappingItem]
 
 router = APIRouter()
 

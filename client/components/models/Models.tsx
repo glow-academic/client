@@ -31,6 +31,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -228,7 +229,12 @@ export default function Models({
 
     setIsDeleting(true);
     try {
-      await deleteModelAction({ body: { modelId: deleteItem.id } });
+      await deleteModelAction({
+        body: {
+          modelId: deleteItem.id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
+      });
       toast.success("Model deleted successfully");
       router.refresh();
     } catch {
@@ -254,7 +260,12 @@ export default function Models({
 
     setIsDuplicating(model.model_id);
     try {
-      await duplicateModelAction({ body: { modelId: model.model_id } });
+      await duplicateModelAction({
+        body: {
+          modelId: model.model_id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
+      });
       toast.success(`Model '${model.name}' duplicated successfully`);
       router.refresh();
     } catch {

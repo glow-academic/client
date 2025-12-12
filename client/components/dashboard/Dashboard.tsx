@@ -415,7 +415,7 @@ export default function Dashboard({
           bundle.footer.scenarioPerformance.attributeScenarioFacts
         }
         parameterMapping={bundle.parameter_mapping}
-        parameterItemMapping={bundle.parameter_item_mapping}
+        parameterItemMapping={bundle.field_mapping}
         validParameterIds={bundle.footer.scenarioPerformance.validParameterIds}
         actionableInsight={bundle.insights.scenario_performance ?? null}
         status={bundle.footer.scenarioPerformance.status ?? "neutral"}
@@ -460,7 +460,7 @@ export default function Dashboard({
         }
         simulationMapping={bundle.simulation_mapping}
         parameterMapping={bundle.parameter_mapping}
-        parameterItemMapping={bundle.parameter_item_mapping}
+        parameterItemMapping={bundle.field_mapping}
         validSimulationIds={
           bundle.footer.simulationComposition.validSimulationIds
         }

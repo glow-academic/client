@@ -66,7 +66,8 @@ async def bulk_create_profile(
         roles = [p.role for p in request.profiles]
         # Department IDs must be parallel array (use None/null for profiles without departments)
         department_ids = [
-            p.primary_department_id if p.primary_department_id else None for p in request.profiles
+            p.primary_department_id if p.primary_department_id else None
+            for p in request.profiles
         ]
 
         # Single consolidated query: validates emails, creates all profiles, and inserts departments

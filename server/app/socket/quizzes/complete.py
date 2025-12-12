@@ -30,9 +30,7 @@ class QuizCompletePayload(BaseModel):
 
 
 # Emit helper functions
-async def quiz_complete_error(
-    payload: CompleteQuizErrorPayload, room: str
-) -> None:
+async def quiz_complete_error(payload: CompleteQuizErrorPayload, room: str) -> None:
     await sio.emit("quiz_complete_error", payload.model_dump(), room=room)
 
 
@@ -48,25 +46,19 @@ async def _quiz_complete_impl(sid: str, data: QuizCompletePayload) -> None:
     Replaces POST /api/v3/attempts/quizzes/complete endpoint
     """
     try:
-        logger.info(
-            f"Received quiz_complete request from {sid} with data: {data}"
-        )
+        logger.info(f"Received quiz_complete request from {sid} with data: {data}")
 
         quiz_id = data.quizId
 
         if not quiz_id:
             logger.error(f"Missing quizId in request from {sid}")
             await quiz_complete_error(
-                CompleteQuizErrorPayload(
-                    success=False, message="Missing quizId"
-                ),
+                CompleteQuizErrorPayload(success=False, message="Missing quizId"),
                 room=sid,
             )
             return
 
-        logger.info(
-            f"Processing quiz complete: quiz_id={quiz_id}, sid={sid}"
-        )
+        logger.info(f"Processing quiz complete: quiz_id={quiz_id}, sid={sid}")
 
         # Get connection pool
         pool = get_pool()
@@ -105,9 +97,7 @@ async def _quiz_complete_impl(sid: str, data: QuizCompletePayload) -> None:
                 # Invalidate cache after mutation
                 tags = ["attempts", "quizzes"]
                 await invalidate_tags(tags)
-                logger.info(
-                    f"Invalidated cache for tags: {tags} after completing quiz"
-                )
+                logger.info(f"Invalidated cache for tags: {tags} after completing quiz")
 
                 await quiz_complete_response(
                     CompleteQuizResponsePayload(
@@ -146,4 +136,3 @@ async def quiz_complete(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
-

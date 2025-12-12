@@ -14,15 +14,47 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMappingItem,
-    FieldMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-)
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+
+
+class ParameterMappingItem(BaseModel):
+    """Parameter mapping item."""
+
+    name: str
+    description: str
+    numerical: bool
+    document_parameter: bool
+    persona_parameter: bool
+
+
+class AgentMappingItem(BaseModel):
+    """Agent mapping item with role information."""
+
+    name: str
+    description: str
+    roles: list[str]
+
+
+# Type aliases for Dict mappings
+ParameterMapping = dict[str, ParameterMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
 
 
 def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
@@ -177,9 +209,7 @@ async def get_document_detail(
         valid_department_ids = [
             str(did) for did in (row.get("valid_department_ids") or [])
         ]
-        valid_field_ids = [
-            str(pid) for pid in (row.get("valid_field_ids") or [])
-        ]
+        valid_field_ids = [str(pid) for pid in (row.get("valid_field_ids") or [])]
         dept_ids = None
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]

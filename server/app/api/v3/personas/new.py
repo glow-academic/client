@@ -12,15 +12,51 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    FieldMapping,
-    ParameterMapping,
-)
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class FieldMappingItem(BaseModel):
+    """Field mapping item with parameter context."""
+
+    name: str
+    description: str
+    parameter_id: str
+    parameter_name: str
+
+
+class ParameterMappingItem(BaseModel):
+    """Parameter mapping item."""
+
+    name: str
+    description: str
+    numerical: bool
+    document_parameter: bool
+    persona_parameter: bool
+    scenario_parameter: bool = False
+    video_parameter: bool = False
+
+
+class AgentMappingItem(BaseModel):
+    """Agent mapping item with role information."""
+
+    name: str
+    description: str
+    roles: list[str]
+
+
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
 
 
 # Inline request/response schemas
@@ -191,8 +227,6 @@ async def get_persona_new(
         if isinstance(parameter_mapping_data, dict):
             for param_id, pdata in parameter_mapping_data.items():
                 if isinstance(pdata, dict):
-                    from app.utils.schema import ParameterMappingItem
-
                     parameter_mapping[param_id] = ParameterMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
@@ -209,8 +243,6 @@ async def get_persona_new(
         if isinstance(field_mapping_data, dict):
             for item_id, idata in field_mapping_data.items():
                 if isinstance(idata, dict):
-                    from app.utils.schema import FieldMappingItem
-
                     field_mapping[item_id] = FieldMappingItem(
                         name=idata.get("name", ""),
                         description=idata.get("description", ""),

@@ -120,9 +120,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             trace_id = gen_trace_id()
 
             # Create attempt and chat using SQL
-            sql = load_sql(
-                "sql/v3/simulations/start_simulation_attempt_complete.sql"
-            )
+            sql = load_sql("sql/v3/simulations/start_simulation_attempt_complete.sql")
             row = await conn.fetchrow(
                 sql,
                 simulation_id,
@@ -193,7 +191,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                     sql = load_sql("sql/v3/attempts/get_attempt_with_profile.sql")
                     attempt_with_profile = await conn.fetchrow(sql, row["attempt_id"])
                     attempt_profile_id_raw = (
-                        attempt_with_profile["profile_id"] if attempt_with_profile else None
+                        attempt_with_profile["profile_id"]
+                        if attempt_with_profile
+                        else None
                     )
                     # Convert asyncpg UUID to Python UUID if needed
                     attempt_profile_id = (
@@ -209,7 +209,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         # Use first department from scenario
                         dept_id_raw = scenario_dept_rows[0]["department_id"]
                         department_id = uuid.UUID(str(dept_id_raw))
-                        logger.info(f"Using department_id from scenario: {department_id}")
+                        logger.info(
+                            f"Using department_id from scenario: {department_id}"
+                        )
                     elif attempt_profile_id:
                         # Fallback to profile's departments
                         sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
@@ -223,12 +225,16 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                     if not department_id:
                         # Last resort: get any active department
-                        sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
+                        sql = load_sql(
+                            "sql/v3/departments/get_all_active_departments.sql"
+                        )
                         all_dept_rows = await conn.fetch(sql)
                         if all_dept_rows and len(all_dept_rows) > 0:
                             dept_id_raw = all_dept_rows[0]["id"]
                             department_id = uuid.UUID(str(dept_id_raw))
-                            logger.info(f"Using first active department: {department_id}")
+                            logger.info(
+                                f"Using first active department: {department_id}"
+                            )
 
                     if not department_id:
                         logger.warning(
@@ -241,7 +247,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         )
 
                         attempt_profile_uuid = (
-                            uuid.UUID(attempt_profile_id) if attempt_profile_id else None
+                            uuid.UUID(attempt_profile_id)
+                            if attempt_profile_id
+                            else None
                         )
 
                         try:
@@ -271,7 +279,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             )
 
                             # Update chat to use child scenario instead of parent
-                            sql = load_sql("sql/v3/simulations/update_chat_scenario_id.sql")
+                            sql = load_sql(
+                                "sql/v3/simulations/update_chat_scenario_id.sql"
+                            )
                             await conn.execute(sql, row["chat_id"], new_scenario_id)
                             logger.info(
                                 f"Updated chat {row['chat_id']} to use child scenario {new_scenario_id}"
@@ -298,7 +308,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 # Update row data for result (convert Record to dict first)
                                 row_dict = dict(row)
                                 row_dict["scenario_id"] = new_scenario_id
-                                row_dict["scenario_name"] = child_scenario.get("name", "")
+                                row_dict["scenario_name"] = child_scenario.get(
+                                    "name", ""
+                                )
                                 row_dict["problem_statement"] = (
                                     child_problem_statement or ""
                                 )

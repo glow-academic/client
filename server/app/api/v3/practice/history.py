@@ -12,8 +12,40 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import AttemptHistoryRow
 from app.utils.sql_helper import load_sql
+from pydantic import ConfigDict
+
+
+# Inline mapping types (DHH style - no shared types)
+class AttemptHistoryRow(BaseModel):
+    """Attempt history row - shared across dashboard, home, reports, and practice history endpoints."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    attemptId: str
+    date: str
+    profileId: str
+    profileName: str
+    simulationName: str
+    numScenarios: int | None = None
+    numScenariosCompleted: int
+    infiniteMode: bool
+    timeLimit: int | None = None
+    personaNames: list[str]
+    personaColors: list[str]
+    score: int | None = None
+    scoreStatus: str | None = None  # "high" | "medium" | "low" | None
+    simulation_id: str
+    scenario_ids: list[str]
+    scenario_titles: list[str]
+    isArchived: bool
+    showView: bool
+    showContinue: bool
+    practiceSimulation: bool
+    passPct: int | None = None
+    department_ids: list[str] | None = None
+    cohortNames: list[str]
+    practiceScenarioId: str | None = None
 
 router = APIRouter()
 

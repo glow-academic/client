@@ -55,15 +55,6 @@ import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type SimulationsListOut = OutputOf<"/api/v3/simulations/list", "post">;
-type ScenarioMappingItem = SimulationsListOut["scenario_mapping"][string];
-type PersonaMappingItem =
-  SimulationsListOut["scenario_mapping"][string]["persona_mapping"][string];
-type MappingItem = {
-  name: string;
-  description: string;
-};
-type ParameterItemMappingItem =
-  SimulationsListOut["scenario_mapping"][string]["parameter_item_mapping"][string];
 
 // Filter key constants
 const NO_PERSONA_KEY = "__no_persona__";

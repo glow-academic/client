@@ -78,7 +78,7 @@ export function VideoBasicInfoSection({
   onRandomizeAll,
   onResetAll,
   isReadonly,
-  isSuperadmin,
+  isSuperadmin: _isSuperadmin,
   defaultName = "New Video",
   activeLabel = "Active",
   activeDescription = "Inactive videos will not be available for use",

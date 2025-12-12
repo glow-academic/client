@@ -76,9 +76,7 @@ async def create_dynamic_document(
     # Get theme tokens for rendering
     theme_tokens: ThemeTokens
     if http_request and profile_id:
-        settings_request = SettingsActiveRequest(
-            profileId=str(profile_id)
-        )
+        settings_request = SettingsActiveRequest(profileId=str(profile_id))
         dummy_response = Response()
         settings_response = await get_active_settings(
             settings_request, http_request, dummy_response, conn
@@ -131,9 +129,7 @@ async def create_dynamic_document(
     # Merge template args with organization info if available
     merged_args = template_args.copy()
     if http_request and profile_id:
-        settings_request = SettingsActiveRequest(
-            profileId=str(profile_id)
-        )
+        settings_request = SettingsActiveRequest(profileId=str(profile_id))
         dummy_response = Response()
         settings_response = await get_active_settings(
             settings_request, http_request, dummy_response, conn

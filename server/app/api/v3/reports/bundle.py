@@ -16,15 +16,86 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    MetricResponse,
-    ScenarioMapping,
-    ScenarioMappingItem,
-    SimulationFilter,
-    SimulationMapping,
-    SimulationMappingItem,
-)
 from app.utils.sql_helper import load_sql
+from enum import Enum
+from typing import Literal
+
+
+# Inline mapping types (DHH style - no shared types)
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item."""
+
+    name: str
+    description: str
+
+
+class SimulationMappingItem(BaseModel):
+    """Simulation mapping item."""
+
+    name: str
+    description: str
+    time_limit: int | None = None
+    department_ids: list[str] | None = None
+
+
+class SimulationFilter(str, Enum):
+    """Simulation filter types."""
+
+    GENERAL = "general"
+    PRACTICE = "practice"
+    ARCHIVED = "archived"
+
+
+class TrendData(BaseModel):
+    """Trend data point."""
+
+    date: str
+    value: float
+    count: int
+
+
+class DataPoint(BaseModel):
+    """Individual data point."""
+
+    profileId: str
+    date: str | None = None
+    value: float | None = None
+    attemptId: str | None = None
+    simulationId: str | None = None
+    scenarioId: str | None = None
+    count: int | None = None
+
+
+class Method(str, Enum):
+    """Analytics computation methods."""
+
+    AVG = "avg"
+    MAX = "max"
+    SUM = "sum"
+    RATE = "rate"
+    COUNT_DISTINCT = "countDistinct"
+    MIN = "min"
+    SLOPE = "slope"
+
+
+class MetricResponse(BaseModel):
+    """Standard metric response."""
+
+    hasData: bool
+    method: Method
+    currentValue: int
+    status: Literal["success", "warning", "danger", "neutral"]
+    trendAnalysis: str | None = None
+    valueField: str | None = None
+    keyField: str | None = None
+    trendData: list[TrendData]
+    dataPoints: list[DataPoint]
+    hover: dict[str, Any] | None = None
+
+
+# Type aliases for Dict mappings
+ScenarioMapping = dict[str, ScenarioMappingItem]
+SimulationMapping = dict[str, SimulationMappingItem]
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 router.include_router(export_router)

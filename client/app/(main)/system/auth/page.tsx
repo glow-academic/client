@@ -52,7 +52,6 @@ async function duplicateAuth(
   const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/duplicate", {
-    ...input,
     body: { ...input.body, profileId },
   });
 }
@@ -63,7 +62,6 @@ async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/delete", {
-    ...input,
     body: { ...input.body, profileId },
   });
 }

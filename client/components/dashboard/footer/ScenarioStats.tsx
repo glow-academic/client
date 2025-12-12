@@ -14,12 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useChartColors } from "@/lib/utils/chartColors";
 import { BarChart3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

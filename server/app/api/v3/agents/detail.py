@@ -13,15 +13,35 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ModelMapping,
-    ModelMappingItem,
-    ReasoningMapping,
-    ReasoningMappingItem,
-)
 from app.utils.sql_helper import load_sql
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class ModelMappingItem(BaseModel):
+    """Model mapping item."""
+
+    name: str
+    description: str
+
+
+class ReasoningMappingItem(BaseModel):
+    """Reasoning mapping item."""
+
+    name: str
+    description: str
+
+
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+ModelMapping = dict[str, ModelMappingItem]
+ReasoningMapping = dict[str, ReasoningMappingItem]
 
 
 # Inline request/response schemas

@@ -31,15 +31,11 @@ class QuizCreatePayload(BaseModel):
 
 
 # Emit helper functions
-async def quiz_create_error(
-    payload: CreateQuizErrorPayload, room: str
-) -> None:
+async def quiz_create_error(payload: CreateQuizErrorPayload, room: str) -> None:
     await sio.emit("quiz_create_error", payload.model_dump(), room=room)
 
 
-async def quiz_create_response(
-    payload: CreateQuizResponsePayload, room: str
-) -> None:
+async def quiz_create_response(payload: CreateQuizResponsePayload, room: str) -> None:
     await sio.emit("quiz_create_response", payload.model_dump(), room=room)
 
 
@@ -49,9 +45,7 @@ async def _quiz_create_impl(sid: str, data: QuizCreatePayload) -> None:
     Replaces POST /api/v3/attempts/quizzes/create endpoint
     """
     try:
-        logger.info(
-            f"Received quiz_create request from {sid} with data: {data}"
-        )
+        logger.info(f"Received quiz_create request from {sid} with data: {data}")
 
         attempt_id = data.attemptId
         video_id = data.videoId
@@ -155,9 +149,7 @@ async def _quiz_create_impl(sid: str, data: QuizCreatePayload) -> None:
                     ),
                     room=sid,
                 )
-                logger.info(
-                    f"Quiz created successfully for {sid}: quiz_id={quiz_id}"
-                )
+                logger.info(f"Quiz created successfully for {sid}: quiz_id={quiz_id}")
 
     except Exception as e:
         logger.error(f"Error creating quiz for {sid}: {str(e)}", exc_info=True)
@@ -179,9 +171,6 @@ async def quiz_create(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in quiz_create for {sid}: {e}")
         await quiz_create_error(
-            CreateQuizErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            CreateQuizErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
-

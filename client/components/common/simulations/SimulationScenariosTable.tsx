@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/table";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";

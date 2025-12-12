@@ -17,6 +17,7 @@ class DuplicateAuthRequest(BaseModel):
     """Request to duplicate auth."""
 
     authId: str
+    profileId: str
 
 
 class DuplicateAuthResponse(BaseModel):

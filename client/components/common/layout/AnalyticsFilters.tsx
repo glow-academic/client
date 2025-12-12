@@ -30,7 +30,6 @@ import {
 } from "./analytics/CohortSelector";
 import { DepartmentSelector } from "./analytics/DepartmentSelector";
 
-type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;

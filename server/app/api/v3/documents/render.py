@@ -89,9 +89,7 @@ async def render_document_template(
         with open(full_path, encoding="utf-8") as f:
             template_html = f.read()
 
-        settings_request = SettingsActiveRequest(
-            profileId=request.profileId
-        )
+        settings_request = SettingsActiveRequest(profileId=request.profileId)
         # Create a dummy response object for get_active_settings
         dummy_response = Response()
         settings_response = await get_active_settings(

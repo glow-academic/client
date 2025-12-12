@@ -46,10 +46,6 @@ import DocumentSelect from "@/components/common/chat/DocumentSelect";
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { formatTime } from "@/utils/time";
 import VideoQuestionPopover from "./VideoQuestionPopover";
-type VideoItem = NonNullable<ContentItem["video"]>;
-type QuizItem = NonNullable<ContentItem["quiz"]>;
-type QuestionItem = ContentItem["questions"][number];
-type QuizResponseItem = NonNullable<QuizItem>["responses"][number];
 
 interface VideoAttemptViewProps {
   attemptId: string;
@@ -133,7 +129,7 @@ export default function VideoAttemptView({
 
   // Initialize selectedDocumentId to first document's ID
   useEffect(() => {
-    if (videoDocuments.length > 0 && !selectedDocumentId) {
+    if (videoDocuments.length > 0 && !selectedDocumentId && videoDocuments[0]) {
       setSelectedDocumentId(videoDocuments[0].document_id);
     }
   }, [videoDocuments, selectedDocumentId]);
@@ -167,8 +163,8 @@ export default function VideoAttemptView({
   const sortedQuestions = useMemo(() => {
     if (!questions || questions.length === 0) return [];
     return [...questions].sort((a, b) => {
-      const aTime = a.times && a.times.length > 0 ? a.times[0] : Infinity;
-      const bTime = b.times && b.times.length > 0 ? b.times[0] : Infinity;
+      const aTime = a.times && a.times.length > 0 && a.times[0] !== undefined ? a.times[0] : Infinity;
+      const bTime = b.times && b.times.length > 0 && b.times[0] !== undefined ? b.times[0] : Infinity;
       return aTime - bTime;
     });
   }, [questions]);
