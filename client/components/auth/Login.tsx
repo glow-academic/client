@@ -5,6 +5,7 @@
  * 06/18/2025
  */
 "use client";
+import type { SettingsActiveOut } from "@/app/(main)/layout-server";
 import { GlowIconComponent } from "@/components/common/GlowIconComponent";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,9 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { applyThemeTokens } from "@/lib/theme/apply-theme";
-import type { SettingsActiveOut } from "@/app/(main)/layout-server";
-import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -136,7 +136,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 3,
         animationDuration: Math.random() * 3 + 2,
-      })),
+      }))
     );
 
     setMovingSparkles(
@@ -146,7 +146,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 2,
         animationDuration: Math.random() * 2 + 3,
-      })),
+      }))
     );
 
     setFloatingSparkles(
@@ -156,7 +156,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 4,
         animationDuration: Math.random() * 3 + 4,
-      })),
+      }))
     );
 
     setMounted(true);
@@ -262,7 +262,7 @@ export default function Login({
     string | null
   >(
     initialDepartmentId ||
-      (departments.length > 0 ? (departments[0]?.id ?? null) : null),
+      (departments.length > 0 ? (departments[0]?.id ?? null) : null)
   );
   const router = useRouter();
 
@@ -333,7 +333,7 @@ export default function Login({
         },
         {
           kc_idp_hint: provider.id,
-        },
+        }
       );
 
       // Note: signIn redirects immediately on success, so we don't need toast.success here
@@ -451,41 +451,141 @@ export default function Login({
             {/* Department Picker - only show if departments exist */}
             {departments.length > 0 && (
               <motion.div variants={cardVariants}>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  Department
-                </label>
-                <Select
-                  value={selectedDepartmentId || undefined}
-                  onValueChange={(value) => {
-                    setSelectedDepartmentId(value);
-                    // Update URL with department parameter and trigger server-side refetch
-                    // If selected department is the default, remove query param to keep URL clean
-                    const url = new URL(window.location.href);
-                    if (value && value === defaultDepartmentId) {
-                      // Remove query param if it's the default department
-                      url.searchParams.delete("department");
-                    } else if (value) {
-                      // Set query param for non-default departments
-                      url.searchParams.set("department", value);
-                    } else {
-                      // Remove query param if no department selected
-                      url.searchParams.delete("department");
+                <style
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                    .department-select-trigger svg {
+                      color: white !important;
+                      opacity: 1 !important;
                     }
-                    // Use router.push to trigger server-side refetch (like dashboard filters)
-                    router.push(url.pathname + url.search);
+                    .department-select-trigger:focus,
+                    .department-select-trigger:focus-visible,
+                    .department-select-trigger[data-state="open"] {
+                      outline: none !important;
+                      ring: none !important;
+                      --tw-ring-width: 0px !important;
+                      --tw-ring-color: transparent !important;
+                      border-color: rgba(255, 255, 255, 0.2) !important;
+                    }
+                    .department-select-item svg {
+                      color: white !important;
+                    }
+                    .department-select-item span svg {
+                      color: white !important;
+                    }
+                    .department-select-content,
+                    .department-select-content * {
+                      border-color: rgba(255, 255, 255, 0.2) !important;
+                    }
+                    .department-select-content {
+                      outline: none !important;
+                      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+                      --tw-ring-width: 0px !important;
+                      --tw-ring-color: transparent !important;
+                      ring-width: 0px !important;
+                      ring-color: transparent !important;
+                    }
+                    .department-select-content:focus,
+                    .department-select-content:focus-visible,
+                    .department-select-content[data-state="open"] {
+                      outline: none !important;
+                      ring: none !important;
+                      --tw-ring-width: 0px !important;
+                      --tw-ring-color: transparent !important;
+                      ring-width: 0px !important;
+                      ring-color: transparent !important;
+                      border-color: rgba(255, 255, 255, 0.2) !important;
+                      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+                    }
+                    .department-select-content [data-slot="select-viewport"],
+                    .department-select-content [data-slot="select-scroll-up-button"],
+                    .department-select-content [data-slot="select-scroll-down-button"] {
+                      border: none !important;
+                      outline: none !important;
+                    }
+                    .department-select-item {
+                      outline: none !important;
+                      border: none !important;
+                    }
+                    .department-select-item:focus,
+                    .department-select-item:focus-visible,
+                    .department-select-item[data-highlighted],
+                    .department-select-item[data-state="checked"],
+                    .department-select-item[data-state="selected"] {
+                      outline: none !important;
+                      border: none !important;
+                      box-shadow: none !important;
+                      ring: none !important;
+                    }
+                  `,
                   }}
-                >
-                  <SelectTrigger className="w-full bg-white/10 backdrop-blur-xl text-white border-white/20 hover:bg-white/15">
-                    <SelectValue placeholder="Select department..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>
-                        {dept.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
+                <div className="relative">
+                  <Select
+                    {...(selectedDepartmentId
+                      ? { value: selectedDepartmentId }
+                      : {})}
+                    onValueChange={(value) => {
+                      setSelectedDepartmentId(value);
+                      // Update URL with department parameter and trigger server-side refetch
+                      // If selected department is the default, remove query param to keep URL clean
+                      const url = new URL(window.location.href);
+                      if (value && value === defaultDepartmentId) {
+                        // Remove query param if it's the default department
+                        url.searchParams.delete("department");
+                      } else if (value) {
+                        // Set query param for non-default departments
+                        url.searchParams.set("department", value);
+                      } else {
+                        // Remove query param if no department selected
+                        url.searchParams.delete("department");
+                      }
+                      // Use router.push to trigger server-side refetch (like dashboard filters)
+                      router.push(url.pathname + url.search);
+                    }}
+                  >
+                    <SelectTrigger
+                      className="department-select-trigger relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 px-4 text-base"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
+                        boxShadow:
+                          "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background =
+                          "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
+                        e.currentTarget.style.boxShadow =
+                          "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
+                        e.currentTarget.style.boxShadow =
+                          "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
+                      }}
+                    >
+                      {/* Liquid glass shine effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
+                      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                      <SelectValue
+                        placeholder="Select department..."
+                        className="relative z-10 text-base"
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="department-select-content bg-white/10 backdrop-blur-xl text-white border border-white/20 rounded-xl shadow-2xl">
+                      {departments.map((dept) => (
+                        <SelectItem
+                          key={dept.id}
+                          value={dept.id}
+                          className="department-select-item text-white hover:bg-white/15 focus:bg-white/15 focus:text-white cursor-pointer text-base"
+                        >
+                          {dept.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </motion.div>
             )}
 

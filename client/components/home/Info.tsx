@@ -861,10 +861,21 @@ export default function Info({ isLoggedIn = false }: InfoProps) {
             <p className="text-lg md:text-xl text-white mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed px-4">
               For more information, please contact PIs{" "}
               <a
-                href="mailto:redacted@purdue.edu,redacted@purdue.edu"
+                href="https://www.cs.purdue.edu/homes/dickeye/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="underline hover:text-blue-100 transition-colors"
               >
-                Ethan Dickey and Andres Bejarano
+                Ethan Dickey
+              </a>{" "}
+              and{" "}
+              <a
+                href="https://andresbejarano.name/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-100 transition-colors"
+              >
+                Andres Bejarano
               </a>
               . Tool originally created in Summer 2025 under their guidance by{" "}
               <a
