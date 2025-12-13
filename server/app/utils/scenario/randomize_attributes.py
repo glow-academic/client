@@ -47,6 +47,9 @@ async def randomize_scenario_attributes(
 
     # Step 1: Department selection with fallback logic
     # Track if we should use "all departments" (empty array) vs specific department(s)
+    # Normalize None to empty list for consistent handling
+    if department_ids is None:
+        department_ids = []
     use_all_departments = not department_ids or len(department_ids) == 0
 
     selected_department_id: uuid.UUID | None = None
@@ -62,18 +65,14 @@ async def randomize_scenario_attributes(
             profile_dept_ids = [uuid.UUID(str(row["id"])) for row in profile_dept_rows]
             selected_department_id = random.choice(profile_dept_ids)
             logger.info(f"Using department_id from profile: {selected_department_id}")
-    else:
-        # Fallback to all active departments
-        sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
-        all_dept_rows = await conn.fetch(sql)
-        if all_dept_rows and len(all_dept_rows) > 0:
-            all_dept_ids = [uuid.UUID(str(row["id"])) for row in all_dept_rows]
-            selected_department_id = random.choice(all_dept_ids)
-            logger.info(f"Using first active department: {selected_department_id}")
 
+    # Allow None/empty - will use empty array for SQL query to select general/cross-department items
+    # Only raise error if we explicitly need a department (e.g., for scenario linking)
+    # For randomization, empty array is valid and selects items with no department links
     if not selected_department_id:
-        raise ValueError(
-            "Cannot proceed without a department_id - no departments available"
+        logger.info(
+            "No department_id available - will select general/cross-department items "
+            "(items with no department links)"
         )
 
     # Step 1.5: Get randomization ranges (with defaults if scenario_id is None)
@@ -610,12 +609,17 @@ async def randomize_scenario_attributes(
                 f"Linked {len(param_ids)} parameter item(s) to child scenario {child_scenario_id}"
             )
 
-        # Link department
-        sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
-        await conn.execute(sql, child_scenario_id, selected_department_id, True)
-        logger.info(
-            f"Linked department {selected_department_id} to child scenario {child_scenario_id}"
-        )
+        # Link department (only if we have one)
+        if selected_department_id:
+            sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
+            await conn.execute(sql, child_scenario_id, selected_department_id, True)
+            logger.info(
+                f"Linked department {selected_department_id} to child scenario {child_scenario_id}"
+            )
+        else:
+            logger.info(
+                f"No department to link - child scenario {child_scenario_id} will be cross-department"
+            )
 
     # Combine all parameter item IDs: general + persona + document
     all_param_item_ids = (

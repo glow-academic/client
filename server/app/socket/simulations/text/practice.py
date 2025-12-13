@@ -130,7 +130,7 @@ async def _simulation_text_practice_impl(
             scenario = dict(parent_scenario)
             parent_scenario_id_uuid = uuid.UUID(parent_scenario_id)
 
-            # Determine department_id
+            # Determine department_id (allow None for guests)
             selected_dept_id: uuid.UUID | None = None
             if data.department_id:
                 selected_dept_id = uuid.UUID(data.department_id)
@@ -146,22 +146,13 @@ async def _simulation_text_practice_impl(
                     if profile_dept_rows and len(profile_dept_rows) > 0:
                         selected_dept_id = profile_dept_rows[0]["id"]
 
+            # For guests without departments, allow None and use empty array for randomization
+            # This will select general/cross-department items (no department links)
             if not selected_dept_id:
-                # Last resort: get any active department
-                sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
-                all_dept_rows = await conn.fetch(sql)
-                if all_dept_rows and len(all_dept_rows) > 0:
-                    selected_dept_id = all_dept_rows[0]["id"]
-
-            if not selected_dept_id:
-                await simulation_text_practice_error(
-                    CreatePracticeScenarioErrorPayload(
-                        success=False,
-                        message="Cannot create scenario: no department_id available",
-                    ),
-                    room=sid,
+                logger.info(
+                    f"No department_id found for guest profile {profile_id}, "
+                    "proceeding with general/cross-department items"
                 )
-                return
 
             # Determine if we need to create a customized scenario variant
             # Only create variant if customization is needed (persona/parameters selected)
@@ -222,10 +213,13 @@ async def _simulation_text_practice_impl(
                         f"Linked {len(data.parameter_item_ids)} parameter item(s) to child scenario"
                     )
 
-                # Link department
-                sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
-                await conn.execute(sql, new_scenario_id, selected_dept_id, True)
-                logger.info(f"Linked department {selected_dept_id} to child scenario")
+                # Link department (only if we have one)
+                if selected_dept_id:
+                    sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
+                    await conn.execute(sql, new_scenario_id, selected_dept_id, True)
+                    logger.info(f"Linked department {selected_dept_id} to child scenario")
+                else:
+                    logger.info("No department to link - scenario will be cross-department")
 
                 scenario_id_override = str(new_scenario_id)
 
