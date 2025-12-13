@@ -9,15 +9,13 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 /** ---- Strong types from OpenAPI ---- */
-type SettingsListIn = InputOf<"/api/v3/settings/list", "post">;
 type SettingsListOut = OutputOf<"/api/v3/settings/list", "post">;
-type SettingsDetailIn = InputOf<"/api/v3/settings/detail", "post">;
 type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
 type UpdateSettingsIn = InputOf<"/api/v3/settings/update", "post">;
 type UpdateSettingsOut = OutputOf<"/api/v3/settings/update", "post">;
 type KeysListOut = OutputOf<"/api/v3/keys/list", "post">;
-type StaffListIn = InputOf<"/api/v3/profile/staff/list", "post">;
 type StaffListOut = OutputOf<"/api/v3/profile/staff/list", "post">;
+export type DepartmentsListOut = OutputOf<"/api/v3/departments/list", "post">;
 
 /** ---- Direct fetch for settings list ---- */
 const getSettingsList = async (profileId: string): Promise<SettingsListOut> => {
@@ -29,14 +27,14 @@ const getSettingsList = async (profileId: string): Promise<SettingsListOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Direct fetch for settings detail ---- */
 const getSettingsDetail = async (
   settingsId: string,
-  profileId: string,
+  profileId: string
 ): Promise<SettingsDetailOut> => {
   return api.post(
     "/settings/detail",
@@ -46,7 +44,7 @@ const getSettingsDetail = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
@@ -60,7 +58,7 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
@@ -74,13 +72,29 @@ const getStaffList = async (profileId: string): Promise<StaffListOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
+  );
+};
+
+/** ---- Direct fetch for departments list (for department picker) ---- */
+const getDepartmentsList = async (
+  profileId: string
+): Promise<DepartmentsListOut> => {
+  return api.post(
+    "/departments/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateSettings(
-  input: UpdateSettingsIn,
+  input: UpdateSettingsIn
 ): Promise<UpdateSettingsOut> {
   "use server";
   const session = await getSession();
@@ -93,7 +107,7 @@ async function updateSettings(
 
 async function getSettingsDetailAction(
   settingsId: string,
-  profileId: string,
+  profileId: string
 ): Promise<SettingsDetailOut> {
   "use server";
   return getSettingsDetail(settingsId, profileId);
@@ -109,24 +123,34 @@ async function getStaffListAction(profileId: string): Promise<StaffListOut> {
   return getStaffList(profileId);
 }
 
+async function getDepartmentsListAction(
+  profileId: string
+): Promise<DepartmentsListOut> {
+  "use server";
+  return getDepartmentsList(profileId);
+}
+
 export default async function SettingsPage() {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch settings list server-side
-  const settingsList = await getSettingsList(profileId);
+  const settingsListResponse = await getSettingsList(profileId);
   const keysList = await getKeysList(profileId);
-  const staffList = await getStaffListAction({
-    body: { profileId },
-  });
+  const staffList = await getStaffListAction(profileId);
+  const departmentsList = await getDepartmentsListAction(profileId);
 
   return (
     <div className="space-y-6" data-page="settings-index">
       <Settings
-        settingsList={settingsList}
+        settingsList={settingsListResponse.settings}
+        settingsDetail={null}
+        selectedSettingsId={null}
+        profileId={profileId}
         keysList={keysList}
         staffList={staffList}
-        getSettingsDetailAction={getSettingsDetail}
+        departmentsList={departmentsList}
+        getSettingsDetailAction={getSettingsDetailAction}
         updateSettingsAction={updateSettings}
         getKeysListAction={getKeysListAction}
         getStaffListAction={getStaffListAction}
@@ -134,4 +158,3 @@ export default async function SettingsPage() {
     </div>
   );
 }
-

@@ -13074,6 +13074,8 @@ export interface components {
             default_admin_profile_id?: string | null;
             /** Default Guest Profile Id */
             default_guest_profile_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * UpdateSettingsResponse

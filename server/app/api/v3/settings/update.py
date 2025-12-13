@@ -52,6 +52,7 @@ class UpdateSettingsRequest(BaseModel):
     )
     default_admin_profile_id: str | None = None  # Default admin/superadmin profile ID
     default_guest_profile_id: str | None = None  # Default guest profile ID
+    department_ids: list[str] | None = None  # Department IDs - empty/null = global settings, non-empty = department-specific
 
 
 class UpdateSettingsResponse(BaseModel):
@@ -92,6 +93,9 @@ async def update_settings(
 
             # Update settings: deactivate current active, insert new active row
             sql_query = load_sql("sql/v3/settings/update_settings.sql")
+            # Prepare department_ids array (empty array = global, non-empty = department-specific)
+            department_ids_array = request.department_ids if request.department_ids else None
+
             sql_params = (
                 request.primary_color,
                 request.accent,
@@ -119,6 +123,7 @@ async def update_settings(
                 provider_enabled_json,
                 auth_enabled_json,
                 auth_value_mapping_json,
+                department_ids_array,
             )
             result = await conn.fetchrow(
                 sql_query,
@@ -148,6 +153,7 @@ async def update_settings(
                 provider_enabled_json,
                 auth_enabled_json,
                 auth_value_mapping_json,
+                department_ids_array,
             )
 
             if not result:

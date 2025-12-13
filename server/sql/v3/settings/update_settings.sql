@@ -27,6 +27,7 @@
 --   $24 = provider_enabled (jsonb, optional) - {provider_id: enabled (boolean)}
 --   $25 = auth_enabled (jsonb, optional) - {auth_id: enabled (boolean)}
 --   $26 = auth_value_mapping (jsonb, optional) - {auth_id: {auth_item_id: value}} for non-encrypted items
+--   $27 = department_ids (text array, nullable) - Empty array = global settings, non-empty = department-specific
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -338,6 +339,46 @@ insert_auth_keys AS (
     WHERE auth_id IS NOT NULL AND auth_item_id IS NOT NULL AND key_id IS NOT NULL
       AND auth_id != '' AND auth_item_id != '' AND key_id != ''
     ON CONFLICT (settings_id, auth_id, auth_item_id, key_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+copy_department_settings AS (
+    -- Copy department_settings links from old settings to new (if department_ids not provided)
+    INSERT INTO department_settings (settings_id, department_id, active, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        ds.department_id,
+        ds.active,
+        NOW(),
+        NOW()
+    FROM old_settings_id osi
+    CROSS JOIN department_settings ds
+    WHERE ds.settings_id = osi.old_id::uuid AND ds.active = true
+      AND ($27::text[] IS NULL OR array_length($27::text[], 1) IS NULL)
+    ON CONFLICT (settings_id, department_id) DO UPDATE SET
+        active = EXCLUDED.active,
+        updated_at = NOW()
+),
+replace_department_settings AS (
+    -- Deactivate all existing department_settings links for the new settings
+    UPDATE department_settings
+    SET active = false, updated_at = NOW()
+    WHERE settings_id = (SELECT settings_id FROM insert_new LIMIT 1)::uuid
+      AND ($27::text[] IS NOT NULL AND array_length($27::text[], 1) IS NOT NULL)
+),
+link_department_settings AS (
+    -- Insert new department_settings links based on department_ids array
+    -- Empty array = global settings (no links), non-empty = department-specific
+    INSERT INTO department_settings (settings_id, department_id, active, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($27::text[]) as dept_id
+    WHERE $27::text[] IS NOT NULL AND array_length($27::text[], 1) > 0
+    ON CONFLICT (settings_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

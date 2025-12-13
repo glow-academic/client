@@ -32401,6 +32401,20 @@
               }
             ],
             "title": "Default Guest Profile Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           }
         },
         "type": "object",

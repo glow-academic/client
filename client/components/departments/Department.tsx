@@ -31,7 +31,6 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { Loader2, Power, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { SettingsForm } from "@/components/common/settings/SettingsForm";
 // Import types from new page (create action)
 import type {
   CreateDepartmentIn,
@@ -150,13 +149,6 @@ export default function Department({
     SettingsDetailOut | null | undefined
   >(initialSettingsDetail);
 
-  // Key mappings state (for SettingsForm)
-  const [providerKeyMapping, setProviderKeyMapping] = useState<
-    Record<string, string>
-  >({});
-  const [authKeyMapping, setAuthKeyMapping] = useState<
-    Record<string, Record<string, string>>
-  >({});
 
   // Use server-provided data (no React Query needed when server data is provided)
   const departmentDetail = serverDepartmentDetail;
@@ -340,12 +332,6 @@ export default function Department({
 
 
   // Initialize key mappings and provider enabled state from settings detail
-  useEffect(() => {
-    if (settingsDetail) {
-      setProviderKeyMapping(settingsDetail.provider_key_mapping || {});
-      setAuthKeyMapping(settingsDetail.auth_key_mapping || {});
-    }
-  }, [settingsDetail]);
 
   // Settings picker handler
   const handleSettingsSelect = async (settingsId: string | null) => {
@@ -612,67 +598,6 @@ export default function Department({
           </div>
         )}
 
-        {/* Settings Configuration - Using Shared SettingsForm */}
-        {isEditMode && settingsDetail && keysList && formData?.settingsId && (
-          <div className="space-y-4 border-t pt-4">
-                <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Department Settings</h3>
-              <p className="text-sm text-muted-foreground">
-                View and configure settings for this department. Settings changes
-                affect the linked settings version.
-              </p>
-                            </div>
-            <SettingsForm
-              settingsDetail={settingsDetail}
-              keysList={keysList}
-              formData={{
-                primary_color: settingsDetail.primary_color || "#171717",
-                accent: settingsDetail.accent || "#f5f5f5",
-                background: settingsDetail.background || "#ffffff",
-                surface: settingsDetail.surface || "#ffffff",
-                success: settingsDetail.success || "#009e34",
-                warning: settingsDetail.warning || "#ea8100",
-                error: settingsDetail.error || "#e7000b",
-                sidebar_background:
-                  settingsDetail.sidebar_background || "#fafafa",
-                sidebar_primary: settingsDetail.sidebar_primary || "#171717",
-                chart1: settingsDetail.chart1 || "#f54900",
-                chart2: settingsDetail.chart2 || "#009689",
-                chart3: settingsDetail.chart3 || "#104e64",
-                chart4: settingsDetail.chart4 || "#ffb900",
-                chart5: settingsDetail.chart5 || "#fe9a00",
-                guest_login_enabled:
-                  settingsDetail.guest_login_enabled ?? true,
-                success_threshold: settingsDetail.success_threshold ?? 85,
-                warning_threshold: settingsDetail.warning_threshold ?? 80,
-                danger_threshold: settingsDetail.danger_threshold ?? 70,
-                default_admin_profile_id:
-                  settingsDetail.default_admin_profile_id || null,
-                default_guest_profile_id:
-                  settingsDetail.default_guest_profile_id || null,
-              }}
-              providerKeyMapping={providerKeyMapping}
-              authKeyMapping={authKeyMapping}
-              onFormDataChange={() => {
-                // Read-only in department context
-              }}
-              onProviderKeyChange={() => {
-                // Read-only in department context
-              }}
-              onProviderEnabledChange={() => {
-                // Read-only in department context
-              }}
-              onAuthKeyChange={() => {
-                // Read-only in department context
-              }}
-              onAuthValueChange={() => {
-                // Read-only in department context
-              }}
-              isSubmitting={isSubmitting}
-              readonly={true}
-            />
-          </div>
-        )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
