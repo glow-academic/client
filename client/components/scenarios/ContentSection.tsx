@@ -825,7 +825,11 @@ export function ContentSection({
                 onDragStart={(e) => onDragStartObjective(e, index)}
                 onDragOver={onDragOverObjective}
                 onDrop={(e) => onDropObjective(e, index)}
-                onRemove={objectives.length > 1 ? () => onRemoveObjective(index) : undefined}
+                onRemove={
+                  objectives.length > 1
+                    ? () => onRemoveObjective(index)
+                    : undefined
+                }
                 totalObjectives={objectives.length}
                 maxObjectives={3}
               />
@@ -853,7 +857,7 @@ export function ContentSection({
           {useVideo && useImage && (
             <div className="w-[25%] min-w-[25%] max-w-[25%] space-y-2 flex flex-col self-stretch">
               <Label>Images</Label>
-              {Object.keys(imageMapping).length > 0 ? (
+              {Object.keys(imageMapping).length > 0 && (
                 <GenericPicker
                   items={imageMapping}
                   itemIds={Object.keys(imageMapping)}
@@ -925,10 +929,6 @@ export function ContentSection({
                   placeholder="Select image..."
                   clearActionLabel="New Image"
                 />
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  No images available
-                </div>
               )}
               {/* Image Upload Area */}
               <div
@@ -1658,10 +1658,10 @@ export function ContentSection({
 
                       {/* Accordion Toggle */}
                       {question.options.length > 0 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => toggleQuestionExpanded(index)}
                           className="h-8 w-8 shrink-0"
                           disabled={isReadonly}
@@ -1679,17 +1679,17 @@ export function ContentSection({
                         type="button"
                         variant="ghost"
                         size="icon"
-                            onClick={() => {
-                              onQuestionsChange(
-                                questions.filter((_, i) => i !== index)
-                              );
-                            }}
+                        onClick={() => {
+                          onQuestionsChange(
+                            questions.filter((_, i) => i !== index)
+                          );
+                        }}
                         className="h-8 w-8 shrink-0"
-                            disabled={isReadonly}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                      </div>
+                        disabled={isReadonly}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
 
                     {/* Options (shown when expanded) */}
                     {expandedQuestions.has(index) &&
@@ -1698,7 +1698,7 @@ export function ContentSection({
                           {question.options.map((option, optIndex) => (
                             <div
                               key={option.id || optIndex}
-                            className={cn(
+                              className={cn(
                                 "flex items-center gap-2",
                                 draggedOptionIndex?.questionIndex === index &&
                                   draggedOptionIndex?.optionIndex ===
@@ -1706,9 +1706,7 @@ export function ContentSection({
                                   "opacity-50"
                               )}
                               onDragOver={onDragOverOption}
-                              onDrop={(e) =>
-                                onDropOption?.(e, index, optIndex)
-                              }
+                              onDrop={(e) => onDropOption?.(e, index, optIndex)}
                             >
                               {/* Option Drag Handle */}
                               {onDragStartOption && (
@@ -1762,14 +1760,17 @@ export function ContentSection({
                                     <Button
                                       type="button"
                                       variant={
-                              option.is_correct
+                                        option.is_correct
                                           ? "default"
                                           : "outline"
                                       }
                                       size="icon"
                                       onClick={() => {
                                         if (onToggleOptionCorrect) {
-                                          onToggleOptionCorrect(index, optIndex);
+                                          onToggleOptionCorrect(
+                                            index,
+                                            optIndex
+                                          );
                                         } else {
                                           // Fallback: update entire questions array
                                           const updatedQuestions = [
@@ -1834,8 +1835,8 @@ export function ContentSection({
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               )}
-                          </div>
-                        ))}
+                            </div>
+                          ))}
                           {question.options.length < 5 && (
                             <Button
                               type="button"
@@ -1869,7 +1870,7 @@ export function ContentSection({
                               Add Option
                             </Button>
                           )}
-                      </div>
+                        </div>
                       )}
                   </div>
                 ))}
@@ -1877,41 +1878,41 @@ export function ContentSection({
             )}
 
             {questions.length < 10 && questions.length > 0 && (
-                  <div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => {
-                        onQuestionsChange([
-                          ...questions,
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    onQuestionsChange([
+                      ...questions,
+                      {
+                        id: "",
+                        question_text: "",
+                        allow_multiple: false,
+                        options: [
                           {
                             id: "",
-                            question_text: "",
-                            allow_multiple: false,
-                            options: [
-                              {
-                                id: "",
-                                option_text: "",
+                            option_text: "",
                             type: "discrete",
-                                is_correct: false,
-                              },
-                              {
-                                id: "",
-                                option_text: "",
-                            type: "discrete",
-                                is_correct: false,
-                              },
-                            ],
-                            times: [],
+                            is_correct: false,
                           },
-                        ]);
-                      }}
-                      disabled={isReadonly}
-                      size="sm"
-                    >
+                          {
+                            id: "",
+                            option_text: "",
+                            type: "discrete",
+                            is_correct: false,
+                          },
+                        ],
+                        times: [],
+                      },
+                    ]);
+                  }}
+                  disabled={isReadonly}
+                  size="sm"
+                >
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Add Question
-                    </Button>
+                </Button>
               </div>
             )}
           </div>
@@ -1943,11 +1944,11 @@ export function ContentSection({
                 disabled={isReadonly}
               />
             </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                {useVideo
-                  ? "Add images alongside video content"
-                  : "Use scenario background image"}
-              </p>
+            <p className="text-xs text-muted-foreground pl-5">
+              {useVideo
+                ? "Add images alongside video content"
+                : "Use scenario background image"}
+            </p>
           </div>
         </div>
 
