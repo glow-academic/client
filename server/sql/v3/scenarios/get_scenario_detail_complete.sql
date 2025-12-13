@@ -148,9 +148,8 @@ scenario_core AS (
         s.generated,
         st.parent_id::text as parent_scenario_id,
         COALESCE(sdd.department_ids, NULL) as department_ids,
-        s.documents_enabled,
         s.objectives_enabled,
-        s.image_enabled,
+        s.images_enabled,
         s.video_enabled,
         s.questions_enabled,
         s.scenario_agent_id::text,
@@ -647,7 +646,7 @@ document_details_data AS (
                     'document_id', d.id::text,
                     'name', d.name,
                     'updatedAt', d.updated_at::text,
-                    'extension', CASE WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$') ELSE NULL END,
+                    'extension', CASE WHEN d.file_path IS NOT NULL THEN SUBSTRING(d.file_path FROM '\\.([^\\.]+)$') ELSE NULL END,
                     'scenario_ids', COALESCE((
                         SELECT jsonb_agg(sd2.scenario_id::text)
                         FROM scenario_documents sd2
@@ -656,9 +655,9 @@ document_details_data AS (
                     'can_edit', true,
                     'can_delete', true,
                     'active', d.active,
-                    'file_path', u.file_path,
-                    'mime_type', u.mime_type,
-                    'upload_id', u.id::text,
+                    'file_path', d.file_path,
+                    'mime_type', d.mime_type,
+                    'upload_id', d.upload_id::text,
                     'parameter_item_ids', COALESCE((
                         SELECT jsonb_agg(df.field_id::text)
                         FROM document_fields df
@@ -682,7 +681,7 @@ document_details_data AS (
             )
             FROM (
                 -- Documents linked to scenario
-                SELECT d.id, d.name, d.updated_at, d.active, u.file_path, u.mime_type, u.id as upload_id
+                SELECT d.id, d.name, d.updated_at, d.active, d.template, u.file_path, u.mime_type, u.id as upload_id
             FROM scenario_documents sd
             JOIN documents d ON d.id = sd.document_id
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
@@ -690,7 +689,7 @@ document_details_data AS (
                 WHERE sd.scenario_id = $1 AND sd.active = true AND d.active = true
                 UNION
                 -- Provided documentIds not already linked to scenario
-                SELECT d.id, d.name, d.updated_at, d.active, u.file_path, u.mime_type, u.id as upload_id
+                SELECT d.id, d.name, d.updated_at, d.active, d.template, u.file_path, u.mime_type, u.id as upload_id
                 FROM documents d
                 LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
                 LEFT JOIN uploads u ON u.id = du.upload_id
@@ -829,7 +828,7 @@ parameter_item_data AS (
         f.id,
         f.name,
         COALESCE(f.description, '') as description,
-        fp.parameter_id,
+        pf.parameter_id,
         p.name as parameter_name
     FROM fields f
     JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
@@ -1162,6 +1161,7 @@ scenario_parameter_ranges_data AS (
 ),
 scenario_field_ranges_data AS (
     SELECT 
+        sc.id as scenario_id,
         COALESCE(
             jsonb_object_agg(
                 sfr.parameter_id::text,
@@ -1174,6 +1174,7 @@ scenario_field_ranges_data AS (
         ) as field_ranges_json
     FROM scenario_core sc
     LEFT JOIN scenario_field_ranges sfr ON sfr.scenario_id = sc.id
+    GROUP BY sc.id
 ),
 valid_agents AS (
     -- Filter agents by department access and expected role
@@ -1219,7 +1220,7 @@ SELECT
     sc.parent_scenario_id,
     COALESCE(ssa_attr.hints_enabled, false) as hints_enabled,
     sc.objectives_enabled,
-    sc.image_enabled as image_input_enabled,
+    sc.images_enabled as image_input_enabled,
     COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
     COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
     COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,
@@ -1249,7 +1250,7 @@ SELECT
     sc.scenario_agent_id,
     sc.image_agent_id,
     sc.video_agent_id,
-    COALESCE((SELECT array_agg(parameter_id::text) FROM linked_scenario_parameters), ARRAY[]::text[]) as parameter_ids,
+    COALESCE((SELECT array_agg(id::text) FROM linked_scenario_parameters), ARRAY[]::text[]) as parameter_ids,
     -- Randomization ranges from tables
     COALESCE((SELECT persona_min FROM scenario_persona_ranges_data), 1) as persona_range_min,
     COALESCE((SELECT persona_max FROM scenario_persona_ranges_data), 3) as persona_range_max,
@@ -1257,7 +1258,7 @@ SELECT
     COALESCE((SELECT document_max FROM scenario_document_ranges_data), 3) as document_range_max,
     COALESCE((SELECT parameter_min FROM scenario_parameter_ranges_data), 0) as parameter_range_min,
     COALESCE((SELECT parameter_max FROM scenario_parameter_ranges_data), 3) as parameter_range_max,
-    COALESCE((SELECT field_ranges_json FROM scenario_field_ranges_data), '{}'::jsonb) as field_ranges_json
+    COALESCE(sfrd.field_ranges_json, '{}'::jsonb) as field_ranges_json
 FROM scenario_core sc
 CROSS JOIN user_profile up
 LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id
@@ -1289,5 +1290,6 @@ CROSS JOIN valid_agents va
 CROSS JOIN scenario_persona_ranges_data sprd
 CROSS JOIN scenario_document_ranges_data sdrd
 CROSS JOIN scenario_parameter_ranges_data sprd2
-CROSS JOIN scenario_field_ranges_data sfrd
+LEFT JOIN scenario_field_ranges_data sfrd ON sfrd.scenario_id = sc.id
+WHERE ($3::boolean IS NOT NULL OR TRUE) AND ($4::boolean IS NOT NULL OR TRUE) AND ($7::uuid[] IS NOT NULL OR TRUE)
 

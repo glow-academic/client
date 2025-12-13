@@ -14,6 +14,7 @@ import {
   MessageSquare,
   PlusCircle,
   RotateCcw,
+  Target,
   Trash2,
   Upload,
   Video,
@@ -232,6 +233,7 @@ export interface ContentSectionProps {
   // Objectives
   objectives: string[];
   objectivesHistory: string[];
+  useObjectives: boolean;
 
   // Images
   useImage: boolean;
@@ -289,6 +291,7 @@ export interface ContentSectionProps {
   onDragStartObjective: (e: React.DragEvent, index: number) => void;
   onDragOverObjective: (e: React.DragEvent) => void;
   onDropObjective: (e: React.DragEvent, targetIndex: number) => void;
+  onUseObjectivesChange: (enabled: boolean) => void;
   onUseImageChange: (enabled: boolean) => void;
   onImageSelect: (
     image: {
@@ -344,6 +347,7 @@ export function ContentSection({
   originalProblemStatement: _originalProblemStatement,
   objectives,
   objectivesHistory,
+  useObjectives,
   useImage,
   image,
   imageMapping,
@@ -372,6 +376,7 @@ export function ContentSection({
   onDragStartObjective,
   onDragOverObjective,
   onDropObjective,
+  onUseObjectivesChange,
   onUseImageChange,
   onImageSelect,
   onImageUpload,
@@ -644,10 +649,42 @@ export function ContentSection({
           />
         </div>
 
-        {/* Objectives List */}
-        <div className="space-y-2">
-          <Label>Objectives</Label>
-          {objectives.length === 0 && (
+        {/* Use Objectives Switch */}
+        <div className="space-y-2 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="use-objectives"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                Use Objectives
+              </Label>
+              <Switch
+                id="use-objectives"
+                checked={useObjectives}
+                onCheckedChange={(checked) => {
+                  onUseObjectivesChange(checked);
+                  if (!checked) {
+                    onObjectivesChange([]);
+                  }
+                }}
+                disabled={isReadonly}
+              />
+            </div>
+            {!useObjectives && (
+              <p className="text-xs text-muted-foreground pl-5">
+                Add learning objectives for this scenario
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Objectives List (shown when useObjectives is true) */}
+        {useObjectives && (
+          <div className="space-y-2">
+            <Label>Objectives</Label>
+            {objectives.length === 0 && (
             <div>
               <Button
                 type="button"
@@ -692,16 +729,163 @@ export function ContentSection({
               </Button>
             </div>
           )}
-        </div>
+          </div>
+        )}
+
+        {/* Use Image Switch (when video is enabled - allows enabling images alongside videos) */}
+        {useVideo && (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="use-image-with-video"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Image
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label="Image icon"
+                  />
+                  Use Image
+                </Label>
+                <Switch
+                  id="use-image-with-video"
+                  checked={useImage}
+                  onCheckedChange={(checked) => {
+                    onUseImageChange(checked);
+                    if (!checked) {
+                      onImageSelect(null);
+                    }
+                  }}
+                  disabled={isReadonly}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Add images alongside video content
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Documents and Preview Section */}
         <div className="flex gap-4 items-stretch">
+          {/* Images Section (left column - only when both video and image are enabled) */}
+          {useVideo && useImage && (
+            <div className="w-[25%] min-w-[25%] max-w-[25%] space-y-2 flex flex-col self-stretch">
+              <Label>Images</Label>
+              {Object.keys(imageMapping).length > 0 ? (
+                <GenericPicker
+                  items={imageMapping}
+                  itemIds={Object.keys(imageMapping)}
+                  selectedIds={image ? [image.id] : []}
+                  onSelect={(ids) => {
+                    const imageId = ids[0] || null;
+                    if (imageId && imageMapping[imageId]) {
+                      const selectedImage = imageMapping[imageId];
+                      onImageSelect({
+                        id: selectedImage.upload_id || selectedImage.id,
+                        name: selectedImage.name,
+                        upload_id: selectedImage.upload_id || selectedImage.id,
+                      });
+                    } else if (!imageId) {
+                      onImageSelect(null);
+                    }
+                  }}
+                  getId={(item) => {
+                    const imgItem = item as unknown as ImageMappingItem;
+                    return imgItem.id;
+                  }}
+                  getLabel={(item) => {
+                    const imgItem = item as unknown as ImageMappingItem;
+                    const date = new Date(imgItem.updated_at);
+                    return `${imgItem.name} - ${date.toLocaleDateString()}`;
+                  }}
+                  getSearchText={(item) => {
+                    const imgItem = item as unknown as ImageMappingItem;
+                    const date = new Date(imgItem.updated_at);
+                    return `${imgItem.name} ${date.toLocaleDateString()}`;
+                  }}
+                  renderButton={(selectedItems) => {
+                    if (selectedItems.length === 0) {
+                      return "Select image...";
+                    }
+                    const selectedImage =
+                      selectedItems[0] as unknown as ImageMappingItem;
+                    return selectedImage?.name || "Select image...";
+                  }}
+                  renderItem={(item, isSelected) => {
+                    const imgItem = item as unknown as ImageMappingItem;
+                    const date = new Date(imgItem.updated_at);
+                    return (
+                      <div className="flex flex-col items-start py-3 w-full">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <Check
+                              className={cn(
+                                "h-4 w-4",
+                                isSelected ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <span className="font-medium">{imgItem.name}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {date.toLocaleDateString()}{" "}
+                          {date.toLocaleTimeString()}
+                        </span>
+                      </div>
+                    );
+                  }}
+                  disabled={isReadonly}
+                  multiSelect={false}
+                  hideSelectedChips={true}
+                  buttonClassName="h-8 justify-between"
+                  compact={true}
+                  groupHeading="Images"
+                  placeholder="Select image..."
+                  clearActionLabel="New Image"
+                />
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No images available
+                </div>
+              )}
+              {/* Image Upload Area */}
+              <div
+                onClick={() => {
+                  if (!isReadonly && !isUploadingImage) {
+                    imageInputRef.current?.click();
+                  }
+                }}
+                className="relative border rounded-lg overflow-hidden min-h-[200px] flex-1 cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center"
+              >
+                {image ? (
+                  <ImageViewer
+                    imageId={image.id}
+                    name={image.name}
+                    bare={true}
+                  />
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center px-4">
+                      Click to upload image
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Video/Image Preview Section */}
           <div
             className={
-              allPreviewDocumentIds.length > 0
-                ? "w-[70%] space-y-2 flex flex-col"
-                : "w-full space-y-2 flex flex-col"
+              useVideo && useImage
+                ? allPreviewDocumentIds.length > 0
+                  ? "w-[40%] space-y-2 flex flex-col"
+                  : "w-[75%] space-y-2 flex flex-col"
+                : allPreviewDocumentIds.length > 0
+                  ? "w-[70%] space-y-2 flex flex-col"
+                  : "w-full space-y-2 flex flex-col"
             }
           >
             {/* Video Picker (when video enabled) */}
@@ -709,7 +893,7 @@ export function ContentSection({
               <>
                 {Object.keys(videoMapping).length > 0 ? (
                   <div className="flex items-center justify-between">
-                    <Label>Preview</Label>
+                    <Label>Video</Label>
                     <GenericPicker
                       items={videoMapping}
                       itemIds={Object.keys(videoMapping)}
@@ -804,7 +988,7 @@ export function ContentSection({
                     />
                   </div>
                 ) : (
-                  <Label>Preview</Label>
+                  <Label>Video</Label>
                 )}
               </>
             )}
@@ -899,133 +1083,160 @@ export function ContentSection({
 
             {!useVideo && !useImage && <Label>Preview</Label>}
 
-            {/* Combined Image and Chat Preview Container */}
-            <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1">
-              {/* Background Image */}
-              {useImage && image && (
-                <div className="absolute inset-0 w-full h-full">
-                  <ImageViewer
-                    imageId={image.id}
-                    name={image.name}
-                    bare={true}
+            {/* Video Preview Container (when video enabled) */}
+            {useVideo && (
+              <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center">
+                {selectedVideo ? (
+                  <video
+                    src={`/api/v3/videos/${selectedVideo.id}/stream`}
+                    controls
+                    className="w-full h-full object-contain"
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-white/70">
+                    <Video className="h-12 w-12 mb-2" />
+                    <p className="text-sm">No video selected</p>
+                  </div>
+                )}
+              </div>
+            )}
 
-              {/* Upload Area */}
-              {useImage && !image && (
-                <div
-                  onClick={() => {
-                    if (!isReadonly && !isUploadingImage) {
-                      imageInputRef.current?.click();
-                    }
-                  }}
-                  className="absolute inset-0 w-full h-full flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
-                >
-                  <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground text-center px-4">
-                    Click to upload image or leave blank to auto generate
-                  </p>
-                </div>
-              )}
+            {/* Combined Image and Chat Preview Container (when video not enabled) */}
+            {!useVideo && (
+              <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1">
+                {/* Background Image */}
+                {useImage && image && (
+                  <div className="absolute inset-0 w-full h-full">
+                    <ImageViewer
+                      imageId={image.id}
+                      name={image.name}
+                      bare={true}
+                    />
+                  </div>
+                )}
 
-              {/* Background when useImage is false */}
-              {!useImage && (
-                <div className="absolute inset-0 w-full h-full bg-muted/20" />
-              )}
+                {/* Upload Area */}
+                {useImage && !image && (
+                  <div
+                    onClick={() => {
+                      if (!isReadonly && !isUploadingImage) {
+                        imageInputRef.current?.click();
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center px-4">
+                      Click to upload image or leave blank to auto generate
+                    </p>
+                  </div>
+                )}
 
-              {/* Chat Preview Overlay */}
-              {(!useImage || (useImage && image)) && (
-                <div className="relative z-10 p-4 h-full min-h-[400px] flex flex-col justify-start">
-                  <div className="space-y-3">
-                    {/* TA/User message */}
-                    <div className="flex justify-end mb-3">
-                      <div className="max-w-[80%]">
-                        <div className="bg-primary text-primary-foreground rounded-lg p-3 shadow-lg">
-                          <p className="text-sm">Hi, how can I help you?</p>
+                {/* Background when useImage is false */}
+                {!useImage && (
+                  <div className="absolute inset-0 w-full h-full bg-muted/20" />
+                )}
+
+                {/* Chat Preview Overlay */}
+                {(!useImage || (useImage && image)) && (
+                  <div className="relative z-10 p-4 h-full min-h-[400px] flex flex-col justify-start">
+                    <div className="space-y-3">
+                      {/* TA/User message */}
+                      <div className="flex justify-end mb-3">
+                        <div className="max-w-[80%]">
+                          <div className="bg-primary text-primary-foreground rounded-lg p-3 shadow-lg">
+                            <p className="text-sm">Hi, how can I help you?</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Assistant messages */}
-                    {selectedPersonaIds.map((personaId) => {
-                      const persona = personaMapping[personaId];
-                      if (!persona) return null;
+                      {/* Assistant messages */}
+                      {selectedPersonaIds.map((personaId) => {
+                        const persona = personaMapping[personaId];
+                        if (!persona) return null;
 
-                      const IconComponent =
-                        getPersonaIconComponent(persona.icon) || MessageSquare;
-                      const hexColor = persona.color || "#64748b";
-                      const buttonStyle = {
-                        background: generateGradientFromHex(hexColor),
-                      };
+                        const IconComponent =
+                          getPersonaIconComponent(persona.icon) ||
+                          MessageSquare;
+                        const hexColor = persona.color || "#64748b";
+                        const buttonStyle = {
+                          background: generateGradientFromHex(hexColor),
+                        };
 
-                      return (
-                        <div
-                          key={personaId}
-                          className="flex justify-start mb-3"
-                        >
+                        return (
+                          <div
+                            key={personaId}
+                            className="flex justify-start mb-3"
+                          >
+                            <div className="max-w-[80%] flex items-stretch gap-2">
+                              <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      aria-label={persona.name}
+                                      className="flex-1 p-0 rounded-md shadow-md"
+                                      style={buttonStyle}
+                                      tabIndex={-1}
+                                    >
+                                      <IconComponent className="h-4 w-4 text-white" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{persona.name}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
+                                <p className="text-sm">
+                                  {persona.example ||
+                                    "I'd be happy to help you with that. Let me provide some guidance..."}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Show placeholder if no personas selected */}
+                      {selectedPersonaIds.length === 0 && (
+                        <div className="flex justify-start mb-3">
                           <div className="max-w-[80%] flex items-stretch gap-2">
                             <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    aria-label={persona.name}
-                                    className="flex-1 p-0 rounded-md shadow-md"
-                                    style={buttonStyle}
-                                    tabIndex={-1}
-                                  >
-                                    <IconComponent className="h-4 w-4 text-white" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{persona.name}</p>
-                                </TooltipContent>
-                              </Tooltip>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="flex-1 p-0 rounded-md shadow-md"
+                                tabIndex={-1}
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </Button>
                             </div>
                             <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
-                              <p className="text-sm">
-                                {persona.example ||
-                                  "I'd be happy to help you with that. Let me provide some guidance..."}
+                              <p className="text-sm text-muted-foreground italic">
+                                Select personas to see preview messages
                               </p>
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-
-                    {/* Show placeholder if no personas selected */}
-                    {selectedPersonaIds.length === 0 && (
-                      <div className="flex justify-start mb-3">
-                        <div className="max-w-[80%] flex items-stretch gap-2">
-                          <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="flex-1 p-0 rounded-md shadow-md"
-                              tabIndex={-1}
-                            >
-                              <MessageSquare className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
-                            <p className="text-sm text-muted-foreground italic">
-                              Select personas to see preview messages
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Documents Preview Section */}
           {allPreviewDocumentIds.length > 0 && (
-            <div className="w-[30%] min-w-[30%] max-w-[30%] space-y-2 flex flex-col self-stretch">
+            <div
+              className={
+                useVideo && useImage
+                  ? "w-[35%] min-w-[35%] max-w-[35%] space-y-2 flex flex-col self-stretch"
+                  : "w-[30%] min-w-[30%] max-w-[30%] space-y-2 flex flex-col self-stretch"
+              }
+            >
               <Label>Documents</Label>
 
               {/* Document Preview Container */}
@@ -1234,41 +1445,39 @@ export function ContentSection({
           )}
         </div>
 
-        {/* Use Video Switch */}
-        <div className="space-y-4 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="use-video"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Video
-                  className="h-3.5 w-3.5 text-muted-foreground"
-                  aria-label="Video icon"
-                />
-                Use Video
-              </Label>
-              <Switch
-                id="use-video"
-                checked={useVideo}
-                onCheckedChange={(checked) => {
-                  onUseVideoChange(checked);
-                  if (!checked) {
-                    onVideoSelect(null);
-                    // If disabling video, also disable questions if they were enabled
-                    if (useQuestions) {
-                      onUseQuestionsChange(false);
+        {/* Use Image Switch (only when video is not enabled - for chat background) */}
+        {!useVideo && (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="use-image-chat"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Image
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label="Image icon"
+                  />
+                  Use Image
+                </Label>
+                <Switch
+                  id="use-image-chat"
+                  checked={useImage}
+                  onCheckedChange={(checked) => {
+                    onUseImageChange(checked);
+                    if (!checked) {
+                      onImageSelect(null);
                     }
-                  }
-                }}
-                disabled={isReadonly}
-              />
+                  }}
+                  disabled={isReadonly}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Use scenario background image
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Use video instead of chat interface
-            </p>
           </div>
-        </div>
+        )}
 
         {/* Use Questions Switch (only when video is enabled) */}
         {useVideo && (
@@ -1358,39 +1567,6 @@ export function ContentSection({
           </div>
         )}
 
-        {/* Use Image Switch (only when video is not enabled) */}
-        {!useVideo && (
-          <div className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="use-image"
-                  className="text-sm flex items-center gap-1.5"
-                >
-                  <Image
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-label="Image icon"
-                  />
-                  Use Image
-                </Label>
-                <Switch
-                  id="use-image"
-                  checked={useImage}
-                  onCheckedChange={(checked) => {
-                    onUseImageChange(checked);
-                    if (!checked) {
-                      onImageSelect(null);
-                    }
-                  }}
-                  disabled={isReadonly}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                Use scenario background image
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Document Preview Dialog */}
         <Dialog

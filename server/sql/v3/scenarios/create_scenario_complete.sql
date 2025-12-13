@@ -1,16 +1,16 @@
 -- Create scenario with all relationships in a single transaction
--- Parameters: $1=name, $2=active, $3=documents_enabled, $4=objectives_enabled, $5=image_enabled,
---            $6=video_enabled, $7=questions_enabled, $8=video_agent_id (uuid, nullable),
---            $9=problem_statement (text), $10=problem_statement_name (text, nullable - defaults to scenario name),
---            $11=problem_statement_versions (text array, nullable),
---            $12=department_ids (text array, nullable), $13=persona_ids (text array, nullable),
---            $14=document_ids (text array), $15=template_document_ids (text array, nullable), $16=objective_ids (text array), 
---            $17=parameter_item_ids (text array, flattened from parameters dict),
---            $18=upload_images_json (JSONB string with upload images array),
---            $19=video_ids (text array, nullable), $20=active_video_id (text, nullable - only one active),
---            $21=question_ids (text array, nullable), $22=question_timestamps (JSONB, nullable - maps question_id to video_id to times array),
---            $23=run_id (uuid, nullable - for linking AI-generated problem_statements and objectives to runs),
---            $24=parameter_ids (text array, nullable)
+-- Parameters: $1=name, $2=active, $3=objectives_enabled, $4=images_enabled,
+--            $5=video_enabled, $6=questions_enabled, $7=video_agent_id (uuid, nullable),
+--            $8=problem_statement (text), $9=problem_statement_name (text, nullable - defaults to scenario name),
+--            $10=problem_statement_versions (text array, nullable),
+--            $11=department_ids (text array, nullable), $12=persona_ids (text array, nullable),
+--            $13=document_ids (text array), $14=template_document_ids (text array, nullable), $15=objective_ids (text array), 
+--            $16=parameter_item_ids (text array, flattened from parameters dict),
+--            $17=upload_images_json (JSONB string with upload images array),
+--            $18=video_ids (text array, nullable), $19=active_video_id (text, nullable - only one active),
+--            $20=question_ids (text array, nullable), $21=question_timestamps (JSONB, nullable - maps question_id to video_id to times array),
+--            $22=run_id (uuid, nullable - for linking AI-generated problem_statements and objectives to runs),
+--            $23=parameter_ids (text array, nullable)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
@@ -18,14 +18,13 @@ WITH new_scenario AS (
     INSERT INTO scenarios (
         name,
         active,
-        documents_enabled,
         objectives_enabled,
-        image_enabled,
+        images_enabled,
         video_enabled,
         questions_enabled,
         video_agent_id
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING id::text as scenario_id
 ),
 link_departments AS (
@@ -38,8 +37,8 @@ link_departments AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($12::text[]) as dept_id
-    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($11::text[]) as dept_id
+    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -54,8 +53,8 @@ link_scenario_parameters AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($24::text[]) as param_id
-    WHERE COALESCE(array_length($24::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($23::text[]) as param_id
+    WHERE COALESCE(array_length($23::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -70,20 +69,20 @@ problem_statement_versions_data AS (
     -- Prepare problem statement versions
     SELECT DISTINCT version_text
     FROM new_scenario ns
-    CROSS JOIN UNNEST($11::text[]) as version_text
-    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($10::text[]) as version_text
+    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
     UNION ALL
     -- If no versions provided, use single problem statement
-    SELECT $9::text as version_text
+    SELECT $8::text as version_text
     FROM new_scenario ns
-    WHERE COALESCE(array_length($11::text[], 1), 0) = 0 AND $9::text IS NOT NULL AND $9::text != ''
+    WHERE COALESCE(array_length($10::text[], 1), 0) = 0 AND $8::text IS NOT NULL AND $8::text != ''
 ),
 create_problem_statements AS (
     -- Create problem_statement records first (strong entity)
     -- Always create new records (don't reuse) to allow different names for same text
     INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
     SELECT 
-        COALESCE($10::text, $1::text) as name,  -- Use provided name or scenario name
+        COALESCE($9::text, $1::text) as name,  -- Use provided name or scenario name
         psd.version_text,
         NOW(),
         NOW()
@@ -97,7 +96,7 @@ link_problem_statements AS (
         ns.scenario_id::uuid,
         cps.problem_statement_id,
         CASE 
-            WHEN cps.problem_statement = $9 THEN true  -- Active if matches problem_statement
+            WHEN cps.problem_statement = $8 THEN true  -- Active if matches problem_statement
             ELSE false
         END as active,
         NOW(),
@@ -115,8 +114,8 @@ link_personas AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($13::text[]) as persona_id
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($12::text[]) as persona_id
+    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -132,12 +131,12 @@ link_documents AS (
         NOW()
     FROM new_scenario ns
     CROSS JOIN (
-        SELECT doc_id FROM UNNEST($14::text[]) as doc_id
+        SELECT doc_id FROM UNNEST($13::text[]) as doc_id
         UNION ALL
-        SELECT doc_id FROM UNNEST(COALESCE($15::text[], ARRAY[]::text[])) as doc_id
+        SELECT doc_id FROM UNNEST(COALESCE($14::text[], ARRAY[]::text[])) as doc_id
     ) all_docs
-    WHERE COALESCE(array_length($14::text[], 1), 0) > 0 
-       OR COALESCE(array_length($15::text[], 1), 0) > 0
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0 
+       OR COALESCE(array_length($14::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -147,8 +146,8 @@ objectives_with_index AS (
     SELECT 
         obj_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($16::text[]) as obj_text
-    WHERE COALESCE(array_length($16::text[], 1), 0) > 0
+    FROM UNNEST($15::text[]) as obj_text
+    WHERE COALESCE(array_length($15::text[], 1), 0) > 0
 ),
 existing_objectives AS (
     -- Find existing objectives by text
@@ -197,8 +196,8 @@ link_parameters AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($17::text[]) as field_id
-    WHERE COALESCE(array_length($17::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($16::text[]) as field_id
+    WHERE COALESCE(array_length($16::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, field_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -211,8 +210,8 @@ create_images AS (
         NOW(),
         NOW(),
         true
-    FROM jsonb_array_elements(COALESCE($18::jsonb, '[]'::jsonb)) as img
-    WHERE jsonb_array_length(COALESCE($18::jsonb, '[]'::jsonb)) > 0
+    FROM jsonb_array_elements(COALESCE($17::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($17::jsonb, '[]'::jsonb)) > 0
       AND NOT EXISTS (
           SELECT 1 FROM images i
           JOIN image_uploads iu ON iu.image_id = i.id
@@ -230,8 +229,8 @@ link_image_uploads AS (
         NOW(),
         NOW()
     FROM create_images ci
-    CROSS JOIN jsonb_array_elements(COALESCE($18::jsonb, '[]'::jsonb)) as img
-    WHERE jsonb_array_length(COALESCE($18::jsonb, '[]'::jsonb)) > 0
+    CROSS JOIN jsonb_array_elements(COALESCE($17::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($17::jsonb, '[]'::jsonb)) > 0
     ON CONFLICT (image_id, upload_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -239,7 +238,7 @@ link_image_uploads AS (
 get_images AS (
     -- Get existing images via image_uploads junction table
     SELECT i.id as image_id, iu.upload_id
-    FROM jsonb_array_elements(COALESCE($18::jsonb, '[]'::jsonb)) as img
+    FROM jsonb_array_elements(COALESCE($17::jsonb, '[]'::jsonb)) as img
     JOIN image_uploads iu ON iu.upload_id = (img->>'upload_id')::uuid
     JOIN images i ON i.id = iu.image_id AND i.name = img->>'name'
     WHERE iu.active = true
@@ -260,7 +259,7 @@ link_images AS (
         NOW()
     FROM new_scenario ns
     CROSS JOIN all_images ai
-    WHERE jsonb_array_length(COALESCE($18::jsonb, '[]'::jsonb)) > 0
+    WHERE jsonb_array_length(COALESCE($17::jsonb, '[]'::jsonb)) > 0
     ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -270,11 +269,11 @@ link_problem_statements_to_runs AS (
     INSERT INTO problem_statement_runs (problem_statement_id, run_id, created_at, updated_at)
     SELECT DISTINCT
         cps.problem_statement_id,
-        $23::uuid,
+        $22::uuid,
         NOW(),
         NOW()
     FROM create_problem_statements cps
-    WHERE $23::uuid IS NOT NULL
+    WHERE $22::uuid IS NOT NULL
     ON CONFLICT (problem_statement_id, run_id) DO NOTHING
 ),
 link_objectives_to_runs AS (
@@ -282,11 +281,11 @@ link_objectives_to_runs AS (
     INSERT INTO objective_runs (objective_id, run_id, created_at, updated_at)
     SELECT DISTINCT
         ao.objective_id,
-        $23::uuid,
+        $22::uuid,
         NOW(),
         NOW()
     FROM all_objectives ao
-    WHERE $23::uuid IS NOT NULL
+    WHERE $22::uuid IS NOT NULL
     ON CONFLICT (objective_id, run_id) DO NOTHING
 ),
 link_videos AS (
@@ -297,17 +296,17 @@ link_videos AS (
         ns.scenario_id::uuid,
         video_id::uuid,
         CASE 
-            WHEN video_id::text = $20 THEN true  -- Active if matches active_video_id
+            WHEN video_id::text = $19 THEN true  -- Active if matches active_video_id
             ELSE false
         END as active,
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($19::text[]) as video_id
-    WHERE COALESCE(array_length($19::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($18::text[]) as video_id
+    WHERE COALESCE(array_length($18::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, video_id) DO UPDATE SET
         active = CASE 
-            WHEN video_id::text = $20 THEN true
+            WHEN video_id::text = $19 THEN true
             ELSE false
         END,
         updated_at = NOW()
@@ -322,8 +321,8 @@ link_questions AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($21::text[]) as question_id
-    WHERE COALESCE(array_length($21::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($20::text[]) as question_id
+    WHERE COALESCE(array_length($20::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, question_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -341,11 +340,11 @@ link_question_times AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN jsonb_each(COALESCE($22::jsonb, '{}'::jsonb)) as q_entry
+    CROSS JOIN jsonb_each(COALESCE($21::jsonb, '{}'::jsonb)) as q_entry
     CROSS JOIN jsonb_each(q_entry.value) as v_entry
     CROSS JOIN jsonb_array_elements_text(v_entry.value) as time_val
-    WHERE $22::jsonb IS NOT NULL
-    AND jsonb_typeof($22::jsonb) = 'object'
+    WHERE $21::jsonb IS NOT NULL
+    AND jsonb_typeof($21::jsonb) = 'object'
     ON CONFLICT (scenario_id, question_id, video_id, time) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -381,8 +380,8 @@ create_field_ranges AS (
         1,  -- default min
         3   -- default max
     FROM new_scenario ns
-    CROSS JOIN UNNEST($24::text[]) as param_id
-    WHERE COALESCE(array_length($24::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($23::text[]) as param_id
+    WHERE COALESCE(array_length($23::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         updated_at = NOW()
 )

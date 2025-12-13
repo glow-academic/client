@@ -3,7 +3,7 @@
  * Scenario-specific basic information section component
  */
 "use client";
-import { Check, Power, RotateCcw, Shuffle } from "lucide-react";
+import { Check, Power, RotateCcw, Shuffle, Video } from "lucide-react";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ export interface ScenarioBasicInfoSectionProps {
   validAgentIds: string[];
   agentMapping: Record<string, AgentMappingItem>;
   active: boolean;
+  useVideo: boolean;
 
   // Callbacks
   onNameChange: (name: string) => void;
@@ -42,6 +43,7 @@ export interface ScenarioBasicInfoSectionProps {
   onImageAgentIdChange: (id: string | null) => void;
   onVideoAgentIdChange: (id: string | null) => void;
   onActiveChange: (active: boolean) => void;
+  onUseVideoChange: (enabled: boolean) => void;
   onRandomizeAll: () => void;
   onResetAll: () => void;
 
@@ -63,12 +65,14 @@ export function ScenarioBasicInfoSection({
   validAgentIds,
   agentMapping,
   active,
+  useVideo,
   onNameChange,
   onDepartmentIdsChange,
   onScenarioAgentIdChange,
   onImageAgentIdChange,
   onVideoAgentIdChange,
   onActiveChange,
+  onUseVideoChange,
   onRandomizeAll,
   onResetAll,
   isReadonly,
@@ -378,6 +382,30 @@ export function ScenarioBasicInfoSection({
             </div>
             <p className="text-xs text-muted-foreground pl-5">
               {activeDescription}
+            </p>
+          </div>
+        </div>
+
+        {/* Use Video Switch */}
+        <div className="space-y-2 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="use-video"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Video className="h-3.5 w-3.5 text-muted-foreground" />
+                Use Video
+              </Label>
+              <Switch
+                id="use-video"
+                checked={useVideo}
+                onCheckedChange={(checked) => onUseVideoChange(checked)}
+                disabled={isReadonly}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Use video instead of chat interface
             </p>
           </div>
         </div>

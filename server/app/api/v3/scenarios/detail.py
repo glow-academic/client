@@ -282,9 +282,8 @@ class ScenarioDetailResponse(BaseModel):
     active: bool
     generated: bool
     parent_scenario_id: str | None
-    documents_enabled: bool
     objectives_enabled: bool
-    image_enabled: bool
+    images_enabled: bool
     video_enabled: bool
     questions_enabled: bool
 
@@ -1000,8 +999,8 @@ async def get_scenario_detail(
         sql_params = (
             request_data.scenarioId,
             request_data.profileId,
-            request_data.useImage,
-            use_objectives,
+            request_data.useImage if request_data.useImage is not None else False,  # $3: boolean (unused, but needed for type inference)
+            use_objectives,  # $4: boolean (unused, but needed for type inference)
             document_ids_uuid,
             problem_statement_ids_uuid,
             template_document_ids_uuid,
@@ -1914,11 +1913,8 @@ async def get_scenario_detail(
             problem_statement_id=scenario.get("problem_statement_id"),
             active=scenario["active"],
             generated=is_generated,
-            documents_enabled=scenario.get(
-                "documents_enabled", scenario.get("use_documents", False)
-            ),  # Backward compatibility
             objectives_enabled=scenario.get("objectives_enabled", True),
-            image_enabled=scenario.get("image_enabled", False),
+            images_enabled=scenario.get("images_enabled", False),
             parent_scenario_id=scenario["parent_scenario_id"],
             department_ids=department_ids,
             valid_department_ids=dept_ids,

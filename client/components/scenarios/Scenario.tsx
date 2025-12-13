@@ -458,11 +458,16 @@ export default function Scenario({
         departmentId: body.departmentId,
         scenarioAgentId: formData.scenarioAgentId, // Required: selected scenario agent ID
         imageAgentId: formData.imageAgentId || undefined, // Optional: selected image agent ID
+        videoAgentId: formData.videoAgentId || undefined, // Optional: selected video agent ID
         personaIds: body.personaIds,
         documentIds: body.documentIds,
         fieldIds: body.fieldIds, // Renamed from parameterItemIds
         profileId: body.profileId,
         scenarioId: scenarioId || undefined, // Pass scenarioId if in edit mode
+        imagesEnabled: useImage,
+        videoEnabled: useVideo,
+        objectivesEnabled: useObjectives,
+        questionsEnabled: useQuestions,
       });
     });
   };
@@ -543,8 +548,11 @@ export default function Scenario({
   const [regenerationInstructions, setRegenerationInstructions] = useState("");
   const [regenerateObjectives, setRegenerateObjectives] = useState(true);
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
-  // Documents are always enabled (no switch)
-  const useDocuments = true;
+  // Use Objectives flag - initialized from URL params (DHH-style: URL as source of truth)
+  const [useObjectives, setUseObjectives] = useState(() => {
+    const useObjectivesFromUrl = searchParams.get("useObjectives");
+    return useObjectivesFromUrl === "true";
+  });
   // Use Image flag - initialized from URL params (DHH-style: URL as source of truth)
   const [useImage, setUseImage] = useState(() => {
     const useImageFromUrl = searchParams.get("useImage");
@@ -1947,10 +1955,8 @@ export default function Scenario({
       );
       // Load scenario flags from server data
       const scenarioDataWithFlags = scenarioData as ScenarioDetailOut & {
-        documents_enabled?: boolean;
-        use_documents?: boolean; // Backward compatibility
         objectives_enabled?: boolean;
-        image_enabled?: boolean;
+        images_enabled?: boolean;
         video_enabled?: boolean;
         questions_enabled?: boolean;
         scenario_images?: Array<{
@@ -1977,10 +1983,13 @@ export default function Scenario({
           times?: number[];
         }>;
       };
-      // Documents are always enabled (no switch)
-      // Load image_enabled and scenario image (single image - take first if exists)
-      const imageEnabled = scenarioDataWithFlags.image_enabled ?? false;
-      setUseImage(imageEnabled);
+      // Load objectives_enabled and objectives
+      const objectivesEnabled =
+        scenarioDataWithFlags.objectives_enabled ?? false;
+      setUseObjectives(objectivesEnabled);
+      // Load images_enabled and scenario image (single image - take first if exists)
+      const imagesEnabled = scenarioDataWithFlags.images_enabled ?? false;
+      setUseImage(imagesEnabled);
       const scenarioImages = scenarioDataWithFlags.scenario_images;
       if (
         imageEnabled &&
@@ -3201,7 +3210,10 @@ export default function Scenario({
         fieldIds: currentFieldIds.length > 0 ? currentFieldIds : null,
         profileId: effectiveProfile?.id || null,
         userInstructions: userInstructions || null,
-        objectivesEnabled: true, // Always enabled - controlled by simulation page
+        objectivesEnabled: useObjectives,
+        imagesEnabled: useImage,
+        videoEnabled: useVideo,
+        questionsEnabled: useQuestions,
       });
 
       if (!result.success) {
@@ -3369,9 +3381,8 @@ export default function Scenario({
           await handleUpdateScenario({
             scenarioId: scenarioId!,
             ...payload,
-            documents_enabled: useDocuments,
-            objectives_enabled: currentObjectives.length > 0,
-            image_enabled: useImage,
+            objectives_enabled: useObjectives,
+            images_enabled: useImage,
             video_enabled: useVideo,
             questions_enabled: useQuestions,
           });
@@ -3388,9 +3399,8 @@ export default function Scenario({
         try {
           await handleCreateScenario({
             ...payload,
-            documents_enabled: useDocuments,
-            objectives_enabled: currentObjectives.length > 0,
-            image_enabled: useImage,
+            objectives_enabled: useObjectives,
+            images_enabled: useImage,
             video_enabled: useVideo,
             questions_enabled: useQuestions,
           });
@@ -3497,6 +3507,7 @@ export default function Scenario({
           validAgentIds={scenarioData?.valid_agent_ids || []}
           agentMapping={agentMapping}
           active={formData.active ?? true}
+          useVideo={useVideo}
           onNameChange={(name) => handleInputChange("name", name)}
           onDepartmentIdsChange={(ids) =>
             handleInputChange("departmentIds", ids)
@@ -3511,6 +3522,14 @@ export default function Scenario({
             setFormData((prev) => ({ ...prev, videoAgentId: id }))
           }
           onActiveChange={(active) => handleInputChange("active", active)}
+          onUseVideoChange={(enabled) => {
+            setUseVideo(enabled);
+            if (!enabled) {
+              setSelectedVideo(null);
+              setActiveVideoId(null);
+              setUseQuestions(false);
+            }
+          }}
           onRandomizeAll={handleRandomizeAll}
           onResetAll={handleResetAll}
           isReadonly={isReadonly}
@@ -3723,6 +3742,13 @@ export default function Scenario({
               }
               objectives={currentObjectives}
               objectivesHistory={objectivesHistory}
+              useObjectives={useObjectives}
+              onUseObjectivesChange={(enabled) => {
+                setUseObjectives(enabled);
+                if (!enabled) {
+                  setCurrentObjectives([]);
+                }
+              }}
               useImage={useImage}
               image={image}
               imageMapping={imageMapping}

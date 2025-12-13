@@ -14513,19 +14513,14 @@
             "type": "object",
             "title": "Parameters"
           },
-          "documents_enabled": {
-            "type": "boolean",
-            "title": "Documents Enabled",
-            "default": false
-          },
           "objectives_enabled": {
             "type": "boolean",
             "title": "Objectives Enabled",
             "default": true
           },
-          "image_enabled": {
+          "images_enabled": {
             "type": "boolean",
-            "title": "Image Enabled",
+            "title": "Images Enabled",
             "default": false
           },
           "video_enabled": {
@@ -31844,19 +31839,14 @@
             "type": "object",
             "title": "Parameters"
           },
-          "documents_enabled": {
-            "type": "boolean",
-            "title": "Documents Enabled",
-            "default": false
-          },
           "objectives_enabled": {
             "type": "boolean",
             "title": "Objectives Enabled",
             "default": true
           },
-          "image_enabled": {
+          "images_enabled": {
             "type": "boolean",
-            "title": "Image Enabled",
+            "title": "Images Enabled",
             "default": false
           },
           "video_enabled": {
@@ -40469,17 +40459,13 @@
             ],
             "title": "Parent Scenario Id"
           },
-          "documents_enabled": {
-            "type": "boolean",
-            "title": "Documents Enabled"
-          },
           "objectives_enabled": {
             "type": "boolean",
             "title": "Objectives Enabled"
           },
-          "image_enabled": {
+          "images_enabled": {
             "type": "boolean",
-            "title": "Image Enabled"
+            "title": "Images Enabled"
           },
           "video_enabled": {
             "type": "boolean",
@@ -40784,9 +40770,8 @@
           "active",
           "generated",
           "parent_scenario_id",
-          "documents_enabled",
           "objectives_enabled",
-          "image_enabled",
+          "images_enabled",
           "video_enabled",
           "questions_enabled",
           "department_ids",

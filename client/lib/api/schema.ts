@@ -6277,20 +6277,15 @@ export interface components {
                 [key: string]: string[];
             };
             /**
-             * Documents Enabled
-             * @default false
-             */
-            documents_enabled: boolean;
-            /**
              * Objectives Enabled
              * @default true
              */
             objectives_enabled: boolean;
             /**
-             * Image Enabled
+             * Images Enabled
              * @default false
              */
-            image_enabled: boolean;
+            images_enabled: boolean;
             /**
              * Video Enabled
              * @default false
@@ -12874,20 +12869,15 @@ export interface components {
                 [key: string]: string[];
             };
             /**
-             * Documents Enabled
-             * @default false
-             */
-            documents_enabled: boolean;
-            /**
              * Objectives Enabled
              * @default true
              */
             objectives_enabled: boolean;
             /**
-             * Image Enabled
+             * Images Enabled
              * @default false
              */
-            image_enabled: boolean;
+            images_enabled: boolean;
             /**
              * Video Enabled
              * @default false
@@ -16068,12 +16058,10 @@ export interface components {
             generated: boolean;
             /** Parent Scenario Id */
             parent_scenario_id: string | null;
-            /** Documents Enabled */
-            documents_enabled: boolean;
             /** Objectives Enabled */
             objectives_enabled: boolean;
-            /** Image Enabled */
-            image_enabled: boolean;
+            /** Images Enabled */
+            images_enabled: boolean;
             /** Video Enabled */
             video_enabled: boolean;
             /** Questions Enabled */

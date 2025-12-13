@@ -3,8 +3,7 @@ WITH source_scenario AS (
         s.id as source_id,
         s.name,
         s.objectives_enabled,
-        s.image_enabled,
-        s.documents_enabled,
+        s.images_enabled,
         ps.problem_statement,
         ps.id as problem_statement_id,
         ps.name as problem_statement_name
@@ -18,8 +17,7 @@ new_scenario AS (
         name,
         active,
         objectives_enabled,
-        image_enabled,
-        documents_enabled,
+        images_enabled,
         created_at,
         updated_at
     )
@@ -27,8 +25,7 @@ new_scenario AS (
         ss.name || ' Copy',
         false,
         ss.objectives_enabled,
-        ss.image_enabled,
-        ss.documents_enabled,
+        ss.images_enabled,
         NOW(),
         NOW()
     FROM source_scenario ss

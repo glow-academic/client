@@ -30,9 +30,8 @@ class UpdateScenarioRequest(BaseModel):
     upload_ids: list[str] | None = None
     image_names: list[str] | None = None
     parameters: dict[str, list[str]]
-    documents_enabled: bool = False
     objectives_enabled: bool = True
-    image_enabled: bool = False
+    images_enabled: bool = False
     video_enabled: bool = False
     questions_enabled: bool = False
     scenario_agent_id: str | None = None
@@ -170,9 +169,8 @@ async def update_scenario(
             request.scenarioId,
             request.name,
             request.active,
-            request.documents_enabled,
             request.objectives_enabled,
-            request.image_enabled,
+            request.images_enabled,
             request.video_enabled,
             request.questions_enabled,
             request.video_agent_id,  # video_agent_id (required if video_enabled)

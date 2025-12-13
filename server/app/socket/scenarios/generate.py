@@ -94,7 +94,9 @@ class GenerateScenarioAIPayload(BaseModel):
     scenarioId: str | None = None  # Optional scenario ID to link generated resources
     objectivesMin: int | None = None
     objectivesMax: int | None = None
+    imagesEnabled: bool = False  # Flag to enable image generation
     videoEnabled: bool = False  # Flag to enable video generation
+    objectivesEnabled: bool = False  # Flag to enable objectives generation
     questionsEnabled: bool = False  # Flag to enable questions generation
 
 
@@ -537,21 +539,25 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # Base 'scenario' role supports all tools (backward compatibility)
             # Fine-grained roles indicate specific capabilities
             agent_role_str = str(agent_role).lower()
-            # Check if objectives should be generated based on objectivesMax
-            objectives_requested = (
-                (data.objectivesMax is not None and data.objectivesMax > 0)
-                if hasattr(data, "objectivesMax")
-                else False
-            )
-            objectives_enabled = objectives_requested and (
-                agent_role_str == "scenario"  # Base role supports all
-                or "objectives" in agent_role_str
+            # Use flags from payload (4 core booleans)
+            objectives_enabled = (
+                hasattr(data, "objectivesEnabled")
+                and data.objectivesEnabled
+                and (
+                    agent_role_str == "scenario"  # Base role supports all
+                    or "objectives" in agent_role_str
+                )
             )
             images_enabled = (
-                agent_role_str == "scenario"  # Base role supports all
-                or "image" in agent_role_str
+                hasattr(data, "imagesEnabled")
+                and data.imagesEnabled
+                and (
+                    agent_role_str == "scenario"  # Base role supports all
+                    or "image" in agent_role_str
+                )
             )
             # Documents enabled if agent supports templates AND template documents exist
+            # (inferred from document presence, not a flag)
             has_template_documents = bool(
                 context["document_templates"] and len(context["document_templates"]) > 0
             )
@@ -559,7 +565,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 agent_role_str == "scenario"  # Base role supports all
                 or "templates" in agent_role_str
             )
-            # Video and questions enabled via flags in payload (not agent role)
+            # Video and questions enabled via flags in payload
             video_enabled = (
                 hasattr(data, "videoEnabled")
                 and data.videoEnabled

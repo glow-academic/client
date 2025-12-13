@@ -68,7 +68,7 @@ scenario_attributes AS (
         ss.scenario_id,
         ss.hints_enabled,
         s.objectives_enabled,
-        s.image_enabled as image_input_enabled
+        s.images_enabled as image_input_enabled
     FROM simulation_scenarios ss
     JOIN scenarios s ON s.id = ss.scenario_id
     WHERE ss.active = true

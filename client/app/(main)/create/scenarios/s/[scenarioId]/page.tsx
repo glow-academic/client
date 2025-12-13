@@ -30,7 +30,10 @@ type GenerateAIScenarioIn = {
   fieldIds: string[] | null;
   profileId: string | null;
   userInstructions: string | null;
+  imagesEnabled: boolean;
+  videoEnabled: boolean;
   objectivesEnabled: boolean;
+  questionsEnabled: boolean;
 };
 type GenerateAIScenarioOut = {
   success: boolean;
@@ -44,8 +47,6 @@ type GenerateAIScenarioOut = {
   document_ids: string[];
   image_ids: string[];
 };
-type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
-type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -277,7 +278,8 @@ export default async function EditScenarioPage({
     if (departmentIds) filterParams.departmentIds = departmentIds;
     if (personaIds) filterParams.personaIds = personaIds;
     if (documentIds) filterParams.documentIds = documentIds;
-    if (templateDocumentIds) filterParams.templateDocumentIds = templateDocumentIds;
+    if (templateDocumentIds)
+      filterParams.templateDocumentIds = templateDocumentIds;
     if (parameterIds) filterParams.parameterIds = parameterIds;
     if (parameterItemIds) filterParams.parameterItemIds = parameterItemIds;
     if (personaSearch) filterParams.personaSearch = personaSearch;
@@ -287,19 +289,30 @@ export default async function EditScenarioPage({
     if (personaMax !== undefined) filterParams.personaMax = personaMax;
     if (documentMin !== undefined) filterParams.documentMin = documentMin;
     if (documentMax !== undefined) filterParams.documentMax = documentMax;
-    if (parameterSelectionMin !== undefined) filterParams.parameterSelectionMin = parameterSelectionMin;
-    if (parameterSelectionMax !== undefined) filterParams.parameterSelectionMax = parameterSelectionMax;
-    if (parameterItemRanges) filterParams.parameterItemRanges = parameterItemRanges;
+    if (parameterSelectionMin !== undefined)
+      filterParams.parameterSelectionMin = parameterSelectionMin;
+    if (parameterSelectionMax !== undefined)
+      filterParams.parameterSelectionMax = parameterSelectionMax;
+    if (parameterItemRanges)
+      filterParams.parameterItemRanges = parameterItemRanges;
     if (randomizePersonas) filterParams.randomizePersonas = randomizePersonas;
-    if (randomizeDocuments) filterParams.randomizeDocuments = randomizeDocuments;
-    if (randomizeParameters) filterParams.randomizeParameters = randomizeParameters;
-    if (randomizeParameterItems) filterParams.randomizeParameterItems = randomizeParameterItems;
+    if (randomizeDocuments)
+      filterParams.randomizeDocuments = randomizeDocuments;
+    if (randomizeParameters)
+      filterParams.randomizeParameters = randomizeParameters;
+    if (randomizeParameterItems)
+      filterParams.randomizeParameterItems = randomizeParameterItems;
     if (useImage !== undefined) filterParams.useImage = useImage;
     if (imageIds) filterParams.imageIds = imageIds;
     if (objectiveIds) filterParams.objectiveIds = objectiveIds;
-    if (problemStatementIds) filterParams.problemStatementIds = problemStatementIds;
-    
-    const scenarioDetail = await getScenario(scenarioId, profileId, Object.keys(filterParams).length > 0 ? filterParams : undefined);
+    if (problemStatementIds)
+      filterParams.problemStatementIds = problemStatementIds;
+
+    const scenarioDetail = await getScenario(
+      scenarioId,
+      profileId,
+      Object.keys(filterParams).length > 0 ? filterParams : undefined
+    );
 
     return (
       <div
@@ -342,8 +355,6 @@ export type {
   CreateScenarioOut,
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
-  RandomizeScenarioIn,
-  RandomizeScenarioOut,
   ScenarioDetailIn,
   ScenarioDetailOut,
   ScenarioNewIn,

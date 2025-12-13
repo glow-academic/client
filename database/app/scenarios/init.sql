@@ -138,9 +138,8 @@ CREATE TABLE scenarios (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
-  documents_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-  image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  images_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   video_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   questions_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -149,6 +148,7 @@ CREATE TABLE scenarios (
   image_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
   video_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
   -- Flags moved to simulation_scenarios junction table: hints_enabled, input_guardrail_enabled, output_guardrail_enabled, copy_paste_allowed
+  -- documents_enabled removed: template enabled inferred from document presence
 );
 
 CREATE INDEX ON scenarios (scenario_agent_id);
