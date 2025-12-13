@@ -30,6 +30,7 @@ export interface ScenarioBasicInfoSectionProps {
   departmentMapping: Record<string, DepartmentMappingItem>;
   scenarioAgentId: string | null;
   imageAgentId: string | null;
+  videoAgentId: string | null;
   validAgentIds: string[];
   agentMapping: Record<string, AgentMappingItem>;
   active: boolean;
@@ -39,6 +40,7 @@ export interface ScenarioBasicInfoSectionProps {
   onDepartmentIdsChange: (ids: string[]) => void;
   onScenarioAgentIdChange: (id: string | null) => void;
   onImageAgentIdChange: (id: string | null) => void;
+  onVideoAgentIdChange: (id: string | null) => void;
   onActiveChange: (active: boolean) => void;
   onRandomizeAll: () => void;
   onResetAll: () => void;
@@ -57,6 +59,7 @@ export function ScenarioBasicInfoSection({
   departmentMapping,
   scenarioAgentId,
   imageAgentId,
+  videoAgentId,
   validAgentIds,
   agentMapping,
   active,
@@ -64,6 +67,7 @@ export function ScenarioBasicInfoSection({
   onDepartmentIdsChange,
   onScenarioAgentIdChange,
   onImageAgentIdChange,
+  onVideoAgentIdChange,
   onActiveChange,
   onRandomizeAll,
   onResetAll,
@@ -87,15 +91,23 @@ export function ScenarioBasicInfoSection({
       return agent?.roles?.includes("image");
     }) || [];
 
+  const videoAgentIds =
+    validAgentIds?.filter((id) => {
+      const agent = agentMapping[id];
+      return agent?.roles?.includes("video");
+    }) || [];
+
   // TODO: Temporarily showing agent sections to debug which agent is being selected
   // TODO: Revert to only showing when there's more than one option after debugging
   // Only show agent pickers if there's more than one option
   // const showScenarioPicker = filteredScenarioAgentIds.length > 1;
   // const showImagePicker = imageAgentIds.length > 1;
+  // const showVideoPicker = videoAgentIds.length > 1;
 
   // TEMPORARY: Show sections even with single option to see which agent is selected
   const showScenarioPicker = filteredScenarioAgentIds.length > 0;
   const showImagePicker = imageAgentIds.length > 0;
+  const showVideoPicker = videoAgentIds.length > 0;
 
   return (
     <Card className="transition-all">
@@ -190,8 +202,8 @@ export function ScenarioBasicInfoSection({
         ) : null}
 
         {/* Agent Selection */}
-        {(showScenarioPicker || showImagePicker) && (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+        {(showScenarioPicker || showImagePicker || showVideoPicker) && (
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {/* Scenario Agent Selection */}
             {showScenarioPicker && (
               <div className="space-y-2">
@@ -282,6 +294,56 @@ export function ScenarioBasicInfoSection({
                       </div>
                     )}
                     placeholder="Select image agent"
+                    disabled={isReadonly}
+                    multiSelect={false}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
+                    groupHeading="Agents"
+                  />
+                ) : null}
+              </div>
+            )}
+
+            {/* Video Agent Selection */}
+            {showVideoPicker && (
+              <div className="space-y-2">
+                <Label htmlFor="videoAgentId">Video Agent</Label>
+                {videoAgentId !== undefined ? (
+                  <GenericPicker
+                    items={agentMapping}
+                    itemIds={videoAgentIds}
+                    selectedIds={videoAgentId ? [videoAgentId] : []}
+                    onSelect={(ids) => onVideoAgentIdChange(ids[0] || null)}
+                    getId={(item) => (item as unknown as { id: string }).id}
+                    getLabel={(item) => item.name || ""}
+                    getSearchText={(item) =>
+                      `${item.name} ${item.description || ""}`
+                    }
+                    renderPreview={(item) => (
+                      <div className="grid gap-2">
+                        <h4 className="font-medium leading-none">
+                          {item.name || "No agent selected"}
+                        </h4>
+                        <div className="text-sm text-muted-foreground">
+                          {item.description || "No description available"}
+                        </div>
+                      </div>
+                    )}
+                    renderItem={(item, _isSelected) => (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate">{item.name}</div>
+                            {item.description && (
+                              <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                {item.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    placeholder="Select video agent"
                     disabled={isReadonly}
                     multiSelect={false}
                     hideSelectedChips={true}

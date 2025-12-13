@@ -3493,6 +3493,7 @@ export default function Scenario({
           departmentMapping={departmentMapping}
           scenarioAgentId={formData.scenarioAgentId}
           imageAgentId={formData.imageAgentId}
+          videoAgentId={formData.videoAgentId}
           validAgentIds={scenarioData?.valid_agent_ids || []}
           agentMapping={agentMapping}
           active={formData.active ?? true}
@@ -3505,6 +3506,9 @@ export default function Scenario({
           }
           onImageAgentIdChange={(id) =>
             setFormData((prev) => ({ ...prev, imageAgentId: id }))
+          }
+          onVideoAgentIdChange={(id) =>
+            setFormData((prev) => ({ ...prev, videoAgentId: id }))
           }
           onActiveChange={(active) => handleInputChange("active", active)}
           onRandomizeAll={handleRandomizeAll}

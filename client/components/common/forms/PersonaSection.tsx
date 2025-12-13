@@ -4,6 +4,7 @@
  */
 "use client";
 import {
+  ArrowRight,
   Brain,
   Check,
   Loader2,
@@ -22,6 +23,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -155,52 +161,75 @@ export function PersonaSection({
             <CardDescription>{stepDescription}</CardDescription>
           </div>
         </div>
-        <div className="flex items-center">
-          <RangeSlider
-            min={sliderMin}
-            max={sliderMax}
-            value={[minMax.min ?? sliderMin, minMax.max ?? sliderMin]}
-            onValueChange={([min, max]) =>
-              onMinMaxChange({
-                min: min ?? sliderMin,
-                max: max ?? sliderMax,
-              })
-            }
-            disabled={isReadonly || disabled}
-            className="w-[200px] mr-4"
-          />
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <Popover>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onRandomize}
-                  disabled={isReadonly || disabled || isRandomizing}
-                >
-                  {isRandomizing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Shuffle className="h-4 w-4" />
-                  )}
-                </Button>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={isReadonly || disabled || isRandomizing}
+                  >
+                    {isRandomizing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Shuffle className="h-4 w-4" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
               </TooltipTrigger>
               <TooltipContent>Randomize</TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onReset}
+            <PopoverContent className="w-80 p-4" align="end">
+              <div className="space-y-4">
+                <RangeSlider
+                  min={sliderMin}
+                  max={sliderMax}
+                  value={[minMax.min ?? sliderMin, minMax.max ?? sliderMin]}
+                  onValueChange={([min, max]) =>
+                    onMinMaxChange({
+                      min: min ?? sliderMin,
+                      max: max ?? sliderMax,
+                    })
+                  }
                   disabled={isReadonly || disabled}
+                  label="Range"
+                />
+                <Button
+                  onClick={onRandomize}
+                  disabled={isReadonly || disabled || isRandomizing}
+                  className="w-full"
+                  size="sm"
                 >
-                  <RotateCcw className="h-4 w-4" />
+                  {isRandomizing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Randomizing...
+                    </>
+                  ) : (
+                    <>
+                      Randomize
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
+                  )}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset</TooltipContent>
-            </Tooltip>
-          </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onReset}
+                disabled={isReadonly || disabled}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reset</TooltipContent>
+          </Tooltip>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 px-6">
