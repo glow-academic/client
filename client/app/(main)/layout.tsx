@@ -28,9 +28,15 @@ export default async function MainLayout({
   const { initial, snapshot, attemptData, activeSettings } =
     await getLayoutContextData();
 
+  // If initial is null, user doesn't have access - let AccessControl handle it
+  // This happens when there's no session and no guest profile ID, or when context fetch fails
+  // AccessControl component will show access denied UI
+
   // Check if we're on the staff page and fetch initial data if needed
   const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  // Use guestProfileId from activeSettings if no session
+  const profileId =
+    session?.effectiveProfileId || activeSettings?.guestProfileId || null;
 
   // Read pathname from headers to check if we're on staff page
   const headersList = await headers();
@@ -39,7 +45,7 @@ export default async function MainLayout({
 
   let initialCreateStaffData = null;
 
-  if (isStaffPage) {
+  if (isStaffPage && profileId) {
     try {
       initialCreateStaffData = await getCreateStaffData({
         body: {

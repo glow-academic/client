@@ -71,7 +71,10 @@ async def get_profile_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile with guest-profile-id resolution in a single SQL file
+        # Get profile by ID
+        # Profile ID must be a valid UUID (guest profile IDs are resolved on the client side)
+        if not request.profileId:
+            raise HTTPException(status_code=400, detail="profileId is required")
         sql_query = load_sql("sql/v3/profile/get_profile.sql")
         sql_params = (request.profileId,)
         row = await conn.fetchrow(sql_query, request.profileId)

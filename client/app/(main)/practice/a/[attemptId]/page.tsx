@@ -11,9 +11,9 @@ import type {
   UpdateChatCreatedAtIn,
   UpdateChatCreatedAtOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
+import { getSession } from "@/auth";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
-import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -22,7 +22,7 @@ import type { Metadata, ResolvingMetadata } from "next";
  */
 const getAttemptFull = async (
   _attemptId: string,
-  input: AttemptFullIn,
+  input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
   return api.post("/attempts/full", input, {
     cache: "no-store",
@@ -35,14 +35,25 @@ const getAttemptFull = async (
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { attemptId } = await params;
 
   const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+
+  // For metadata, use session profile ID or return default if no session
+  const profileId = session?.effectiveProfileId;
 
   try {
+    if (!profileId) {
+      // If no session, return default metadata
+      return {
+        title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
+        description:
+          "Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.",
+      };
+    }
+
     const attemptData = await getAttemptFull(attemptId, {
       body: { attemptId, profileId },
     });
@@ -62,7 +73,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateChatCreatedAt(
-  input: UpdateChatCreatedAtIn,
+  input: UpdateChatCreatedAtIn
 ): Promise<UpdateChatCreatedAtOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -78,7 +89,19 @@ export default async function PracticeAttemptPage({
   const { attemptId } = await params;
 
   const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+
+  // For restricted pages like attempt pages, require authentication
+  // Return access denied early if no session (simpler than resolving guest IDs)
+  if (!session?.effectiveProfileId) {
+    return (
+      <DepartmentAccessDenied
+        resourceType="scenario"
+        redirectPath="/practice"
+      />
+    );
+  }
+
+  const profileId = session.effectiveProfileId;
 
   // Fetch attempt data server-side
   try {

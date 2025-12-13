@@ -115,7 +115,7 @@ async def get_practice_history(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Profile ID is passed as-is (including "guest-profile-id" string) - SQL handles resolution
+        # Profile ID must be a valid UUID (guest profile IDs are resolved on the client side)
         profile_id = filters.profileId
 
         # Load SQL query

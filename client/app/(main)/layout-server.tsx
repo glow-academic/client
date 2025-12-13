@@ -60,13 +60,13 @@ type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
     return api.post("/profile/context", input);
-  },
+  }
 );
 
 const getActiveSettings = cache(
   async (input: SettingsActiveIn): Promise<SettingsActiveOut> => {
     return api.post("/settings/active", input);
-  },
+  }
 );
 
 /** ---- Direct fetch (no caching - source of truth) ----
@@ -74,7 +74,7 @@ const getActiveSettings = cache(
  */
 const getAttemptFull = async (
   _attemptId: string,
-  input: AttemptFullIn,
+  input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
   return api.post("/attempts/full", input, {
     cache: "no-store",
@@ -105,17 +105,59 @@ export async function getLayoutContextData() {
     emulationTTL: session?.emulationTTL ?? null,
   };
 
-  const effectiveProfileId = session?.effectiveProfileId || "guest-profile-id";
-  const actualProfileId = session?.user?.profileId || "guest-profile-id";
+  // CRITICAL: Fetch settings FIRST to get guest profile ID
+  // This ensures we always have a valid UUID before making other API calls
+  let activeSettings: SettingsActiveOut | null = null;
+  let guestProfileId: string | null = null;
 
-  // IMPORTANT: server overrides IDs internally; you still pass something for typing parity
-  const initial = await getLayoutContext({
-    body: {
-      actualProfileId,
-      effectiveProfileId,
-      pathname: "/", // layout-level; pages can still supply their own on demand
-    },
-  });
+  try {
+    // Use null or empty string for unauthenticated users (not "guest-profile-id")
+    // Empty string is preferred to avoid type ambiguity in SQL
+    const settingsProfileId = session?.effectiveProfileId || null;
+    activeSettings = await getActiveSettings({
+      body: { profileId: settingsProfileId },
+    });
+    guestProfileId = activeSettings?.guestProfileId || null;
+  } catch {
+    // If settings fetch fails, just continue without settings data
+    // This can happen if no active settings exist
+    activeSettings = null;
+  }
+
+  // Resolve guest IDs: use guestProfileId from settings if session IDs are null/empty
+  const effectiveProfileIdRaw = session?.effectiveProfileId || null;
+  const actualProfileIdRaw = session?.user?.profileId || null;
+
+  const effectiveProfileId = effectiveProfileIdRaw || guestProfileId;
+  const actualProfileId = actualProfileIdRaw || guestProfileId;
+
+  // If we still don't have valid IDs, return early with null initial
+  // This allows the layout to handle access denied gracefully
+  if (!effectiveProfileId || !actualProfileId) {
+    return {
+      initial: null,
+      snapshot,
+      attemptData: null,
+      activeSettings,
+    };
+  }
+
+  // Now fetch profile context with resolved UUIDs (no string literals)
+  // Let errors propagate - if user doesn't have access, endpoint will return 403/404
+  let initial: LayoutContextOut | null = null;
+  try {
+    initial = await getLayoutContext({
+      body: {
+        actualProfileId,
+        effectiveProfileId,
+        pathname: "/", // layout-level; pages can still supply their own on demand
+      },
+    });
+  } catch {
+    // If context fetch fails (e.g., 403/404), return null
+    // Layout will handle access denied via AccessControl component
+    initial = null;
+  }
 
   // Read pathname from headers to check if we're on an attempt page
   const headersList = await headers();
@@ -127,9 +169,9 @@ export async function getLayoutContextData() {
     pathname.match(/\/practice\/a\/([^/]+)/);
   const attemptId = attemptMatch ? attemptMatch[1] : null;
 
-  // Fetch attempt data if we have an attemptId
+  // Fetch attempt data if we have an attemptId (using resolved UUID)
   let attemptData: AttemptFullOut | null = null;
-  if (attemptId) {
+  if (attemptId && effectiveProfileId) {
     try {
       attemptData = await getAttemptFull(attemptId, {
         body: { attemptId, profileId: effectiveProfileId },
@@ -139,18 +181,6 @@ export async function getLayoutContextData() {
       // This can happen if the attempt doesn't exist or user doesn't have access
       attemptData = null;
     }
-  }
-
-  // Fetch active settings
-  let activeSettings: SettingsActiveOut | null = null;
-  try {
-    activeSettings = await getActiveSettings({
-      body: { profileId: effectiveProfileId },
-    });
-  } catch {
-    // If settings fetch fails, just continue without settings data
-    // This can happen if no active settings exist
-    activeSettings = null;
   }
 
   return { initial, snapshot, attemptData, activeSettings };
@@ -169,7 +199,7 @@ type SwitchEffectiveProfileResult = {
 };
 
 async function authorizeEmulation(
-  input: AuthorizeEmulationIn,
+  input: AuthorizeEmulationIn
 ): Promise<AuthorizeEmulationOut> {
   return api.post("/profile/authorize-emulation", input);
 }
@@ -180,7 +210,7 @@ async function authorizeEmulation(
  * Uses server-side session mutation via NextAuth's unstable_update.
  */
 export async function switchEffectiveProfile(
-  input: SwitchEffectiveProfileParams,
+  input: SwitchEffectiveProfileParams
 ): Promise<SwitchEffectiveProfileResult> {
   try {
     const session = await getSession();
@@ -222,35 +252,35 @@ export async function switchEffectiveProfile(
 
 /** ---- Strongly-typed server actions for Feedback (single source of truth) ---- */
 export async function createFeedback(
-  input: CreateFeedbackIn,
+  input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
   return api.post("/feedback/create", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */
 export async function refreshAnalytics(
-  input: RefreshAnalyticsIn,
+  input: RefreshAnalyticsIn
 ): Promise<RefreshAnalyticsOut> {
   return api.post("/analytics/refresh", input);
 }
 
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
 export async function searchSimulatableProfiles(
-  input: SearchSimulatableProfilesIn,
+  input: SearchSimulatableProfilesIn
 ): Promise<SearchSimulatableProfilesOut> {
   return api.post("/profile/search-simulatable-profiles", input);
 }
 
 /** ---- Strongly-typed server actions for Staff (single source of truth) ---- */
 export async function searchStaff(
-  input: SearchStaffIn,
+  input: SearchStaffIn
 ): Promise<SearchStaffOut> {
   "use server";
   return api.post("/profile/staff/search-staff", input);
 }
 
 export async function getCreateStaffData(
-  input: CreateStaffDataIn,
+  input: CreateStaffDataIn
 ): Promise<CreateStaffDataOut> {
   "use server";
   return api.post("/profile/staff/create-staff-data", input);
@@ -262,7 +292,7 @@ export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
 }
 
 export async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn,
+  input: BulkCreateOrUpdateStaffIn
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

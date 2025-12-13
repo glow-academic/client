@@ -412,7 +412,7 @@ export function MainLayoutClient({
   initialCreateStaffData,
 }: {
   children: React.ReactNode;
-  initial: LayoutContextResponse;
+  initial: LayoutContextResponse | null; // Can be null if user doesn't have access
   sessionSnapshot: SafeSessionSnapshot;
   attemptData: AttemptFullOut | null;
   activeSettings: SettingsActiveOut | null;

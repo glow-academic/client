@@ -1,8 +1,8 @@
 -- Get active settings row based on profile's primary department
--- Parameters: $1 = profile_id (uuid or "guest-profile-id")
--- Returns: Settings row (default for guest-profile-id, department-specific for authenticated users)
+-- Parameters: $1 = profile_id (uuid, null, empty string, or "guest-profile-id" for backward compatibility)
+-- Returns: Settings row (default for null/empty/guest-profile-id, department-specific for authenticated users)
 -- Logic: 
---   1. If profile_id is "guest-profile-id": return default settings (no department links)
+--   1. If profile_id is null, empty, or "guest-profile-id": return default settings (no department links)
 --   2. If profile_id is a real UUID: get primary_department_id, then department-specific settings
 --   3. Fall back to default settings (settings with no department_settings records = cross-department)
 --   4. Final fallback: any active settings row
@@ -19,14 +19,19 @@ WITH default_settings AS (
     LIMIT 1
 ),
 is_guest AS (
-    -- Check if this is a guest request
-    SELECT ($1::text = 'guest-profile-id') as is_guest_flag
+    -- Check if this is a guest request (empty string or "guest-profile-id" string)
+    -- Parameter is passed as text (empty string for null/guest, UUID string for authenticated users)
+    SELECT (
+        $1::text = '' OR 
+        $1::text = 'guest-profile-id'
+    ) as is_guest_flag
 ),
 resolve_profile_id AS (
-    -- Resolve profile_id (keep as-is if UUID, null if guest-profile-id)
+    -- Resolve profile_id (keep as-is if UUID, null if guest)
+    -- Parameter is passed as text (empty string for null/guest, UUID string for authenticated users)
     SELECT 
         CASE 
-            WHEN $1::text = 'guest-profile-id' THEN NULL::uuid
+            WHEN $1::text = '' OR $1::text = 'guest-profile-id' THEN NULL::uuid
             ELSE $1::uuid
         END as resolved_profile_id
 ),
@@ -105,6 +110,16 @@ settings_providers_data AS (
     FROM selected_settings ss
     JOIN setting_providers sp ON sp.settings_id = ss.settings_id AND sp.active = true
     JOIN providers p ON p.id = sp.provider_id AND p.active = true
+),
+settings_default_guest_data AS (
+    -- Get default guest account for the selected settings
+    SELECT 
+        sdg.profile_id::text as default_guest_profile_id,
+        p.first_name || ' ' || p.last_name as default_guest_name
+    FROM selected_settings ss
+    JOIN settings_default_guest sdg ON sdg.settings_id = ss.settings_id AND sdg.active = true
+    JOIN profiles p ON p.id = sdg.profile_id
+    LIMIT 1
 )
 SELECT 
     s.id::text as settings_id,
@@ -131,9 +146,11 @@ SELECT
     COALESCE(sad.auth_ids, ARRAY[]::text[]) as auth_ids,
     COALESCE(sad.auth_mapping, '{}'::jsonb) as auth_mapping,
     COALESCE(spd.provider_ids, ARRAY[]::text[]) as provider_ids,
-    COALESCE(spd.provider_mapping, '{}'::jsonb) as provider_mapping
+    COALESCE(spd.provider_mapping, '{}'::jsonb) as provider_mapping,
+    sdgd.default_guest_profile_id
 FROM selected_settings ss
 JOIN settings s ON s.id = ss.settings_id
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
+LEFT JOIN settings_default_guest_data sdgd ON true
 LIMIT 1

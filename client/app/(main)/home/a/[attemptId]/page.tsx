@@ -49,9 +49,20 @@ export async function generateMetadata(
   const { attemptId } = await params;
 
   const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+
+  // For metadata, use session profile ID or return default if no session
+  const profileId = session?.effectiveProfileId;
 
   try {
+    if (!profileId) {
+      // If no session, return default metadata
+      return {
+        title: `Attempt ${attemptId.substring(0, 8)}...`,
+        description:
+          "Teaching practice session for graduate teaching assistant training. Review pedagogical performance, student interaction strategies, and teaching effectiveness through simulation-based learning assessment.",
+      };
+    }
+
     const attemptData = await getAttemptFull(attemptId, {
       body: { attemptId, profileId },
     });
@@ -87,7 +98,16 @@ export default async function AttemptPage({
   const { attemptId } = await params;
 
   const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+
+  // For restricted pages like attempt pages, require authentication
+  // Return access denied early if no session (simpler than resolving guest IDs)
+  if (!session?.effectiveProfileId) {
+    return (
+      <DepartmentAccessDenied resourceType="scenario" redirectPath="/home" />
+    );
+  }
+
+  const profileId = session.effectiveProfileId;
 
   // Fetch attempt data server-side
   try {

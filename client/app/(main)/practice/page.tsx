@@ -46,7 +46,7 @@ const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
  * Note: Practice history endpoint doesn't use Redis cache, but header is sent for consistency.
  */
 const getPracticeHistory = async (
-  input: PracticeHistoryIn,
+  input: PracticeHistoryIn
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -108,11 +108,59 @@ export default async function PracticePage({
     }
   });
 
-  // Get profileId and departmentIds from profile context
+  // CRITICAL: Fetch settings FIRST to get guest profile ID
+  // This ensures we always have a valid UUID before making other API calls
+  let guestProfileId: string | null = null;
+  try {
+    type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
+    const getActiveSettings = async (input: {
+      body: { profileId: string | null };
+    }): Promise<SettingsActiveOut> => {
+      return api.post("/settings/active", input, {
+        cache: "no-store",
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }) as Promise<SettingsActiveOut>;
+    };
+    const settingsProfileId = session?.effectiveProfileId || null;
+    const activeSettings = await getActiveSettings({
+      body: { profileId: settingsProfileId },
+    });
+    guestProfileId = activeSettings?.guestProfileId || null;
+  } catch {
+    // If settings fetch fails, continue without guest profile ID
+    // This will cause an error later if user is not authenticated
+  }
+
+  // Resolve guest IDs: use guestProfileId from settings if session IDs are null/empty
+  const effectiveProfileIdRaw = session?.effectiveProfileId || null;
+  const actualProfileIdRaw = session?.user?.profileId || null;
+
+  const effectiveProfileId = effectiveProfileIdRaw || guestProfileId;
+  const actualProfileId = actualProfileIdRaw || guestProfileId;
+
+  // If we still don't have valid IDs, we can't proceed
+  // For practice page, require authentication (no guest access)
+  if (!effectiveProfileId || !actualProfileId) {
+    // Return early - user will see access denied via AccessControl
+    return (
+      <div className="container mx-auto p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p className="text-gray-600">
+            You need to log in to access the practice page.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get profileId and departmentIds from profile context with resolved UUIDs
   const profileContext = await getProfileContext({
     body: {
-      actualProfileId: session?.user?.profileId || "guest-profile-id",
-      effectiveProfileId: session?.effectiveProfileId || "guest-profile-id",
+      actualProfileId,
+      effectiveProfileId,
       pathname: "/practice",
     },
   });
@@ -120,7 +168,7 @@ export default async function PracticePage({
   // Build practice filters (only profileId and departmentIds)
   // Always pass departmentIds (never empty array) - use all IDs from profile context
   const practiceFiltersBody: PracticeIn["body"] = {
-    profileId: session?.effectiveProfileId || "guest-profile-id",
+    profileId: effectiveProfileId,
     departmentIds: profileContext.departmentIds || [], // Always pass (non-empty from profile context)
   };
 
@@ -164,10 +212,9 @@ export default async function PracticePage({
   };
 
   // Check if user is a guest
-  const effectiveProfileId = session?.effectiveProfileId || "guest-profile-id";
+  // Note: effectiveProfileId is already resolved above
   const isGuest =
-    effectiveProfileId === "guest-profile-id" ||
-    profileContext.effectiveProfile?.role === "guest";
+    !effectiveProfileId || profileContext.effectiveProfile?.role === "guest";
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so history re-fetches when filters change
@@ -306,10 +353,10 @@ async function PracticeHistorySection({
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
   const archivedCount = historyData.data.filter(
-    (item) => item.isArchived,
+    (item) => item.isArchived
   ).length;
   const unarchivedCount = historyData.data.filter(
-    (item) => !item.isArchived,
+    (item) => !item.isArchived
   ).length;
 
   // Use server-provided data directly (no transformation needed)

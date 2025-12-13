@@ -20,7 +20,7 @@ from app.utils.theme.oklch_to_hex import hex_to_oklch
 class SettingsActiveRequest(BaseModel):
     """Request to get active settings."""
 
-    profileId: str
+    profileId: str | None = None  # Can be null, empty string, UUID, or "guest-profile-id" for backward compatibility
 
 
 class ThemePrimitives(BaseModel):
@@ -116,6 +116,7 @@ class SettingsActiveResponse(BaseModel):
     success_threshold: int
     warning_threshold: int
     danger_threshold: int
+    guestProfileId: str | None = None  # Guest profile ID from settings_default_guest table
 
 
 router = APIRouter()
@@ -267,10 +268,12 @@ async def get_active_settings(
 
     try:
         sql_query = load_sql("sql/v3/settings/get_active_settings.sql")
-        # Pass profileId directly to SQL query
-        # SQL handles "guest-profile-id" specially to return default settings
-        sql_params = (request.profileId,)
-        settings = await conn.fetchrow(sql_query, request.profileId)
+        # Pass profileId directly to SQL query (can be null, empty, UUID, or "guest-profile-id")
+        # SQL handles null/empty/"guest-profile-id" to return default settings
+        # Use empty string instead of None to avoid PostgreSQL type ambiguity
+        profile_id_param = request.profileId if request.profileId else ""
+        sql_params = (profile_id_param,)
+        settings = await conn.fetchrow(sql_query, profile_id_param)
 
         if not settings:
             raise HTTPException(status_code=404, detail="No active settings found")
@@ -312,6 +315,7 @@ async def get_active_settings(
             success_threshold=settings["success_threshold"],
             warning_threshold=settings["warning_threshold"],
             danger_threshold=settings["danger_threshold"],
+            guestProfileId=settings.get("default_guest_profile_id"),
         )
 
         # Cache response

@@ -175,7 +175,8 @@ async def get_home_overview(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Profile ID is required and passed as-is (including "guest-profile-id" string) - SQL handles resolution
+        # Profile ID is required and must be a valid UUID
+        # Guest profile IDs are resolved on the client side before calling this endpoint
         # SQL will infer role hierarchy from profileId
 
         # Build WHERE clause for home overview

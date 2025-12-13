@@ -248,8 +248,11 @@ async def get_practice_overview(
         if not filters.profileId:
             raise ValueError("profileId is required for practice overview")
 
-        # Profile ID is passed as-is (including "guest-profile-id" string) - SQL handles resolution
-        profile_id_final = filters.profileId.strip() or "guest-profile-id"
+        # Profile ID must be a valid UUID
+        # Guest profile IDs are resolved on the client side before calling this endpoint
+        profile_id_final = filters.profileId.strip()
+        if not profile_id_final:
+            raise ValueError("profileId cannot be empty")
 
         # Load SQL file
         sql_query = load_sql("sql/v3/practice/practice_overview.sql")

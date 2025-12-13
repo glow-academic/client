@@ -28,7 +28,7 @@ async function getActiveSettings(): Promise<SettingsActiveOut | null> {
       "/settings/active",
       {
         body: {
-          profileId: "guest-profile-id",
+          profileId: null, // Use null for unauthenticated users (not "guest-profile-id")
         },
       },
       {
@@ -46,10 +46,8 @@ async function getActiveSettings(): Promise<SettingsActiveOut | null> {
 
 export default async function InfoPage() {
   const session = await getSession();
-  // Check if user is logged in: effectiveProfileId exists and is not guest-profile-id
-  const isLoggedIn =
-    !!session?.effectiveProfileId &&
-    session.effectiveProfileId !== "guest-profile-id";
+  // Check if user is logged in: effectiveProfileId exists
+  const isLoggedIn = !!session?.effectiveProfileId;
 
   // Fetch default settings for guest/unauthenticated users
   const activeSettings = await getActiveSettings();

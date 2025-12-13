@@ -32,7 +32,12 @@ import { Socket } from "socket.io-client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
-type ProfileRole = "superadmin" | "admin" | "instructional" | "member" | "guest";
+type ProfileRole =
+  | "superadmin"
+  | "admin"
+  | "instructional"
+  | "member"
+  | "guest";
 
 // Use types from server response
 type ProfileItem = LayoutContextResponse["actualProfile"];
@@ -130,7 +135,7 @@ export const useProfile = () => {
 
 interface ProfileProviderClientProps {
   children: React.ReactNode;
-  initial: LayoutContextResponse;
+  initial: LayoutContextResponse | null; // Can be null if user doesn't have access
   sessionSnapshot: SafeSessionSnapshot;
 }
 
@@ -144,11 +149,13 @@ export function ProfileProviderClient({
 
   // Department filter state
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    [],
+    []
   );
 
-  const bootstrapProfile = initial.actualProfile ?? null;
-  const effectiveProfile = initial.effectiveProfile ?? null;
+  // Handle null initial (access denied case) - use default values
+  // AccessControl component will handle displaying the access denied UI
+  const bootstrapProfile = initial?.actualProfile ?? null;
+  const effectiveProfile = initial?.effectiveProfile ?? null;
 
   // WebSocket connection state
   const [isConnected, setIsConnected] = useState(false);
@@ -228,7 +235,7 @@ export function ProfileProviderClient({
 
         if (connectionAttempts.current >= maxConnectionAttempts) {
           toast.error(
-            "Unable to connect to real-time updates. Some features may be limited.",
+            "Unable to connect to real-time updates. Some features may be limited."
           );
         }
       });
@@ -236,23 +243,19 @@ export function ProfileProviderClient({
       // Set up event handlers for simulation tracking
       socket.on(
         "simulation_started",
-        (data: {
-          success: boolean;
-          message: string;
-          attempt_id: string;
-        }) => {
+        (data: { success: boolean; message: string; attempt_id: string }) => {
           setStartingSimulationId(null);
           if (data.success) {
             toast.success(data.message);
             window.dispatchEvent(
               new CustomEvent("simulationStarted", {
                 detail: { attemptId: data.attempt_id },
-              }),
+              })
             );
           } else {
             toast.error(data.message);
           }
-        },
+        }
       );
 
       socket.on(
@@ -261,7 +264,7 @@ export function ProfileProviderClient({
           setStartingSimulationId(null);
           toast.error(data.message);
           window.dispatchEvent(new CustomEvent("simulationError"));
-        },
+        }
       );
     };
 
@@ -287,11 +290,11 @@ export function ProfileProviderClient({
 
   // Compute effective department IDs (like cohorts in Home.tsx)
   const effectiveDepartmentIds = useMemo(() => {
-    const allDepartmentIds = initial.departmentIds ?? [];
+    const allDepartmentIds = initial?.departmentIds ?? [];
     return selectedDepartmentIds.length > 0
       ? selectedDepartmentIds
       : allDepartmentIds;
-  }, [selectedDepartmentIds, initial.departmentIds]);
+  }, [selectedDepartmentIds, initial?.departmentIds]);
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
   const isFullEmulation = useMemo(() => {
@@ -300,7 +303,7 @@ export function ProfileProviderClient({
         effectiveProfile &&
         effectiveProfile.id !== bootstrapProfile.id &&
         sessionSnapshot.emulationTTL &&
-        sessionSnapshot.fullEmulation,
+        sessionSnapshot.fullEmulation
     );
   }, [
     bootstrapProfile,
@@ -340,7 +343,7 @@ export function ProfileProviderClient({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname],
+    [router, pathname]
   );
 
   const isSectionAvailable = useCallback(
@@ -350,7 +353,7 @@ export function ProfileProviderClient({
         "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role],
+    [effectiveProfile?.role]
   );
 
   // WebSocket helper methods
@@ -381,7 +384,7 @@ export function ProfileProviderClient({
       setStartingSimulationId(data.simulation_id);
       socketRef.current.emit("simulation_text_start", payload);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const emitCreatePracticeScenario = useCallback(
@@ -428,7 +431,7 @@ export function ProfileProviderClient({
       }
       socketRef.current.emit("simulation_text_practice", payload);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const value: ProfileContextType = {
@@ -449,23 +452,23 @@ export function ProfileProviderClient({
     navigateToDefault,
     isSectionAvailable,
 
-    // Layout data (from server)
-    departments: initial.departments ?? [],
-    departmentIds: initial.departmentIds ?? [],
+    // Layout data (from server) - handle null initial gracefully
+    departments: initial?.departments ?? [],
+    departmentIds: initial?.departmentIds ?? [],
     selectedDepartmentIds,
     setSelectedDepartmentIds,
     effectiveDepartmentIds,
-    cohorts: initial.cohorts.items ?? [],
-    cohortIds: initial.cohortIds ?? [],
-    simulations: initial.simulations.items ?? [],
-    simulationIds: initial.simulationIds ?? [],
-    cohortMemberCounts: initial.cohorts.memberCounts ?? {},
-    earliestAttemptDate: initial.earliestAttemptDate ?? null,
+    cohorts: initial?.cohorts?.items ?? [],
+    cohortIds: initial?.cohortIds ?? [],
+    simulations: initial?.simulations?.items ?? [],
+    simulationIds: initial?.simulationIds ?? [],
+    cohortMemberCounts: initial?.cohorts?.memberCounts ?? {},
+    earliestAttemptDate: initial?.earliestAttemptDate ?? null,
 
-    // Permissions data (from server)
-    availableSections: initial.availableSections ?? [],
-    redirectPath: initial.redirectPath ?? "/home",
-    scopedRoles: initial.scopedRoles ?? [],
+    // Permissions data (from server) - handle null initial gracefully
+    availableSections: initial?.availableSections ?? [],
+    redirectPath: initial?.redirectPath ?? "/home",
+    scopedRoles: initial?.scopedRoles ?? [],
 
     // WebSocket connection (tied to profile)
     socket: socketRef.current,
