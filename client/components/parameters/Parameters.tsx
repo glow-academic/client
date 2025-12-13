@@ -12,7 +12,6 @@ import {
   Copy,
   Edit,
   Eye,
-  Hash,
   List,
   MapPin,
   Plus,
@@ -325,70 +324,36 @@ export default function Parameters({
       return <Calendar className="h-5 w-5" />;
     if (name.includes("time") || name.includes("hour"))
       return <Clock className="h-5 w-5" />;
-    if (parameter.numerical) return <Hash className="h-5 w-5" />;
     return <List className="h-5 w-5" />;
   };
 
   const renderPreview = (
     items: ParametersListOut["parameters"][number]["sample_items"],
-    numerical: boolean,
     totalCount: number,
   ) => {
-    if (numerical) {
-      // Sort by numeric value
-      const sortedItems = [...items].sort((a, b) => {
-        const aVal = parseFloat(a.value) || 0;
-        const bVal = parseFloat(b.value) || 0;
-        return aVal - bVal;
-      });
-
-      return (
-        <div className="space-y-2">
-          {sortedItems.map((item) => (
-            <div
-              key={item.parameter_item_id}
-              className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
-            >
-              <div>
-                <p className="text-sm font-medium">{item.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  Value: {item.value}
-                </p>
-              </div>
+    // Show name + description
+    return (
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div
+            key={item.parameter_item_id}
+            className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
+          >
+            <div>
+              <p className="text-sm font-medium">{item.name}</p>
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {item.description}
+              </p>
             </div>
-          ))}
-          {totalCount > 3 && (
-            <p className="text-xs text-muted-foreground">
-              +{totalCount - 3} more
-            </p>
-          )}
-        </div>
-      );
-    } else {
-      // Non-numerical: show name + description
-      return (
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div
-              key={item.parameter_item_id}
-              className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
-            >
-              <div>
-                <p className="text-sm font-medium">{item.name}</p>
-                <p className="text-xs text-muted-foreground line-clamp-1">
-                  {item.description}
-                </p>
-              </div>
-            </div>
-          ))}
-          {totalCount > 3 && (
-            <p className="text-xs text-muted-foreground">
-              +{totalCount - 3} more
-            </p>
-          )}
-        </div>
-      );
-    }
+          </div>
+        ))}
+        {totalCount > 3 && (
+          <p className="text-xs text-muted-foreground">
+            +{totalCount - 3} more
+          </p>
+        )}
+      </div>
+    );
   };
 
   const renderParameterCard = (parameter: (typeof parameters)[number]) => {
@@ -417,11 +382,6 @@ export default function Parameters({
                 {parameter.department_ids?.length === 0 && (
                   <Badge variant="secondary" className="text-xs">
                     Default
-                  </Badge>
-                )}
-                {parameter.numerical && (
-                  <Badge variant="default" className="text-xs">
-                    Numerical
                   </Badge>
                 )}
                 {!parameter.active && (
@@ -518,7 +478,6 @@ export default function Parameters({
           ) : (
             renderPreview(
               parameter.sample_items,
-              parameter.numerical,
               parameter.num_items,
             )
           )}

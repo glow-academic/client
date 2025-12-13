@@ -84,7 +84,7 @@ export default function Documents({
   generateTemplateAction: _generateTemplateAction,
 }: DocumentsProps) {
   const router = useRouter();
-  const { departmentIds, effectiveProfile } = useProfile();
+  const { departmentIds } = useProfile();
 
   // Table state for filtering
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -113,8 +113,8 @@ export default function Documents({
     () => documentsData?.scenario_mapping || {},
     [documentsData],
   );
-  const parameterItemMapping = useMemo(
-    () => documentsData?.parameter_item_mapping || {},
+  const fieldMapping = useMemo(
+    () => documentsData?.field_mapping || {},
     [documentsData],
   );
   const departmentMapping = useMemo(
@@ -170,19 +170,19 @@ export default function Documents({
         },
       },
       {
-        accessorKey: "parameter_item_ids",
+        accessorKey: "field_ids",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Parameter Items" />
+          <DataTableColumnHeader column={column} title="Fields" />
         ),
         cell: ({ row }) => {
-          const itemIds = row.getValue("parameter_item_ids") as string[];
+          const itemIds = row.getValue("field_ids") as string[];
           if (!itemIds.length) {
             return <span className="text-xs text-muted-foreground">None</span>;
           }
           return (
             <div className="max-w-[240px] flex flex-wrap gap-1">
               {itemIds.slice(0, 4).map((id) => {
-                const item = parameterItemMapping[id];
+                const item = fieldMapping[id];
                 const name = item ? item["name"] : id;
                 return (
                   <Badge key={id} variant="default" className="text-[10px]">
@@ -278,7 +278,7 @@ export default function Documents({
         sortingFn: "datetime",
       },
     ],
-    [scenarioMapping, parameterItemMapping],
+    [scenarioMapping, fieldMapping],
   );
 
   // Permission checking using server-provided flags
@@ -547,14 +547,14 @@ export default function Documents({
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-                        {document.parameter_item_ids &&
-                          document.parameter_item_ids.length > 0 && (
+                        {document.field_ids &&
+                          document.field_ids.length > 0 && (
                             <div className="mb-3">
                               <div className="flex flex-wrap gap-1">
-                                {document.parameter_item_ids
+                                {document.field_ids
                                   .slice(0, 3)
                                   .map((id) => {
-                                    const item = parameterItemMapping[id];
+                                    const item = fieldMapping[id];
                                     return (
                                       <Badge
                                         key={id}
@@ -565,12 +565,12 @@ export default function Documents({
                                       </Badge>
                                     );
                                   })}
-                                {document.parameter_item_ids.length > 3 && (
+                                {document.field_ids.length > 3 && (
                                   <Badge
                                     variant="outline"
                                     className="text-[10px]"
                                   >
-                                    +{document.parameter_item_ids.length - 3}
+                                    +{document.field_ids.length - 3}
                                   </Badge>
                                 )}
                               </div>
@@ -671,7 +671,7 @@ export default function Documents({
                     active: previewDocument.active,
                     department_ids: previewDocument.department_ids || [],
                     upload_id: previewDocument.upload_id || null,
-                    parameter_item_ids: previewDocument.parameter_item_ids,
+                    field_ids: previewDocument.field_ids,
                   }}
                   bare={true}
                   isFormDocument={false}

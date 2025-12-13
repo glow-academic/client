@@ -1,6 +1,6 @@
 -- Get logs list with profile join (using app_logs_profiles junction table)
 SELECT 
-    al.id::text as log_id,
+    al.id::text as id,
     al.level,
     al.logger_name,
     al.message,

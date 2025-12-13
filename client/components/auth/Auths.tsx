@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useProfile } from "@/contexts/profile-context";
 
 import type {
   AuthListOut,
@@ -44,6 +45,7 @@ export default function Auths({
   deleteAuthAction,
 }: AuthsProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -65,7 +67,10 @@ export default function Auths({
     setIsDuplicating(auth.auth_id);
     try {
       await duplicateAuthAction({
-        body: { authId: auth.auth_id },
+        body: {
+          authId: auth.auth_id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
       });
       toast.success(`Auth "${auth.name}" duplicated successfully`);
       router.refresh();
@@ -84,7 +89,12 @@ export default function Auths({
     if (!deleteItem || !deleteAuthAction) return;
 
     try {
-      await deleteAuthAction({ body: { authId: deleteItem.id } });
+      await deleteAuthAction({
+        body: {
+          authId: deleteItem.id,
+          profileId: effectiveProfile?.id || "guest-profile-id",
+        },
+      });
       toast.success(`Auth "${deleteItem.name}" deleted successfully`);
       router.refresh();
     } catch (error) {

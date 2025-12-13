@@ -4707,18 +4707,6 @@ export interface components {
             /** Can Delete */
             can_delete: boolean;
         };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles: string[];
-        };
         /** AgentNewRequest */
         AgentNewRequest: {
             /** Profileid */
@@ -7468,7 +7456,7 @@ export interface components {
             document_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__documents__detail__AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
@@ -8671,6 +8659,8 @@ export interface components {
             key_masked: string;
             /** Type */
             type: string;
+            /** Description */
+            description: string;
             /** Active */
             active: boolean;
             /** Created At */
@@ -9676,7 +9666,7 @@ export interface components {
             };
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__list__AgentMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -14140,6 +14130,10 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Staff Ids */
+            staff_ids?: string[] | null;
         };
         /**
          * StaffItem
@@ -14240,14 +14234,66 @@ export interface components {
             description: string;
         };
         /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__cohorts__list__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+        };
+        /**
          * ScenarioMappingItem
-         * @description Scenario mapping item.
+         * @description Scenario mapping item with extended fields for nested data.
          */
         app__api__v3__cohorts__list__ScenarioMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids: string[];
+            /**
+             * Persona Mapping
+             * @default {}
+             */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__cohorts__list__PersonaMappingItem"];
+            };
+            /**
+             * Document Mapping
+             * @default {}
+             */
+            document_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Mapping
+             * @default {}
+             */
+            parameter_item_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids: string[];
         };
         /**
          * DepartmentMappingItem
@@ -14608,6 +14654,18 @@ export interface components {
             description: string;
         };
         /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__documents__detail__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
+        };
+        /**
          * DepartmentMappingItem
          * @description Department mapping item.
          */
@@ -14616,6 +14674,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
         };
         /**
          * FieldMappingItem
@@ -14646,16 +14706,48 @@ export interface components {
             document_parameter: boolean;
             /** Persona Parameter */
             persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
         };
         /**
          * DepartmentMappingItem
-         * @description Department mapping item.
+         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
          */
         app__api__v3__documents__detail_bulk__DepartmentMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Staff Ids */
+            staff_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
         };
         /**
          * FieldMappingItem
@@ -14673,9 +14765,41 @@ export interface components {
         };
         /**
          * DepartmentMappingItem
-         * @description Department mapping item.
+         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
          */
         app__api__v3__documents__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Staff Ids */
+            staff_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+        };
+        /**
+         * DocumentMappingItem
+         * @description Document mapping item.
+         */
+        app__api__v3__documents__list__DocumentMappingItem: {
             /** Name */
             name: string;
             /** Description */
@@ -14710,16 +14834,60 @@ export interface components {
             document_parameter: boolean;
             /** Persona Parameter */
             persona_parameter: boolean;
+            /**
+             * Scenario Parameter
+             * @default false
+             */
+            scenario_parameter: boolean;
+            /**
+             * Video Parameter
+             * @default false
+             */
+            video_parameter: boolean;
+        };
+        /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__documents__list__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
         };
         /**
          * ScenarioMappingItem
-         * @description Scenario mapping item.
+         * @description Scenario mapping item with extended fields for nested data.
          */
         app__api__v3__documents__list__ScenarioMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__documents__list__PersonaMappingItem"];
+            };
+            /** Document Mapping */
+            document_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__documents__list__DocumentMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__documents__list__FieldMappingItem"];
+            };
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Document Ids */
+            document_ids: string[];
         };
         /**
          * DepartmentMappingItem
@@ -14981,14 +15149,66 @@ export interface components {
             description: string;
         };
         /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__leaderboard__bundle__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+        };
+        /**
          * ScenarioMappingItem
-         * @description Scenario mapping item.
+         * @description Scenario mapping item with extended fields for nested data.
          */
         app__api__v3__leaderboard__bundle__ScenarioMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids: string[];
+            /**
+             * Persona Mapping
+             * @default {}
+             */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__leaderboard__bundle__PersonaMappingItem"];
+            };
+            /**
+             * Document Mapping
+             * @default {}
+             */
+            document_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Mapping
+             * @default {}
+             */
+            parameter_item_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids: string[];
         };
         /**
          * FeedbackItem
@@ -15027,8 +15247,8 @@ export interface components {
          * @description Log item with new simplified structure.
          */
         app__api__v3__logs__list__LogItem: {
-            /** Log Id */
-            log_id: string;
+            /** Id */
+            id: string;
             /** Level */
             level: string;
             /** Logger Name */
@@ -15170,14 +15390,78 @@ export interface components {
             can_duplicate: boolean;
         };
         /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__parameters__list__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+        };
+        /**
          * ScenarioMappingItem
-         * @description Scenario mapping item.
+         * @description Scenario mapping item with extended fields for nested data.
          */
         app__api__v3__parameters__list__ScenarioMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids?: string[];
+            /**
+             * Persona Mapping
+             * @default {}
+             */
+            persona_mapping?: {
+                [key: string]: components["schemas"]["app__api__v3__parameters__list__PersonaMappingItem"];
+            };
+            /**
+             * Document Mapping
+             * @default {}
+             */
+            document_mapping?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Mapping
+             * @default {}
+             */
+            parameter_item_mapping?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids?: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids?: string[];
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__personas__detail__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
         };
         /**
          * DebugInfoItem
@@ -15284,7 +15568,7 @@ export interface components {
             valid_department_ids: string[];
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__detail__AgentMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -15314,6 +15598,18 @@ export interface components {
             examples_history: components["schemas"]["ExampleWithDepartments"][];
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__detail__DebugInfoItem"][];
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__personas__list__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
         };
         /**
          * DepartmentMappingItem
@@ -15374,14 +15670,78 @@ export interface components {
             updated_at: string;
         };
         /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__personas__list__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+        };
+        /**
          * ScenarioMappingItem
-         * @description Scenario mapping item.
+         * @description Scenario mapping item with extended fields for nested data.
          */
         app__api__v3__personas__list__ScenarioMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids: string[];
+            /**
+             * Persona Mapping
+             * @default {}
+             */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__personas__list__PersonaMappingItem"];
+            };
+            /**
+             * Document Mapping
+             * @default {}
+             */
+            document_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Mapping
+             * @default {}
+             */
+            parameter_item_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids: string[];
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__personas__new__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
         };
         /**
          * DebugInfoItem
@@ -15488,7 +15848,7 @@ export interface components {
             valid_department_ids: string[];
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__personas__new__AgentMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -15673,13 +16033,49 @@ export interface components {
         };
         /**
          * ScenarioMappingItem
-         * @description Scenario mapping item.
+         * @description Scenario mapping item with extended fields for nested data.
          */
         app__api__v3__practice__overview__ScenarioMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids: string[];
+            /**
+             * Persona Mapping
+             * @default {}
+             */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__practice__overview__PersonaMappingItem"];
+            };
+            /**
+             * Document Mapping
+             * @default {}
+             */
+            document_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Mapping
+             * @default {}
+             */
+            parameter_item_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids: string[];
         };
         /**
          * StandardGroupMappingItem
@@ -15960,14 +16356,66 @@ export interface components {
             } | null;
         };
         /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__reports__bundle__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+        };
+        /**
          * ScenarioMappingItem
-         * @description Scenario mapping item.
+         * @description Scenario mapping item with extended fields for nested data.
          */
         app__api__v3__reports__bundle__ScenarioMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids: string[];
+            /**
+             * Persona Mapping
+             * @default {}
+             */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__reports__bundle__PersonaMappingItem"];
+            };
+            /**
+             * Document Mapping
+             * @default {}
+             */
+            document_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Mapping
+             * @default {}
+             */
+            parameter_item_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids: string[];
         };
         /**
          * TrendData
@@ -16043,6 +16491,16 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /**
+             * Points
+             * @default 0
+             */
+            points: number;
+            /**
+             * Passpoints
+             * @default 0
+             */
+            passPoints: number;
         };
         /**
          * StandardGroupItem
@@ -16076,6 +16534,18 @@ export interface components {
             description?: string | null;
             /** Points */
             points: number;
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__scenarios__detail__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
         };
         /**
          * DepartmentMappingItem
@@ -16360,7 +16830,7 @@ export interface components {
             image_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__detail__AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
@@ -16458,6 +16928,18 @@ export interface components {
             cohort_ids: string[];
             /** Updated At */
             updated_at: string;
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__scenarios__new__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
         };
         /**
          * DepartmentMappingItem
@@ -16742,7 +17224,7 @@ export interface components {
             image_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__new__AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
@@ -16823,6 +17305,18 @@ export interface components {
             rubric_id?: string | null;
             /** Time Limit Seconds */
             time_limit_seconds?: number | null;
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item.
+         */
+        app__api__v3__simulations__detail__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles?: string[] | null;
         };
         /**
          * DepartmentMappingItem
@@ -17077,9 +17571,7 @@ export interface components {
             };
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["app__api__v3__simulations__detail__AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
@@ -17095,14 +17587,66 @@ export interface components {
             description: string;
         };
         /**
+         * PersonaMappingItem
+         * @description Persona mapping item with custom color and icon fields.
+         */
+        app__api__v3__simulations__list__PersonaMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Image Model */
+            image_model?: boolean | null;
+        };
+        /**
          * ScenarioMappingItem
-         * @description Scenario mapping item.
+         * @description Scenario mapping item with extended fields for nested data.
          */
         app__api__v3__simulations__list__ScenarioMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids: string[];
+            /**
+             * Persona Mapping
+             * @default {}
+             */
+            persona_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__simulations__list__PersonaMappingItem"];
+            };
+            /**
+             * Document Mapping
+             * @default {}
+             */
+            document_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Mapping
+             * @default {}
+             */
+            parameter_item_mapping: {
+                [key: string]: unknown;
+            };
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids: string[];
         };
         /**
          * SimulationItem
@@ -17149,6 +17693,12 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
         };
         /**
          * DocumentMappingItem
@@ -17392,6 +17942,8 @@ export interface components {
             active: boolean;
             /** Hints Enabled */
             hints_enabled?: boolean | null;
+            /** Copy Paste Allowed */
+            copy_paste_allowed?: boolean | null;
             /** Audio Enabled */
             audio_enabled?: boolean | null;
             /** Text Enabled */
@@ -17427,6 +17979,18 @@ export interface components {
             times: number[];
             /** Options */
             options: components["schemas"]["QuestionOption"][];
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__videos__detail__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
         };
         /**
          * DepartmentMappingItem
@@ -17626,7 +18190,7 @@ export interface components {
             video_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__detail__AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
@@ -17732,6 +18296,18 @@ export interface components {
             can_duplicate: boolean;
             /** Updated At */
             updated_at: string;
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__videos__new__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
         };
         /**
          * DepartmentMappingItem
@@ -17933,7 +18509,7 @@ export interface components {
             video_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__videos__new__AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];

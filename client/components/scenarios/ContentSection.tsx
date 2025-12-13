@@ -54,7 +54,7 @@ import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
-type PersonaMappingItem = components["schemas"]["PersonaMappingItem"];
+type PersonaMappingItem = components["schemas"]["app__api__v3__scenarios__detail__PersonaMappingItem"];
 
 type StepStatus = "pending" | "active" | "completed";
 
@@ -1118,11 +1118,11 @@ export function ContentSection({
             <DialogHeader>
               <DialogTitle>
                 {previewDocumentId
-                  ? documentMapping[previewDocumentId]?.["name"] ||
-                    documentDetails?.find(
+                  ? (documentMapping[previewDocumentId]?.name ||
+                    (documentDetails?.find(
                       (d) => d.document_id === previewDocumentId
-                    )?.["name"] ||
-                    "Document Preview"
+                    ) as { name?: string } | undefined)?.name ||
+                    "Document Preview")
                   : "Document Preview"}
               </DialogTitle>
               <DialogDescription>Preview document content</DialogDescription>
@@ -1133,14 +1133,6 @@ export function ContentSection({
                 const fullDoc = documentDetails?.find(
                   (d) => d.document_id === docId
                 );
-
-                // Check if this is a child document
-                const parentDocumentId = (
-                  fullDoc as {
-                    parent_document_id?: string;
-                  }
-                )?.parent_document_id;
-                const _isChildDocument = Boolean(parentDocumentId);
 
                 const docForViewer: DocumentItem = fullDoc
                   ? ({

@@ -79,6 +79,7 @@ export default function Auth({
   updateAuthAction,
 }: AuthProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
   const isEditMode = mode === "edit" && !!authId;
 
   const initialFormData: FormData = useMemo(

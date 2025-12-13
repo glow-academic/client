@@ -3,6 +3,7 @@
 import {
   ColumnDef,
   ColumnFiltersState,
+  Row,
   SortingState,
   VisibilityState,
   flexRender,
@@ -270,7 +271,7 @@ export function SimulationScenariosTable({
                   </TooltipContent>
                 </Tooltip>
               ),
-              cell: ({ row }) => {
+              cell: ({ row }: { row: Row<ContentItem> }) => {
                 const item = row.original;
                 return (
                   <div className="flex items-center justify-center min-w-[150px]">
@@ -286,14 +287,17 @@ export function SimulationScenariosTable({
                           ids[0] || null
                         )
                       }
-                      getId={(item) => (item as unknown as { id: string }).id}
-                      getLabel={(item) => item.name || ""}
-                      getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                      getId={(item) => {
+                        const entry = Object.entries(agentMapping).find(([, v]) => v === item);
+                        return entry ? entry[0] : "";
+                      }}
+                      getLabel={(item) => item.name}
+                      getSearchText={(item) => `${(item as { name: string }).name} ${((item as { description?: string }).description) || ""}`}
                       renderPreview={(item) => (
                         <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                          <h4 className="font-medium leading-none">{(item as { name: string }).name || "No agent selected"}</h4>
                           <div className="text-sm text-muted-foreground">
-                            {item.description || "No description available"}
+                            {(item as { description?: string }).description || "No description available"}
                           </div>
                         </div>
                       )}
@@ -301,10 +305,10 @@ export function SimulationScenariosTable({
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <div className="flex-1 min-w-0">
-                              <div className="truncate">{item.name}</div>
-                              {item.description && (
+                              <div className="truncate">{(item as { name: string }).name}</div>
+                              {(item as { description?: string }).description && (
                                 <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {item.description}
+                                  {(item as { description?: string }).description}
                                 </div>
                               )}
                             </div>
@@ -342,17 +346,22 @@ export function SimulationScenariosTable({
                   </TooltipContent>
                 </Tooltip>
               ),
-              cell: ({ row }) => {
+              cell: ({ row }: { row: Row<ContentItem> }) => {
                 const item = row.original;
                 return (
                   <div className="flex items-center justify-center min-w-[150px]">
-                    <AgentPicker
-                      mapping={agentMapping}
-                      validIds={gradeAgentIds}
+                    <GenericPicker
+                      items={agentMapping}
+                      itemIds={gradeAgentIds}
                       selectedIds={item.grade_agent_ids || []}
                       onSelect={(ids) =>
                         onGradeAgentsChange?.(`${item.type}:${item.id}`, ids)
                       }
+                      getId={(item) => {
+                        const entry = Object.entries(agentMapping).find(([, v]) => v === item);
+                        return entry ? entry[0] : "";
+                      }}
+                      getLabel={(item) => item.name}
                       placeholder="Select agents"
                       disabled={readonly || !onGradeAgentsChange}
                       multiSelect={true}
@@ -464,7 +473,7 @@ export function SimulationScenariosTable({
               {readonly ? (
                 <span className="text-xs text-muted-foreground">
                   {item.rubric_id && rubricMapping[item.rubric_id]
-                    ? rubricMapping[item.rubric_id].name
+                    ? rubricMapping[item.rubric_id]?.name || "None"
                     : "None"}
                 </span>
               ) : (

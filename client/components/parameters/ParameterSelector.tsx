@@ -349,7 +349,7 @@ export function ParameterSelector({
   const extractNumericValue = (name: string): number => {
     // Try to extract number from parentheses: "Name (5)" -> 5
     const parenMatch = name.match(/\((\d+(?:\.\d+)?)\)/);
-    if (parenMatch) {
+    if (parenMatch && parenMatch[1]) {
       return parseFloat(parenMatch[1]);
     }
     // Try parsing the entire name as a number
@@ -421,11 +421,12 @@ export function ParameterSelector({
     for (const itemId of itemIds) {
       const item = fieldMapping[itemId];
       if (item) {
-        const itemValue = parseFloat(item.value);
+        // Extract numeric value from name (format: "Name (value)" or just "value")
+        const numericValue = extractNumericValue(item.name);
         if (
-          !isNaN(itemValue) &&
-          itemValue >= minRange &&
-          itemValue <= maxRange
+          !isNaN(numericValue) &&
+          numericValue >= minRange &&
+          numericValue <= maxRange
         ) {
           matchingItemIds.push(itemId);
         }
@@ -434,10 +435,6 @@ export function ParameterSelector({
 
     // Update selection with all matching items
     handleNumericalParameterChange(parameterId, matchingItemIds);
-  };
-
-  const resetParameter = (parameterId: string) => {
-    handleNonNumericalParameterChange(parameterId, []);
   };
 
   const resetNumericalParameter = (parameterId: string) => {

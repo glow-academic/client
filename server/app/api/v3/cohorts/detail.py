@@ -22,6 +22,8 @@ class DepartmentMappingItem(BaseModel):
 
     name: str
     description: str
+    simulation_ids: list[str] | None = None
+    staff_ids: list[str] | None = None
 
 
 class CohortMappingItem(BaseModel):

@@ -157,9 +157,6 @@ export default function Department({
   const [authKeyMapping, setAuthKeyMapping] = useState<
     Record<string, Record<string, string>>
   >({});
-  const [providerEnabled, setProviderEnabled] = useState<
-    Record<string, boolean>
-  >({});
 
   // Use server-provided data (no React Query needed when server data is provided)
   const departmentDetail = serverDepartmentDetail;
@@ -347,13 +344,6 @@ export default function Department({
     if (settingsDetail) {
       setProviderKeyMapping(settingsDetail.provider_key_mapping || {});
       setAuthKeyMapping(settingsDetail.auth_key_mapping || {});
-      
-      // Initialize provider enabled state
-      const enabled: Record<string, boolean> = {};
-      settingsDetail.all_provider_ids.forEach((providerId) => {
-        enabled[providerId] = settingsDetail.provider_ids.includes(providerId);
-      });
-      setProviderEnabled(enabled);
     }
   }, [settingsDetail]);
 

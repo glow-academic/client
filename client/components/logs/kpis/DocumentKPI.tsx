@@ -72,9 +72,10 @@ export default function DocumentKPI({
 
   // Generate gradient style from color
   const gradientStyle = useMemo(() => {
+    const color = displayColor || chartColorFallbacks.chart3;
     return {
-      background: `linear-gradient(to bottom right, ${colorToRgba(displayColor, 0.1)}, ${colorToRgba(displayColor, 0.2)})`,
-      borderColor: colorToRgba(displayColor, 0.3),
+      background: `linear-gradient(to bottom right, ${colorToRgba(color, 0.1)}, ${colorToRgba(color, 0.2)})`,
+      borderColor: colorToRgba(color, 0.3),
     };
   }, [displayColor]);
 

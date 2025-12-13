@@ -41,11 +41,21 @@ class ProfileMappingItem(BaseModel):
     description: str
 
 
+# Type aliases for Dict mappings (defined before ScenarioMappingItem to avoid forward reference issues)
+PersonaMapping = dict[str, PersonaMappingItem]
+
+
 class ScenarioMappingItem(BaseModel):
-    """Scenario mapping item."""
+    """Scenario mapping item with extended fields for nested data."""
 
     name: str
     description: str
+    persona_ids: list[str] = []
+    persona_mapping: "PersonaMapping" = {}
+    document_mapping: dict[str, Any] = {}
+    parameter_item_mapping: dict[str, Any] = {}
+    parameter_item_ids: list[str] = []
+    document_ids: list[str] = []
 
 
 class SimulationMappingItem(BaseModel):
@@ -58,7 +68,6 @@ class SimulationMappingItem(BaseModel):
 
 
 # Type aliases for Dict mappings
-PersonaMapping = dict[str, PersonaMappingItem]
 ScenarioMapping = dict[str, ScenarioMappingItem]
 
 

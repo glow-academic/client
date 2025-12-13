@@ -60,7 +60,7 @@ export function SimulationControls({
   const currentMessages = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id,
+      (c) => c.chat.id === currentChat.id
     );
     return chatData?.messages ?? [];
   }, [attemptData, currentChat]);
@@ -84,7 +84,7 @@ export function SimulationControls({
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
-    null,
+    null
   );
   const [endChatLoading, setEndChatLoading] = useState(false);
 
@@ -121,7 +121,7 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [currentChatId, socket, attemptId],
+    [currentChatId, socket, attemptId]
   );
 
   // End all chats function
@@ -156,7 +156,7 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [attempt, currentChatId, attemptId, socket],
+    [attempt, currentChatId, attemptId, socket]
   );
 
   // Listen for WebSocket events to reset loading state and handle grading
@@ -237,7 +237,7 @@ export function SimulationControls({
         data.total_count !== undefined
       ) {
         const progress = Math.round(
-          (data.completed_count / data.total_count) * 100,
+          (data.completed_count / data.total_count) * 100
         );
         setGradingProgress({
           completed: data.completed_count,
@@ -269,61 +269,10 @@ export function SimulationControls({
       socket.off("end_all_completed", handleEndAllCompleted);
       socket.off(
         "simulation_grading_progress",
-        handleSimulationGradingProgress,
+        handleSimulationGradingProgress
       );
     };
   }, [socket, currentChatId]);
-
-  // Get all simulation scenarios with their previous chats (for remaining scenarios calculation)
-  const allSimulationScenarios = useMemo(() => {
-    // Early return if attemptData is not available
-    if (!attemptData) {
-      return [];
-    }
-
-    if (
-      !attemptData.allSimulationScenarios ||
-      !Array.isArray(attemptData.allSimulationScenarios)
-    ) {
-      return [];
-    }
-
-    // Map to include chatId if a chat exists for this scenario
-    return attemptData.allSimulationScenarios.map((scenarioData) => {
-      // Find all chats for this scenario in the current attempt
-      // Use parentScenarioId to match correctly (child scenarios map to parent scenarios)
-      const scenarioChats =
-        attemptData.chats?.filter(
-          (c) => c.chat.parentScenarioId === scenarioData.id,
-        ) || [];
-
-      // Check if this scenario has at least one chat with a grade (completed and graded)
-      const hasGradedChat = scenarioChats.some(
-        (c) => c.chat.completed && c.gradingState !== null,
-      );
-
-      // Get the first chat ID if any exist
-      const firstChat = scenarioChats[0];
-
-      return {
-        scenarioId: scenarioData.id,
-        scenarioName: scenarioData.name || "Scenario",
-        chatId: firstChat?.chat.id || null,
-        hasCompletedChat: hasGradedChat,
-        // previousChats comes from allSimulationScenarios (v3)
-        previousChats:
-          scenarioData.previousChats || firstChat?.previousChats || [],
-      };
-    });
-  }, [attemptData]);
-
-  // Use server-side calculation for remaining scenarios
-  // Filter to only include scenarios without completed chats
-  const remainingScenarios = useMemo(() => {
-    return allSimulationScenarios.filter(
-      (scenario) => !scenario.hasCompletedChat,
-    );
-  }, [allSimulationScenarios]);
 
   // Get previous chats for current chat to show red dot indicator
   // Must be computed before early returns to maintain hook order
@@ -386,7 +335,7 @@ export function SimulationControls({
 
     // Generate sequential permutations (1, 1+2, 1+2+3, etc.)
     const positions = Array.from(optionsByPosition.keys()).sort(
-      (a, b) => a - b,
+      (a, b) => a - b
     );
     const allPermutations: ContinuationPermutation[] = [];
 
@@ -397,7 +346,7 @@ export function SimulationControls({
       // Generate all permutations for this sequence using cartesian product
       const generatePermutations = (
         posIndex: number = 0,
-        currentPerm: ContinuationPermutationOption[] = [],
+        currentPerm: ContinuationPermutationOption[] = []
       ): ContinuationPermutationOption[][] => {
         if (posIndex >= seqPositions.length) {
           return [currentPerm];
@@ -409,7 +358,7 @@ export function SimulationControls({
 
         for (const option of options) {
           results.push(
-            ...generatePermutations(posIndex + 1, [...currentPerm, option]),
+            ...generatePermutations(posIndex + 1, [...currentPerm, option])
           );
         }
 
@@ -421,7 +370,7 @@ export function SimulationControls({
         const totalScore = perm.reduce((sum, opt) => sum + (opt.score || 0), 0);
         const totalTimeTaken = perm.reduce(
           (sum, opt) => sum + (opt.timeTaken || 0),
-          0,
+          0
         );
         const percentages = perm
           .map((opt) => opt.percentage)
@@ -429,7 +378,7 @@ export function SimulationControls({
         const totalPercentage =
           percentages.length > 0
             ? Math.round(
-                percentages.reduce((sum, p) => sum + p, 0) / percentages.length,
+                percentages.reduce((sum, p) => sum + p, 0) / percentages.length
               )
             : null;
 
@@ -462,36 +411,7 @@ export function SimulationControls({
   }, [isPracticeSimulation, continuationPermutations]);
 
   // Get previous chats for current chat (for red dot indicator)
-  // Prefer using previousChats directly from chat data (server-computed, uses parent scenario ID)
-  // Fallback to allSimulationScenarios if chat data doesn't have previousChats
-  const previousChats = useMemo(() => {
-    if (!currentChatData) return [];
-
-    // First try: Use previousChats directly from chat data (server-computed with parent scenario ID)
-    const chatPreviousChats = currentChatData.previousChats || [];
-    if (chatPreviousChats.length > 0) {
-      return chatPreviousChats;
-    }
-
-    // Fallback: Use parentScenarioId from chat to find in allSimulationScenarios
-    if (!allSimulationScenarios.length) return [];
-
-    const parentScenarioId =
-      currentChatData.chat.parentScenarioId || currentChatData.scenario?.id;
-
-    if (!parentScenarioId) return [];
-
-    // Find the matching scenario in allSimulationScenarios
-    const matchingScenario = allSimulationScenarios.find(
-      (s) => s.scenarioId === parentScenarioId,
-    );
-
-    return matchingScenario?.previousChats || [];
-  }, [currentChatData, allSimulationScenarios]);
-
   // For practice simulations, never show previous chats (must always go through manual grading)
-  const hasPreviousChats = !isPracticeSimulation && previousChats.length > 0;
-
 
   // Don't show buttons if attemptData is not available
   if (!attemptData) {
@@ -563,7 +483,7 @@ export function SimulationControls({
   };
 
   // Handle Next Video button click
-  const handleNextVideo = useCallback(async () => {
+  const handleNextVideo = async () => {
     if (!currentChatId || !socket) {
       toast.error("WebSocket not connected. Please refresh the page.");
       return;
@@ -583,8 +503,7 @@ export function SimulationControls({
       setEndChatLoading(false);
       setEndingAction(null);
     }
-  }, [currentChatId, socket, attemptId]);
-
+  };
 
   return (
     <>
@@ -808,7 +727,7 @@ export function SimulationControls({
                 }
 
                 const selectedPerm = continuationPermutations.find(
-                  (p) => p.id === selectedContinuationPermutation,
+                  (p) => p.id === selectedContinuationPermutation
                 );
 
                 if (selectedPerm && selectedPerm.options.length > 0) {
@@ -832,7 +751,7 @@ export function SimulationControls({
                     endAllChats(
                       Object.keys(previousChatMap).length > 0
                         ? previousChatMap
-                        : undefined,
+                        : undefined
                     );
                   }
                 } else {

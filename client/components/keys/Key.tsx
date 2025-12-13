@@ -214,6 +214,7 @@ export default function Key({
           description: formData.description || "",
           active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
+          profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
         toast.success("Key updated successfully!");
@@ -225,6 +226,7 @@ export default function Key({
           description: formData.description || "",
           active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
+          profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
         toast.success("Key created successfully!");

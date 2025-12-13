@@ -13,7 +13,7 @@ import DocumentKPI from "./kpis/DocumentKPI";
 import RedisKPI from "./kpis/RedisKPI";
 import WebSocketKPI from "./kpis/WebSocketKPI";
 
-import type { LogsBundleOut } from "@/app/(main)/system/logs/page";
+import type { LogsBundleOut } from "@/app/(main)/system/health/page";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useChartColors } from "@/lib/utils/chartColors";
@@ -53,7 +53,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
 
   // Prepare metrics chart data
   const metricsChartData = useMemo(() => {
-    return metrics.map((m) => ({
+    return metrics.map((m: LogsBundleOut["metrics"][number]) => ({
       date: m.date,
       cpu: m.cpu_percent,
       latency: m.latency_ms,
@@ -220,7 +220,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
                     No feedback yet
                   </div>
                 ) : (
-                  feedback.map((item) => (
+                  feedback.map((item: LogsBundleOut["feedback"][number]) => (
                     <Card key={item.feedback_id} className="p-3">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <Badge variant="outline">{item.type}</Badge>

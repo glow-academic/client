@@ -101,7 +101,6 @@ export default function Simulation({
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
     null
   );
-  const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const router = useRouter();
   const isEditMode = !!simulationId;
@@ -190,13 +189,22 @@ export default function Simulation({
     () => simulationData?.department_mapping || {},
     [simulationData]
   );
-  // Extract agent mapping
-  const agentMapping = useMemo(
-    () =>
-      (simulationData as { agent_mapping?: Record<string, unknown> })
-        ?.agent_mapping || {},
-    [simulationData]
-  );
+  // Extract agent mapping (only available in detail endpoint, not new endpoint)
+  // Map to the expected type format: Record<string, { name: string; roles?: string[] }>
+  const agentMapping = useMemo(() => {
+    if (isEditMode && simulationDetail && "agent_mapping" in simulationDetail) {
+      const mapping = simulationDetail.agent_mapping || {};
+      const mapped: Record<string, { name: string; roles?: string[] }> = {};
+      Object.entries(mapping).forEach(([key, value]) => {
+        mapped[key] =
+          value.roles && value.roles.length > 0
+            ? { name: value.name, roles: value.roles }
+            : { name: value.name };
+      });
+      return mapped;
+    }
+    return {};
+  }, [isEditMode, simulationDetail]);
   const validAgentIds = useMemo(
     () =>
       (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [],
@@ -275,8 +283,15 @@ export default function Simulation({
     // Get union of scenario_ids from ALL departments (to identify cross-department items)
     const allDeptScenarioIds = new Set<string>();
     Object.values(departmentMapping).forEach((deptData) => {
-      if (deptData?.scenario_ids && Array.isArray(deptData.scenario_ids)) {
-        deptData.scenario_ids.forEach((id) => allDeptScenarioIds.add(id));
+      if (
+        deptData &&
+        "scenario_ids" in deptData &&
+        deptData.scenario_ids &&
+        Array.isArray(deptData.scenario_ids)
+      ) {
+        deptData.scenario_ids.forEach((id: string) =>
+          allDeptScenarioIds.add(id)
+        );
       }
     });
 
@@ -284,8 +299,15 @@ export default function Simulation({
     const selectedDeptScenarioIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
       const deptData = departmentMapping[deptId];
-      if (deptData?.scenario_ids && Array.isArray(deptData.scenario_ids)) {
-        deptData.scenario_ids.forEach((id) => selectedDeptScenarioIds.add(id));
+      if (
+        deptData &&
+        "scenario_ids" in deptData &&
+        deptData.scenario_ids &&
+        Array.isArray(deptData.scenario_ids)
+      ) {
+        deptData.scenario_ids.forEach((id: string) =>
+          selectedDeptScenarioIds.add(id)
+        );
       }
     });
 
@@ -329,8 +351,13 @@ export default function Simulation({
     // Get union of rubric_ids from ALL departments (to identify cross-department items)
     const allDeptRubricIds = new Set<string>();
     Object.values(departmentMapping).forEach((deptData) => {
-      if (deptData?.rubric_ids && Array.isArray(deptData.rubric_ids)) {
-        deptData.rubric_ids.forEach((id) => allDeptRubricIds.add(id));
+      if (
+        deptData &&
+        "rubric_ids" in deptData &&
+        deptData.rubric_ids &&
+        Array.isArray(deptData.rubric_ids)
+      ) {
+        deptData.rubric_ids.forEach((id: string) => allDeptRubricIds.add(id));
       }
     });
 
@@ -338,8 +365,15 @@ export default function Simulation({
     const selectedDeptRubricIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
       const deptData = departmentMapping[deptId];
-      if (deptData?.rubric_ids && Array.isArray(deptData.rubric_ids)) {
-        deptData.rubric_ids.forEach((id) => selectedDeptRubricIds.add(id));
+      if (
+        deptData &&
+        "rubric_ids" in deptData &&
+        deptData.rubric_ids &&
+        Array.isArray(deptData.rubric_ids)
+      ) {
+        deptData.rubric_ids.forEach((id: string) =>
+          selectedDeptRubricIds.add(id)
+        );
       }
     });
 
@@ -457,28 +491,53 @@ export default function Simulation({
             switchState?.hints_enabled ?? scenario.hints_enabled ?? false,
           copy_paste_allowed:
             switchState?.copy_paste_allowed ??
-            scenario.copy_paste_allowed ??
+            ("copy_paste_allowed" in scenario
+              ? scenario.copy_paste_allowed
+              : false) ??
             false,
           audio_enabled:
-            switchState?.audio_enabled ?? scenario.audio_enabled ?? false,
+            switchState?.audio_enabled ??
+            ("audio_enabled" in scenario ? scenario.audio_enabled : false) ??
+            false,
           text_enabled:
-            switchState?.text_enabled ?? scenario.text_enabled ?? true,
+            switchState?.text_enabled ??
+            ("text_enabled" in scenario ? scenario.text_enabled : true) ??
+            true,
           show_problem_statement:
             switchState?.show_problem_statement ??
-            scenario.show_problem_statement ??
+            ("show_problem_statement" in scenario
+              ? scenario.show_problem_statement
+              : true) ??
             true,
           show_objectives:
-            switchState?.show_objectives ?? scenario.show_objectives ?? true,
-          show_image: switchState?.show_image ?? scenario.show_image ?? true,
+            switchState?.show_objectives ??
+            ("show_objectives" in scenario
+              ? scenario.show_objectives
+              : "objectives_enabled" in scenario
+                ? scenario.objectives_enabled
+                : true) ??
+            true,
+          show_image:
+            switchState?.show_image ??
+            ("show_image" in scenario
+              ? scenario.show_image
+              : "image_input_enabled" in scenario
+                ? scenario.image_input_enabled
+                : true) ??
+            true,
           rubric_id: switchState?.rubric_id ?? scenario.rubric_id ?? null,
           time_limit_seconds:
             switchState?.time_limit_seconds ??
             scenario.time_limit_seconds ??
             null,
           hint_agent_id:
-            switchState?.hint_agent_id ?? scenario.hint_agent_id ?? null,
+            switchState?.hint_agent_id ??
+            ("hint_agent_id" in scenario ? scenario.hint_agent_id : null) ??
+            null,
           grade_agent_ids:
-            switchState?.grade_agent_ids ?? scenario.grade_agent_ids ?? [],
+            switchState?.grade_agent_ids ??
+            ("grade_agent_ids" in scenario ? scenario.grade_agent_ids : []) ??
+            [],
         });
       });
     }
@@ -553,6 +612,8 @@ export default function Simulation({
           show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
+          hint_agent_id?: string | null;
+          grade_agent_ids?: string[];
         }
       > = {};
       const newOriginalSwitchStates: Record<
@@ -569,6 +630,8 @@ export default function Simulation({
           show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
+          hint_agent_id?: string | null;
+          grade_agent_ids?: string[];
         }
       > = {};
 
@@ -580,29 +643,77 @@ export default function Simulation({
           newOriginalActiveStates[key] = scenario.active;
           newSwitchStates[key] = {
             hints_enabled: scenario.hints_enabled ?? false,
-            copy_paste_allowed: scenario.copy_paste_allowed ?? false,
-            audio_enabled: scenario.audio_enabled ?? false,
-            text_enabled: scenario.text_enabled ?? true,
-            show_problem_statement: scenario.show_problem_statement ?? true,
-            show_objectives: scenario.show_objectives ?? true,
-            show_image: scenario.show_image ?? true,
+            copy_paste_allowed:
+              ("copy_paste_allowed" in scenario
+                ? scenario.copy_paste_allowed
+                : false) ?? false,
+            audio_enabled:
+              ("audio_enabled" in scenario ? scenario.audio_enabled : false) ??
+              false,
+            text_enabled:
+              ("text_enabled" in scenario ? scenario.text_enabled : true) ??
+              true,
+            show_problem_statement:
+              ("show_problem_statement" in scenario
+                ? scenario.show_problem_statement
+                : true) ?? true,
+            show_objectives:
+              ("show_objectives" in scenario
+                ? scenario.show_objectives
+                : "objectives_enabled" in scenario
+                  ? scenario.objectives_enabled
+                  : true) ?? true,
+            show_image:
+              ("show_image" in scenario
+                ? scenario.show_image
+                : "image_input_enabled" in scenario
+                  ? scenario.image_input_enabled
+                  : true) ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
-            hint_agent_id: scenario.hint_agent_id ?? null,
-            grade_agent_ids: scenario.grade_agent_ids ?? [],
+            hint_agent_id:
+              ("hint_agent_id" in scenario ? scenario.hint_agent_id : null) ??
+              null,
+            grade_agent_ids:
+              ("grade_agent_ids" in scenario ? scenario.grade_agent_ids : []) ??
+              [],
           };
           newOriginalSwitchStates[key] = {
             hints_enabled: scenario.hints_enabled ?? false,
-            copy_paste_allowed: scenario.copy_paste_allowed ?? false,
-            audio_enabled: scenario.audio_enabled ?? false,
-            text_enabled: scenario.text_enabled ?? true,
-            show_problem_statement: scenario.show_problem_statement ?? true,
-            show_objectives: scenario.show_objectives ?? true,
-            show_image: scenario.show_image ?? true,
+            copy_paste_allowed:
+              ("copy_paste_allowed" in scenario
+                ? scenario.copy_paste_allowed
+                : false) ?? false,
+            audio_enabled:
+              ("audio_enabled" in scenario ? scenario.audio_enabled : false) ??
+              false,
+            text_enabled:
+              ("text_enabled" in scenario ? scenario.text_enabled : true) ??
+              true,
+            show_problem_statement:
+              ("show_problem_statement" in scenario
+                ? scenario.show_problem_statement
+                : true) ?? true,
+            show_objectives:
+              ("show_objectives" in scenario
+                ? scenario.show_objectives
+                : "objectives_enabled" in scenario
+                  ? scenario.objectives_enabled
+                  : true) ?? true,
+            show_image:
+              ("show_image" in scenario
+                ? scenario.show_image
+                : "image_input_enabled" in scenario
+                  ? scenario.image_input_enabled
+                  : true) ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
-            hint_agent_id: scenario.hint_agent_id ?? null,
-            grade_agent_ids: scenario.grade_agent_ids ?? [],
+            hint_agent_id:
+              ("hint_agent_id" in scenario ? scenario.hint_agent_id : null) ??
+              null,
+            grade_agent_ids:
+              ("grade_agent_ids" in scenario ? scenario.grade_agent_ids : []) ??
+              [],
           };
         });
       }
@@ -1270,18 +1381,38 @@ export default function Simulation({
       );
       const newItems: ContentItem[] = newVideoIds.map((videoId, idx) => {
         const videoData = simulationData?.video_mapping?.[videoId];
+        const videoName =
+          videoData && typeof videoData === "object" && "name" in videoData
+            ? typeof videoData["name"] === "string"
+              ? videoData["name"]
+              : "Unnamed Video"
+            : "Unnamed Video";
+        const videoDescription =
+          videoData &&
+          typeof videoData === "object" &&
+          "description" in videoData
+            ? typeof videoData["description"] === "string"
+              ? videoData["description"]
+              : ""
+            : "";
         return {
           type: "video" as const,
           id: videoId,
-          title: videoData?.["name"] || "Unnamed Video",
-          description: videoData?.["description"] || "",
+          title: videoName,
+          description: videoDescription,
           active: true,
           position: maxPosition + idx + 1,
           usage_count: 0,
           success_rate: 0,
           last_used: null,
           can_remove: true,
-          length_seconds: videoData?.["length_seconds"] || 0,
+          length_seconds:
+            videoData &&
+            typeof videoData === "object" &&
+            "length_seconds" in videoData &&
+            typeof videoData["length_seconds"] === "number"
+              ? videoData["length_seconds"]
+              : 0,
           isNew: true,
         };
       });

@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import type {
   BulkDeleteLogsIn,
   BulkDeleteLogsOut,
-  LogsListOut,
-} from "@/app/(main)/system/logs/page";
+  LogsRunsOut,
+} from "@/app/(main)/system/health/page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +26,7 @@ import { useRouter } from "next/navigation";
 export interface BulkDeleteLogsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  logs: LogsListOut["logs"][number][];
+  logs: LogsRunsOut["data"];
   onSuccess?: () => void;
   bulkDeleteLogsAction: (input: BulkDeleteLogsIn) => Promise<BulkDeleteLogsOut>;
 }
@@ -48,7 +48,7 @@ export function BulkDeleteLogsDialog({
 
   const getLogsToDelete = (
     percentage: DeletePercentage,
-  ): LogsListOut["logs"][number][] => {
+  ): LogsRunsOut["data"] => {
     const totalLogs = logs.length;
     if (totalLogs === 0) return [];
 
@@ -79,7 +79,7 @@ export function BulkDeleteLogsDialog({
       await bulkDeleteLogsAction({
         body: {
           profileId: effectiveProfile?.id || "",
-          ids: logsToDelete.map((log) => parseInt(log.log_id)),
+          ids: logsToDelete.map((log) => parseInt(log.id)),
         },
       });
       router.refresh();

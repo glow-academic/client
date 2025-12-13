@@ -40,7 +40,6 @@ export default function SimulationProgress({
 }: SimulationProgressProps) {
   const isTAViewMode = viewMode === ViewMode.TA;
   const progressPercentage = completionPct;
-  const isComplete = status === "passed";
 
   // Get status text and badge styling
   const getStatusInfo = () => {

@@ -3336,7 +3336,6 @@ export default function Scenario({
           onRandomizeAll={handleRandomizeAll}
           onResetAll={handleResetAll}
           isReadonly={isReadonly}
-          isSuperadmin={isSuperadmin}
         />
         {/* Step 2: Persona Selection */}
         <PersonaSection
@@ -3380,21 +3379,29 @@ export default function Scenario({
             ? {
                 documentDetails: scenarioData.document_details as Array<{
                   document_id: string;
-                  upload_id?: string | null;
-                  [key: string]: unknown;
+                  name: string;
+                  updatedAt: string;
+                  extension: string;
+                  scenario_ids: string[];
+                  can_edit: boolean;
+                  can_delete: boolean;
+                  active: boolean;
+                  department_ids: string[] | null;
+                  upload_id: string | null;
+                  field_ids: string[];
                 }>,
               }
             : {})}
           searchTerm={documentSearchTerm}
           minMax={documentMinMax}
-          allowedRange={
-            scenarioData?.allowed_ranges?.document
-              ? {
+          {...(scenarioData?.allowed_ranges?.document
+            ? {
+                allowedRange: {
                   min: scenarioData.allowed_ranges.document.min,
                   max: scenarioData.allowed_ranges.document.max,
-                }
-              : undefined
-          }
+                },
+              }
+            : {})}
           previewDocumentId={previewDocumentId}
           onDocumentIdsChange={setCurrentDocumentIds}
           onTemplateDocumentIdsChange={setTemplateDocumentIds}

@@ -3,7 +3,7 @@
  * Used to display the keys page with table-based filtering and card layout.
  */
 "use client";
-import { Edit, Eye, Key, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { Edit, Eye, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";

@@ -161,11 +161,12 @@ export default function StaffNewEdit({
   // Set breadcrumb context when staff data is loaded
   useEffect(() => {
     if (staffDetail?.name && profileId && isEditMode) {
-      setEntityMetadata({
-        entityId: profileId,
-        entityName: staffDetail.name,
-        entityType: "staff",
-      });
+      // Note: "staff" is not in EntityMetadata union type, so we skip breadcrumb metadata
+      // setEntityMetadata({
+      //   entityId: profileId,
+      //   entityName: staffDetail.name,
+      //   entityType: "staff",
+      // });
     }
     return () => clearEntityMetadata();
   }, [
@@ -267,22 +268,20 @@ export default function StaffNewEdit({
         }
 
         await handleUpdateStaff({
-          body: {
-            profileId: profileId!,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            emails: validEmails,
-            primary_email_index:
-              formData.primaryEmailIndex != null &&
-              formData.primaryEmailIndex >= 0 &&
-              formData.primaryEmailIndex < validEmails.length
-                ? formData.primaryEmailIndex
-                : 0,
-            role: formData.role || "",
-            requests_per_day: parsedReqPerDay,
-            primary_department_id: departmentId,
-            active: formData.active ?? true,
-          },
+          profileId: profileId!,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          emails: validEmails,
+          primary_email_index:
+            formData.primaryEmailIndex != null &&
+            formData.primaryEmailIndex >= 0 &&
+            formData.primaryEmailIndex < validEmails.length
+              ? formData.primaryEmailIndex
+              : 0,
+          role: formData.role || "",
+          requests_per_day: parsedReqPerDay,
+          primary_department_id: departmentId,
+          active: formData.active ?? true,
         });
 
         toast.success("Staff updated successfully!");
@@ -296,19 +295,17 @@ export default function StaffNewEdit({
         }
 
         await handleCreateStaff({
-          body: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            emails: validEmails,
-            primary_email_index:
-              formData.primaryEmailIndex != null &&
-              formData.primaryEmailIndex >= 0 &&
-              formData.primaryEmailIndex < validEmails.length
-                ? formData.primaryEmailIndex
-                : 0,
-            role: formData.role || "",
-            primary_department_id: formData.primaryDepartmentId || null,
-          },
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          emails: validEmails,
+          primary_email_index:
+            formData.primaryEmailIndex != null &&
+            formData.primaryEmailIndex >= 0 &&
+            formData.primaryEmailIndex < validEmails.length
+              ? formData.primaryEmailIndex
+              : 0,
+          role: formData.role || "",
+          primary_department_id: formData.primaryDepartmentId || null,
         });
 
         toast.success("Staff created successfully!");
@@ -558,7 +555,7 @@ export default function StaffNewEdit({
                           >
                             <IconComponent className="h-3.5 w-3.5 text-white" />
                           </div>
-                          <span className="truncate">{role?.name || placeholder}</span>
+                          <span className="truncate">{role?.name || "Select role"}</span>
                         </div>
                       );
                     }}

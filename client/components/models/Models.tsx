@@ -73,6 +73,7 @@ export default function Models({
   deleteModelAction,
 }: ModelsProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;

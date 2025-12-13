@@ -227,6 +227,7 @@ export function ParameterItemPicker<
           parameterId: parameterId,
           name: newName.trim(),
           description: newDescription.trim(),
+          default: false,
         },
       });
 

@@ -90,7 +90,8 @@ export default function SimulationCompositionPicker({
     return getConfigId(currentConfig);
   }, [currentConfig]);
 
-  const handleSelect = (id: string) => {
+  const handleSelect = (ids: string[]) => {
+    const id = ids[0] || "";
     const config = PRESET_CONFIGS.find((c) => getConfigId(c) === id);
     if (config) {
       onConfigChange(config);
@@ -99,10 +100,15 @@ export default function SimulationCompositionPicker({
 
   return (
     <GenericPicker
-      mapping={configMapping}
-      validIds={validConfigIds}
-      selectedId={selectedConfigId}
+      items={configMapping}
+      itemIds={validConfigIds}
+      selectedIds={selectedConfigId ? [selectedConfigId] : []}
       onSelect={handleSelect}
+      getId={(item) => {
+        const entry = Object.entries(configMapping).find(([, v]) => v === item);
+        return entry ? entry[0] : "";
+      }}
+      getLabel={(item) => item.name}
       placeholder="Select configuration..."
       searchPlaceholder="Search configurations..."
       emptyMessage="No configuration found."

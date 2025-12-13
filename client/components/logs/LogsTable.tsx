@@ -13,7 +13,7 @@ import type {
   BulkDeleteLogsIn,
   BulkDeleteLogsOut,
   LogsRunsOut,
-} from "@/app/(main)/system/logs/page";
+} from "@/app/(main)/system/health/page";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -411,7 +411,7 @@ export default function LogsTable({
 
   const levelOptions = useMemo(
     () =>
-      runsData?.levelOptions?.map((opt) => ({
+      runsData?.levelOptions?.map((opt: LogsRunsOut["levelOptions"][number]) => ({
         value: opt.value,
         label: opt.label,
         count: opt.count,
@@ -421,7 +421,7 @@ export default function LogsTable({
 
   const loggerOptions = useMemo(
     () =>
-      runsData?.loggerOptions?.map((opt) => ({
+      runsData?.loggerOptions?.map((opt: LogsRunsOut["loggerOptions"][number]) => ({
         value: opt.value,
         label: opt.label,
         count: opt.count,
@@ -431,7 +431,7 @@ export default function LogsTable({
 
   const actorOptions = useMemo(
     () =>
-      runsData?.actorOptions?.map((opt) => ({
+      runsData?.actorOptions?.map((opt: LogsRunsOut["actorOptions"][number]) => ({
         value: opt.value,
         label: opt.label,
         count: opt.count,
@@ -729,16 +729,7 @@ export default function LogsTable({
       <BulkDeleteLogsDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        logs={logs.map((l) => ({
-          log_id: l.id,
-          logger_name: l.logger_name,
-          level: l.level,
-          message: "",
-          profile_id: "",
-          extra: l.extra || null,
-          created_at: l.created_at,
-          actor_name: l.actor_name,
-        }))}
+        logs={logs}
         onSuccess={handleBulkDeleteSuccess}
         bulkDeleteLogsAction={bulkDeleteLogsAction}
       />

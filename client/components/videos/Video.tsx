@@ -52,7 +52,7 @@ import type { VideoDetailOut } from "@/app/(main)/create/videos/v/[videoId]/page
 import type { components } from "@/lib/api/schema";
 
 // Strong types from API schema
-type AgentMappingItem = components["schemas"]["AgentMappingItem"];
+type AgentMappingItem = components["schemas"]["app__api__v3__videos__detail__AgentMappingItem"];
 type AgentMapping = Record<string, AgentMappingItem>;
 
 // Parameter types (compatible with ParameterSelector)
@@ -1524,7 +1524,7 @@ export default function Video({
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [, setErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = useCallback(
     <K extends keyof FormData>(field: K, value: FormData[K]) => {
@@ -1638,11 +1638,7 @@ export default function Video({
   }, [videoData?.field_mapping]);
 
   // Filter parameters by document_parameter for display next to documents
-  const documentParameterIds = useMemo(() => {
-    return Object.keys(parameterMapping).filter(
-      (paramId) => parameterMapping[paramId]?.document_parameter === true
-    );
-  }, [parameterMapping]);
+  // Note: documentParameterIds removed as it's unused
 
   const generalVideoParameterIds = useMemo(() => {
     return Object.keys(parameterMapping).filter(
@@ -2574,6 +2570,7 @@ export default function Video({
 
       return () => clearTimeout(timeoutId);
     }
+    return undefined;
   }, [
     videoData?.randomized,
     videoData,
@@ -3295,21 +3292,29 @@ export default function Video({
           ? {
               documentDetails: videoData.document_details as Array<{
                 document_id: string;
-                upload_id?: string | null;
-                [key: string]: unknown;
+                name: string;
+                updatedAt: string;
+                extension: string;
+                scenario_ids: string[];
+                can_edit: boolean;
+                can_delete: boolean;
+                active: boolean;
+                department_ids: string[] | null;
+                upload_id: string | null;
+                field_ids: string[];
               }>,
             }
           : {})}
         searchTerm={documentSearchTerm}
         minMax={documentMinMax}
-        allowedRange={
-          videoData?.allowed_ranges?.document
-            ? {
+        {...(videoData?.allowed_ranges?.document
+          ? {
+              allowedRange: {
                 min: videoData.allowed_ranges.document.min,
                 max: videoData.allowed_ranges.document.max,
-              }
-            : undefined
-        }
+              },
+            }
+          : {})}
         previewDocumentId={previewDocumentId}
         onDocumentIdsChange={setSelectedDocumentIds}
         onTemplateDocumentIdsChange={setTemplateDocumentIds}

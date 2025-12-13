@@ -532,6 +532,7 @@ export default function Persona({
             active: formData.active ?? true,
             department_ids: finalDepartmentIds,
             parameter_ids: formData.parameterIds || [],
+            example_ids: [],
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
           {

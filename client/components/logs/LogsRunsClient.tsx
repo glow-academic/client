@@ -10,7 +10,7 @@ import type {
   BulkDeleteLogsIn,
   BulkDeleteLogsOut,
   LogsRunsOut,
-} from "@/app/(main)/system/logs/page";
+} from "@/app/(main)/system/health/page";
 import LogsTable from "./LogsTable";
 
 interface LogsRunsClientProps {

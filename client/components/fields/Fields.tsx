@@ -5,7 +5,7 @@
  * 12/05/2025
  */
 "use client";
-import { Copy, Edit, Eye, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { Copy, Edit, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -246,8 +246,10 @@ export default function Fields({
     setIsDeleting(true);
     try {
       await deleteFieldAction({
-        fieldId: deleteItem.id,
-        profileId: "", // Will be set from session in server action
+        body: {
+          fieldId: deleteItem.id,
+          profileId: "", // Will be set from session in server action
+        },
       });
       toast.success(`Field '${deleteItem.name}' deleted successfully`);
       setShowDeleteDialog(false);
@@ -273,8 +275,10 @@ export default function Fields({
     setIsDuplicating(fieldId);
     try {
       await duplicateFieldAction({
-        fieldId,
-        profileId: "", // Will be set from session in server action
+        body: {
+          fieldId,
+          profileId: "", // Will be set from session in server action
+        },
       });
       toast.success(`Field '${name}' duplicated successfully`);
       router.refresh();
@@ -285,10 +289,6 @@ export default function Fields({
     } finally {
       setIsDuplicating(null);
     }
-  };
-
-  const handleView = (fieldId: string) => {
-    router.push(`/management/fields/${fieldId}`);
   };
 
   const handleEdit = (fieldId: string) => {
@@ -315,11 +315,6 @@ export default function Fields({
               <CardTitle className="text-lg font-semibold truncate">
                 {field.name}
               </CardTitle>
-              {field.default_field && (
-                <Badge variant="secondary" className="mt-1 text-xs">
-                  Default
-                </Badge>
-              )}
             </div>
             <div className="flex items-center gap-1 ml-2 flex-shrink-0">
               {field.can_edit && (
@@ -367,9 +362,6 @@ export default function Fields({
           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
             {field.description || "No description available"}
           </p>
-          <div className="text-sm font-mono text-muted-foreground mb-3">
-            Value: {field.value}
-          </div>
           {/* Parameters and Departments */}
           <div className="flex flex-col gap-2 text-xs text-muted-foreground">
             {field.parameter_ids && field.parameter_ids.length > 0 && (
@@ -377,7 +369,7 @@ export default function Fields({
                 <span className="font-medium">Parameters:</span>
                 {field.parameter_ids.slice(0, 3).map((pid) => (
                   <Badge key={pid} variant="outline" className="text-xs">
-                    {parameterMapping[pid]?.name || pid.slice(0, 8)}
+                    {parameterMapping[pid]?.["name"] || pid.slice(0, 8)}
                   </Badge>
                 ))}
                 {field.parameter_ids.length > 3 && (

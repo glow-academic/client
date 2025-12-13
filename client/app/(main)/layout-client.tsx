@@ -59,9 +59,6 @@ function MainLayoutContent({
   createFeedbackAction,
   refreshAnalyticsAction,
   searchSimulatableProfilesAction,
-  processCSVAction,
-  bulkCreateOrUpdateStaffAction,
-  initialCreateStaffData,
 }: {
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;

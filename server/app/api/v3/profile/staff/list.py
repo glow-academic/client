@@ -37,6 +37,7 @@ class TrendData(BaseModel):
     value: float
     count: int
 
+
 router = APIRouter()
 
 

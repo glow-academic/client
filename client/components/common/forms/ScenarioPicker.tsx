@@ -55,6 +55,8 @@ import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type SimulationsListOut = OutputOf<"/api/v3/simulations/list", "post">;
+type ScenarioMappingItem =
+  SimulationsListOut["scenario_mapping"][string];
 
 // Filter key constants
 const NO_PERSONA_KEY = "__no_persona__";
@@ -180,8 +182,8 @@ export function ScenarioPicker<
         hasNoDocuments = true;
       } else {
         sc.document_ids.forEach((docId) => {
-          const doc = sc.document_mapping?.[docId];
-          if (doc) {
+          const doc = sc.document_mapping?.[docId] as { name?: string; description?: string } | undefined;
+          if (doc && doc.name && doc.description) {
             const existing = documentMap.get(docId);
             documentMap.set(docId, {
               name: doc.name,
@@ -233,8 +235,8 @@ export function ScenarioPicker<
         hasNoParams = true;
       } else {
         sc.parameter_item_ids.forEach((paramId) => {
-          const param = sc.parameter_item_mapping?.[paramId];
-          if (param) {
+          const param = sc.parameter_item_mapping?.[paramId] as { name?: string; parameter_name?: string; description?: string } | undefined;
+          if (param && param.name && param.parameter_name && param.description) {
             const existing = countMap.get(paramId);
             countMap.set(paramId, {
               name: param.name,
@@ -388,8 +390,8 @@ export function ScenarioPicker<
       parameterId: string;
     }[] = [];
     scenario.parameter_item_ids.forEach((parameterItemId) => {
-      const parameterItem = scenario.parameter_item_mapping?.[parameterItemId];
-      if (parameterItem) {
+      const parameterItem = scenario.parameter_item_mapping?.[parameterItemId] as { parameter_name?: string; name?: string; parameter_id?: string } | undefined;
+      if (parameterItem && parameterItem.parameter_name && parameterItem.name && parameterItem.parameter_id) {
         badges.push({
           parameterName: parameterItem.parameter_name,
           value: parameterItem.name,

@@ -97,10 +97,6 @@ export default function Field({
   // Use server-provided data
   const fieldDetail = serverFieldDetail;
 
-  // Extract body types from server action types for type safety
-  type CreateFieldBody = CreateFieldIn extends { body: infer B } ? B : never;
-  type UpdateFieldBody = UpdateFieldIn extends { body: infer B } ? B : never;
-
   // Get valid options from server data
   const validDepartmentIds = useMemo(() => {
     return (
@@ -172,22 +168,20 @@ export default function Field({
 
   // Set breadcrumb metadata
   useEffect(() => {
-    if (isEditMode && fieldDetail) {
+    if (isEditMode && fieldDetail && fieldId) {
       setEntityMetadata({
-        title: fieldDetail.name,
-        description: fieldDetail.description,
-      });
-    } else {
-      setEntityMetadata({
-        title: "New Field",
-        description: "Create a new field",
+        entityId: fieldId,
+        entityName: fieldDetail.name,
+        entityType: "parameter",
       });
     }
 
     return () => {
-      clearEntityMetadata();
+      if (fieldId) {
+        clearEntityMetadata(fieldId);
+      }
     };
-  }, [isEditMode, fieldDetail, setEntityMetadata, clearEntityMetadata]);
+  }, [isEditMode, fieldDetail, fieldId, setEntityMetadata, clearEntityMetadata]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -341,9 +335,12 @@ export default function Field({
                     departmentIds: ids,
                   }))
                 }
-                getId={(dept) => (dept as unknown as { id: string }).id}
-                getLabel={(dept) => dept.name || ""}
-                getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                getId={(dept) => {
+                  const entry = Object.entries(departmentMapping).find(([, v]) => v === dept);
+                  return entry ? entry[0] : "";
+                }}
+                getLabel={(dept) => (dept["name"] as string | undefined) || ""}
+                getSearchText={(dept) => `${dept["name"]} ${dept["description"] || ""}`}
                 placeholder="All Departments"
                 multiSelect={true}
                 hideSelectedChips={true}
@@ -368,9 +365,12 @@ export default function Field({
                     conditionalParameterIds: ids,
                   }))
                 }
-                getId={(item) => (item as unknown as { id: string }).id}
-                getLabel={(item) => item.name || ""}
-                getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                getId={(item) => {
+                  const entry = Object.entries(parameterMapping).find(([, v]) => v === item);
+                  return entry ? entry[0] : "";
+                }}
+                getLabel={(item) => item["name"] || ""}
+                getSearchText={(item) => `${item["name"]} ${item["description"] || ""}`}
                 placeholder="Select conditional parameters..."
                 multiSelect={true}
                 hideSelectedChips={true}

@@ -32,11 +32,27 @@ class AgentMappingItem(BaseModel):
     roles: list[str]
 
 
-class ScenarioMappingItem(BaseModel):
-    """Scenario mapping item."""
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
 
     name: str
     description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+
+
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item with extended fields for nested data."""
+
+    name: str
+    description: str
+    persona_ids: list[str] = []
+    persona_mapping: dict[str, PersonaMappingItem] = {}
+    document_mapping: dict[str, Any] = {}
+    parameter_item_mapping: dict[str, Any] = {}
+    parameter_item_ids: list[str] = []
+    document_ids: list[str] = []
 
 
 # Type aliases for Dict mappings

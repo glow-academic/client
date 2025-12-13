@@ -771,7 +771,7 @@ export default function GradedAttemptView({
                           isActive={false}
                           simulation={simulation}
                           currentChatHints={currentChatHints}
-                          personas={personas}
+                          personas={personas || []}
                           scenario={
                             displayChat?.id
                               ? scenariosByChatId[displayChat.id] || null

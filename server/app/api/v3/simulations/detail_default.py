@@ -69,6 +69,14 @@ class RubricMappingItem(BaseModel):
     description: str
 
 
+class AgentMappingItem(BaseModel):
+    """Agent mapping item."""
+
+    name: str
+    description: str
+    roles: list[str] | None = None
+
+
 class ScenarioMappingItem(BaseModel):
     """Scenario mapping item with extended fields for nested data."""
 
@@ -90,6 +98,7 @@ FieldMapping = dict[str, FieldMappingItem]
 ParameterMapping = dict[str, ParameterMappingItem]
 RubricMapping = dict[str, RubricMappingItem]
 ScenarioMapping = dict[str, ScenarioMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
 
 
 # Inline schemas
@@ -216,7 +225,7 @@ class SimulationDetailResponse(BaseModel):
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
     field_mapping: FieldMapping
-    agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format
+    agent_mapping: AgentMapping
     valid_agent_ids: list[str]
 
 
@@ -490,12 +499,12 @@ async def get_simulation_new(
                     )
 
         # Parse parameter_item mapping
-        field_mapping: FieldMapping = {}
+        field_mapping_dict: FieldMapping = {}
         field_mapping_data = parse_jsonb(result.get("field_mapping"))
         if isinstance(field_mapping_data, dict):
             for piid, pidata in field_mapping_data.items():
                 if isinstance(pidata, dict):
-                    field_mapping[piid] = FieldMappingItem(
+                    field_mapping_dict[piid] = FieldMappingItem(
                         name=pidata.get("name", ""),
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
@@ -527,7 +536,7 @@ async def get_simulation_new(
                     )
 
         # Parse agent_mapping (empty for new simulations, but parse structure)
-        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping: AgentMapping = {}
         agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
         if isinstance(agent_mapping_data, dict):
             for agent_id, adata in agent_mapping_data.items():
@@ -540,11 +549,11 @@ async def get_simulation_new(
                             roles = []
                     if not isinstance(roles, list):
                         roles = []
-                    agent_mapping[agent_id] = {
-                        "name": adata.get("name", ""),
-                        "description": adata.get("description", ""),
-                        "roles": [str(r) for r in roles],
-                    }
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=adata.get("name", ""),
+                        description=adata.get("description", ""),
+                        roles=[str(r) for r in roles] if roles else None,
+                    )
 
         valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
 
@@ -591,7 +600,7 @@ async def get_simulation_new(
             video_mapping=video_mapping,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
-            field_mapping=field_mapping,
+            field_mapping=field_mapping_dict,
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
         )

@@ -100,6 +100,7 @@ export function EvalDetail({
       eval_id: string;
       success: boolean;
       stopped_count: number;
+      message?: string;
     }) => {
       if (data.eval_id === evalDetail.eval_id) {
         setEvalDetail((prev) => ({
@@ -109,7 +110,7 @@ export function EvalDetail({
           completed_runs: prev.completed_runs + data.stopped_count,
         }));
         setIsStopping(false);
-        toast.success(data.message);
+        toast.success(data.message || `Stopped ${data.stopped_count} model_run evaluations`);
       }
     };
 

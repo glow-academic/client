@@ -73,17 +73,6 @@ interface FieldConnectionState {
   active: boolean;
 }
 
-interface ParameterItemFormData {
-  id?: string;
-  name: string;
-  description: string;
-  default: boolean;
-  isNew?: boolean;
-  isDeleted?: boolean;
-  canDelete?: boolean;
-  departmentIds?: string[] | null;
-}
-
 export interface ParameterProps {
   parameterId?: string;
   mode?: "create" | "edit";
@@ -140,9 +129,6 @@ export default function Parameter({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>();
-  const [parameterItemsFormData, setParameterItemsFormData] = useState<
-    ParameterItemFormData[]
-  >([]);
   // Field connections state: field_id -> { default, active }
   const [fieldConnections, setFieldConnections] = useState<
     Record<string, FieldConnectionState>
@@ -317,21 +303,6 @@ export default function Parameter({
   // Initialize parameter items from v3 nested data (for backward compatibility)
   useEffect(() => {
     if (!initiallySorted && parameterItems && parameterItems.length > 0) {
-      const sorted = parameterItems
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name));
-      const formData = sorted.map((item) => ({
-        id: item.parameter_item_id,
-        name: item.name,
-        description: item.description,
-        default: item.default ?? false,
-        // V3 response has usage_count, derive canDelete from it
-        canDelete: (item.usage_count ?? 0) === 0,
-        departmentIds: item.department_ids ?? null,
-        isNew: false,
-        isDeleted: false,
-      }));
-      setParameterItemsFormData(formData);
       setInitiallySorted(true);
     }
   }, [initiallySorted, parameterItems]);
@@ -367,21 +338,7 @@ export default function Parameter({
     }
     if (!parameterItems) return;
     if (!initiallySorted) return; // wait until initial sort hook runs
-
-    const mapped = parameterItems
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((item) => ({
-        id: item.parameter_item_id,
-        name: item.name,
-        description: item.description,
-        default: item.default ?? false,
-        // V3 response has usage_count, derive canDelete from it
-        canDelete: (item.usage_count ?? 0) === 0,
-        departmentIds: item.department_ids ?? null,
-        isNew: false,
-        isDeleted: false,
-      }));
-    setParameterItemsFormData(mapped);
+    // Note: parameterItems are already sorted and mapped by the parent component
   }, [parameterItems, mode, initiallySorted]);
 
   // Handlers for field connections
@@ -1030,12 +987,12 @@ export default function Parameter({
                           </div>
                         );
                       }}
-                      renderButton={(selectedItems, placeholder) => {
-                        if (selectedItems.length === 0) return placeholder;
+                      renderButton={(selectedItems) => {
+                        if (selectedItems.length === 0) return "Select persona";
                         if (selectedItems.length === 1) {
                           const persona = selectedItems[0];
                           const IconComponent =
-                            getPersonaIconComponent(persona?.icon) || Brain;
+                            (persona?.icon ? getPersonaIconComponent(persona.icon) : null) || Brain;
                           const hexColor = persona?.color || "#64748b";
                           const generateGradient = (hex: string) => {
                             const cleanHex = hex.replace("#", "");
@@ -1059,7 +1016,7 @@ export default function Parameter({
                                 <IconComponent className="h-3.5 w-3.5 text-white" />
                               </div>
                               <span className="truncate">
-                                {persona?.name || placeholder}
+                                {persona?.name || "Select persona"}
                               </span>
                             </div>
                           );
@@ -1076,9 +1033,7 @@ export default function Parameter({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onRemove(
-                                (persona as unknown as { id: string }).id
-                              );
+                              onRemove();
                             }}
                             className="text-muted-foreground hover:text-destructive flex-shrink-0"
                           >

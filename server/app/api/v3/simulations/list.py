@@ -47,19 +47,25 @@ class RubricMappingItem(BaseModel):
     description: str
 
 
+# Type aliases for Dict mappings (defined before ScenarioMappingItem to avoid forward reference issues)
+DepartmentMapping = dict[str, "DepartmentMappingItem"]
+CohortMapping = dict[str, "CohortMappingItem"]
+PersonaMapping = dict[str, "PersonaMappingItem"]
+RubricMapping = dict[str, "RubricMappingItem"]
+ScenarioMapping = dict[str, "ScenarioMappingItem"]
+
+
 class ScenarioMappingItem(BaseModel):
-    """Scenario mapping item."""
+    """Scenario mapping item with extended fields for nested data."""
 
     name: str
     description: str
-
-
-# Type aliases for Dict mappings
-DepartmentMapping = dict[str, DepartmentMappingItem]
-CohortMapping = dict[str, CohortMappingItem]
-PersonaMapping = dict[str, PersonaMappingItem]
-RubricMapping = dict[str, RubricMappingItem]
-ScenarioMapping = dict[str, ScenarioMappingItem]
+    persona_ids: list[str] = []
+    persona_mapping: PersonaMapping = {}
+    document_mapping: dict[str, Any] = {}
+    parameter_item_mapping: dict[str, Any] = {}
+    parameter_item_ids: list[str] = []
+    document_ids: list[str] = []
 
 
 # Inline request/response schemas

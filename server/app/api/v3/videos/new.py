@@ -412,10 +412,10 @@ def filter_valid_document_ids(
             continue
 
         # Get fields from documentMapping (not document_details)
-        doc: DocumentMappingItem | None = document_mapping.get(doc_id)
+        doc_item: DocumentMappingItem | None = document_mapping.get(doc_id)
         doc_field_ids: list[str] = []
-        if doc and doc.field_ids:
-            doc_field_ids = doc.field_ids
+        if doc_item and doc_item.field_ids:
+            doc_field_ids = doc_item.field_ids
 
         # Get fields from document_details (field_ids)
         doc_details: DocumentDetailItem | None = next(

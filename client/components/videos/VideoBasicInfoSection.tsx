@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/tooltip";
 import type { components } from "@/lib/api/schema";
 
-type AgentMappingItem = components["schemas"]["AgentMappingItem"];
-type DepartmentMappingItem = components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+type AgentMappingItem = components["schemas"]["app__api__v3__videos__detail__AgentMappingItem"];
+type DepartmentMappingItem = components["schemas"]["app__api__v3__videos__detail__DepartmentMappingItem"];
 
 export interface VideoBasicInfoSectionProps {
   // Data

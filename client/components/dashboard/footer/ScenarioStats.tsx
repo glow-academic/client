@@ -244,10 +244,15 @@ export default function ScenarioStats({
             </div>
 
             <GenericPicker
-              mapping={parameterMappingForPicker}
-              validIds={validParameterIdsForPicker}
-              selectedId={activeParamId}
-              onSelect={setSelectedParameterId}
+              items={parameterMappingForPicker}
+              itemIds={validParameterIdsForPicker}
+              selectedIds={activeParamId ? [activeParamId] : []}
+              onSelect={(ids) => setSelectedParameterId(ids[0] || "")}
+              getId={(item) => {
+                const entry = Object.entries(parameterMappingForPicker).find(([, v]) => v === item);
+                return entry ? entry[0] : "";
+              }}
+              getLabel={(item) => item.name}
               placeholder="Select Parameter"
               searchPlaceholder="Search parameters..."
               emptyMessage="No parameter found."

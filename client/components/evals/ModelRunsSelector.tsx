@@ -41,8 +41,6 @@ export function ModelRunsSelector({
   selectedModelRunIds,
   onSelect,
   modelMapping = {},
-  agentMapping = {},
-  personaMapping = {},
   agentIds,
   eval: evalFilter,
 }: ModelRunsSelectorProps) {
@@ -65,17 +63,17 @@ export function ModelRunsSelector({
       try {
         const requestBody: ModelRunsFilters["body"] = {
           profileId,
-          search: searchQuery || undefined,
-          page: filters.page,
-          pageSize: filters.pageSize,
+          search: searchQuery || null,
+          page: filters.page ?? null,
+          pageSize: filters.pageSize ?? null,
           agentType:
-            filters.agentType === "all" ? undefined : filters.agentType,
-          modelIds: filters.modelIds,
-          agentIds: agentIds || filters.agentIds,
-          personaIds: filters.personaIds,
-          startDate: filters.startDate,
-          endDate: filters.endDate,
-          eval: evalFilter,
+            filters.agentType === "all" ? null : filters.agentType || null,
+          modelIds: filters.modelIds ?? null,
+          agentIds: agentIds || filters.agentIds || null,
+          personaIds: filters.personaIds ?? null,
+          startDate: filters.startDate ?? null,
+          endDate: filters.endDate ?? null,
+          eval: evalFilter ?? null,
         };
         const response = await api.post("/evals/model_runs", {
           body: requestBody,
@@ -128,7 +126,7 @@ export function ModelRunsSelector({
               onValueChange={(value) =>
                 setFilters({
                   ...filters,
-                  agentType: value === "all" ? undefined : value,
+                  agentType: value === "all" ? null : value,
                 })
               }
             >
@@ -149,7 +147,7 @@ export function ModelRunsSelector({
               onValueChange={(value) =>
                 setFilters({
                   ...filters,
-                  modelIds: value === "all" ? undefined : [value],
+                  modelIds: value === "all" ? null : [value],
                 })
               }
             >

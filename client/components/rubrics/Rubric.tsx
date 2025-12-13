@@ -48,10 +48,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  getDefaultDepartmentIds,
-  transformDepartmentIdsForSubmit,
-} from "@/utils/department-picker-helpers";
+import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpers";
 import { Edit, Plus, Power, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 

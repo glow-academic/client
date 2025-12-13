@@ -882,8 +882,8 @@ export function UploadClassificationDialog({
                       ],
                     ),
                   );
-                  const zipDefaultsWithDepartment = {
-                    ...zipDefaults,
+                  const zipDefaultsWithDepartment: FileClassification = {
+                    parameterItemIds: globalDefaultParameterItemIds,
                     departmentIds: finalDepartmentIds || [],
                   };
                   onConfirm(perFileWithDepartment, zipDefaultsWithDepartment);

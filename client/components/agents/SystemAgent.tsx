@@ -967,7 +967,7 @@ export default function SystemAgent({
                 <Label htmlFor="role">Role *</Label>
                 {formData?.role !== undefined ? (
                   <GenericPicker
-                    items={AGENT_ROLES}
+                    items={[...AGENT_ROLES]}
                     selectedIds={formData.role ? [formData.role] : []}
                     onSelect={(ids) => {
                       const role = ids[0] || "";
@@ -1012,10 +1012,10 @@ export default function SystemAgent({
                         }
                       }
                     }}
-                    getId={(role) => role.id}
-                    getLabel={(role) => role.name}
+                    getId={(role) => (role as { id: string }).id}
+                    getLabel={(role) => (role as { name: string }).name}
                     getSearchText={(role) =>
-                      `${role.name} ${role.description || ""}`
+                      `${(role as { name: string }).name} ${(role as { description?: string }).description || ""}`
                     }
                     placeholder="Select role"
                     multiSelect={false}
@@ -1229,7 +1229,7 @@ export default function SystemAgent({
                   <Label htmlFor="voices">Voices</Label>
                   {formData?.model_voice_ids !== undefined ? (
                     <GenericPicker
-                      items={VOICES}
+                      items={[...VOICES]}
                       selectedIds={
                         formData.model_voice_ids &&
                         formData.model_voice_ids.length > 0
@@ -1248,9 +1248,9 @@ export default function SystemAgent({
                         handleInputChange("model_voice_ids", selectedIds);
                         handleInputChange("voices", voiceIds);
                       }}
-                      getId={(item) => item.id}
-                      getLabel={(item) => item.name}
-                      getSearchText={(item) => item.name}
+                      getId={(item) => (item as { id: string }).id}
+                      getLabel={(item) => (item as { name: string }).name}
+                      getSearchText={(item) => (item as { name: string }).name}
                       disabled={isSubmitting || isReadonly}
                       multiSelect={true}
                       hideSelectedChips={true}

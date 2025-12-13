@@ -23,6 +23,7 @@ class DepartmentMappingItem(BaseModel):
 
     name: str
     description: str
+    parameter_ids: list[str] | None = None
 
 
 class FieldMappingItem(BaseModel):
@@ -42,6 +43,8 @@ class ParameterMappingItem(BaseModel):
     numerical: bool
     document_parameter: bool
     persona_parameter: bool
+    scenario_parameter: bool = False
+    video_parameter: bool = False
 
 
 class AgentMappingItem(BaseModel):

@@ -23,7 +23,8 @@ interface EntityMetadata {
     | "model"
     | "chat"
     | "attempt"
-    | "video";
+    | "video"
+    | "key";
 }
 
 /**

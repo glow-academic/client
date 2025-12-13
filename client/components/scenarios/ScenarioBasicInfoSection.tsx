@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/tooltip";
 import type { components } from "@/lib/api/schema";
 
-type AgentMappingItem = components["schemas"]["AgentMappingItem"];
+type AgentMappingItem =
+  components["schemas"]["app__api__v3__scenarios__detail__AgentMappingItem"];
 type DepartmentMappingItem =
-  components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+  components["schemas"]["app__api__v3__scenarios__detail__DepartmentMappingItem"];
 
 export interface ScenarioBasicInfoSectionProps {
   // Data
@@ -45,7 +46,6 @@ export interface ScenarioBasicInfoSectionProps {
 
   // UI State
   isReadonly: boolean;
-  isSuperadmin: boolean;
   defaultName?: string;
   activeLabel?: string;
   activeDescription?: string;
@@ -70,7 +70,6 @@ export function ScenarioBasicInfoSection({
   onRandomizeAll,
   onResetAll,
   isReadonly,
-  isSuperadmin,
   defaultName = "New Scenario",
   activeLabel = "Active",
   activeDescription = "Inactive scenarios will not be available for other simulations",
@@ -325,5 +324,6 @@ export function ScenarioBasicInfoSection({
     </Card>
   );
 }
+
 
 

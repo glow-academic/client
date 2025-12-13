@@ -327,12 +327,17 @@ export default function Growth({
                 />
                 <YAxis className="text-xs" domain={[0, 100]} />
                 <Tooltip
-                  content={(props) => (
-                    <CustomLineTooltip
-                      {...props}
-                      metricsWithFormatters={metricsWithFormatters}
-                    />
-                  )}
+                  content={(props) => {
+                    if (!props) return null;
+                    return (
+                      <CustomLineTooltip
+                        active={props.active}
+                        payload={(props.payload || []) as Array<{ dataKey?: string; value?: number; name?: string; color?: string }>}
+                        label={props.label}
+                        metricsWithFormatters={metricsWithFormatters}
+                      />
+                    );
+                  }}
                 />
                 <Legend />
                 {selectedMetricObjects.map((metric) => (

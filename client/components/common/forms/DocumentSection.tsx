@@ -43,14 +43,22 @@ export interface DocumentSectionProps {
   templateDocumentIds: string[];
   documentDetails?: Array<{
     document_id: string;
-    upload_id?: string | null;
-    [key: string]: unknown;
+    name: string;
+    updatedAt: string;
+    extension: string;
+    scenario_ids: string[];
+    can_edit: boolean;
+    can_delete: boolean;
+    active: boolean;
+    department_ids: string[] | null;
+    upload_id: string | null;
+    field_ids: string[];
   }>;
 
   // State
   searchTerm: string;
   minMax: { min: number; max: number }; // Current values
-  allowedRange?: { min: number; max: number } | undefined; // Allowed limits (optional, defaults to minMax if not provided)
+  allowedRange?: { min: number; max: number }; // Allowed limits (optional, defaults to minMax if not provided)
   previewDocumentId: string | null;
 
   // Callbacks
@@ -247,13 +255,20 @@ export function DocumentSection({
 
               // Create document item for DocumentViewer
               const docForViewer: DocumentItem = fullDoc
-                ? ({
-                    ...fullDoc,
+                ? {
+                    document_id: fullDoc.document_id,
+                    name: fullDoc.name,
+                    updatedAt: fullDoc.updatedAt,
+                    extension: fullDoc.extension,
+                    scenario_ids: fullDoc.scenario_ids,
+                    can_edit: fullDoc.can_edit,
+                    can_delete: fullDoc.can_delete,
+                    active: fullDoc.active,
+                    department_ids: fullDoc.department_ids,
                     upload_id: fullDoc.upload_id ?? null,
-                    parameter_item_ids: [],
-                    field_ids: [],
-                  } as DocumentItem)
-                : ({
+                    field_ids: fullDoc.field_ids || [],
+                  }
+                : {
                     document_id: docId,
                     name: document.name || "Document",
                     updatedAt: new Date().toISOString(),
@@ -263,10 +278,9 @@ export function DocumentSection({
                     can_delete: false,
                     active: true,
                     department_ids: [],
-                    field_ids: [],
-                    parameter_item_ids: [],
                     upload_id: null,
-                  } as DocumentItem);
+                    field_ids: [],
+                  };
 
               return (
                 <button
@@ -356,13 +370,20 @@ export function DocumentSection({
                   (d) => d.document_id === docId
                 );
                 const docForViewer: DocumentItem = fullDoc
-                  ? ({
-                      ...fullDoc,
+                  ? {
+                      document_id: fullDoc.document_id,
+                      name: fullDoc.name,
+                      updatedAt: fullDoc.updatedAt,
+                      extension: fullDoc.extension,
+                      scenario_ids: fullDoc.scenario_ids,
+                      can_edit: fullDoc.can_edit,
+                      can_delete: fullDoc.can_delete,
+                      active: fullDoc.active,
+                      department_ids: fullDoc.department_ids,
                       upload_id: fullDoc.upload_id ?? null,
-                      parameter_item_ids: [],
-                      field_ids: [],
-                    } as DocumentItem)
-                  : ({
+                      field_ids: fullDoc.field_ids || [],
+                    }
+                  : {
                       document_id: docId,
                       name: documentMapping[docId]?.name || "Document",
                       updatedAt: new Date().toISOString(),
@@ -372,10 +393,9 @@ export function DocumentSection({
                       can_delete: false,
                       active: true,
                       department_ids: [],
-                      field_ids: [],
-                      parameter_item_ids: [],
                       upload_id: null,
-                    } as DocumentItem);
+                      field_ids: [],
+                    };
                 return (
                   <div className="mt-4">
                     <DocumentViewer

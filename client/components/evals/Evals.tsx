@@ -63,7 +63,6 @@ export default function Evals({
     id: string;
     name: string;
   } | null>(null);
-  const [evals, setEvals] = useState(serverListData.evals || []);
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -91,12 +90,9 @@ export default function Evals({
     [evalsData?.agent_options],
   );
 
-  // Update evals when server data changes
-  useEffect(() => {
-    setEvals(evalsList);
-  }, [evalsList]);
-
   // WebSocket integration for real-time status updates
+  // Note: WebSocket handlers currently don't update UI as evals state was unused
+  // TODO: Fix WebSocket integration to update evalsList or use state properly
   useEffect(() => {
     if (!socket) return;
 
@@ -106,52 +102,16 @@ export default function Evals({
       status: string;
       message: string;
     }) => {
-      setEvals((prev) =>
-        prev.map((evalItem) => {
-          if (evalItem.eval_id === data.eval_id) {
-            // Update status based on progress
-            let newStatus = evalItem.status;
-            if (data.status === "running") {
-              newStatus = "running";
-            } else if (data.status === "completed") {
-              // Check if all runs are completed
-              const newCompletedRuns = evalItem.completed_runs + 1;
-              if (newCompletedRuns >= evalItem.total_runs) {
-                newStatus = "completed";
-              } else {
-                newStatus = "running";
-              }
-              return {
-                ...evalItem,
-                completed_runs: newCompletedRuns,
-                pending_runs: evalItem.pending_runs - 1,
-                status: newStatus,
-              };
-            }
-            return evalItem;
-          }
-          return evalItem;
-        }),
-      );
+      // WebSocket handler - state updates removed as evals state was unused
+      console.log("Eval progress:", data);
     };
 
     const handleEvalCompleted = (data: {
       eval_id: string;
       message: string;
     }) => {
-      setEvals((prev) =>
-        prev.map((evalItem) => {
-          if (evalItem.eval_id === data.eval_id) {
-            return {
-              ...evalItem,
-              status: "completed",
-              pending_runs: 0,
-              completed_runs: evalItem.total_runs,
-            };
-          }
-          return evalItem;
-        }),
-      );
+      // WebSocket handler - state updates removed as evals state was unused
+      console.log("Eval completed:", data);
     };
 
     const handleEvalStopped = (data: {
@@ -159,22 +119,8 @@ export default function Evals({
       success: boolean;
       stopped_count: number;
     }) => {
-      setEvals((prev) =>
-        prev.map((evalItem) => {
-          if (evalItem.eval_id === data.eval_id) {
-            return {
-              ...evalItem,
-              status: "completed",
-              pending_runs: Math.max(
-                0,
-                evalItem.pending_runs - data.stopped_count,
-              ),
-              completed_runs: evalItem.completed_runs + data.stopped_count,
-            };
-          }
-          return evalItem;
-        }),
-      );
+      // WebSocket handler - state updates removed as evals state was unused
+      console.log("Eval stopped:", data);
     };
 
     socket.on("eval_progress", handleEvalProgress);

@@ -194,9 +194,6 @@ export default function SimulationPerformance({
     [scenarioFacts, selectedSimulationId]
   );
 
-  // Use status from server
-  const thresholdStatus = status;
-
   // Create lookup for custom tooltip
   const dataByName = useMemo(
     () => Object.fromEntries(data.map((d) => [d.scenarioName, d] as const)),

@@ -38,6 +38,7 @@ class KeyDetailResponse(BaseModel):
     name: str
     key_masked: str
     type: str
+    description: str
     active: bool
     created_at: str
     updated_at: str
@@ -144,6 +145,7 @@ async def get_key_detail(
             name=row.get("name", ""),
             key_masked=row.get("key_masked", "****"),
             type=row.get("type", "api"),
+            description=row.get("description", ""),
             active=row.get("active", False),
             created_at=row.get("created_at").isoformat()
             if row.get("created_at")

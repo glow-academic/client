@@ -335,7 +335,7 @@ export function DocumentPicker<
                   </div>
                 ) : id ? (
                   (() => {
-                    const minimalDoc: DocumentItem = {
+                    const minimalDoc: DocumentViewerItem = {
                       document_id: id,
                       name: item.name || "Document",
                       updatedAt: new Date().toISOString(),
@@ -345,11 +345,9 @@ export function DocumentPicker<
                       can_delete: false,
                       active: true,
                       department_ids: [],
-                      file_path: item.filePath || "",
-                      mime_type: item.mimeType || "",
-                      field_ids: [],
                       upload_id: id || null,
-                    } as DocumentViewerItem;
+                      field_ids: [],
+                    };
                     return (
                       <div className="w-full h-full">
                         <DocumentViewer
@@ -421,7 +419,7 @@ export function DocumentPicker<
               if (mappedDoc && previewDocumentId) {
                 // Create minimal DocumentItem from mapping with document_id
                 // DocumentViewer can fetch the document using document_id
-                const minimalDoc: DocumentItem = {
+                const minimalDoc: DocumentViewerItem = {
                   document_id: previewDocumentId,
                   name: mappedDoc.name || "Document",
                   updatedAt: new Date().toISOString(),
@@ -431,11 +429,9 @@ export function DocumentPicker<
                   can_delete: false,
                   active: true,
                   department_ids: [],
-                  file_path: mappedDoc.filePath || "",
-                  mime_type: mappedDoc.mimeType || "",
-                  field_ids: [],
                   upload_id: previewDocumentId || null,
-                } as DocumentViewerItem;
+                  field_ids: [],
+                };
                 return (
                   <div className="flex-1 min-h-0">
                     <DocumentViewer

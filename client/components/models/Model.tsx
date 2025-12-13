@@ -789,7 +789,7 @@ export default function Model({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Input</label>
                       <GenericPicker
-                        items={MODALITIES}
+                        items={[...MODALITIES]}
                         selectedIds={formData.modalities?.input || ["text"]}
                         onSelect={(modalities) =>
                           setFormData((prev) => ({
@@ -813,7 +813,7 @@ export default function Model({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Output</label>
                       <GenericPicker
-                        items={MODALITIES}
+                        items={[...MODALITIES]}
                         selectedIds={formData.modalities?.output || ["text"]}
                         onSelect={(modalities) =>
                           setFormData((prev) => ({
@@ -1056,7 +1056,7 @@ export default function Model({
                   {formData.enableReasoningLevels && (
                     <div className="pl-6 pt-1">
                       <GenericPicker
-                        items={REASONING_LEVELS}
+                        items={[...REASONING_LEVELS]}
                         selectedIds={formData.reasoning_levels || []}
                         onSelect={(ids) =>
                           setFormData((prev) => ({
@@ -1171,7 +1171,7 @@ export default function Model({
                     {formData.enableVoices && (
                       <div className="pl-6 pt-1">
                         <GenericPicker
-                          items={VOICES}
+                          items={[...VOICES]}
                           selectedIds={formData.voices || []}
                           onSelect={(ids) =>
                             setFormData((prev) => ({
@@ -1265,7 +1265,7 @@ export default function Model({
                 {formData.enableQualities && (
                   <div className="pl-6 pt-1">
                     <GenericPicker
-                      items={QUALITIES}
+                      items={[...QUALITIES]}
                       selectedIds={formData.qualities || []}
                       onSelect={(ids) =>
                         setFormData((prev) => ({ ...prev, qualities: ids }))

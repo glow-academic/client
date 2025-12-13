@@ -390,11 +390,11 @@ async def _simulation_voice_user_speech_impl(
             del _voice_message_ids[chat_id]
         # Still emit simulation_run_complete even on error to hide stop button
         try:
-            chat_id_uuid: uuid.UUID | None = uuid.UUID(chat_id) if chat_id else None
-            if chat_id_uuid:
+            chat_uuid: uuid.UUID | None = uuid.UUID(chat_id) if chat_id else None
+            if chat_uuid:
                 await simulation_run_complete(
                     SimulationRunCompletePayload(chat_id=chat_id),
-                    room=f"simulation_{chat_id_uuid}",
+                    room=f"simulation_{chat_uuid}",
                 )
         except Exception as emit_err:
             logger.error(

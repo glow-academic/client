@@ -22,6 +22,9 @@ class DepartmentMappingItem(BaseModel):
 
     name: str
     description: str
+    scenario_ids: list[str] | None = None
+    rubric_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
 
 
 class FieldMappingItem(BaseModel):
@@ -422,12 +425,12 @@ async def get_simulation_new(
                     )
 
         # Parse parameter_item mapping
-        field_mapping: FieldMapping = {}
+        field_mapping_dict: FieldMapping = {}
         field_mapping_data = parse_jsonb(result.get("field_mapping"))
         if isinstance(field_mapping_data, dict):
             for piid, pidata in field_mapping_data.items():
                 if isinstance(pidata, dict):
-                    field_mapping[piid] = FieldMappingItem(
+                    field_mapping_dict[piid] = FieldMappingItem(
                         name=pidata.get("name", ""),
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
@@ -501,7 +504,7 @@ async def get_simulation_new(
             video_mapping=video_mapping,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
-            field_mapping=field_mapping,
+            field_mapping=field_mapping_dict,
         )
 
         # Cache response

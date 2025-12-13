@@ -35,6 +35,7 @@ class ContentItemInRequest(BaseModel):
     active: bool = True
     # Switch fields (scenarios only, except show fields which apply to both)
     hints_enabled: bool | None = None
+    copy_paste_allowed: bool | None = None  # Scenarios only
     audio_enabled: bool | None = None  # Scenarios only
     text_enabled: bool | None = None  # Scenarios only
     show_problem_statement: bool | None = None  # Scenarios and videos
@@ -99,6 +100,7 @@ async def update_simulation(
             scenario_ids: list[str] = []
             scenario_active_flags: list[bool] = []
             scenario_hints_enabled: list[bool] = []
+            scenario_copy_paste_allowed: list[bool] = []
             scenario_audio_enabled: list[bool] = []
             scenario_text_enabled: list[bool] = []
             scenario_show_problem_statement: list[bool] = []
@@ -125,6 +127,11 @@ async def update_simulation(
                         scenario_hints_enabled.append(
                             item.hints_enabled
                             if item.hints_enabled is not None
+                            else False
+                        )
+                        scenario_copy_paste_allowed.append(
+                            item.copy_paste_allowed
+                            if item.copy_paste_allowed is not None
                             else False
                         )
                         scenario_audio_enabled.append(
@@ -202,6 +209,9 @@ async def update_simulation(
             )
             scenario_hints_array = (
                 scenario_hints_enabled if scenario_hints_enabled else []
+            )
+            scenario_copy_paste_allowed_array = (
+                scenario_copy_paste_allowed if scenario_copy_paste_allowed else []
             )
             scenario_audio_enabled_array = (
                 scenario_audio_enabled if scenario_audio_enabled else []

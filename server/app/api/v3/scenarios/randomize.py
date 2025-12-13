@@ -361,10 +361,10 @@ async def randomize_scenario_attributes(
                 if param_item:
                     param_id = param_item["parameter_id"]
                     # Check if this parameter is a document parameter
-                    param: dict[str, Any] | None = next(
+                    param_dict: dict[str, Any] | None = next(
                         (p for p in active_parameters if p["id"] == param_id), None
                     )
-                    if param and param.get("document_parameter", False):
+                    if param_dict and param_dict.get("document_parameter", False):
                         if param_item_id not in document_param_ids:
                             document_param_ids.append(param_item_id)
         logger.info(

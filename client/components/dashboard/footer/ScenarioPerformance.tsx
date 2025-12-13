@@ -235,7 +235,7 @@ export default function ScenarioPerformance({
   }, [attributeScenarioFacts, activeParameterId]);
 
   const elements: AttributeElement[] = useMemo(() => {
-    const mapped = itemsForParameter.map((it, idx) => {
+    const mapped = itemsForParameter.map((it) => {
       const scen = attributeScenarioFacts.filter(
         (f) => f.parameterItemId === it.id,
       );
@@ -292,7 +292,7 @@ export default function ScenarioPerformance({
     // Assign colors after limiting
     return sorted.map((el, idx) => ({
       ...el,
-      color: chartColors[idx % chartColors.length],
+      color: chartColors[idx % chartColors.length] || "",
     }));
   }, [
     itemsForParameter,
@@ -454,10 +454,15 @@ export default function ScenarioPerformance({
 
           {/* Parameter Picker */}
           <GenericPicker
-            mapping={parameterMappingForPicker}
-            validIds={validParameterIdsForPicker}
-            selectedId={activeParameterId}
-            onSelect={setSelectedParameterId}
+            items={parameterMappingForPicker}
+            itemIds={validParameterIdsForPicker}
+            selectedIds={activeParameterId ? [activeParameterId] : []}
+            onSelect={(ids) => setSelectedParameterId(ids[0] || "")}
+            getId={(item) => {
+              const entry = Object.entries(parameterMappingForPicker).find(([, v]) => v === item);
+              return entry ? entry[0] : "";
+            }}
+            getLabel={(item) => item.name}
             placeholder="Select Parameter"
             searchPlaceholder="Search parameters..."
             emptyMessage="No parameter found."

@@ -2261,7 +2261,7 @@ export default function Staff({
                                             >
                                               <IconComponent className="h-3.5 w-3.5 text-white" />
                                             </div>
-                                            <span className="truncate">{role?.name || placeholder}</span>
+                                            <span className="truncate">{role?.name || "Select role"}</span>
                                           </div>
                                         );
                                       }}

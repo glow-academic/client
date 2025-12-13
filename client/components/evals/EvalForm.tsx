@@ -272,7 +272,7 @@ export function EvalForm({
                   </div>
                 </div>
               )}
-              renderItem={(item, isSelected) => (
+              renderItem={(item) => (
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div className="flex-1 min-w-0">
@@ -333,7 +333,7 @@ export function EvalForm({
               profileId={profileId}
               selectedModelRunIds={selectedModelRunIds}
               onSelect={setSelectedModelRunIds}
-              modelMapping={rubricsList.model_mapping || {}}
+              modelMapping={{}}
               agentMapping={agentMappingForRuns}
               agentIds={selectedAgentId}
               eval={true}

@@ -5,6 +5,7 @@ import io
 import json
 import zipfile
 from datetime import datetime
+from enum import Enum
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -15,7 +16,6 @@ from app.main import get_db
 from app.utils.analytics_query_builder import build_profile_and_analytics_filters
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
-from enum import Enum
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -25,6 +25,8 @@ class SimulationFilter(str, Enum):
     GENERAL = "general"
     PRACTICE = "practice"
     ARCHIVED = "archived"
+
+
 from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)

@@ -1,7 +1,6 @@
 "use client";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { Brain, Check } from "lucide-react";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
 import {
@@ -214,14 +213,21 @@ export function PracticeCustomizeDialog({
               </div>
             )}
             <div className="grid gap-2" data-testid="practice-persona-picker">
-              <PersonaPicker
-                mapping={filteredPersonaMapping}
-                validIds={validPersonaIds}
+              <Label>Target Persona</Label>
+              <GenericPicker
+                items={filteredPersonaMapping}
+                itemIds={validPersonaIds}
                 selectedIds={selectedPersonaIds}
                 onSelect={setSelectedPersonaIds}
+                getId={(item) => {
+                  const entry = Object.entries(filteredPersonaMapping).find(([, v]) => v === item);
+                  return entry ? entry[0] : "";
+                }}
+                getLabel={(item) => (item as { name: string }).name || ""}
+                getSearchText={(item) => `${(item as { name: string }).name} ${((item as { description?: string }).description) || ""}`}
                 multiSelect={false}
-                label="Target Persona"
-                description="Choose the target persona you'll practice with in standard mode."
+                placeholder="Choose the target persona you'll practice with in standard mode."
+                buttonClassName="w-full"
               />
             </div>
             <div
@@ -234,10 +240,10 @@ export function PracticeCustomizeDialog({
                     typeof ParameterSelector
                   >[0]["parameterMapping"]
                 }
-                parameterItemMapping={
+                fieldMapping={
                   filteredParameterItemMapping as Parameters<
                     typeof ParameterSelector
-                  >[0]["parameterItemMapping"]
+                  >[0]["fieldMapping"]
                 }
                 validParameterItemIds={validParameterItemIds}
                 selectedParameterItemIds={selectedParameterItemIds}

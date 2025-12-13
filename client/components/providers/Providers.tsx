@@ -366,16 +366,16 @@ export default function Providers({
             className="h-8 w-full md:w-[150px] lg:w-[250px]"
             data-testid="input-search-providers"
           />
-          {providerOptions.length > 0 && (
+          {providerOptions.length > 0 && table.getColumn("provider") && (
             <DataTableFacetedFilter
-              column={table.getColumn("provider")}
+              column={table.getColumn("provider")!}
               title="Provider"
               options={providerOptions}
             />
           )}
-          {statusOptions.length > 0 && (
+          {statusOptions.length > 0 && table.getColumn("status") && (
             <DataTableFacetedFilter
-              column={table.getColumn("status")}
+              column={table.getColumn("status")!}
               title="Status"
               options={statusOptions}
             />

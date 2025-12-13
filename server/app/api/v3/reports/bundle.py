@@ -1,7 +1,8 @@
 """Reports bundle v3 API endpoint."""
 
 import json
-from typing import Annotated, Any
+from enum import Enum
+from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -17,16 +18,30 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from enum import Enum
-from typing import Literal
 
 
 # Inline mapping types (DHH style - no shared types)
-class ScenarioMappingItem(BaseModel):
-    """Scenario mapping item."""
+class PersonaMappingItem(BaseModel):
+    """Persona mapping item with custom color and icon fields."""
 
     name: str
     description: str
+    color: str
+    icon: str
+    image_model: bool | None = None
+
+
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item with extended fields for nested data."""
+
+    name: str
+    description: str
+    persona_ids: list[str] = []
+    persona_mapping: dict[str, PersonaMappingItem] = {}
+    document_mapping: dict[str, Any] = {}
+    parameter_item_mapping: dict[str, Any] = {}
+    parameter_item_ids: list[str] = []
+    document_ids: list[str] = []
 
 
 class SimulationMappingItem(BaseModel):

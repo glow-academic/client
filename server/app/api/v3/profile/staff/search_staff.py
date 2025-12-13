@@ -29,6 +29,7 @@ class CohortMappingItem(BaseModel):
     name: str
     description: str
 
+
 router = APIRouter()
 
 

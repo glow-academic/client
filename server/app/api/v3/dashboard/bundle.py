@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime
+from enum import Enum
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
@@ -14,8 +15,6 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from enum import Enum
-from typing import Literal
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -153,6 +152,7 @@ class AttemptHistoryRow(BaseModel):
     department_ids: list[str] | None = None
     cohortNames: list[str]
     practiceScenarioId: str | None = None
+
 
 router = APIRouter()
 

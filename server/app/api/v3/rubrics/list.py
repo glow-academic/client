@@ -38,6 +38,8 @@ class StandardGroupMappingItem(BaseModel):
 
     name: str
     description: str
+    points: int = 0
+    passPoints: int = 0
 
 
 class StandardMappingItem(BaseModel):

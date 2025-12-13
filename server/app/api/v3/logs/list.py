@@ -22,7 +22,7 @@ class LogsListRequest(BaseModel):
 class LogItem(BaseModel):
     """Log item with new simplified structure."""
 
-    log_id: str
+    id: str
     level: str
     logger_name: str
     message: str
@@ -82,7 +82,7 @@ async def list_logs(
 
             log_items.append(
                 LogItem(
-                    log_id=row["log_id"],
+                    id=row["id"],
                     level=row["level"],
                     logger_name=row["logger_name"],
                     message=row["message"],

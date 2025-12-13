@@ -1,5 +1,7 @@
 """Document list endpoint - v3 API."""
 
+from __future__ import annotations
+
 import json
 from collections import Counter
 from typing import Annotated, Any
@@ -56,19 +58,6 @@ class ParameterMappingItem(BaseModel):
     video_parameter: bool = False
 
 
-class ScenarioMappingItem(BaseModel):
-    """Scenario mapping item with extended fields for nested data."""
-
-    name: str
-    description: str
-    persona_ids: list[str]
-    persona_mapping: "PersonaMapping"
-    document_mapping: "DocumentMapping"
-    parameter_item_mapping: "FieldMapping"
-    parameter_item_ids: list[str]
-    document_ids: list[str]
-
-
 class PersonaMappingItem(BaseModel):
     """Persona mapping item with custom color and icon fields."""
 
@@ -86,9 +75,23 @@ class DocumentMappingItem(BaseModel):
     description: str
 
 
-# Type aliases for Dict mappings
+# Type aliases for Dict mappings (defined before ScenarioMappingItem for forward references)
 PersonaMapping = dict[str, PersonaMappingItem]
 DocumentMapping = dict[str, DocumentMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+
+
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item with extended fields for nested data."""
+
+    name: str
+    description: str
+    persona_ids: list[str]
+    persona_mapping: PersonaMapping
+    document_mapping: DocumentMapping
+    parameter_item_mapping: FieldMapping
+    parameter_item_ids: list[str]
+    document_ids: list[str]
 
 
 class DocumentsListRequest(BaseModel):
@@ -130,6 +133,11 @@ class DocumentsListResponse(BaseModel):
     # Edit dialog data (consolidated from detail endpoint)
     valid_department_ids: list[str]
     document_type_options: list[str]
+
+
+# Rebuild models to resolve forward references for OpenAPI schema generation
+ScenarioMappingItem.model_rebuild()
+DocumentsListResponse.model_rebuild()
 
 
 router = APIRouter()

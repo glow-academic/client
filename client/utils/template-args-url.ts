@@ -41,7 +41,7 @@ export function templateArgsToSearchParams(
  */
 export function searchParamsToTemplateArgs(
   params: URLSearchParams,
-  schema: TemplateSchema | null,
+  _schema: TemplateSchema | null,
 ): Record<string, any> {
   const jsonString = params.get(TEMPLATE_ARGS_PARAM);
 

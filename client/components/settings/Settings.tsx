@@ -133,8 +133,8 @@ export default function Settings({
     success_threshold: 85,
     warning_threshold: 80,
     danger_threshold: 70,
-    default_admin_profile_id: null as string | null | undefined,
-    default_guest_profile_id: null as string | null | undefined,
+    default_admin_profile_id: null as string | null,
+    default_guest_profile_id: null as string | null,
   });
 
   // Update form data and key mappings when settings detail changes

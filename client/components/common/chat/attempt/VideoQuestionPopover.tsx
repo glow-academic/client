@@ -12,20 +12,14 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 // Icons
 import { CheckCircle2, XCircle } from "lucide-react";
 
-import type { AttemptFullOut } from "@/app/(main)/home/a/[attemptId]/page";
+import type { ContentItem } from "./AttemptChat";
 
-type ContentItem = AttemptFullOut["content"][number];
 type QuestionItem = ContentItem["questions"][number];
 type QuizResponseItem = NonNullable<ContentItem["quiz"]>["responses"][number];
 
@@ -81,13 +75,13 @@ export default function VideoQuestionPopover({
 
     // Determine if answer is correct
     const correctOptionIds = new Set(
-      question.options.filter((opt) => opt.isCorrect).map((opt) => opt.id),
+      question.options.filter((opt: { isCorrect: boolean }) => opt.isCorrect).map((opt: { id: string }) => opt.id),
     );
-    const selectedAndCorrect = Array.from(selectedOptions).filter((id) =>
+    const selectedAndCorrect = Array.from(selectedOptions).filter((id: string) =>
       correctOptionIds.has(id),
     );
     const selectedAndIncorrect = Array.from(selectedOptions).filter(
-      (id) => !correctOptionIds.has(id),
+      (id: string) => !correctOptionIds.has(id),
     );
 
     const isAnswerCorrect =
@@ -136,7 +130,7 @@ export default function VideoQuestionPopover({
               disabled={isAnswered}
             >
               <div className="space-y-3">
-                {question.options.map((option) => (
+                {question.options.map((option: { id: string; optionText: string; isCorrect: boolean }) => (
                   <div
                     key={option.id}
                     className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted cursor-pointer"
@@ -159,7 +153,7 @@ export default function VideoQuestionPopover({
 
           {question.type === "choice" && question.allowMultiple && (
             <div className="space-y-3">
-              {question.options.map((option) => (
+              {question.options.map((option: { id: string; optionText: string; isCorrect: boolean }) => (
                 <div
                   key={option.id}
                   className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted cursor-pointer"

@@ -446,8 +446,8 @@ export default function ManualAddStaffModal({
                   </div>
                 );
               }}
-              renderButton={(selectedItems, placeholder) => {
-                if (selectedItems.length === 0) return placeholder;
+              renderButton={(selectedItems) => {
+                if (selectedItems.length === 0) return "Select role...";
                 const role = selectedItems[0];
                 const IconComponent = role?.icon || User;
                 const hexColor = role?.color || "#64748b";
@@ -472,7 +472,7 @@ export default function ManualAddStaffModal({
                     >
                       <IconComponent className="h-3.5 w-3.5 text-white" />
                     </div>
-                    <span className="truncate">{role?.name || placeholder}</span>
+                    <span className="truncate">{role?.name || "Select role..."}</span>
                   </div>
                 );
               }}

@@ -19,8 +19,6 @@ import type {
   CreateDocumentOut,
   DocumentsListOut,
   FinalizeUploadOut,
-  GenerateTemplateIn,
-  GenerateTemplateOut,
 } from "@/app/(main)/management/documents/new/page";
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
@@ -53,14 +51,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { inferMimeFromName } from "@/utils/mime-map";
 import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
-import { cn } from "@/lib/utils";
-import { Building2, Check, FileCode, Plus, Power, Tag, UploadCloud, X } from "lucide-react";
+import {
+  Building2,
+  Check,
+  FileCode,
+  Plus,
+  Power,
+  Tag,
+  UploadCloud,
+  X,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -87,9 +94,6 @@ export interface DocumentProps {
     input: UpdateDocumentIn
   ) => Promise<UpdateDocumentOut>;
   finalizeUploadAction?: (uploadId: string) => Promise<FinalizeUploadOut>;
-  generateTemplateAction?: (
-    input: GenerateTemplateIn
-  ) => Promise<GenerateTemplateOut>;
   renderTemplateAction?: (
     input: RenderTemplateIn
   ) => Promise<RenderTemplateOut>;
@@ -104,7 +108,6 @@ export default function Document({
   createDocumentAction,
   updateDocumentAction,
   finalizeUploadAction,
-  generateTemplateAction,
   renderTemplateAction,
   renderedHtml = null,
 }: DocumentProps) {
@@ -133,9 +136,15 @@ export default function Document({
   type UpdateDocumentBody = UpdateDocumentIn extends { body: infer B }
     ? B
     : never;
-  type GenerateTemplateBody = GenerateTemplateIn extends { body: infer B }
-    ? B
-    : never;
+  // GenerateTemplateBody type for WebSocket event (GenerateTemplateIn is never for WebSocket)
+  type GenerateTemplateBody = {
+    departmentId: string;
+    profileId?: string;
+    documentId?: string;
+    documentName?: string;
+    documentDescription?: string;
+    fieldIds?: string[];
+  };
 
   // Form state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -166,7 +175,6 @@ export default function Document({
     null
   );
   const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
-  const [templateArgs, setTemplateArgs] = useState<Record<string, unknown>>({});
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null
@@ -252,36 +260,26 @@ export default function Document({
 
   const validParameterItemIds = useMemo(() => {
     if (isEditMode) {
-      const baseIds = documentDetail?.valid_parameter_item_ids || [];
+      const baseIds = documentDetail?.valid_field_ids || [];
       const selectedDeptIds = formData.departmentIds;
 
       if (selectedDeptIds.length === 0) {
         return baseIds;
       }
 
-      const deptParameterIds = new Set<string>();
-      selectedDeptIds.forEach((deptId) => {
-        const deptData = departmentMapping[deptId];
-        if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
-          deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
-        }
-      });
-
+      // Filter fields based on linked parameters
+      const linkedParameterIds = new Set(
+        documentDetail?.linked_parameter_ids || []
+      );
       return baseIds.filter((itemId) => {
         const item = fieldMapping[itemId];
-        return item && deptParameterIds.has(item.parameter_id);
+        return item && linkedParameterIds.has(item.parameter_id);
       });
     }
     return Object.keys(fieldMapping);
-  }, [
-    isEditMode,
-    documentDetail,
-    formData.departmentIds,
-    departmentMapping,
-    fieldMapping,
-  ]);
+  }, [isEditMode, documentDetail, formData.departmentIds, fieldMapping]);
 
-  // Create mode: Filter valid parameter item IDs based on selected departments
+  // Create mode: Filter valid field IDs based on selected departments
   const filteredValidParameterItemIds = useMemo(() => {
     if (isEditMode) return [];
     const selectedDeptIds = selectedDepartmentIds || [];
@@ -289,43 +287,10 @@ export default function Document({
       return validParameterItemIds;
     }
 
-    const selectedDeptParameterItemIds = new Set<string>();
-    selectedDeptIds.forEach((deptId) => {
-      const deptData = departmentMapping[deptId];
-      if (
-        deptData &&
-        "parameter_item_ids" in deptData &&
-        Array.isArray(deptData.parameter_item_ids)
-      ) {
-        deptData.parameter_item_ids.forEach((id: string) =>
-          selectedDeptParameterItemIds.add(id)
-        );
-      }
-    });
-
-    const allDeptParameterItemIds = new Set<string>();
-    Object.values(departmentMapping).forEach((deptData) => {
-      if (
-        deptData?.parameter_item_ids &&
-        Array.isArray(deptData.parameter_item_ids)
-      ) {
-        deptData.parameter_item_ids.forEach((id: string) =>
-          allDeptParameterItemIds.add(id)
-        );
-      }
-    });
-
-    return validParameterItemIds.filter((itemId) => {
-      const inSelectedDepts = selectedDeptParameterItemIds.has(itemId);
-      const isCrossDept = !allDeptParameterItemIds.has(itemId);
-      return inSelectedDepts || isCrossDept;
-    });
-  }, [
-    isEditMode,
-    validParameterItemIds,
-    selectedDepartmentIds,
-    departmentMapping,
-  ]);
+    // Return all valid field IDs when departments are selected
+    // Field filtering by department is handled server-side
+    return validParameterItemIds;
+  }, [isEditMode, validParameterItemIds, selectedDepartmentIds]);
 
   // Create mode: Identify document_parameter=true parameters
   const documentParameterIds = useMemo(() => {
@@ -343,8 +308,8 @@ export default function Document({
         description: documentDetail.description || "",
         active: documentDetail.active ?? true,
         departmentIds: documentDetail.department_ids || [],
-        parameterItemIds: documentDetail.parameter_item_ids || [],
-        parameterIds: (documentDetail as any).linked_parameter_ids || [],
+        parameterItemIds: documentDetail.field_ids || [],
+        parameterIds: documentDetail.linked_parameter_ids || [],
         classifyAgentId: documentDetail.classify_agent_id || null,
         documentAgentId: documentDetail.document_agent_id || null,
       });
@@ -357,9 +322,7 @@ export default function Document({
 
       // Initialize template args if template document
       if (documentDetail.template) {
-        if (documentDetail.template_args) {
-          setTemplateArgs(documentDetail.template_args);
-        }
+        // Template args are handled by the template form
         if (documentDetail.template_upload_id) {
           setTemplateUploadId(documentDetail.template_upload_id);
         }
@@ -476,7 +439,6 @@ export default function Document({
         // Always call render endpoint if we have template args, even if empty
         // This ensures we get a rendered preview with default values
         if (!renderTemplateAction) {
-          console.error("Render template action not available");
           setClientRenderedHtml(null);
           return;
         }
@@ -492,8 +454,9 @@ export default function Document({
         const result = await renderTemplateAction({ body: renderBody });
         setClientRenderedHtml(result.rendered_html);
       } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Error rendering template:", error);
         // If render fails, set to null so TemplatePreview shows appropriate message
-        console.error("Failed to render template:", error);
         setClientRenderedHtml(null);
       }
     }, 500); // Debounce 500ms
@@ -997,6 +960,15 @@ export default function Document({
               : undefined,
       } as GenerateTemplateBody;
 
+      type GenerateTemplateOut = {
+        success: boolean;
+        message: string;
+        template_html: string;
+        template_schema: Record<string, unknown>;
+        upload_id: string;
+        template_mapping: Record<string, unknown> | null;
+      };
+
       const result = await new Promise<GenerateTemplateOut>(
         (resolve, reject) => {
           const handleProgress = (data: {
@@ -1053,8 +1025,8 @@ export default function Document({
           socket.on("document_template_generation_error", handleError);
 
           socket.emit("document_generate", {
-            departmentId: body.departmentId,
-            profileId: body.profileId,
+            departmentId: body.departmentId!,
+            profileId: body.profileId!,
             documentId: body.documentId,
             documentName: body.documentName,
             documentDescription: body.documentDescription,
@@ -1076,7 +1048,6 @@ export default function Document({
         setTemplateUploadId(result.upload_id || null);
         setSelectedTemplateId(result.upload_id || null);
         setIsTemplateMode(true);
-        setTemplateArgs({});
 
         // If template_mapping is returned (when documentId was provided), update state
         if (result.template_mapping && isEditMode) {
@@ -1113,7 +1084,6 @@ export default function Document({
       setTemplateHtml(null);
       setTemplateSchema(null);
       setTemplateUploadId(null);
-      setTemplateArgs({});
       return;
     }
 
@@ -1136,7 +1106,6 @@ export default function Document({
       setTemplateSchema(schema);
       // Initialize template args to empty object for the new template
       // User will fill in the values via the form
-      setTemplateArgs({});
     } else {
       toast.error("Invalid template schema");
       return;
@@ -1232,7 +1201,7 @@ export default function Document({
             formData.departmentIds.length > 0
               ? (formData.departmentIds[0] ?? null)
               : null,
-          parameter_item_ids: formData.parameterItemIds,
+          field_ids: formData.parameterItemIds,
           parameter_ids: formData.parameterIds,
           classify_agent_id: formData.classifyAgentId ?? null,
           document_agent_id: formData.documentAgentId ?? null,
@@ -1312,7 +1281,6 @@ export default function Document({
       setTemplateHtml(null);
       setTemplateSchema(null);
       setTemplateUploadId(null);
-      setTemplateArgs({});
     }
   };
 
@@ -1342,7 +1310,9 @@ export default function Document({
                     onSelect={setSelectedDepartmentIds}
                     getId={(dept) => (dept as unknown as { id: string }).id}
                     getLabel={(dept) => dept.name || ""}
-                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                    getSearchText={(dept) =>
+                      `${dept.name} ${dept.description || ""}`
+                    }
                     placeholder="Dept"
                     multiSelect={true}
                     compact={true}
@@ -1488,9 +1458,13 @@ export default function Document({
                                 });
                               }
                             }}
-                            getId={(dept) => (dept as unknown as { id: string }).id}
+                            getId={(dept) =>
+                              (dept as unknown as { id: string }).id
+                            }
                             getLabel={(dept) => dept.name || ""}
-                            getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                            getSearchText={(dept) =>
+                              `${dept.name} ${dept.description || ""}`
+                            }
                             placeholder="Dept"
                             multiSelect={true}
                             compact={true}
@@ -1544,8 +1518,7 @@ export default function Document({
                             documentParameterIds.some((paramId) =>
                               filteredValidParameterItemIds.some(
                                 (itemId) =>
-                                  fieldMapping[itemId]?.parameter_id ===
-                                  paramId
+                                  fieldMapping[itemId]?.parameter_id === paramId
                               )
                             )
                           }
@@ -1695,7 +1668,9 @@ export default function Document({
                 }}
                 getId={(dept) => (dept as unknown as { id: string }).id}
                 getLabel={(dept) => dept.name || ""}
-                getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                getSearchText={(dept) =>
+                  `${dept.name} ${dept.description || ""}`
+                }
                 multiSelect={true}
                 hideSelectedChips={true}
                 disabled={isSubmitting}
@@ -1707,19 +1682,15 @@ export default function Document({
           {/* Required Parameters */}
           {isEditMode &&
           documentDetail &&
-          (documentDetail as any).linked_parameter_ids &&
-          (documentDetail as any).linked_parameter_ids.length > 0 ? (
+          documentDetail.linked_parameter_ids &&
+          documentDetail.linked_parameter_ids.length > 0 ? (
             <div className="space-y-4">
               <Label>Required Parameters</Label>
               {formData?.parameterItemIds !== undefined ? (
                 <ParameterSelector
-                  parameterMapping={
-                    (documentDetail as any).parameter_mapping || {}
-                  }
+                  parameterMapping={documentDetail.parameter_mapping || {}}
                   fieldMapping={fieldMapping}
-                  validParameterItemIds={
-                    documentDetail.valid_parameter_item_ids || []
-                  }
+                  validParameterItemIds={documentDetail.valid_field_ids || []}
                   selectedParameterItemIds={formData.parameterItemIds}
                   onParameterItemIdsChange={(ids) =>
                     setFormData((prev) => ({
@@ -1777,18 +1748,24 @@ export default function Document({
                               classifyAgentId: ids[0] || null,
                             }))
                           }
-                          getId={(item) => (item as unknown as { id: string }).id}
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
                           getLabel={(item) => item.name || ""}
-                          getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                          getSearchText={(item) =>
+                            `${item.name} ${item.description || ""}`
+                          }
                           renderPreview={(item) => (
                             <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                              <h4 className="font-medium leading-none">
+                                {item.name || "No agent selected"}
+                              </h4>
                               <div className="text-sm text-muted-foreground">
                                 {item.description || "No description available"}
                               </div>
                             </div>
                           )}
-                          renderItem={(item, isSelected) => (
+                          renderItem={(item) => (
                             <div className="flex items-center justify-between w-full">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <div className="flex-1 min-w-0">
@@ -1818,9 +1795,9 @@ export default function Document({
                     <div className="space-y-2">
                       <Label htmlFor="documentAgentId">Document Agent</Label>
                       {formData?.documentAgentId !== undefined ? (
-                        <AgentPicker
-                          mapping={agentMapping}
-                          validIds={documentAgentIds}
+                        <GenericPicker
+                          items={agentMapping}
+                          itemIds={documentAgentIds}
                           selectedIds={
                             formData?.documentAgentId
                               ? [formData.documentAgentId]
@@ -1832,9 +1809,19 @@ export default function Document({
                               documentAgentId: ids[0] || null,
                             }))
                           }
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
+                          getLabel={(item) => item.name || ""}
+                          getSearchText={(item) =>
+                            `${item.name} ${item.description || ""}`
+                          }
                           placeholder="Select document agent"
                           disabled={isSubmitting}
                           multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="w-full"
+                          groupHeading="Agents"
                         />
                       ) : null}
                     </div>
@@ -1937,9 +1924,15 @@ export default function Document({
                           <GenericPicker
                             items={templateMapping}
                             itemIds={Object.keys(templateMapping)}
-                            selectedIds={selectedTemplateId ? [selectedTemplateId] : []}
-                            onSelect={(ids) => handleTemplateSelect(ids[0] || null)}
-                            getId={(item) => (item as unknown as { id: string }).id}
+                            selectedIds={
+                              selectedTemplateId ? [selectedTemplateId] : []
+                            }
+                            onSelect={(ids) =>
+                              handleTemplateSelect(ids[0] || null)
+                            }
+                            getId={(item) =>
+                              (item as unknown as { id: string }).id
+                            }
                             getLabel={(item) => {
                               const date = new Date(item.updated_at);
                               return `Version ${date.toLocaleDateString()}`;
@@ -1947,9 +1940,12 @@ export default function Document({
                             getSearchText={(item) => {
                               const date = new Date(item.updated_at);
                               const schema = item.template_args;
-                              const preview = schema && typeof schema === "object" && "name" in schema
-                                ? String(schema.name)
-                                : "Template";
+                              const preview =
+                                schema &&
+                                typeof schema === "object" &&
+                                "name" in schema
+                                  ? String((schema as { name: unknown }).name)
+                                  : "Template";
                               return `${date.toLocaleDateString()} ${preview}`;
                             }}
                             renderButton={(selectedItems) => {
@@ -1957,15 +1953,21 @@ export default function Document({
                                 return "New Template";
                               }
                               const template = selectedItems[0];
+                              if (!template) {
+                                return "New Template";
+                              }
                               const date = new Date(template.updated_at);
                               return `Version ${date.toLocaleDateString()}`;
                             }}
                             renderItem={(item, isSelected) => {
                               const date = new Date(item.updated_at);
                               const schema = item.template_args;
-                              const preview = schema && typeof schema === "object" && "name" in schema
-                                ? String(schema.name)
-                                : "Template";
+                              const preview =
+                                schema &&
+                                typeof schema === "object" &&
+                                "name" in schema
+                                  ? String((schema as { name: unknown }).name)
+                                  : "Template";
                               return (
                                 <div className="flex flex-col items-start py-3 w-full">
                                   <div className="flex items-center justify-between w-full">
@@ -1973,7 +1975,9 @@ export default function Document({
                                       <Check
                                         className={cn(
                                           "h-4 w-4",
-                                          isSelected ? "opacity-100" : "opacity-0",
+                                          isSelected
+                                            ? "opacity-100"
+                                            : "opacity-0"
                                         )}
                                       />
                                       <span className="font-medium">
@@ -2084,7 +2088,7 @@ export default function Document({
                 active: documentDetail.active ?? true,
                 department_ids: documentDetail.department_ids || null,
                 upload_id: documentDetail.upload_id || null,
-                parameter_item_ids: documentDetail.parameter_item_ids || [],
+                field_ids: documentDetail.field_ids || [],
               }}
               bare={true}
             />
