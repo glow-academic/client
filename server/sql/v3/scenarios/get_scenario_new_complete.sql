@@ -1,8 +1,24 @@
-WITH user_departments AS (
+WITH params AS (
+    -- Explicitly cast all parameters for asyncpg type inference
+    -- Parameters: $1=profileId (uuid), $2=useImage (boolean, unused), $3=useObjectives (boolean, unused),
+    --             $4=documentIds (uuid[]), $5=problemStatementIds (uuid[]), $6=templateDocumentIds (uuid[]),
+    --             $7=objectiveIds (uuid[]), $8=imageIds (uuid[])
+    SELECT 
+        $1::uuid as profile_id,
+        $2::boolean as use_image,
+        $3::boolean as use_objectives,
+        $4::uuid[] as document_ids,
+        $5::uuid[] as problem_statement_ids,
+        $6::uuid[] as template_document_ids,
+        $7::uuid[] as objective_ids,
+        $8::uuid[] as image_ids
+),
+user_departments AS (
     SELECT DISTINCT d.id
     FROM departments d
     JOIN profile_departments pd ON pd.department_id = d.id
-    WHERE pd.profile_id = $1 AND pd.active = true AND d.active = true
+    CROSS JOIN params p
+    WHERE pd.profile_id = p.profile_id AND pd.active = true AND d.active = true
 ),
 department_persona_ids AS (
     SELECT 
@@ -865,4 +881,6 @@ SELECT
     false as video_enabled,
     -- Questions enabled flag (default false)
     false as questions_enabled
+FROM params
+WHERE ($2::boolean IS NOT NULL OR TRUE) AND ($3::boolean IS NOT NULL OR TRUE)
 

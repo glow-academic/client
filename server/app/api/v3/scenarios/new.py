@@ -1095,19 +1095,21 @@ async def get_scenario_new(
             except (ValueError, TypeError):
                 image_ids_uuid = None
 
-        # Derive useObjectives from objectivesMax for backward compatibility with SQL
+        # SQL query uses parameters $1, $4, $5, $6, $7, $8 (skips $2 and $3)
+        # Note: useImage and use_objectives are not used in SQL, but we must provide
+        # typed values for $2 and $3 so PostgreSQL can determine parameter types
         use_objectives = (
             request_data.objectivesMax is not None and request_data.objectivesMax > 0
         )
         sql_params = (
-            request_data.profileId,
-            request_data.useImage,
-            use_objectives,
-            document_ids_uuid,
-            problem_statement_ids_uuid,
-            template_document_ids_uuid,
-            objective_ids_uuid,
-            image_ids_uuid,
+            request_data.profileId,  # $1
+            request_data.useImage if request_data.useImage is not None else False,  # $2: boolean (unused)
+            use_objectives,  # $3: boolean (unused)
+            document_ids_uuid,  # $4
+            problem_statement_ids_uuid,  # $5
+            template_document_ids_uuid,  # $6
+            objective_ids_uuid,  # $7
+            image_ids_uuid,  # $8
         )
 
         # Execute query
@@ -1382,6 +1384,11 @@ async def get_scenario_new(
         # Extract agent IDs
         scenario_agent_id = str(result.get("scenario_agent_id", "")) or ""
         image_agent_id = str(result.get("image_agent_id", "")) or ""
+        video_agent_id = str(result.get("video_agent_id", "")) or ""
+        
+        # Extract video and questions flags
+        video_enabled = bool(result.get("video_enabled", False))
+        questions_enabled = bool(result.get("questions_enabled", False))
 
         # Apply filtering based on request parameters
         filtered_valid_persona_ids = valid_persona_ids
