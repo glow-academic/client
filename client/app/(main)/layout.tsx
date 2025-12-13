@@ -34,14 +34,46 @@ export default async function MainLayout({
   // Check route access server-side
   const accessResult = await checkRouteAccess(pathname, session);
 
-  // If access denied, show unified access denied component
+  // If access denied, handle based on reason
   if (!accessResult.allowed) {
+    const reason = accessResult.reason || "route-denied";
+
+    // If user is not logged in at all, show full-width access denied (no sidebar)
+    if (reason === "not-logged-in") {
+      return (
+        <UnifiedAccessDenied
+          reason={reason}
+          pathname={pathname}
+          fullWidth={true}
+          {...(accessResult.role && { role: accessResult.role })}
+        />
+      );
+    }
+
+    // Otherwise (route-denied or department), user is logged in (including guests)
+    // Fetch layout data and show access denied inside sidebar
+    const { initial, snapshot, attemptData, activeSettings } =
+      await getLayoutContextData();
+
     return (
-      <UnifiedAccessDenied
-        reason={accessResult.reason || "route-denied"}
-        pathname={pathname}
-        {...(accessResult.role && { role: accessResult.role })}
-      />
+      <MainLayoutClient
+        initial={initial}
+        sessionSnapshot={snapshot}
+        attemptData={attemptData}
+        activeSettings={activeSettings}
+        switchEffectiveProfileAction={switchEffectiveProfile}
+        createFeedbackAction={createFeedback}
+        refreshAnalyticsAction={refreshAnalytics}
+        searchSimulatableProfilesAction={searchSimulatableProfiles}
+        processCSVAction={processCSV}
+        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
+      >
+        <UnifiedAccessDenied
+          reason={reason}
+          pathname={pathname}
+          {...(accessResult.role && { role: accessResult.role })}
+        />
+      </MainLayoutClient>
     );
   }
 
