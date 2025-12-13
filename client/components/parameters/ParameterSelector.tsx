@@ -612,7 +612,7 @@ export function ParameterSelector({
                   <input
                     type="text"
                     placeholder={`Search ${parameter?.name?.toLowerCase() || "items"}...`}
-                    value={searchTerm}
+                    value={searchTerms[parameterId] || ""}
                     onChange={(e) =>
                       setSearchTerms((prev) => ({
                         ...prev,

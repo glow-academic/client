@@ -2573,6 +2573,8 @@ export default function Video({
 
       return () => clearTimeout(timeoutId);
     }
+    // Explicitly return undefined for TypeScript when condition is false
+    return undefined;
   }, [
     videoData?.randomized,
     videoData,

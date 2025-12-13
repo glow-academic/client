@@ -8,13 +8,14 @@ import {
   ChevronDown,
   ChevronUp,
   GripVertical,
-  Image,
+  Image as ImageIcon,
   Loader2,
   PlusCircle,
   RotateCcw,
   Trash2,
   Upload,
 } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 
 import DocumentViewer, {
@@ -683,13 +684,14 @@ export function VideoContentSection({
                 <div className="space-y-2 flex-1 overflow-y-auto">
                   {images.map((img, idx) => (
                     <div key={img.id || idx} className="relative aspect-square">
-                      <img
+                      <Image
                         alt={img.name || `Video image ${idx + 1}`}
                         src={
                           img.file_path ||
                           `/api/v3/uploads/download/${img.upload_id || img.id}`
                         }
-                        className="w-full h-full object-cover rounded-lg border"
+                        fill
+                        className="object-cover rounded-lg border"
                       />
                       <Button
                         type="button"
@@ -971,7 +973,7 @@ export function VideoContentSection({
                 htmlFor="use-image"
                 className="text-sm flex items-center gap-1.5"
               >
-                <Image className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 Use Images
               </Label>
               <Switch

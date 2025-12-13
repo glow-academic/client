@@ -1224,6 +1224,7 @@ export default function Model({
               <div className="flex items-center justify-between">
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center gap-2">
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
                     <Image className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     <Label
                       htmlFor="enable-qualities"

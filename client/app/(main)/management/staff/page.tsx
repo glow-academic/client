@@ -75,7 +75,7 @@ const getInitialSearchData = cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function deleteStaff(
+async function deleteStaff(
   input: DeleteStaffIn
 ): Promise<DeleteStaffOut> {
   "use server";
@@ -83,7 +83,7 @@ export async function deleteStaff(
   return api.post("/profile/staff/delete", input);
 }
 
-export async function bulkDeleteStaff(
+async function bulkDeleteStaff(
   input: BulkDeleteStaffIn
 ): Promise<BulkDeleteStaffOut> {
   "use server";
@@ -91,42 +91,26 @@ export async function bulkDeleteStaff(
   return api.post("/profile/staff/bulk-delete", input);
 }
 
-export async function updateStaff(
-  input: UpdateStaffIn
-): Promise<UpdateStaffOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profile/staff/update", input);
-}
-
-export async function bulkUpdateStaff(
-  input: BulkUpdateStaffIn
-): Promise<BulkUpdateStaffOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profile/staff/bulk-update", input);
-}
-
-export async function searchStaff(
+async function searchStaff(
   input: SearchStaffIn
 ): Promise<SearchStaffOut> {
   "use server";
   return api.post("/profile/staff/search-staff", input);
 }
 
-export async function getCreateStaffData(
+async function getCreateStaffData(
   input: CreateStaffDataIn
 ): Promise<CreateStaffDataOut> {
   "use server";
   return api.post("/profile/staff/create-staff-data", input);
 }
 
-export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
+async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
   return api.post("/profile/staff/process-csv", input);
 }
 
-export async function bulkCreateOrUpdateStaff(
+async function bulkCreateOrUpdateStaff(
   input: BulkCreateOrUpdateStaffIn
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";

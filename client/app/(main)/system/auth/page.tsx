@@ -66,34 +66,6 @@ async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   });
 }
 
-export async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
-  "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
-}
-
-export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
-  "use server";
-  // decrypt-key doesn't need profileId
-  return api.post("/keys/decrypt-key", input);
-}
-
-export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
-  "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
-}
-
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Auth",

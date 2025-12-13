@@ -26,6 +26,7 @@ import {
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
+import type { OutputOf } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -622,7 +623,12 @@ export function SimulationScenariosTable({
           {!readonly && onScenarioSelect && (
             <div className="w-[200px]">
               <ScenarioPicker
-                scenarioMapping={scenarioMapping}
+                scenarioMapping={
+                  scenarioMapping as Record<
+                    string,
+                    OutputOf<"/api/v3/simulations/list", "post">["scenario_mapping"][string]
+                  >
+                }
                 validScenarioIds={validScenarioIds}
                 selectedScenarioIds={selectedScenarioIds}
                 onSelect={onScenarioSelect}
