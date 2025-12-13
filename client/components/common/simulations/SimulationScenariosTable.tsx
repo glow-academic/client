@@ -61,9 +61,6 @@ export interface SimulationScenariosTableProps {
     contentId: string,
     timeLimitMinutes: number | null
   ) => void;
-  // Agent change handlers
-  onHintAgentChange?: (contentId: string, agentId: string | null) => void;
-  onGradeAgentsChange?: (contentId: string, agentIds: string[]) => void;
   // Rubric picker props
   rubricMapping?: Record<string, { name: string; description?: string }>;
   validRubricIds?: string[];
@@ -98,8 +95,6 @@ export function SimulationScenariosTable({
   onTextToggle,
   onRubricChange,
   onTimeLimitChange,
-  onHintAgentChange,
-  onGradeAgentsChange,
   rubricMapping = {},
   validRubricIds = [],
   agentMapping = {},
@@ -125,72 +120,6 @@ export function SimulationScenariosTable({
     [data]
   );
 
-  // Compute available agents per role (for conditional column visibility)
-  const hintAgentIds = React.useMemo(() => {
-    return validAgentIds.filter((id) => {
-      const agent = agentMapping[id];
-      if (!agent) return false;
-      const roles = agent.roles || agent["roles"] || [];
-      return Array.isArray(roles) && roles.includes("hint");
-    });
-  }, [validAgentIds, agentMapping]);
-
-  const gradeAgentIds = React.useMemo(() => {
-    return validAgentIds.filter((id) => {
-      const agent = agentMapping[id];
-      if (!agent) return false;
-      const roles = agent.roles || agent["roles"] || [];
-      return Array.isArray(roles) && roles.includes("grade");
-    });
-  }, [validAgentIds, agentMapping]);
-
-  // Track if auto-selection has been done for each scenario
-  const autoSelectedRef = React.useRef<Set<string>>(new Set());
-
-  // Auto-select first agent if only one option and not already set
-  React.useEffect(() => {
-    if (
-      readonly ||
-      !onHintAgentChange ||
-      !onGradeAgentsChange ||
-      scenarioItems.length === 0
-    ) {
-      return;
-    }
-
-    scenarioItems.forEach((item) => {
-      const contentId = `${item.type}:${item.id}`;
-      const autoSelectKey = `${contentId}-auto-selected`;
-
-      // Skip if already auto-selected for this item
-      if (autoSelectedRef.current.has(autoSelectKey)) {
-        return;
-      }
-
-      // Auto-select hint agent
-      if (!item.hint_agent_id && hintAgentIds.length === 1) {
-        onHintAgentChange(contentId, hintAgentIds[0]!);
-      }
-
-      // Auto-select grade agents (if only one)
-      if (
-        (!item.grade_agent_ids || item.grade_agent_ids.length === 0) &&
-        gradeAgentIds.length === 1
-      ) {
-        onGradeAgentsChange(contentId, [gradeAgentIds[0]!]);
-      }
-
-      // Mark as auto-selected
-      autoSelectedRef.current.add(autoSelectKey);
-    });
-  }, [
-    scenarioItems,
-    hintAgentIds,
-    gradeAgentIds,
-    readonly,
-    onHintAgentChange,
-    onGradeAgentsChange,
-  ]);
 
   // Columns definition
   const columns: ColumnDef<ContentItem>[] = React.useMemo(
@@ -266,126 +195,6 @@ export function SimulationScenariosTable({
           );
         },
       },
-      // Only show hint agent column if more than one option
-      ...(hintAgentIds.length > 1
-        ? [
-            {
-              id: "hint_agent",
-              header: () => (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex flex-col items-center gap-1 cursor-help">
-                      <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs">Hint Agent</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Agent to use for generating hints</p>
-                  </TooltipContent>
-                </Tooltip>
-              ),
-              cell: ({ row }: { row: Row<ContentItem> }) => {
-                const item = row.original;
-                return (
-                  <div className="flex items-center justify-center min-w-[150px]">
-                    <GenericPicker
-                      items={agentMapping}
-                      itemIds={hintAgentIds}
-                      selectedIds={
-                        item.hint_agent_id ? [item.hint_agent_id] : []
-                      }
-                      onSelect={(ids) =>
-                        onHintAgentChange?.(
-                          `${item.type}:${item.id}`,
-                          ids[0] || null
-                        )
-                      }
-                      getId={(item) => {
-                        const entry = Object.entries(agentMapping).find(([, v]) => v === item);
-                        return entry ? entry[0] : "";
-                      }}
-                      getLabel={(item) => item.name}
-                      getSearchText={(item) => `${(item as { name: string }).name} ${((item as { description?: string }).description) || ""}`}
-                      renderPreview={(item) => (
-                        <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">{(item as { name: string }).name || "No agent selected"}</h4>
-                          <div className="text-sm text-muted-foreground">
-                            {(item as { description?: string }).description || "No description available"}
-                          </div>
-                        </div>
-                      )}
-                      renderItem={(item, _isSelected) => (
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="truncate">{(item as { name: string }).name}</div>
-                              {(item as { description?: string }).description && (
-                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {(item as { description?: string }).description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      placeholder="Select agent"
-                      disabled={readonly || !onHintAgentChange}
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName="h-8 text-xs"
-                      groupHeading="Agents"
-                    />
-                  </div>
-                );
-              },
-            },
-          ]
-        : []),
-      // Only show grade agents column if more than one option
-      ...(gradeAgentIds.length > 1
-        ? [
-            {
-              id: "grade_agents",
-              header: () => (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex flex-col items-center gap-1 cursor-help">
-                      <Target className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs">Grade Agents</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Agents to use for grading (multiple allowed)</p>
-                  </TooltipContent>
-                </Tooltip>
-              ),
-              cell: ({ row }: { row: Row<ContentItem> }) => {
-                const item = row.original;
-                return (
-                  <div className="flex items-center justify-center min-w-[150px]">
-                    <GenericPicker
-                      items={agentMapping}
-                      itemIds={gradeAgentIds}
-                      selectedIds={item.grade_agent_ids || []}
-                      onSelect={(ids) =>
-                        onGradeAgentsChange?.(`${item.type}:${item.id}`, ids)
-                      }
-                      getId={(item) => {
-                        const entry = Object.entries(agentMapping).find(([, v]) => v === item);
-                        return entry ? entry[0] : "";
-                      }}
-                      getLabel={(item) => item.name}
-                      placeholder="Select agents"
-                      disabled={readonly || !onGradeAgentsChange}
-                      multiSelect={true}
-                      buttonClassName="h-8 text-xs"
-                    />
-                  </div>
-                );
-              },
-            },
-          ]
-        : []),
       {
         id: "copy_paste_allowed",
         header: () => (

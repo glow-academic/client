@@ -36,10 +36,6 @@ class ContentItemInRequest(BaseModel):
     show_image: bool | None = None  # Scenarios and videos
     rubric_id: str | None = None
     time_limit_seconds: int | None = None  # Per-scenario time limit in seconds
-    hint_agent_id: str | None = None
-    grade_agent_ids: list[str] | None = (
-        None  # Array of grade agent IDs for this scenario
-    )
 
 
 class UpdateSimulationRequest(BaseModel):
@@ -51,6 +47,9 @@ class UpdateSimulationRequest(BaseModel):
     department_ids: list[str] | None
     active: bool
     practice_simulation: bool
+    hint_agent_id: str | None = None
+    grade_text_agent_id: str | None = None
+    grade_voice_agent_id: str | None = None
     time_limit: int | None = (
         None  # Deprecated: use per-scenario time_limit_seconds in content_items
     )
@@ -98,10 +97,6 @@ async def update_simulation(
             scenario_show_image: list[bool] = []
             scenario_rubric_ids: list[str] = []
             scenario_time_limit_seconds: list[int | None] = []
-            scenario_hint_agent_ids: list[str] = []
-            scenario_grade_agent_ids: list[
-                list[str]
-            ] = []  # Array of arrays, one per scenario
 
             # Use unified content_items if provided, otherwise fall back to separate arrays
             if request.content_items:
@@ -144,12 +139,6 @@ async def update_simulation(
                             item.rubric_id if item.rubric_id else ""
                         )
                         scenario_time_limit_seconds.append(item.time_limit_seconds)
-                        scenario_hint_agent_ids.append(
-                            item.hint_agent_id if item.hint_agent_id else ""
-                        )
-                        scenario_grade_agent_ids.append(
-                            item.grade_agent_ids if item.grade_agent_ids else []
-                        )
             else:
                 # Legacy support: extract from separate arrays
                 if request.scenario_ids:
@@ -196,12 +185,6 @@ async def update_simulation(
             scenario_time_limit_seconds_array = (
                 scenario_time_limit_seconds if scenario_time_limit_seconds else []
             )
-            scenario_hint_agent_ids_array = (
-                scenario_hint_agent_ids if scenario_hint_agent_ids else []
-            )
-            scenario_grade_agent_ids_array = (
-                scenario_grade_agent_ids if scenario_grade_agent_ids else []
-            )
             # Update simulation with departments and scenarios in single SQL (DHH style)
             # Note: rubric_id and time_limit are now per-scenario, not simulation-level
             sql_query = load_sql("sql/v3/simulations/update_simulation_complete.sql")
@@ -214,6 +197,8 @@ async def update_simulation(
                 dept_ids,  # Always pass array (empty array if no departments)
                 scenario_ids_array,
                 scenario_flags_array,
+                [],  # video_ids (empty for now)
+                [],  # video_active_flags (empty for now)
                 scenario_hints_array,
                 scenario_rubric_ids_array,
                 scenario_time_limit_seconds_array,
@@ -222,8 +207,12 @@ async def update_simulation(
                 scenario_show_problem_statement_array,
                 scenario_show_objectives_array,
                 scenario_show_image_array,
-                scenario_hint_agent_ids_array,
-                scenario_grade_agent_ids_array,
+                [],  # video_show_problem_statement (empty for now)
+                [],  # video_show_objectives (empty for now)
+                [],  # video_show_image (empty for now)
+                request.hint_agent_id,  # $22
+                request.grade_text_agent_id,  # $23
+                request.grade_voice_agent_id,  # $24
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

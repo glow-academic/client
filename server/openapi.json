@@ -32488,6 +32488,39 @@
             "type": "boolean",
             "title": "Practice Simulation"
           },
+          "hint_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Agent Id"
+          },
+          "grade_text_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Text Agent Id"
+          },
+          "grade_voice_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Voice Agent Id"
+          },
           "time_limit": {
             "anyOf": [
               {
@@ -42917,17 +42950,6 @@
             ],
             "title": "Time Limit Seconds"
           },
-          "hint_agent_id": {
-            "type": "string",
-            "title": "Hint Agent Id"
-          },
-          "grade_agent_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Grade Agent Ids"
-          },
           "usage_count": {
             "type": "integer",
             "title": "Usage Count"
@@ -42969,8 +42991,6 @@
           "show_image",
           "rubric_id",
           "time_limit_seconds",
-          "hint_agent_id",
-          "grade_agent_ids",
           "usage_count",
           "success_rate",
           "last_used",
@@ -43121,6 +43141,25 @@
             "type": "boolean",
             "title": "Practice Simulation"
           },
+          "hint_agent_id": {
+            "type": "string",
+            "title": "Hint Agent Id"
+          },
+          "grade_text_agent_id": {
+            "type": "string",
+            "title": "Grade Text Agent Id"
+          },
+          "grade_voice_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Voice Agent Id"
+          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -43225,6 +43264,9 @@
           "valid_scenario_ids",
           "active",
           "practice_simulation",
+          "hint_agent_id",
+          "grade_text_agent_id",
+          "grade_voice_agent_id",
           "can_edit",
           "can_duplicate",
           "can_delete",
@@ -44232,31 +44274,6 @@
               }
             ],
             "title": "Time Limit Seconds"
-          },
-          "hint_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hint Agent Id"
-          },
-          "grade_agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Agent Ids"
           }
         },
         "type": "object",

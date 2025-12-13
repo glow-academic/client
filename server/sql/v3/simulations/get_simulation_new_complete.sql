@@ -12,6 +12,9 @@ WITH user_departments AS (
                 ''::text as description,
                 true as active,
                 false as practice_simulation,
+                NULL::text as hint_agent_id,
+                NULL::text as grade_text_agent_id,
+                NULL::text as grade_voice_agent_id,
                 NULL::uuid as rubric_id,
                 0 as time_limit
         ),
@@ -52,16 +55,8 @@ WITH user_departments AS (
                 NULL::boolean as show_objectives,
                 NULL::boolean as show_image,
                 NULL::uuid as rubric_id,
-                NULL::uuid as hint_agent_id,
                 NULL::integer as time_limit_seconds,
                 ARRAY[]::uuid[] as parameter_item_ids
-            WHERE false  -- This ensures no rows are returned
-        ),
-        simulation_scenarios_grade_agents_data AS (
-            SELECT 
-                NULL::uuid as simulation_id,
-                NULL::uuid as scenario_id,
-                ARRAY[]::text[] as grade_agent_ids
             WHERE false  -- This ensures no rows are returned
         ),
         scenario_statistics AS (
@@ -91,8 +86,6 @@ WITH user_departments AS (
                         'show_objectives', sb.show_objectives,
                         'show_image', sb.show_image,
                         'rubric_id', sb.rubric_id::text,
-                        'hint_agent_id', sb.hint_agent_id::text,
-                        'grade_agent_ids', COALESCE(ssgad.grade_agent_ids, ARRAY[]::text[]),
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
@@ -109,7 +102,6 @@ WITH user_departments AS (
             COALESCE(ARRAY_AGG(sb.scenario_id::text), ARRAY[]::text[]) as scenario_ids
             FROM simulation_scenarios_base sb
             LEFT JOIN scenario_statistics stats ON stats.scenario_id = sb.scenario_id
-            LEFT JOIN simulation_scenarios_grade_agents_data ssgad ON ssgad.scenario_id = sb.scenario_id
         ),
         valid_scenarios_list AS (
             SELECT DISTINCT
@@ -463,6 +455,10 @@ WITH user_departments AS (
             sb.active,
             false as default_simulation,
             sb.practice_simulation,
+            -- Agent IDs
+            sb.hint_agent_id,
+            sb.grade_text_agent_id,
+            sb.grade_voice_agent_id,
             uc.role as user_role,
             COALESCE(cu.active_cohort_count, 0) as active_cohort_count,
             COALESCE(cu.total_cohort_links, 0) as total_cohort_links,

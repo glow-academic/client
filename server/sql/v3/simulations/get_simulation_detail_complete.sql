@@ -69,6 +69,9 @@ user_context AS (
                 s.description,
                 s.active,
                 s.practice_simulation,
+                s.hint_agent_id::text,
+                s.grade_text_agent_id::text,
+                s.grade_voice_agent_id::text,
                 (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
                 COALESCE(
                     (SELECT SUM(stl.time_limit_seconds)
@@ -117,7 +120,6 @@ user_context AS (
                 ss.show_objectives,
                 ss.show_image,
                 ss.rubric_id,
-                ss.hint_agent_id::text,
                 stl.time_limit_seconds,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT sf.field_id)
@@ -132,15 +134,6 @@ user_context AS (
             LEFT JOIN scenario_time_limits stl ON stl.simulation_id = ss.simulation_id AND stl.scenario_id = ss.scenario_id AND stl.active = true
             WHERE ss.simulation_id = $1
             ORDER BY ss.position
-        ),
-        simulation_scenarios_grade_agents_data AS (
-            SELECT 
-                ssga.simulation_id,
-                ssga.scenario_id,
-                ARRAY_AGG(ssga.agent_id::text ORDER BY ssga.agent_id) as grade_agent_ids
-            FROM simulation_scenarios_grade_agents ssga
-            WHERE ssga.simulation_id = $1
-            GROUP BY ssga.simulation_id, ssga.scenario_id
         ),
         scenario_statistics AS (
             SELECT 
@@ -207,8 +200,6 @@ user_context AS (
                         'show_objectives', sb.show_objectives,
                         'show_image', sb.show_image,
                         'rubric_id', sb.rubric_id::text,
-                        'hint_agent_id', sb.hint_agent_id,
-                        'grade_agent_ids', COALESCE(ssgad.grade_agent_ids, ARRAY[]::text[]),
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
@@ -225,7 +216,6 @@ user_context AS (
             COALESCE(ARRAY_AGG(sb.scenario_id::text), ARRAY[]::text[]) as scenario_ids
             FROM simulation_scenarios_base sb
             LEFT JOIN scenario_statistics stats ON stats.scenario_id = sb.scenario_id
-            LEFT JOIN simulation_scenarios_grade_agents_data ssgad ON ssgad.simulation_id = $1 AND ssgad.scenario_id = sb.scenario_id
         ),
         valid_scenarios_list AS (
             -- Get scenarios that are marked as roots in scenario_tree (parent_id = child_id)
@@ -591,6 +581,10 @@ user_context AS (
             sb.active,
             false as default_simulation,
             sb.practice_simulation,
+            -- Agent IDs
+            sb.hint_agent_id,
+            sb.grade_text_agent_id,
+            sb.grade_voice_agent_id,
             -- User context
             uc.role as user_role,
             COALESCE(cu.active_cohort_count, 0) as active_cohort_count,

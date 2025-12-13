@@ -13104,6 +13104,12 @@ export interface components {
             active: boolean;
             /** Practice Simulation */
             practice_simulation: boolean;
+            /** Hint Agent Id */
+            hint_agent_id?: string | null;
+            /** Grade Text Agent Id */
+            grade_text_agent_id?: string | null;
+            /** Grade Voice Agent Id */
+            grade_voice_agent_id?: string | null;
             /** Time Limit */
             time_limit?: number | null;
             /**
@@ -16875,10 +16881,6 @@ export interface components {
             rubric_id: string | null;
             /** Time Limit Seconds */
             time_limit_seconds: number | null;
-            /** Hint Agent Id */
-            hint_agent_id: string;
-            /** Grade Agent Ids */
-            grade_agent_ids: string[];
             /** Usage Count */
             usage_count: number;
             /** Success Rate */
@@ -16943,6 +16945,12 @@ export interface components {
             active: boolean;
             /** Practice Simulation */
             practice_simulation: boolean;
+            /** Hint Agent Id */
+            hint_agent_id: string;
+            /** Grade Text Agent Id */
+            grade_text_agent_id: string;
+            /** Grade Voice Agent Id */
+            grade_voice_agent_id: string | null;
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -17368,10 +17376,6 @@ export interface components {
             rubric_id?: string | null;
             /** Time Limit Seconds */
             time_limit_seconds?: number | null;
-            /** Hint Agent Id */
-            hint_agent_id?: string | null;
-            /** Grade Agent Ids */
-            grade_agent_ids?: string[] | null;
         };
     };
     responses: never;

@@ -70,9 +70,6 @@ export interface ContentItem {
   show_image?: boolean; // Scenarios and videos
   rubric_id?: string | null;
   time_limit_seconds?: number | null; // Per-scenario time limit in seconds
-  // Agent IDs (scenarios only)
-  hint_agent_id?: string | null;
-  grade_agent_ids?: string[]; // Multi-select for grade agents
 }
 
 export interface SimulationContentTableProps {

@@ -124,10 +124,6 @@ class ScenarioInSimulation(BaseModel):
     rubric_id: str | None
     time_limit_seconds: int | None  # Per-scenario time limit in seconds
 
-    # Agent IDs
-    hint_agent_id: str
-    grade_agent_ids: list[str]  # Array of grade agent IDs from junction table
-
     # Statistics fields
     usage_count: int  # Number of all chats (regardless of completion)
     success_rate: int  # Percentage (0-100) of completed chats that passed
@@ -201,6 +197,11 @@ class SimulationDetailResponse(BaseModel):
     # Boolean parameters
     active: bool
     practice_simulation: bool
+
+    # Agent IDs
+    hint_agent_id: str | None
+    grade_text_agent_id: str | None
+    grade_voice_agent_id: str | None
 
     # Permission flags
     can_edit: bool
@@ -334,8 +335,6 @@ async def get_simulation_new(
                             show_objectives=s_data.get("show_objectives", True),
                             show_image=s_data.get("show_image", True),
                             rubric_id=s_data.get("rubric_id"),
-                            hint_agent_id=s_data.get("hint_agent_id", ""),
-                            grade_agent_ids=s_data.get("grade_agent_ids", []),
                             time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),
                             success_rate=s_data.get("success_rate", 0),
@@ -587,6 +586,15 @@ async def get_simulation_new(
             valid_video_ids=valid_video_ids,
             active=result.get("active", False),
             practice_simulation=result.get("practice_simulation", False),
+            hint_agent_id=str(result.get("hint_agent_id"))
+            if result.get("hint_agent_id")
+            else None,
+            grade_text_agent_id=str(result.get("grade_text_agent_id"))
+            if result.get("grade_text_agent_id")
+            else None,
+            grade_voice_agent_id=str(result.get("grade_voice_agent_id"))
+            if result.get("grade_voice_agent_id")
+            else None,
             can_edit=can_edit,
             can_duplicate=can_duplicate,
             can_delete=can_delete,
