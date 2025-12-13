@@ -3,12 +3,12 @@
  * Key editing page
  */
 
-import { getSession } from "@/auth";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Key from "@/components/keys/Key";
-
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -43,10 +43,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { keyId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const key = await getKey(keyId, profileId);
     return {
       title: `${key?.name || "Key"}`,
@@ -68,8 +67,12 @@ export default async function EditKeyPage({
   params: Promise<{ keyId: string }>;
 }) {
   const { keyId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/system/keys/k/${keyId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch data for edit mode
   try {
@@ -107,12 +110,11 @@ export default async function EditKeyPage({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 

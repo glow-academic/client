@@ -4,10 +4,10 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import { getSession } from "@/auth";
-
 import Rubrics from "@/components/rubrics/Rubrics";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
@@ -48,12 +48,11 @@ export async function duplicateRubric(
   input: DuplicateRubricIn,
 ): Promise<DuplicateRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/rubrics/duplicate", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -61,12 +60,11 @@ export async function deleteRubric(
   input: DeleteRubricIn,
 ): Promise<DeleteRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/rubrics/delete", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -74,12 +72,11 @@ export async function createRubric(
   input: CreateRubricIn,
 ): Promise<CreateRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/rubrics/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -87,12 +84,11 @@ export async function updateRubric(
   input: UpdateRubricIn,
 ): Promise<UpdateRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/rubrics/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -105,8 +101,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RubricsPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/engine/rubrics" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getRubricsList(profileId);

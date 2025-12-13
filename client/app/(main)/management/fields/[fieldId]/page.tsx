@@ -5,7 +5,6 @@
  * 12/05/2025
  */
 
-import { getSession } from "@/auth";
 
 import Field from "@/components/fields/Field";
 import { api } from "@/lib/api/client";
@@ -42,10 +41,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { fieldId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const field = await getField(fieldId, profileId);
     return {
       title: `${field?.name || "Field"}`,
@@ -65,11 +63,10 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/fields/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -80,8 +77,12 @@ export default async function FieldEditPage({
   params: Promise<{ fieldId: string }>;
 }) {
   const { fieldId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/management/fields/${fieldId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch field data (always fresh - source of truth)
   const field = await getField(fieldId, profileId);

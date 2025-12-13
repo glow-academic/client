@@ -3,11 +3,11 @@
  * New key page for the keys section.
  */
 
-import { getSession } from "@/auth";
-
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Key from "@/components/keys/Key";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -28,32 +28,36 @@ const getKeyDefault = async (profileId: string): Promise<KeyNewOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Strongly-typed server action ---- */
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Key",
-    description: "Create a new API key for teaching assistant training platform. Generate secure access credentials, configure API integrations, and maintain platform security for educational institutions and L&D programs.",
+    description:
+      "Create a new API key for teaching assistant training platform. Generate secure access credentials, configure API integrations, and maintain platform security for educational institutions and L&D programs.",
   };
 }
 
 export default async function NewKeyPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/system/keys" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch key default data (for dropdowns and defaults)
   const keyDetailDefault = await getKeyDefault(profileId);

@@ -21,7 +21,7 @@ import { ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -245,6 +245,7 @@ interface LoginProps {
   initialDepartmentId?: string | undefined; // Initial department ID from query parameter
   activeSettings?: SettingsActiveOut | null; // Active settings for theme application
   defaultDepartmentId?: string | null; // Default department ID from settings_default_department table
+  redirectPath?: string; // Redirect path after login
 }
 
 export default function Login({
@@ -255,6 +256,7 @@ export default function Login({
   initialDepartmentId,
   activeSettings,
   defaultDepartmentId,
+  redirectPath: redirectPathProp,
 }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
@@ -265,6 +267,11 @@ export default function Login({
       (departments.length > 0 ? (departments[0]?.id ?? null) : null)
   );
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get redirectPath from prop or query params (query params take precedence)
+  const redirectPath =
+    redirectPathProp || searchParams.get("redirectPath") || null;
 
   // Apply theme tokens from activeSettings (client-side only)
   useEffect(() => {
@@ -319,9 +326,11 @@ export default function Login({
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
-      // Redirect to home after login - home page will handle role-based redirects
+      // Redirect to redirectPath if provided, otherwise home (home page will handle role-based redirects)
       // (guests will be redirected to /practice by the home page)
-      const redirectTo = `${appPrefix}/home`;
+      const redirectTo = redirectPath
+        ? `${appPrefix}${redirectPath}`
+        : `${appPrefix}/home`;
 
       // Use NextAuth's signIn with "keycloak" provider (our only provider in auth.ts)
       // Pass kc_idp_hint to force Keycloak to skip login page and redirect to the specified provider
@@ -359,8 +368,10 @@ export default function Login({
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
-      // ✨ DIRECT REDIRECT: Send guests straight to practice
-      const guestRedirect = `${appPrefix}/practice`;
+      // Redirect to redirectPath if provided, otherwise practice
+      const guestRedirect = redirectPath
+        ? `${appPrefix}${redirectPath}`
+        : `${appPrefix}/practice`;
 
       toast.success("Accessing as guest!");
       router.push(guestRedirect);

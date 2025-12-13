@@ -2,10 +2,10 @@
  * app/(main)/system/auth/page.tsx
  * Auth list page
  */
-import { getSession } from "@/auth";
-
 import Auths from "@/components/auth/Auths";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
@@ -48,21 +48,19 @@ async function duplicateAuth(
   input: DuplicateAuthIn
 ): Promise<DuplicateAuthOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/duplicate", {
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/delete", {
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -75,8 +73,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AuthPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/system/auth" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getAuthList(profileId);

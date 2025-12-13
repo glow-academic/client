@@ -5,11 +5,11 @@
  * 12/04/2025
  */
 
-import { getSession } from "@/auth";
-
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import StaffNewEdit from "@/components/staff/StaffNewEdit";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata } from "next";
 import { cache } from "react";
 
@@ -52,8 +52,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewStaffPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/management/staff" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch default staff detail server-side
   const staffDetailDefault = await getStaffNew(profileId);

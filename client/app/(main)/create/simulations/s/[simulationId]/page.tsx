@@ -5,7 +5,8 @@
  * 06/09/2025
  */
 
-import { getSession } from "@/auth";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 
 import Simulation from "@/components/simulations/Simulation";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
@@ -51,10 +52,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { simulationId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const simulation = await getSimulation(simulationId, profileId);
     return {
       title: `${simulation?.name || "Simulation"}`,
@@ -93,8 +93,12 @@ export default async function EditSimulationPage({
   params: Promise<{ simulationId: string }>;
 }) {
   const { simulationId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/create/simulations/s/${simulationId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch simulation detail (always fresh - source of truth)
   try {

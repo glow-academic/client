@@ -5,10 +5,10 @@
  * 01/21/2025
  */
 
-import { getSession } from "@/auth";
-
 import Document from "@/components/documents/Document";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
@@ -75,8 +75,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewDocumentPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/management/documents" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side for mappings
   const listData = await getDocumentsList(profileId);

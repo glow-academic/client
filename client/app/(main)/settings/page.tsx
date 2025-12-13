@@ -3,9 +3,10 @@
  * Settings page
  */
 
-import { getSession } from "@/auth";
 import Settings from "@/components/settings/Settings";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -97,11 +98,10 @@ async function updateSettings(
   input: UpdateSettingsIn
 ): Promise<UpdateSettingsOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/settings/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -131,8 +131,12 @@ async function getDepartmentsListAction(
 }
 
 export default async function SettingsPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/settings" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch settings list server-side
   const settingsListResponse = await getSettingsList(profileId);

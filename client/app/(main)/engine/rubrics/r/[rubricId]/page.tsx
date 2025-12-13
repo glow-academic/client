@@ -5,12 +5,12 @@
  * 06/09/2025
  */
 
-import Rubric from "@/components/rubrics/Rubric";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
-import { getSession } from "@/auth";
-
+import Rubric from "@/components/rubrics/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -27,7 +27,7 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
  */
 const getRubric = async (
   rubricId: string,
-  profileId: string,
+  profileId: string
 ): Promise<RubricDetailOut> => {
   return api.post(
     "/rubrics/detail",
@@ -37,7 +37,7 @@ const getRubric = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
@@ -50,20 +50,19 @@ const getRubricDefault = async (profileId: string): Promise<RubricNewOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ rubricId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { rubricId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const rubric = await getRubric(rubricId, profileId);
     return {
       title: `${rubric?.name || "Rubric"}`,
@@ -85,8 +84,12 @@ export default async function EditRubricPage({
   params: Promise<{ rubricId: string }>;
 }) {
   const { rubricId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/engine/rubrics/r/${rubricId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch data based on mode (edit vs create)
   try {
@@ -136,21 +139,20 @@ export default async function EditRubricPage({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/rubrics/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  RubricNewIn,
-  RubricNewOut,
   RubricDetailIn,
   RubricDetailOut,
+  RubricNewIn,
+  RubricNewOut,
   UpdateRubricIn,
   UpdateRubricOut,
 };

@@ -5,11 +5,11 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Persona from "@/components/personas/Persona";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -47,10 +47,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { personaId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const persona = await getPersona(personaId, profileId);
     return {
       title: `${persona?.name || "Persona"} Persona`,
@@ -70,12 +69,11 @@ async function createPersona(
   input: CreatePersonaIn,
 ): Promise<CreatePersonaOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/personas/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -83,12 +81,11 @@ async function updatePersona(
   input: UpdatePersonaIn,
 ): Promise<UpdatePersonaOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/personas/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -99,8 +96,12 @@ export default async function PersonaEditPage({
   params: Promise<{ personaId: string }>;
 }) {
   const { personaId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/create/personas/p/${personaId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch persona detail (always fresh - source of truth)
   try {

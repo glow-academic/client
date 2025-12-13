@@ -5,10 +5,10 @@
  * 12/05/2025
  */
 
-import { getSession } from "@/auth";
-
 import Field from "@/components/fields/Field";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
@@ -46,18 +46,21 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createField(input: CreateFieldIn): Promise<CreateFieldOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/fields/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewFieldPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/management/fields" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch default field data
   const fieldDetailDefault = await getFieldDetailDefault(profileId);

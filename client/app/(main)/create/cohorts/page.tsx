@@ -4,11 +4,11 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import { getSession } from "@/auth";
-
 import Cohorts from "@/components/cohorts/Cohorts";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
@@ -37,13 +37,13 @@ const getCohortsList = async (profileId: string): Promise<CohortsListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateCohort(
-  input: DuplicateCohortIn,
+  input: DuplicateCohortIn
 ): Promise<DuplicateCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -63,17 +63,26 @@ async function leaveCohort(input: LeaveCohortIn): Promise<LeaveCohortOut> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  await getSession(); // Session check for metadata context
+  try {
+    await requireAuthenticated();
+  } catch {
+    // Metadata can be generated even if auth fails
+  }
 
   return {
     title: "Cohorts",
-    description: "Manage learning cohorts for teaching assistant training programs. Organize groups of teaching assistants, track cohort progress, and coordinate group-based learning activities for effective L&D program administration.",
+    description:
+      "Manage learning cohorts for teaching assistant training programs. Organize groups of teaching assistants, track cohort progress, and coordinate group-based learning activities for effective L&D program administration.",
   };
 }
 
 export default async function CohortsPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/create/cohorts" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getCohortsList(profileId);
@@ -100,4 +109,3 @@ export type {
   LeaveCohortIn,
   LeaveCohortOut,
 };
-

@@ -96,7 +96,7 @@ export default async function AttemptPage({
   // Require authentication - attempt pages don't allow guest access
   const authResult = await requireAuthenticated().catch(() => null);
   if (!authResult) {
-    return <AccessDenied redirectPath="/home" />;
+    return <AccessDenied redirectPath={`/home/a/${attemptId}`} />;
   }
 
   const profileId = authResult.effectiveProfileId;

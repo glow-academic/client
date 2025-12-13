@@ -5,10 +5,10 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import Model from "@/components/models/Model";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
@@ -52,22 +52,20 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/models/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/keys/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -78,18 +76,21 @@ async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
 
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/keys/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewModelPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/engine/models" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch default model data (provider mapping for picker)
   const modelDetailDefault = await getModelDetailDefault(profileId);

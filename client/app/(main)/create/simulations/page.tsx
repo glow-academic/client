@@ -4,10 +4,10 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import { getSession } from "@/auth";
-
 import { Simulations } from "@/components/simulations/Simulations";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
@@ -67,8 +67,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SimulationsPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/create/simulations" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getSimulationsList(profileId);

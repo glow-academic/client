@@ -5,10 +5,10 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import Staff from "@/components/staff/Staff";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
@@ -127,8 +127,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StaffPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/management/staff" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getStaffList({

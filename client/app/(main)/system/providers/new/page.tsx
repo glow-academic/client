@@ -3,10 +3,10 @@
  * New provider page for the providers section.
  */
 
-import { getSession } from "@/auth";
-
 import Provider from "@/components/providers/Provider";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
@@ -35,12 +35,11 @@ const getProviderDefault = async (profileId: string): Promise<ProviderNewOut> =>
 /** ---- Strongly-typed server action ---- */
 async function createProvider(input: CreateProviderIn): Promise<CreateProviderOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/providers/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -52,8 +51,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewProviderPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/system/providers" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch provider default data (for dropdowns and defaults)
   const providerDetailDefault = await getProviderDefault(profileId);

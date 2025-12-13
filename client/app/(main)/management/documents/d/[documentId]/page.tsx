@@ -5,12 +5,12 @@
  * 01/21/2025
  */
 
-import { getSession } from "@/auth";
-
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Document from "@/components/documents/Document";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import type { TemplateSchema } from "@/components/documents/TemplateForm";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -49,10 +49,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { documentId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const document = await getDocument(documentId, profileId);
     return {
       title: `${document?.name || "Document"}`,
@@ -94,8 +93,12 @@ export default async function DocumentEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { documentId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/management/documents/d/${documentId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch document detail (always fresh - source of truth)
   try {

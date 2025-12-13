@@ -5,10 +5,10 @@
  * 06/18/2025
  */
 
-import { getSession } from "@/auth";
-
 import Feedback from "@/components/feedback/Feedback";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -44,8 +44,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function FeedbackPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/system/feedback" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getFeedbackList({

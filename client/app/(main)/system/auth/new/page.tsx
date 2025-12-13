@@ -3,7 +3,8 @@
  * Auth create page
  */
 
-import { getSession } from "@/auth";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 
 import Auth from "@/components/auth/Auth";
 import { api } from "@/lib/api/client";
@@ -49,40 +50,41 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/create", {
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AuthCreatePage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/system/auth" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch default auth detail
   const authDetailDefault = await getAuthDefault(profileId);

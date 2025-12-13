@@ -5,10 +5,10 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import Reports from "@/components/reports/Reports";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
@@ -56,14 +56,19 @@ const getProfileContext = async (input: {
 };
 
 /** ---- Inline filters function for reports page ---- */
-async function getReportsFilters(searchParams?: URLSearchParams) {
-  const session = await getSession();
+async function getReportsFilters(
+  searchParams?: URLSearchParams,
+  authResult?: { effectiveProfileId: string; actualProfileId: string }
+) {
+  if (!authResult) {
+    throw new Error("Authentication required");
+  }
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await getProfileContext({
     body: {
-      actualProfileId: session?.user?.profileId || "",
-      effectiveProfileId: session?.effectiveProfileId || "",
+      actualProfileId: authResult.actualProfileId,
+      effectiveProfileId: authResult.effectiveProfileId,
       pathname: "/",
     },
   });
@@ -144,6 +149,11 @@ interface ReportsPageProps {
 export default async function ReportsFullPage({
   searchParams,
 }: ReportsPageProps) {
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/analytics/reports" />;
+  }
+
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -160,6 +170,7 @@ export default async function ReportsFullPage({
   // Get filters from search params or defaults
   const filters = await getReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
+    authResult,
   );
 
   // Extract pagination and filter params from search params for reports table

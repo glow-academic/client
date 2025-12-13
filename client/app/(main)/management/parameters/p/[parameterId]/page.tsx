@@ -5,11 +5,11 @@
  * 07/26/2025
  */
 
-import { getSession } from "@/auth";
-
 import Parameter from "@/components/parameters/Parameter";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -51,10 +51,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { parameterId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const parameter = await getParameter(parameterId, profileId);
     return {
       title: `${parameter?.name || "Parameter"} Parameter`,
@@ -74,12 +73,11 @@ async function createParameter(
   input: CreateParameterIn,
 ): Promise<CreateParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -87,12 +85,11 @@ async function updateParameter(
   input: UpdateParameterIn,
 ): Promise<UpdateParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -103,8 +100,12 @@ export default async function ParameterEditPage({
   params: Promise<{ parameterId: string }>;
 }) {
   const { parameterId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/management/parameters/p/${parameterId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch parameter detail (always fresh - source of truth)
   try {

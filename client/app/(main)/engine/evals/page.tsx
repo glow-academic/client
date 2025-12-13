@@ -4,10 +4,10 @@
  * @AshokSaravanan222
  * 01/26/2025
  */
-import { getSession } from "@/auth";
-
 import Evals from "@/components/evals/Evals";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
@@ -37,11 +37,10 @@ const getEvalsList = async (profileId: string): Promise<EvalsListOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/evals/delete", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -54,8 +53,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function EvalsPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/engine/evals" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getEvalsList(profileId);

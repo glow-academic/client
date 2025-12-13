@@ -5,11 +5,11 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Report from "@/components/reports/Report";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
@@ -98,14 +98,19 @@ const getProfileContext = async (input: {
 };
 
 /** ---- Inline filters function for profile reports page ---- */
-async function getProfileReportsFilters(searchParams?: URLSearchParams) {
-  const session = await getSession();
+async function getProfileReportsFilters(
+  searchParams?: URLSearchParams,
+  authResult?: { effectiveProfileId: string; actualProfileId: string }
+) {
+  if (!authResult) {
+    throw new Error("Authentication required");
+  }
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await getProfileContext({
     body: {
-      actualProfileId: session?.user?.profileId || "",
-      effectiveProfileId: session?.effectiveProfileId || "",
+      actualProfileId: authResult.actualProfileId,
+      effectiveProfileId: authResult.effectiveProfileId,
       pathname: "/",
     },
   });
@@ -210,6 +215,10 @@ export default async function ReportsPage({
   searchParams,
 }: ProfileReportsPageProps) {
   const { profileId } = await params;
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/analytics/reports/p/${profileId}`} />;
+  }
 
   // Parse search params
   const paramsObj = await searchParams;
@@ -227,6 +236,7 @@ export default async function ReportsPage({
   // Get filters from search params or defaults
   const defaultFilters = await getProfileReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
+    authResult,
   );
   const reportsFilters = {
     ...defaultFilters,

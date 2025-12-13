@@ -4,12 +4,13 @@
  * @AshokSaravanan222 & @siladiea
  * 08/10/2025
  */
-import { getSession } from "@/auth";
 import { Suspense } from "react";
 
 import { PricingRunsClient } from "@/components/pricing/PricingRunsClient";
 import { PricingSummary } from "@/components/pricing/PricingSummary";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
@@ -78,14 +79,19 @@ const getProfileContext = async (input: {
 };
 
 /** ---- Inline filters function for pricing page ---- */
-async function getPricingFilters(searchParams?: URLSearchParams) {
-  const session = await getSession();
+async function getPricingFilters(
+  searchParams?: URLSearchParams,
+  authResult?: { effectiveProfileId: string; actualProfileId: string }
+) {
+  if (!authResult) {
+    throw new Error("Authentication required");
+  }
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await getProfileContext({
     body: {
-      actualProfileId: session?.user?.profileId || "",
-      effectiveProfileId: session?.effectiveProfileId || "",
+      actualProfileId: authResult.actualProfileId,
+      effectiveProfileId: authResult.effectiveProfileId,
       pathname: "/",
     },
   });
@@ -164,6 +170,11 @@ interface PricingPageProps {
 }
 
 export default async function PricingPage({ searchParams }: PricingPageProps) {
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/analytics/pricing" />;
+  }
+
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -180,6 +191,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   // Get filters from search params or defaults
   const filters = await getPricingFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
+    authResult,
   );
 
   // Fetch summary data server-side (for chart - all runs, no pagination)

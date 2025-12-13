@@ -3,8 +3,6 @@
  * Auth edit page
  */
 
-import { getSession } from "@/auth";
-
 import type {
   CreateKeyIn,
   CreateKeyOut,
@@ -14,8 +12,10 @@ import type {
   UpdateKeyOut,
 } from "@/app/(main)/system/auth/page";
 import Auth from "@/components/auth/Auth";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -34,7 +34,7 @@ type AuthNewOut = OutputOf<"/api/v3/auth/new", "post">;
  */
 const getAuth = async (
   authId: string,
-  profileId: string,
+  profileId: string
 ): Promise<AuthDetailOut> => {
   return api.post(
     "/auth/detail",
@@ -44,20 +44,19 @@ const getAuth = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ authId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { authId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const auth = await getAuth(authId, profileId);
     return {
       title: `${auth?.name || "Auth"} Auth`,
@@ -66,7 +65,8 @@ export async function generateMetadata(
   } catch {
     return {
       title: "Auth",
-      description: "Authentication method configuration for teaching assistant training platform. Manage identity providers and secure access mechanisms for educational institutions and L&D programs.",
+      description:
+        "Authentication method configuration for teaching assistant training platform. Manage identity providers and secure access mechanisms for educational institutions and L&D programs.",
     };
   }
 }
@@ -74,32 +74,29 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/create", {
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/auth/update", {
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -111,12 +108,11 @@ async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
 
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -127,8 +123,12 @@ export default async function AuthEditPage({
   params: Promise<{ authId: string }>;
 }) {
   const { authId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/system/auth/a/${authId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch auth detail (always fresh - source of truth)
   try {
@@ -173,9 +173,9 @@ export default async function AuthEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AuthNewOut,
   AuthDetailIn,
   AuthDetailOut,
+  AuthNewOut,
   CreateAuthIn,
   CreateAuthOut,
   UpdateAuthIn,

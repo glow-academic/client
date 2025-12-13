@@ -5,10 +5,10 @@
  * 06/09/2025
  */
 
-import { getSession } from "@/auth";
-
 import Scenario from "@/components/scenarios/Scenario";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
@@ -69,8 +69,12 @@ export default async function NewScenarioPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/create/scenarios" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Parse search params
   const params = await searchParams;

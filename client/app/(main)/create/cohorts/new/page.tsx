@@ -5,10 +5,10 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import Cohort from "@/components/cohorts/Cohort";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
@@ -91,7 +91,11 @@ async function searchCohortProfile(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  await getSession(); // Session check for metadata context
+  try {
+    await requireAuthenticated();
+  } catch {
+    // Metadata can be generated even if auth fails
+  }
 
   return {
     title: "New Cohort",
@@ -100,8 +104,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewCohortPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/create/cohorts" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch cohort default data (for dropdowns and defaults)
   const cohortDetailDefault = await getCohortDefault(profileId);

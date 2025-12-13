@@ -2,10 +2,10 @@
  * app/(main)/system/providers/page.tsx
  * Providers list page
  */
-import { getSession } from "@/auth";
-
 import Providers from "@/components/providers/Providers";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
@@ -38,12 +38,11 @@ const getProvidersList = async (profileId: string): Promise<ProvidersListOut> =>
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function deleteProvider(input: DeleteProviderIn): Promise<DeleteProviderOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/providers/delete", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -55,8 +54,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ProvidersPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/system/providers" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getProvidersList(profileId);

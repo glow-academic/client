@@ -4,10 +4,10 @@
  * @AshokSaravanan222
  * 01/26/2025
  */
-import { getSession } from "@/auth";
-
 import { EvalForm } from "@/components/evals/EvalForm";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
@@ -42,18 +42,21 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions ---- */
 async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/evals/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewEvalPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/engine/evals" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch rubrics list
   const rubricsList = await getRubricsList(profileId);

@@ -5,7 +5,6 @@
  * 12/04/2025
  */
 
-import { getSession } from "@/auth";
 
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import StaffNewEdit from "@/components/staff/StaffNewEdit";
@@ -44,10 +43,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { profileId } = await params;
-  const session = await getSession();
-  const currentProfileId = session?.effectiveProfileId || "guest-profile-id";
-
   try {
+    const authResult = await requireAuthenticated();
+    const currentProfileId = authResult.effectiveProfileId;
     const staffDetail = await getStaff(profileId, currentProfileId);
     return {
       title: `Edit ${staffDetail.name}`,
@@ -65,11 +63,10 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions ---- */
 async function updateStaff(input: UpdateStaffIn): Promise<UpdateStaffOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
 
   return api.post("/profile/staff/update", {
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -80,8 +77,12 @@ export default async function StaffEditPage({
   params: Promise<{ profileId: string }>;
 }) {
   const { profileId } = await params;
-  const session = await getSession();
-  const currentProfileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/management/staff/p/${profileId}`} />;
+  }
+
+  const currentProfileId = authResult.effectiveProfileId;
 
   // Fetch staff detail (always fresh - source of truth)
   try {

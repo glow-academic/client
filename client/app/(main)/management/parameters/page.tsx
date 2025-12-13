@@ -4,11 +4,11 @@
  * @AshokSaravanan222 & @siladiea
  * 07/21/2025
  */
-import { getSession } from "@/auth";
-
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Parameters from "@/components/parameters/Parameters";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
@@ -51,12 +51,11 @@ async function duplicateParameter(
   input: DuplicateParameterIn
 ): Promise<DuplicateParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/duplicate", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -64,12 +63,11 @@ async function deleteParameter(
   input: DeleteParameterIn
 ): Promise<DeleteParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/delete", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -82,8 +80,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ContextPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/management/parameters" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getParametersList(profileId);

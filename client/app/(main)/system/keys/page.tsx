@@ -2,11 +2,11 @@
  * app/(main)/system/keys/page.tsx
  * Keys list page
  */
-import { getSession } from "@/auth";
-
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Keys from "@/components/keys/Keys";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
@@ -31,32 +31,36 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function deleteKey(input: DeleteKeyIn): Promise<DeleteKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/delete", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Keys",
-    description: "Manage API keys and authentication credentials for teaching assistant training platform. Configure secure access keys, manage API integrations, and maintain platform security for educational institutions and L&D programs.",
+    description:
+      "Manage API keys and authentication credentials for teaching assistant training platform. Configure secure access keys, manage API integrations, and maintain platform security for educational institutions and L&D programs.",
   };
 }
 
 export default async function KeysPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/system/keys" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch list data server-side
   const listData = await getKeysList(profileId);
@@ -69,4 +73,4 @@ export default async function KeysPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { KeysListOut, DeleteKeyIn, DeleteKeyOut };
+export type { DeleteKeyIn, DeleteKeyOut, KeysListOut };

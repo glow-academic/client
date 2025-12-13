@@ -4,7 +4,6 @@
  * @AshokSaravanan222
  * 01/26/2025
  */
-import { getSession } from "@/auth";
 
 import { EvalDetail } from "@/components/evals/EvalDetail";
 import { api } from "@/lib/api/client";
@@ -51,21 +50,19 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions ---- */
 async function runEval(input: RunEvalIn): Promise<RunEvalOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/evals/run", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function stopEval(input: StopEvalIn): Promise<StopEvalOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/evals/stop", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -75,9 +72,13 @@ export default async function EvalDetailPage({
 }: {
   params: Promise<{ evalId: string }>;
 }) {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
   const { evalId } = await params;
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/engine/evals/e/${evalId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch eval detail
   const evalDetail = await getEvalDetail(evalId, profileId);

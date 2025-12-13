@@ -5,11 +5,11 @@
  * 07/20/2025
  */
 
-import { getSession } from "@/auth";
-
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Department from "@/components/departments/Department";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -83,10 +83,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { departmentId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const department = await getDepartment(departmentId, profileId);
     return {
       title: `${department?.title || "Department"} Department`,
@@ -144,8 +143,12 @@ export default async function DepartmentEditPage({
   params: Promise<{ departmentId: string }>;
 }) {
   const { departmentId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/system/departments/d/${departmentId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch department detail (always fresh - source of truth)
   try {

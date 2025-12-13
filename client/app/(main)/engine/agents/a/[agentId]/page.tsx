@@ -5,7 +5,6 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
 
 import SystemAgent from "@/components/agents/SystemAgent";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
@@ -49,10 +48,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { agentId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const agent = await getAgent(agentId, profileId);
     return {
       title: `${agent?.name || "Agent"} Agent`,
@@ -70,23 +68,21 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/agents/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/agents/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -105,8 +101,12 @@ export default async function AgentEditPage({
   params: Promise<{ agentId: string }>;
 }) {
   const { agentId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/engine/agents/a/${agentId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch agent detail (always fresh - source of truth)
   try {

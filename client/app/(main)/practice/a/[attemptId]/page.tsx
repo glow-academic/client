@@ -14,7 +14,7 @@ import type {
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
 import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
+import { requireAuth } from "@/lib/auth-helpers";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Direct fetch (no caching - source of truth) ----
@@ -40,7 +40,7 @@ export async function generateMetadata(
   const { attemptId } = await params;
 
   try {
-    const authResult = await requireAuthenticated().catch(() => null);
+    const authResult = await requireAuth();
     if (!authResult) {
       return {
         title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
@@ -83,10 +83,10 @@ export default async function PracticeAttemptPage({
 }) {
   const { attemptId } = await params;
 
-  // Require authentication - attempt pages don't allow guest access
-  const authResult = await requireAuthenticated().catch(() => null);
+  // Require auth (allows guest fallback via requireAuth)
+  const authResult = await requireAuth();
   if (!authResult) {
-    return <AccessDenied redirectPath="/practice" />;
+    return <AccessDenied redirectPath={`/practice/a/${attemptId}`} />;
   }
 
   const profileId = authResult.effectiveProfileId;
@@ -114,7 +114,7 @@ export default async function PracticeAttemptPage({
       "status" in error &&
       error.status === 403
     ) {
-      return <AccessDenied redirectPath="/practice" />;
+      return <AccessDenied redirectPath={`/practice/a/${attemptId}`} />;
     }
     // Re-throw other errors
     throw error;

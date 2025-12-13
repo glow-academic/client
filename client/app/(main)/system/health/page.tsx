@@ -4,7 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import { getSession } from "@/auth";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import { Suspense } from "react";
 
 import Logs from "@/components/logs/Logs";
@@ -35,10 +36,12 @@ const getLogsBundle = cache(
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getLogsRuns = async (input: LogsRunsIn): Promise<LogsRunsOut> => {
+const getLogsRuns = async (
+  input: LogsRunsIn,
+  authResult: { effectiveProfileId: string }
+): Promise<LogsRunsOut> => {
   const bypassCache = await isHardRefresh();
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const profileId = authResult.effectiveProfileId;
 
   return api.post(
     "/logs/runs",
@@ -63,8 +66,8 @@ async function bulkDeleteLogs(
   input: BulkDeleteLogsIn
 ): Promise<BulkDeleteLogsOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated();
+  const profileId = authResult.effectiveProfileId;
 
   // Override profileId from session (security)
   const out = await api.post("/logs/bulk-delete", {
@@ -90,8 +93,12 @@ interface SystemPageProps {
 }
 
 export default async function SystemPage({ searchParams }: SystemPageProps) {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/system/health" />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Parse search params
   const params = await searchParams;
@@ -172,7 +179,7 @@ export default async function SystemPage({ searchParams }: SystemPageProps) {
         }
       >
         <LogsRunsSection
-          profileId={profileId}
+          authResult={authResult}
           logsPage={logsPage}
           logsPageSize={logsPageSize}
           logsSearch={logsSearch}
@@ -189,7 +196,7 @@ export default async function SystemPage({ searchParams }: SystemPageProps) {
 
 /** ---- Inline runs section component (only used here) ---- */
 async function LogsRunsSection({
-  profileId,
+  authResult,
   logsPage,
   logsPageSize,
   logsSearch,
@@ -199,7 +206,7 @@ async function LogsRunsSection({
   logsSortBy,
   logsSortOrder,
 }: {
-  profileId: string;
+  authResult: { effectiveProfileId: string };
   logsPage: number;
   logsPageSize: number;
   logsSearch?: string | undefined;
@@ -211,7 +218,7 @@ async function LogsRunsSection({
 }) {
   // Build runs filters with pagination/search/sorting/filtering params
   const runsFilters = {
-    profileId,
+    profileId: authResult.effectiveProfileId,
     page: logsPage,
     pageSize: logsPageSize,
     ...(logsSearch && { search: logsSearch }),
@@ -231,7 +238,7 @@ async function LogsRunsSection({
   // Fetch runs data server-side
   const runsData = await getLogsRuns({
     body: runsFilters,
-  });
+  }, authResult);
 
   return (
     <LogsRunsClient

@@ -5,12 +5,12 @@
  * 07/20/2025
  */
 
-import { getSession } from "@/auth";
-
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Cohort from "@/components/cohorts/Cohort";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Trophy } from "lucide-react";
 import Link from "next/link";
@@ -84,10 +84,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { cohortId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const cohort = await getCohort(cohortId, profileId);
     return {
       title: `${cohort?.title || "Cohort"} Edit`,
@@ -129,8 +128,12 @@ export default async function CohortEditPage({
   params: Promise<{ cohortId: string }>;
 }) {
   const { cohortId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/create/cohorts/c/${cohortId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Check cohort access by fetching detail (will return 403 if no access)
   let cohortDetail: CohortDetailOut;

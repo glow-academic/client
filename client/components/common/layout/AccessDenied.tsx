@@ -38,12 +38,13 @@ export function AccessDenied({
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <div className="flex flex-col gap-2">
-              <Button asChild className="w-full">
-                <Link href={redirectPath}>Go to Dashboard</Link>
-              </Button>
               {showLoginButton && (
-                <Button asChild variant="outline" className="w-full">
-                  <Link href="/login">Log In</Link>
+                <Button asChild className="w-full">
+                  <Link
+                    href={`/login?redirectPath=${encodeURIComponent(redirectPath)}`}
+                  >
+                    Log In
+                  </Link>
                 </Button>
               )}
             </div>
@@ -53,4 +54,3 @@ export function AccessDenied({
     </div>
   );
 }
-

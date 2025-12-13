@@ -5,10 +5,10 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import Model from "@/components/models/Model";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -50,10 +50,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { modelId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
   try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
     const model = await getModel(modelId, profileId);
     return {
       title: `${model?.name || "Model"}`,
@@ -73,22 +72,20 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/models/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/keys/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -99,11 +96,10 @@ async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
 
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  const authResult = await requireAuthenticated();
   return api.post("/keys/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body, profileId: authResult.effectiveProfileId },
   });
 }
 
@@ -114,8 +110,12 @@ export default async function ModelEditPage({
   params: Promise<{ modelId: string }>;
 }) {
   const { modelId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/engine/models/${modelId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch model data (always fresh - source of truth, includes provider_mapping)
   const model = await getModel(modelId, profileId);

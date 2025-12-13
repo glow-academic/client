@@ -5,7 +5,8 @@
  * 06/09/2025
  */
 
-import { getSession } from "@/auth";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Scenario from "@/components/scenarios/Scenario";
@@ -105,8 +106,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { scenarioId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  try {
+    const authResult = await requireAuthenticated();
+    const profileId = authResult.effectiveProfileId;
 
   try {
     const scenario = await getScenario(scenarioId, profileId);
@@ -149,8 +151,12 @@ export default async function EditScenarioPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { scenarioId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath={`/create/scenarios/s/${scenarioId}`} />;
+  }
+
+  const profileId = authResult.effectiveProfileId;
 
   // Parse search params
   const paramsObj = await searchParams;

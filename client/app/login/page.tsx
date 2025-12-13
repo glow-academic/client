@@ -83,6 +83,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const departmentParam = params["department"];
   const departmentIdFromQuery =
     typeof departmentParam === "string" ? departmentParam : undefined;
+  const redirectPathParam = params["redirectPath"];
+  const redirectPath =
+    typeof redirectPathParam === "string" ? redirectPathParam : undefined;
 
   // Fetch login data (providers + departments) from consolidated endpoint
   // First fetch without department to get default_department_id and departments list
@@ -140,6 +143,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       initialDepartmentId={initialDepartmentId}
       activeSettings={activeSettings}
       defaultDepartmentId={loginData.default_department_id || null}
+      redirectPath={redirectPath}
     />
   );
 }

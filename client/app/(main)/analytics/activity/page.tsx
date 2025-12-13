@@ -5,11 +5,16 @@
  * 01/20/2025
  */
 
-import { getSession } from "@/auth";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  await getSession(); // Session check for metadata context
+  try {
+    await requireAuthenticated();
+  } catch {
+    // Metadata can be generated even if auth fails
+  }
 
   return {
     title: "Activity",
@@ -19,7 +24,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ActivityPage() {
-  await getSession(); // Session check
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/analytics/activity" />;
+  }
 
   return (
     <div className="space-y-6" data-page="activity-index">
