@@ -34,6 +34,13 @@ class CreateScenarioRequest(BaseModel):
     document_vision_enabled: bool = False
     objectives_enabled: bool = True
     image_enabled: bool = False
+    video_enabled: bool = False
+    questions_enabled: bool = False
+    video_agent_id: str | None = None
+    video_ids: list[str] | None = None
+    active_video_id: str | None = None
+    question_ids: list[str] | None = None
+    question_timestamps: dict[str, dict[str, list[int]]] | None = None
 
 
 class CreateScenarioResponse(BaseModel):
@@ -162,6 +169,16 @@ async def create_scenario(
             else "[]"
         )
 
+        # Prepare video/question data
+        video_ids = request.video_ids or []
+        active_video_id = request.active_video_id
+        question_ids = request.question_ids or []
+        question_timestamps_json = json.dumps(request.question_timestamps) if request.question_timestamps else None
+
+        # Validate video_agent_id is provided if video_enabled
+        if request.video_enabled and not request.video_agent_id:
+            raise ValueError("video_agent_id is required when video_enabled is true")
+
         # Create scenario with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/create_scenario_complete.sql")
         sql_params = (
@@ -171,6 +188,9 @@ async def create_scenario(
             request.document_vision_enabled,
             request.objectives_enabled,
             request.image_enabled,
+            request.video_enabled,
+            request.questions_enabled,
+            request.video_agent_id,  # video_agent_id (required if video_enabled)
             request.problem_statement,
             request.problem_statement_name,  # Optional problem statement name
             problem_statement_versions,
@@ -181,6 +201,10 @@ async def create_scenario(
             objective_ids,
             parameter_item_ids,
             upload_images_json,
+            video_ids if video_ids else None,
+            active_video_id,
+            question_ids if question_ids else None,
+            question_timestamps_json,
             None,  # run_id (for linking AI-generated problem_statements and objectives to runs)
             parameter_ids if parameter_ids else None,
         )

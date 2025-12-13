@@ -542,10 +542,7 @@ from app.socket.log import log_run  # noqa: F401
 from app.socket.quizzes.complete import quiz_complete  # noqa: E402; type: ignore
 
 # Import quiz handlers
-from app.socket.quizzes.create import quiz_create  # noqa: E402; type: ignore
-from app.socket.quizzes.submit_response import (
-    quiz_submit_response,  # noqa: E402; type: ignore
-)
+# Note: Quiz events removed - questions now handled through scenarios
 from app.socket.scenarios.generate import generate_scenario  # noqa: E402; type: ignore
 
 # Import scenario tools to register internal_sio handlers
@@ -610,15 +607,9 @@ from app.socket.simulations.voice.user.text import (
 from app.socket.simulations.voice.user.transcript import (
     simulation_voice_user_transcript,
 )  # noqa: E402; type: ignore
-from app.socket.videos.generate import video_generate  # noqa: E402; type: ignore
-from app.socket.videos.outline import video_outline  # noqa: E402; type: ignore
-
-# Import video tools to register internal_sio handlers
-from app.socket.videos.tools.document import video_tool_document  # noqa: F401
-from app.socket.videos.tools.image import video_tool_image  # noqa: F401
-from app.socket.videos.tools.outline import video_tool_outline  # noqa: F401
-from app.socket.videos.tools.questions import video_tool_questions  # noqa: F401
-from app.socket.videos.tools.video import video_tool_video  # noqa: F401
+# Import scenario tools to register internal_sio handlers
+from app.socket.scenarios.tools.video import scenario_tool_video  # noqa: F401
+from app.socket.scenarios.tools.questions import scenario_tool_questions  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
@@ -1286,13 +1277,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             simulation_voice_assistant_done,
             # AI generation events
             generate_scenario,
-            video_outline,
-            video_generate,
             document_generate,
-            # Quiz events
-            quiz_create,
-            quiz_submit_response,
-            quiz_complete,
+            # Note: quiz events removed - questions now handled through scenarios
             # Note: generate_image, image_generation_complete, and scenario_tool_* events
             # are internal-only (triggered by scenario generation, not called directly by clients)
         ]
@@ -1372,27 +1358,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.simulations.voice.user.transcript import (
             simulation_voice_user_transcript_emit,
         )
-        from app.socket.videos.generate import (
-            video_generation_complete,
-            video_generation_error,
-            video_generation_progress,
+        from app.socket.scenarios.tools.video import (
+            scenario_video_tool_complete,
+            scenario_video_tool_error,
         )
-        from app.socket.videos.outline import (
-            video_outline_generation_complete,
-            video_outline_generation_error,
-            video_outline_generation_progress,
+        from app.socket.scenarios.tools.questions import (
+            scenario_questions_tool_complete,
+            scenario_questions_tool_error,
         )
-
-        # Note: video document tool reuses document_tool_complete (already imported above)
-        from app.socket.videos.tools.outline import (
-            outline_tool_complete as video_outline_tool_complete,
-        )  # noqa: F401
-        from app.socket.videos.tools.questions import (
-            questions_tool_complete as video_questions_tool_complete,
-        )  # noqa: F401
-        from app.socket.videos.tools.video import (
-            video_tool_complete as video_video_tool_complete,
-        )  # noqa: F401
 
         # Collect all unique emit functions (use one instance of each event name)
         server_to_client_stubs = [
@@ -1424,12 +1397,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             scenario_generation_progress,
             scenario_generation_complete,
             scenario_generation_error,
-            video_outline_generation_progress,
-            video_outline_generation_complete,
-            video_outline_generation_error,
-            video_generation_progress,
-            video_generation_complete,
-            video_generation_error,
             document_template_generation_progress,
             document_template_generation_complete,
             document_template_generation_error,
@@ -1438,12 +1405,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             problem_statement_tool_complete,  # scenario_tool_problem_statement_complete
             objectives_tool_complete,  # scenario_tool_objectives_complete
             image_tool_complete,  # scenario_tool_image_complete
-            # Video tool events
-            video_questions_tool_complete,  # questions_tool_complete
-            video_outline_tool_complete,  # outline_tool_complete
-            # Note: video_image_tool_complete reuses image_tool_complete (already registered above for scenarios)
-            video_video_tool_complete,  # video_tool_complete
-            # Note: video_document_tool_complete reuses document_tool_complete (already registered above)
+            # Scenario video/questions tool events
+            scenario_video_tool_complete,  # scenario_tool_video_complete
+            scenario_video_tool_error,  # scenario_tool_video_error
+            scenario_questions_tool_complete,  # scenario_tool_questions_complete
+            scenario_questions_tool_error,  # scenario_tool_questions_error
             # Voice events
             simulation_voice_start_response,
             simulation_voice_start_error,
@@ -1454,13 +1420,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             simulation_voice_user_transcript_emit,
             simulation_voice_user_text_error,
             voice_tool_call_error,
-            # Quiz events
-            quiz_create_response,
-            quiz_create_error,
-            quiz_submit_response_response,
-            quiz_submit_response_error,
-            quiz_complete_response,
-            quiz_complete_error,
+            # Note: quiz events removed - questions now handled through scenarios
         ]
 
         contract = build_socket_contract(

@@ -37,7 +37,6 @@ import {
   type ContentItem,
 } from "@/components/common/simulations/SimulationContentTable";
 import { SimulationScenariosTable } from "@/components/common/simulations/SimulationScenariosTable";
-import { SimulationVideosTable } from "@/components/common/simulations/SimulationVideosTable";
 import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -211,7 +210,7 @@ export default function Simulation({
     [simulationData]
   );
 
-  // State for managing unified content (scenarios + videos)
+  // State for managing content (scenarios only)
   const [currentContentItems, setCurrentContentItems] = useState<ContentItem[]>(
     []
   );
@@ -542,38 +541,6 @@ export default function Simulation({
       });
     }
 
-    // Add videos from server data
-    if (simulationData?.videos) {
-      simulationData.videos.forEach((video) => {
-        const key = `video:${video["video_id"]}`;
-        const switchState = contentSwitchStates[key];
-        items.push({
-          type: "video",
-          id: video["video_id"] as string,
-          title: video["title"] as string,
-          description: video["description"] as string,
-          active: contentActiveStates[key] ?? (video["active"] as boolean),
-          position: video["position"] as number,
-          usage_count: video["usage_count"] as number,
-          success_rate: video["success_rate"] as number,
-          last_used: video["last_used"] as string | null,
-          can_remove: video["can_remove"] as boolean,
-          length_seconds: video["length_seconds"] as number,
-          isNew: false,
-          show_problem_statement:
-            switchState?.show_problem_statement ??
-            (video["show_problem_statement"] as boolean) ??
-            true,
-          show_objectives:
-            switchState?.show_objectives ??
-            (video["show_objectives"] as boolean) ??
-            true,
-          show_image:
-            switchState?.show_image ?? (video["show_image"] as boolean) ?? true,
-        });
-      });
-    }
-
     // Add staged items (newly added, not yet saved)
     stagedContentItems.forEach((item) => {
       const key = `${item.type}:${item.id}`;
@@ -587,7 +554,6 @@ export default function Simulation({
     return items.sort((a, b) => a.position - b.position);
   }, [
     simulationData?.scenarios,
-    simulationData?.videos,
     stagedContentItems,
     contentActiveStates,
     contentSwitchStates,
@@ -714,30 +680,6 @@ export default function Simulation({
             grade_agent_ids:
               ("grade_agent_ids" in scenario ? scenario.grade_agent_ids : []) ??
               [],
-          };
-        });
-      }
-
-      // Initialize active states and switch states from videos
-      if (simulationData.videos) {
-        simulationData.videos.forEach((video) => {
-          const key = `video:${video["video_id"]}`;
-          newActiveStates[key] = video["active"] as boolean;
-          newOriginalActiveStates[key] = video["active"] as boolean;
-          const videoShowProblemStatement =
-            (video["show_problem_statement"] as boolean) ?? true;
-          const videoShowObjectives =
-            (video["show_objectives"] as boolean) ?? true;
-          const videoShowImage = (video["show_image"] as boolean) ?? true;
-          newSwitchStates[key] = {
-            show_problem_statement: videoShowProblemStatement,
-            show_objectives: videoShowObjectives,
-            show_image: videoShowImage,
-          };
-          newOriginalSwitchStates[key] = {
-            show_problem_statement: videoShowProblemStatement,
-            show_objectives: videoShowObjectives,
-            show_image: videoShowImage,
           };
         });
       }
@@ -935,7 +877,7 @@ export default function Simulation({
       // Convert unified content items to API format
       // Separate scenarios and videos while preserving order
       interface ContentItemPayload {
-        type: "scenario" | "video";
+        type: "scenario";
         id: string;
         active: boolean;
         hints_enabled?: boolean;
@@ -990,15 +932,6 @@ export default function Simulation({
               switchState?.hint_agent_id ?? item.hint_agent_id ?? null;
             baseItem.grade_agent_ids =
               switchState?.grade_agent_ids ?? item.grade_agent_ids ?? [];
-          } else if (item.type === "video") {
-            baseItem.show_problem_statement =
-              switchState?.show_problem_statement ??
-              item.show_problem_statement ??
-              true;
-            baseItem.show_objectives =
-              switchState?.show_objectives ?? item.show_objectives ?? true;
-            baseItem.show_image =
-              switchState?.show_image ?? item.show_image ?? true;
           }
 
           return baseItem;
@@ -1079,12 +1012,8 @@ export default function Simulation({
 
     // Get original content IDs from server data
     const originalScenarioIds = simulationData.scenario_ids || [];
-    const originalVideoIds = simulationData.video_ids || [];
     const currentScenarioIdsFromContent = currentContentItems
       .filter((item) => item.type === "scenario")
-      .map((item) => item.id);
-    const currentVideoIdsFromContent = currentContentItems
-      .filter((item) => item.type === "video")
       .map((item) => item.id);
 
     return (
@@ -1096,8 +1025,6 @@ export default function Simulation({
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify(currentScenarioIdsFromContent) !==
         JSON.stringify(originalScenarioIds) ||
-      JSON.stringify(currentVideoIdsFromContent) !==
-        JSON.stringify(originalVideoIds) ||
       JSON.stringify(contentActiveStates) !==
         JSON.stringify(originalContentActiveStates) ||
       JSON.stringify(contentSwitchStates) !==
@@ -1362,65 +1289,6 @@ export default function Simulation({
     [currentContentItems, simulationData?.scenario_mapping]
   );
 
-  // Handler for video picker selection - adds videos directly
-  const handleVideoSelect = useCallback(
-    (videoIds: string[]) => {
-      // Find newly selected videos (not already in currentContentItems)
-      const existingVideoIds = new Set(
-        currentContentItems
-          .filter((item) => item.type === "video")
-          .map((item) => item.id)
-      );
-      const newVideoIds = videoIds.filter((id) => !existingVideoIds.has(id));
-
-      if (newVideoIds.length === 0) return;
-
-      const maxPosition = Math.max(
-        ...currentContentItems.map((item) => item.position),
-        0
-      );
-      const newItems: ContentItem[] = newVideoIds.map((videoId, idx) => {
-        const videoData = simulationData?.video_mapping?.[videoId];
-        const videoName =
-          videoData && typeof videoData === "object" && "name" in videoData
-            ? typeof videoData["name"] === "string"
-              ? videoData["name"]
-              : "Unnamed Video"
-            : "Unnamed Video";
-        const videoDescription =
-          videoData &&
-          typeof videoData === "object" &&
-          "description" in videoData
-            ? typeof videoData["description"] === "string"
-              ? videoData["description"]
-              : ""
-            : "";
-        return {
-          type: "video" as const,
-          id: videoId,
-          title: videoName,
-          description: videoDescription,
-          active: true,
-          position: maxPosition + idx + 1,
-          usage_count: 0,
-          success_rate: 0,
-          last_used: null,
-          can_remove: true,
-          length_seconds:
-            videoData &&
-            typeof videoData === "object" &&
-            "length_seconds" in videoData &&
-            typeof videoData["length_seconds"] === "number"
-              ? videoData["length_seconds"]
-              : 0,
-          isNew: true,
-        };
-      });
-      setStagedContentItems((prev) => [...prev, ...newItems]);
-    },
-    [currentContentItems, simulationData?.video_mapping]
-  );
-
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
 
   return (
@@ -1634,24 +1502,6 @@ export default function Simulation({
             />
           </div>
 
-          {/* Videos Table - Video-Specific Attributes */}
-          <div className="space-y-2">
-            <SimulationVideosTable
-              data={currentContentItems}
-              videoMapping={
-                (simulationData?.video_mapping || {}) as Record<
-                  string,
-                  { name: string; description: string; length_seconds: number }
-                >
-              }
-              validVideoIds={simulationData?.valid_video_ids || []}
-              selectedVideoIds={currentContentItems
-                .filter((item) => item.type === "video")
-                .map((item) => item.id)}
-              onVideoSelect={handleVideoSelect}
-              readonly={isReadonly}
-            />
-          </div>
         </div>
 
         {/* Submit Button */}

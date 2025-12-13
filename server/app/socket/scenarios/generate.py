@@ -84,6 +84,9 @@ class GenerateScenarioAIPayload(BaseModel):
     imageAgentId: str | None = (
         None  # Optional: Agent ID for image generation (required when images are enabled)
     )
+    videoAgentId: str | None = (
+        None  # Optional: Agent ID for video generation (required when videos are enabled)
+    )
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
     fieldIds: list[str] | None = None
@@ -91,6 +94,8 @@ class GenerateScenarioAIPayload(BaseModel):
     scenarioId: str | None = None  # Optional scenario ID to link generated resources
     objectivesMin: int | None = None
     objectivesMax: int | None = None
+    videoEnabled: bool = False  # Flag to enable video generation
+    questionsEnabled: bool = False  # Flag to enable questions generation
 
 
 # Emit helper functions
@@ -554,10 +559,21 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 agent_role_str == "scenario"  # Base role supports all
                 or "templates" in agent_role_str
             )
+            # Video and questions enabled via flags in payload (not agent role)
+            video_enabled = (
+                hasattr(data, "videoEnabled")
+                and data.videoEnabled
+                and hasattr(data, "videoAgentId")
+                and data.videoAgentId
+            )
+            questions_enabled = (
+                hasattr(data, "questionsEnabled") and data.questionsEnabled
+            )
 
             logger.info(
                 f"Agent role: {agent_role}, objectives_enabled: {objectives_enabled}, "
-                f"images_enabled: {images_enabled}, documents_enabled: {documents_enabled}"
+                f"images_enabled: {images_enabled}, documents_enabled: {documents_enabled}, "
+                f"video_enabled: {video_enabled}, questions_enabled: {questions_enabled}"
             )
 
             # Use default guest profile from context if no profile_id provided
@@ -1054,7 +1070,121 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             else:
                 logger.info("Dynamic document tool skipped (documents_enabled=False)")
 
-            # 4. Image Generation Tool (if enabled)
+            # 4. Video Generation Tool (if enabled)
+            if video_enabled:
+                if not hasattr(data, "videoAgentId") or not data.videoAgentId:
+                    logger.warning(
+                        "videoAgentId required for video generation, skipping tool"
+                    )
+                else:
+                    video_agent_id = uuid.UUID(data.videoAgentId)
+
+                    async def generate_video(
+                        prompt: str = Field(
+                            description="Detailed prompt describing the video to generate. Include specific details about the scenario, setting, characters, and actions."
+                        ),
+                        image_ids: list[str] | None = Field(
+                            default=None,
+                            description="Optional list of image IDs to use as reference for video generation. If provided, video generation will wait for these images to be ready.",
+                        ),
+                    ) -> str:
+                        """Generate a video for this scenario.
+
+                        The video should visually represent the scenario described in the problem statement.
+                        Include details about the setting, characters, and key actions.
+
+                        Args:
+                            prompt: Detailed prompt for video generation
+                            image_ids: Optional list of image IDs to reference
+
+                        Returns:
+                            Confirmation message
+                        """
+                        # Emit to internal bus for video generation
+                        await internal_sio.emit(
+                            "scenario_tool_video",
+                            {
+                                "sid": sid,
+                                "trace_id": trace_id,
+                                "prompt": prompt,
+                                "scenario_id": data.scenarioId
+                                if data.scenarioId
+                                else None,
+                                "video_id": None,  # Will be created
+                                "image_ids": image_ids,
+                                "agent_id": str(video_agent_id),
+                                "department_id": str(department_id)
+                                if department_id
+                                else None,
+                            },
+                        )
+
+                        logger.info(
+                            f"[generate_scenario] Emitted video generation to internal bus: "
+                            f"prompt_length={len(prompt)}, image_ids={image_ids}"
+                        )
+                        return "Video generation started successfully"
+
+                    scenario_tools.append(function_tool(generate_video))
+                    logger.info("Created video generation tool")
+            else:
+                logger.info("Video generation tool skipped (video_enabled=False)")
+
+            # 5. Questions Generation Tool (if enabled)
+            if questions_enabled:
+
+                async def create_questions(
+                    questions: list[
+                        dict[str, Any]
+                    ] = Field(
+                        description="List of questions to create. Each question should be a dict with 'question_text' (string), 'allow_multiple' (boolean), and 'options' (list of dicts with 'option_text' and 'is_correct' boolean). Example: [{'question_text': 'What is the main issue?', 'allow_multiple': False, 'options': [{'option_text': 'Option A', 'is_correct': True}, {'option_text': 'Option B', 'is_correct': False}]}]"
+                    ),
+                    question_timestamps: dict[str, list[int]] | None = Field(
+                        default=None,
+                        description="Optional dictionary mapping question indices (as strings: '0', '1', '2', etc.) to lists of timestamps (in seconds) where each question should appear in the video. Only used if video is also generated. Example: {'0': [10, 30], '1': [45]}",
+                    ),
+                ) -> str:
+                    """Create questions for this scenario.
+
+                    Questions should test understanding of the scenario and help GTAs practice
+                    their responses. Each question should have clear options with one or more
+                    correct answers.
+
+                    Args:
+                        questions: List of question dicts with question_text, allow_multiple, and options
+                        question_timestamps: Optional mapping of question indices to video timestamps
+
+                    Returns:
+                        Confirmation message
+                    """
+                    # Get video_id if video was generated (from context or previous tool results)
+                    video_id = None  # TODO: Extract from previous tool results if available
+
+                    # Emit to internal bus for questions creation
+                    await internal_sio.emit(
+                        "scenario_tool_questions",
+                        {
+                            "sid": sid,
+                            "trace_id": trace_id,
+                            "questions": questions,
+                            "scenario_id": data.scenarioId if data.scenarioId else None,
+                            "video_id": video_id,
+                            "question_timestamps": question_timestamps,
+                        },
+                    )
+
+                    logger.info(
+                        f"[generate_scenario] Emitted questions to internal bus: "
+                        f"{len(questions)} questions"
+                    )
+                    return f"Created {len(questions)} questions successfully"
+
+                scenario_tools.append(function_tool(create_questions))
+                logger.info("Created questions generation tool")
+            else:
+                logger.info("Questions generation tool skipped (questions_enabled=False)")
+
+            # 6. Image Generation Tool (if enabled)
             if images_enabled:
                 if not final_profile_id:
                     logger.warning(

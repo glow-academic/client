@@ -286,6 +286,8 @@ class ScenarioDetailResponse(BaseModel):
     document_vision_enabled: bool
     objectives_enabled: bool
     image_enabled: bool
+    video_enabled: bool
+    questions_enabled: bool
 
     # Department
     department_ids: list[str] | None
@@ -297,6 +299,9 @@ class ScenarioDetailResponse(BaseModel):
     document_ids: list[str]
     valid_document_ids: list[str]
     scenario_images: list[dict[str, Any]]
+    scenario_videos: list[dict[str, Any]]
+    question_ids: list[str]
+    questions: list[dict[str, Any]]
 
     # Objectives
     objective_ids: list[str]
@@ -334,6 +339,7 @@ class ScenarioDetailResponse(BaseModel):
     # Agent IDs
     scenario_agent_id: str
     image_agent_id: str
+    video_agent_id: str
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
     # Filtered valid IDs (replacing client-side filtering)
@@ -1043,6 +1049,50 @@ async def get_scenario_detail(
             if isinstance(data, list):
                 return data
             return None
+
+        def parse_scenario_videos(data: Any) -> list[dict[str, Any]]:
+            """Parse scenario videos from JSONB."""
+            videos_data = parse_jsonb(data)
+            videos: list[dict[str, Any]] = []
+            if isinstance(videos_data, list):
+                videos = [
+                    {
+                        "id": vid.get("id", ""),
+                        "name": vid.get("name", ""),
+                        "length_seconds": vid.get("length_seconds", 0),
+                        "completed": vid.get("completed", False),
+                        "active": vid.get("active", True),
+                        "image_enabled": vid.get("image_enabled", False),
+                    }
+                    for vid in videos_data
+                    if isinstance(vid, dict)
+                ]
+            return videos
+
+        def parse_question_ids(data: Any) -> list[str]:
+            """Parse question IDs from array."""
+            if isinstance(data, list):
+                return [str(qid) for qid in data]
+            return []
+
+        def parse_questions(data: Any) -> list[dict[str, Any]]:
+            """Parse questions from JSONB."""
+            questions_data = parse_jsonb(data)
+            questions: list[dict[str, Any]] = []
+            if isinstance(questions_data, list):
+                questions = [
+                    {
+                        "id": q.get("id", ""),
+                        "question_text": q.get("question_text", ""),
+                        "allow_multiple": q.get("allow_multiple", False),
+                        "active": q.get("active", True),
+                        "options": q.get("options", []),
+                        "times": q.get("times", []),
+                    }
+                    for q in questions_data
+                    if isinstance(q, dict)
+                ]
+            return questions
 
         # Parse parameters
         parameters_dict: dict[str, ParameterDetail] = {}
@@ -1871,6 +1921,12 @@ async def get_scenario_detail(
             valid_parameter_ids=valid_parameter_ids,
             scenario_agent_id=scenario.get("scenario_agent_id", ""),
             image_agent_id=scenario.get("image_agent_id", ""),
+            video_agent_id=scenario.get("video_agent_id", ""),
+            video_enabled=scenario.get("video_enabled", False),
+            questions_enabled=scenario.get("questions_enabled", False),
+            scenario_videos=parse_scenario_videos(scenario.get("scenario_videos")),
+            question_ids=parse_question_ids(scenario.get("question_ids")),
+            questions=parse_questions(scenario.get("questions")),
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
         )

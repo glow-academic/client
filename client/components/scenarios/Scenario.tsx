@@ -491,6 +491,7 @@ export default function Scenario({
       active: true,
       scenarioAgentId: null as string | null,
       imageAgentId: null as string | null,
+      videoAgentId: null as string | null,
       parameterIds: [] as string[], // Empty means "all parameters"
     }),
     [defaultDepartmentIds]
@@ -552,6 +553,16 @@ export default function Scenario({
     const useImageFromUrl = searchParams.get("useImage");
     return useImageFromUrl === "true";
   });
+  // Use Video flag - initialized from URL params
+  const [useVideo, setUseVideo] = useState(() => {
+    const useVideoFromUrl = searchParams.get("useVideo");
+    return useVideoFromUrl === "true";
+  });
+  // Use Questions flag - initialized from URL params
+  const [useQuestions, setUseQuestions] = useState(() => {
+    const useQuestionsFromUrl = searchParams.get("useQuestions");
+    return useQuestionsFromUrl === "true";
+  });
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
@@ -595,6 +606,30 @@ export default function Scenario({
   } | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Video state
+  const [selectedVideo, setSelectedVideo] = useState<{
+    id: string;
+    name: string;
+    length_seconds: number;
+  } | null>(null);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
+  // Questions state
+  const [currentQuestionIds, setCurrentQuestionIds] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<
+    Array<{
+      id: string;
+      question_text: string;
+      allow_multiple: boolean;
+      options: Array<{
+        id: string;
+        option_text: string;
+        is_correct: boolean;
+      }>;
+      times?: number[];
+    }>
+  >([]);
 
   // Use transition for smooth UI updates during randomization
   // This ensures the old UI stays visible while new randomized selections are being applied
@@ -1082,6 +1117,49 @@ export default function Scenario({
 
     return mapping;
   }, [scenarioData]);
+
+  // Extract video mapping from scenario_videos array
+  type VideoMappingItem = {
+    id: string;
+    name: string;
+    length_seconds: number;
+  };
+  const videoMapping = useMemo((): Record<string, VideoMappingItem> => {
+    const scenarioVideos = (
+      scenarioData as ScenarioDetailOut & {
+        scenario_videos?: Array<{
+          id?: string;
+          name?: string;
+          length_seconds?: number;
+          active?: boolean;
+        }>;
+      }
+    )?.scenario_videos;
+
+    if (!scenarioVideos || !Array.isArray(scenarioVideos)) {
+      return {};
+    }
+
+    const mapping: Record<string, VideoMappingItem> = {};
+    scenarioVideos.forEach((vid) => {
+      const vidTyped = vid as {
+        id?: string;
+        name?: string;
+        length_seconds?: number;
+        active?: boolean;
+      };
+      const videoId = vidTyped["id"];
+      if (videoId) {
+        mapping[videoId] = {
+          id: videoId,
+          name: vidTyped["name"] || "",
+          length_seconds: vidTyped["length_seconds"] || 0,
+        };
+      }
+    });
+    return mapping;
+  }, [scenarioData]);
+
   // Filter objectives_history based on selected departments
   const objectivesHistory = useMemo(() => {
     const rawHistory = scenarioData?.objectives_history || [];
@@ -1841,6 +1919,9 @@ export default function Scenario({
         active: scenarioData.active ?? true,
         scenarioAgentId: scenarioData.scenario_agent_id || null,
         imageAgentId: scenarioData.image_agent_id || null,
+        videoAgentId:
+          (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
+            .video_agent_id || null,
         parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       // Initialize previousDepartmentIds when loading scenario data
@@ -1874,10 +1955,30 @@ export default function Scenario({
         document_vision_enabled?: boolean;
         objectives_enabled?: boolean;
         image_enabled?: boolean;
+        video_enabled?: boolean;
+        questions_enabled?: boolean;
         scenario_images?: Array<{
           id?: string;
           name?: string;
           upload_id?: string;
+        }>;
+        scenario_videos?: Array<{
+          id?: string;
+          name?: string;
+          length_seconds?: number;
+          active?: boolean;
+        }>;
+        question_ids?: string[];
+        questions?: Array<{
+          id?: string;
+          question_text?: string;
+          allow_multiple?: boolean;
+          options?: Array<{
+            id?: string;
+            option_text?: string;
+            is_correct?: boolean;
+          }>;
+          times?: number[];
         }>;
       };
       // Documents are always enabled (no switch)
@@ -1909,6 +2010,85 @@ export default function Scenario({
       } else {
         setImage(null);
       }
+
+      // Load video_enabled and scenario video (only active video)
+      const videoEnabled = scenarioDataWithFlags.video_enabled ?? false;
+      setUseVideo(videoEnabled);
+      const scenarioVideos = scenarioDataWithFlags.scenario_videos;
+      if (
+        videoEnabled &&
+        scenarioVideos &&
+        Array.isArray(scenarioVideos) &&
+        scenarioVideos.length > 0
+      ) {
+        // Find active video (only one should be active)
+        const activeVideo =
+          scenarioVideos.find((v) => {
+            const vTyped = v as { active?: boolean };
+            return vTyped["active"] === true;
+          }) || scenarioVideos[0];
+        const activeVideoTyped = activeVideo as {
+          id?: string;
+          name?: string;
+          length_seconds?: number;
+        };
+        const videoId = activeVideoTyped["id"];
+        if (videoId) {
+          setSelectedVideo({
+            id: videoId,
+            name: activeVideoTyped["name"] || "",
+            length_seconds: activeVideoTyped["length_seconds"] || 0,
+          });
+          setActiveVideoId(videoId);
+        } else {
+          setSelectedVideo(null);
+          setActiveVideoId(null);
+        }
+      } else {
+        setSelectedVideo(null);
+        setActiveVideoId(null);
+      }
+
+      // Load questions_enabled and questions
+      const questionsEnabled = scenarioDataWithFlags.questions_enabled ?? false;
+      setUseQuestions(questionsEnabled);
+      const questionIds = scenarioDataWithFlags.question_ids || [];
+      const questionsData = scenarioDataWithFlags.questions || [];
+      setCurrentQuestionIds(questionIds);
+      if (
+        questionsData &&
+        Array.isArray(questionsData) &&
+        questionsData.length > 0
+      ) {
+        setQuestions(
+          questionsData.map((q) => {
+            const qTyped = q as {
+              id?: string;
+              question_text?: string;
+              allow_multiple?: boolean;
+              options?: Array<{
+                id?: string;
+                option_text?: string;
+                is_correct?: boolean;
+              }>;
+              times?: number[];
+            };
+            return {
+              id: qTyped["id"] || "",
+              question_text: qTyped["question_text"] || "",
+              allow_multiple: qTyped["allow_multiple"] || false,
+              options: (qTyped["options"] || []).map((opt) => ({
+                id: opt["id"] || "",
+                option_text: opt["option_text"] || "",
+                is_correct: opt["is_correct"] || false,
+              })),
+              times: qTyped["times"] || [],
+            };
+          })
+        );
+      } else {
+        setQuestions([]);
+      }
       // Store originals for change tracking
       setOriginalFormData({
         name: scenarioData.name,
@@ -1917,6 +2097,9 @@ export default function Scenario({
         active: scenarioData.active ?? true,
         scenarioAgentId: scenarioData.scenario_agent_id || null,
         imageAgentId: scenarioData.image_agent_id || null,
+        videoAgentId:
+          (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
+            .video_agent_id || null,
         parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       setOriginalDocumentIds(scenarioData.document_ids || []);
@@ -1953,6 +2136,9 @@ export default function Scenario({
         name: preservedName,
         scenarioAgentId: scenarioData.scenario_agent_id || null,
         imageAgentId: scenarioData.image_agent_id || null,
+        videoAgentId:
+          (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
+            .video_agent_id || null,
         parameterIds: newData.selected_parameter_ids || [],
       });
 
@@ -2226,6 +2412,7 @@ export default function Scenario({
       setFormData((prev) => ({
         ...prev,
         scenarioAgentId: null,
+        videoAgentId: null,
       }));
     }
   }, [
@@ -2268,11 +2455,25 @@ export default function Scenario({
         imageAgentId: imageAgentIds[0] || null,
       }));
     }
+
+    // Auto-select first video agent if only one option and not already set
+    const videoAgentIds =
+      scenarioData.valid_agent_ids?.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("video");
+      }) || [];
+    if (videoAgentIds.length === 1 && !formData.videoAgentId) {
+      setFormData((prev) => ({
+        ...prev,
+        videoAgentId: videoAgentIds[0] || null,
+      }));
+    }
   }, [
     scenarioData,
     agentMapping,
     formData.scenarioAgentId,
     formData.imageAgentId,
+    formData.videoAgentId,
     expectedScenarioRole,
   ]);
 
@@ -3161,6 +3362,13 @@ export default function Scenario({
         parameter_ids?: string[] | null;
         scenario_agent_id?: string | null;
         image_agent_id?: string | null;
+        video_enabled?: boolean;
+        questions_enabled?: boolean;
+        video_agent_id?: string | null;
+        video_ids?: string[] | null;
+        active_video_id?: string | null;
+        question_ids?: string[] | null;
+        question_timestamps?: Record<string, Record<string, number[]>> | null;
       } = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
@@ -3176,6 +3384,24 @@ export default function Scenario({
         parameters: parametersDict,
         scenario_agent_id: formData.scenarioAgentId || null,
         image_agent_id: formData.imageAgentId || null,
+        video_enabled: useVideo,
+        questions_enabled: useQuestions,
+        video_agent_id: formData.videoAgentId || null,
+        video_ids: selectedVideo ? [selectedVideo.id] : null,
+        active_video_id: activeVideoId || null,
+        question_ids: currentQuestionIds.length > 0 ? currentQuestionIds : null,
+        question_timestamps:
+          questions.length > 0 && selectedVideo
+            ? questions.reduce(
+                (acc, q) => {
+                  if (q.times && q.times.length > 0) {
+                    acc[q.id] = { [selectedVideo.id]: q.times };
+                  }
+                  return acc;
+                },
+                {} as Record<string, Record<string, number[]>>
+              )
+            : null,
       };
 
       // Include problem_statement_versions if in create mode and we have local versions
@@ -3204,7 +3430,9 @@ export default function Scenario({
             document_vision_enabled: documentVisionEnabled,
             objectives_enabled: currentObjectives.length > 0,
             image_enabled: useImage,
-          });
+            video_enabled: useVideo,
+            questions_enabled: useQuestions,
+          } as unknown as UpdateScenarioIn);
           toast.success("Scenario updated successfully!");
           router.push("/create/scenarios");
         } catch (error) {
@@ -3222,7 +3450,9 @@ export default function Scenario({
             document_vision_enabled: documentVisionEnabled,
             objectives_enabled: currentObjectives.length > 0,
             image_enabled: useImage,
-          });
+            video_enabled: useVideo,
+            questions_enabled: useQuestions,
+          } as unknown as CreateScenarioIn);
           // Clear local versions after successful creation
           setLocalProblemStatementVersions([]);
           toast.success("Scenario created successfully!");
@@ -3596,6 +3826,36 @@ export default function Scenario({
               onImageSelect={handleImageSelect}
               onImageUpload={handleImageUpload}
               onImageRemove={() => setImage(null)}
+              useVideo={useVideo}
+              selectedVideo={selectedVideo}
+              videoMapping={videoMapping}
+              activeVideoId={activeVideoId}
+              onUseVideoChange={(enabled) => {
+                setUseVideo(enabled);
+                if (!enabled) {
+                  setSelectedVideo(null);
+                  setActiveVideoId(null);
+                  setUseQuestions(false);
+                }
+              }}
+              onVideoSelect={(video) => {
+                setSelectedVideo(video);
+                setActiveVideoId(video?.id || null);
+              }}
+              useQuestions={useQuestions}
+              questions={questions}
+              currentQuestionIds={currentQuestionIds}
+              onUseQuestionsChange={(enabled) => {
+                setUseQuestions(enabled);
+                if (!enabled) {
+                  setQuestions([]);
+                  setCurrentQuestionIds([]);
+                }
+              }}
+              onQuestionsChange={(newQuestions) => {
+                setQuestions(newQuestions);
+                setCurrentQuestionIds(newQuestions.map((q) => q.id));
+              }}
               onScenarioPreviewDocumentChange={setScenarioPreviewDocumentId}
               onGenerate={handleGenerateScenario}
               onResetContent={handleResetContent}

@@ -13,9 +13,11 @@ import {
   Loader2,
   MessageSquare,
   PlusCircle,
+  Play,
   RotateCcw,
   Trash2,
   Upload,
+  Video,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -237,6 +239,27 @@ export interface ContentSectionProps {
   imageMapping: Record<string, ImageMappingItem>;
   isUploadingImage: boolean;
 
+  // Videos
+  useVideo: boolean;
+  selectedVideo: { id: string; name: string; length_seconds: number } | null;
+  videoMapping: Record<string, { id: string; name: string; length_seconds: number }>;
+  activeVideoId: string | null;
+
+  // Questions
+  useQuestions: boolean;
+  questions: Array<{
+    id: string;
+    question_text: string;
+    allow_multiple: boolean;
+    options: Array<{
+      id: string;
+      option_text: string;
+      is_correct: boolean;
+    }>;
+    times?: number[];
+  }>;
+  currentQuestionIds: string[];
+
   // Documents Preview
   allPreviewDocumentIds: string[];
   documentMapping: Record<string, DocumentMappingItem>;
@@ -273,6 +296,20 @@ export interface ContentSectionProps {
   ) => void;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageRemove: () => void;
+  onUseVideoChange: (enabled: boolean) => void;
+  onVideoSelect: (video: { id: string; name: string; length_seconds: number } | null) => void;
+  onUseQuestionsChange: (enabled: boolean) => void;
+  onQuestionsChange: (questions: Array<{
+    id: string;
+    question_text: string;
+    allow_multiple: boolean;
+    options: Array<{
+      id: string;
+      option_text: string;
+      is_correct: boolean;
+    }>;
+    times?: number[];
+  }>) => void;
   onScenarioPreviewDocumentChange: (docId: string | null) => void;
   onGenerate: (instructions?: string, regenerateObjectives?: boolean) => void;
   onResetContent: () => void;
@@ -304,6 +341,13 @@ export function ContentSection({
   image,
   imageMapping,
   isUploadingImage,
+  useVideo,
+  selectedVideo,
+  videoMapping,
+  activeVideoId,
+  useQuestions,
+  questions,
+  currentQuestionIds,
   allPreviewDocumentIds,
   documentMapping,
   scenarioPreviewDocumentId,
@@ -325,6 +369,10 @@ export function ContentSection({
   onImageSelect,
   onImageUpload,
   onImageRemove: _onImageRemove,
+  onUseVideoChange,
+  onVideoSelect,
+  onUseQuestionsChange,
+  onQuestionsChange,
   onScenarioPreviewDocumentChange,
   onGenerate,
   onResetContent,
@@ -639,9 +687,9 @@ export function ContentSection({
           )}
         </div>
 
-        {/* Documents and Image Preview Section */}
+        {/* Documents and Preview Section */}
         <div className="flex gap-4 items-stretch">
-          {/* Image Preview Section */}
+          {/* Video/Image Preview Section */}
           <div
             className={
               allPreviewDocumentIds.length > 0
@@ -649,8 +697,90 @@ export function ContentSection({
                 : "w-full space-y-2 flex flex-col"
             }
           >
-            {/* ImagePicker */}
-            {useImage && (
+            {/* Video Picker (when video enabled) */}
+            {useVideo && (
+              <>
+                {Object.keys(videoMapping).length > 0 ? (
+                  <div className="flex items-center justify-between">
+                    <Label>Preview</Label>
+                    <GenericPicker
+                      items={videoMapping}
+                      itemIds={Object.keys(videoMapping)}
+                      selectedIds={selectedVideo ? [selectedVideo.id] : []}
+                      onSelect={(ids) => {
+                        const videoId = ids[0] || null;
+                        if (videoId && videoMapping[videoId]) {
+                          const selectedVideoItem = videoMapping[videoId];
+                          onVideoSelect({
+                            id: selectedVideoItem.id,
+                            name: selectedVideoItem.name,
+                            length_seconds: selectedVideoItem.length_seconds,
+                          });
+                        } else if (!videoId) {
+                          onVideoSelect(null);
+                        }
+                      }}
+                      getId={(item) => {
+                        const vidItem = item as { id: string; name: string; length_seconds: number };
+                        return vidItem.id;
+                      }}
+                      getLabel={(item) => {
+                        const vidItem = item as { id: string; name: string; length_seconds: number };
+                        return `${vidItem.name} (${Math.floor(vidItem.length_seconds / 60)}:${String(vidItem.length_seconds % 60).padStart(2, '0')})`;
+                      }}
+                      getSearchText={(item) => {
+                        const vidItem = item as { id: string; name: string; length_seconds: number };
+                        return vidItem.name;
+                      }}
+                      renderButton={(selectedItems) => {
+                        if (selectedItems.length === 0) {
+                          return "Select video...";
+                        }
+                        const selectedVideoItem =
+                          selectedItems[0] as { id: string; name: string; length_seconds: number };
+                        return selectedVideoItem?.name || "Select video...";
+                      }}
+                      renderItem={(item, isSelected) => {
+                        const vidItem = item as { id: string; name: string; length_seconds: number };
+                        return (
+                          <div className="flex flex-col items-start py-3 w-full">
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2">
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4",
+                                    isSelected ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span className="font-medium">
+                                  {vidItem.name}
+                                </span>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {Math.floor(vidItem.length_seconds / 60)}:{String(vidItem.length_seconds % 60).padStart(2, '0')}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }}
+                      disabled={isReadonly}
+                      multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="h-8 justify-between"
+                      compact={true}
+                      groupHeading="Videos"
+                      placeholder="Select video..."
+                      clearActionLabel="No Video"
+                    />
+                  </div>
+                ) : (
+                  <Label>Preview</Label>
+                )}
+              </>
+            )}
+            
+            {/* ImagePicker (when image enabled and video not enabled) */}
+            {!useVideo && useImage && (
               <>
                 {Object.keys(imageMapping).length > 0 ? (
                   <div className="flex items-center justify-between">
@@ -734,6 +864,10 @@ export function ContentSection({
                 ) : (
                   <Label>Preview</Label>
                 )}
+              </>
+            )}
+            
+            {!useVideo && !useImage && <Label>Preview</Label>}
               </>
             )}
             {!useImage && <Label>Preview</Label>}
@@ -1073,37 +1207,155 @@ export function ContentSection({
           )}
         </div>
 
-        {/* Use Image Switch */}
+        {/* Use Video Switch */}
         <div className="space-y-4 pt-2">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Label
-                htmlFor="use-image"
+                htmlFor="use-video"
                 className="text-sm flex items-center gap-1.5"
               >
-                <Image
+                <Video
                   className="h-3.5 w-3.5 text-muted-foreground"
-                  aria-label="Image icon"
+                  aria-label="Video icon"
                 />
-                Use Image
+                Use Video
               </Label>
               <Switch
-                id="use-image"
-                checked={useImage}
+                id="use-video"
+                checked={useVideo}
                 onCheckedChange={(checked) => {
-                  onUseImageChange(checked);
+                  onUseVideoChange(checked);
                   if (!checked) {
-                    onImageSelect(null);
+                    onVideoSelect(null);
+                    // If disabling video, also disable questions if they were enabled
+                    if (useQuestions) {
+                      onUseQuestionsChange(false);
+                    }
                   }
                 }}
                 disabled={isReadonly}
               />
             </div>
             <p className="text-xs text-muted-foreground pl-5">
-              Use scenario background image
+              Use video instead of chat interface
             </p>
           </div>
         </div>
+
+        {/* Use Questions Switch (only when video is enabled) */}
+        {useVideo && (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="use-questions"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <MessageSquare
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label="Questions icon"
+                  />
+                  Use Questions
+                </Label>
+                <Switch
+                  id="use-questions"
+                  checked={useQuestions}
+                  onCheckedChange={(checked) => {
+                    onUseQuestionsChange(checked);
+                    if (!checked) {
+                      onQuestionsChange([]);
+                    }
+                  }}
+                  disabled={isReadonly}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Add questions below the video
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Questions Section (when video and questions are enabled) */}
+        {useVideo && useQuestions && questions.length > 0 && (
+          <div className="space-y-4 pt-4">
+            <Label>Questions</Label>
+            <div className="space-y-4">
+              {questions.map((question, index) => (
+                <Card key={question.id || index}>
+                  <CardHeader>
+                    <CardTitle className="text-sm">
+                      Question {index + 1}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm mb-3">{question.question_text}</p>
+                    <div className="space-y-2">
+                      {question.options.map((option) => (
+                        <div
+                          key={option.id}
+                          className={cn(
+                            "p-2 rounded border",
+                            option.is_correct
+                              ? "bg-green-50 border-green-200"
+                              : "bg-muted/50"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            {option.is_correct && (
+                              <Check className="h-4 w-4 text-green-600" />
+                            )}
+                            <span className="text-sm">{option.option_text}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {question.times && question.times.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Appears at: {question.times.map(t => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`).join(", ")}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Use Image Switch (only when video is not enabled) */}
+        {!useVideo && (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="use-image"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Image
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label="Image icon"
+                  />
+                  Use Image
+                </Label>
+                <Switch
+                  id="use-image"
+                  checked={useImage}
+                  onCheckedChange={(checked) => {
+                    onUseImageChange(checked);
+                    if (!checked) {
+                      onImageSelect(null);
+                    }
+                  }}
+                  disabled={isReadonly}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Use scenario background image
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Document Preview Dialog */}
         <Dialog

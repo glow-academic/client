@@ -19,8 +19,7 @@ CREATE TYPE agent_role AS ENUM (
   'video',
   'simulation-text',
   'simulation-voice',
-  'eval',
-  'outline'
+  'eval'
 );
 
 -- ============================================================================

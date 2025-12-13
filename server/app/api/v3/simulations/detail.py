@@ -134,28 +134,6 @@ class ScenarioInSimulation(BaseModel):
     can_remove: bool  # True if usage_count == 0
 
 
-class VideoInSimulation(BaseModel):
-    """Video with position in simulation."""
-
-    video_id: str
-    title: str
-    description: str
-    active: bool
-    position: int  # From simulation_videos junction table
-    length_seconds: int  # Video length in seconds
-
-    # Switch fields from simulation_videos junction table
-    show_problem_statement: bool
-    show_objectives: bool
-    show_image: bool
-
-    # Statistics fields
-    usage_count: int  # Number of attempts that included this video via quizzes
-    success_rate: int  # Percentage (0-100) of quiz responses that match correct answers
-    last_used: str | None  # ISO timestamp or None
-    can_remove: bool  # True if usage_count == 0
-
-
 class ParameterItem(BaseModel):
     """Parameter data for dropdown."""
 
@@ -195,8 +173,6 @@ class SimulationDetailResponse(BaseModel):
     valid_rubric_ids: list[str]
     scenario_ids: list[str]
     valid_scenario_ids: list[str]
-    video_ids: list[str]
-    valid_video_ids: list[str]
 
     # Boolean parameters
     active: bool
@@ -213,7 +189,6 @@ class SimulationDetailResponse(BaseModel):
 
     # Full scenario objects
     scenarios: list[ScenarioInSimulation]
-    videos: list[VideoInSimulation]
 
     # Parameter data
     parameters: list[ParameterItem]
@@ -222,9 +197,6 @@ class SimulationDetailResponse(BaseModel):
 
     # Top-level mappings
     scenario_mapping: ScenarioMapping
-    video_mapping: dict[
-        str, dict[str, Any]
-    ]  # Video mapping similar to scenario mapping
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
     field_mapping: FieldMapping
@@ -359,39 +331,9 @@ async def get_simulation_detail(
                         )
                     )
 
-        # Parse videos list from JSONB
-        videos_list: list[VideoInSimulation] = []
-        videos_list_data = result.get("videos_list")
-        if isinstance(videos_list_data, str):
-            videos_list_data = json.loads(videos_list_data)
-        if videos_list_data and isinstance(videos_list_data, list):
-            for v_data in videos_list_data:
-                if isinstance(v_data, dict):
-                    videos_list.append(
-                        VideoInSimulation(
-                            video_id=v_data.get("video_id", ""),
-                            title=v_data.get("title", ""),
-                            description=v_data.get("description", ""),
-                            active=v_data.get("active", False),
-                            position=v_data.get("position", 0),
-                            length_seconds=v_data.get("length_seconds", 0),
-                            show_problem_statement=v_data.get(
-                                "show_problem_statement", True
-                            ),
-                            show_objectives=v_data.get("show_objectives", True),
-                            show_image=v_data.get("show_image", True),
-                            usage_count=v_data.get("usage_count", 0),
-                            success_rate=v_data.get("success_rate", 0),
-                            last_used=v_data.get("last_used"),
-                            can_remove=v_data.get("can_remove", True),
-                        )
-                    )
-
         # Get IDs
         scenario_ids = result.get("scenario_ids", [])
-        video_ids = result.get("video_ids", [])
         valid_scenario_ids = result.get("valid_scenario_ids", [])
-        valid_video_ids = result.get("valid_video_ids", [])
         valid_rubric_ids = result.get("valid_rubric_ids", [])
         valid_department_ids = result.get("valid_department_ids", [])
 
@@ -593,8 +535,6 @@ async def get_simulation_detail(
             valid_rubric_ids=valid_rubric_ids,
             scenario_ids=scenario_ids,
             valid_scenario_ids=valid_scenario_ids,
-            video_ids=video_ids,
-            valid_video_ids=valid_video_ids,
             active=result.get("active", False),
             practice_simulation=result.get("practice_simulation", False),
             can_edit=can_edit,
@@ -603,12 +543,10 @@ async def get_simulation_detail(
             in_use=total_cohort_links > 0,  # In use if has any cohort links
             cohort_count=total_cohort_links,  # Return total for display
             scenarios=scenarios_list,
-            videos=videos_list,
             parameters=parameters_list,
             parameter_items=parameter_items_list,
             parameter_mapping=parameter_mapping,
             scenario_mapping=scenario_mapping,
-            video_mapping=video_mapping,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
             field_mapping=field_mapping_dict,

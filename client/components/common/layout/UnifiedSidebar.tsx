@@ -284,7 +284,6 @@ export function UnifiedSidebar({
     // Create - Available from instructor level and up
     if (
       availableSections.includes("personas") ||
-      availableSections.includes("videos") ||
       availableSections.includes("scenarios") ||
       availableSections.includes("simulations")
     ) {
@@ -302,11 +301,6 @@ export function UnifiedSidebar({
             title: "Scenarios",
             url: "#",
             section: "scenarios",
-          },
-          {
-            title: "Videos",
-            url: "#",
-            section: "videos",
           },
           {
             title: "Personas",

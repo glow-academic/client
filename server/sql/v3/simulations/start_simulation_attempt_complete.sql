@@ -37,52 +37,11 @@ simulation_scenarios AS (
     WHERE ss.simulation_id = $1::uuid AND ss.active = true
     ORDER BY ss.position
 ),
--- Get simulation videos in order
-simulation_videos AS (
-    SELECT 
-        sv.video_id,
-        sv.position
-    FROM simulation_videos sv
-    WHERE sv.simulation_id = $1::uuid AND sv.active = true
-    ORDER BY sv.position
-),
--- Determine content type and first content item
+-- Determine content type (always scenario now - videos are accessed through scenarios)
 content_type_check AS (
     SELECT 
-        CASE 
-            -- If scenario override provided, use scenario
-            WHEN COALESCE($4::text, '') != '' THEN 'scenario'
-            -- Compare positions: use whichever comes first (scenario or video)
-            WHEN EXISTS(SELECT 1 FROM simulation_scenarios) AND EXISTS(SELECT 1 FROM simulation_videos) THEN
-                CASE 
-                    WHEN (SELECT MIN(position) FROM simulation_scenarios) < 
-                         (SELECT MIN(position) FROM simulation_videos) THEN 'scenario'
-                    ELSE 'video'
-                END
-            -- If only scenarios exist, use scenario
-            WHEN EXISTS(SELECT 1 FROM simulation_scenarios) THEN 'scenario'
-            -- If only videos exist, use video
-            WHEN EXISTS(SELECT 1 FROM simulation_videos) THEN 'video'
-            -- Default to scenario
-            ELSE 'scenario'
-        END as content_type,
-        CASE 
-            -- If content type is video, get first video_id
-            WHEN (CASE 
-                    WHEN COALESCE($4::text, '') != '' THEN 'scenario'
-                    WHEN EXISTS(SELECT 1 FROM simulation_scenarios) AND EXISTS(SELECT 1 FROM simulation_videos) THEN
-                        CASE 
-                            WHEN (SELECT MIN(position) FROM simulation_scenarios) < 
-                                 (SELECT MIN(position) FROM simulation_videos) THEN 'scenario'
-                            ELSE 'video'
-                        END
-                    WHEN EXISTS(SELECT 1 FROM simulation_scenarios) THEN 'scenario'
-                    WHEN EXISTS(SELECT 1 FROM simulation_videos) THEN 'video'
-                    ELSE 'scenario'
-                  END) = 'video' THEN
-                (SELECT video_id FROM simulation_videos ORDER BY position LIMIT 1)
-            ELSE NULL::uuid
-        END as first_video_id
+        'scenario' as content_type,
+        NULL::uuid as first_video_id
 ),
 -- Determine chosen scenario
 chosen_scenario_id AS (
@@ -319,7 +278,7 @@ SELECT
     CASE WHEN ctc.content_type = 'scenario' THEN sfd.problem_statement ELSE NULL::text END as problem_statement,
     CASE WHEN ctc.content_type = 'scenario' THEN sfd.needs_generation ELSE false END as needs_generation,
     ctc.content_type,
-    ctc.first_video_id::text as video_id,
+    NULL::text as video_id,
     -- Simulation metadata as JSONB
     jsonb_build_object(
         'id', sd.id::text,

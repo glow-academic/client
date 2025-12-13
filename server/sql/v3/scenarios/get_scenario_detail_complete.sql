@@ -152,8 +152,11 @@ scenario_core AS (
         s.document_vision_enabled,
         s.objectives_enabled,
         s.image_enabled,
+        s.video_enabled,
+        s.questions_enabled,
         s.scenario_agent_id::text,
-        s.image_agent_id::text
+        s.image_agent_id::text,
+        s.video_agent_id::text
     FROM scenarios s
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
@@ -179,6 +182,68 @@ scenario_documents_agg AS (
     SELECT ARRAY_AGG(document_id::text ORDER BY document_id) as document_ids
     FROM scenario_documents
     WHERE scenario_id = $1 AND active = true
+),
+scenario_videos_data AS (
+    SELECT COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'id', v.id::text,
+                'name', v.name,
+                'length_seconds', v.length_seconds,
+                'completed', v.completed,
+                'active', sv.active,
+                'image_enabled', v.image_enabled
+            )
+        ),
+        '[]'::jsonb
+    ) as scenario_videos
+    FROM scenario_videos sv
+    JOIN videos v ON v.id = sv.video_id
+    WHERE sv.scenario_id = $1 AND sv.active = true
+),
+scenario_questions_data AS (
+    SELECT 
+        COALESCE(ARRAY_AGG(q.id::text ORDER BY sq.created_at), ARRAY[]::text[]) as question_ids,
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', q.id::text,
+                    'question_text', q.question_text,
+                    'allow_multiple', q.allow_multiple,
+                    'active', sq.active,
+                    'options', COALESCE(
+                        (SELECT jsonb_agg(
+                            jsonb_build_object(
+                                'id', opt.id::text,
+                                'option_text', opt.option_text,
+                                'type', opt.type::text,
+                                'is_correct', EXISTS(
+                                    SELECT 1 FROM question_answers qa 
+                                    WHERE qa.question_id = q.id AND qa.option_id = opt.id AND qa.active = true
+                                )
+                            )
+                        )
+                        FROM question_options qopt
+                        JOIN options opt ON opt.id = qopt.option_id
+                        WHERE qopt.question_id = q.id AND qopt.active = true AND opt.active = true),
+                        '[]'::jsonb
+                    ),
+                    'times', COALESCE(
+                        (SELECT ARRAY_AGG(sqt.time ORDER BY sqt.time)
+                         FROM scenario_question_times sqt
+                         WHERE sqt.scenario_id = $1 
+                         AND sqt.question_id = q.id 
+                         AND sqt.active = true),
+                        ARRAY[]::integer[]
+                    )
+                )
+                ORDER BY sq.created_at
+            ),
+            '[]'::jsonb
+        ) as questions
+    FROM scenario_questions sq
+    JOIN questions q ON q.id = sq.question_id
+    WHERE sq.scenario_id = $1 AND sq.active = true
 ),
 scenario_images_data AS (
     SELECT COALESCE(
@@ -1168,8 +1233,14 @@ SELECT
     COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
     COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history,
     COALESCE((SELECT scenario_images FROM scenario_images_data), '[]'::jsonb) as scenario_images,
+    COALESCE((SELECT scenario_videos FROM scenario_videos_data), '[]'::jsonb) as scenario_videos,
+    COALESCE((SELECT question_ids FROM scenario_questions_data), ARRAY[]::text[]) as question_ids,
+    COALESCE((SELECT questions FROM scenario_questions_data), '[]'::jsonb) as questions,
+    sc.video_enabled,
+    sc.questions_enabled,
     sc.scenario_agent_id,
     sc.image_agent_id,
+    sc.video_agent_id,
     COALESCE((SELECT array_agg(parameter_id::text) FROM linked_scenario_parameters), ARRAY[]::text[]) as parameter_ids
 FROM scenario_core sc
 CROSS JOIN user_profile up
@@ -1196,5 +1267,7 @@ CROSS JOIN scenario_departments_mapping_data sdmdept
 CROSS JOIN enhanced_department_mapping_data edmdept
 CROSS JOIN problem_statement_mapping_data psmd
 CROSS JOIN objectives_history_data ohd
+CROSS JOIN scenario_videos_data svd
+CROSS JOIN scenario_questions_data sqd
 CROSS JOIN valid_agents va
 

@@ -735,6 +735,25 @@ default_image_agent AS (
         CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
     LIMIT 1
 ),
+default_video_agent AS (
+    -- Get best video agent for the resolved department
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    WHERE a.role = 'video'
+    AND a.active = true
+    AND (
+        -- Include if agent is linked to the resolved department
+        ad.department_id = rdfa.department_id
+        -- OR agent has no department links (cross-department)
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        -- Prioritize department-specific agents over cross-department agents
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
 agent_filtered AS (
     -- Filter agents by department access and expected role
     -- Include agents matching expected role AND always include image agents
@@ -748,6 +767,8 @@ agent_filtered AS (
         a.role = ear.role
         -- OR always include image agents (for image agent picker)
         OR a.role = 'image'
+        -- OR always include video agents (for video agent picker)
+        OR a.role = 'video'
     )
     GROUP BY a.id, a.name, a.description, a.role, ear.role
     HAVING 
@@ -845,5 +866,31 @@ SELECT
         AND i.id = ANY($8::uuid[])
         AND i.active = true),
         '[]'::jsonb
-    ) as scenario_images
+    ) as scenario_images,
+    -- Scenario videos (list of available videos for selection)
+    COALESCE(
+        (SELECT jsonb_agg(
+            jsonb_build_object(
+                'id', v.id::text,
+                'name', v.name,
+                'length_seconds', v.length_seconds,
+                'completed', v.completed,
+                'active', v.active,
+                'image_enabled', v.image_enabled
+            )
+            ORDER BY v.created_at DESC
+        )
+        FROM videos v
+        WHERE v.active = true),
+        '[]'::jsonb
+    ) as scenario_videos,
+    -- Scenario questions (empty for new scenario)
+    ARRAY[]::text[] as question_ids,
+    '[]'::jsonb as questions,
+    -- Video agent ID (default)
+    COALESCE((SELECT agent_id FROM default_video_agent), '') as video_agent_id,
+    -- Video enabled flag (default false)
+    false as video_enabled,
+    -- Questions enabled flag (default false)
+    false as questions_enabled
 

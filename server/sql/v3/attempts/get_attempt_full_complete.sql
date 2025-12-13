@@ -77,47 +77,16 @@
             WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
             ORDER BY ss.position
         ),
-        -- Get all videos for this simulation with their positions
-        simulation_videos_list AS (
-            SELECT sv.video_id, sv.position, sv.show_problem_statement, sv.show_objectives, sv.show_image
-            FROM simulation_videos sv
-            CROSS JOIN attempt_base ab
-            WHERE sv.simulation_id = ab.simulation_id AND sv.active = true
-            ORDER BY sv.position
-        ),
-        -- Get video data with questions, timestamps, and options
-        videos_data AS (
+        -- Get scenario videos and questions (videos now accessed through scenarios)
+        -- This data will be merged into scenario data, not separate content items
+        scenario_videos_with_questions AS (
             SELECT 
+                sv.scenario_id,
                 v.id as video_id,
                 v.name as video_title,
                 v.length_seconds,
                 vu.upload_id,
-                svl.position,
-                svl.show_image,
-                -- Get documents connected to this video
-                COALESCE(
-                    (SELECT jsonb_agg(
-                        jsonb_build_object(
-                            'id', d.id::text,
-                            'name', d.name,
-                            'description', '',
-                            'extension', CASE 
-                                WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\.([^\.]+)$')
-                                ELSE NULL
-                            END,
-                            'filePath', u.file_path,
-                            'mimeType', u.mime_type,
-                            'uploadId', CASE WHEN du.upload_id IS NOT NULL THEN du.upload_id::text ELSE NULL END
-                        )
-                    )
-                    FROM video_documents vd
-                    JOIN documents d ON d.id = vd.document_id
-                    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-                    LEFT JOIN uploads u ON u.id = du.upload_id
-                    WHERE vd.video_id = v.id AND vd.active = true AND d.active = true),
-                    '[]'::jsonb
-                ) as videoDocuments,
-                -- Get questions with timestamps and options
+                -- Get questions with timestamps and options (from scenario_questions, not video_questions)
                 COALESCE(
                     (SELECT jsonb_agg(
                         jsonb_build_object(
@@ -126,9 +95,12 @@
                             'type', 'choice'::text,
                             'allowMultiple', q.allow_multiple,
                             'times', (
-                                SELECT ARRAY_AGG(qt.time ORDER BY qt.time)
-                                FROM question_times qt
-                                WHERE qt.video_id = v.id AND qt.question_id = q.id AND qt.active = true
+                                SELECT ARRAY_AGG(sqt.time ORDER BY sqt.time)
+                                FROM scenario_question_times sqt
+                                WHERE sqt.scenario_id = sv.scenario_id 
+                                  AND sqt.question_id = q.id 
+                                  AND sqt.video_id = v.id
+                                  AND sqt.active = true
                             ),
                             'options', (
                                 SELECT COALESCE(
@@ -147,19 +119,20 @@
                                 LEFT JOIN question_answers qa ON qa.question_id = q.id AND qa.option_id = o.id AND qa.active = true
                                 WHERE qo.question_id = q.id AND qo.active = true
                             )
-                        ) ORDER BY q.created_at
+                        ) ORDER BY sq.created_at
                     )
-                    FROM video_questions vq
-                    JOIN questions q ON q.id = vq.question_id
-                    WHERE vq.video_id = v.id AND vq.active = true AND q.active = true),
+                    FROM scenario_questions sq
+                    JOIN questions q ON q.id = sq.question_id
+                    WHERE sq.scenario_id = sv.scenario_id AND sq.active = true AND q.active = true),
                     '[]'::jsonb
                 ) as questions
-            FROM simulation_videos_list svl
-            JOIN videos v ON v.id = svl.video_id
+            FROM scenario_videos sv
+            JOIN videos v ON v.id = sv.video_id
             LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
-            WHERE v.active = true
+            WHERE sv.active = true AND v.active = true
         ),
-        -- Get quizzes for this attempt
+        -- Note: Quizzes are deprecated - questions are now handled directly through scenarios
+        -- This CTE is kept for backward compatibility but may not be used
         attempt_quizzes_data AS (
             SELECT 
                 q.id as quiz_id,
@@ -1032,70 +1005,8 @@
             LEFT JOIN personas_per_chat ppc ON ppc.chat_id = cb.id
         ),
         -- Videos with quiz data
-        videos_with_all_data AS (
-            SELECT 
-                vd.video_id,
-                vd.position,
-                -- Get quiz for this video and attempt
-                aqd.quiz_id,
-                aqd.quiz_completed,
-                aqd.quiz_created_at,
-                aqd.quiz_updated_at,
-                -- Get quiz responses
-                COALESCE(qrg.responses, '[]'::jsonb) as quiz_responses,
-                jsonb_build_object(
-                    'chat', jsonb_build_object(
-                        'id', NULL::text,  -- Videos don't have chat IDs
-                        'createdAt', COALESCE(aqd.quiz_created_at, NOW())::text,
-                        'updatedAt', COALESCE(aqd.quiz_updated_at, NOW())::text,
-                        'title', vd.video_title,
-                        'scenarioId', NULL::text,  -- Videos don't have scenarios
-                        'parentScenarioId', NULL::text,
-                        'attemptId', (SELECT id::text FROM attempt_base),
-                        'completed', COALESCE(aqd.quiz_completed, false),
-                        'completedAt', CASE 
-                            WHEN aqd.quiz_completed THEN aqd.quiz_updated_at::text
-                            ELSE NULL 
-                        END,
-                        'traceId', NULL::text,
-                        'documentIds', '[]'::jsonb
-                    ),
-                    'scenario', NULL::jsonb,  -- Videos don't have scenarios
-                    'messages', '[]'::jsonb,  -- Videos don't have messages
-                    'hints', '[]'::jsonb,  -- Videos don't have hints
-                    'grade', NULL::jsonb,  -- Videos use quiz completion, not grades
-                    'feedbacks', '[]'::jsonb,  -- Videos don't have feedbacks
-                    'dynamicRubric', NULL::jsonb,  -- Videos don't have rubrics
-                    'gradingState', NULL::jsonb,  -- Videos don't have grading state
-                    'personas', '[]'::jsonb,  -- Videos don't have personas
-                    'previousChats', '[]'::jsonb,  -- Videos don't have previous chats
-                    'contentType', 'video'::text,
-                    'video', jsonb_build_object(
-                        'id', vd.video_id::text,
-                        'title', vd.video_title,
-                        'lengthSeconds', vd.length_seconds,
-                        'uploadId', CASE WHEN vd.upload_id IS NOT NULL THEN vd.upload_id::text ELSE NULL END,
-                        'videoDocuments', vd.videoDocuments,
-                        'questions', vd.questions,
-                        'showImage', vd.show_image
-                    ),
-                    'quiz', CASE 
-                        WHEN aqd.quiz_id IS NOT NULL THEN
-                            jsonb_build_object(
-                                'id', aqd.quiz_id::text,
-                                'completed', aqd.quiz_completed,
-                                'responses', COALESCE(qrg.responses, '[]'::jsonb)
-                            )
-                        ELSE NULL
-                    END
-                ) as chat_data,
-                COALESCE(aqd.quiz_completed, false) as completed,
-                COALESCE(aqd.quiz_created_at, NOW()) as created_at,
-                NULL::jsonb as grade
-            FROM videos_data vd
-            LEFT JOIN attempt_quizzes_data aqd ON aqd.video_id = vd.video_id
-            LEFT JOIN quiz_responses_grouped qrg ON qrg.quiz_id = aqd.quiz_id
-        ),
+        -- Note: Videos are now accessed through scenarios, not as separate content items
+        -- Video data is included in scenario data when scenario has an active video
         -- Unified content: combine chats and videos, ordered by position
         -- For chats, we need to determine their position from simulation_scenarios
         chats_with_positions AS (
@@ -1132,7 +1043,7 @@
                 cwp.position
             FROM chats_with_positions cwp
         ),
-        -- Combine chats and videos into unified content list
+        -- Unified content: only scenarios now (videos are accessed through scenarios)
         unified_content AS (
             SELECT 
                 chat_id::text as content_id,
@@ -1143,23 +1054,11 @@
                 position,
                 'scenario'::text as content_type
             FROM chats_with_content_type
-            
-            UNION ALL
-            
-            SELECT 
-                video_id::text as content_id,
-                chat_data,
-                completed,
-                created_at,
-                grade,
-                position,
-                'video'::text as content_type
-            FROM videos_with_all_data
         ),
         aggregated_results_data AS (
             SELECT 
                 CASE 
-                    WHEN COUNT(*) FILTER (WHERE completed = true AND (grade IS NOT NULL OR content_type = 'video')) > 0 THEN
+                    WHEN COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL) > 0 THEN
                         jsonb_build_object(
                             'totalScore', COALESCE(SUM((grade->>'score')::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL), 0)::float,
                             'totalPossiblePoints', COALESCE(
@@ -1183,7 +1082,7 @@
                                 ELSE 0.0
                             END,
                             'passed', BOOL_AND((grade->>'passed')::boolean) FILTER (WHERE completed = true AND grade IS NOT NULL),
-                            'chatsCompleted', COUNT(*) FILTER (WHERE completed = true AND (grade IS NOT NULL OR content_type = 'video'))::int,
+                            'chatsCompleted', COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL)::int,
                             'totalChats', COUNT(*)::int
                         )
                     ELSE NULL
@@ -1198,18 +1097,6 @@
                         CASE 
                             WHEN uc.completed AND uc.grade IS NOT NULL THEN
                                 (uc.grade->>'timeTaken')::integer
-                            WHEN uc.completed AND uc.content_type = 'video' THEN
-                                -- For videos, use quiz updated_at - created_at if quiz exists and is completed
-                                CASE 
-                                    WHEN uc.chat_data->'quiz' IS NOT NULL 
-                                         AND uc.chat_data->'quiz' != 'null'::jsonb
-                                         AND (uc.chat_data->'quiz'->>'completed')::boolean = true THEN
-                                        EXTRACT(EPOCH FROM (
-                                            (uc.chat_data->'chat'->>'updatedAt')::timestamp - 
-                                            (uc.chat_data->'chat'->>'createdAt')::timestamp
-                                        ))::integer
-                                    ELSE 0
-                                END
                             WHEN uc.completed THEN
                                 EXTRACT(EPOCH FROM (
                                     (uc.grade->>'createdAt')::timestamp - uc.created_at
@@ -1293,11 +1180,10 @@
                 OR sc.scenario_id = ss.scenario_id
               )
         ),
-        -- Count total content items (scenarios + videos)
+        -- Count total content items (scenarios only - videos accessed through scenarios)
         total_content_count AS (
             SELECT 
-                (SELECT COUNT(*) FROM simulation_scenarios_list) + 
-                (SELECT COUNT(*) FROM simulation_videos_list) as total_count
+                (SELECT COUNT(*) FROM simulation_scenarios_list) as total_count
         ),
         metadata_computed AS (
             SELECT 
@@ -1316,7 +1202,7 @@
                     0
                 ) as current_chat_index,
                 -- For infinite mode, still return total content count
-                -- For normal mode, use total content count (scenarios + videos)
+                -- For normal mode, use total content count (scenarios only)
                 COALESCE((SELECT total_count FROM total_content_count), COUNT(*)::integer) as expected_chat_count,
                 COUNT(*) = 1 as is_single_chat_attempt,
                 CASE 
@@ -1357,38 +1243,29 @@
                 END as is_last_attempt,
                 COALESCE(BOOL_AND(completed), false) as show_results,
                 -- Show controls only if there are positions without completed content (work remaining)
-                -- Count completed scenarios and videos
+                -- Count completed scenarios
                 CASE 
-                    WHEN (SELECT COUNT(*) FROM simulation_root_scenarios_list) + (SELECT COUNT(*) FROM simulation_videos_list) = 0 THEN false
+                    WHEN (SELECT COUNT(*) FROM simulation_root_scenarios_list) = 0 THEN false
                     ELSE COALESCE((
                         SELECT 
                             (SELECT COUNT(DISTINCT srsl.root_scenario_id) FROM simulation_root_scenarios_list srsl
                              LEFT JOIN scenarios_with_completed_chats swcc ON swcc.parent_scenario_id = srsl.root_scenario_id
-                             WHERE swcc.parent_scenario_id IS NULL) +
-                            (SELECT COUNT(*) FROM simulation_videos_list svl
-                             LEFT JOIN videos_with_all_data vwad ON vwad.video_id = svl.video_id
-                             WHERE COALESCE(vwad.completed, false) = false)
+                             WHERE swcc.parent_scenario_id IS NULL)
                         ) > 0, true)
                 END as should_show_controls,
-                -- Count remaining content (scenarios without completed chats + videos without completed quizzes)
+                -- Count remaining content (scenarios without completed chats)
                 COALESCE((
                     SELECT 
                         (SELECT COUNT(DISTINCT srsl.root_scenario_id) FROM simulation_root_scenarios_list srsl
                          LEFT JOIN scenarios_with_completed_chats swcc ON swcc.parent_scenario_id = srsl.root_scenario_id
-                         WHERE swcc.parent_scenario_id IS NULL) +
-                        (SELECT COUNT(*) FROM simulation_videos_list svl
-                         LEFT JOIN videos_with_all_data vwad ON vwad.video_id = svl.video_id
-                         WHERE COALESCE(vwad.completed, false) = false)
+                         WHERE swcc.parent_scenario_id IS NULL)
                 ), 0)::integer as remaining_scenarios_count,
                 -- Check if this is the last remaining content
                 COALESCE((
                     SELECT 
                         (SELECT COUNT(DISTINCT srsl.root_scenario_id) FROM simulation_root_scenarios_list srsl
                          LEFT JOIN scenarios_with_completed_chats swcc ON swcc.parent_scenario_id = srsl.root_scenario_id
-                         WHERE swcc.parent_scenario_id IS NULL) +
-                        (SELECT COUNT(*) FROM simulation_videos_list svl
-                         LEFT JOIN videos_with_all_data vwad ON vwad.video_id = svl.video_id
-                         WHERE COALESCE(vwad.completed, false) = false)
+                         WHERE swcc.parent_scenario_id IS NULL)
                 ), 0) = 1 as is_last_remaining_scenario,
                 -- Can pick multiple alternatives (not allowed for practice simulations)
                 NOT (SELECT sim_practice_simulation FROM attempt_base) as can_pick_multiple_alternatives

@@ -159,20 +159,6 @@ CREATE TABLE scenario_parameters (
 CREATE INDEX ON scenario_parameters (scenario_id);
 CREATE INDEX ON scenario_parameters (parameter_id);
 
--- Videos → Parameters junction table (BCNF normalization)
--- Links videos to parameters (when video uses specific parameters)
--- No records = video not linked to any parameter
-CREATE TABLE video_parameters (
-  video_id UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
-  active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (video_id, parameter_id)
-);
-
-CREATE INDEX ON video_parameters (video_id);
-CREATE INDEX ON video_parameters (parameter_id);
   
 CREATE TABLE scenarios (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -183,15 +169,19 @@ CREATE TABLE scenarios (
   document_vision_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  video_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  questions_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT TRUE,
   scenario_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
-  image_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
+  image_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
+  video_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
   -- Flags moved to simulation_scenarios junction table: hints_enabled, input_guardrail_enabled, output_guardrail_enabled, copy_paste_allowed
 );
 
 CREATE INDEX ON scenarios (scenario_agent_id);
 CREATE INDEX ON scenarios (image_agent_id);
+CREATE INDEX ON scenarios (video_agent_id);
 
 -- Scenario → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)
@@ -286,6 +276,62 @@ CREATE TABLE scenario_images (
 CREATE INDEX ON scenario_images (scenario_id);
 CREATE INDEX ON scenario_images (image_id);
 CREATE INDEX ON scenario_images (scenario_id, active);
+
+-- Scenario → Videos junction table (BCNF normalization)
+-- Links scenarios to videos (strong entity, like images)
+-- Only 0 or 1 active video per scenario
+CREATE TABLE scenario_videos (
+  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  video_id    UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, video_id)
+);
+
+CREATE INDEX ON scenario_videos (scenario_id);
+CREATE INDEX ON scenario_videos (video_id);
+CREATE INDEX ON scenario_videos (scenario_id, active);
+
+-- Constraint: Only 0 or 1 active video per scenario
+CREATE UNIQUE INDEX scenario_videos_one_active_per_scenario 
+  ON scenario_videos(scenario_id) 
+  WHERE active = true;
+
+-- Scenario → Questions junction table (BCNF normalization)
+-- Links scenarios to questions (replaces video_questions)
+CREATE TABLE scenario_questions (
+  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  question_id UUID NOT NULL REFERENCES questions(id) ON DELETE RESTRICT,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, question_id)
+);
+
+CREATE INDEX ON scenario_questions (scenario_id);
+CREATE INDEX ON scenario_questions (question_id);
+CREATE INDEX ON scenario_questions (scenario_id, active);
+
+-- Scenario Question Times junction table (BCNF normalization)
+-- Links scenario questions to videos with timestamps (replaces question_times)
+-- Allows multiple timestamps per question per video
+CREATE TABLE scenario_question_times (
+  scenario_id UUID NOT NULL,
+  question_id UUID NOT NULL,
+  video_id    UUID NOT NULL,
+  time        INTEGER NOT NULL, -- seconds into video when question appears
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, question_id, video_id, time),
+  FOREIGN KEY (scenario_id, question_id) REFERENCES scenario_questions(scenario_id, question_id) ON DELETE CASCADE,
+  FOREIGN KEY (scenario_id, video_id) REFERENCES scenario_videos(scenario_id, video_id) ON DELETE CASCADE
+);
+
+CREATE INDEX ON scenario_question_times (scenario_id, question_id);
+CREATE INDEX ON scenario_question_times (scenario_id, video_id);
+CREATE INDEX ON scenario_question_times (scenario_id, question_id, video_id, active);
 
 -- Document → Fields junction table (BCNF normalization)
 -- Allows documents to be filtered by field values

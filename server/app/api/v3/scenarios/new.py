@@ -267,6 +267,8 @@ class ScenarioDetailResponse(BaseModel):
     hints_enabled: bool
     objectives_enabled: bool
     image_input_enabled: bool
+    video_enabled: bool
+    questions_enabled: bool
     parent_scenario_id: str | None
     department_ids: list[str] | None
     valid_department_ids: list[str]
@@ -278,6 +280,9 @@ class ScenarioDetailResponse(BaseModel):
     valid_objectives: list[str]
     objectives_history: list[ObjectiveWithDepartments]
     scenario_images: list[dict[str, Any]]
+    scenario_videos: list[dict[str, Any]]
+    question_ids: list[str]
+    questions: list[dict[str, Any]]
     parameters: dict[str, ParameterDetail]
     active_simulation_ids: list[str]
     document_details: list[DocumentDetailItem]
@@ -296,6 +301,7 @@ class ScenarioDetailResponse(BaseModel):
     valid_parameter_ids: list[str]
     scenario_agent_id: str
     image_agent_id: str
+    video_agent_id: str
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
     # Filtered valid IDs (replacing client-side filtering)
@@ -1936,6 +1942,43 @@ async def get_scenario_new(
                 if isinstance(img, dict)
             ]
 
+        # Parse scenario_videos from SQL result
+        scenario_videos_data = parse_jsonb(result.get("scenario_videos"))
+        scenario_videos: list[dict[str, Any]] = []
+        if isinstance(scenario_videos_data, list):
+            scenario_videos = [
+                {
+                    "id": vid.get("id", ""),
+                    "name": vid.get("name", ""),
+                    "length_seconds": vid.get("length_seconds", 0),
+                    "completed": vid.get("completed", False),
+                    "active": vid.get("active", True),
+                    "image_enabled": vid.get("image_enabled", False),
+                }
+                for vid in scenario_videos_data
+                if isinstance(vid, dict)
+            ]
+
+        # Parse question_ids and questions from SQL result
+        question_ids_data = result.get("question_ids") or []
+        question_ids: list[str] = [str(qid) for qid in question_ids_data] if isinstance(question_ids_data, list) else []
+        
+        questions_data = parse_jsonb(result.get("questions"))
+        questions: list[dict[str, Any]] = []
+        if isinstance(questions_data, list):
+            questions = [
+                {
+                    "id": q.get("id", ""),
+                    "question_text": q.get("question_text", ""),
+                    "allow_multiple": q.get("allow_multiple", False),
+                    "active": q.get("active", True),
+                    "options": q.get("options", []),
+                    "times": q.get("times", []),
+                }
+                for q in questions_data
+                if isinstance(q, dict)
+            ]
+
         response_data = ScenarioDetailResponse(
             # Basic fields (empty defaults)
             name="",
@@ -1968,6 +2011,10 @@ async def get_scenario_new(
             objectives_history=objectives_history,
             # Images from provided imageIds
             scenario_images=scenario_images,
+            # Videos (empty for new scenario)
+            scenario_videos=scenario_videos,
+            question_ids=question_ids,
+            questions=questions,
             # Parameters (with valid options for creation)
             parameters=parameters_dict,
             # Simulations (empty defaults)
@@ -1992,6 +2039,9 @@ async def get_scenario_new(
             valid_parameter_ids=valid_parameter_ids,
             scenario_agent_id=scenario_agent_id,
             image_agent_id=image_agent_id,
+            video_agent_id=video_agent_id,
+            video_enabled=video_enabled,
+            questions_enabled=questions_enabled,
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
             # Selected IDs from request (filtered to valid ones)

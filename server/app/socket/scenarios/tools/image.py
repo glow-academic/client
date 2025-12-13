@@ -12,6 +12,10 @@ from app.utils.sql_helper import load_sql
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
+# Track pending video generations that wait for images
+# Format: {scenario_id: {"image_ids": set, "prompt": str, "agent_id": str, "department_id": str, "sid": str, "trace_id": str, "video_id": str}}
+_pending_video_generations: dict[str, dict[str, Any]] = {}
+
 
 class ImageToolPayload(BaseModel):
     trace_id: str
@@ -134,6 +138,43 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
                 f"✓ Created image record {image_id} and kicked off background generation "
                 f"(scenario_id={validated.scenario_id}, trace_id={trace_id})"
             )
+
+            # Check if there's a pending video generation waiting for this image
+            if validated.scenario_id and validated.scenario_id in _pending_video_generations:
+                pending = _pending_video_generations[validated.scenario_id]
+                image_ids = pending.get("image_ids", set())
+                image_ids.add(str(image_id))
+
+                # Check if all required images are complete (for now, trigger on first image)
+                if len(image_ids) > 0:
+                    logger.info(
+                        f"All images ready for scenario {validated.scenario_id}, triggering video generation"
+                    )
+
+                    # Trigger video generation by calling the handler directly
+                    from app.socket.scenarios.tools.video import (
+                        _scenario_tool_video_impl,
+                    )
+
+                    video_payload = {
+                        "trace_id": pending["trace_id"],
+                        "prompt": pending["prompt"],
+                        "scenario_id": validated.scenario_id,
+                        "video_id": pending.get("video_id"),
+                        "image_ids": list(image_ids),
+                        "agent_id": pending["agent_id"],
+                        "department_id": pending["department_id"],
+                    }
+
+                    # Call video tool handler directly (it will handle the case where images are ready)
+                    import asyncio
+
+                    asyncio.create_task(
+                        _scenario_tool_video_impl(pending["sid"], video_payload)
+                    )
+
+                    # Remove from pending
+                    del _pending_video_generations[validated.scenario_id]
 
             await image_tool_complete(
                 ImageToolCompletePayload(

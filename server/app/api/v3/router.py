@@ -59,7 +59,6 @@ from app.api.v3.settings import router as settings_router
 from app.api.v3.simulations import router as simulations_router
 from app.api.v3.units import router as units_router
 from app.api.v3.uploads import router as uploads_router
-from app.api.v3.videos import router as videos_router
 
 # ============================================================================
 # Main Router Configuration
@@ -73,7 +72,6 @@ router.include_router(profile_router)
 router.include_router(scenarios_router)
 router.include_router(simulations_router)
 router.include_router(personas_router)
-router.include_router(videos_router)
 
 # Batch C: Secondary Resources (Complete CRUD)
 router.include_router(auth_router)

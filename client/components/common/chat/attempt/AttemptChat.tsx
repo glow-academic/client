@@ -31,19 +31,16 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ActiveAttemptView from "./ActiveAttemptView";
 import GradedAttemptView from "./GradedAttemptView";
-import VideoAttemptView from "./VideoAttemptView";
 
 type UpdateChatCreatedAtBody = UpdateChatCreatedAtIn extends { body: infer B }
   ? B
   : never;
 
-// ContentItem type - derived from ChatData but with questions extracted from video
-// This matches what VideoAttemptView expects (ContentItem has questions at top level)
+// ContentItem type - derived from ChatData
+// Questions now come from scenario.questions, not video.questions
 type AttemptFullResponse = AttemptFullOut;
 type ChatDataType = AttemptFullResponse["chats"][number];
-export type ContentItem = ChatDataType & {
-  questions: NonNullable<ChatDataType["video"]>["questions"];
-};
+export type ContentItem = ChatDataType;
 
 interface AttemptChatProps {
   attemptId: string;
@@ -252,14 +249,11 @@ export default function AttemptChat({
   const attempt = attemptData?.attempt || null;
   const simulation = attemptData?.simulation || null;
 
-  // Derive content array from chats - maps ChatData to ContentItem format
-  // ContentItem has questions extracted from video.questions for easier access
+  // Derive content array from chats
+  // Questions now come from scenario.questions, not video.questions
   const content = useMemo<ContentItem[]>(() => {
     if (!attemptData?.chats) return [];
-    return attemptData.chats.map((chatData) => ({
-      ...chatData,
-      questions: chatData.video?.questions || [],
-    }));
+    return attemptData.chats;
   }, [attemptData]);
 
   // Expected content count - total number of content items (chats + videos)
@@ -272,7 +266,7 @@ export default function AttemptChat({
     return chatData?.chat || attemptData.chats[0]?.chat || null;
   }, [attemptData, currentChatIndex]);
 
-  // Get current content item (full ContentItem object) to access contentType, video, quiz
+  // Get current content item (full ContentItem object)
   const currentContentItem = useMemo<ContentItem | null>(() => {
     if (!content || content.length === 0) return null;
     const contentItem = content[currentContentIndex];
@@ -1624,51 +1618,6 @@ export default function AttemptChat({
     }
   }, [displayChat, currentChatIndex, scenarioDocuments, selectedDocumentId]);
 
-  // Check contentType to determine which view to render
-  const contentType = currentContentItem?.contentType || "scenario";
-
-  // Helper function to handle quiz completion
-  const handleVideoComplete = useCallback(
-    async (quizId: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-      try {
-        socket.emit("quiz_complete", {
-          quizId,
-        });
-      } catch (error) {
-        toast.error(`Failed to complete quiz: ${error}`);
-      }
-    },
-    [socket, isConnected],
-  );
-
-  // Helper function to handle quiz response submission
-  const handleSubmitQuizResponse = useCallback(
-    async (
-      quizId: string,
-      questionId: string,
-      optionId: string,
-      _isCorrect: boolean,
-    ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-      try {
-        socket.emit("quiz_submit_response", {
-          quizId,
-          questionId,
-          optionId,
-        });
-      } catch (error) {
-        toast.error(`Failed to submit quiz response: ${error}`);
-      }
-    },
-    [socket, isConnected],
-  );
 
   if (!chats || chats.length === 0) {
     return (
@@ -1748,51 +1697,69 @@ export default function AttemptChat({
     );
   }
 
-  // If video content type, render VideoAttemptView
-  if (contentType === "video" && currentContentItem) {
-    // Get documents - video documents come from video.videoDocuments in contentItem
-    // scenarioDocuments may also contain documents, so combine both sources
-    const videoDocuments = currentContentItem.video?.videoDocuments || [];
-    const scenarioDocumentsForVideo = scenarioDocuments.filter(
-      (doc) =>
-        doc.type === "policy" ||
-        (doc.field_ids &&
-          Array.isArray(doc.field_ids) &&
-          doc.field_ids.length > 0),
-    );
-    // Combine and deduplicate by document_id
-    // videoDocuments are VideoDocumentItem (has 'id'), scenarioDocuments are ScenarioDocumentItem (has 'document_id')
-    const allDocuments = [
-      ...videoDocuments.map((doc) => ({ ...doc, document_id: doc.id })),
-      ...scenarioDocumentsForVideo,
-    ];
-    const uniqueDocuments = Array.from(
-      new Map(allDocuments.map((doc) => [doc.document_id, doc])).values(),
-    ) as typeof scenarioDocuments;
-
+  // If scenario has video, render video view instead of chat
+  // Note: Video is now part of scenario, not a separate content type
+  if (hasVideo && scenarioVideo && scenario) {
+    // For now, we'll render a simplified video view inline
+    // TODO: Create a proper video timeline component to replace AttemptInput
     return (
-      <VideoAttemptView
-        attemptId={attemptId}
-        contentItem={currentContentItem}
-        documents={uniqueDocuments}
-        currentContentIndex={currentContentIndex}
-        expectedContentCount={expectedContentCount}
-        isAttemptOwner={isAttemptOwner}
-        timer={timer}
-        currentChat={currentContentItem.chat}
-        onVideoComplete={handleVideoComplete}
-        onSubmitQuizResponse={handleSubmitQuizResponse}
-        onContinue={() => {
-          if (currentContentIndex < content.length - 1) {
-            setCurrentContentIndex(currentContentIndex + 1);
-          }
-        }}
-        onPrevious={() => {
-          if (currentContentIndex > 0) {
-            setCurrentContentIndex(currentContentIndex - 1);
-          }
-        }}
-      />
+      <div className="flex flex-col h-full">
+        {/* Questions at top (replace problem statement) */}
+        {scenarioQuestions.length > 0 && (
+          <div className="border-b p-4 space-y-4">
+            <h2 className="text-lg font-semibold">Questions</h2>
+            {scenarioQuestions.map((question, idx) => (
+              <div key={question.id || idx} className="space-y-2">
+                <p className="font-medium">{question.questionText}</p>
+                {question.options && question.options.length > 0 && (
+                  <div className="space-y-1 pl-4">
+                    {question.options.map((option) => (
+                      <div
+                        key={option.id}
+                        className={`p-2 rounded border ${
+                          option.isCorrect
+                            ? "bg-green-50 border-green-200"
+                            : "bg-muted/50"
+                        }`}
+                      >
+                        {option.optionText}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Video player in main area */}
+        <div className="flex-1 bg-black flex items-center justify-center">
+          {scenarioVideo.upload_id ? (
+            <video
+              src={`/api/v3/videos/${scenarioVideo.id}/stream`}
+              controls
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <div className="text-white">Video not available</div>
+          )}
+        </div>
+
+        {/* Submit button below video */}
+        {scenarioQuestions.length > 0 && (
+          <div className="border-t p-4">
+            <Button
+              onClick={() => {
+                // Handle question submission
+                toast.info("Question submission will be handled here");
+              }}
+              className="w-full"
+            >
+              Submit Answers
+            </Button>
+          </div>
+        )}
+      </div>
     );
   }
 

@@ -275,137 +275,6 @@ user_context AS (
             SELECT ARRAY_AGG(id::text) as ids
             FROM valid_scenarios_list
         ),
-        simulation_videos_base AS (
-            SELECT 
-                v.id as video_id,
-                v.name,
-                '' as description,
-                sv.active,
-                sv.position,
-                sv.show_problem_statement,
-                sv.show_objectives,
-                sv.show_image,
-                v.length_seconds
-            FROM videos v
-            JOIN simulation_videos sv ON sv.video_id = v.id
-            WHERE sv.simulation_id = $1
-            ORDER BY sv.position
-        ),
-        video_statistics AS (
-            SELECT 
-                sv.video_id,
-                -- Usage: count of attempts for this simulation that included videos via quizzes
-                COUNT(DISTINCT aq.attempt_id) as usage_count,
-                -- Success rate: percentage of quiz responses that match correct answers
-                CASE 
-                    WHEN COUNT(DISTINCT qr.id) > 0 
-                    THEN ROUND(
-                        (COUNT(DISTINCT CASE 
-                            WHEN EXISTS (
-                                SELECT 1 FROM question_answers qa 
-                                WHERE qa.question_id = qr.question_id 
-                                AND qa.option_id = qr.option_id 
-                                AND qa.active = true
-                            ) THEN qr.id 
-                        END)::numeric / 
-                         COUNT(DISTINCT qr.id)::numeric) * 100
-                    )
-                    ELSE 0 
-                END as success_rate,
-                -- Last used: most recent attempt created_at for this simulation
-                MAX(sa.created_at) as last_used_date
-            FROM simulation_videos sv
-            LEFT JOIN quizzes q ON q.video_id = sv.video_id
-            LEFT JOIN attempt_quizzes aq ON aq.quiz_id = q.id
-            LEFT JOIN simulation_attempts sa ON sa.id = aq.attempt_id AND sa.simulation_id = $1
-            LEFT JOIN quiz_responses qr ON qr.quiz_id = q.id
-            WHERE sv.simulation_id = $1
-            GROUP BY sv.video_id
-        ),
-        videos_list_data AS (
-            SELECT COALESCE(
-                jsonb_agg(
-                    jsonb_build_object(
-                        'video_id', vb.video_id::text,
-                        'title', vb.name,
-                        'description', COALESCE(vb.description, ''),
-                        'active', vb.active,
-                        'position', vb.position,
-                        'show_problem_statement', vb.show_problem_statement,
-                        'show_objectives', vb.show_objectives,
-                        'show_image', vb.show_image,
-                        'length_seconds', vb.length_seconds,
-                        'usage_count', COALESCE(stats.usage_count, 0),
-                        'success_rate', COALESCE(stats.success_rate, 0),
-                        'last_used', stats.last_used_date,
-                        'can_remove', COALESCE(stats.usage_count, 0) = 0
-                    ) ORDER BY vb.position
-                ),
-                '[]'::jsonb
-            ) as videos_list,
-            COALESCE(ARRAY_AGG(vb.video_id::text), ARRAY[]::text[]) as video_ids
-            FROM simulation_videos_base vb
-            LEFT JOIN video_statistics stats ON stats.video_id = vb.video_id
-        ),
-        valid_videos_list AS (
-            -- Get videos that are marked as roots in video_tree (parent_id = child_id)
-            -- and are active and in user's departments OR cross-department (no department links)
-            SELECT DISTINCT
-                v.id,
-                v.name,
-                '' as description
-            FROM videos v
-            CROSS JOIN user_department_ids udi
-            JOIN video_tree vt ON vt.parent_id = v.id AND vt.child_id = v.id
-            LEFT JOIN video_departments vd ON vd.video_id = v.id AND vd.active = true
-            WHERE v.active = true
-              AND (
-                  vd.department_id = ANY(udi.ids)
-                  OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = v.id AND vd2.active = true)
-              )
-            UNION
-            -- Also include root videos for currently selected videos (for edit mode - ensures selected items are available)
-            SELECT DISTINCT
-                COALESCE(
-                    (SELECT vt2.parent_id 
-                     FROM video_tree vt2 
-                     WHERE vt2.child_id = svb.video_id 
-                       AND vt2.parent_id = vt2.child_id 
-                     LIMIT 1),
-                    svb.video_id
-                ) as id,
-                v2.name,
-                svb.description
-            FROM simulation_videos_base svb
-            JOIN videos v2 ON v2.id = COALESCE(
-                (SELECT vt3.parent_id 
-                 FROM video_tree vt3 
-                 WHERE vt3.child_id = svb.video_id 
-                   AND vt3.parent_id = vt3.child_id 
-                 LIMIT 1),
-                svb.video_id
-            )
-            WHERE v2.active = true
-        ),
-        valid_videos AS (
-            SELECT ARRAY_AGG(id::text) as ids
-            FROM valid_videos_list
-        ),
-        video_mapping_data AS (
-            SELECT COALESCE(
-                jsonb_object_agg(
-                    vvl.id::text,
-                    jsonb_build_object(
-                        'name', vvl.name,
-                        'description', COALESCE(vvl.description, ''),
-                        'length_seconds', v.length_seconds
-                    )
-                ),
-                '{}'::jsonb
-            ) as video_mapping
-            FROM valid_videos_list vvl
-            JOIN videos v ON v.id = vvl.id
-        ),
         valid_rubrics_data AS (
             SELECT DISTINCT
                 r.id,
@@ -735,17 +604,12 @@ user_context AS (
             -- Scenarios
             sld.scenarios_list,
             sld.scenario_ids,
-            -- Videos
-            vld.videos_list,
-            vld.video_ids,
             -- Valid IDs
             COALESCE(vs.ids, ARRAY[]::text[]) as valid_scenario_ids,
-            COALESCE(vv.ids, ARRAY[]::text[]) as valid_video_ids,
             COALESCE(rmd.rubric_ids, ARRAY[]::text[]) as valid_rubric_ids,
             dmd.department_ids as valid_department_ids,
             -- Mappings
             smc.scenario_mapping,
-            vmd.video_mapping,
             rmd.rubric_mapping,
             dmd.department_mapping,
             pmd.parameter_mapping,
@@ -759,14 +623,11 @@ user_context AS (
         CROSS JOIN user_context uc
         LEFT JOIN cohort_usage cu ON true
         LEFT JOIN scenarios_list_data sld ON true
-        LEFT JOIN videos_list_data vld ON true
         LEFT JOIN valid_scenarios vs ON true
-        LEFT JOIN valid_videos vv ON true
         LEFT JOIN rubric_mapping_data rmd ON true
         LEFT JOIN parameter_mapping_data pmd ON true
         LEFT JOIN field_mapping_data fmd ON true
         LEFT JOIN parameter_items_list_data pild ON true
         LEFT JOIN scenario_mapping_complete smc ON true
-        LEFT JOIN video_mapping_data vmd ON true
         LEFT JOIN department_mapping_data dmd ON true
         LEFT JOIN valid_agents va ON true
