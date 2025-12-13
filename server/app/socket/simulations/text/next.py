@@ -154,7 +154,7 @@ async def _create_chat_for_scenario_inline(
         return None
 
     # Use randomization function to select attributes and create child scenario
-    from app.api.v3.scenarios.randomize import randomize_scenario_attributes
+    from app.utils.scenario.randomize_attributes import randomize_scenario_attributes
 
     # Convert asyncpg UUID to Python UUID
     parent_scenario_id_uuid = uuid.UUID(str(parent_scenario["id"]))

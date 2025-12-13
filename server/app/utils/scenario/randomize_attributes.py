@@ -1,52 +1,25 @@
-"""Scenario randomize endpoint - v3 API following DHH principles."""
+"""Scenario randomization utility - used by WebSocket events.
+
+This module provides the core randomization logic for scenario attributes.
+It is used by WebSocket events (start_simulation, continue_simulation) to
+create randomized child scenario variants.
+
+Note: Randomization in the UI happens via the /scenarios/new endpoint
+with a randomize query parameter.
+"""
 
 import json
 import random
 import uuid
-from typing import Annotated, Any
+from typing import Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
-
-from app.main import get_db
-from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
-from app.utils.scenario.generate_problem_statement import (
-    generate_scenario_problem_statement,
-)
+from app.utils.scenario.generate_problem_statement import \
+    generate_scenario_problem_statement
 from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
-
-
-# Inline request/response schemas
-class RandomizeScenarioRequest(BaseModel):
-    """Request to randomize scenario sections."""
-
-    name: str | None = None
-    description: str | None = None
-    personaIds: list[str] | None = None
-    documentIds: list[str] | None = None
-    parameterItemIds: list[str] | None = None
-    departmentIds: list[str] | None = None
-    targets: list[str] = []  # ["persona", "documents", "parameters"]
-    scenarioId: str | None = None  # When provided, creates child scenario
-    profileId: str | None = None  # For department fallback logic
-
-
-class RandomizeScenarioResponse(BaseModel):
-    """Response from scenario randomization."""
-
-    success: bool
-    message: str
-    personaIds: list[str] = []
-    documentIds: list[str] = []
-    parameterItemIds: list[str] = []
-    childScenarioId: str | None = None  # Returned when scenarioId provided
-
-
-router = APIRouter()
 
 
 async def randomize_scenario_attributes(
@@ -102,6 +75,42 @@ async def randomize_scenario_attributes(
         raise ValueError(
             "Cannot proceed without a department_id - no departments available"
         )
+
+    # Step 1.5: Get randomization ranges (with defaults if scenario_id is None)
+    sql = load_sql("sql/v3/scenarios/get_randomization_ranges.sql")
+    ranges_result = await conn.fetchrow(sql, scenario_id)
+    if not ranges_result:
+        # Fallback to defaults if query fails
+        persona_min = 1
+        persona_max = 3
+        document_min = 0
+        document_max = 3
+        parameter_min = 0
+        parameter_max = 3
+        field_ranges_json: dict[str, dict[str, int]] = {}
+    else:
+        persona_min = ranges_result.get("persona_min", 1)
+        persona_max = ranges_result.get("persona_max", 3)
+        document_min = ranges_result.get("document_min", 0)
+        document_max = ranges_result.get("document_max", 3)
+        parameter_min = ranges_result.get("parameter_min", 0)
+        parameter_max = ranges_result.get("parameter_max", 3)
+        # Parse field_ranges_json
+        field_ranges_raw = ranges_result.get("field_ranges_json", {})
+        if isinstance(field_ranges_raw, str):
+            try:
+                field_ranges_json = json.loads(field_ranges_raw)
+            except json.JSONDecodeError:
+                field_ranges_json = {}
+        elif isinstance(field_ranges_raw, dict):
+            field_ranges_json = field_ranges_raw
+        else:
+            field_ranges_json = {}
+
+    logger.info(
+        f"Using randomization ranges - personas: {persona_min}-{persona_max}, "
+        f"documents: {document_min}-{document_max}, parameters: {parameter_min}-{parameter_max}"
+    )
 
     # Step 2: Load randomization data
     # If department_ids was null/empty (all departments), pass empty array to SQL query
@@ -229,10 +238,29 @@ async def randomize_scenario_attributes(
         logger.info(f"Using provided persona_id: {scenario_persona_ids}")
     elif should_randomize_persona:
         # Random selection from active personas (when persona is in targets)
+        # Use ranges to determine count
         if active_personas:
-            selected_persona = random.choice(active_personas)
-            scenario_persona_ids = [selected_persona["id"]]
-            logger.info(f"Randomly selected persona_id: {scenario_persona_ids[0]}")
+            available_count = len(active_personas)
+            capped_max = min(persona_max, available_count)
+            # Ensure min doesn't exceed available count
+            effective_min = min(persona_min, available_count)
+            # Random count between min and max (inclusive)
+            if effective_min <= capped_max:
+                count = random.randint(effective_min, capped_max)
+                shuffled = active_personas.copy()
+                random.shuffle(shuffled)
+                scenario_persona_ids = [p["id"] for p in shuffled[:count]]
+                logger.info(
+                    f"Randomly selected {count} persona(s) (range: {persona_min}-{persona_max}, "
+                    f"available: {available_count}): {scenario_persona_ids}"
+                )
+            else:
+                # Fallback: select at least one if available
+                selected_persona = random.choice(active_personas)
+                scenario_persona_ids = [selected_persona["id"]]
+                logger.info(
+                    f"Range invalid ({effective_min}-{capped_max}), selected 1 persona: {scenario_persona_ids[0]}"
+                )
         else:
             logger.info("No active personas found")
 
@@ -243,6 +271,7 @@ async def randomize_scenario_attributes(
     persona_param_ids: list[uuid.UUID] = []
     if not targets or "persona" in [t.lower() for t in targets]:
         # Randomize persona parameters when randomizing personas
+        # Use per-parameter field ranges if available
         persona_parameters = [
             p for p in active_parameters if p.get("persona_parameter", False)
         ]
@@ -250,10 +279,29 @@ async def randomize_scenario_attributes(
             for param in persona_parameters:
                 param_items = parameter_items_by_param_id.get(param["id"], [])
                 if param_items:
-                    selected_item = random.choice(param_items)
-                    persona_param_ids.append(selected_item["id"])
+                    # Get range for this parameter from field_ranges_json
+                    param_id_str = str(param["id"])
+                    param_range = field_ranges_json.get(param_id_str, {})
+                    param_min = param_range.get("min", 1) if isinstance(param_range, dict) else 1
+                    param_max = param_range.get("max", 3) if isinstance(param_range, dict) else 3
+                    
+                    # Use range to determine how many items to select for this parameter
+                    available_count = len(param_items)
+                    capped_max = min(param_max, available_count)
+                    effective_min = min(param_min, available_count)
+                    
+                    if effective_min <= capped_max:
+                        count = random.randint(effective_min, capped_max)
+                        shuffled = param_items.copy()
+                        random.shuffle(shuffled)
+                        selected_items = shuffled[:count]
+                        persona_param_ids.extend([item["id"] for item in selected_items])
+                    else:
+                        # Fallback: select at least one
+                        selected_item = random.choice(param_items)
+                        persona_param_ids.append(selected_item["id"])
             logger.info(
-                f"Randomly selected {len(persona_param_ids)} persona parameter_item_ids: {persona_param_ids}"
+                f"Randomly selected {len(persona_param_ids)} persona parameter_item_ids using per-parameter ranges: {persona_param_ids}"
             )
 
     # Step 4: Parameter item selection
@@ -272,7 +320,7 @@ async def randomize_scenario_attributes(
         param_ids = parameter_item_ids
         logger.info(f"Using provided parameter_item_ids: {param_ids}")
     elif should_randomize_parameters:
-        # Random selection: one per parameter (excluding persona/document parameters)
+        # Random selection: use ranges to determine how many parameters to select
         general_parameters = [
             p
             for p in active_parameters
@@ -280,13 +328,49 @@ async def randomize_scenario_attributes(
             and not p.get("persona_parameter", False)
         ]
         if general_parameters:
-            for param in general_parameters:
+            available_count = len(general_parameters)
+            capped_max = min(parameter_max, available_count)
+            # Ensure min doesn't exceed available count
+            effective_min = min(parameter_min, available_count)
+            # Random count between min and max (inclusive)
+            if effective_min <= capped_max:
+                count = random.randint(effective_min, capped_max)
+                shuffled = general_parameters.copy()
+                random.shuffle(shuffled)
+                selected_parameters = shuffled[:count]
+            else:
+                # Fallback: select at least one if available
+                selected_parameters = [random.choice(general_parameters)]
+            
+            # For each selected parameter, use per-parameter field ranges to determine item count
+            for param in selected_parameters:
                 param_items = parameter_items_by_param_id.get(param["id"], [])
                 if param_items:
-                    selected_item = random.choice(param_items)
-                    param_ids.append(selected_item["id"])
+                    # Get range for this parameter from field_ranges_json
+                    param_id_str = str(param["id"])
+                    param_range = field_ranges_json.get(param_id_str, {})
+                    param_min = param_range.get("min", 1) if isinstance(param_range, dict) else 1
+                    param_max = param_range.get("max", 3) if isinstance(param_range, dict) else 3
+                    
+                    # Use range to determine how many items to select for this parameter
+                    available_count = len(param_items)
+                    capped_max = min(param_max, available_count)
+                    effective_min = min(param_min, available_count)
+                    
+                    if effective_min <= capped_max:
+                        count = random.randint(effective_min, capped_max)
+                        shuffled = param_items.copy()
+                        random.shuffle(shuffled)
+                        selected_items = shuffled[:count]
+                        param_ids.extend([item["id"] for item in selected_items])
+                    else:
+                        # Fallback: select at least one
+                        selected_item = random.choice(param_items)
+                        param_ids.append(selected_item["id"])
             logger.info(
-                f"Randomly selected {len(param_ids)} general parameter_item_ids: {param_ids}"
+                f"Randomly selected {len(selected_parameters)} parameter(s) "
+                f"(range: {parameter_min}-{parameter_max}, available: {available_count}), "
+                f"with {len(param_ids)} parameter_item_ids: {param_ids}"
             )
         else:
             logger.info("No active general parameters found")
@@ -331,17 +415,34 @@ async def randomize_scenario_attributes(
                 f"Found {len(matching_documents)} documents matching parameter items"
             )
 
-        if matching_documents:
-            # Select 1 document from matching documents
-            selected_doc = random.choice(matching_documents)
-            doc_ids = [selected_doc["id"]]
-            logger.info(f"Selected document via parameter items: {selected_doc['id']}")
-        elif active_documents:
-            # Fallback to random selection from active documents
-            logger.info("No documents match parameter items, using random selection")
-            selected_doc = random.choice(active_documents)
-            doc_ids = [selected_doc["id"]]
-            logger.info(f"Randomly selected document: {selected_doc['id']}")
+        # Use ranges to determine how many documents to select
+        available_documents = matching_documents if matching_documents else active_documents
+        if available_documents:
+            available_count = len(available_documents)
+            capped_max = min(document_max, available_count)
+            # Ensure min doesn't exceed available count
+            effective_min = min(document_min, available_count)
+            # Random count between min and max (inclusive)
+            if effective_min <= capped_max:
+                count = random.randint(effective_min, capped_max)
+                shuffled = available_documents.copy()
+                random.shuffle(shuffled)
+                doc_ids = [d["id"] for d in shuffled[:count]]
+                logger.info(
+                    f"Randomly selected {count} document(s) (range: {document_min}-{document_max}, "
+                    f"available: {available_count}): {doc_ids}"
+                )
+            else:
+                # Fallback: select at least one if available (or zero if min is 0)
+                if effective_min == 0:
+                    doc_ids = []
+                    logger.info("Range allows 0 documents, selected none")
+                else:
+                    selected_doc = random.choice(available_documents)
+                    doc_ids = [selected_doc["id"]]
+                    logger.info(
+                        f"Range invalid ({effective_min}-{capped_max}), selected 1 document: {doc_ids[0]}"
+                    )
         else:
             logger.info("No active documents found")
 
@@ -549,82 +650,3 @@ def parse_jsonb(data: Any) -> list[dict[str, Any]]:
         return []
     return [dict(item) for item in data]
 
-
-@router.post("/randomize", response_model=RandomizeScenarioResponse)
-async def randomize_scenario_sections(
-    request: RandomizeScenarioRequest,
-    http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> RandomizeScenarioResponse:
-    """Randomize scenario attributes and optionally create child scenario variant."""
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
-
-    try:
-        # Convert string IDs to UUIDs
-        persona_ids = (
-            [uuid.UUID(p) for p in request.personaIds] if request.personaIds else None
-        )
-        document_ids = (
-            [uuid.UUID(d) for d in request.documentIds] if request.documentIds else None
-        )
-        parameter_item_ids = (
-            [uuid.UUID(p) for p in request.parameterItemIds]
-            if request.parameterItemIds
-            else None
-        )
-        department_ids = (
-            [uuid.UUID(d) for d in request.departmentIds]
-            if request.departmentIds
-            else None
-        )
-        scenario_id = uuid.UUID(request.scenarioId) if request.scenarioId else None
-        profile_id = uuid.UUID(request.profileId) if request.profileId else None
-
-        # Normalize empty lists
-        if document_ids:
-            document_ids = [d for d in document_ids if d]
-        if parameter_item_ids:
-            parameter_item_ids = [p for p in parameter_item_ids if p]
-        if department_ids:
-            department_ids = [d for d in department_ids if d]
-        targets = [t for t in request.targets if t.strip()] if request.targets else []
-
-        # Call core randomization function
-        result = await randomize_scenario_attributes(
-            conn=conn,
-            persona_ids=persona_ids,
-            document_ids=document_ids,
-            parameter_item_ids=parameter_item_ids,
-            department_ids=department_ids,
-            scenario_id=scenario_id,
-            profile_id=profile_id,
-            targets=targets,
-        )
-
-        # Return response
-        suggested_persona_ids = [str(p) for p in result["persona_ids"]]
-
-        return RandomizeScenarioResponse(
-            success=True,
-            message="Randomization completed successfully",
-            personaIds=suggested_persona_ids,
-            documentIds=[str(x) for x in result["document_ids"]],
-            parameterItemIds=[str(x) for x in result["parameter_item_ids"]],
-            childScenarioId=str(result["child_scenario_id"])
-            if result["child_scenario_id"]
-            else None,
-        )
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        handle_route_error(
-            error=e,
-            route_path=http_request.url.path,
-            operation="randomize_scenario_sections",
-            sql_query=sql_query,
-            sql_params=sql_params,
-            request=http_request,
-        )

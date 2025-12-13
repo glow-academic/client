@@ -659,26 +659,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/randomize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Randomize Scenario Sections
-         * @description Randomize scenario attributes and optionally create child scenario variant.
-         */
-        post: operations["randomize_scenario_sections_api_v3_scenarios_randomize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/scenarios/select-attributes": {
         parameters: {
             query?: never;
@@ -10324,60 +10304,6 @@ export interface components {
             createdAt: string;
         };
         /**
-         * RandomizeScenarioRequest
-         * @description Request to randomize scenario sections.
-         */
-        RandomizeScenarioRequest: {
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Personaids */
-            personaIds?: string[] | null;
-            /** Documentids */
-            documentIds?: string[] | null;
-            /** Parameteritemids */
-            parameterItemIds?: string[] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /**
-             * Targets
-             * @default []
-             */
-            targets: string[];
-            /** Scenarioid */
-            scenarioId?: string | null;
-            /** Profileid */
-            profileId?: string | null;
-        };
-        /**
-         * RandomizeScenarioResponse
-         * @description Response from scenario randomization.
-         */
-        RandomizeScenarioResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /**
-             * Personaids
-             * @default []
-             */
-            personaIds: string[];
-            /**
-             * Documentids
-             * @default []
-             */
-            documentIds: string[];
-            /**
-             * Parameteritemids
-             * @default []
-             */
-            parameterItemIds: string[];
-            /** Childscenarioid */
-            childScenarioId?: string | null;
-        };
-        /**
          * RandomizedSelections
          * @description Randomized selections returned from server.
          */
@@ -18363,39 +18289,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteScenarioResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    randomize_scenario_sections_api_v3_scenarios_randomize_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RandomizeScenarioRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RandomizeScenarioResponse"];
                 };
             };
             /** @description Validation Error */
