@@ -2605,7 +2605,7 @@ export default function Scenario({
       id: "content",
       title: "Scenario",
       description:
-        "This is what the TA will see when they enter the scenario. Leave blank for auto-generation.",
+        "This is what will be seen when entering the scenario. Leave blank for auto-generation.",
       status: getStepStatus("content"),
     };
 
