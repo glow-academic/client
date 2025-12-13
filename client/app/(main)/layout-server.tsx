@@ -56,6 +56,11 @@ type BulkCreateOrUpdateStaffOut = OutputOf<
 type SettingsActiveIn = InputOf<"/api/v3/settings/active", "post">;
 type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 
+/** ---- Client-side settings type (excludes guestProfileId) ----
+ * guestProfileId is server-side only and should not be exposed to client components
+ */
+export type SettingsActiveClient = Omit<SettingsActiveOut, "guestProfileId">;
+
 /** ---- Cached fetch ---- */
 const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
@@ -124,21 +129,26 @@ export async function getLayoutContextData() {
     activeSettings = null;
   }
 
-  // Resolve guest IDs: use guestProfileId from settings if session IDs are null/empty
+  // Resolve profile IDs: use guestProfileId or defaultAccountProfileId from settings if session IDs are null/empty
+  // Check for default account mode first (stored in localStorage, but we can't access it server-side)
+  // So we'll check for it in requireAuth() instead
   const effectiveProfileIdRaw = session?.effectiveProfileId || null;
   const actualProfileIdRaw = session?.user?.profileId || null;
 
+  // For now, use guestProfileId as fallback (default account will be handled in requireAuth)
   const effectiveProfileId = effectiveProfileIdRaw || guestProfileId;
   const actualProfileId = actualProfileIdRaw || guestProfileId;
 
   // If we still don't have valid IDs, return early with null initial
   // This allows the layout to handle access denied gracefully
   if (!effectiveProfileId || !actualProfileId) {
+    // Extract guestProfileId before passing to client (server-side only)
+    const { guestProfileId: _, ...settingsWithoutGuest } = activeSettings || {};
     return {
       initial: null,
       snapshot,
       attemptData: null,
-      activeSettings,
+      activeSettings: settingsWithoutGuest as SettingsActiveClient | null,
     };
   }
 
@@ -183,7 +193,18 @@ export async function getLayoutContextData() {
     }
   }
 
-  return { initial, snapshot, attemptData, activeSettings };
+  // Extract guestProfileId before passing to client (server-side only)
+  const { guestProfileId: _, ...settingsWithoutGuest } = activeSettings || {};
+  const activeSettingsClient: SettingsActiveClient | null = activeSettings
+    ? (settingsWithoutGuest as SettingsActiveClient)
+    : null;
+
+  return {
+    initial,
+    snapshot,
+    attemptData,
+    activeSettings: activeSettingsClient,
+  };
 }
 
 /** ---- Strongly-typed server actions for Session Management (single source of truth) ---- */

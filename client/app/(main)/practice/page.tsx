@@ -5,12 +5,12 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import SimulationHistory from "@/components/common/history/SimulationHistory";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Practice from "@/components/practice/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuth } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -93,7 +93,19 @@ interface PracticePageProps {
 export default async function PracticePage({
   searchParams,
 }: PracticePageProps) {
-  const session = await getSession();
+  // Allow guest access - practice page supports guest mode via guestProfileId
+  // When user clicks "Continue as Guest", they're redirected here and should be able to access
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return (
+      <AccessDenied
+        message="You need to log in to access the practice page."
+        redirectPath="/practice"
+      />
+    );
+  }
+
+  const { effectiveProfileId, actualProfileId } = authResult;
 
   // Parse search params
   const paramsObj = await searchParams;
@@ -107,54 +119,6 @@ export default async function PracticePage({
       }
     }
   });
-
-  // CRITICAL: Fetch settings FIRST to get guest profile ID
-  // This ensures we always have a valid UUID before making other API calls
-  let guestProfileId: string | null = null;
-  try {
-    type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
-    const getActiveSettings = async (input: {
-      body: { profileId: string | null };
-    }): Promise<SettingsActiveOut> => {
-      return api.post("/settings/active", input, {
-        cache: "no-store",
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
-      }) as Promise<SettingsActiveOut>;
-    };
-    const settingsProfileId = session?.effectiveProfileId || null;
-    const activeSettings = await getActiveSettings({
-      body: { profileId: settingsProfileId },
-    });
-    guestProfileId = activeSettings?.guestProfileId || null;
-  } catch {
-    // If settings fetch fails, continue without guest profile ID
-    // This will cause an error later if user is not authenticated
-  }
-
-  // Resolve guest IDs: use guestProfileId from settings if session IDs are null/empty
-  const effectiveProfileIdRaw = session?.effectiveProfileId || null;
-  const actualProfileIdRaw = session?.user?.profileId || null;
-
-  const effectiveProfileId = effectiveProfileIdRaw || guestProfileId;
-  const actualProfileId = actualProfileIdRaw || guestProfileId;
-
-  // If we still don't have valid IDs, we can't proceed
-  // For practice page, require authentication (no guest access)
-  if (!effectiveProfileId || !actualProfileId) {
-    // Return early - user will see access denied via AccessControl
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-gray-600">
-            You need to log in to access the practice page.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Get profileId and departmentIds from profile context with resolved UUIDs
   const profileContext = await getProfileContext({

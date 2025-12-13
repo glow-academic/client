@@ -21,6 +21,7 @@ class SettingsActiveRequest(BaseModel):
     """Request to get active settings."""
 
     profileId: str | None = None  # Can be null, empty string, UUID, or "guest-profile-id" for backward compatibility
+    departmentId: str | None = None  # Optional department ID for department-specific settings lookup
 
 
 class ThemePrimitives(BaseModel):
@@ -117,6 +118,7 @@ class SettingsActiveResponse(BaseModel):
     warning_threshold: int
     danger_threshold: int
     guestProfileId: str | None = None  # Guest profile ID from settings_default_guest table
+    defaultAccountProfileId: str | None = None  # Default account profile ID from settings_default_account table
 
 
 router = APIRouter()
@@ -268,12 +270,14 @@ async def get_active_settings(
 
     try:
         sql_query = load_sql("sql/v3/settings/get_active_settings.sql")
-        # Pass profileId directly to SQL query (can be null, empty, UUID, or "guest-profile-id")
-        # SQL handles null/empty/"guest-profile-id" to return default settings
+        # Pass profileId and departmentId to SQL query
+        # profileId: can be null, empty, UUID, or "guest-profile-id" for backward compatibility
+        # departmentId: optional UUID for direct department-specific settings lookup
         # Use empty string instead of None to avoid PostgreSQL type ambiguity
         profile_id_param = request.profileId if request.profileId else ""
-        sql_params = (profile_id_param,)
-        settings = await conn.fetchrow(sql_query, profile_id_param)
+        department_id_param = request.departmentId if request.departmentId else ""
+        sql_params = (profile_id_param, department_id_param)
+        settings = await conn.fetchrow(sql_query, profile_id_param, department_id_param)
 
         if not settings:
             raise HTTPException(status_code=404, detail="No active settings found")

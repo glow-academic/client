@@ -58,18 +58,26 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
     return () => clearTimeout(timer);
   }, [effectiveProfile, pathname, isLoading]);
 
-  // If still loading, show loading state instead of access denied
-  // Also show loading if we don't have a profile yet (prevents premature access denied)
-  if (isLoading || !effectiveProfile) {
+  // If still loading, show loading state
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">
-            {isLoading ? "Loading..." : "Initializing..."}
-          </p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // If no profile after loading, authentication failed - show access denied
+  if (!effectiveProfile) {
+    return (
+      <AccessDeniedCard
+        role="guest"
+        pathname={pathname}
+        redirectPath={redirectPath}
+      />
     );
   }
 

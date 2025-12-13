@@ -1,11 +1,14 @@
--- Get active settings row based on profile's primary department
--- Parameters: $1 = profile_id (uuid, null, empty string, or "guest-profile-id" for backward compatibility)
--- Returns: Settings row (default for null/empty/guest-profile-id, department-specific for authenticated users)
+-- Get active settings row based on profile's primary department or direct department ID
+-- Parameters: 
+--   $1 = profile_id (uuid, null, empty string, or "guest-profile-id" for backward compatibility)
+--   $2 = department_id (optional uuid, null, or empty string for direct department lookup)
+-- Returns: Settings row (default for null/empty/guest-profile-id, department-specific for authenticated users or when departmentId provided)
 -- Logic: 
---   1. If profile_id is null, empty, or "guest-profile-id": return default settings (no department links)
---   2. If profile_id is a real UUID: get primary_department_id, then department-specific settings
---   3. Fall back to default settings (settings with no department_settings records = cross-department)
---   4. Final fallback: any active settings row
+--   1. If department_id ($2) is provided and not empty: use it directly for department-specific settings
+--   2. If profile_id ($1) is a real UUID: get primary_department_id, then department-specific settings
+--   3. If profile_id is null, empty, or "guest-profile-id": return default settings (no department links)
+--   4. Fall back to default settings (settings with no department_settings records = cross-department)
+--   5. Final fallback: any active settings row
 WITH default_settings AS (
     -- Get settings with no department links (cross-department/default)
     -- These are settings that have no records in department_settings
@@ -35,36 +38,56 @@ resolve_profile_id AS (
             ELSE $1::uuid
         END as resolved_profile_id
 ),
-profile_primary_department AS (
-    -- Get profile's primary department ID (only for authenticated users)
-    SELECT pd.department_id
-    FROM resolve_profile_id rpi
-    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
-    WHERE rpi.resolved_profile_id IS NOT NULL
-      AND pd.is_primary = TRUE 
-      AND pd.active = true
-    LIMIT 1
+resolve_department_id AS (
+    -- Resolve department ID: use $2 if provided, otherwise get from profile's primary department
+    SELECT 
+        CASE 
+            -- If $2 (departmentId) is provided and not empty, use it directly
+            WHEN $2::text IS NOT NULL AND $2::text != '' THEN $2::uuid
+            -- Otherwise, try to get from profile's primary department
+            ELSE (
+                SELECT pd.department_id
+                FROM resolve_profile_id rpi
+                JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+                WHERE rpi.resolved_profile_id IS NOT NULL
+                  AND pd.is_primary = TRUE 
+                  AND pd.active = true
+                LIMIT 1
+            )
+        END as resolved_department_id
 ),
 dept_specific_settings AS (
-    -- Get department-specific settings (if primary_department_id exists)
+    -- Get department-specific settings (if resolved_department_id exists)
     SELECT s.id as settings_id
     FROM settings s
     JOIN department_settings sd ON sd.settings_id = s.id
-    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE s.active = true 
+    JOIN resolve_department_id rdi ON sd.department_id = rdi.resolved_department_id
+    WHERE rdi.resolved_department_id IS NOT NULL
+      AND s.active = true 
       AND sd.active = true
     LIMIT 1
 ),
 selected_settings AS (
-    -- For guest-profile-id: return default settings only
-    -- For authenticated users: prefer department-specific, then default, then any active
+    -- Priority: department-specific settings (if departmentId provided or profile has department), then default, then any active
+    -- If departmentId ($2) is provided: prefer department-specific settings
+    -- If profileId ($1) is a UUID: prefer department-specific settings from profile's department
+    -- Otherwise: use default settings
     SELECT 
         CASE 
+            -- If departmentId is provided or profile has a department, prefer department-specific settings
+            WHEN (SELECT resolved_department_id FROM resolve_department_id) IS NOT NULL THEN
+                COALESCE(
+                    (SELECT settings_id FROM dept_specific_settings),
+                    (SELECT settings_id FROM default_settings),
+                    (SELECT id FROM settings WHERE active = true LIMIT 1)
+                )
+            -- For guest requests (no department): return default settings only
             WHEN (SELECT is_guest_flag FROM is_guest) THEN
                 COALESCE(
                     (SELECT settings_id FROM default_settings),
                     (SELECT id FROM settings WHERE active = true LIMIT 1)
                 )
+            -- Fallback: prefer department-specific, then default, then any active
             ELSE
                 COALESCE(
                     (SELECT settings_id FROM dept_specific_settings),
@@ -120,6 +143,16 @@ settings_default_guest_data AS (
     JOIN settings_default_guest sdg ON sdg.settings_id = ss.settings_id AND sdg.active = true
     JOIN profiles p ON p.id = sdg.profile_id
     LIMIT 1
+),
+settings_default_account_data AS (
+    -- Get default account (admin/superadmin) for the selected settings
+    SELECT 
+        sda.profile_id::text as default_account_profile_id,
+        p.first_name || ' ' || p.last_name as default_account_name
+    FROM selected_settings ss
+    JOIN settings_default_account sda ON sda.settings_id = ss.settings_id AND sda.active = true
+    JOIN profiles p ON p.id = sda.profile_id
+    LIMIT 1
 )
 SELECT 
     s.id::text as settings_id,
@@ -147,10 +180,12 @@ SELECT
     COALESCE(sad.auth_mapping, '{}'::jsonb) as auth_mapping,
     COALESCE(spd.provider_ids, ARRAY[]::text[]) as provider_ids,
     COALESCE(spd.provider_mapping, '{}'::jsonb) as provider_mapping,
-    sdgd.default_guest_profile_id
+    sdgd.default_guest_profile_id,
+    sdad.default_account_profile_id
 FROM selected_settings ss
 JOIN settings s ON s.id = ss.settings_id
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
 LEFT JOIN settings_default_guest_data sdgd ON true
+LEFT JOIN settings_default_account_data sdad ON true
 LIMIT 1

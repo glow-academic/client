@@ -354,6 +354,7 @@ export default function Login({
       // Set guest mode in localStorage and redirect to practice
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedProfileId");
+      localStorage.removeItem("defaultAccountMode");
       localStorage.setItem("guestMode", "true");
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
@@ -370,6 +371,42 @@ export default function Login({
       }
     } finally {
       setLoadingGuest(false);
+    }
+  };
+
+  const handleDefaultAccountLogin = async () => {
+    try {
+      if (!activeSettings?.defaultAccountProfileId) {
+        toast.error("Default account not configured");
+        return;
+      }
+
+      setLoading({ ...loading, defaultAccount: true });
+
+      // Clear guest mode and simulated profile from localStorage
+      localStorage.removeItem("guestMode");
+      localStorage.removeItem("simulatedProfileId");
+      // Set default account mode flag
+      localStorage.setItem("defaultAccountMode", "true");
+      localStorage.setItem(
+        "defaultAccountProfileId",
+        activeSettings.defaultAccountProfileId
+      );
+
+      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+
+      // Redirect to home after login - home page will handle role-based redirects
+      const redirectTo = `${appPrefix}/home`;
+
+      toast.success("Accessing as default account!");
+      router.push(redirectTo);
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      if (!errorMessage.toLowerCase().includes("load failed")) {
+        toast.error("An error occurred during login: " + errorMessage);
+      }
+    } finally {
+      setLoading({ ...loading, defaultAccount: false });
     }
   };
 
@@ -645,24 +682,75 @@ export default function Login({
                 </motion.div>
               ))}
 
-              {/* Divider - only show if there are SSO providers and guest login is enabled */}
-              {providers.length > 0 && guest_login_enabled && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="relative py-2"
-                >
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/30" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase z-10">
-                    <span className="bg-blue-400 px-4 py-1 text-white font-medium tracking-wider rounded backdrop-blur-sm">
-                      Or
-                    </span>
-                  </div>
-                </motion.div>
-              )}
+              {/* Default Account Button - only show if show_default_account is true and defaultAccountProfileId exists */}
+              {_show_default_account &&
+                activeSettings?.defaultAccountProfileId && (
+                  <motion.div variants={cardVariants} whileHover="hover">
+                    <Button
+                      type="button"
+                      onClick={handleDefaultAccountLogin}
+                      disabled={loading["defaultAccount"]}
+                      data-testid="default-account-login-button"
+                      className="relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
+                        boxShadow:
+                          "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background =
+                          "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
+                        e.currentTarget.style.boxShadow =
+                          "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
+                        e.currentTarget.style.boxShadow =
+                          "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
+                      }}
+                    >
+                      {/* Liquid glass shine effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
+                      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                      <div className="relative flex items-center justify-center space-x-3">
+                        {loading["defaultAccount"] ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <UserIcon />
+                        )}
+                        <span className="text-base">
+                          {loading["defaultAccount"]
+                            ? "Signing in..."
+                            : "Continue as Default Account"}
+                        </span>
+                      </div>
+                    </Button>
+                  </motion.div>
+                )}
+
+              {/* Divider - only show if there are SSO providers and (guest login OR default account) is enabled */}
+              {providers.length > 0 &&
+                (guest_login_enabled ||
+                  (_show_default_account &&
+                    activeSettings?.defaultAccountProfileId)) && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="relative py-2"
+                  >
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-white/30" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase z-10">
+                      <span className="bg-blue-400 px-4 py-1 text-white font-medium tracking-wider rounded backdrop-blur-sm">
+                        Or
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
 
               {/* Guest Access Button - only show if guest_login_enabled is true */}
               {guest_login_enabled && (

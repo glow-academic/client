@@ -46,6 +46,7 @@ import type {
   SafeSessionSnapshot,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
+  SettingsActiveClient,
   SettingsActiveOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
@@ -415,7 +416,7 @@ export function MainLayoutClient({
   initial: LayoutContextResponse | null; // Can be null if user doesn't have access
   sessionSnapshot: SafeSessionSnapshot;
   attemptData: AttemptFullOut | null;
-  activeSettings: SettingsActiveOut | null;
+  activeSettings: SettingsActiveClient | null;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;

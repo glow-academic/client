@@ -5,11 +5,12 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -48,14 +49,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { attemptId } = await params;
 
-  const session = await getSession();
-
-  // For metadata, use session profile ID or return default if no session
-  const profileId = session?.effectiveProfileId;
-
   try {
-    if (!profileId) {
-      // If no session, return default metadata
+    const authResult = await requireAuthenticated().catch(() => null);
+    if (!authResult) {
       return {
         title: `Attempt ${attemptId.substring(0, 8)}...`,
         description:
@@ -64,7 +60,7 @@ export async function generateMetadata(
     }
 
     const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId, profileId },
+      body: { attemptId, profileId: authResult.effectiveProfileId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
@@ -97,17 +93,13 @@ export default async function AttemptPage({
 }) {
   const { attemptId } = await params;
 
-  const session = await getSession();
-
-  // For restricted pages like attempt pages, require authentication
-  // Return access denied early if no session (simpler than resolving guest IDs)
-  if (!session?.effectiveProfileId) {
-    return (
-      <DepartmentAccessDenied resourceType="scenario" redirectPath="/home" />
-    );
+  // Require authentication - attempt pages don't allow guest access
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/home" />;
   }
 
-  const profileId = session.effectiveProfileId;
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch attempt data server-side
   try {

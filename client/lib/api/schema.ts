@@ -11363,6 +11363,8 @@ export interface components {
         SettingsActiveRequest: {
             /** Profileid */
             profileId?: string | null;
+            /** Departmentid */
+            departmentId?: string | null;
         };
         /**
          * SettingsActiveResponse
@@ -11392,6 +11394,8 @@ export interface components {
             danger_threshold: number;
             /** Guestprofileid */
             guestProfileId?: string | null;
+            /** Defaultaccountprofileid */
+            defaultAccountProfileId?: string | null;
         };
         /**
          * SettingsDetailRequest

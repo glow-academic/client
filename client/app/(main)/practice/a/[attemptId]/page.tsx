@@ -11,10 +11,10 @@ import type {
   UpdateChatCreatedAtIn,
   UpdateChatCreatedAtOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
-import { getSession } from "@/auth";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Direct fetch (no caching - source of truth) ----
@@ -39,14 +39,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { attemptId } = await params;
 
-  const session = await getSession();
-
-  // For metadata, use session profile ID or return default if no session
-  const profileId = session?.effectiveProfileId;
-
   try {
-    if (!profileId) {
-      // If no session, return default metadata
+    const authResult = await requireAuthenticated().catch(() => null);
+    if (!authResult) {
       return {
         title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
         description:
@@ -55,7 +50,7 @@ export async function generateMetadata(
     }
 
     const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId, profileId },
+      body: { attemptId, profileId: authResult.effectiveProfileId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
@@ -88,20 +83,13 @@ export default async function PracticeAttemptPage({
 }) {
   const { attemptId } = await params;
 
-  const session = await getSession();
-
-  // For restricted pages like attempt pages, require authentication
-  // Return access denied early if no session (simpler than resolving guest IDs)
-  if (!session?.effectiveProfileId) {
-    return (
-      <DepartmentAccessDenied
-        resourceType="scenario"
-        redirectPath="/practice"
-      />
-    );
+  // Require authentication - attempt pages don't allow guest access
+  const authResult = await requireAuthenticated().catch(() => null);
+  if (!authResult) {
+    return <AccessDenied redirectPath="/practice" />;
   }
 
-  const profileId = session.effectiveProfileId;
+  const profileId = authResult.effectiveProfileId;
 
   // Fetch attempt data server-side
   try {
@@ -126,12 +114,7 @@ export default async function PracticeAttemptPage({
       "status" in error &&
       error.status === 403
     ) {
-      return (
-        <DepartmentAccessDenied
-          resourceType="scenario"
-          redirectPath="/practice"
-        />
-      );
+      return <AccessDenied redirectPath="/practice" />;
     }
     // Re-throw other errors
     throw error;

@@ -5,12 +5,12 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
 import SimulationHistory from "@/components/common/history/SimulationHistory";
+import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Home from "@/components/home/Home";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuth } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
@@ -79,14 +79,16 @@ const getProfileContext = async (input: {
 };
 
 /** ---- Inline filters function for home page ---- */
-async function getHomeFilters(searchParams?: URLSearchParams) {
-  const session = await getSession();
-
+async function getHomeFilters(
+  searchParams: URLSearchParams | undefined,
+  effectiveProfileId: string,
+  actualProfileId: string
+) {
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await getProfileContext({
     body: {
-      actualProfileId: session?.user?.profileId || "",
-      effectiveProfileId: session?.effectiveProfileId || "",
+      actualProfileId,
+      effectiveProfileId,
       pathname: "/",
     },
   });
@@ -166,7 +168,18 @@ interface HomePageProps {
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const session = await getSession();
+  // Require auth (allows guest fallback via requireAuth)
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return (
+      <AccessDenied
+        message="You need to log in to access the home page."
+        redirectPath="/home"
+      />
+    );
+  }
+
+  const { effectiveProfileId, actualProfileId } = authResult;
 
   // Parse search params
   const paramsObj = await searchParams;
@@ -184,7 +197,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // Get filters from search params or defaults, then subset to Home fields
   // Note: getHomeFilters uses getProfileContext which is now cached
   const defaultFilters = await getHomeFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
+    effectiveProfileId,
+    actualProfileId
   );
 
   // Extract subset for Home: startDate, endDate, profileId (required)
@@ -196,7 +211,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds, // Always non-empty
       departmentIds: defaultFilters.departmentIds, // Always non-empty
-      profileId: session?.effectiveProfileId || "guest-profile-id", // Required for member mode detection
+      profileId: effectiveProfileId, // Use resolved profile ID (no guest-profile-id string)
     },
   };
 
@@ -299,7 +314,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             historyInfiniteMode={historyInfiniteMode}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
-            effectiveProfileId={session?.effectiveProfileId ?? null}
+            effectiveProfileId={effectiveProfileId}
           />
         </Suspense>
       </div>
@@ -337,13 +352,13 @@ async function HomeHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  effectiveProfileId?: string | null;
+  effectiveProfileId: string;
 }) {
   // Build history filters matching logic from page.tsx
   // profileId is required for department scoping
   const historyFilters: HomeHistoryIn = {
     body: {
-      profileId: effectiveProfileId || "guest-profile-id",
+      profileId: effectiveProfileId,
       startDate: defaultFilters.startDate,
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds,

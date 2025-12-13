@@ -27944,6 +27944,17 @@
               }
             ],
             "title": "Profileid"
+          },
+          "departmentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentid"
           }
         },
         "type": "object",
@@ -28003,6 +28014,17 @@
               }
             ],
             "title": "Guestprofileid"
+          },
+          "defaultAccountProfileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaultaccountprofileid"
           }
         },
         "type": "object",

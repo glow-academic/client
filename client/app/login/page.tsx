@@ -51,13 +51,17 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
 }
 
 /** ---- Direct fetch for settings (separate call, like settings page pattern) ---- */
-async function getActiveSettings(): Promise<SettingsActiveOut | null> {
+/** ---- Now supports department-specific settings via departmentId parameter ---- */
+async function getActiveSettings(
+  departmentId?: string | null
+): Promise<SettingsActiveOut | null> {
   try {
     return (await api.post(
       "/settings/active",
       {
         body: {
           profileId: null, // Use null for unauthenticated users (not "guest-profile-id")
+          departmentId: departmentId || null, // Optional department ID for department-specific settings
         },
       },
       {
@@ -100,8 +104,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const loginData: LoginDataOut = await getLoginData(departmentIdForApi);
 
   // Fetch settings separately (like settings page pattern)
-  // Always use guest-profile-id for login page (unauthenticated users)
-  const activeSettings = await getActiveSettings();
+  // Now supports department-specific settings based on selected department
+  // Priority: 1) Query param department, 2) Default department, 3) First department, 4) Default settings
+  const departmentIdForSettings =
+    departmentIdFromQuery ||
+    loginData.default_department_id ||
+    (loginData.departments.length > 0 ? loginData.departments[0]?.id : null);
+  const activeSettings = await getActiveSettings(departmentIdForSettings);
 
   // Business logic: Validate department_id from query param exists in departments list
   const validDepartmentId =
