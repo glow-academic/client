@@ -54,6 +54,7 @@ export function EvalForm({
         });
         setAgentsList(response);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to fetch agents:", error);
         toast.error("Failed to load agents");
       } finally {

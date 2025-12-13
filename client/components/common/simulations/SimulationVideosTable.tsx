@@ -150,7 +150,7 @@ export function SimulationVideosTable({
         },
       },
     ],
-    [readonly],
+    [],
   );
 
   const table = useReactTable({
@@ -177,7 +177,7 @@ export function SimulationVideosTable({
 
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [table, videoItems.length, sorting, columnFilters]);
+  }, [table]);
 
   return (
     <TooltipProvider>

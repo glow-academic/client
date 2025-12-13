@@ -70,7 +70,19 @@ export interface SimulationScenariosTableProps {
   agentMapping?: Record<string, { name: string; roles?: string[] }>;
   validAgentIds?: string[];
   // Scenario picker props
-  scenarioMapping?: Record<string, any>;
+  scenarioMapping?: Record<
+    string,
+    {
+      name: string;
+      description: string;
+      persona_ids?: string[];
+      persona_mapping?: Record<string, { name: string; description: string; color?: string }>;
+      document_mapping?: Record<string, unknown>;
+      parameter_item_mapping?: Record<string, unknown>;
+      parameter_item_ids?: string[];
+      document_ids?: string[];
+    }
+  >;
   validScenarioIds?: string[];
   selectedScenarioIds?: string[];
   onScenarioSelect?: (ids: string[]) => void;
@@ -594,7 +606,7 @@ export function SimulationScenariosTable({
 
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [table, scenarioItems.length, sorting, columnFilters]);
+  }, [table]);
 
   return (
     <TooltipProvider>

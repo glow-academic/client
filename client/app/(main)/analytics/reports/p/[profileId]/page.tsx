@@ -177,7 +177,8 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { profileId } = await params;
   const session = await getSession();
-  session?.effectiveProfileId || profileId; // Used for metadata context
+  // Use effectiveProfileId if available, otherwise fallback to profileId (for metadata context)
+  const _effectiveProfileId = session?.effectiveProfileId || profileId;
 
   try {
     const profileData = await getProfileDetail(profileId, {

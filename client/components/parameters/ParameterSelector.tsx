@@ -446,6 +446,27 @@ export function ParameterSelector({
     return [...nonNumericalParameters, ...numericalParameters];
   }, [nonNumericalParameters, numericalParameters]);
 
+  // Compute filtered item IDs for all non-numerical parameters (moved outside map to avoid hook violation)
+  const filteredItemIdsByParameter = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    for (const parameterId of nonNumericalParameters) {
+      const itemIds = parameterItemsByParameter[parameterId] || [];
+      const searchTerm = searchTerms[parameterId] || "";
+      if (!searchTerm.trim()) {
+        result[parameterId] = itemIds;
+      } else {
+        const searchLower = searchTerm.toLowerCase();
+        result[parameterId] = itemIds.filter((itemId) => {
+          const item = fieldMapping[itemId];
+          if (!item) return false;
+          const searchText = `${item.name} ${item.description || ""}`.toLowerCase();
+          return searchText.includes(searchLower);
+        });
+      }
+    }
+    return result;
+  }, [nonNumericalParameters, parameterItemsByParameter, searchTerms, fieldMapping]);
+
   const hasParameters = allParameters.length > 0;
 
   return (
@@ -568,19 +589,7 @@ export function ParameterSelector({
             );
           } else {
             // Non-numerical parameter rendering with card grid
-            const searchTerm = searchTerms[parameterId] || "";
-            const filteredItemIds = useMemo(() => {
-              if (!searchTerm.trim()) {
-                return itemIds;
-              }
-              const searchLower = searchTerm.toLowerCase();
-              return itemIds.filter((itemId) => {
-                const item = fieldMapping[itemId];
-                if (!item) return false;
-                const searchText = `${item.name} ${item.description || ""}`.toLowerCase();
-                return searchText.includes(searchLower);
-              });
-            }, [itemIds, fieldMapping, searchTerm]);
+            const filteredItemIds = filteredItemIdsByParameter[parameterId] || itemIds;
             
             return (
               <div key={parameterId} className="space-y-3">

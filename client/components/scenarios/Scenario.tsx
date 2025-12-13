@@ -2142,7 +2142,6 @@ export default function Scenario({
 
       formDataInitializedRef.current = true;
     }
-    // formData.name, formData.problemStatement, handleInputChange intentionally excluded to prevent loops
   }, [
     scenarioData,
     isEditMode,
@@ -2152,6 +2151,11 @@ export default function Scenario({
     searchParams,
     parameterSelectionMinMax, // Used as fallback value in effect
     parameterMapping,
+    fieldMapping,
+    formData.name,
+    formData.problemStatement,
+    handleInputChange,
+    useImage,
   ]);
 
   // Problem statement ID is now managed via URL parameters, not state

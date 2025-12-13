@@ -103,6 +103,7 @@ export default function Evals({
       message: string;
     }) => {
       // WebSocket handler - state updates removed as evals state was unused
+      // eslint-disable-next-line no-console
       console.log("Eval progress:", data);
     };
 
@@ -111,6 +112,7 @@ export default function Evals({
       message: string;
     }) => {
       // WebSocket handler - state updates removed as evals state was unused
+      // eslint-disable-next-line no-console
       console.log("Eval completed:", data);
     };
 
@@ -120,6 +122,7 @@ export default function Evals({
       stopped_count: number;
     }) => {
       // WebSocket handler - state updates removed as evals state was unused
+      // eslint-disable-next-line no-console
       console.log("Eval stopped:", data);
     };
 

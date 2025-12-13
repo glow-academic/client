@@ -388,19 +388,22 @@ export default function Rubric({
   };
 
   // Handle edit standard group
-  const handleEditGroup = (groupId: string) => {
-    const group = standardGroups.find((g) => g.id === groupId);
-    if (group) {
-      setGroupFormData({
-        name: group.name,
-        description: group.description,
-        points: group.points.toString(),
-        passPoints: group.passPoints.toString(),
-      });
-      setEditingGroupId(groupId);
-      setShowAddGroupModal(true);
-    }
-  };
+  const handleEditGroup = useCallback(
+    (groupId: string) => {
+      const group = standardGroups.find((g) => g.id === groupId);
+      if (group) {
+        setGroupFormData({
+          name: group.name,
+          description: group.description,
+          points: group.points.toString(),
+          passPoints: group.passPoints.toString(),
+        });
+        setEditingGroupId(groupId);
+        setShowAddGroupModal(true);
+      }
+    },
+    [standardGroups]
+  );
 
   // Handle save standard group
   const handleSaveGroup = () => {
@@ -459,46 +462,60 @@ export default function Rubric({
   };
 
   // Handle delete standard group
-  const handleDeleteGroup = async (groupId: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this standard group? This will also delete all associated standards."
-      )
-    ) {
-      return;
-    }
-
-    // Remove group and its standards
-    setStandardGroups((prev) => prev.filter((g) => g.id !== groupId));
-    setStandards((prev) => prev.filter((s) => s.standardGroupId !== groupId));
-    setGridCells((prev) => prev.filter((c) => c.standardGroupId !== groupId));
-
-    // If in edit mode, save immediately
-    if (isEditMode && updateRubricAction) {
-      try {
-        const finalDepartmentIds = transformDepartmentIdsForSubmit(
-          formData.departmentIds || [],
-          isSuperadmin,
-          rubricData?.valid_department_ids || []
-        );
-        await updateRubricUnified({
-          name: formData.name,
-          description: formData.description,
-          department_ids: finalDepartmentIds,
-          active: formData.active,
-          standardGroups: standardGroups.filter((g) => g.id !== groupId),
-          standards: standards.filter((s) => s.standardGroupId !== groupId),
-          gridCells: gridCells.filter((c) => c.standardGroupId !== groupId),
-        });
-        toast.success("Standard group deleted successfully");
-        router.refresh();
-      } catch (error) {
-        toast.error("Failed to delete standard group", {
-          description: error instanceof Error ? error.message : "Unknown error",
-        });
+  const handleDeleteGroup = useCallback(
+    async (groupId: string) => {
+      if (
+        !confirm(
+          "Are you sure you want to delete this standard group? This will also delete all associated standards."
+        )
+      ) {
+        return;
       }
-    }
-  };
+
+      // Remove group and its standards
+      setStandardGroups((prev) => prev.filter((g) => g.id !== groupId));
+      setStandards((prev) => prev.filter((s) => s.standardGroupId !== groupId));
+      setGridCells((prev) => prev.filter((c) => c.standardGroupId !== groupId));
+
+      // If in edit mode, save immediately
+      if (isEditMode && updateRubricAction) {
+        try {
+          const finalDepartmentIds = transformDepartmentIdsForSubmit(
+            formData.departmentIds || [],
+            isSuperadmin,
+            rubricData?.valid_department_ids || []
+          );
+          await updateRubricUnified({
+            name: formData.name,
+            description: formData.description,
+            department_ids: finalDepartmentIds,
+            active: formData.active,
+            standardGroups: standardGroups.filter((g) => g.id !== groupId),
+            standards: standards.filter((s) => s.standardGroupId !== groupId),
+            gridCells: gridCells.filter((c) => c.standardGroupId !== groupId),
+          });
+          toast.success("Standard group deleted successfully");
+          router.refresh();
+        } catch (error) {
+          toast.error("Failed to delete standard group", {
+            description: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
+      }
+    },
+    [
+      isEditMode,
+      updateRubricAction,
+      formData,
+      isSuperadmin,
+      rubricData,
+      standardGroups,
+      standards,
+      gridCells,
+      router,
+      updateRubricUnified,
+    ]
+  );
 
   // Handle add standard
   const handleAddStandard = () => {
@@ -511,17 +528,20 @@ export default function Rubric({
   };
 
   // Handle edit standard
-  const handleEditStandard = (standardId: string) => {
-    const standard = standards.find((s) => s.id === standardId);
-    if (standard) {
-      setStandardFormData({
-        name: standard.name,
-        points: standard.points.toString(),
-      });
-      setEditingStandardId(standardId);
-      setShowAddStandardModal(true);
-    }
-  };
+  const handleEditStandard = useCallback(
+    (standardId: string) => {
+      const standard = standards.find((s) => s.id === standardId);
+      if (standard) {
+        setStandardFormData({
+          name: standard.name,
+          points: standard.points.toString(),
+        });
+        setEditingStandardId(standardId);
+        setShowAddStandardModal(true);
+      }
+    },
+    [standards]
+  );
 
   // Handle save standard
   const handleSaveStandard = () => {
@@ -593,40 +613,54 @@ export default function Rubric({
   };
 
   // Handle delete standard
-  const handleDeleteStandard = async (standardId: string) => {
-    if (!confirm("Are you sure you want to delete this standard?")) {
-      return;
-    }
-
-    setStandards((prev) => prev.filter((s) => s.id !== standardId));
-    setGridCells((prev) => prev.filter((c) => c.standardId !== standardId));
-
-    // If in edit mode, save immediately
-    if (isEditMode && updateRubricAction) {
-      try {
-        const finalDepartmentIds = transformDepartmentIdsForSubmit(
-          formData.departmentIds || [],
-          isSuperadmin,
-          rubricData?.valid_department_ids || []
-        );
-        await updateRubricUnified({
-          name: formData.name,
-          description: formData.description,
-          department_ids: finalDepartmentIds,
-          active: formData.active,
-          standardGroups,
-          standards: standards.filter((s) => s.id !== standardId),
-          gridCells: gridCells.filter((c) => c.standardId !== standardId),
-        });
-        toast.success("Standard deleted successfully");
-        router.refresh();
-      } catch (error) {
-        toast.error("Failed to delete standard", {
-          description: error instanceof Error ? error.message : "Unknown error",
-        });
+  const handleDeleteStandard = useCallback(
+    async (standardId: string) => {
+      if (!confirm("Are you sure you want to delete this standard?")) {
+        return;
       }
-    }
-  };
+
+      setStandards((prev) => prev.filter((s) => s.id !== standardId));
+      setGridCells((prev) => prev.filter((c) => c.standardId !== standardId));
+
+      // If in edit mode, save immediately
+      if (isEditMode && updateRubricAction) {
+        try {
+          const finalDepartmentIds = transformDepartmentIdsForSubmit(
+            formData.departmentIds || [],
+            isSuperadmin,
+            rubricData?.valid_department_ids || []
+          );
+          await updateRubricUnified({
+            name: formData.name,
+            description: formData.description,
+            department_ids: finalDepartmentIds,
+            active: formData.active,
+            standardGroups,
+            standards: standards.filter((s) => s.id !== standardId),
+            gridCells: gridCells.filter((c) => c.standardId !== standardId),
+          });
+          toast.success("Standard deleted successfully");
+          router.refresh();
+        } catch (error) {
+          toast.error("Failed to delete standard", {
+            description: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
+      }
+    },
+    [
+      isEditMode,
+      updateRubricAction,
+      formData,
+      isSuperadmin,
+      rubricData,
+      standardGroups,
+      standards,
+      gridCells,
+      router,
+      updateRubricUnified,
+    ]
+  );
 
   // Handle grid cell change
   const handleCellChange = (
@@ -806,6 +840,8 @@ export default function Rubric({
     findStandardIdForGroup,
     handleEditStandard,
     handleDeleteStandard,
+    handleEditGroup,
+    handleDeleteGroup,
   ]);
 
   // Table state

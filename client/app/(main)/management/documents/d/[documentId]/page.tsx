@@ -150,6 +150,7 @@ export default async function DocumentEditPage({
           } catch (error) {
             // If rendering fails, renderedHtml stays null
             // Component will handle this gracefully
+            // eslint-disable-next-line no-console
             console.error("Failed to render template:", error);
           }
         }

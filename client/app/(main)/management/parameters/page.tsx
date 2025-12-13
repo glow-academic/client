@@ -73,14 +73,6 @@ async function deleteParameter(
   });
 }
 
-export async function createParameterItem(
-  input: CreateParameterItemIn
-): Promise<CreateParameterItemOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/items/create", input);
-}
-
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Parameters",

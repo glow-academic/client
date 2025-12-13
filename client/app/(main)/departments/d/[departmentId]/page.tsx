@@ -109,17 +109,17 @@ async function updateDepartment(
   return api.post("/departments/update", input);
 }
 
-export async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
+async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
   return api.post("/keys/create", input);
 }
 
-export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
+async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
   "use server";
   return api.post("/keys/decrypt-key", input);
 }
 
-export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
+async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
   return api.post("/keys/update", input);
 }

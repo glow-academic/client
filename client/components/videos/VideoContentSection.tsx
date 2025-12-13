@@ -684,11 +684,11 @@ export function VideoContentSection({
                   {images.map((img, idx) => (
                     <div key={img.id || idx} className="relative aspect-square">
                       <img
+                        alt={img.name || `Video image ${idx + 1}`}
                         src={
                           img.file_path ||
                           `/api/v3/uploads/download/${img.upload_id || img.id}`
                         }
-                        alt={img.name}
                         className="w-full h-full object-cover rounded-lg border"
                       />
                       <Button
@@ -971,7 +971,7 @@ export function VideoContentSection({
                 htmlFor="use-image"
                 className="text-sm flex items-center gap-1.5"
               >
-                <Image className="h-3.5 w-3.5 text-muted-foreground" />
+                <Image className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 Use Images
               </Label>
               <Switch

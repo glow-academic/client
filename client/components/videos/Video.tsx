@@ -2279,6 +2279,7 @@ export default function Video({
     parameterMapping,
     parameterSelectionMinMax,
     handleInputChange,
+    initialFormData,
   ]);
 
   // Auto-select first available outline and question agents if not already selected
@@ -2494,6 +2495,8 @@ export default function Video({
     updateUrlParams,
     handleInputChange,
     randomizingSection,
+    currentFieldIds,
+    fieldMapping,
   ]);
 
   // Also handle randomized flag as fallback (DHH-style: server tells client when to clear param)
@@ -2570,7 +2573,6 @@ export default function Video({
 
       return () => clearTimeout(timeoutId);
     }
-    return undefined;
   }, [
     videoData?.randomized,
     videoData,

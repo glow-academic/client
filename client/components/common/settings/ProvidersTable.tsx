@@ -253,7 +253,7 @@ export function ProvidersTable({
 
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [table, data.length]);
+  }, [table]);
 
   return (
     <TooltipProvider>

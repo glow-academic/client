@@ -291,7 +291,7 @@ export function ParameterFieldsTable({
 
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [table, data.length, sorting, columnFilters]);
+  }, [table]);
 
   return (
     <TooltipProvider>

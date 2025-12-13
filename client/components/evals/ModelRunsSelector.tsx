@@ -81,6 +81,7 @@ export function ModelRunsSelector({
         setModelRuns(response.model_runs || []);
         setTotalPages(response.total_pages || 1);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to fetch model runs:", error);
       } finally {
         setLoading(false);
