@@ -121,7 +121,8 @@ persona_data AS (
         )
     ORDER BY p.name
 ),
--- Persona parameter relationships: direct (parameter_personas) and via fields (persona_fields → parameter_fields)
+-- Persona parameter relationships: via fields (persona_fields → parameter_fields) and persona_parameter flag
+-- Note: parameter_personas junction table removed - use persona_parameter boolean flag instead
 persona_parameter_relationships AS (
     SELECT DISTINCT
         p.id as persona_id,
@@ -129,15 +130,8 @@ persona_parameter_relationships AS (
     FROM persona_data p
     CROSS JOIN parameters param
     WHERE param.active = true
+    AND param.persona_parameter = true
     AND (
-        -- Direct relationship via parameter_personas
-        EXISTS (
-            SELECT 1 FROM parameter_personas pp
-            WHERE pp.persona_id = p.id
-            AND pp.parameter_id = param.id
-            AND pp.active = true
-        )
-        OR
         -- Indirect relationship via persona_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM persona_fields pf
@@ -147,13 +141,7 @@ persona_parameter_relationships AS (
             AND pf.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no persona restrictions, it's valid for all personas
-        NOT EXISTS (
-            SELECT 1 FROM parameter_personas pp2
-            WHERE pp2.parameter_id = param.id
-            AND pp2.active = true
-        )
+        -- If parameter has persona_parameter flag, it's valid for all personas (no junction table restrictions)
     )
 ),
 persona_parameter_mapping AS (
@@ -283,7 +271,8 @@ document_data AS (
     )
     ORDER BY name
 ),
--- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
+-- Document parameter relationships: via fields (document_fields → parameter_fields) and document_parameter flag
+-- Note: parameter_documents junction table removed - use document_parameter boolean flag instead
 document_parameter_relationships AS (
     SELECT DISTINCT
         d.id as document_id,
@@ -291,15 +280,8 @@ document_parameter_relationships AS (
     FROM document_data d
     CROSS JOIN parameters param
     WHERE param.active = true
+    AND param.document_parameter = true
     AND (
-        -- Direct relationship via parameter_documents
-        EXISTS (
-            SELECT 1 FROM parameter_documents pd
-            WHERE pd.document_id = d.id
-            AND pd.parameter_id = param.id
-            AND pd.active = true
-        )
-        OR
         -- Indirect relationship via document_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM document_fields df
@@ -309,13 +291,7 @@ document_parameter_relationships AS (
             AND df.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no document restrictions, it's valid for all documents
-        NOT EXISTS (
-            SELECT 1 FROM parameter_documents pd2
-            WHERE pd2.parameter_id = param.id
-            AND pd2.active = true
-        )
+        -- If parameter has document_parameter flag, it's valid for all documents (no junction table restrictions)
     )
 ),
 document_mapping_data AS (
@@ -356,8 +332,8 @@ available_scenario_parameters AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter,
+        p.document_parameter,
+        p.persona_parameter,
         p.scenario_parameter,
         p.video_parameter,
         false as numerical
@@ -687,13 +663,9 @@ has_template_documents AS (
             ELSE false
         END as has_templates
 ),
--- Determine expected agent role based on flags
+-- Determine expected agent role - always 'scenario' (variant roles removed)
 expected_agent_role AS (
-    SELECT get_scenario_agent_role(
-        COALESCE($2::boolean, false),
-        COALESCE($3::boolean, false),
-        (SELECT has_templates FROM has_template_documents)
-    ) as role
+    SELECT 'scenario'::agent_role as role
 ),
 default_scenario_agent AS (
     -- Get best scenario agent for the resolved department based on expected role

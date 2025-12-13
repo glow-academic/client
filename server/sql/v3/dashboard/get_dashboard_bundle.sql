@@ -1448,7 +1448,7 @@
                     jsonb_build_object(
                         'name', p.name, 
                         'description', COALESCE(p.description, ''),
-                        'document_parameter', CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END
+                        'document_parameter', p.document_parameter
                     )
                 ), '{}'::jsonb) AS mapping
                 FROM parameters p

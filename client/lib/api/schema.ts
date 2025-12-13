@@ -1275,207 +1275,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/videos/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Videos List
-         * @description Get videos list with all relationships.
-         */
-        post: operations["get_videos_list_api_v3_videos_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Video Detail
-         * @description Get detailed video information.
-         */
-        post: operations["get_video_detail_api_v3_videos_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/new": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Video New
-         * @description Get default video structure for creation mode.
-         */
-        post: operations["get_video_new_api_v3_videos_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Video
-         * @description Create a new video.
-         */
-        post: operations["create_video_api_v3_videos_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Video
-         * @description Update an existing video.
-         */
-        post: operations["update_video_api_v3_videos_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Video
-         * @description Duplicate a video.
-         */
-        post: operations["duplicate_video_api_v3_videos_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Video
-         * @description Delete a video.
-         */
-        post: operations["delete_video_api_v3_videos_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Find Videos
-         * @description 🔎 Find videos by name/description
-         *     -----------------------------------
-         *     Fuzzy, case-insensitive search on video name and description.
-         *     Supports optional department filtering.
-         *
-         *     Input
-         *         • query - Video name or description to search for
-         *         • limit - Max results (default: 200)
-         *         • department_ids - Optional list of department IDs to filter by
-         *
-         *     Returns
-         *         [
-         *             {
-         *                 "id": str,                    # Video UUID
-         *                 "name": str | None,           # Video name/title
-         *                 "description": str | None,    # Video description
-         *                 "length_seconds": int,         # Video length in seconds
-         *                 "department_ids": list[str] | None,  # Department IDs (if any)
-         *                 "score": int                  # Heuristic match score
-         *             },
-         *             ...
-         *         ]
-         */
-        post: operations["find_videos_api_v3_videos_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/randomize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Randomize Video Sections
-         * @description Randomize video attributes (problem statements, objectives, policies).
-         */
-        post: operations["randomize_video_sections_api_v3_videos_randomize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/auth/list": {
         parameters: {
             query?: never;
@@ -5334,7 +5133,7 @@ export interface components {
             personas: components["schemas"]["app__api__v3__attempts__full__PersonaItem"][];
             /** Contenttype */
             contentType?: string | null;
-            video?: components["schemas"]["app__api__v3__attempts__full__VideoItem"] | null;
+            video?: components["schemas"]["VideoItem"] | null;
             quiz?: components["schemas"]["QuizItem"] | null;
         };
         /** ChatItem */
@@ -6298,10 +6097,6 @@ export interface components {
             department_ids: string[] | null;
             /** Field Connections */
             field_connections: components["schemas"]["FieldConnectionCreate"][];
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -6507,11 +6302,6 @@ export interface components {
              */
             documents_enabled: boolean;
             /**
-             * Document Vision Enabled
-             * @default false
-             */
-            document_vision_enabled: boolean;
-            /**
              * Objectives Enabled
              * @default true
              */
@@ -6521,6 +6311,30 @@ export interface components {
              * @default false
              */
             image_enabled: boolean;
+            /**
+             * Video Enabled
+             * @default false
+             */
+            video_enabled: boolean;
+            /**
+             * Questions Enabled
+             * @default false
+             */
+            questions_enabled: boolean;
+            /** Video Agent Id */
+            video_agent_id?: string | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Active Video Id */
+            active_video_id?: string | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Question Timestamps */
+            question_timestamps?: {
+                [key: string]: {
+                    [key: string]: number[];
+                };
+            } | null;
         };
         /**
          * CreateScenarioResponse
@@ -6558,8 +6372,6 @@ export interface components {
             rubric_id: string;
             /** Scenario Ids */
             scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;
-            /** Video Ids */
-            video_ids?: string[] | components["schemas"]["VideoInRequest"][] | null;
             /** Content Items */
             content_items?: components["schemas"]["app__api__v3__simulations__create__ContentItemInRequest"][] | null;
         };
@@ -6630,56 +6442,6 @@ export interface components {
             success: boolean;
             /** Profileid */
             profileId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * CreateVideoRequest
-         * @description Request to create a video.
-         */
-        CreateVideoRequest: {
-            /** Name */
-            name: string;
-            /** Length Seconds */
-            length_seconds?: number | null;
-            /** Upload Id */
-            upload_id?: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Outline Ids */
-            outline_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Upload Ids */
-            upload_ids?: string[] | null;
-            /** Image Names */
-            image_names?: string[] | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /**
-             * Questions
-             * @default []
-             */
-            questions: components["schemas"]["app__api__v3__videos__create__QuestionItem"][];
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-        };
-        /**
-         * CreateVideoResponse
-         * @description Response from create operation.
-         */
-        CreateVideoResponse: {
-            /** Success */
-            success: boolean;
-            /** Videoid */
-            videoId: string;
             /** Message */
             message: string;
         };
@@ -7274,24 +7036,6 @@ export interface components {
             message: string;
         };
         /**
-         * DeleteVideoRequest
-         * @description Request to delete a video.
-         */
-        DeleteVideoRequest: {
-            /** Videoid */
-            videoId: string;
-        };
-        /**
-         * DeleteVideoResponse
-         * @description Response from delete operation.
-         */
-        DeleteVideoResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
          * DepartmentDetailRequest
          * @description Request for department detail.
          */
@@ -7787,26 +7531,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DuplicateVideoRequest
-         * @description Request to duplicate a video.
-         */
-        DuplicateVideoRequest: {
-            /** Videoid */
-            videoId: string;
-        };
-        /**
-         * DuplicateVideoResponse
-         * @description Response from duplicate operation.
-         */
-        DuplicateVideoResponse: {
-            /** Success */
-            success: boolean;
-            /** Videoid */
-            videoId: string;
-            /** Message */
-            message: string;
-        };
         /** DynamicRubric */
         DynamicRubric: {
             /** Chatid */
@@ -8278,21 +8002,6 @@ export interface components {
              * @default 10
              */
             limit: number;
-        };
-        /**
-         * FindVideosRequest
-         * @description Request to search videos.
-         */
-        FindVideosRequest: {
-            /** Query */
-            query: string;
-            /**
-             * Limit
-             * @default 200
-             */
-            limit: number;
-            /** Department Ids */
-            department_ids?: string[] | null;
         };
         /**
          * GenerateCertificateRequest
@@ -10580,7 +10289,7 @@ export interface components {
             sql: string;
         };
         /** QuestionItem */
-        "QuestionItem-Output": {
+        QuestionItem: {
             /** Id */
             id: string;
             /** Questiontext */
@@ -10593,48 +10302,6 @@ export interface components {
             times: number[];
             /** Options */
             options: components["schemas"]["OptionItem"][];
-        };
-        /**
-         * QuestionOption
-         * @description Option for a question.
-         */
-        QuestionOption: {
-            /** Option Text */
-            option_text: string;
-            /** Type */
-            type: string;
-            /** Is Correct */
-            is_correct: boolean;
-        };
-        /**
-         * QuestionOptionResponse
-         * @description Option in question response.
-         */
-        QuestionOptionResponse: {
-            /** Option Id */
-            option_id: string;
-            /** Option Text */
-            option_text: string;
-            /** Type */
-            type: string;
-            /** Is Correct */
-            is_correct: boolean;
-        };
-        /**
-         * QuestionResponse
-         * @description Question in video detail response.
-         */
-        QuestionResponse: {
-            /** Question Id */
-            question_id: string;
-            /** Question Text */
-            question_text: string;
-            /** Allow Multiple */
-            allow_multiple: boolean;
-            /** Times */
-            times: number[];
-            /** Options */
-            options: components["schemas"]["QuestionOptionResponse"][];
         };
         /** QuizItem */
         QuizItem: {
@@ -10709,54 +10376,6 @@ export interface components {
             parameterItemIds: string[];
             /** Childscenarioid */
             childScenarioId?: string | null;
-        };
-        /**
-         * RandomizeVideoRequest
-         * @description Request to randomize video sections.
-         */
-        RandomizeVideoRequest: {
-            /** Videoid */
-            videoId?: string | null;
-            /** Profileid */
-            profileId?: string | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Problemstatementids */
-            problemStatementIds?: string[] | null;
-            /** Objectiveids */
-            objectiveIds?: string[] | null;
-            /** Documentids */
-            documentIds?: string[] | null;
-            /**
-             * Targets
-             * @default []
-             */
-            targets: string[];
-        };
-        /**
-         * RandomizeVideoResponse
-         * @description Response for video randomization.
-         */
-        RandomizeVideoResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /**
-             * Problemstatementids
-             * @default []
-             */
-            problemStatementIds: string[];
-            /**
-             * Objectiveids
-             * @default []
-             */
-            objectiveIds: string[];
-            /**
-             * Documentids
-             * @default []
-             */
-            documentIds: string[];
         };
         /**
          * RandomizedSelections
@@ -13115,10 +12734,6 @@ export interface components {
             department_ids: string[] | null;
             /** Field Connections */
             field_connections: components["schemas"]["FieldConnectionCreate"][];
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -13340,11 +12955,6 @@ export interface components {
              */
             documents_enabled: boolean;
             /**
-             * Document Vision Enabled
-             * @default false
-             */
-            document_vision_enabled: boolean;
-            /**
              * Objectives Enabled
              * @default true
              */
@@ -13354,10 +12964,34 @@ export interface components {
              * @default false
              */
             image_enabled: boolean;
+            /**
+             * Video Enabled
+             * @default false
+             */
+            video_enabled: boolean;
+            /**
+             * Questions Enabled
+             * @default false
+             */
+            questions_enabled: boolean;
             /** Scenario Agent Id */
             scenario_agent_id?: string | null;
             /** Image Agent Id */
             image_agent_id?: string | null;
+            /** Video Agent Id */
+            video_agent_id?: string | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Active Video Id */
+            active_video_id?: string | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Question Timestamps */
+            question_timestamps?: {
+                [key: string]: {
+                    [key: string]: number[];
+                };
+            } | null;
         };
         /**
          * UpdateScenarioResponse
@@ -13479,8 +13113,6 @@ export interface components {
             rubric_id: string;
             /** Scenario Ids */
             scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;
-            /** Video Ids */
-            video_ids?: string[] | components["schemas"]["VideoInRequest"][] | null;
             /** Content Items */
             content_items?: components["schemas"]["app__api__v3__simulations__update__ContentItemInRequest"][] | null;
         };
@@ -13528,57 +13160,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * UpdateVideoRequest
-         * @description Request to update a video.
-         */
-        UpdateVideoRequest: {
-            /** Videoid */
-            videoId: string;
-            /** Name */
-            name: string;
-            /** Length Seconds */
-            length_seconds: number;
-            /** Upload Id */
-            upload_id?: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Outline Ids */
-            outline_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Upload Ids */
-            upload_ids?: string[] | null;
-            /** Image Names */
-            image_names?: string[] | null;
-            /** Active */
-            active: boolean;
-            /**
-             * Questions
-             * @default []
-             */
-            questions: components["schemas"]["app__api__v3__videos__update__QuestionItem"][];
-            /** Outline Agent Id */
-            outline_agent_id?: string | null;
-            /** Image Agent Id */
-            image_agent_id?: string | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-        };
-        /**
-         * UpdateVideoResponse
-         * @description Response from update operation.
-         */
-        UpdateVideoResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -13587,58 +13168,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-        };
-        /**
-         * VideoDetailRequest
-         * @description Request to get video detail.
-         */
-        VideoDetailRequest: {
-            /** Videoid */
-            videoId: string;
-            /** Profileid */
-            profileId: string;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Personaids */
-            personaIds?: string[] | null;
-            /** Documentids */
-            documentIds?: string[] | null;
-            /** Templatedocumentids */
-            templateDocumentIds?: string[] | null;
-            /** Parameterids */
-            parameterIds?: string[] | null;
-            /** Fieldids */
-            fieldIds?: string[] | null;
-            /** Personasearch */
-            personaSearch?: string | null;
-            /** Documentsearch */
-            documentSearch?: string | null;
-            /** Parametersearch */
-            parameterSearch?: string | null;
-            /** Personamin */
-            personaMin?: number | null;
-            /** Personamax */
-            personaMax?: number | null;
-            /** Documentmin */
-            documentMin?: number | null;
-            /** Documentmax */
-            documentMax?: number | null;
-            /** Parameterselectionmin */
-            parameterSelectionMin?: number | null;
-            /** Parameterselectionmax */
-            parameterSelectionMax?: number | null;
-            /** Questionsmin */
-            questionsMin?: number | null;
-            /** Questionsmax */
-            questionsMax?: number | null;
-            /** Fieldranges */
-            fieldRanges?: {
-                [key: string]: {
-                    [key: string]: number;
-                };
-            } | null;
-            /** Randomize */
-            randomize?: string | null;
         };
         /** VideoDocumentItem */
         VideoDocumentItem: {
@@ -13657,142 +13186,22 @@ export interface components {
             /** Uploadid */
             uploadId: string | null;
         };
-        /**
-         * VideoInRequest
-         * @description Video in request format.
-         */
-        VideoInRequest: {
-            /** Video Id */
-            video_id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /**
-         * VideoInSimulation
-         * @description Video with position in simulation.
-         */
-        VideoInSimulation: {
-            /** Video Id */
-            video_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Position */
-            position: number;
-            /** Length Seconds */
-            length_seconds: number;
-            /** Show Problem Statement */
-            show_problem_statement: boolean;
-            /** Show Objectives */
-            show_objectives: boolean;
-            /** Show Image */
-            show_image: boolean;
-            /** Usage Count */
-            usage_count: number;
-            /** Success Rate */
-            success_rate: number;
-            /** Last Used */
-            last_used: string | null;
-            /** Can Remove */
-            can_remove: boolean;
-        };
-        /**
-         * VideoNewRequest
-         * @description Request to get default video details.
-         */
-        VideoNewRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Personaids */
-            personaIds?: string[] | null;
-            /** Documentids */
-            documentIds?: string[] | null;
-            /** Templatedocumentids */
-            templateDocumentIds?: string[] | null;
-            /** Parameterids */
-            parameterIds?: string[] | null;
-            /** Fieldids */
-            fieldIds?: string[] | null;
-            /** Personasearch */
-            personaSearch?: string | null;
-            /** Documentsearch */
-            documentSearch?: string | null;
-            /** Parametersearch */
-            parameterSearch?: string | null;
-            /** Personamin */
-            personaMin?: number | null;
-            /** Personamax */
-            personaMax?: number | null;
-            /** Documentmin */
-            documentMin?: number | null;
-            /** Documentmax */
-            documentMax?: number | null;
-            /** Parameterselectionmin */
-            parameterSelectionMin?: number | null;
-            /** Parameterselectionmax */
-            parameterSelectionMax?: number | null;
-            /** Questionsmin */
-            questionsMin?: number | null;
-            /** Questionsmax */
-            questionsMax?: number | null;
-            /** Fieldranges */
-            fieldRanges?: {
-                [key: string]: {
-                    [key: string]: number;
-                };
-            } | null;
-            /** Randomize */
-            randomize?: string | null;
-        };
-        /**
-         * VideoSearchResult
-         * @description Video search result.
-         */
-        VideoSearchResult: {
+        /** VideoItem */
+        VideoItem: {
             /** Id */
             id: string;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Length Seconds */
-            length_seconds: number;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Score */
-            score: number;
-        };
-        /**
-         * VideosFilters
-         * @description Filters for videos list request.
-         */
-        VideosFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * VideosListResponse
-         * @description Response for videos list endpoint.
-         */
-        VideosListResponse: {
-            /** Videos */
-            videos: components["schemas"]["app__api__v3__videos__list__VideoItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__list__DepartmentMappingItem"];
-            };
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
+            /** Title */
+            title: string;
+            /** Lengthseconds */
+            lengthSeconds: number;
+            /** Uploadid */
+            uploadId: string | null;
+            /** Videodocuments */
+            videoDocuments: components["schemas"]["VideoDocumentItem"][];
+            /** Questions */
+            questions: components["schemas"]["QuestionItem"][];
+            /** Showimage */
+            showImage: boolean;
         };
         /** AgentDetailResponse */
         app__api__v3__agents__detail__AgentDetailResponse: {
@@ -14093,23 +13502,6 @@ export interface components {
             points: number;
             /** Passpoints */
             passPoints: number;
-        };
-        /** VideoItem */
-        app__api__v3__attempts__full__VideoItem: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Lengthseconds */
-            lengthSeconds: number;
-            /** Uploadid */
-            uploadId: string | null;
-            /** Videodocuments */
-            videoDocuments: components["schemas"]["VideoDocumentItem"][];
-            /** Questions */
-            questions: components["schemas"]["QuestionItem-Output"][];
-            /** Showimage */
-            showImage: boolean;
         };
         /**
          * DepartmentMappingItem
@@ -16746,12 +16138,14 @@ export interface components {
             parent_scenario_id: string | null;
             /** Documents Enabled */
             documents_enabled: boolean;
-            /** Document Vision Enabled */
-            document_vision_enabled: boolean;
             /** Objectives Enabled */
             objectives_enabled: boolean;
             /** Image Enabled */
             image_enabled: boolean;
+            /** Video Enabled */
+            video_enabled: boolean;
+            /** Questions Enabled */
+            questions_enabled: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Valid Department Ids */
@@ -16766,6 +16160,16 @@ export interface components {
             valid_document_ids: string[];
             /** Scenario Images */
             scenario_images: {
+                [key: string]: unknown;
+            }[];
+            /** Scenario Videos */
+            scenario_videos: {
+                [key: string]: unknown;
+            }[];
+            /** Question Ids */
+            question_ids: string[];
+            /** Questions */
+            questions: {
                 [key: string]: unknown;
             }[];
             /** Objective Ids */
@@ -16828,6 +16232,8 @@ export interface components {
             scenario_agent_id: string;
             /** Image Agent Id */
             image_agent_id: string;
+            /** Video Agent Id */
+            video_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__scenarios__detail__AgentMappingItem"];
@@ -17144,6 +16550,10 @@ export interface components {
             objectives_enabled: boolean;
             /** Image Input Enabled */
             image_input_enabled: boolean;
+            /** Video Enabled */
+            video_enabled: boolean;
+            /** Questions Enabled */
+            questions_enabled: boolean;
             /** Parent Scenario Id */
             parent_scenario_id: string | null;
             /** Department Ids */
@@ -17166,6 +16576,16 @@ export interface components {
             objectives_history: components["schemas"]["app__api__v3__scenarios__new__ObjectiveWithDepartments"][];
             /** Scenario Images */
             scenario_images: {
+                [key: string]: unknown;
+            }[];
+            /** Scenario Videos */
+            scenario_videos: {
+                [key: string]: unknown;
+            }[];
+            /** Question Ids */
+            question_ids: string[];
+            /** Questions */
+            questions: {
                 [key: string]: unknown;
             }[];
             /** Parameters */
@@ -17222,6 +16642,8 @@ export interface components {
             scenario_agent_id: string;
             /** Image Agent Id */
             image_agent_id: string;
+            /** Video Agent Id */
+            video_agent_id: string;
             /** Agent Mapping */
             agent_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__scenarios__new__AgentMappingItem"];
@@ -17277,7 +16699,7 @@ export interface components {
         };
         /**
          * ContentItemInRequest
-         * @description Unified content item (scenario or video) in request format.
+         * @description Content item (scenario) in request format.
          */
         app__api__v3__simulations__create__ContentItemInRequest: {
             /** Type */
@@ -17517,10 +16939,6 @@ export interface components {
             scenario_ids: string[];
             /** Valid Scenario Ids */
             valid_scenario_ids: string[];
-            /** Video Ids */
-            video_ids: string[];
-            /** Valid Video Ids */
-            valid_video_ids: string[];
             /** Active */
             active: boolean;
             /** Practice Simulation */
@@ -17537,8 +16955,6 @@ export interface components {
             cohort_count: number;
             /** Scenarios */
             scenarios: components["schemas"]["app__api__v3__simulations__detail__ScenarioInSimulation"][];
-            /** Videos */
-            videos: components["schemas"]["VideoInSimulation"][];
             /** Parameters */
             parameters: components["schemas"]["app__api__v3__simulations__detail__ParameterItem"][];
             /** Parameter Items */
@@ -17550,12 +16966,6 @@ export interface components {
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__simulations__detail__ScenarioMappingItem"];
-            };
-            /** Video Mapping */
-            video_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
             };
             /** Rubric Mapping */
             rubric_mapping: {
@@ -17928,7 +17338,7 @@ export interface components {
         };
         /**
          * ContentItemInRequest
-         * @description Unified content item (scenario or video) in request format.
+         * @description Content item (scenario) in request format.
          */
         app__api__v3__simulations__update__ContentItemInRequest: {
             /** Type */
@@ -17962,642 +17372,6 @@ export interface components {
             hint_agent_id?: string | null;
             /** Grade Agent Ids */
             grade_agent_ids?: string[] | null;
-        };
-        /**
-         * QuestionItem
-         * @description Question item in create request.
-         */
-        app__api__v3__videos__create__QuestionItem: {
-            /** Question Text */
-            question_text: string;
-            /**
-             * Allow Multiple
-             * @default false
-             */
-            allow_multiple: boolean;
-            /** Times */
-            times: number[];
-            /** Options */
-            options: components["schemas"]["QuestionOption"][];
-        };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__videos__detail__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles: string[];
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
-         */
-        app__api__v3__videos__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Staff Ids */
-            staff_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-        };
-        /**
-         * DocumentDetailItem
-         * @description Document detail for preview.
-         */
-        app__api__v3__videos__detail__DocumentDetailItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Extension */
-            extension: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Field Ids */
-            field_ids: string[];
-            /**
-             * Is Template
-             * @default false
-             */
-            is_template: boolean;
-        };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item with parameter context.
-         */
-        app__api__v3__videos__detail__FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[] | null;
-        };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item.
-         */
-        app__api__v3__videos__detail__ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-            /**
-             * Scenario Parameter
-             * @default false
-             */
-            scenario_parameter: boolean;
-            /**
-             * Video Parameter
-             * @default false
-             */
-            video_parameter: boolean;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        app__api__v3__videos__detail__PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Example */
-            example?: string | null;
-        };
-        /**
-         * VideoDetailResponse
-         * @description Response for video detail.
-         */
-        app__api__v3__videos__detail__VideoDetailResponse: {
-            /** Name */
-            name: string;
-            /** Length Seconds */
-            length_seconds: number;
-            /** Active */
-            active: boolean;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Video Url */
-            video_url: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Outline Ids */
-            outline_ids: string[];
-            /** Outline Mapping */
-            outline_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Document Ids */
-            document_ids: string[];
-            /** Document Mapping */
-            document_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Document Details */
-            document_details: components["schemas"]["app__api__v3__videos__detail__DocumentDetailItem"][];
-            /** Valid Document Ids */
-            valid_document_ids: string[];
-            /** Video Images */
-            video_images: {
-                [key: string]: unknown;
-            }[];
-            /** Objectives History */
-            objectives_history: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__detail__DepartmentMappingItem"];
-            };
-            /** Questions */
-            questions: components["schemas"]["QuestionResponse"][];
-            /** Outline Agent Id */
-            outline_agent_id: string;
-            /** Image Agent Id */
-            image_agent_id: string;
-            /** Video Agent Id */
-            video_agent_id: string;
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__detail__AgentMappingItem"];
-            };
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__detail__ParameterMappingItem"];
-            };
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__detail__FieldMappingItem"];
-            };
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Video Parameter Ids */
-            video_parameter_ids: string[];
-            /** Valid Parameter Ids */
-            valid_parameter_ids: string[];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__detail__PersonaMappingItem"];
-            };
-            /** Valid Persona Ids */
-            valid_persona_ids: string[];
-            /** Valid Field Ids */
-            valid_field_ids?: string[] | null;
-            /** Valid General Field Ids */
-            valid_general_field_ids?: string[] | null;
-            allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
-            question_count_range: components["schemas"]["RangeMinMax"];
-            randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
-            /**
-             * Randomized
-             * @default false
-             */
-            randomized: boolean;
-            /** Selected Persona Ids */
-            selected_persona_ids?: string[] | null;
-            /** Selected Document Ids */
-            selected_document_ids?: string[] | null;
-            /** Selected Template Document Ids */
-            selected_template_document_ids?: string[] | null;
-            /** Selected Parameter Ids */
-            selected_parameter_ids?: string[] | null;
-            /** Selected Field Ids */
-            selected_field_ids?: string[] | null;
-            /** Persona Search */
-            persona_search?: string | null;
-            /** Document Search */
-            document_search?: string | null;
-            /** Parameter Search */
-            parameter_search?: string | null;
-            /** Persona Min */
-            persona_min?: number | null;
-            /** Persona Max */
-            persona_max?: number | null;
-            /** Document Min */
-            document_min?: number | null;
-            /** Document Max */
-            document_max?: number | null;
-            /** Parameter Selection Min */
-            parameter_selection_min?: number | null;
-            /** Parameter Selection Max */
-            parameter_selection_max?: number | null;
-            /** Field Ranges */
-            field_ranges?: {
-                [key: string]: {
-                    [key: string]: number;
-                };
-            } | null;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__videos__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * VideoItem
-         * @description Individual video item in the response.
-         */
-        app__api__v3__videos__list__VideoItem: {
-            /** Video Id */
-            video_id: string;
-            /** Name */
-            name: string;
-            /** Length Seconds */
-            length_seconds: number;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Updated At */
-            updated_at: string;
-        };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__videos__new__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles: string[];
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
-         */
-        app__api__v3__videos__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Staff Ids */
-            staff_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-        };
-        /**
-         * DocumentDetailItem
-         * @description Document detail for preview.
-         */
-        app__api__v3__videos__new__DocumentDetailItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Extension */
-            extension: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Field Ids */
-            field_ids: string[];
-            /**
-             * Is Template
-             * @default false
-             */
-            is_template: boolean;
-        };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item with parameter context.
-         */
-        app__api__v3__videos__new__FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[] | null;
-        };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item.
-         */
-        app__api__v3__videos__new__ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-            /**
-             * Scenario Parameter
-             * @default false
-             */
-            scenario_parameter: boolean;
-            /**
-             * Video Parameter
-             * @default false
-             */
-            video_parameter: boolean;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        app__api__v3__videos__new__PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Example */
-            example?: string | null;
-        };
-        /**
-         * VideoDetailResponse
-         * @description Response for video detail.
-         */
-        app__api__v3__videos__new__VideoDetailResponse: {
-            /** Name */
-            name: string;
-            /** Length Seconds */
-            length_seconds: number;
-            /** Active */
-            active: boolean;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
-            /** Video Url */
-            video_url: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Outline Ids */
-            outline_ids: string[];
-            /** Outline Mapping */
-            outline_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Document Ids */
-            document_ids: string[];
-            /** Document Mapping */
-            document_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Document Details */
-            document_details: components["schemas"]["app__api__v3__videos__new__DocumentDetailItem"][];
-            /** Valid Document Ids */
-            valid_document_ids: string[];
-            /** Video Images */
-            video_images: {
-                [key: string]: unknown;
-            }[];
-            /** Objectives History */
-            objectives_history: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__new__DepartmentMappingItem"];
-            };
-            /** Questions */
-            questions: components["schemas"]["QuestionResponse"][];
-            /** Outline Agent Id */
-            outline_agent_id: string;
-            /** Image Agent Id */
-            image_agent_id: string;
-            /** Video Agent Id */
-            video_agent_id: string;
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__new__AgentMappingItem"];
-            };
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__new__ParameterMappingItem"];
-            };
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__new__FieldMappingItem"];
-            };
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Video Parameter Ids */
-            video_parameter_ids: string[];
-            /** Valid Parameter Ids */
-            valid_parameter_ids: string[];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__new__PersonaMappingItem"];
-            };
-            /** Valid Persona Ids */
-            valid_persona_ids: string[];
-            /** Valid Field Ids */
-            valid_field_ids?: string[] | null;
-            /** Valid General Field Ids */
-            valid_general_field_ids?: string[] | null;
-            allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
-            question_count_range: components["schemas"]["RangeMinMax"];
-            randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
-            /**
-             * Randomized
-             * @default false
-             */
-            randomized: boolean;
-            /** Selected Persona Ids */
-            selected_persona_ids?: string[] | null;
-            /** Selected Document Ids */
-            selected_document_ids?: string[] | null;
-            /** Selected Template Document Ids */
-            selected_template_document_ids?: string[] | null;
-            /** Selected Parameter Ids */
-            selected_parameter_ids?: string[] | null;
-            /** Selected Field Ids */
-            selected_field_ids?: string[] | null;
-            /** Persona Search */
-            persona_search?: string | null;
-            /** Document Search */
-            document_search?: string | null;
-            /** Parameter Search */
-            parameter_search?: string | null;
-            /** Persona Min */
-            persona_min?: number | null;
-            /** Persona Max */
-            persona_max?: number | null;
-            /** Document Min */
-            document_min?: number | null;
-            /** Document Max */
-            document_max?: number | null;
-            /** Parameter Selection Min */
-            parameter_selection_min?: number | null;
-            /** Parameter Selection Max */
-            parameter_selection_max?: number | null;
-            /** Field Ranges */
-            field_ranges?: {
-                [key: string]: {
-                    [key: string]: number;
-                };
-            } | null;
-        };
-        /**
-         * QuestionItem
-         * @description Question item in update request.
-         */
-        app__api__v3__videos__update__QuestionItem: {
-            /** Question Text */
-            question_text: string;
-            /**
-             * Allow Multiple
-             * @default false
-             */
-            allow_multiple: boolean;
-            /** Times */
-            times: number[];
-            /** Options */
-            options: components["schemas"]["QuestionOption"][];
         };
     };
     responses: never;
@@ -20377,303 +19151,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PersonaResponseTimesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_videos_list_api_v3_videos_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VideosFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideosListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_video_detail_api_v3_videos_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VideoDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v3__videos__detail__VideoDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_video_new_api_v3_videos_new_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VideoNewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v3__videos__new__VideoDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_video_api_v3_videos_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateVideoRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateVideoResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_video_api_v3_videos_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateVideoRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateVideoResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_video_api_v3_videos_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DuplicateVideoRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DuplicateVideoResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_video_api_v3_videos_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteVideoRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteVideoResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    find_videos_api_v3_videos_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FindVideosRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideoSearchResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    randomize_video_sections_api_v3_videos_randomize_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RandomizeVideoRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RandomizeVideoResponse"];
                 };
             };
             /** @description Validation Error */

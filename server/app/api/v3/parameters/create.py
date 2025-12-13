@@ -34,8 +34,6 @@ class CreateParameterRequest(BaseModel):
     video_parameter: bool = False
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     field_connections: list[FieldConnectionCreate]
-    persona_ids: list[str] | None = None  # Optional: link to specific personas
-    document_ids: list[str] | None = None  # Optional: link to specific documents
     profileId: str  # Required for auditing/access control
 
 
@@ -92,8 +90,6 @@ async def create_parameter(
                 request.video_parameter,
                 request.department_ids,  # Parameter-level department_ids
                 field_connections_json,  # JSONB array of field connections
-                request.persona_ids,  # Persona IDs for junction table
-                request.document_ids,  # Document IDs for junction table
                 request.profileId,
             )
             parameter_result = await conn.fetchrow(sql_query, *sql_params)

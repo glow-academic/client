@@ -140,7 +140,10 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
             )
 
             # Check if there's a pending video generation waiting for this image
-            if validated.scenario_id and validated.scenario_id in _pending_video_generations:
+            if (
+                validated.scenario_id
+                and validated.scenario_id in _pending_video_generations
+            ):
                 pending = _pending_video_generations[validated.scenario_id]
                 image_ids = pending.get("image_ids", set())
                 image_ids.add(str(image_id))

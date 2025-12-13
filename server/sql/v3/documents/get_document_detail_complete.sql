@@ -109,20 +109,16 @@ valid_depts AS (
     LEFT JOIN department_parameter_ids dparami ON dparami.department_id = ud.id
 ),
 linked_parameters AS (
-    -- Get parameters linked to this document via parameter_documents junction table
-    SELECT DISTINCT
-        p.id as parameter_id,
-        p.name as parameter_name,
-        p.description as parameter_description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
-    FROM parameter_documents pd
-    JOIN parameters p ON p.id = pd.parameter_id
-    CROSS JOIN document_data dd
-    WHERE pd.document_id = dd.document_id::uuid
-    AND pd.active = true
-    AND p.active = true
+    -- Note: parameter_documents junction table removed - parameters no longer directly linked to documents
+    -- Return empty result since we can't determine which parameters are linked
+    SELECT 
+        NULL::uuid as parameter_id,
+        NULL::text as parameter_name,
+        NULL::text as parameter_description,
+        false as persona_parameter,
+        false as scenario_parameter,
+        false as video_parameter
+    WHERE false
 ),
 parameter_mapping_data AS (
     SELECT COALESCE(

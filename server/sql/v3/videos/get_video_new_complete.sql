@@ -230,7 +230,8 @@ document_data AS (
         AND param.scenario_parameter = true
     )
 ),
--- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
+-- Document parameter relationships: via fields (document_fields → parameter_fields) and document_parameter flag
+-- Note: parameter_documents junction table removed - use document_parameter boolean flag instead
 document_parameter_relationships AS (
     SELECT DISTINCT
         d.id as document_id,
@@ -238,15 +239,8 @@ document_parameter_relationships AS (
     FROM document_data d
     CROSS JOIN parameters param
     WHERE param.active = true
+    AND param.document_parameter = true
     AND (
-        -- Direct relationship via parameter_documents
-        EXISTS (
-            SELECT 1 FROM parameter_documents pd
-            WHERE pd.document_id = d.id
-            AND pd.parameter_id = param.id
-            AND pd.active = true
-        )
-        OR
         -- Indirect relationship via document_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM document_fields df
@@ -256,13 +250,7 @@ document_parameter_relationships AS (
             AND df.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no document restrictions, it's valid for all documents
-        NOT EXISTS (
-            SELECT 1 FROM parameter_documents pd2
-            WHERE pd2.parameter_id = param.id
-            AND pd2.active = true
-        )
+        -- If parameter has document_parameter flag, it's valid for all documents (no junction table restrictions)
     )
 ),
 document_mapping_data AS (
@@ -414,7 +402,7 @@ parameter_data_for_mapping AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        p.document_parameter,
         true as video_parameter  -- p.video_parameter = true is already filtered in WHERE clause
     FROM parameters p
     JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
@@ -431,7 +419,8 @@ parameter_data_for_mapping AS (
     ORDER BY p.name
 ),
 document_parameters_for_video AS (
-    -- Only include parameters linked via parameter_documents that ALSO have video_parameter = true
+    -- Only include parameters with document_parameter flag that ALSO have video_parameter = true
+    -- Note: parameter_documents junction table removed - using document_parameter boolean flag instead
     -- This matches scenario behavior which only includes scenario_parameter = true
     SELECT DISTINCT
         p.id,
@@ -439,8 +428,9 @@ document_parameters_for_video AS (
         COALESCE(p.description, '') as description,
         true as document_parameter,
         true as video_parameter  -- Must have video_parameter = true to be included
-    FROM parameter_documents pd
-    JOIN parameters p ON p.id = pd.parameter_id
+    FROM parameters p
+    WHERE p.document_parameter = true
+    AND p.video_parameter = true
     JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.active = true
     LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
     CROSS JOIN user_departments ud

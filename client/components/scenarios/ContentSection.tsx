@@ -13,7 +13,6 @@ import {
   Loader2,
   MessageSquare,
   PlusCircle,
-  Play,
   RotateCcw,
   Trash2,
   Upload,
@@ -56,7 +55,8 @@ import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
-type PersonaMappingItem = components["schemas"]["app__api__v3__scenarios__detail__PersonaMappingItem"];
+type PersonaMappingItem =
+  components["schemas"]["app__api__v3__scenarios__detail__PersonaMappingItem"];
 
 type StepStatus = "pending" | "active" | "completed";
 
@@ -242,7 +242,10 @@ export interface ContentSectionProps {
   // Videos
   useVideo: boolean;
   selectedVideo: { id: string; name: string; length_seconds: number } | null;
-  videoMapping: Record<string, { id: string; name: string; length_seconds: number }>;
+  videoMapping: Record<
+    string,
+    { id: string; name: string; length_seconds: number }
+  >;
   activeVideoId: string | null;
 
   // Questions
@@ -297,19 +300,23 @@ export interface ContentSectionProps {
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageRemove: () => void;
   onUseVideoChange: (enabled: boolean) => void;
-  onVideoSelect: (video: { id: string; name: string; length_seconds: number } | null) => void;
+  onVideoSelect: (
+    video: { id: string; name: string; length_seconds: number } | null
+  ) => void;
   onUseQuestionsChange: (enabled: boolean) => void;
-  onQuestionsChange: (questions: Array<{
-    id: string;
-    question_text: string;
-    allow_multiple: boolean;
-    options: Array<{
+  onQuestionsChange: (
+    questions: Array<{
       id: string;
-      option_text: string;
-      is_correct: boolean;
-    }>;
-    times?: number[];
-  }>) => void;
+      question_text: string;
+      allow_multiple: boolean;
+      options: Array<{
+        id: string;
+        option_text: string;
+        is_correct: boolean;
+      }>;
+      times?: number[];
+    }>
+  ) => void;
   onScenarioPreviewDocumentChange: (docId: string | null) => void;
   onGenerate: (instructions?: string, regenerateObjectives?: boolean) => void;
   onResetContent: () => void;
@@ -344,10 +351,10 @@ export function ContentSection({
   useVideo,
   selectedVideo,
   videoMapping,
-  activeVideoId,
+  activeVideoId: _activeVideoId,
   useQuestions,
   questions,
-  currentQuestionIds,
+  currentQuestionIds: _currentQuestionIds,
   allPreviewDocumentIds,
   documentMapping,
   scenarioPreviewDocumentId,
@@ -721,27 +728,46 @@ export function ContentSection({
                         }
                       }}
                       getId={(item) => {
-                        const vidItem = item as { id: string; name: string; length_seconds: number };
+                        const vidItem = item as {
+                          id: string;
+                          name: string;
+                          length_seconds: number;
+                        };
                         return vidItem.id;
                       }}
                       getLabel={(item) => {
-                        const vidItem = item as { id: string; name: string; length_seconds: number };
-                        return `${vidItem.name} (${Math.floor(vidItem.length_seconds / 60)}:${String(vidItem.length_seconds % 60).padStart(2, '0')})`;
+                        const vidItem = item as {
+                          id: string;
+                          name: string;
+                          length_seconds: number;
+                        };
+                        return `${vidItem.name} (${Math.floor(vidItem.length_seconds / 60)}:${String(vidItem.length_seconds % 60).padStart(2, "0")})`;
                       }}
                       getSearchText={(item) => {
-                        const vidItem = item as { id: string; name: string; length_seconds: number };
+                        const vidItem = item as {
+                          id: string;
+                          name: string;
+                          length_seconds: number;
+                        };
                         return vidItem.name;
                       }}
                       renderButton={(selectedItems) => {
                         if (selectedItems.length === 0) {
                           return "Select video...";
                         }
-                        const selectedVideoItem =
-                          selectedItems[0] as { id: string; name: string; length_seconds: number };
+                        const selectedVideoItem = selectedItems[0] as {
+                          id: string;
+                          name: string;
+                          length_seconds: number;
+                        };
                         return selectedVideoItem?.name || "Select video...";
                       }}
                       renderItem={(item, isSelected) => {
-                        const vidItem = item as { id: string; name: string; length_seconds: number };
+                        const vidItem = item as {
+                          id: string;
+                          name: string;
+                          length_seconds: number;
+                        };
                         return (
                           <div className="flex flex-col items-start py-3 w-full">
                             <div className="flex items-center justify-between w-full">
@@ -757,7 +783,11 @@ export function ContentSection({
                                 </span>
                               </div>
                               <span className="text-xs text-muted-foreground">
-                                {Math.floor(vidItem.length_seconds / 60)}:{String(vidItem.length_seconds % 60).padStart(2, '0')}
+                                {Math.floor(vidItem.length_seconds / 60)}:
+                                {String(vidItem.length_seconds % 60).padStart(
+                                  2,
+                                  "0"
+                                )}
                               </span>
                             </div>
                           </div>
@@ -778,7 +808,7 @@ export function ContentSection({
                 )}
               </>
             )}
-            
+
             {/* ImagePicker (when image enabled and video not enabled) */}
             {!useVideo && useImage && (
               <>
@@ -866,11 +896,8 @@ export function ContentSection({
                 )}
               </>
             )}
-            
+
             {!useVideo && !useImage && <Label>Preview</Label>}
-              </>
-            )}
-            {!useImage && <Label>Preview</Label>}
 
             {/* Combined Image and Chat Preview Container */}
             <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1">
@@ -1306,14 +1333,22 @@ export function ContentSection({
                             {option.is_correct && (
                               <Check className="h-4 w-4 text-green-600" />
                             )}
-                            <span className="text-sm">{option.option_text}</span>
+                            <span className="text-sm">
+                              {option.option_text}
+                            </span>
                           </div>
                         </div>
                       ))}
                     </div>
                     {question.times && question.times.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-2">
-                        Appears at: {question.times.map(t => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`).join(", ")}
+                        Appears at:{" "}
+                        {question.times
+                          .map(
+                            (t) =>
+                              `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`
+                          )
+                          .join(", ")}
                       </p>
                     )}
                   </CardContent>
@@ -1370,11 +1405,13 @@ export function ContentSection({
             <DialogHeader>
               <DialogTitle>
                 {previewDocumentId
-                  ? (documentMapping[previewDocumentId]?.name ||
-                    (documentDetails?.find(
-                      (d) => d.document_id === previewDocumentId
-                    ) as { name?: string } | undefined)?.name ||
-                    "Document Preview")
+                  ? documentMapping[previewDocumentId]?.name ||
+                    (
+                      documentDetails?.find(
+                        (d) => d.document_id === previewDocumentId
+                      ) as { name?: string } | undefined
+                    )?.name ||
+                    "Document Preview"
                   : "Document Preview"}
               </DialogTitle>
               <DialogDescription>Preview document content</DialogDescription>

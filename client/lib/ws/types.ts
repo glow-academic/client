@@ -155,45 +155,6 @@ export type ServerToClientEvents = {
     message: string;
     trace_id?: string;
   }) => void;
-  video_outline_generation_progress: (payload: {
-    type: string;
-    message?: string;
-    trace_id?: string;
-  }) => void;
-  video_outline_generation_complete: (payload: {
-    success: boolean;
-    message: string;
-    name: string;
-    outline: string;
-    outline_id?: string;
-    video_name?: string;
-    questions?: { question_text: string; allow_multiple: boolean; options: string }[];
-    question_timestamps: Record<string, unknown>;
-    trace_id?: string;
-  }) => void;
-  video_outline_generation_error: (payload: {
-    success: boolean;
-    message: string;
-    trace_id?: string;
-  }) => void;
-  video_generation_progress: (payload: {
-    type: string;
-    message?: string;
-    status?: string;
-    progress?: number;
-    video_id?: string;
-  }) => void;
-  video_generation_complete: (payload: {
-    success: boolean;
-    message: string;
-    videoUrl?: string;
-    videoId?: string;
-  }) => void;
-  video_generation_error: (payload: {
-    success: boolean;
-    message: string;
-    video_id?: string;
-  }) => void;
   document_template_generation_progress: (payload: {
     type: string;
     message?: string;
@@ -238,23 +199,28 @@ export type ServerToClientEvents = {
     trace_id: string;
     message?: string;
   }) => void;
-  questions_tool_complete: (payload: {
+  scenario_video_tool_complete: (payload: {
+    success: boolean;
+    generation_id?: string;
+    video_id?: string;
+    trace_id: string;
+    message?: string;
+  }) => void;
+  scenario_video_tool_error: (payload: {
+    success: boolean;
+    message: string;
+    trace_id: string;
+  }) => void;
+  scenario_questions_tool_complete: (payload: {
     success: boolean;
     question_ids: string[];
     trace_id: string;
     message?: string;
   }) => void;
-  outline_tool_complete: (payload: {
+  scenario_questions_tool_error: (payload: {
     success: boolean;
-    outline_id: string;
+    message: string;
     trace_id: string;
-    message?: string;
-  }) => void;
-  video_tool_complete: (payload: {
-    success: boolean;
-    generation_id?: string;
-    trace_id: string;
-    message?: string;
   }) => void;
   simulation_voice_start_response: (payload: {
     success: boolean;
@@ -305,33 +271,6 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
-  quiz_create_response: (payload: {
-    success: boolean;
-    message: string;
-    quizId?: string;
-  }) => void;
-  quiz_create_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  quiz_submit_response_response: (payload: {
-    success: boolean;
-    message: string;
-    isCorrect: boolean;
-  }) => void;
-  quiz_submit_response_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  quiz_complete_response: (payload: {
-    success: boolean;
-    message: string;
-    allCorrect: boolean;
-  }) => void;
-  quiz_complete_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
 };
 
 export type ClientToServerEvents = {
@@ -346,17 +285,5 @@ export type ClientToServerEvents = {
   simulation_text_end: (payload: {
     chat_id: string;
     chat_type?: string;
-  }) => void;
-  quiz_create: (payload: {
-    attemptId: string;
-    videoId: string;
-  }) => void;
-  quiz_submit_response: (payload: {
-    quizId: string;
-    questionId: string;
-    optionId: string;
-  }) => void;
-  quiz_complete: (payload: {
-    quizId: string;
   }) => void;
 };

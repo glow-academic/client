@@ -154,53 +154,19 @@ profile_data AS (
     FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
-linked_parameters AS (
-    -- Get parameters linked to this persona via parameter_personas junction table
-    SELECT DISTINCT
-        p.id as parameter_id,
-        p.name as parameter_name,
-        p.description as parameter_description,
-    FROM parameter_personas pp
-    JOIN parameters p ON p.id = pp.parameter_id
-    WHERE pp.persona_id = $1
-    AND pp.active = true
-    AND p.active = true
-),
 parameter_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            lp.parameter_id::text,
-            jsonb_build_object(
-                'name', lp.parameter_name,
-                'description', lp.parameter_description,
-                'document_parameter', false,
-                'persona_parameter', true
-            )
-        ),
-        '{}'::jsonb
-    ) as parameter_mapping,
-    array_agg(lp.parameter_id::text ORDER BY lp.parameter_name) as parameter_ids
-    FROM linked_parameters lp
+    -- Note: parameter_personas junction table removed - parameters no longer directly linked to personas
+    -- Return empty mapping since we can't determine which parameters are linked
+    SELECT 
+        '{}'::jsonb as parameter_mapping,
+        ARRAY[]::text[] as parameter_ids
 ),
 field_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            f.id::text,
-            jsonb_build_object(
-                'name', f.name,
-                'description', COALESCE(f.description, ''),
-                'parameter_id', pf.parameter_id::text,
-                'parameter_name', p.name
-            )
-        ),
-        '{}'::jsonb
-    ) as field_mapping,
-    array_agg(f.id::text ORDER BY f.name) as parameter_item_ids
-    FROM linked_parameters lp
-    JOIN parameter_fields pf ON pf.parameter_id = lp.parameter_id AND pf.active = true
-    JOIN fields f ON f.id = pf.field_id AND f.active = true
-    JOIN parameters p ON p.id = pf.parameter_id
-    WHERE p.active = true
+    -- Note: Since parameters are no longer linked to personas, return empty field mapping
+    -- Fields can still be linked to personas via persona_fields junction table
+    SELECT 
+        '{}'::jsonb as field_mapping,
+        ARRAY[]::text[] as parameter_item_ids
 ),
 persona_field_ids AS (
     -- Get field IDs already assigned to this persona (if persona_fields table exists)

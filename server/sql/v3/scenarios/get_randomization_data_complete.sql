@@ -34,8 +34,8 @@ filtered_parameters AS (
         p.id, 
         p.name, 
         p.description, 
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+        p.document_parameter,
+        p.persona_parameter
     FROM parameters p
     JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true

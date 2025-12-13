@@ -32,7 +32,6 @@ export interface ScenarioBasicInfoSectionProps {
   imageAgentId: string | null;
   validAgentIds: string[];
   agentMapping: Record<string, AgentMappingItem>;
-  expectedScenarioRole: string;
   active: boolean;
 
   // Callbacks
@@ -60,7 +59,6 @@ export function ScenarioBasicInfoSection({
   imageAgentId,
   validAgentIds,
   agentMapping,
-  expectedScenarioRole,
   active,
   onNameChange,
   onDepartmentIdsChange,
@@ -74,13 +72,13 @@ export function ScenarioBasicInfoSection({
   activeLabel = "Active",
   activeDescription = "Inactive scenarios will not be available for other simulations",
 }: ScenarioBasicInfoSectionProps) {
-  // Filter agents by computed role based on current flags
+  // Filter agents by 'scenario' role only
   const filteredScenarioAgentIds =
     validAgentIds?.filter((id) => {
       const agent = agentMapping[id];
       const agentRole = agent?.roles?.[0];
-      // Include agents matching expected role OR legacy 'scenario' role (backward compatibility)
-      return agentRole === expectedScenarioRole || agentRole === "scenario";
+      // Include only agents with 'scenario' role
+      return agentRole === "scenario";
     }) || [];
 
   const imageAgentIds =

@@ -65,8 +65,6 @@ async def update_document(
             sql_query = load_sql("sql/v3/documents/update_document_complete.sql")
             # Ensure field_ids is always an array (empty if None)
             field_ids_list = request.field_ids or []
-            # Ensure parameter_ids is always an array (empty if None)
-            param_ids = request.parameter_ids if request.parameter_ids else []
             sql_params = (
                 uuid.UUID(request.documentId),
                 request.name,
@@ -85,7 +83,6 @@ async def update_document(
                 if request.templateUploadId
                 else None,
                 template_args_jsonb,
-                param_ids,
             )
             await conn.execute(sql_query, *sql_params)
 

@@ -109,18 +109,6 @@ user_has_parameter_access AS (
              AND fd.active = true) = 0
     ) as has_access
 ),
-linked_persona_ids AS (
-    SELECT 
-        ARRAY_AGG(pp.persona_id::text ORDER BY pp.created_at) as persona_ids
-    FROM parameter_id_resolved pid
-    JOIN parameter_personas pp ON pp.parameter_id = pid.parameter_id AND pp.active = true
-),
-linked_document_ids AS (
-    SELECT 
-        ARRAY_AGG(pd.document_id::text ORDER BY pd.created_at) as document_ids
-    FROM parameter_id_resolved pid
-    JOIN parameter_documents pd ON pd.parameter_id = pid.parameter_id AND pd.active = true
-),
 parameter_data AS (
     SELECT 
         p.name,
@@ -132,8 +120,8 @@ parameter_data AS (
         p.scenario_parameter,
         p.video_parameter,
         COALESCE(pda.department_ids, NULL) as department_ids,
-        COALESCE(lpi.persona_ids, ARRAY[]::text[]) as persona_ids,
-        COALESCE(ldi.document_ids, ARRAY[]::text[]) as document_ids,
+        ARRAY[]::text[] as persona_ids,
+        ARRAY[]::text[] as document_ids,
         CASE 
             WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
             -- Default parameters (no department_ids) are read-only for non-superadmin
@@ -146,8 +134,6 @@ parameter_data AS (
     JOIN parameters p ON p.id = pid.parameter_id
     LEFT JOIN parameter_departments_aggregated pda ON true
     LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
-    LEFT JOIN linked_persona_ids lpi ON true
-    LEFT JOIN linked_document_ids ldi ON true
     CROSS JOIN user_profile up
 ),
 -- All available fields (not just connected ones)

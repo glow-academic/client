@@ -1961,8 +1961,12 @@ async def get_scenario_new(
 
         # Parse question_ids and questions from SQL result
         question_ids_data = result.get("question_ids") or []
-        question_ids: list[str] = [str(qid) for qid in question_ids_data] if isinstance(question_ids_data, list) else []
-        
+        question_ids: list[str] = (
+            [str(qid) for qid in question_ids_data]
+            if isinstance(question_ids_data, list)
+            else []
+        )
+
         questions_data = parse_jsonb(result.get("questions"))
         questions: list[dict[str, Any]] = []
         if isinstance(questions_data, list):

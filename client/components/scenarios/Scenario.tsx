@@ -467,9 +467,7 @@ export default function Scenario({
     });
   };
 
-  // Wrapper functions for compatibility (matching original mutateAsync signature)
-  const createScenario = handleCreateScenario;
-  const updateScenario = handleUpdateScenario;
+  // Note: Using handleCreateScenario and handleUpdateScenario directly
 
   // Form data state
   const defaultDepartmentIds = useMemo(
@@ -547,7 +545,6 @@ export default function Scenario({
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
   // Documents are always enabled (no switch)
   const useDocuments = true;
-  const documentVisionEnabled = false;
   // Use Image flag - initialized from URL params (DHH-style: URL as source of truth)
   const [useImage, setUseImage] = useState(() => {
     const useImageFromUrl = searchParams.get("useImage");
@@ -1952,7 +1949,6 @@ export default function Scenario({
       const scenarioDataWithFlags = scenarioData as ScenarioDetailOut & {
         documents_enabled?: boolean;
         use_documents?: boolean; // Backward compatibility
-        document_vision_enabled?: boolean;
         objectives_enabled?: boolean;
         image_enabled?: boolean;
         video_enabled?: boolean;
@@ -2346,49 +2342,7 @@ export default function Scenario({
 
   // Problem statement ID is now managed via URL parameters, not state
 
-  // Helper function to compute scenario agent role from flags
-  const getScenarioAgentRole = useCallback(
-    (
-      imageEnabled: boolean,
-      objectivesEnabled: boolean,
-      documentsEnabled: boolean
-    ): string => {
-      // Determine agent role based on flag combinations (matches SQL function logic)
-      if (imageEnabled && objectivesEnabled && documentsEnabled) {
-        return "scenario-image-objectives-templates";
-      } else if (imageEnabled && objectivesEnabled) {
-        return "scenario-image-objectives";
-      } else if (imageEnabled && documentsEnabled) {
-        return "scenario-image-templates";
-      } else if (objectivesEnabled && documentsEnabled) {
-        return "scenario-objectives-templates";
-      } else if (imageEnabled) {
-        return "scenario-image";
-      } else if (objectivesEnabled) {
-        return "scenario-objectives";
-      } else if (documentsEnabled) {
-        return "scenario-templates";
-      } else {
-        return "scenario"; // Base scenario (no special features)
-      }
-    },
-    []
-  );
-
-  // Compute expected agent role from current flags
-  const expectedScenarioRole = useMemo(() => {
-    const documentsEnabled = currentDocumentIds.length > 0;
-    return getScenarioAgentRole(
-      useImage,
-      currentObjectives.length > 0,
-      documentsEnabled
-    );
-  }, [
-    useImage,
-    currentObjectives.length,
-    currentDocumentIds,
-    getScenarioAgentRole,
-  ]);
+  // Note: getScenarioAgentRole and expectedScenarioRole removed - scenarios now always use base 'scenario' role
 
   // Reset initialization flag when switching between edit/create modes or scenario changes
   useEffect(() => {
@@ -2402,25 +2356,15 @@ export default function Scenario({
     const agent = agentMapping[formData.scenarioAgentId];
     const agentRole = agent?.roles?.[0]; // Get first role (should be only one)
 
-    // If current agent doesn't match expected role, clear selection
-    if (
-      agentRole &&
-      agentRole !== expectedScenarioRole &&
-      agentRole !== "scenario"
-    ) {
-      // Only clear if it's not the legacy 'scenario' role (backward compatibility)
+    // If current agent doesn't match 'scenario' role, clear selection
+    if (agentRole && agentRole !== "scenario") {
       setFormData((prev) => ({
         ...prev,
         scenarioAgentId: null,
         videoAgentId: null,
       }));
     }
-  }, [
-    expectedScenarioRole,
-    scenarioData,
-    agentMapping,
-    formData.scenarioAgentId,
-  ]);
+  }, [scenarioData, agentMapping, formData.scenarioAgentId]);
 
   // Auto-select agents when there's only one option (similar to Document.tsx)
   useEffect(() => {
@@ -2430,8 +2374,8 @@ export default function Scenario({
       scenarioData.valid_agent_ids?.filter((id) => {
         const agent = agentMapping[id];
         const agentRole = agent?.roles?.[0];
-        // Filter by expected role OR legacy 'scenario' role (backward compatibility)
-        return agentRole === expectedScenarioRole || agentRole === "scenario";
+        // Filter by 'scenario' role only
+        return agentRole === "scenario";
       }) || [];
 
     const imageAgentIds =
@@ -2474,7 +2418,6 @@ export default function Scenario({
     formData.scenarioAgentId,
     formData.imageAgentId,
     formData.videoAgentId,
-    expectedScenarioRole,
   ]);
 
   // Check if form has changes
@@ -3423,16 +3366,15 @@ export default function Scenario({
       if (isEditMode) {
         // UPDATE mode - V2 handles all junction tables automatically
         try {
-          await updateScenario({
+          await handleUpdateScenario({
             scenarioId: scenarioId!,
             ...payload,
             documents_enabled: useDocuments,
-            document_vision_enabled: documentVisionEnabled,
             objectives_enabled: currentObjectives.length > 0,
             image_enabled: useImage,
             video_enabled: useVideo,
             questions_enabled: useQuestions,
-          } as unknown as UpdateScenarioIn);
+          });
           toast.success("Scenario updated successfully!");
           router.push("/create/scenarios");
         } catch (error) {
@@ -3444,15 +3386,14 @@ export default function Scenario({
       } else {
         // CREATE mode - V2 handles all junction tables automatically
         try {
-          await createScenario({
+          await handleCreateScenario({
             ...payload,
             documents_enabled: useDocuments,
-            document_vision_enabled: documentVisionEnabled,
             objectives_enabled: currentObjectives.length > 0,
             image_enabled: useImage,
             video_enabled: useVideo,
             questions_enabled: useQuestions,
-          } as unknown as CreateScenarioIn);
+          });
           // Clear local versions after successful creation
           setLocalProblemStatementVersions([]);
           toast.success("Scenario created successfully!");
@@ -3554,7 +3495,6 @@ export default function Scenario({
           imageAgentId={formData.imageAgentId}
           validAgentIds={scenarioData?.valid_agent_ids || []}
           agentMapping={agentMapping}
-          expectedScenarioRole={expectedScenarioRole}
           active={formData.active ?? true}
           onNameChange={(name) => handleInputChange("name", name)}
           onDepartmentIdsChange={(ids) =>

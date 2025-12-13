@@ -64,8 +64,6 @@ interface FormData {
   scenario_parameter?: boolean;
   video_parameter?: boolean;
   departmentIds?: string[] | null;
-  personaIds?: string[];
-  documentIds?: string[];
 }
 
 interface FieldConnectionState {
@@ -121,8 +119,6 @@ export default function Parameter({
       video_parameter: false,
       departmentIds:
         defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
-      personaIds: [],
-      documentIds: [],
     }),
     [defaultDepartmentIds]
   );
@@ -238,39 +234,6 @@ export default function Parameter({
   ]);
 
   // Filter personas and documents by selected departments
-  const filteredPersonaIds = useMemo(() => {
-    const allPersonaIds = parameterData?.valid_persona_ids || [];
-    // Server already filters by parameter departments, so we can use all valid IDs
-    return allPersonaIds;
-  }, [parameterData?.valid_persona_ids]);
-
-  const filteredDocumentIds = useMemo(() => {
-    const allDocumentIds = parameterData?.valid_document_ids || [];
-    // Server already filters by parameter departments
-    return allDocumentIds;
-  }, [parameterData?.valid_document_ids]);
-
-  const filteredPersonaMapping = useMemo(() => {
-    const mapping = parameterData?.persona_mapping || {};
-    const filtered: Record<string, Record<string, unknown>> = {};
-    filteredPersonaIds.forEach((id) => {
-      if (mapping[id]) {
-        filtered[id] = mapping[id] as Record<string, unknown>;
-      }
-    });
-    return filtered;
-  }, [parameterData?.persona_mapping, filteredPersonaIds]);
-
-  const filteredDocumentMapping = useMemo(() => {
-    const mapping = parameterData?.document_mapping || {};
-    const filtered: Record<string, Record<string, unknown>> = {};
-    filteredDocumentIds.forEach((id) => {
-      if (mapping[id]) {
-        filtered[id] = mapping[id] as Record<string, unknown>;
-      }
-    });
-    return filtered;
-  }, [parameterData?.document_mapping, filteredDocumentIds]);
 
   const [initiallySorted, setInitiallySorted] = useState(false);
 
@@ -287,8 +250,6 @@ export default function Parameter({
         scenario_parameter: parameterData.scenario_parameter ?? false,
         video_parameter: parameterData.video_parameter ?? false,
         departmentIds: parameterData.department_ids || null,
-        personaIds: parameterData.persona_ids || [],
-        documentIds: parameterData.document_ids || [],
       });
     } else if (!isEditMode && parameterData) {
       // For create mode, use data from default detail endpoint
@@ -461,14 +422,6 @@ export default function Parameter({
           video_parameter: formData.video_parameter || false,
           department_ids: formData.departmentIds ?? null,
           field_connections: fieldConnectionsToSubmit,
-          persona_ids:
-            formData.personaIds && formData.personaIds.length > 0
-              ? formData.personaIds
-              : null,
-          document_ids:
-            formData.documentIds && formData.documentIds.length > 0
-              ? formData.documentIds
-              : null,
           profileId,
         });
 
@@ -486,14 +439,6 @@ export default function Parameter({
           video_parameter: formData.video_parameter || false,
           department_ids: formData.departmentIds ?? null,
           field_connections: fieldConnectionsToSubmit,
-          persona_ids:
-            formData.personaIds && formData.personaIds.length > 0
-              ? formData.personaIds
-              : null,
-          document_ids:
-            formData.documentIds && formData.documentIds.length > 0
-              ? formData.documentIds
-              : null,
           profileId,
         });
 
@@ -909,203 +854,6 @@ export default function Parameter({
               </>
             ) : null}
 
-            {/* Show Persona Picker when persona_parameter is true */}
-            {formData?.persona_parameter === true &&
-              parameterData?.persona_mapping && (
-                <div className="space-y-2 pt-2 pl-4 border-l-2 border-muted">
-                  <Label>Link to Personas</Label>
-                  {formData?.personaIds !== undefined ? (
-                    <GenericPicker
-                      items={
-                        filteredPersonaMapping as Record<
-                          string,
-                          {
-                            name: string;
-                            description: string;
-                            color: string;
-                            icon: string;
-                            image_model?: boolean | null;
-                          }
-                        >
-                      }
-                      itemIds={filteredPersonaIds}
-                      selectedIds={formData.personaIds}
-                      onSelect={(ids) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          personaIds: ids,
-                        }))
-                      }
-                      getId={(persona) =>
-                        (persona as unknown as { id: string }).id
-                      }
-                      getLabel={(persona) => persona.name || ""}
-                      getSearchText={(persona) =>
-                        `${persona.name} ${persona.description || ""}`
-                      }
-                      renderItem={(persona, isSelected) => {
-                        const IconComponent =
-                          getPersonaIconComponent(persona.icon) || Brain;
-                        const hexColor = persona.color || "#64748b";
-                        const generateGradient = (hex: string) => {
-                          const cleanHex = hex.replace("#", "");
-                          const r = parseInt(cleanHex.substr(0, 2), 16);
-                          const g = parseInt(cleanHex.substr(2, 2), 16);
-                          const b = parseInt(cleanHex.substr(4, 2), 16);
-                          const lighterR = Math.min(255, r + 60);
-                          const lighterG = Math.min(255, g + 60);
-                          const lighterB = Math.min(255, b + 60);
-                          const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                          return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                        };
-                        return (
-                          <div className="flex items-center gap-3 w-full">
-                            <div
-                              className="p-2 rounded-lg shadow-lg flex-shrink-0"
-                              style={{
-                                background: generateGradient(hexColor),
-                              }}
-                            >
-                              <IconComponent className="h-4 w-4 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">
-                                {persona.name}
-                              </div>
-                              {persona.description && (
-                                <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {persona.description}
-                                </div>
-                              )}
-                            </div>
-                            <Check
-                              className={cn(
-                                "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                          </div>
-                        );
-                      }}
-                      renderButton={(selectedItems) => {
-                        if (selectedItems.length === 0) return "Select persona";
-                        if (selectedItems.length === 1) {
-                          const persona = selectedItems[0];
-                          const IconComponent =
-                            (persona?.icon ? getPersonaIconComponent(persona.icon) : null) || Brain;
-                          const hexColor = persona?.color || "#64748b";
-                          const generateGradient = (hex: string) => {
-                            const cleanHex = hex.replace("#", "");
-                            const r = parseInt(cleanHex.substr(0, 2), 16);
-                            const g = parseInt(cleanHex.substr(2, 2), 16);
-                            const b = parseInt(cleanHex.substr(4, 2), 16);
-                            const lighterR = Math.min(255, r + 60);
-                            const lighterG = Math.min(255, g + 60);
-                            const lighterB = Math.min(255, b + 60);
-                            const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                            return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                          };
-                          return (
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <div
-                                className="p-1 rounded-md shadow-sm flex-shrink-0"
-                                style={{
-                                  background: generateGradient(hexColor),
-                                }}
-                              >
-                                <IconComponent className="h-3.5 w-3.5 text-white" />
-                              </div>
-                              <span className="truncate">
-                                {persona?.name || "Select persona"}
-                              </span>
-                            </div>
-                          );
-                        }
-                        return `${selectedItems.length} selected`;
-                      }}
-                      renderChip={(persona, onRemove) => (
-                        <div
-                          key={(persona as unknown as { id: string }).id}
-                          className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
-                        >
-                          <span className="truncate">{persona.name}</span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRemove();
-                            }}
-                            className="text-muted-foreground hover:text-destructive flex-shrink-0"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      )}
-                      placeholder="Select personas..."
-                      multiSelect={true}
-                      hideSelectedChips={false}
-                      disabled={
-                        !!(
-                          isEditMode &&
-                          parameterDetail &&
-                          !parameterDetail.can_edit
-                        )
-                      }
-                      buttonClassName="w-full"
-                      groupHeading="Personas"
-                    />
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">
-                    Select which personas this parameter applies to (filtered by
-                    selected departments)
-                  </p>
-                </div>
-              )}
-
-            {/* Show Document Picker when document_parameter is true */}
-            {formData?.document_parameter === true &&
-              parameterData?.document_mapping && (
-                <div className="space-y-2 pt-2 pl-4 border-l-2 border-muted">
-                  <Label>Link to Documents</Label>
-                  {formData?.documentIds !== undefined ? (
-                    <DocumentPicker
-                      mapping={
-                        filteredDocumentMapping as Record<
-                          string,
-                          {
-                            name: string;
-                            description: string;
-                            tags?: string[];
-                            filePath?: string;
-                            mimeType?: string;
-                          }
-                        >
-                      }
-                      validIds={filteredDocumentIds}
-                      selectedIds={formData.documentIds}
-                      onSelect={(ids) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          documentIds: ids,
-                        }))
-                      }
-                      placeholder="Select documents..."
-                      multiSelect={true}
-                      disabled={
-                        !!(
-                          isEditMode &&
-                          parameterDetail &&
-                          !parameterDetail.can_edit
-                        )
-                      }
-                    />
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">
-                    Select which documents this parameter applies to (filtered
-                    by selected departments)
-                  </p>
-                </div>
-              )}
           </div>
 
           {/* Field Connections Section */}
@@ -1167,8 +915,6 @@ export default function Parameter({
                         parameterData?.scenario_parameter ?? false,
                       video_parameter: parameterData?.video_parameter ?? false,
                       departmentIds: parameterData?.department_ids,
-                      personaIds: parameterData?.persona_ids || [],
-                      documentIds: parameterData?.document_ids || [],
                     }) &&
                   JSON.stringify(fieldConnections) ===
                     JSON.stringify(originalFieldConnections))

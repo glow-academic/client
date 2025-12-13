@@ -401,8 +401,8 @@ parameter_data AS (
         par.id,
         par.name,
         COALESCE(par.description, '') as description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = par.id AND pd.active = true) THEN true ELSE false END as document_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = par.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+        par.document_parameter,
+        par.persona_parameter
     FROM parameters par
     JOIN parameter_fields fp ON fp.parameter_id = par.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true

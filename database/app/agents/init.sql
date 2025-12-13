@@ -253,18 +253,7 @@ CREATE INDEX ON objective_runs (objective_id);
 CREATE INDEX ON objective_runs (run_id);
 CREATE INDEX ON objective_runs (run_id, created_at);
 
--- Outline → Runs junction table
-CREATE TABLE outline_runs (
-  outline_id UUID NOT NULL REFERENCES outlines(id) ON DELETE CASCADE,
-  run_id     UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (outline_id, run_id)
-);
-
-CREATE INDEX ON outline_runs (outline_id);
-CREATE INDEX ON outline_runs (run_id);
-CREATE INDEX ON outline_runs (run_id, created_at);
+-- Note: outline_runs table removed in migration 90 (outlines feature deprecated)
 
 -- Image → Runs junction table
 CREATE TABLE image_runs (

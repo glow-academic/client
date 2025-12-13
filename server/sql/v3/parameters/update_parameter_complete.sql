@@ -1,5 +1,5 @@
 -- Update parameter with field connections and department links in a single transaction
--- Parameters: $1=parameterId, $2=name, $3=description, $4=active, $5=simulation_parameter, $6=document_parameter, $7=persona_parameter, $8=scenario_parameter, $9=video_parameter, $10=parameter_level_department_ids (text array, nullable), $11=field_connections_json (jsonb array), $12=persona_ids (text array, nullable), $13=document_ids (text array, nullable), $14=profile_id (uuid or "guest-profile-id")
+-- Parameters: $1=parameterId, $2=name, $3=description, $4=active, $5=simulation_parameter, $6=document_parameter, $7=persona_parameter, $8=scenario_parameter, $9=video_parameter, $10=parameter_level_department_ids (text array, nullable), $11=field_connections_json (jsonb array), $12=profile_id (uuid or "guest-profile-id")
 -- field_connections_json format: [{"field_id": "uuid", "default": true/false, "active": true/false}, ...]
 -- Exactly one field connection must have default=true
 WITH resolve_guest_profile AS (
@@ -11,7 +11,7 @@ WITH resolve_guest_profile AS (
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
              JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $14::uuid AND sdg.active = true
+             WHERE pd.profile_id = $12::uuid AND sdg.active = true
              LIMIT 1),
             -- Fallback to default (active) settings guest profile
             (SELECT sdg.profile_id FROM settings_default_guest sdg
@@ -23,10 +23,10 @@ WITH resolve_guest_profile AS (
 resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $14::text = 'guest-profile-id' THEN
+            WHEN $12::text = 'guest-profile-id' THEN
                 (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $14::text IS NULL OR $14::text = '' THEN NULL::uuid
-            ELSE $14::uuid
+            WHEN $12::text IS NULL OR $12::text = '' THEN NULL::uuid
+            ELSE $12::uuid
         END as resolved_profile_id
 ),
 update_parameter AS (
@@ -122,48 +122,6 @@ link_parameter_departments AS (
     ON CONFLICT (parameter_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
-),
-delete_existing_parameter_personas AS (
-    -- Soft delete all existing parameter_personas links
-    UPDATE parameter_personas 
-    SET active = false, updated_at = NOW()
-    WHERE parameter_id = $1::uuid
-),
-link_parameter_personas AS (
-    -- Link personas to parameter if provided
-    INSERT INTO parameter_personas (parameter_id, persona_id, active, created_at, updated_at)
-    SELECT 
-        $1::uuid,
-        persona_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM UNNEST($12::text[]) as persona_id
-    WHERE $12::text[] IS NOT NULL AND array_length($12::text[], 1) > 0
-    ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-),
-delete_existing_parameter_documents AS (
-    -- Soft delete all existing parameter_documents links
-    UPDATE parameter_documents 
-    SET active = false, updated_at = NOW()
-    WHERE parameter_id = $1::uuid
-),
-link_parameter_documents AS (
-    -- Link documents to parameter if provided
-    INSERT INTO parameter_documents (parameter_id, document_id, active, created_at, updated_at)
-    SELECT 
-        $1::uuid,
-        document_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM UNNEST($13::text[]) as document_id
-    WHERE $13::text[] IS NOT NULL AND array_length($13::text[], 1) > 0
-    ON CONFLICT (parameter_id, document_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-),
+    ),
 SELECT parameter_id FROM update_parameter
 

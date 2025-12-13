@@ -149,7 +149,6 @@ scenario_core AS (
         st.parent_id::text as parent_scenario_id,
         COALESCE(sdd.department_ids, NULL) as department_ids,
         s.documents_enabled,
-        s.document_vision_enabled,
         s.objectives_enabled,
         s.image_enabled,
         s.video_enabled,
@@ -407,7 +406,8 @@ persona_data AS (
     LEFT JOIN image_model_check imc2 ON imc2.model_id = m2.id
     WHERE p2.active = true
 ),
--- Persona parameter relationships: direct (parameter_personas) and via fields (persona_fields → parameter_fields)
+-- Persona parameter relationships: via fields (persona_fields → parameter_fields) and persona_parameter flag
+-- Note: parameter_personas junction table removed - use persona_parameter boolean flag instead
 persona_parameter_relationships AS (
     SELECT DISTINCT
         p.id as persona_id,
@@ -415,15 +415,8 @@ persona_parameter_relationships AS (
     FROM persona_data p
     CROSS JOIN parameters param
     WHERE param.active = true
+    AND param.persona_parameter = true
     AND (
-        -- Direct relationship via parameter_personas
-        EXISTS (
-            SELECT 1 FROM parameter_personas pp
-            WHERE pp.persona_id = p.id
-            AND pp.parameter_id = param.id
-            AND pp.active = true
-        )
-        OR
         -- Indirect relationship via persona_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM persona_fields pf
@@ -433,13 +426,7 @@ persona_parameter_relationships AS (
             AND pf.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no persona restrictions, it's valid for all personas
-        NOT EXISTS (
-            SELECT 1 FROM parameter_personas pp2
-            WHERE pp2.parameter_id = param.id
-            AND pp2.active = true
-        )
+        -- If parameter has persona_parameter flag, it's valid for all personas (no junction table restrictions)
     )
 ),
 persona_examples_data AS (
@@ -560,7 +547,8 @@ document_data AS (
         AND param.video_parameter = true
     )
 ),
--- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
+-- Document parameter relationships: via fields (document_fields → parameter_fields) and document_parameter flag
+-- Note: parameter_documents junction table removed - use document_parameter boolean flag instead
 document_parameter_relationships AS (
     SELECT DISTINCT
         d.id as document_id,
@@ -568,15 +556,8 @@ document_parameter_relationships AS (
     FROM document_data d
     CROSS JOIN parameters param
     WHERE param.active = true
+    AND param.document_parameter = true
     AND (
-        -- Direct relationship via parameter_documents
-        EXISTS (
-            SELECT 1 FROM parameter_documents pd
-            WHERE pd.document_id = d.id
-            AND pd.parameter_id = param.id
-            AND pd.active = true
-        )
-        OR
         -- Indirect relationship via document_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM document_fields df
@@ -586,13 +567,7 @@ document_parameter_relationships AS (
             AND df.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no document restrictions, it's valid for all documents
-        NOT EXISTS (
-            SELECT 1 FROM parameter_documents pd2
-            WHERE pd2.parameter_id = param.id
-            AND pd2.active = true
-        )
+        -- If parameter has document_parameter flag, it's valid for all documents (no junction table restrictions)
     )
 ),
 valid_documents_data AS (
@@ -765,8 +740,8 @@ linked_scenario_parameters AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+        p.document_parameter,
+        p.persona_parameter
     FROM scenario_parameters sp
     JOIN parameters p ON p.id = sp.parameter_id
     WHERE sp.scenario_id = $1
@@ -778,8 +753,8 @@ parameter_data_for_mapping AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+        p.document_parameter,
+        p.persona_parameter
     FROM parameters p
     JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
     LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
@@ -1161,11 +1136,7 @@ has_template_documents AS (
 ),
 -- Determine expected agent role based on flags
 expected_agent_role AS (
-    SELECT get_scenario_agent_role(
-        COALESCE($3::boolean, false),
-        COALESCE($4::boolean, false),
-        (SELECT has_templates FROM has_template_documents)
-    ) as role
+    SELECT 'scenario'::agent_role as role
 ),
 valid_agents AS (
     -- Filter agents by department access and expected role

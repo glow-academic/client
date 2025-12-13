@@ -31,7 +31,6 @@ class UpdateScenarioRequest(BaseModel):
     image_names: list[str] | None = None
     parameters: dict[str, list[str]]
     documents_enabled: bool = False
-    document_vision_enabled: bool = False
     objectives_enabled: bool = True
     image_enabled: bool = False
     video_enabled: bool = False
@@ -155,7 +154,11 @@ async def update_scenario(
         video_ids = request.video_ids or []
         active_video_id = request.active_video_id
         question_ids = request.question_ids or []
-        question_timestamps_json = json.dumps(request.question_timestamps) if request.question_timestamps else None
+        question_timestamps_json = (
+            json.dumps(request.question_timestamps)
+            if request.question_timestamps
+            else None
+        )
 
         # Validate video_agent_id is provided if video_enabled
         if request.video_enabled and not request.video_agent_id:
@@ -168,7 +171,6 @@ async def update_scenario(
             request.name,
             request.active,
             request.documents_enabled,
-            request.document_vision_enabled,
             request.objectives_enabled,
             request.image_enabled,
             request.video_enabled,

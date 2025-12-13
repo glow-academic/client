@@ -130,19 +130,15 @@ primary_department_id AS (
     LIMIT 1
 ),
 available_parameters AS (
-    -- Get all parameters that could be linked to personas (via parameter_personas)
-    -- For new personas, show all active parameters
+    -- Get all parameters that could be linked to personas
+    -- Note: parameter_personas junction table removed - show all active parameters with persona_parameter flag
     SELECT DISTINCT
         p.id as parameter_id,
         p.name as parameter_name,
         p.description as parameter_description
     FROM parameters p
     WHERE p.active = true
-    AND EXISTS (
-        SELECT 1 FROM parameter_personas pp 
-        WHERE pp.parameter_id = p.id 
-        AND pp.active = true
-    )
+    AND p.persona_parameter = true
 ),
 parameter_mapping_data AS (
     SELECT COALESCE(

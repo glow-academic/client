@@ -87,7 +87,6 @@ async def create_document(
             if request_body.templateUploadId
             else None,
             template_args_jsonb,
-            param_ids,
         )
 
         await conn.execute(sql_query, *sql_params)

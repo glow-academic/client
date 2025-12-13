@@ -1,5 +1,5 @@
 -- Update persona with agents and department links in a single transaction
--- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=text_agent_id (nullable), $9=voice_agent_id (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id"), $12=parameter_ids (nullable text array), $13=example_ids (nullable text array)
+-- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=text_agent_id (nullable), $9=voice_agent_id (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id"), $12=example_ids (nullable text array)
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 

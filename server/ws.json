@@ -17,24 +17,6 @@
         "chat_id": "string",
         "chat_type": "?string"
       }
-    },
-    "quiz_create": {
-      "payload": {
-        "attemptId": "string",
-        "videoId": "string"
-      }
-    },
-    "quiz_submit_response": {
-      "payload": {
-        "quizId": "string",
-        "questionId": "string",
-        "optionId": "string"
-      }
-    },
-    "quiz_complete": {
-      "payload": {
-        "quizId": "string"
-      }
     }
   },
   "serverToClient": {
@@ -239,57 +221,6 @@
         "trace_id": "?string"
       }
     },
-    "video_outline_generation_progress": {
-      "payload": {
-        "type": "string",
-        "message": "?string",
-        "trace_id": "?string"
-      }
-    },
-    "video_outline_generation_complete": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "name": "string",
-        "outline": "string",
-        "outline_id": "?string",
-        "video_name": "?string",
-        "questions": "?object{question_text:string,allow_multiple:boolean,options:string}[]",
-        "question_timestamps": "object",
-        "trace_id": "?string"
-      }
-    },
-    "video_outline_generation_error": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "trace_id": "?string"
-      }
-    },
-    "video_generation_progress": {
-      "payload": {
-        "type": "string",
-        "message": "?string",
-        "status": "?string",
-        "progress": "?number",
-        "video_id": "?string"
-      }
-    },
-    "video_generation_complete": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "videoUrl": "?string",
-        "videoId": "?string"
-      }
-    },
-    "video_generation_error": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "video_id": "?string"
-      }
-    },
     "document_template_generation_progress": {
       "payload": {
         "type": "string",
@@ -348,7 +279,23 @@
         "message": "?string"
       }
     },
-    "questions_tool_complete": {
+    "scenario_video_tool_complete": {
+      "payload": {
+        "success": "boolean",
+        "generation_id": "?string",
+        "video_id": "?string",
+        "trace_id": "string",
+        "message": "?string"
+      }
+    },
+    "scenario_video_tool_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string",
+        "trace_id": "string"
+      }
+    },
+    "scenario_questions_tool_complete": {
       "payload": {
         "success": "boolean",
         "question_ids": "string[]",
@@ -356,20 +303,11 @@
         "message": "?string"
       }
     },
-    "outline_tool_complete": {
+    "scenario_questions_tool_error": {
       "payload": {
         "success": "boolean",
-        "outline_id": "string",
-        "trace_id": "string",
-        "message": "?string"
-      }
-    },
-    "video_tool_complete": {
-      "payload": {
-        "success": "boolean",
-        "generation_id": "?string",
-        "trace_id": "string",
-        "message": "?string"
+        "message": "string",
+        "trace_id": "string"
       }
     },
     "simulation_voice_start_response": {
@@ -434,45 +372,6 @@
       }
     },
     "voice_tool_call_error": {
-      "payload": {
-        "success": "boolean",
-        "message": "string"
-      }
-    },
-    "quiz_create_response": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "quizId": "?string"
-      }
-    },
-    "quiz_create_error": {
-      "payload": {
-        "success": "boolean",
-        "message": "string"
-      }
-    },
-    "quiz_submit_response_response": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "isCorrect": "boolean"
-      }
-    },
-    "quiz_submit_response_error": {
-      "payload": {
-        "success": "boolean",
-        "message": "string"
-      }
-    },
-    "quiz_complete_response": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "allCorrect": "boolean"
-      }
-    },
-    "quiz_complete_error": {
       "payload": {
         "success": "boolean",
         "message": "string"

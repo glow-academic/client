@@ -539,7 +539,6 @@ from app.socket.images.generate import generate_image  # noqa: F401
 
 # Import log module to register internal_sio handler
 from app.socket.log import log_run  # noqa: F401
-from app.socket.quizzes.complete import quiz_complete  # noqa: E402; type: ignore
 
 # Import quiz handlers
 # Note: Quiz events removed - questions now handled through scenarios
@@ -549,9 +548,13 @@ from app.socket.scenarios.generate import generate_scenario  # noqa: E402; type:
 from app.socket.scenarios.tools.document import scenario_tool_document  # noqa: F401
 from app.socket.scenarios.tools.image import scenario_tool_image  # noqa: F401
 from app.socket.scenarios.tools.objectives import scenario_tool_objectives  # noqa: F401
+from app.socket.scenarios.tools.questions import scenario_tool_questions  # noqa: F401
 from app.socket.scenarios.tools.statement import (
     scenario_tool_problem_statement,  # noqa: F401
 )
+
+# Import scenario tools to register internal_sio handlers
+from app.socket.scenarios.tools.video import scenario_tool_video  # noqa: F401
 from app.socket.simulations import (
     simulation_join,  # type: ignore
     simulation_leave,
@@ -607,9 +610,6 @@ from app.socket.simulations.voice.user.text import (
 from app.socket.simulations.voice.user.transcript import (
     simulation_voice_user_transcript,
 )  # noqa: E402; type: ignore
-# Import scenario tools to register internal_sio handlers
-from app.socket.scenarios.tools.video import scenario_tool_video  # noqa: F401
-from app.socket.scenarios.tools.questions import scenario_tool_questions  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
@@ -1290,15 +1290,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             document_template_generation_error,
             document_template_generation_progress,
         )
-        from app.socket.quizzes.complete import (
-            quiz_complete_error,
-            quiz_complete_response,
-        )
-        from app.socket.quizzes.create import quiz_create_error, quiz_create_response
-        from app.socket.quizzes.submit_response import (
-            quiz_submit_response_error,
-            quiz_submit_response_response,
-        )
         from app.socket.scenarios.generate import (
             scenario_generation_complete,
             scenario_generation_error,
@@ -1307,7 +1298,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.scenarios.tools.document import document_tool_complete
         from app.socket.scenarios.tools.image import image_tool_complete
         from app.socket.scenarios.tools.objectives import objectives_tool_complete
+        from app.socket.scenarios.tools.questions import (
+            scenario_questions_tool_complete,
+            scenario_questions_tool_error,
+        )
         from app.socket.scenarios.tools.statement import problem_statement_tool_complete
+        from app.socket.scenarios.tools.video import (
+            scenario_video_tool_complete,
+            scenario_video_tool_error,
+        )
         from app.socket.simulations.join import simulation_joined
         from app.socket.simulations.text.end import simulation_text_ended
         from app.socket.simulations.text.next import (
@@ -1357,14 +1356,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         )
         from app.socket.simulations.voice.user.transcript import (
             simulation_voice_user_transcript_emit,
-        )
-        from app.socket.scenarios.tools.video import (
-            scenario_video_tool_complete,
-            scenario_video_tool_error,
-        )
-        from app.socket.scenarios.tools.questions import (
-            scenario_questions_tool_complete,
-            scenario_questions_tool_error,
         )
 
         # Collect all unique emit functions (use one instance of each event name)

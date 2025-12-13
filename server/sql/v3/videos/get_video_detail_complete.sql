@@ -125,7 +125,8 @@ video_documents_agg AS (
     FROM video_documents vd
     WHERE vd.video_id = $1 AND vd.active = true
 ),
--- Document parameter relationships: direct (parameter_documents) and via fields (document_fields → parameter_fields)
+-- Document parameter relationships: via fields (document_fields → parameter_fields) and document_parameter flag
+-- Note: parameter_documents junction table removed - use document_parameter boolean flag instead
 document_parameter_relationships AS (
     SELECT DISTINCT
         d.id as document_id,
@@ -134,6 +135,7 @@ document_parameter_relationships AS (
     JOIN documents d ON d.id = vd.document_id
     CROSS JOIN parameters param
     WHERE vd.video_id = $1 AND vd.active = true AND d.active = true AND param.active = true
+        AND param.document_parameter = true
         -- Exclude documents with scenario_parameter = true
         AND NOT EXISTS (
             SELECT 1 
@@ -147,14 +149,6 @@ document_parameter_relationships AS (
             AND param2.scenario_parameter = true
         )
     AND (
-        -- Direct relationship via parameter_documents
-        EXISTS (
-            SELECT 1 FROM parameter_documents pd
-            WHERE pd.document_id = d.id
-            AND pd.parameter_id = param.id
-            AND pd.active = true
-        )
-        OR
         -- Indirect relationship via document_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM document_fields df
@@ -164,13 +158,7 @@ document_parameter_relationships AS (
             AND df.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no document restrictions, it's valid for all documents
-        NOT EXISTS (
-            SELECT 1 FROM parameter_documents pd2
-            WHERE pd2.parameter_id = param.id
-            AND pd2.active = true
-        )
+        -- If parameter has document_parameter flag, it's valid for all documents (no junction table restrictions)
     )
 ),
 document_mapping_data AS (
@@ -535,7 +523,7 @@ linked_video_parameters AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        p.document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
     FROM video_parameters vp
     JOIN parameters p ON p.id = vp.parameter_id
@@ -544,17 +532,20 @@ linked_video_parameters AS (
     AND p.active = true
 ),
 document_parameters_for_video AS (
-    -- Also include parameters linked via parameter_documents (for document filtering)
+    -- Also include parameters with document_parameter flag (for document filtering)
+    -- Note: parameter_documents junction table removed - using document_parameter boolean flag instead
     SELECT DISTINCT
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
         true as document_parameter,
         false as video_parameter
-    FROM parameter_documents pd
-    JOIN parameters p ON p.id = pd.parameter_id
-    WHERE pd.active = true
+    FROM parameters p
+    WHERE p.document_parameter = true
     AND p.active = true
+    AND NOT EXISTS (
+        SELECT 1 FROM video_parameters vp2 WHERE vp2.parameter_id = p.id AND vp2.video_id = $1 AND vp2.active = true
+    )
 ),
 video_parameter_data AS (
     SELECT * FROM linked_video_parameters
@@ -567,7 +558,7 @@ parameter_data_for_mapping AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
+        p.document_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
     FROM parameters p
     JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
@@ -737,7 +728,8 @@ persona_data AS (
     WHERE p2.active = true
     ORDER BY name
 ),
--- Persona parameter relationships: direct (parameter_personas) and via fields (persona_fields → parameter_fields)
+-- Persona parameter relationships: via fields (persona_fields → parameter_fields) and persona_parameter flag
+-- Note: parameter_personas junction table removed - use persona_parameter boolean flag instead
 persona_parameter_relationships AS (
     SELECT DISTINCT
         p.id as persona_id,
@@ -745,15 +737,8 @@ persona_parameter_relationships AS (
     FROM persona_data p
     CROSS JOIN parameters param
     WHERE param.active = true
+    AND param.persona_parameter = true
     AND (
-        -- Direct relationship via parameter_personas
-        EXISTS (
-            SELECT 1 FROM parameter_personas pp
-            WHERE pp.persona_id = p.id
-            AND pp.parameter_id = param.id
-            AND pp.active = true
-        )
-        OR
         -- Indirect relationship via persona_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM persona_fields pf
@@ -763,13 +748,7 @@ persona_parameter_relationships AS (
             AND pf.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no persona restrictions, it's valid for all personas
-        NOT EXISTS (
-            SELECT 1 FROM parameter_personas pp2
-            WHERE pp2.parameter_id = param.id
-            AND pp2.active = true
-        )
+        -- If parameter has persona_parameter flag, it's valid for all personas (no junction table restrictions)
     )
 ),
 valid_personas_data AS (

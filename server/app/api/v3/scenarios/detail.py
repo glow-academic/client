@@ -283,7 +283,6 @@ class ScenarioDetailResponse(BaseModel):
     generated: bool
     parent_scenario_id: str | None
     documents_enabled: bool
-    document_vision_enabled: bool
     objectives_enabled: bool
     image_enabled: bool
     video_enabled: bool
@@ -1882,7 +1881,6 @@ async def get_scenario_detail(
             documents_enabled=scenario.get(
                 "documents_enabled", scenario.get("use_documents", False)
             ),  # Backward compatibility
-            document_vision_enabled=scenario.get("document_vision_enabled", False),
             objectives_enabled=scenario.get("objectives_enabled", True),
             image_enabled=scenario.get("image_enabled", False),
             parent_scenario_id=scenario["parent_scenario_id"],

@@ -5,7 +5,6 @@ WITH source_scenario AS (
         s.objectives_enabled,
         s.image_enabled,
         s.documents_enabled,
-        s.document_vision_enabled,
         ps.problem_statement,
         ps.id as problem_statement_id,
         ps.name as problem_statement_name
@@ -21,7 +20,6 @@ new_scenario AS (
         objectives_enabled,
         image_enabled,
         documents_enabled,
-        document_vision_enabled,
         created_at,
         updated_at
     )
@@ -31,7 +29,6 @@ new_scenario AS (
         ss.objectives_enabled,
         ss.image_enabled,
         ss.documents_enabled,
-        ss.document_vision_enabled,
         NOW(),
         NOW()
     FROM source_scenario ss

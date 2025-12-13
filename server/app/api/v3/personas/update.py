@@ -88,9 +88,6 @@ async def update_persona(
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
 
-            # Ensure parameter_ids is always an array (empty array if None)
-            param_ids = request.parameter_ids if request.parameter_ids else []
-
             # Ensure example_ids is always an array (empty array if None)
             example_ids = request.example_ids if request.example_ids else []
 
@@ -120,7 +117,6 @@ async def update_persona(
                 voice_agent_id,
                 dept_ids,  # Always pass array (empty array if no departments)
                 request.profileId,
-                param_ids,  # Always pass array (empty array if no parameters)
                 example_ids,  # Always pass array (empty array if no examples)
             )
             result = await conn.fetchrow(sql_query, *sql_params)

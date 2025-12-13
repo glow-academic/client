@@ -114,35 +114,8 @@ CREATE TABLE parameter_departments (
 CREATE INDEX ON parameter_departments (parameter_id);
 CREATE INDEX ON parameter_departments (department_id);
 
--- Parameters → Personas junction table (BCNF normalization)
--- Links parameters to personas (when parameter applies to specific personas)
--- No records = parameter not linked to any persona
-CREATE TABLE parameter_personas (
-  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
-  persona_id UUID NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
-  active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (parameter_id, persona_id)
-);
-
-CREATE INDEX ON parameter_personas (parameter_id);
-CREATE INDEX ON parameter_personas (persona_id);
-
--- Parameters → Documents junction table (BCNF normalization)
--- Links parameters to documents (when parameter applies to specific documents)
--- No records = parameter not linked to any document
-CREATE TABLE parameter_documents (
-  parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
-  document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-  active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (parameter_id, document_id)
-);
-
-CREATE INDEX ON parameter_documents (parameter_id);
-CREATE INDEX ON parameter_documents (document_id);
+-- Note: parameter_personas and parameter_documents junction tables removed in migration 91
+-- Parameters are now linked to personas/documents via boolean flags (persona_parameter, document_parameter)
 
 -- Scenarios → Parameters junction table (BCNF normalization)
 -- Links scenarios to parameters (when scenario uses specific parameters)
@@ -166,7 +139,6 @@ CREATE TABLE scenarios (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   documents_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  document_vision_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   video_enabled BOOLEAN NOT NULL DEFAULT FALSE,

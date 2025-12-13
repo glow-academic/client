@@ -1134,9 +1134,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             if questions_enabled:
 
                 async def create_questions(
-                    questions: list[
-                        dict[str, Any]
-                    ] = Field(
+                    questions: list[dict[str, Any]] = Field(
                         description="List of questions to create. Each question should be a dict with 'question_text' (string), 'allow_multiple' (boolean), and 'options' (list of dicts with 'option_text' and 'is_correct' boolean). Example: [{'question_text': 'What is the main issue?', 'allow_multiple': False, 'options': [{'option_text': 'Option A', 'is_correct': True}, {'option_text': 'Option B', 'is_correct': False}]}]"
                     ),
                     question_timestamps: dict[str, list[int]] | None = Field(
@@ -1158,7 +1156,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         Confirmation message
                     """
                     # Get video_id if video was generated (from context or previous tool results)
-                    video_id = None  # TODO: Extract from previous tool results if available
+                    video_id = (
+                        None  # TODO: Extract from previous tool results if available
+                    )
 
                     # Emit to internal bus for questions creation
                     await internal_sio.emit(
@@ -1182,7 +1182,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 scenario_tools.append(function_tool(create_questions))
                 logger.info("Created questions generation tool")
             else:
-                logger.info("Questions generation tool skipped (questions_enabled=False)")
+                logger.info(
+                    "Questions generation tool skipped (questions_enabled=False)"
+                )
 
             # 6. Image Generation Tool (if enabled)
             if images_enabled:

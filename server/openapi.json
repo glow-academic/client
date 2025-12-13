@@ -2592,433 +2592,6 @@
         ]
       }
     },
-    "/api/v3/videos/list": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Get Videos List",
-        "description": "Get videos list with all relationships.",
-        "operationId": "get_videos_list_api_v3_videos_list_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VideosFilters"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VideosListResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
-    "/api/v3/videos/detail": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Get Video Detail",
-        "description": "Get detailed video information.",
-        "operationId": "get_video_detail_api_v3_videos_detail_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VideoDetailRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__videos__detail__VideoDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
-    "/api/v3/videos/new": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Get Video New",
-        "description": "Get default video structure for creation mode.",
-        "operationId": "get_video_new_api_v3_videos_new_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VideoNewRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__videos__new__VideoDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
-    "/api/v3/videos/create": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Create Video",
-        "description": "Create a new video.",
-        "operationId": "create_video_api_v3_videos_create_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateVideoRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateVideoResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
-    "/api/v3/videos/update": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Update Video",
-        "description": "Update an existing video.",
-        "operationId": "update_video_api_v3_videos_update_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateVideoRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateVideoResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
-    "/api/v3/videos/duplicate": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Duplicate Video",
-        "description": "Duplicate a video.",
-        "operationId": "duplicate_video_api_v3_videos_duplicate_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DuplicateVideoRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DuplicateVideoResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
-    "/api/v3/videos/delete": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Delete Video",
-        "description": "Delete a video.",
-        "operationId": "delete_video_api_v3_videos_delete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteVideoRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteVideoResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
-    "/api/v3/videos/search": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Find Videos",
-        "description": "\ud83d\udd0e Find videos by name/description\n-----------------------------------\nFuzzy, case-insensitive search on video name and description.\nSupports optional department filtering.\n\nInput\n    \u2022 query - Video name or description to search for\n    \u2022 limit - Max results (default: 200)\n    \u2022 department_ids - Optional list of department IDs to filter by\n\nReturns\n    [\n        {\n            \"id\": str,                    # Video UUID\n            \"name\": str | None,           # Video name/title\n            \"description\": str | None,    # Video description\n            \"length_seconds\": int,         # Video length in seconds\n            \"department_ids\": list[str] | None,  # Department IDs (if any)\n            \"score\": int                  # Heuristic match score\n        },\n        ...\n    ]",
-        "operationId": "find_videos_api_v3_videos_search_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FindVideosRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/VideoSearchResult"
-                  },
-                  "type": "array",
-                  "title": "Response Find Videos Api V3 Videos Search Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
-    "/api/v3/videos/randomize": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Randomize Video Sections",
-        "description": "Randomize video attributes (problem statements, objectives, policies).",
-        "operationId": "randomize_video_sections_api_v3_videos_randomize_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RandomizeVideoRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RandomizeVideoResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
     "/api/v3/auth/list": {
       "post": {
         "tags": [
@@ -12056,7 +11629,7 @@
           "video": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/app__api__v3__attempts__full__VideoItem"
+                "$ref": "#/components/schemas/VideoItem"
               },
               {
                 "type": "null"
@@ -14443,34 +14016,6 @@
             "type": "array",
             "title": "Field Connections"
           },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -15020,11 +14565,6 @@
             "title": "Documents Enabled",
             "default": false
           },
-          "document_vision_enabled": {
-            "type": "boolean",
-            "title": "Document Vision Enabled",
-            "default": false
-          },
           "objectives_enabled": {
             "type": "boolean",
             "title": "Objectives Enabled",
@@ -15034,6 +14574,86 @@
             "type": "boolean",
             "title": "Image Enabled",
             "default": false
+          },
+          "video_enabled": {
+            "type": "boolean",
+            "title": "Video Enabled",
+            "default": false
+          },
+          "questions_enabled": {
+            "type": "boolean",
+            "title": "Questions Enabled",
+            "default": false
+          },
+          "video_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Agent Id"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
+          "active_video_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Video Id"
+          },
+          "question_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Ids"
+          },
+          "question_timestamps": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Timestamps"
           }
         },
         "type": "object",
@@ -15141,26 +14761,6 @@
               }
             ],
             "title": "Scenario Ids"
-          },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "items": {
-                  "$ref": "#/components/schemas/VideoInRequest"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
           },
           "content_items": {
             "anyOf": [
@@ -15352,192 +14952,6 @@
         ],
         "title": "CreateStaffResponse",
         "description": "Response from create staff."
-      },
-      "CreateVideoRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "length_seconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Length Seconds"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "outline_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outline Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "upload_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Ids"
-          },
-          "image_names": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Names"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          },
-          "questions": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__videos__create__QuestionItem"
-            },
-            "type": "array",
-            "title": "Questions",
-            "default": []
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "department_ids"
-        ],
-        "title": "CreateVideoRequest",
-        "description": "Request to create a video."
-      },
-      "CreateVideoResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "videoId": {
-            "type": "string",
-            "title": "Videoid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "videoId",
-          "message"
-        ],
-        "title": "CreateVideoResponse",
-        "description": "Response from create operation."
       },
       "DailyData": {
         "properties": {
@@ -16994,39 +16408,6 @@
         "title": "DeleteStaffResponse",
         "description": "Response from delete staff."
       },
-      "DeleteVideoRequest": {
-        "properties": {
-          "videoId": {
-            "type": "string",
-            "title": "Videoid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "videoId"
-        ],
-        "title": "DeleteVideoRequest",
-        "description": "Request to delete a video."
-      },
-      "DeleteVideoResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteVideoResponse",
-        "description": "Response from delete operation."
-      },
       "DepartmentDetailRequest": {
         "properties": {
           "departmentId": {
@@ -18188,44 +17569,6 @@
         "title": "DuplicateSimulationResponse",
         "description": "Response from duplicate simulation."
       },
-      "DuplicateVideoRequest": {
-        "properties": {
-          "videoId": {
-            "type": "string",
-            "title": "Videoid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "videoId"
-        ],
-        "title": "DuplicateVideoRequest",
-        "description": "Request to duplicate a video."
-      },
-      "DuplicateVideoResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "videoId": {
-            "type": "string",
-            "title": "Videoid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "videoId",
-          "message"
-        ],
-        "title": "DuplicateVideoResponse",
-        "description": "Response from duplicate operation."
-      },
       "DynamicRubric": {
         "properties": {
           "chatId": {
@@ -19318,39 +18661,6 @@
         ],
         "title": "FindSimulationsRequest",
         "description": "Request to search simulations."
-      },
-      "FindVideosRequest": {
-        "properties": {
-          "query": {
-            "type": "string",
-            "title": "Query"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit",
-            "default": 200
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "query"
-        ],
-        "title": "FindVideosRequest",
-        "description": "Request to search videos."
       },
       "GenerateCertificateRequest": {
         "properties": {
@@ -25465,7 +24775,7 @@
         "title": "QueryDataRequest",
         "description": "Request to execute a SQL query."
       },
-      "QuestionItem-Output": {
+      "QuestionItem": {
         "properties": {
           "id": {
             "type": "string",
@@ -25508,99 +24818,6 @@
           "options"
         ],
         "title": "QuestionItem"
-      },
-      "QuestionOption": {
-        "properties": {
-          "option_text": {
-            "type": "string",
-            "title": "Option Text"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "is_correct": {
-            "type": "boolean",
-            "title": "Is Correct"
-          }
-        },
-        "type": "object",
-        "required": [
-          "option_text",
-          "type",
-          "is_correct"
-        ],
-        "title": "QuestionOption",
-        "description": "Option for a question."
-      },
-      "QuestionOptionResponse": {
-        "properties": {
-          "option_id": {
-            "type": "string",
-            "title": "Option Id"
-          },
-          "option_text": {
-            "type": "string",
-            "title": "Option Text"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "is_correct": {
-            "type": "boolean",
-            "title": "Is Correct"
-          }
-        },
-        "type": "object",
-        "required": [
-          "option_id",
-          "option_text",
-          "type",
-          "is_correct"
-        ],
-        "title": "QuestionOptionResponse",
-        "description": "Option in question response."
-      },
-      "QuestionResponse": {
-        "properties": {
-          "question_id": {
-            "type": "string",
-            "title": "Question Id"
-          },
-          "question_text": {
-            "type": "string",
-            "title": "Question Text"
-          },
-          "allow_multiple": {
-            "type": "boolean",
-            "title": "Allow Multiple"
-          },
-          "times": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Times"
-          },
-          "options": {
-            "items": {
-              "$ref": "#/components/schemas/QuestionOptionResponse"
-            },
-            "type": "array",
-            "title": "Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "question_id",
-          "question_text",
-          "allow_multiple",
-          "times",
-          "options"
-        ],
-        "title": "QuestionResponse",
-        "description": "Question in video detail response."
       },
       "QuizItem": {
         "properties": {
@@ -25824,142 +25041,6 @@
         ],
         "title": "RandomizeScenarioResponse",
         "description": "Response from scenario randomization."
-      },
-      "RandomizeVideoRequest": {
-        "properties": {
-          "videoId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videoid"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "problemStatementIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problemstatementids"
-          },
-          "objectiveIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectiveids"
-          },
-          "documentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentids"
-          },
-          "targets": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Targets",
-            "default": []
-          }
-        },
-        "type": "object",
-        "title": "RandomizeVideoRequest",
-        "description": "Request to randomize video sections."
-      },
-      "RandomizeVideoResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "problemStatementIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Problemstatementids",
-            "default": []
-          },
-          "objectiveIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objectiveids",
-            "default": []
-          },
-          "documentIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Documentids",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "RandomizeVideoResponse",
-        "description": "Response for video randomization."
       },
       "RandomizedSelections": {
         "properties": {
@@ -32362,34 +31443,6 @@
             "type": "array",
             "title": "Field Connections"
           },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -33026,11 +32079,6 @@
             "title": "Documents Enabled",
             "default": false
           },
-          "document_vision_enabled": {
-            "type": "boolean",
-            "title": "Document Vision Enabled",
-            "default": false
-          },
           "objectives_enabled": {
             "type": "boolean",
             "title": "Objectives Enabled",
@@ -33039,6 +32087,16 @@
           "image_enabled": {
             "type": "boolean",
             "title": "Image Enabled",
+            "default": false
+          },
+          "video_enabled": {
+            "type": "boolean",
+            "title": "Video Enabled",
+            "default": false
+          },
+          "questions_enabled": {
+            "type": "boolean",
+            "title": "Questions Enabled",
             "default": false
           },
           "scenario_agent_id": {
@@ -33062,6 +32120,76 @@
               }
             ],
             "title": "Image Agent Id"
+          },
+          "video_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Agent Id"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
+          "active_video_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Video Id"
+          },
+          "question_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Ids"
+          },
+          "question_timestamps": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Timestamps"
           }
         },
         "type": "object",
@@ -33396,26 +32524,6 @@
             ],
             "title": "Scenario Ids"
           },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "items": {
-                  "$ref": "#/components/schemas/VideoInRequest"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
-          },
           "content_items": {
             "anyOf": [
               {
@@ -33551,208 +32659,6 @@
         "title": "UpdateStaffResponse",
         "description": "Response from update staff."
       },
-      "UpdateVideoRequest": {
-        "properties": {
-          "videoId": {
-            "type": "string",
-            "title": "Videoid"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "length_seconds": {
-            "type": "integer",
-            "title": "Length Seconds"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "outline_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outline Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "upload_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Ids"
-          },
-          "image_names": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Names"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "questions": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__videos__update__QuestionItem"
-            },
-            "type": "array",
-            "title": "Questions",
-            "default": []
-          },
-          "outline_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outline Agent Id"
-          },
-          "image_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Agent Id"
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "videoId",
-          "name",
-          "length_seconds",
-          "department_ids",
-          "active"
-        ],
-        "title": "UpdateVideoRequest",
-        "description": "Request to update a video."
-      },
-      "UpdateVideoResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateVideoResponse",
-        "description": "Response from update operation."
-      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -33785,258 +32691,6 @@
           "type"
         ],
         "title": "ValidationError"
-      },
-      "VideoDetailRequest": {
-        "properties": {
-          "videoId": {
-            "type": "string",
-            "title": "Videoid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "personaIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaids"
-          },
-          "documentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentids"
-          },
-          "templateDocumentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templatedocumentids"
-          },
-          "parameterIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterids"
-          },
-          "fieldIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldids"
-          },
-          "personaSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personasearch"
-          },
-          "documentSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentsearch"
-          },
-          "parameterSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parametersearch"
-          },
-          "personaMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personamin"
-          },
-          "personaMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personamax"
-          },
-          "documentMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentmin"
-          },
-          "documentMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentmax"
-          },
-          "parameterSelectionMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterselectionmin"
-          },
-          "parameterSelectionMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterselectionmax"
-          },
-          "questionsMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questionsmin"
-          },
-          "questionsMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questionsmax"
-          },
-          "fieldRanges": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldranges"
-          },
-          "randomize": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Randomize"
-          }
-        },
-        "type": "object",
-        "required": [
-          "videoId",
-          "profileId"
-        ],
-        "title": "VideoDetailRequest",
-        "description": "Request to get video detail."
       },
       "VideoDocumentItem": {
         "properties": {
@@ -34109,360 +32763,21 @@
         ],
         "title": "VideoDocumentItem"
       },
-      "VideoInRequest": {
-        "properties": {
-          "video_id": {
-            "type": "string",
-            "title": "Video Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "video_id"
-        ],
-        "title": "VideoInRequest",
-        "description": "Video in request format."
-      },
-      "VideoInSimulation": {
-        "properties": {
-          "video_id": {
-            "type": "string",
-            "title": "Video Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
-          },
-          "length_seconds": {
-            "type": "integer",
-            "title": "Length Seconds"
-          },
-          "show_problem_statement": {
-            "type": "boolean",
-            "title": "Show Problem Statement"
-          },
-          "show_objectives": {
-            "type": "boolean",
-            "title": "Show Objectives"
-          },
-          "show_image": {
-            "type": "boolean",
-            "title": "Show Image"
-          },
-          "usage_count": {
-            "type": "integer",
-            "title": "Usage Count"
-          },
-          "success_rate": {
-            "type": "integer",
-            "title": "Success Rate"
-          },
-          "last_used": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Used"
-          },
-          "can_remove": {
-            "type": "boolean",
-            "title": "Can Remove"
-          }
-        },
-        "type": "object",
-        "required": [
-          "video_id",
-          "title",
-          "description",
-          "active",
-          "position",
-          "length_seconds",
-          "show_problem_statement",
-          "show_objectives",
-          "show_image",
-          "usage_count",
-          "success_rate",
-          "last_used",
-          "can_remove"
-        ],
-        "title": "VideoInSimulation",
-        "description": "Video with position in simulation."
-      },
-      "VideoNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "personaIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaids"
-          },
-          "documentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentids"
-          },
-          "templateDocumentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templatedocumentids"
-          },
-          "parameterIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterids"
-          },
-          "fieldIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldids"
-          },
-          "personaSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personasearch"
-          },
-          "documentSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentsearch"
-          },
-          "parameterSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parametersearch"
-          },
-          "personaMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personamin"
-          },
-          "personaMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personamax"
-          },
-          "documentMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentmin"
-          },
-          "documentMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentmax"
-          },
-          "parameterSelectionMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterselectionmin"
-          },
-          "parameterSelectionMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterselectionmax"
-          },
-          "questionsMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questionsmin"
-          },
-          "questionsMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questionsmax"
-          },
-          "fieldRanges": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldranges"
-          },
-          "randomize": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Randomize"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "VideoNewRequest",
-        "description": "Request to get default video details."
-      },
-      "VideoSearchResult": {
+      "VideoItem": {
         "properties": {
           "id": {
             "type": "string",
             "title": "Id"
           },
-          "name": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "lengthSeconds": {
+            "type": "integer",
+            "title": "Lengthseconds"
+          },
+          "uploadId": {
             "anyOf": [
               {
                 "type": "string"
@@ -34471,103 +32786,38 @@
                 "type": "null"
               }
             ],
-            "title": "Name"
+            "title": "Uploadid"
           },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+          "videoDocuments": {
+            "items": {
+              "$ref": "#/components/schemas/VideoDocumentItem"
+            },
+            "type": "array",
+            "title": "Videodocuments"
           },
-          "length_seconds": {
-            "type": "integer",
-            "title": "Length Seconds"
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionItem"
+            },
+            "type": "array",
+            "title": "Questions"
           },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "score": {
-            "type": "integer",
-            "title": "Score"
+          "showImage": {
+            "type": "boolean",
+            "title": "Showimage"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "name",
-          "description",
-          "length_seconds",
-          "department_ids",
-          "score"
+          "title",
+          "lengthSeconds",
+          "uploadId",
+          "videoDocuments",
+          "questions",
+          "showImage"
         ],
-        "title": "VideoSearchResult",
-        "description": "Video search result."
-      },
-      "VideosFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "VideosFilters",
-        "description": "Filters for videos list request."
-      },
-      "VideosListResponse": {
-        "properties": {
-          "videos": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__videos__list__VideoItem"
-            },
-            "type": "array",
-            "title": "Videos"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__list__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "department_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Department Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "videos",
-          "department_mapping",
-          "department_options"
-        ],
-        "title": "VideosListResponse",
-        "description": "Response for videos list endpoint."
+        "title": "VideoItem"
       },
       "app__api__v3__agents__detail__AgentDetailResponse": {
         "properties": {
@@ -35410,62 +33660,6 @@
           "passPoints"
         ],
         "title": "StandardGroupMappingItem"
-      },
-      "app__api__v3__attempts__full__VideoItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "lengthSeconds": {
-            "type": "integer",
-            "title": "Lengthseconds"
-          },
-          "uploadId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uploadid"
-          },
-          "videoDocuments": {
-            "items": {
-              "$ref": "#/components/schemas/VideoDocumentItem"
-            },
-            "type": "array",
-            "title": "Videodocuments"
-          },
-          "questions": {
-            "items": {
-              "$ref": "#/components/schemas/QuestionItem-Output"
-            },
-            "type": "array",
-            "title": "Questions"
-          },
-          "showImage": {
-            "type": "boolean",
-            "title": "Showimage"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "lengthSeconds",
-          "uploadId",
-          "videoDocuments",
-          "questions",
-          "showImage"
-        ],
-        "title": "VideoItem"
       },
       "app__api__v3__cohorts__add_staff__DepartmentMappingItem": {
         "properties": {
@@ -42462,10 +40656,6 @@
             "type": "boolean",
             "title": "Documents Enabled"
           },
-          "document_vision_enabled": {
-            "type": "boolean",
-            "title": "Document Vision Enabled"
-          },
           "objectives_enabled": {
             "type": "boolean",
             "title": "Objectives Enabled"
@@ -42473,6 +40663,14 @@
           "image_enabled": {
             "type": "boolean",
             "title": "Image Enabled"
+          },
+          "video_enabled": {
+            "type": "boolean",
+            "title": "Video Enabled"
+          },
+          "questions_enabled": {
+            "type": "boolean",
+            "title": "Questions Enabled"
           },
           "department_ids": {
             "anyOf": [
@@ -42530,6 +40728,29 @@
             },
             "type": "array",
             "title": "Scenario Images"
+          },
+          "scenario_videos": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenario Videos"
+          },
+          "question_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Question Ids"
+          },
+          "questions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Questions"
           },
           "objective_ids": {
             "items": {
@@ -42663,6 +40884,10 @@
             "type": "string",
             "title": "Image Agent Id"
           },
+          "video_agent_id": {
+            "type": "string",
+            "title": "Video Agent Id"
+          },
           "agent_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/app__api__v3__scenarios__detail__AgentMappingItem"
@@ -42743,9 +40968,10 @@
           "generated",
           "parent_scenario_id",
           "documents_enabled",
-          "document_vision_enabled",
           "objectives_enabled",
           "image_enabled",
+          "video_enabled",
+          "questions_enabled",
           "department_ids",
           "valid_department_ids",
           "persona_ids",
@@ -42753,6 +40979,9 @@
           "document_ids",
           "valid_document_ids",
           "scenario_images",
+          "scenario_videos",
+          "question_ids",
+          "questions",
           "objective_ids",
           "valid_objectives",
           "objectives_history",
@@ -42774,6 +41003,7 @@
           "valid_parameter_ids",
           "scenario_agent_id",
           "image_agent_id",
+          "video_agent_id",
           "agent_mapping",
           "valid_agent_ids",
           "objective_count_range"
@@ -43668,6 +41898,14 @@
             "type": "boolean",
             "title": "Image Input Enabled"
           },
+          "video_enabled": {
+            "type": "boolean",
+            "title": "Video Enabled"
+          },
+          "questions_enabled": {
+            "type": "boolean",
+            "title": "Questions Enabled"
+          },
           "parent_scenario_id": {
             "anyOf": [
               {
@@ -43756,6 +41994,29 @@
             },
             "type": "array",
             "title": "Scenario Images"
+          },
+          "scenario_videos": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenario Videos"
+          },
+          "question_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Question Ids"
+          },
+          "questions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Questions"
           },
           "parameters": {
             "additionalProperties": {
@@ -43863,6 +42124,10 @@
           "image_agent_id": {
             "type": "string",
             "title": "Image Agent Id"
+          },
+          "video_agent_id": {
+            "type": "string",
+            "title": "Video Agent Id"
           },
           "agent_mapping": {
             "additionalProperties": {
@@ -44131,6 +42396,8 @@
           "hints_enabled",
           "objectives_enabled",
           "image_input_enabled",
+          "video_enabled",
+          "questions_enabled",
           "parent_scenario_id",
           "department_ids",
           "valid_department_ids",
@@ -44142,6 +42409,9 @@
           "valid_objectives",
           "objectives_history",
           "scenario_images",
+          "scenario_videos",
+          "question_ids",
+          "questions",
           "parameters",
           "active_simulation_ids",
           "document_details",
@@ -44160,6 +42430,7 @@
           "valid_parameter_ids",
           "scenario_agent_id",
           "image_agent_id",
+          "video_agent_id",
           "agent_mapping",
           "valid_agent_ids",
           "objective_count_range"
@@ -44277,7 +42548,7 @@
           "id"
         ],
         "title": "ContentItemInRequest",
-        "description": "Unified content item (scenario or video) in request format."
+        "description": "Content item (scenario) in request format."
       },
       "app__api__v3__simulations__detail__AgentMappingItem": {
         "properties": {
@@ -44842,20 +43113,6 @@
             "type": "array",
             "title": "Valid Scenario Ids"
           },
-          "video_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Video Ids"
-          },
-          "valid_video_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Video Ids"
-          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -44891,13 +43148,6 @@
             "type": "array",
             "title": "Scenarios"
           },
-          "videos": {
-            "items": {
-              "$ref": "#/components/schemas/VideoInSimulation"
-            },
-            "type": "array",
-            "title": "Videos"
-          },
           "parameters": {
             "items": {
               "$ref": "#/components/schemas/app__api__v3__simulations__detail__ParameterItem"
@@ -44925,14 +43175,6 @@
             },
             "type": "object",
             "title": "Scenario Mapping"
-          },
-          "video_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Video Mapping"
           },
           "rubric_mapping": {
             "additionalProperties": {
@@ -44981,8 +43223,6 @@
           "valid_rubric_ids",
           "scenario_ids",
           "valid_scenario_ids",
-          "video_ids",
-          "valid_video_ids",
           "active",
           "practice_simulation",
           "can_edit",
@@ -44991,12 +43231,10 @@
           "in_use",
           "cohort_count",
           "scenarios",
-          "videos",
           "parameters",
           "parameter_items",
           "parameter_mapping",
           "scenario_mapping",
-          "video_mapping",
           "rubric_mapping",
           "department_mapping",
           "field_mapping",
@@ -46027,2140 +44265,7 @@
           "id"
         ],
         "title": "ContentItemInRequest",
-        "description": "Unified content item (scenario or video) in request format."
-      },
-      "app__api__v3__videos__create__QuestionItem": {
-        "properties": {
-          "question_text": {
-            "type": "string",
-            "title": "Question Text"
-          },
-          "allow_multiple": {
-            "type": "boolean",
-            "title": "Allow Multiple",
-            "default": false
-          },
-          "times": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Times"
-          },
-          "options": {
-            "items": {
-              "$ref": "#/components/schemas/QuestionOption"
-            },
-            "type": "array",
-            "title": "Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "question_text",
-          "times",
-          "options"
-        ],
-        "title": "QuestionItem",
-        "description": "Question item in create request."
-      },
-      "app__api__v3__videos__detail__AgentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "roles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "AgentMappingItem",
-        "description": "Agent mapping item with role information."
-      },
-      "app__api__v3__videos__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Ids"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          },
-          "agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Ids"
-          },
-          "staff_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Staff Ids"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item - extends MappingItem with optional entity ID arrays."
-      },
-      "app__api__v3__videos__detail__DocumentDetailItem": {
-        "properties": {
-          "document_id": {
-            "type": "string",
-            "title": "Document Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "extension": {
-            "type": "string",
-            "title": "Extension"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "file_path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Path"
-          },
-          "mime_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mime Type"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "field_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Field Ids"
-          },
-          "is_template": {
-            "type": "boolean",
-            "title": "Is Template",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "document_id",
-          "name",
-          "updatedAt",
-          "extension",
-          "scenario_ids",
-          "can_edit",
-          "can_delete",
-          "active",
-          "department_ids",
-          "file_path",
-          "mime_type",
-          "upload_id",
-          "field_ids"
-        ],
-        "title": "DocumentDetailItem",
-        "description": "Document detail for preview."
-      },
-      "app__api__v3__videos__detail__FieldMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "parameter_id": {
-            "type": "string",
-            "title": "Parameter Id"
-          },
-          "parameter_name": {
-            "type": "string",
-            "title": "Parameter Name"
-          },
-          "conditional_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conditional Parameter Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "parameter_id",
-          "parameter_name"
-        ],
-        "title": "FieldMappingItem",
-        "description": "Field mapping item with parameter context."
-      },
-      "app__api__v3__videos__detail__ParameterMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "type": "boolean",
-            "title": "Persona Parameter"
-          },
-          "scenario_parameter": {
-            "type": "boolean",
-            "title": "Scenario Parameter",
-            "default": false
-          },
-          "video_parameter": {
-            "type": "boolean",
-            "title": "Video Parameter",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "numerical",
-          "document_parameter",
-          "persona_parameter"
-        ],
-        "title": "ParameterMappingItem",
-        "description": "Parameter mapping item."
-      },
-      "app__api__v3__videos__detail__PersonaMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "image_model": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Model"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          },
-          "example": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Example"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "color",
-          "icon"
-        ],
-        "title": "PersonaMappingItem",
-        "description": "Persona mapping item with custom color and icon fields."
-      },
-      "app__api__v3__videos__detail__VideoDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "length_seconds": {
-            "type": "integer",
-            "title": "Length Seconds"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "video_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Url"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "outline_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Outline Ids"
-          },
-          "outline_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Outline Mapping"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids"
-          },
-          "document_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Document Mapping"
-          },
-          "document_details": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__videos__detail__DocumentDetailItem"
-            },
-            "type": "array",
-            "title": "Document Details"
-          },
-          "valid_document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Document Ids"
-          },
-          "video_images": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Video Images"
-          },
-          "objectives_history": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objectives History"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__detail__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "questions": {
-            "items": {
-              "$ref": "#/components/schemas/QuestionResponse"
-            },
-            "type": "array",
-            "title": "Questions"
-          },
-          "outline_agent_id": {
-            "type": "string",
-            "title": "Outline Agent Id"
-          },
-          "image_agent_id": {
-            "type": "string",
-            "title": "Image Agent Id"
-          },
-          "video_agent_id": {
-            "type": "string",
-            "title": "Video Agent Id"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__detail__AgentMappingItem"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "valid_agent_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Agent Ids"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__detail__ParameterMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "field_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__detail__FieldMappingItem"
-            },
-            "type": "object",
-            "title": "Field Mapping"
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids"
-          },
-          "video_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Video Parameter Ids"
-          },
-          "valid_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Parameter Ids"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__detail__PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          },
-          "valid_persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Persona Ids"
-          },
-          "valid_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Field Ids"
-          },
-          "valid_general_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid General Field Ids"
-          },
-          "allowed_ranges": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AllowedRanges"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "question_count_range": {
-            "$ref": "#/components/schemas/RangeMinMax"
-          },
-          "randomized_selections": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RandomizedSelections"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "randomized": {
-            "type": "boolean",
-            "title": "Randomized",
-            "default": false
-          },
-          "selected_persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Persona Ids"
-          },
-          "selected_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Document Ids"
-          },
-          "selected_template_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Template Document Ids"
-          },
-          "selected_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Parameter Ids"
-          },
-          "selected_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Field Ids"
-          },
-          "persona_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Search"
-          },
-          "document_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Search"
-          },
-          "parameter_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Search"
-          },
-          "persona_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Min"
-          },
-          "persona_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Max"
-          },
-          "document_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Min"
-          },
-          "document_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Max"
-          },
-          "parameter_selection_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Selection Min"
-          },
-          "parameter_selection_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Selection Max"
-          },
-          "field_ranges": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ranges"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "length_seconds",
-          "active",
-          "upload_id",
-          "video_url",
-          "department_ids",
-          "valid_department_ids",
-          "outline_ids",
-          "outline_mapping",
-          "document_ids",
-          "document_mapping",
-          "document_details",
-          "valid_document_ids",
-          "video_images",
-          "objectives_history",
-          "can_edit",
-          "can_duplicate",
-          "can_delete",
-          "department_mapping",
-          "questions",
-          "outline_agent_id",
-          "image_agent_id",
-          "video_agent_id",
-          "agent_mapping",
-          "valid_agent_ids",
-          "parameter_mapping",
-          "field_mapping",
-          "parameter_item_ids",
-          "video_parameter_ids",
-          "valid_parameter_ids",
-          "persona_ids",
-          "persona_mapping",
-          "valid_persona_ids",
-          "question_count_range"
-        ],
-        "title": "VideoDetailResponse",
-        "description": "Response for video detail."
-      },
-      "app__api__v3__videos__list__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__videos__list__VideoItem": {
-        "properties": {
-          "video_id": {
-            "type": "string",
-            "title": "Video Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "length_seconds": {
-            "type": "integer",
-            "title": "Length Seconds"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "video_id",
-          "name",
-          "length_seconds",
-          "active",
-          "department_ids",
-          "can_edit",
-          "can_delete",
-          "can_duplicate",
-          "updated_at"
-        ],
-        "title": "VideoItem",
-        "description": "Individual video item in the response."
-      },
-      "app__api__v3__videos__new__AgentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "roles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "AgentMappingItem",
-        "description": "Agent mapping item with role information."
-      },
-      "app__api__v3__videos__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Ids"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          },
-          "agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Ids"
-          },
-          "staff_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Staff Ids"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item - extends MappingItem with optional entity ID arrays."
-      },
-      "app__api__v3__videos__new__DocumentDetailItem": {
-        "properties": {
-          "document_id": {
-            "type": "string",
-            "title": "Document Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "extension": {
-            "type": "string",
-            "title": "Extension"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "file_path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Path"
-          },
-          "mime_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mime Type"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "field_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Field Ids"
-          },
-          "is_template": {
-            "type": "boolean",
-            "title": "Is Template",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "document_id",
-          "name",
-          "updatedAt",
-          "extension",
-          "scenario_ids",
-          "can_edit",
-          "can_delete",
-          "active",
-          "department_ids",
-          "file_path",
-          "mime_type",
-          "upload_id",
-          "field_ids"
-        ],
-        "title": "DocumentDetailItem",
-        "description": "Document detail for preview."
-      },
-      "app__api__v3__videos__new__FieldMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "parameter_id": {
-            "type": "string",
-            "title": "Parameter Id"
-          },
-          "parameter_name": {
-            "type": "string",
-            "title": "Parameter Name"
-          },
-          "conditional_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conditional Parameter Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "parameter_id",
-          "parameter_name"
-        ],
-        "title": "FieldMappingItem",
-        "description": "Field mapping item with parameter context."
-      },
-      "app__api__v3__videos__new__ParameterMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "type": "boolean",
-            "title": "Persona Parameter"
-          },
-          "scenario_parameter": {
-            "type": "boolean",
-            "title": "Scenario Parameter",
-            "default": false
-          },
-          "video_parameter": {
-            "type": "boolean",
-            "title": "Video Parameter",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "numerical",
-          "document_parameter",
-          "persona_parameter"
-        ],
-        "title": "ParameterMappingItem",
-        "description": "Parameter mapping item."
-      },
-      "app__api__v3__videos__new__PersonaMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "image_model": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Model"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          },
-          "example": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Example"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "color",
-          "icon"
-        ],
-        "title": "PersonaMappingItem",
-        "description": "Persona mapping item with custom color and icon fields."
-      },
-      "app__api__v3__videos__new__VideoDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "length_seconds": {
-            "type": "integer",
-            "title": "Length Seconds"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "file_path": {
-            "type": "string",
-            "title": "File Path"
-          },
-          "mime_type": {
-            "type": "string",
-            "title": "Mime Type"
-          },
-          "video_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Url"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "outline_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Outline Ids"
-          },
-          "outline_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Outline Mapping"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids"
-          },
-          "document_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Document Mapping"
-          },
-          "document_details": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__videos__new__DocumentDetailItem"
-            },
-            "type": "array",
-            "title": "Document Details"
-          },
-          "valid_document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Document Ids"
-          },
-          "video_images": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Video Images"
-          },
-          "objectives_history": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objectives History"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__new__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "questions": {
-            "items": {
-              "$ref": "#/components/schemas/QuestionResponse"
-            },
-            "type": "array",
-            "title": "Questions"
-          },
-          "outline_agent_id": {
-            "type": "string",
-            "title": "Outline Agent Id"
-          },
-          "image_agent_id": {
-            "type": "string",
-            "title": "Image Agent Id"
-          },
-          "video_agent_id": {
-            "type": "string",
-            "title": "Video Agent Id"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__new__AgentMappingItem"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "valid_agent_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Agent Ids"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__new__ParameterMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "field_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__new__FieldMappingItem"
-            },
-            "type": "object",
-            "title": "Field Mapping"
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids"
-          },
-          "video_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Video Parameter Ids"
-          },
-          "valid_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Parameter Ids"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__new__PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          },
-          "valid_persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Persona Ids"
-          },
-          "valid_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Field Ids"
-          },
-          "valid_general_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid General Field Ids"
-          },
-          "allowed_ranges": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AllowedRanges"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "question_count_range": {
-            "$ref": "#/components/schemas/RangeMinMax"
-          },
-          "randomized_selections": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RandomizedSelections"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "randomized": {
-            "type": "boolean",
-            "title": "Randomized",
-            "default": false
-          },
-          "selected_persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Persona Ids"
-          },
-          "selected_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Document Ids"
-          },
-          "selected_template_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Template Document Ids"
-          },
-          "selected_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Parameter Ids"
-          },
-          "selected_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Field Ids"
-          },
-          "persona_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Search"
-          },
-          "document_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Search"
-          },
-          "parameter_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Search"
-          },
-          "persona_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Min"
-          },
-          "persona_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Max"
-          },
-          "document_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Min"
-          },
-          "document_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Max"
-          },
-          "parameter_selection_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Selection Min"
-          },
-          "parameter_selection_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Selection Max"
-          },
-          "field_ranges": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ranges"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "length_seconds",
-          "active",
-          "file_path",
-          "mime_type",
-          "video_url",
-          "department_ids",
-          "valid_department_ids",
-          "outline_ids",
-          "outline_mapping",
-          "document_ids",
-          "document_mapping",
-          "document_details",
-          "valid_document_ids",
-          "video_images",
-          "objectives_history",
-          "can_edit",
-          "can_duplicate",
-          "can_delete",
-          "department_mapping",
-          "questions",
-          "outline_agent_id",
-          "image_agent_id",
-          "video_agent_id",
-          "agent_mapping",
-          "valid_agent_ids",
-          "parameter_mapping",
-          "field_mapping",
-          "parameter_item_ids",
-          "video_parameter_ids",
-          "valid_parameter_ids",
-          "persona_ids",
-          "persona_mapping",
-          "valid_persona_ids",
-          "question_count_range"
-        ],
-        "title": "VideoDetailResponse",
-        "description": "Response for video detail."
-      },
-      "app__api__v3__videos__update__QuestionItem": {
-        "properties": {
-          "question_text": {
-            "type": "string",
-            "title": "Question Text"
-          },
-          "allow_multiple": {
-            "type": "boolean",
-            "title": "Allow Multiple",
-            "default": false
-          },
-          "times": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Times"
-          },
-          "options": {
-            "items": {
-              "$ref": "#/components/schemas/QuestionOption"
-            },
-            "type": "array",
-            "title": "Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "question_text",
-          "times",
-          "options"
-        ],
-        "title": "QuestionItem",
-        "description": "Question item in update request."
+        "description": "Content item (scenario) in request format."
       }
     }
   }
