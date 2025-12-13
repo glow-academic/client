@@ -20,16 +20,18 @@ export function useFederatedLogout() {
       await signOut({ redirect: false });
 
       // 2. Construct Keycloak Logout URL
+      // Match the pattern used in auth.ts: include /auth path prefix when accessing Keycloak directly
+      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
       const keycloakUrl =
-        process.env["NEXT_PUBLIC_KEYCLOAK_URL"] || "http://localhost:8080";
+        process.env["NEXT_PUBLIC_KEYCLOAK_URL"] ||
+        `http://localhost:8080${appPrefix}/auth`;
       const realm = process.env["NEXT_PUBLIC_KEYCLOAK_REALM"] || "glow";
       const clientId =
         process.env["NEXT_PUBLIC_AUTH_KEYCLOAK_ID"] || "glow-client";
 
       // Where to go after Keycloak is done (back to your login page)
-      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
       const returnTo = encodeURIComponent(
-        `${window.location.origin}${appPrefix}/login`,
+        `${window.location.origin}${appPrefix}/login`
       );
 
       // 3. Construct the logout URL
