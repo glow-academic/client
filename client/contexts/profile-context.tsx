@@ -63,6 +63,7 @@ interface ProfileContextType {
   isSimulating: boolean;
   isFullEmulation: boolean;
   isLoading: boolean;
+  isAuthenticated: boolean; // true if user has real NextAuth session
 
   // Helper functions
   navigateToDefault: (role: ProfileRole) => void;
@@ -437,6 +438,7 @@ export function ProfileProviderClient({
     ),
     isFullEmulation,
     isLoading: false, // Data comes from server, always available
+    isAuthenticated: sessionSnapshot.isAuthenticated,
 
     // Helper functions
     navigateToDefault,

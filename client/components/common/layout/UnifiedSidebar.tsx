@@ -141,6 +141,7 @@ export function UnifiedSidebar({
     isLoading,
     availableSections,
     isFullEmulation,
+    isAuthenticated,
   } = useProfile();
 
   // Build navigation menu based on role with search filtering
@@ -565,8 +566,10 @@ export function UnifiedSidebar({
     effectiveProfile &&
     activeProfile.id !== effectiveProfile.id;
 
-  // Check if user can emulate (instructional and higher)
+  // Check if user can emulate (instructional and higher, and must be authenticated)
+  // Guest/default account users can't emulate even if they have the right role
   const canEmulate =
+    isAuthenticated &&
     activeProfile &&
     ["instructional", "admin", "superadmin"].includes(activeProfile.role);
 

@@ -360,7 +360,23 @@ export default function Login({
     try {
       setLoadingGuest(true);
 
-      // Set guest mode in localStorage and redirect to practice
+      if (!activeSettings?.guestProfileId) {
+        toast.error("Guest login not configured");
+        return;
+      }
+
+      // Import server action dynamically to avoid SSR issues
+      const { setGuestSession } = await import("@/app/(main)/layout-server");
+
+      // Set guest session cookie server-side
+      const result = await setGuestSession(activeSettings.guestProfileId);
+
+      if (!result.ok) {
+        toast.error(result.reason || "Failed to set guest session");
+        return;
+      }
+
+      // Set guest mode in localStorage for client-side state
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedProfileId");
       localStorage.removeItem("defaultAccountMode");
@@ -393,6 +409,21 @@ export default function Login({
       }
 
       setLoading({ ...loading, defaultAccount: true });
+
+      // Import server action dynamically to avoid SSR issues
+      const { setDefaultAccountSession } = await import(
+        "@/app/(main)/layout-server"
+      );
+
+      // Set default account session cookie server-side
+      const result = await setDefaultAccountSession(
+        activeSettings.defaultAccountProfileId
+      );
+
+      if (!result.ok) {
+        toast.error(result.reason || "Failed to set default account session");
+        return;
+      }
 
       // Clear guest mode and simulated profile from localStorage
       localStorage.removeItem("guestMode");

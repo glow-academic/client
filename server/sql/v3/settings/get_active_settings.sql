@@ -135,24 +135,32 @@ settings_providers_data AS (
     JOIN providers p ON p.id = sp.provider_id AND p.active = true
 ),
 settings_default_guest_data AS (
-    -- Get default guest account for the selected settings
+    -- Get default guest account: try selected settings first, fall back to default settings
     SELECT 
-        sdg.profile_id::text as default_guest_profile_id,
-        p.first_name || ' ' || p.last_name as default_guest_name
-    FROM selected_settings ss
-    JOIN settings_default_guest sdg ON sdg.settings_id = ss.settings_id AND sdg.active = true
-    JOIN profiles p ON p.id = sdg.profile_id
-    LIMIT 1
+        COALESCE(
+            (SELECT sdg.profile_id::text
+             FROM selected_settings ss
+             JOIN settings_default_guest sdg ON sdg.settings_id = ss.settings_id AND sdg.active = true
+             LIMIT 1),
+            (SELECT sdg.profile_id::text
+             FROM default_settings ds
+             JOIN settings_default_guest sdg ON sdg.settings_id = ds.settings_id AND sdg.active = true
+             LIMIT 1)
+        ) as default_guest_profile_id
 ),
 settings_default_account_data AS (
-    -- Get default account (admin/superadmin) for the selected settings
+    -- Get default account: try selected settings first, fall back to default settings
     SELECT 
-        sda.profile_id::text as default_account_profile_id,
-        p.first_name || ' ' || p.last_name as default_account_name
-    FROM selected_settings ss
-    JOIN settings_default_account sda ON sda.settings_id = ss.settings_id AND sda.active = true
-    JOIN profiles p ON p.id = sda.profile_id
-    LIMIT 1
+        COALESCE(
+            (SELECT sda.profile_id::text
+             FROM selected_settings ss
+             JOIN settings_default_account sda ON sda.settings_id = ss.settings_id AND sda.active = true
+             LIMIT 1),
+            (SELECT sda.profile_id::text
+             FROM default_settings ds
+             JOIN settings_default_account sda ON sda.settings_id = ds.settings_id AND sda.active = true
+             LIMIT 1)
+        ) as default_account_profile_id
 )
 SELECT 
     s.id::text as settings_id,

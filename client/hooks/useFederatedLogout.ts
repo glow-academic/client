@@ -5,7 +5,8 @@ import { signOut, useSession } from "next-auth/react";
  *
  * This hook performs a two-step logout:
  * 1. Clears the local NextAuth session cookie
- * 2. Redirects to Keycloak logout endpoint to clear the server-side session
+ * 2. Clears guest/default account cookies (if any)
+ * 3. Redirects to Keycloak logout endpoint to clear the server-side session
  *
  * @returns An async function that performs federated logout
  */
@@ -19,7 +20,17 @@ export function useFederatedLogout() {
       // redirect: false prevents NextAuth from reloading the page immediately
       await signOut({ redirect: false });
 
-      // 2. Construct Keycloak Logout URL
+      // 2. Clear guest/default account cookies
+      try {
+        const { clearGuestSessionCookies } = await import(
+          "@/app/(main)/layout-server"
+        );
+        await clearGuestSessionCookies();
+      } catch {
+        // Ignore errors - cookies might not exist
+      }
+
+      // 3. Construct Keycloak Logout URL
       // Match the pattern used in auth.ts: include /auth path prefix when accessing Keycloak directly
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
       const keycloakUrl =
@@ -34,10 +45,10 @@ export function useFederatedLogout() {
         `${window.location.origin}${appPrefix}/login`
       );
 
-      // 3. Construct the logout URL
+      // 4. Construct the logout URL
       let logoutUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/logout?post_logout_redirect_uri=${returnTo}&client_id=${clientId}`;
 
-      // 4. Append id_token_hint if available
+      // 5. Append id_token_hint if available
       // This tells Keycloak: "I am this user, and I really want to logout. Don't ask me."
       if (session?.id_token) {
         logoutUrl += `&id_token_hint=${session.id_token}`;

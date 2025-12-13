@@ -5,7 +5,7 @@
 import { getSession, update } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -99,6 +99,7 @@ export type SafeSessionSnapshot = {
   effectiveProfileId: string | null;
   fullEmulation: boolean;
   emulationTTL: number | null;
+  isAuthenticated: boolean; // true if user has real NextAuth session (not guest/default account)
 };
 
 export async function getLayoutContextData() {
@@ -108,6 +109,9 @@ export async function getLayoutContextData() {
     effectiveProfileId: session?.effectiveProfileId ?? null,
     fullEmulation: !!session?.fullEmulation,
     emulationTTL: session?.emulationTTL ?? null,
+    // Only authenticated users have id_token (from Keycloak)
+    // Guest/default account users have pseudo-sessions without id_token
+    isAuthenticated: !!session?.id_token,
   };
 
   // CRITICAL: Fetch settings FIRST to get guest profile ID
@@ -260,6 +264,99 @@ export async function switchEffectiveProfile(
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return { ok: false, reason: errorMessage };
+  }
+}
+
+/**
+ * Server action to set guest session cookie.
+ * Validates that the profile exists before setting the cookie.
+ */
+export async function setGuestSession(
+  guestProfileId: string
+): Promise<{ ok: boolean; reason?: string }> {
+  "use server";
+  try {
+    // Validate profile exists
+    const profileResponse = (await api.post("/profile/detail", {
+      body: { profileId: guestProfileId },
+    })) as { profile: { id: string; role: string } };
+
+    if (!profileResponse.profile) {
+      return { ok: false, reason: "Guest profile not found" };
+    }
+
+    // Clear default account cookie if set
+    const cookieStore = await cookies();
+    cookieStore.delete("default-account-profile-id");
+
+    // Set guest profile cookie (30 days expiry)
+    cookieStore.set("guest-profile-id", guestProfileId, {
+      httpOnly: false, // Need to read it client-side for redirects
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: "/",
+    });
+
+    return { ok: true };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return { ok: false, reason: errorMessage };
+  }
+}
+
+/**
+ * Server action to set default account session cookie.
+ * Validates that the profile exists before setting the cookie.
+ */
+export async function setDefaultAccountSession(
+  defaultAccountProfileId: string
+): Promise<{ ok: boolean; reason?: string }> {
+  "use server";
+  try {
+    // Validate profile exists
+    const profileResponse = (await api.post("/profile/detail", {
+      body: { profileId: defaultAccountProfileId },
+    })) as { profile: { id: string; role: string } };
+
+    if (!profileResponse.profile) {
+      return { ok: false, reason: "Default account profile not found" };
+    }
+
+    // Clear guest cookie if set
+    const cookieStore = await cookies();
+    cookieStore.delete("guest-profile-id");
+
+    // Set default account profile cookie (30 days expiry)
+    cookieStore.set("default-account-profile-id", defaultAccountProfileId, {
+      httpOnly: false, // Need to read it client-side for redirects
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: "/",
+    });
+
+    return { ok: true };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return { ok: false, reason: errorMessage };
+  }
+}
+
+/**
+ * Server action to clear guest/default account session cookies.
+ * Called on logout to ensure clean session state.
+ */
+export async function clearGuestSessionCookies(): Promise<void> {
+  "use server";
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("guest-profile-id");
+    cookieStore.delete("default-account-profile-id");
+  } catch {
+    // Ignore errors - cookies might not exist
   }
 }
 

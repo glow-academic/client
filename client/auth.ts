@@ -1,9 +1,10 @@
 // auth.ts
 import { api } from "@/lib/api/client";
 import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
+import type { Session } from "next-auth";
 import NextAuth from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
@@ -31,7 +32,7 @@ function parseName(name: string | null | undefined): {
 // Helper function to create a profile with guest role
 async function createGuestProfile(
   email: string,
-  name: string | null | undefined,
+  name: string | null | undefined
 ): Promise<void> {
   const { firstName, lastName } = parseName(name);
   try {
@@ -52,7 +53,7 @@ async function createGuestProfile(
       // eslint-disable-next-line no-console
       console.error(
         `Failed to create guest profile for ${email}:`,
-        errorMessage,
+        errorMessage
       );
     }
   }
@@ -111,7 +112,7 @@ export const {
             // eslint-disable-next-line no-console
             console.error(
               `Failed to update lastLogin for profile ${existingProfile.id}:`,
-              error instanceof Error ? error.message : String(error),
+              error instanceof Error ? error.message : String(error)
             );
           }
         } else {
@@ -123,7 +124,7 @@ export const {
         // eslint-disable-next-line no-console
         console.error(
           `Error in createUser event for ${user.email}:`,
-          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.message : String(error)
         );
       }
     },
@@ -167,7 +168,7 @@ export const {
               // eslint-disable-next-line no-console
               console.error(
                 `Failed to update profile ${existingProfile.id}:`,
-                error instanceof Error ? error.message : String(error),
+                error instanceof Error ? error.message : String(error)
               );
             }
           }
@@ -211,7 +212,7 @@ export const {
                 `Failed to fetch profile after creation for ${user.email}:`,
                 retryError instanceof Error
                   ? retryError.message
-                  : String(retryError),
+                  : String(retryError)
               );
             }
           } catch (createError) {
@@ -222,7 +223,7 @@ export const {
               `Failed to create profile in jwt callback for ${user.email}:`,
               createError instanceof Error
                 ? createError.message
-                : String(createError),
+                : String(createError)
             );
           }
         }
@@ -251,6 +252,41 @@ export const {
         }
         if ("fullEmulation" in session) {
           token["fullEmulation"] = !!session.fullEmulation;
+        }
+      }
+
+      // Handle guest/default account cookies when no authenticated user
+      // This allows unauthenticated users to have a pseudo-session
+      if (!user && !token["profileId"]) {
+        try {
+          const cookieStore = await cookies();
+          const guestProfileId = cookieStore.get("guest-profile-id")?.value;
+          const defaultAccountProfileId = cookieStore.get(
+            "default-account-profile-id"
+          )?.value;
+
+          const profileId = defaultAccountProfileId || guestProfileId;
+
+          if (profileId) {
+            // Fetch profile to get role
+            try {
+              const profileResponse = (await api.post("/profile/detail", {
+                body: { profileId },
+              })) as { profile: { id: string; role: string } };
+              const profile = profileResponse.profile;
+
+              if (profile) {
+                token["profileId"] = profile.id;
+                token["effectiveProfileId"] = profile.id;
+                token["role"] = profile.role || "guest";
+              }
+            } catch {
+              // If profile fetch fails, clear the cookie and continue without session
+              // The cookie will be cleared by the server action on next request
+            }
+          }
+        } catch {
+          // Ignore cookie access errors
         }
       }
 
@@ -292,6 +328,56 @@ export const {
   },
 });
 
+/**
+ * Helper function to create a pseudo-session from guest/default account cookies
+ */
+async function createPseudoSessionFromCookies(): Promise<Session | null> {
+  try {
+    const cookieStore = await cookies();
+    const guestProfileId = cookieStore.get("guest-profile-id")?.value;
+    const defaultAccountProfileId = cookieStore.get(
+      "default-account-profile-id"
+    )?.value;
+
+    const profileId = defaultAccountProfileId || guestProfileId;
+
+    if (!profileId) {
+      return null;
+    }
+
+    // Fetch profile to get role
+    try {
+      const profileResponse = (await api.post("/profile/detail", {
+        body: { profileId },
+      })) as { profile: { id: string; role: string } };
+      const profile = profileResponse.profile;
+
+      if (!profile) {
+        return null;
+      }
+
+      // Create a minimal session object
+      return {
+        user: {
+          id: profile.id,
+          profileId: profile.id,
+          role: (profile.role || "guest") as "guest" | "staff" | "admin",
+        },
+        effectiveProfileId: profile.id,
+        emulationTTL: null,
+        fullEmulation: false,
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+      } as Session;
+    } catch {
+      // If profile fetch fails, return null (cookie might be invalid)
+      return null;
+    }
+  } catch {
+    // Ignore cookie access errors
+    return null;
+  }
+}
+
 export async function getSession() {
   try {
     const headerList = await headers();
@@ -303,5 +389,16 @@ export async function getSession() {
     // Ignore header access errors and fall back to real auth.
   }
 
-  return auth();
+  // Try to get authenticated session first
+  const authSession = await auth();
+
+  // If no authenticated session, check for guest/default account cookies
+  if (!authSession?.user?.profileId) {
+    const pseudoSession = await createPseudoSessionFromCookies();
+    if (pseudoSession) {
+      return pseudoSession;
+    }
+  }
+
+  return authSession;
 }
