@@ -10,7 +10,7 @@ export type ProfileRole =
   | "superadmin"
   | "admin"
   | "instructional"
-  | "ta"
+  | "member"
   | "guest";
 
 // Re-export the functions from route-permissions for backward compatibility

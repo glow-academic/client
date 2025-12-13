@@ -189,14 +189,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   // Extract subset for Home: startDate, endDate, profileId (required)
   // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
-  // profileId is required for TA mode detection and role hierarchy filtering
+  // profileId is required for member mode detection and role hierarchy filtering
   const homeFilters: HomeIn = {
     body: {
       startDate: defaultFilters.startDate,
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds, // Always non-empty
       departmentIds: defaultFilters.departmentIds, // Always non-empty
-      profileId: session?.effectiveProfileId || "guest-profile-id", // Required for TA mode detection
+      profileId: session?.effectiveProfileId || "guest-profile-id", // Required for member mode detection
     },
   };
 

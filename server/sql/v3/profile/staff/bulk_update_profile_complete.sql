@@ -22,9 +22,9 @@ profile_validation AS (
         CASE 
             WHEN $3 IS NULL THEN true  -- Not updating role
             WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND $3 IN ('instructional', 'ta', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND $3 IN ('ta', 'guest') THEN true
-            WHEN cur.role = 'ta' AND $3 = 'guest' THEN true
+            WHEN cur.role = 'admin' AND $3 IN ('instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'instructional' AND $3 IN ('member', 'guest') THEN true
+            WHEN cur.role = 'member' AND $3 = 'guest' THEN true
             ELSE false
         END as can_assign_role,
         -- Check if role level is acceptable (cannot assign equal or higher role)
@@ -33,9 +33,9 @@ profile_validation AS (
             WHEN cur.role = 'superadmin' THEN true  -- Superadmin can assign any role
             WHEN p.id = $1 THEN true  -- Can update own role
             WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND $3 IN ('instructional', 'ta', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND $3 IN ('ta', 'guest') THEN true
-            WHEN cur.role = 'ta' AND $3 = 'guest' THEN true
+            WHEN cur.role = 'admin' AND $3 IN ('instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'instructional' AND $3 IN ('member', 'guest') THEN true
+            WHEN cur.role = 'member' AND $3 = 'guest' THEN true
             ELSE false
         END as role_level_ok,
         -- All profiles can be edited based on role hierarchy

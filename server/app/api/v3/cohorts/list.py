@@ -339,11 +339,11 @@ async def get_cohorts_list(
             if user_role == "superadmin":
                 return True
             elif user_role == "admin":
-                return target_role in ("admin", "instructional", "ta", "guest")
+                return target_role in ("admin", "instructional", "member", "guest")
             elif user_role == "instructional":
-                return target_role in ("instructional", "ta", "guest")
-            elif user_role == "ta":
-                return target_role in ("ta", "guest")
+                return target_role in ("instructional", "member", "guest")
+            elif user_role == "member":
+                return target_role in ("member", "guest")
             elif user_role == "guest":
                 return target_role == "guest"
             return False

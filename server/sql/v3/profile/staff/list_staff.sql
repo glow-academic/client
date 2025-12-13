@@ -160,24 +160,24 @@ instructional_users_trend AS (
     ), '[]'::jsonb) as trend
     FROM instructional_users_cumulative
 ),
-ta_users_by_date AS (
+member_users_by_date AS (
     SELECT 
         DATE(p.created_at) as date,
         COUNT(DISTINCT p.id) as count
     FROM profiles p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND p.role = 'ta'
+    AND p.role = 'member'
     GROUP BY DATE(p.created_at)
 ),
-ta_users_cumulative AS (
+member_users_cumulative AS (
     SELECT 
         date,
         SUM(count) OVER (ORDER BY date) as cumulative_count,
         count as daily_count
-    FROM ta_users_by_date
+    FROM member_users_by_date
 ),
-ta_users_trend AS (
+member_users_trend AS (
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'date', date::text,
@@ -185,7 +185,7 @@ ta_users_trend AS (
             'count', daily_count
         ) ORDER BY date
     ), '[]'::jsonb) as trend
-    FROM ta_users_cumulative
+    FROM member_users_cumulative
 ),
 total_requests_by_date AS (
     SELECT 
@@ -242,7 +242,7 @@ trend_data_combined AS (
         'active', (SELECT trend FROM active_users_trend),
         'admin', (SELECT trend FROM admin_users_trend),
         'instructional', (SELECT trend FROM instructional_users_trend),
-        'ta', (SELECT trend FROM ta_users_trend),
+        'member', (SELECT trend FROM member_users_trend),
         'total_requests', (SELECT trend FROM total_requests_trend)
     ) as trend_data
 )
@@ -288,9 +288,9 @@ SELECT DISTINCT ON (p.id)
         -- Superadmin has no restrictions
         WHEN up.role = 'superadmin' THEN true
         -- Role hierarchy: can only edit roles lower than current role
-        WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
-        WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
-        WHEN up.role = 'ta' AND p.role = 'guest' THEN true
+        WHEN up.role = 'admin' AND p.role IN ('instructional', 'member', 'guest') THEN true
+        WHEN up.role = 'instructional' AND p.role IN ('member', 'guest') THEN true
+        WHEN up.role = 'member' AND p.role = 'guest' THEN true
         ELSE false
     END as can_edit,
     CASE 
@@ -301,9 +301,9 @@ SELECT DISTINCT ON (p.id)
         -- Cannot delete profiles with cohort links (prevent orphaned data)
         WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
         -- Role hierarchy: can only delete roles lower than current role
-        WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
-        WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
-        WHEN up.role = 'ta' AND p.role = 'guest' THEN true
+        WHEN up.role = 'admin' AND p.role IN ('instructional', 'member', 'guest') THEN true
+        WHEN up.role = 'instructional' AND p.role IN ('member', 'guest') THEN true
+        WHEN up.role = 'member' AND p.role = 'guest' THEN true
         ELSE false
     END as can_delete,
     cmd.cohort_mapping,
@@ -342,9 +342,9 @@ WHERE (
 )
 AND (
     up.role = 'superadmin' OR
-    (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR
-    (up.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest')) OR
-    (up.role = 'ta' AND p.role IN ('ta', 'guest')) OR
+    (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'member', 'guest')) OR
+    (up.role = 'instructional' AND p.role IN ('instructional', 'member', 'guest')) OR
+    (up.role = 'member' AND p.role IN ('member', 'guest')) OR
     (up.role = 'guest' AND p.role = 'guest')
 )
 GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 

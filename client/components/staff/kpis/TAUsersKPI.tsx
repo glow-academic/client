@@ -84,7 +84,7 @@ export default function TAUsersKPI({
         onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">TAs</CardTitle>
+          <CardTitle className="text-sm font-medium">Members</CardTitle>
           <UserIcon className="h-4 w-4" style={{ color: chartColor }} />
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
@@ -97,9 +97,9 @@ export default function TAUsersKPI({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>TA Users Growth Trend</DialogTitle>
+            <DialogTitle>Member Users Growth Trend</DialogTitle>
             <DialogDescription hidden>
-              This chart shows the growth of TA users over time.
+              This chart shows the growth of member users over time.
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
@@ -117,7 +117,7 @@ export default function TAUsersKPI({
                 <Tooltip
                   formatter={(value: number, name: string) => [
                     name === "value" ? Math.round(value) : value,
-                    name === "value" ? "Total TAs" : "New TAs",
+                    name === "value" ? "Total Members" : "New Members",
                   ]}
                   labelFormatter={formatDate}
                 />

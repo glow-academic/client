@@ -48,9 +48,9 @@ role_visibility_check AS (
         tp.*,
         CASE 
             WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND tp.role IN ('admin', 'instructional', 'ta', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND tp.role IN ('instructional', 'ta', 'guest') THEN true
-            WHEN cur.role = 'ta' AND tp.role IN ('ta', 'guest') THEN true
+            WHEN cur.role = 'admin' AND tp.role IN ('admin', 'instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'instructional' AND tp.role IN ('instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'member' AND tp.role IN ('member', 'guest') THEN true
             WHEN cur.role = 'guest' AND tp.role = 'guest' THEN true
             ELSE false
         END as can_see
@@ -93,9 +93,9 @@ can_edit_check AS (
     SELECT 
         CASE 
             WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND vp.role IN ('admin', 'instructional', 'ta', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND vp.role IN ('instructional', 'ta', 'guest') THEN true
-            WHEN cur.role = 'ta' AND vp.role IN ('ta', 'guest') THEN true
+            WHEN cur.role = 'admin' AND vp.role IN ('admin', 'instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'instructional' AND vp.role IN ('instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'member' AND vp.role IN ('member', 'guest') THEN true
             ELSE false
         END as can_edit
     FROM visible_profile vp

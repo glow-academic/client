@@ -25,7 +25,7 @@ import React, {
 } from "react";
 import { useProfile } from "./profile-context";
 
-type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
+type ProfileRole = "superadmin" | "admin" | "instructional" | "member" | "guest";
 
 export type SimulationFilter = "practice" | "general" | "archived";
 
@@ -357,12 +357,12 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     [pathname],
   );
 
-  // Resolve effective roles: force TA-only for TA users, default to all when empty
+  // Resolve effective roles: force member-only for member users, default to all when empty
   const effectiveRoles = useMemo<ProfileRole[]>(() => {
-    if (effectiveProfile?.role === "ta") return ["ta"] as ProfileRole[];
+    if (effectiveProfile?.role === "member") return ["member"] as ProfileRole[];
     // Empty selection means all roles
     if (selectedRoles.length === 0) {
-      return ["superadmin", "admin", "instructional", "ta", "guest"];
+      return ["superadmin", "admin", "instructional", "member", "guest"];
     }
     return selectedRoles;
   }, [effectiveProfile?.role, selectedRoles]);

@@ -108,7 +108,7 @@ async function getLeaderboardFilters(searchParams?: URLSearchParams) {
     };
   }
 
-  // For TA users: scope cohort filter to their profile's cohorts if no cohortIds specified
+  // For member users: scope cohort filter to their profile's cohorts if no cohortIds specified
   // For instructional+: use all accessible cohorts from profile context if no cohortIds specified
   const cohortIds =
     filters.cohortIds && filters.cohortIds.length > 0

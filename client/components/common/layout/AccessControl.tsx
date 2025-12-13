@@ -42,7 +42,7 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
       // This handles cases like TA accessing /leaderboard
       const role = effectiveProfile.role as
         | "guest"
-        | "ta"
+        | "member"
         | "instructional"
         | "admin"
         | "superadmin";
@@ -123,7 +123,7 @@ function AccessDeniedCard({
     switch (role) {
       case "guest":
         return "You need to log in to access this page.";
-      case "ta":
+      case "member":
         if (
           section === "analytics" ||
           section === "create" ||
@@ -152,7 +152,7 @@ function AccessDeniedCard({
     switch (role) {
       case "guest":
         return <User className="h-8 w-8 text-muted-foreground" />;
-      case "ta":
+      case "member":
         return <User className="h-8 w-8 text-blue-500" />;
       case "instructional":
         return <Shield className="h-8 w-8 text-green-500" />;

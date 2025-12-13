@@ -56,7 +56,7 @@ history_viewer_role AS (
                     WHEN 'superadmin'::profile_role = ANY($7::profile_role[]) THEN 'superadmin'::text
                     WHEN 'admin'::profile_role = ANY($7::profile_role[]) THEN 'admin'::text
                     WHEN 'instructional'::profile_role = ANY($7::profile_role[]) THEN 'instructional'::text
-                    WHEN 'ta'::profile_role = ANY($7::profile_role[]) THEN 'ta'::text
+                    WHEN 'member'::profile_role = ANY($7::profile_role[]) THEN 'member'::text
                     ELSE 'guest'::text
                 END
             ELSE COALESCE((SELECT role::text FROM profiles WHERE id = rpi.resolved_profile_id), 'guest'::text)
@@ -123,9 +123,9 @@ history_attempts AS (
       -- Role hierarchy filtering
       AND (
         hvr.role = 'superadmin' OR
-        (hvr.role = 'admin' AND p_attempt.role IN ('admin', 'instructional', 'ta', 'guest')) OR
-        (hvr.role = 'instructional' AND p_attempt.role IN ('instructional', 'ta', 'guest')) OR
-        (hvr.role = 'ta' AND p_attempt.role IN ('ta', 'guest')) OR
+        (hvr.role = 'admin' AND p_attempt.role IN ('admin', 'instructional', 'member', 'guest')) OR
+        (hvr.role = 'instructional' AND p_attempt.role IN ('instructional', 'member', 'guest')) OR
+        (hvr.role = 'member' AND p_attempt.role IN ('member', 'guest')) OR
         (hvr.role = 'guest' AND p_attempt.role = 'guest')
       )
 ),

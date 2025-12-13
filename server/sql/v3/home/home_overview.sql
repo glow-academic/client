@@ -6,7 +6,7 @@
 -- for the 'filt' CTE is built dynamically using AnalyticsQueryBuilder.build_base_filter
 -- Parameters (in order):
 -- $1, $2: start_date (datetime), end_date (datetime) - for WHERE clause
--- $3: profile_id (uuid) - required, used for TA mode detection and role hierarchy computation
+-- $3: profile_id (uuid) - required, used for member mode detection and role hierarchy computation
 -- $4: cohort_ids (uuid[])
 -- $5: department_ids (uuid[])
 -- Roles are inferred from profile_id in the profile_role_lookup CTE (no longer a parameter)
@@ -76,33 +76,33 @@ profile_role_lookup AS (
     SELECT 
         CASE 
             WHEN rpi.resolved_profile_id IS NULL THEN 'instructional'
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'ta' THEN 'ta'
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'member' THEN 'member'
             ELSE 'instructional'
         END AS mode,
         CASE
             WHEN rpi.resolved_profile_id IS NULL THEN false
-            ELSE COALESCE((SELECT role = 'ta' FROM profiles WHERE id = rpi.resolved_profile_id), false)
-        END AS is_ta_mode,
+            ELSE COALESCE((SELECT role = 'member' FROM profiles WHERE id = rpi.resolved_profile_id), false)
+        END AS is_member_mode,
         -- Compute role hierarchy array based on profile's role
         CASE
-            WHEN rpi.resolved_profile_id IS NULL THEN ARRAY['instructional', 'ta', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'ta', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'admin' THEN ARRAY['admin', 'instructional', 'ta', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'instructional' THEN ARRAY['instructional', 'ta', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'ta' THEN ARRAY['ta', 'guest']::profile_role[]
+            WHEN rpi.resolved_profile_id IS NULL THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'member' THEN ARRAY['member', 'guest']::profile_role[]
             WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'guest' THEN ARRAY['guest']::profile_role[]
-            ELSE ARRAY['instructional', 'ta', 'guest']::profile_role[]  -- Default fallback
+            ELSE ARRAY['instructional', 'member', 'guest']::profile_role[]  -- Default fallback
         END AS role_hierarchy
     FROM resolve_profile_id rpi
 ),
--- Filter analytics for items: for TA mode include profileId filter
+-- Filter analytics for items: for member mode include profileId filter
 -- NOTE: WHERE clause here is built dynamically - see route implementation
 -- Also filter by simulation_ids from cohorts (new filtering order)
 filt AS (
     SELECT a.* 
     FROM analytics a, profile_role_lookup prl, resolve_profile_id rpi
     WHERE {WHERE_CLAUSE_PLACEHOLDER}
-      AND (NOT prl.is_ta_mode OR a.profile_id = rpi.resolved_profile_id)
+      AND (NOT prl.is_member_mode OR a.profile_id = rpi.resolved_profile_id)
       -- Filter by simulation_ids from cohorts (new filtering order)
       AND (cardinality($4::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
 ),
@@ -184,8 +184,8 @@ cohort_membership AS (
     WHERE cp.active = true  -- Only active cohort memberships for non-history queries
       AND (cardinality($4::uuid[]) = 0 OR c.id = ANY($4::uuid[]))
       AND p.role = ANY(prl.role_hierarchy)  -- Use computed role hierarchy from profile_role_lookup
-      -- When TA mode, only include the current TA's profile_id
-      AND (NOT prl.is_ta_mode OR cp.profile_id = rpi.resolved_profile_id)
+      -- When member mode, only include the current member's profile_id
+      AND (NOT prl.is_member_mode OR cp.profile_id = rpi.resolved_profile_id)
     GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, c.title, p.role, c.id
     HAVING 
         (cardinality($5::uuid[]) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY($5::uuid[])) > 0)
@@ -346,7 +346,7 @@ ta_rows AS (
         ) AS item
     FROM sim_meta s
     LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
-    WHERE EXISTS (SELECT 1 FROM profile_role_lookup prl WHERE prl.is_ta_mode)
+    WHERE EXISTS (SELECT 1 FROM profile_role_lookup prl WHERE prl.is_member_mode)
       AND EXISTS (SELECT 1 FROM ta_sim_space t WHERE t.simulation_id = s.simulation_id)
 ),
 -- INSTRUCTIONAL VIEW: counts across all cohort members
@@ -437,7 +437,7 @@ inst_rows AS (
     JOIN inst_counts ic ON ic.simulation_id = s.simulation_id
     LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
     LEFT JOIN inst_cohort_names icn ON icn.simulation_id = s.simulation_id
-    WHERE NOT EXISTS (SELECT 1 FROM profile_role_lookup prl WHERE prl.is_ta_mode)
+    WHERE NOT EXISTS (SELECT 1 FROM profile_role_lookup prl WHERE prl.is_member_mode)
 ),
 all_rubric_ids AS (
     SELECT DISTINCT rubric_id FROM sim_meta
@@ -511,9 +511,9 @@ simulation_mapping_data AS (
 )
 SELECT json_build_object(
     'mode', (SELECT mode FROM profile_role_lookup),
-    'hasData', CASE WHEN (SELECT is_ta_mode FROM profile_role_lookup) THEN EXISTS(SELECT 1 FROM ta_rows) ELSE EXISTS(SELECT 1 FROM inst_rows) END,
+    'hasData', CASE WHEN (SELECT is_member_mode FROM profile_role_lookup) THEN EXISTS(SELECT 1 FROM ta_rows) ELSE EXISTS(SELECT 1 FROM inst_rows) END,
     'items', CASE
-        WHEN (SELECT is_ta_mode FROM profile_role_lookup) THEN COALESCE((SELECT json_agg(item ORDER BY (item->>'simulationTitle')) FROM ta_rows), '[]'::json)
+        WHEN (SELECT is_member_mode FROM profile_role_lookup) THEN COALESCE((SELECT json_agg(item ORDER BY (item->>'simulationTitle')) FROM ta_rows), '[]'::json)
         ELSE COALESCE((SELECT json_agg(item ORDER BY has_passed_bool ASC, sort_cohort_name NULLS LAST, sort_title) FROM inst_rows), '[]'::json)
     END,
     'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping), '{}'::jsonb),

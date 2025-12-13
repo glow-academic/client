@@ -131,7 +131,7 @@ function MainLayoutContent({
   const canShowAnalyticsFilters = useMemo(() => {
     // Show filters on leaderboard page for all authorized users
     if (pathname === "/leaderboard") {
-      const allowedRoles = ["ta", "instructional", "admin", "superadmin"];
+      const allowedRoles = ["member", "instructional", "admin", "superadmin"];
       return (
         effectiveProfile?.role && allowedRoles.includes(effectiveProfile.role)
       );

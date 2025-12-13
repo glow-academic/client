@@ -23,7 +23,7 @@ export default function Error({
     // Navigate based on effective role if available, otherwise default to home
     if (
       effectiveProfile?.role &&
-      effectiveProfile.role !== "ta" &&
+      effectiveProfile.role !== "member" &&
       effectiveProfile.role !== "guest"
     ) {
       router.push("/analytics");

@@ -76,7 +76,7 @@ available_profiles AS (
     SELECT *
     FROM all_staff
     WHERE profile_id NOT IN (SELECT profile_id FROM current_cohort_profiles)
-        AND role IN ('instructional', 'ta')
+        AND role IN ('instructional', 'member')
 )
 SELECT
     cd.id::text as cohort_id,

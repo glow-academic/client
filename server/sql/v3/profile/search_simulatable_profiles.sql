@@ -59,8 +59,8 @@ simulatable_data AS (
     WHERE p.id != (SELECT resolved_profile_id FROM resolve_profile_id)
       AND CASE 
         WHEN rr.role = 'superadmin' THEN true
-        WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
-        WHEN rr.role = 'instructional' THEN p.role IN ('ta', 'guest')
+        WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'member', 'guest')
+        WHEN rr.role = 'instructional' THEN p.role IN ('member', 'guest')
         ELSE false
       END
       {search_where_clause}

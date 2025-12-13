@@ -32,7 +32,7 @@ import { Socket } from "socket.io-client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
-type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
+type ProfileRole = "superadmin" | "admin" | "instructional" | "member" | "guest";
 
 // Use types from server response
 type ProfileItem = LayoutContextResponse["actualProfile"];

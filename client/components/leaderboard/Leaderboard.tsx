@@ -25,7 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import AccoladeCard, { AccoladeCardSkeleton } from "./AccoladeCard";
 import LeaderboardTable, { LeaderboardTableSkeleton } from "./LeaderboardTable";
 
-type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
+type ProfileRole = "superadmin" | "admin" | "instructional" | "member" | "guest";
 
 type LeaderboardMetric = {
   hasData: boolean;
@@ -109,14 +109,14 @@ export default function Leaderboard({
 
   const handleViewReport = (profileId: string) => {
     // Disable navigation for TAs when viewing a specific cohort
-    if (cohortId && effectiveProfile?.role === "ta") {
+    if (cohortId && effectiveProfile?.role === "member") {
       return;
     }
     router.push(`/analytics/reports/p/${profileId}`);
   };
 
   // Check if navigation should be disabled for TAs viewing a specific cohort
-  const shouldDisableNavigation = cohortId && effectiveProfile?.role === "ta";
+  const shouldDisableNavigation = cohortId && effectiveProfile?.role === "member";
 
   // Check if user has permission to view reports (instructional and above)
   const canViewReports =

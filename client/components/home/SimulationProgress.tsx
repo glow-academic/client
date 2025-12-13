@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export enum ViewMode {
-  TA = "ta",
+  MEMBER = "member",
   INSTRUCTIONAL = "instructional",
 }
 
@@ -23,7 +23,7 @@ interface SimulationProgressProps {
   passedCount?: number;
   inProgressCount?: number;
   notStartedCount?: number;
-  passPct?: number; // For TA mode
+  passPct?: number; // For member mode
 }
 
 export default function SimulationProgress({
@@ -38,13 +38,13 @@ export default function SimulationProgress({
   notStartedCount,
   passPct,
 }: SimulationProgressProps) {
-  const isTAViewMode = viewMode === ViewMode.TA;
+  const isMemberViewMode = viewMode === ViewMode.MEMBER;
   const progressPercentage = completionPct;
 
   // Get status text and badge styling
   const getStatusInfo = () => {
-    if (isTAViewMode) {
-      // TA view: show based on status
+    if (isMemberViewMode) {
+      // Member view: show based on status
       if (status === "passed") {
         return {
           text: "Passed",
@@ -134,7 +134,7 @@ export default function SimulationProgress({
           </div>
 
           {/* Detailed counts or pass threshold */}
-          {isTAViewMode ? (
+          {isMemberViewMode ? (
             <div className="text-xs text-muted-foreground">
               <span className="inline-flex items-center">
                 <span className="w-2 h-2 bg-orange-500 rounded-full mr-1.5"></span>
@@ -200,7 +200,7 @@ export default function SimulationProgress({
         </div>
 
         {/* Detailed counts or pass threshold */}
-        {isTAViewMode ? (
+        {isMemberViewMode ? (
           <div className="text-xs text-muted-foreground">
             <span className="inline-flex items-center">
               <span className="w-2 h-2 bg-orange-500 rounded-full mr-1"></span>

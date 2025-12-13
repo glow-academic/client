@@ -199,10 +199,10 @@ export function AnalyticsFilters({
   // Automatically filter available roles and remove invalid selections when cohorts are selected
   useEffect(() => {
     if (selectedCohortIds.length > 0) {
-      // When cohorts are selected, only allow "ta" and "instructional" roles
-      // Remove any existing selections that aren't "ta" or "instructional"
+      // When cohorts are selected, only allow "member" and "instructional" roles
+      // Remove any existing selections that aren't "member" or "instructional"
       const validRoles = selectedRoles.filter(
-        (role) => role === "ta" || role === "instructional",
+        (role) => role === "member" || role === "instructional",
       );
       if (validRoles.length !== selectedRoles.length) {
         setSelectedRoles(validRoles);
@@ -342,7 +342,7 @@ export function AnalyticsFilters({
                 items={
                   selectedCohortIds.length > 0
                     ? PROFILE_ROLES.filter(
-                        (role) => role === "instructional" || role === "ta",
+                        (role) => role === "instructional" || role === "member",
                       )
                     : PROFILE_ROLES.filter((role) => scopedRoles.includes(role))
                 }

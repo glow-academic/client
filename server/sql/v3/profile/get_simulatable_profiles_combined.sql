@@ -58,8 +58,8 @@ LEFT JOIN LATERAL (
 WHERE p.id != (SELECT resolved_profile_id FROM resolve_profile_id)
   AND CASE 
     WHEN rr.role = 'superadmin' THEN true
-    WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
-    WHEN rr.role = 'instructional' THEN p.role IN ('ta', 'guest')
+    WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'member', 'guest')
+    WHEN rr.role = 'instructional' THEN p.role IN ('member', 'guest')
     ELSE false
   END
 GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 

@@ -18,7 +18,7 @@ export default function NotFound() {
 
   const handleBackToGlow = () => {
     // Navigate based on effective role, default to /home if context unavailable
-    if (effectiveProfile?.role !== "ta" && effectiveProfile?.role !== "guest") {
+    if (effectiveProfile?.role !== "member" && effectiveProfile?.role !== "guest") {
       router.push("/analytics");
     } else {
       router.push("/home");

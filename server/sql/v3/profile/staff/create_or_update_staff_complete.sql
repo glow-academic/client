@@ -21,10 +21,10 @@ role_validation AS (
     SELECT 
         CASE 
             WHEN $9 IS NULL THEN true  -- Skip validation if no current_profile_id provided
-            WHEN cur.role = 'superadmin' AND $5 IN ('superadmin', 'admin', 'instructional', 'ta', 'guest') THEN true
-            WHEN cur.role = 'admin' AND $5 IN ('instructional', 'ta', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND $5 IN ('ta', 'guest') THEN true
-            WHEN cur.role = 'ta' AND $5 = 'guest' THEN true
+            WHEN cur.role = 'superadmin' AND $5 IN ('superadmin', 'admin', 'instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'admin' AND $5 IN ('instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'instructional' AND $5 IN ('member', 'guest') THEN true
+            WHEN cur.role = 'member' AND $5 = 'guest' THEN true
             WHEN cur.role = 'guest' THEN false
             ELSE false
         END as can_assign,

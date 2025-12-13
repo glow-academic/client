@@ -305,8 +305,8 @@ export default function Home({ homeData }: HomeProps) {
                     key={item.id}
                     id={item.id}
                     viewMode={
-                      item.viewMode === "ta"
-                        ? ViewMode.TA
+                      item.viewMode === "member"
+                        ? ViewMode.MEMBER
                         : ViewMode.INSTRUCTIONAL
                     }
                     {...(item.cohortName && { cohortName: item.cohortName })}

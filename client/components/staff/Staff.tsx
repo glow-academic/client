@@ -163,7 +163,7 @@ const getRoleIcon = (role: string) => {
     case "admin":
     case "instructional":
       return Shield;
-    case "ta":
+    case "member":
     case "guest":
     default:
       return UserIcon;
@@ -178,8 +178,8 @@ const getRoleDisplayName = (role: string): string => {
       return "Administrator";
     case "instructional":
       return "Instructional Staff";
-    case "ta":
-      return "Teaching Assistant";
+    case "member":
+      return "Member";
     case "guest":
       return "Guest";
     default:
@@ -481,7 +481,7 @@ export default function Staff({
         active: [],
         admin: [],
         instructional: [],
-        ta: [],
+        member: [],
         total_requests: [],
       },
     [serverListData?.trend_data],
@@ -497,7 +497,7 @@ export default function Staff({
       active: activeStaff.length,
       inactive: inactiveStaff.length,
       instructional: staff.filter((s) => s.role === "instructional").length,
-      ta: staff.filter((s) => s.role === "ta").length,
+      member: staff.filter((s) => s.role === "member").length,
       admin: staff.filter((s) => s.role === "admin").length,
       superadmin: staff.filter((s) => s.role === "superadmin").length,
       guest: staff.filter((s) => s.role === "guest").length,
@@ -591,7 +591,7 @@ export default function Staff({
 
   // CSV Import logic
   const validRoles = useMemo(() => {
-    const roleOrder = ["ta", "instructional", "admin", "superadmin"];
+    const roleOrder = ["member", "instructional", "admin", "superadmin"];
     return roleOrder.filter((role) => roleOptionsForCSV.includes(role));
   }, [roleOptionsForCSV]);
 
@@ -752,7 +752,7 @@ export default function Staff({
         firstName: "John",
         lastName: "Doe",
         email: "redacted@purdue.edu",
-        role: "ta",
+        role: "member",
         department: "",
         cohort: "",
       },
@@ -1534,8 +1534,8 @@ export default function Staff({
             trendData={trendData["instructional"] || []}
           />
           <TAUsersKPI
-            currentValue={counts.ta}
-            trendData={trendData["ta"] || []}
+            currentValue={counts.member}
+            trendData={trendData["member"] || []}
           />
           <TotalRequestsKPI
             currentValue={counts.totalRequests}

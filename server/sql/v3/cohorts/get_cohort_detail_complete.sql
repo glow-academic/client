@@ -164,26 +164,26 @@ cohort_staff AS (
         CASE 
             WHEN p.id = $2 THEN true
             WHEN ups.role = 'superadmin' THEN true
-            WHEN ups.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
-            WHEN ups.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
-            WHEN ups.role = 'ta' AND p.role = 'guest' THEN true
+            WHEN ups.role = 'admin' AND p.role IN ('instructional', 'member', 'guest') THEN true
+            WHEN ups.role = 'instructional' AND p.role IN ('member', 'guest') THEN true
+            WHEN ups.role = 'member' AND p.role = 'guest' THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN p.id = $2 THEN false
             WHEN ups.role = 'superadmin' THEN true
             WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
-            WHEN ups.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
-            WHEN ups.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
-            WHEN ups.role = 'ta' AND p.role = 'guest' THEN true
+            WHEN ups.role = 'admin' AND p.role IN ('instructional', 'member', 'guest') THEN true
+            WHEN ups.role = 'instructional' AND p.role IN ('member', 'guest') THEN true
+            WHEN ups.role = 'member' AND p.role = 'guest' THEN true
             ELSE false
         END as can_delete,
         CASE 
             WHEN p.id = $2 THEN false
             WHEN ups.role = 'superadmin' THEN true
-            WHEN ups.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest') THEN true
-            WHEN ups.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest') THEN true
-            WHEN ups.role = 'ta' AND p.role IN ('ta', 'guest') THEN true
+            WHEN ups.role = 'admin' AND p.role IN ('admin', 'instructional', 'member', 'guest') THEN true
+            WHEN ups.role = 'instructional' AND p.role IN ('instructional', 'member', 'guest') THEN true
+            WHEN ups.role = 'member' AND p.role IN ('member', 'guest') THEN true
             WHEN ups.role = 'guest' AND p.role = 'guest' THEN true
             ELSE false
         END as can_remove
@@ -208,9 +208,9 @@ cohort_staff AS (
     CROSS JOIN user_profile_for_staff ups
     WHERE (
         ups.role = 'superadmin' OR
-        (ups.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR
-        (ups.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest')) OR
-        (ups.role = 'ta' AND p.role IN ('ta', 'guest')) OR
+        (ups.role = 'admin' AND p.role IN ('admin', 'instructional', 'member', 'guest')) OR
+        (ups.role = 'instructional' AND p.role IN ('instructional', 'member', 'guest')) OR
+        (ups.role = 'member' AND p.role IN ('member', 'guest')) OR
         (ups.role = 'guest' AND p.role = 'guest')
     )
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active,

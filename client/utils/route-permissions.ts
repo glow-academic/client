@@ -10,7 +10,7 @@ export type ProfileRole =
   | "superadmin"
   | "admin"
   | "instructional"
-  | "ta"
+  | "member"
   | "guest";
 
 export interface RoutePermission {
@@ -33,19 +33,19 @@ export interface SectionPermission {
 export const ROUTE_PERMISSIONS: SectionPermission[] = [
   {
     section: "home",
-    roles: ["ta", "instructional", "admin", "superadmin"],
+    roles: ["member", "instructional", "admin", "superadmin"],
     title: "Home",
-    description: "Main dashboard for TA users",
+    description: "Main dashboard for member users",
     routes: [
       {
         path: "/home",
-        roles: ["ta", "instructional", "admin", "superadmin"],
+        roles: ["member", "instructional", "admin", "superadmin"],
         title: "Home Dashboard",
         redirectTo: "/home",
       },
       {
         path: "/home/a/[attemptId]",
-        roles: ["ta", "instructional", "admin", "superadmin"],
+        roles: ["member", "instructional", "admin", "superadmin"],
         title: "Simulation Attempt",
         redirectTo: "/home",
       },
@@ -53,19 +53,19 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
   },
   {
     section: "practice",
-    roles: ["guest", "ta", "instructional", "admin", "superadmin"],
+    roles: ["guest", "member", "instructional", "admin", "superadmin"],
     title: "Practice",
     description: "Practice simulations for all users",
     routes: [
       {
         path: "/practice",
-        roles: ["guest", "ta", "instructional", "admin", "superadmin"],
+        roles: ["guest", "member", "instructional", "admin", "superadmin"],
         title: "Practice Zone",
         redirectTo: "/practice",
       },
       {
         path: "/practice/a/[attemptId]",
-        roles: ["guest", "ta", "instructional", "admin", "superadmin"],
+        roles: ["guest", "member", "instructional", "admin", "superadmin"],
         title: "Practice Attempt",
         redirectTo: "/practice",
       },
@@ -73,7 +73,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
   },
   {
     section: "analytics",
-    roles: ["ta", "instructional", "admin", "superadmin"],
+    roles: ["member", "instructional", "admin", "superadmin"],
     title: "Analytics",
     description: "Analytics and reporting tools",
     routes: [
@@ -221,13 +221,13 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
   },
   {
     section: "leaderboard",
-    roles: ["ta", "instructional", "admin", "superadmin"],
+    roles: ["member", "instructional", "admin", "superadmin"],
     title: "Leaderboard",
     description: "Performance leaderboard and rankings",
     routes: [
       {
         path: "/leaderboard",
-        roles: ["ta", "instructional", "admin", "superadmin"],
+        roles: ["member", "instructional", "admin", "superadmin"],
         title: "Leaderboard",
         redirectTo: "/leaderboard",
       },
@@ -526,8 +526,8 @@ export const getRedirectPathForRole = (role: ProfileRole): string => {
   switch (role) {
     case "guest":
       return "/practice"; // Guest users can access practice
-    case "ta":
-      return "/home"; // TA users start at home
+    case "member":
+      return "/home"; // Member users start at home
     case "instructional":
     case "admin":
     case "superadmin":
@@ -539,7 +539,7 @@ export const getRedirectPathForRole = (role: ProfileRole): string => {
         // If we have a role but it's not in our switch, check if it's a valid role
         const validRoles = [
           "guest",
-          "ta",
+          "member",
           "instructional",
           "admin",
           "superadmin",

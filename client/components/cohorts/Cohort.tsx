@@ -124,7 +124,7 @@ const getRoleIcon = (role: string) => {
     case "admin":
     case "instructional":
       return UserIcon;
-    case "ta":
+    case "member":
     case "guest":
     default:
       return UserIcon;
@@ -139,8 +139,8 @@ const getRoleDisplayName = (role: string): string => {
       return "Administrator";
     case "instructional":
       return "Instructional Staff";
-    case "ta":
-      return "Teaching Assistant";
+    case "member":
+      return "Member";
     case "guest":
       return "Guest";
     default:
@@ -404,7 +404,7 @@ export default function Cohort({
       superadmin: "Super Administrator",
       admin: "Administrator",
       instructional: "Instructional Staff",
-      ta: "Teaching Assistant",
+      member: "Member",
       guest: "Guest",
     };
     return (scopedRoles || []).map((role) => ({
@@ -949,7 +949,7 @@ export default function Cohort({
           emails: [],
           primary_email: "",
           name: "Loading...",
-          role: "ta",
+          role: "member",
           initials: "??",
           active: true,
           last_active: null,

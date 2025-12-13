@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-CREATE TYPE profile_role AS ENUM ('superadmin', 'admin', 'instructional', 'ta', 'guest');
+CREATE TYPE profile_role AS ENUM ('superadmin', 'admin', 'instructional', 'member', 'guest');
 
 CREATE TABLE profiles (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

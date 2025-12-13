@@ -21,9 +21,9 @@ cohort_profiles_role_filtered AS (
         ARRAY_AGG(cp.profile_id) FILTER (
             WHERE 
                 (up.role = 'superadmin') OR
-                (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR
-                (up.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest')) OR
-                (up.role = 'ta' AND p.role IN ('ta', 'guest')) OR
+                (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'member', 'guest')) OR
+                (up.role = 'instructional' AND p.role IN ('instructional', 'member', 'guest')) OR
+                (up.role = 'member' AND p.role IN ('member', 'guest')) OR
                 (up.role = 'guest' AND p.role = 'guest')
         ) as profile_ids
     FROM cohort_profiles cp

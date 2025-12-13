@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 # Profile role type (matches database enum)
-ProfileRole = Literal["guest", "ta", "instructional", "admin", "superadmin"]
+ProfileRole = Literal["guest", "member", "instructional", "admin", "superadmin"]
 
 
 class RoutePermission(BaseModel):
@@ -44,19 +44,19 @@ class SectionPermission(BaseModel):
 ROUTE_PERMISSIONS: list[SectionPermission] = [
     SectionPermission(
         section="home",
-        roles=["ta", "instructional", "admin", "superadmin"],
+        roles=["member", "instructional", "admin", "superadmin"],
         title="Home",
-        description="Main dashboard for TA users",
+        description="Main dashboard for member users",
         routes=[
             RoutePermission(
                 path="/home",
-                roles=["ta", "instructional", "admin", "superadmin"],
+                roles=["member", "instructional", "admin", "superadmin"],
                 title="Home Dashboard",
                 redirectTo="/home",
             ),
             RoutePermission(
                 path="/home/a/[attemptId]",
-                roles=["ta", "instructional", "admin", "superadmin"],
+                roles=["member", "instructional", "admin", "superadmin"],
                 title="Simulation Attempt",
                 redirectTo="/home",
             ),
@@ -64,19 +64,19 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     ),
     SectionPermission(
         section="practice",
-        roles=["guest", "ta", "instructional", "admin", "superadmin"],
+        roles=["guest", "member", "instructional", "admin", "superadmin"],
         title="Practice",
         description="Practice simulations for all users",
         routes=[
             RoutePermission(
                 path="/practice",
-                roles=["guest", "ta", "instructional", "admin", "superadmin"],
+                roles=["guest", "member", "instructional", "admin", "superadmin"],
                 title="Practice Zone",
                 redirectTo="/practice",
             ),
             RoutePermission(
                 path="/practice/a/[attemptId]",
-                roles=["guest", "ta", "instructional", "admin", "superadmin"],
+                roles=["guest", "member", "instructional", "admin", "superadmin"],
                 title="Practice Attempt",
                 redirectTo="/practice",
             ),
@@ -84,7 +84,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     ),
     SectionPermission(
         section="analytics",
-        roles=["ta", "instructional", "admin", "superadmin"],
+        roles=["member", "instructional", "admin", "superadmin"],
         title="Analytics",
         description="Analytics and reporting tools",
         routes=[
@@ -128,13 +128,13 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     ),
     SectionPermission(
         section="leaderboard",
-        roles=["ta", "instructional", "admin", "superadmin"],
+        roles=["member", "instructional", "admin", "superadmin"],
         title="Leaderboard",
         description="Performance leaderboard and rankings",
         routes=[
             RoutePermission(
                 path="/leaderboard",
-                roles=["ta", "instructional", "admin", "superadmin"],
+                roles=["member", "instructional", "admin", "superadmin"],
                 title="Leaderboard",
                 redirectTo="/leaderboard",
             ),
@@ -142,7 +142,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     ),
     SectionPermission(
         section="cohorts",
-        roles=["ta", "instructional", "admin", "superadmin"],
+        roles=["member", "instructional", "admin", "superadmin"],
         title="Cohorts",
         description="Cohort management and viewing",
         routes=[
@@ -160,7 +160,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
             ),
             RoutePermission(
                 path="/cohorts/c/[cohortId]",
-                roles=["ta", "instructional", "admin", "superadmin"],
+                roles=["member", "instructional", "admin", "superadmin"],
                 title="View Cohort",
                 redirectTo="/cohorts",
             ),
@@ -553,7 +553,7 @@ def get_redirect_path_for_role(role: ProfileRole) -> str:
     """
     redirect_map = {
         "guest": "/practice",  # Guest users start at practice
-        "ta": "/home",  # TA users start at home
+        "member": "/home",  # Member users start at home
         "instructional": "/analytics/dashboard",  # Instructional staff starts at analytics dashboard
         "admin": "/analytics/dashboard",  # Admins start at analytics dashboard
         "superadmin": "/analytics/dashboard",  # Superadmins start at analytics dashboard

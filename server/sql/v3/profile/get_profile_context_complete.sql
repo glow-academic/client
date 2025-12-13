@@ -51,8 +51,8 @@ emulation_validation AS (
                       AND p_effective.id != rpi.resolved_actual_profile_id
                       AND CASE 
                         WHEN p_actual.role = 'superadmin' THEN true
-                        WHEN p_actual.role = 'admin' THEN p_effective.role IN ('instructional', 'ta', 'guest')
-                        WHEN p_actual.role = 'instructional' THEN p_effective.role IN ('ta', 'guest')
+                        WHEN p_actual.role = 'admin' THEN p_effective.role IN ('instructional', 'member', 'guest')
+                        WHEN p_actual.role = 'instructional' THEN p_effective.role IN ('member', 'guest')
                         ELSE false
                       END
                 )
@@ -72,10 +72,10 @@ scoped_roles_computed AS (
     -- Compute scoped roles based on effective profile's role
     SELECT 
         CASE 
-            WHEN epr.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'ta', 'guest']::profile_role[]
-            WHEN epr.role = 'admin' THEN ARRAY['admin', 'instructional', 'ta', 'guest']::profile_role[]
-            WHEN epr.role = 'instructional' THEN ARRAY['instructional', 'ta', 'guest']::profile_role[]
-            WHEN epr.role = 'ta' THEN ARRAY['ta']::profile_role[]
+            WHEN epr.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_role[]
+            WHEN epr.role = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_role[]
+            WHEN epr.role = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
+            WHEN epr.role = 'member' THEN ARRAY['member']::profile_role[]
             ELSE ARRAY['guest']::profile_role[]
         END as scoped_roles
     FROM effective_profile_role epr
