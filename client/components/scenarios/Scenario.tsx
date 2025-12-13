@@ -630,11 +630,19 @@ export default function Scenario({
       options: Array<{
         id: string;
         option_text: string;
+        type?: "discrete" | "freeform";
         is_correct: boolean;
       }>;
       times?: number[];
     }>
   >([]);
+  const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
+    number | null
+  >(null);
+  const [draggedOptionIndex, setDraggedOptionIndex] = useState<{
+    questionIndex: number;
+    optionIndex: number;
+  } | null>(null);
 
   // Use transition for smooth UI updates during randomization
   // This ensures the old UI stays visible while new randomized selections are being applied
@@ -2074,6 +2082,7 @@ export default function Scenario({
               options?: Array<{
                 id?: string;
                 option_text?: string;
+                type?: "discrete" | "freeform";
                 is_correct?: boolean;
               }>;
               times?: number[];
@@ -2085,6 +2094,7 @@ export default function Scenario({
               options: (qTyped["options"] || []).map((opt) => ({
                 id: opt["id"] || "",
                 option_text: opt["option_text"] || "",
+                type: opt["type"] || "discrete",
                 is_correct: opt["is_correct"] || false,
               })),
               times: qTyped["times"] || [],
@@ -3063,6 +3073,198 @@ export default function Scenario({
     setDraggedObjectiveIndex(null);
   };
 
+  // Question drag handlers
+  const handleDragStartQuestion = (e: React.DragEvent, index: number) => {
+    setDraggedQuestionIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverQuestion = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropQuestion = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedQuestionIndex === null) return;
+    setQuestions((prev) => {
+      const next = [...prev];
+      const removed = next[draggedQuestionIndex];
+      if (!removed) return next;
+      next.splice(draggedQuestionIndex, 1);
+      next.splice(targetIndex, 0, removed);
+      return next;
+    });
+    setDraggedQuestionIndex(null);
+  };
+
+  // Option drag handlers
+  const handleDragStartOption = (
+    e: React.DragEvent,
+    questionIndex: number,
+    optionIndex: number
+  ) => {
+    setDraggedOptionIndex({ questionIndex, optionIndex });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverOption = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropOption = (
+    e: React.DragEvent,
+    questionIndex: number,
+    targetOptionIndex: number
+  ) => {
+    e.preventDefault();
+    if (draggedOptionIndex === null) return;
+    if (
+      draggedOptionIndex.questionIndex !== questionIndex ||
+      draggedOptionIndex.optionIndex === targetOptionIndex
+    ) {
+      setDraggedOptionIndex(null);
+      return;
+    }
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[draggedOptionIndex.questionIndex];
+      if (!question) return next;
+      const options = [...question.options];
+      const removed = options[draggedOptionIndex.optionIndex];
+      if (!removed) return next;
+      options.splice(draggedOptionIndex.optionIndex, 1);
+      options.splice(targetOptionIndex, 0, removed);
+      next[draggedOptionIndex.questionIndex] = {
+        ...question,
+        options,
+      };
+      return next;
+    });
+    setDraggedOptionIndex(null);
+  };
+
+  // Question update handlers
+  const handleUpdateQuestion = (
+    index: number,
+    question: {
+      id: string;
+      question_text: string;
+      allow_multiple: boolean;
+      options: Array<{
+        id: string;
+        option_text: string;
+        type?: "discrete" | "freeform";
+        is_correct: boolean;
+      }>;
+      times?: number[];
+    }
+  ) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      next[index] = question;
+      return next;
+    });
+  };
+
+  const handleQuestionTimesChange = (index: number, times: number[]) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[index];
+      if (!question) return next;
+      next[index] = {
+        ...question,
+        times,
+      };
+      return next;
+    });
+  };
+
+  // Option management handlers
+  const handleAddOption = (questionIndex: number) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      next[questionIndex] = {
+        ...question,
+        options: [
+          ...question.options,
+          {
+            id: "",
+            option_text: "",
+            type: "discrete",
+            is_correct: false,
+          },
+        ],
+      };
+      return next;
+    });
+  };
+
+  const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      next[questionIndex] = {
+        ...question,
+        options: question.options.filter((_, i) => i !== optionIndex),
+      };
+      return next;
+    });
+  };
+
+  const handleOptionChange = (
+    questionIndex: number,
+    optionIndex: number,
+    option: {
+      id: string;
+      option_text: string;
+      type?: "discrete" | "freeform";
+      is_correct: boolean;
+    }
+  ) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      const options = [...question.options];
+      const existingOption = options[optionIndex];
+      if (!existingOption) return next;
+      options[optionIndex] = option;
+      next[questionIndex] = {
+        ...question,
+        options,
+      };
+      return next;
+    });
+  };
+
+  const handleToggleOptionCorrect = (
+    questionIndex: number,
+    optionIndex: number
+  ) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      const options = [...question.options];
+      const existingOption = options[optionIndex];
+      if (!existingOption) return next;
+      options[optionIndex] = {
+        ...existingOption,
+        is_correct: !existingOption.is_correct,
+      };
+      next[questionIndex] = {
+        ...question,
+        options,
+      };
+      return next;
+    });
+  };
+
   const handleImageSelect = (
     image: {
       id: string;
@@ -3834,11 +4036,13 @@ export default function Scenario({
                           {
                             id: "",
                             option_text: "",
+                            type: "discrete",
                             is_correct: false,
                           },
                           {
                             id: "",
                             option_text: "",
+                            type: "discrete",
                             is_correct: false,
                           },
                         ],
@@ -3855,6 +4059,20 @@ export default function Scenario({
                 setQuestions(newQuestions);
                 setCurrentQuestionIds(newQuestions.map((q) => q.id));
               }}
+              onDragStartQuestion={handleDragStartQuestion}
+              onDragOverQuestion={handleDragOverQuestion}
+              onDropQuestion={handleDropQuestion}
+              onDragStartOption={handleDragStartOption}
+              onDragOverOption={handleDragOverOption}
+              onDropOption={handleDropOption}
+              onUpdateQuestion={handleUpdateQuestion}
+              onQuestionTimesChange={handleQuestionTimesChange}
+              onAddOption={handleAddOption}
+              onRemoveOption={handleRemoveOption}
+              onOptionChange={handleOptionChange}
+              onToggleOptionCorrect={handleToggleOptionCorrect}
+              draggedQuestionIndex={draggedQuestionIndex}
+              draggedOptionIndex={draggedOptionIndex}
               onScenarioPreviewDocumentChange={setScenarioPreviewDocumentId}
               onGenerate={handleGenerateScenario}
               onResetContent={handleResetContent}

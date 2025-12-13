@@ -5,8 +5,10 @@
 "use client";
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Eye,
   GripVertical,
   Image,
@@ -261,6 +263,7 @@ export interface ContentSectionProps {
     options: Array<{
       id: string;
       option_text: string;
+      type?: "discrete" | "freeform";
       is_correct: boolean;
     }>;
     times?: number[];
@@ -317,11 +320,55 @@ export interface ContentSectionProps {
       options: Array<{
         id: string;
         option_text: string;
+        type?: "discrete" | "freeform";
         is_correct: boolean;
       }>;
       times?: number[];
     }>
   ) => void;
+  onDragStartQuestion?: (e: React.DragEvent, index: number) => void;
+  onDragOverQuestion?: (e: React.DragEvent) => void;
+  onDropQuestion?: (e: React.DragEvent, targetIndex: number) => void;
+  onDragStartOption?: (
+    e: React.DragEvent,
+    questionIndex: number,
+    optionIndex: number
+  ) => void;
+  onDragOverOption?: (e: React.DragEvent) => void;
+  onDropOption?: (
+    e: React.DragEvent,
+    questionIndex: number,
+    targetOptionIndex: number
+  ) => void;
+  onUpdateQuestion?: (
+    index: number,
+    question: {
+      id: string;
+      question_text: string;
+      allow_multiple: boolean;
+      options: Array<{
+        id: string;
+        option_text: string;
+        type?: "discrete" | "freeform";
+        is_correct: boolean;
+      }>;
+      times?: number[];
+    }
+  ) => void;
+  onQuestionTimesChange?: (index: number, times: number[]) => void;
+  onAddOption?: (questionIndex: number) => void;
+  onRemoveOption?: (questionIndex: number, optionIndex: number) => void;
+  onOptionChange?: (
+    questionIndex: number,
+    optionIndex: number,
+    option: {
+      id: string;
+      option_text: string;
+      type?: "discrete" | "freeform";
+      is_correct: boolean;
+    }
+  ) => void;
+  onToggleOptionCorrect?: (questionIndex: number, optionIndex: number) => void;
   onScenarioPreviewDocumentChange: (docId: string | null) => void;
   onGenerate: (instructions?: string, regenerateObjectives?: boolean) => void;
   onResetContent: () => void;
@@ -336,6 +383,8 @@ export interface ContentSectionProps {
   isGeneratingScenario: boolean;
   isSubmitting: boolean;
   draggedObjectiveIndex: number | null;
+  draggedQuestionIndex?: number | null;
+  draggedOptionIndex?: { questionIndex: number; optionIndex: number } | null;
   imageInputRef: React.RefObject<HTMLInputElement>;
   isEditMode?: boolean;
 }
@@ -387,6 +436,18 @@ export function ContentSection({
   onVideoSelect,
   onUseQuestionsChange,
   onQuestionsChange,
+  onDragStartQuestion,
+  onDragOverQuestion,
+  onDropQuestion,
+  onDragStartOption,
+  onDragOverOption,
+  onDropOption,
+  onUpdateQuestion,
+  onQuestionTimesChange,
+  onAddOption,
+  onRemoveOption,
+  onOptionChange,
+  onToggleOptionCorrect,
   onScenarioPreviewDocumentChange,
   onGenerate,
   onResetContent,
@@ -399,6 +460,8 @@ export function ContentSection({
   isGeneratingScenario,
   isSubmitting,
   draggedObjectiveIndex,
+  draggedQuestionIndex,
+  draggedOptionIndex,
   imageInputRef,
   isEditMode = false,
 }: ContentSectionProps) {
@@ -406,6 +469,57 @@ export function ContentSection({
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
   );
+
+  // State for expanded questions (which questions have their options visible)
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Helper function to toggle question expansion
+  const toggleQuestionExpanded = (index: number) => {
+    setExpandedQuestions((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  // Helper function to handle question time change
+  const handleQuestionTimeChange = (index: number, timeStr: string) => {
+    if (!onQuestionTimesChange) return;
+    const time = parseInt(timeStr, 10);
+    // Estimate video length from selected video or default to 8 seconds
+    const estimatedVideoLength = selectedVideo?.length_seconds || 8;
+    if (isNaN(time) || time < 0 || time > estimatedVideoLength) {
+      return;
+    }
+    const newTimes = timeStr === "" ? [] : [time];
+    onQuestionTimesChange(index, newTimes);
+  };
+
+  // Helper function to handle question text change
+  const handleQuestionTextChange = (index: number, text: string) => {
+    if (!onUpdateQuestion) {
+      // Fallback to updating entire questions array
+      const updatedQuestions = [...questions];
+      updatedQuestions[index] = {
+        ...updatedQuestions[index],
+        question_text: text,
+      };
+      onQuestionsChange(updatedQuestions);
+      return;
+    }
+    const currentQuestion = questions[index];
+    if (!currentQuestion) return;
+    onUpdateQuestion(index, {
+      ...currentQuestion,
+      question_text: text,
+    });
+  };
 
   // State for document navigation
   const currentDocumentIndex = useMemo(() => {
@@ -1448,9 +1562,9 @@ export function ContentSection({
           </div>
         )}
 
-        {/* Questions Section (when video and questions are enabled) */}
+        {/* Questions List (when video and questions are enabled) */}
         {useVideo && useQuestions && (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-2">
             {questions.length === 0 && (
               <div>
                 <Button
@@ -1466,11 +1580,13 @@ export function ContentSection({
                           {
                             id: "",
                             option_text: "",
+                            type: "discrete",
                             is_correct: false,
                           },
                           {
                             id: "",
                             option_text: "",
+                            type: "discrete",
                             is_correct: false,
                           },
                         ],
@@ -1481,76 +1597,286 @@ export function ContentSection({
                   disabled={isReadonly}
                   size="sm"
                 >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add question
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Question
                 </Button>
               </div>
             )}
             {questions.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {questions.map((question, index) => (
-                  <Card key={question.id || index}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm">
-                          Question {index + 1}
-                        </CardTitle>
-                        {questions.length > 1 && (
+                  <div
+                    key={question.id || index}
+                    className={cn(
+                      "space-y-2",
+                      draggedQuestionIndex === index && "opacity-50"
+                    )}
+                    onDragOver={onDragOverQuestion}
+                    onDrop={(e) => onDropQuestion?.(e, index)}
+                  >
+                    <div className="flex items-center gap-2">
+                      {/* Drag Handle */}
+                      {onDragStartQuestion && (
+                        <div
+                          draggable={!isReadonly}
+                          onDragStart={(e) => onDragStartQuestion(e, index)}
+                          className="cursor-grab active:cursor-grabbing shrink-0"
+                        >
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+
+                      {/* Question Text Input */}
+                      <div className="flex-1">
+                        <Input
+                          value={question.question_text}
+                          onChange={(e) =>
+                            handleQuestionTextChange(index, e.target.value)
+                          }
+                          placeholder="Enter question text"
+                          className="flex-1"
+                          disabled={isReadonly}
+                          onDragStart={(e) => e.preventDefault()}
+                        />
+                      </div>
+
+                      {/* Time Input */}
+                      {selectedVideo && (
+                        <Input
+                          type="number"
+                          min="0"
+                          max={selectedVideo.length_seconds}
+                          value={question.times?.[0] ?? ""}
+                          onChange={(e) =>
+                            handleQuestionTimeChange(index, e.target.value)
+                          }
+                          placeholder="Time"
+                          className="w-20"
+                          disabled={isReadonly}
+                        />
+                      )}
+
+                      {/* Accordion Toggle */}
+                      {question.options.length > 0 && (
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6"
+                          onClick={() => toggleQuestionExpanded(index)}
+                          className="h-8 w-8 shrink-0"
+                          disabled={isReadonly}
+                        >
+                          {expandedQuestions.has(index) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronUp className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+
+                      {/* Delete Button */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                             onClick={() => {
                               onQuestionsChange(
                                 questions.filter((_, i) => i !== index)
                               );
                             }}
+                        className="h-8 w-8 shrink-0"
                             disabled={isReadonly}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        )}
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm mb-3">{question.question_text}</p>
-                      <div className="space-y-2">
-                        {question.options.map((option) => (
-                          <div
-                            key={option.id}
+
+                    {/* Options (shown when expanded) */}
+                    {expandedQuestions.has(index) &&
+                      question.options.length > 0 && (
+                        <div className="pl-6 space-y-2 border-l-2 border-muted ml-2">
+                          {question.options.map((option, optIndex) => (
+                            <div
+                              key={option.id || optIndex}
                             className={cn(
-                              "p-2 rounded border",
-                              option.is_correct
-                                ? "bg-green-50 border-green-200"
-                                : "bg-muted/50"
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              {option.is_correct && (
-                                <Check className="h-4 w-4 text-green-600" />
+                                "flex items-center gap-2",
+                                draggedOptionIndex?.questionIndex === index &&
+                                  draggedOptionIndex?.optionIndex ===
+                                    optIndex &&
+                                  "opacity-50"
                               )}
-                              <span className="text-sm">
-                                {option.option_text}
-                              </span>
-                            </div>
+                              onDragOver={onDragOverOption}
+                              onDrop={(e) =>
+                                onDropOption?.(e, index, optIndex)
+                              }
+                            >
+                              {/* Option Drag Handle */}
+                              {onDragStartOption && (
+                                <div
+                                  draggable={!isReadonly}
+                                  onDragStart={(e) =>
+                                    onDragStartOption(e, index, optIndex)
+                                  }
+                                  className="cursor-grab active:cursor-grabbing shrink-0"
+                                >
+                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+
+                              {/* Option Text Input */}
+                              <Input
+                                value={option.option_text}
+                                onChange={(e) => {
+                                  if (onOptionChange) {
+                                    onOptionChange(index, optIndex, {
+                                      ...option,
+                                      option_text: e.target.value,
+                                    });
+                                  } else {
+                                    // Fallback: update entire questions array
+                                    const updatedQuestions = [...questions];
+                                    const updatedOptions = [
+                                      ...updatedQuestions[index].options,
+                                    ];
+                                    updatedOptions[optIndex] = {
+                                      ...updatedOptions[optIndex],
+                                      option_text: e.target.value,
+                                    };
+                                    updatedQuestions[index] = {
+                                      ...updatedQuestions[index],
+                                      options: updatedOptions,
+                                    };
+                                    onQuestionsChange(updatedQuestions);
+                                  }
+                                }}
+                                placeholder="Option text"
+                                className="flex-1"
+                                disabled={isReadonly}
+                                onDragStart={(e) => e.preventDefault()}
+                              />
+
+                              {/* Correct Checkbox */}
+                              {option.type !== "freeform" && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant={
+                              option.is_correct
+                                          ? "default"
+                                          : "outline"
+                                      }
+                                      size="icon"
+                                      onClick={() => {
+                                        if (onToggleOptionCorrect) {
+                                          onToggleOptionCorrect(index, optIndex);
+                                        } else {
+                                          // Fallback: update entire questions array
+                                          const updatedQuestions = [
+                                            ...questions,
+                                          ];
+                                          const updatedOptions = [
+                                            ...updatedQuestions[index].options,
+                                          ];
+                                          updatedOptions[optIndex] = {
+                                            ...updatedOptions[optIndex],
+                                            is_correct:
+                                              !updatedOptions[optIndex]
+                                                .is_correct,
+                                          };
+                                          updatedQuestions[index] = {
+                                            ...updatedQuestions[index],
+                                            options: updatedOptions,
+                                          };
+                                          onQuestionsChange(updatedQuestions);
+                                        }
+                                      }}
+                                      className="h-8 w-8 shrink-0"
+                                      disabled={isReadonly}
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {option.is_correct
+                                      ? "Mark as incorrect"
+                                      : "Mark as correct"}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {/* Delete Option Button */}
+                              {question.options.length > 2 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    if (onRemoveOption) {
+                                      onRemoveOption(index, optIndex);
+                                    } else {
+                                      // Fallback: update entire questions array
+                                      const updatedQuestions = [...questions];
+                                      updatedQuestions[index] = {
+                                        ...updatedQuestions[index],
+                                        options: updatedQuestions[
+                                          index
+                                        ].options.filter(
+                                          (_, i) => i !== optIndex
+                                        ),
+                                      };
+                                      onQuestionsChange(updatedQuestions);
+                                    }
+                                  }}
+                                  className="h-8 w-8 shrink-0"
+                                  disabled={isReadonly}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                           </div>
                         ))}
+                          {question.options.length < 5 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (onAddOption) {
+                                  onAddOption(index);
+                                } else {
+                                  // Fallback: update entire questions array
+                                  const updatedQuestions = [...questions];
+                                  updatedQuestions[index] = {
+                                    ...updatedQuestions[index],
+                                    options: [
+                                      ...updatedQuestions[index].options,
+                                      {
+                                        id: "",
+                                        option_text: "",
+                                        type: "discrete",
+                                        is_correct: false,
+                                      },
+                                    ],
+                                  };
+                                  onQuestionsChange(updatedQuestions);
+                                }
+                              }}
+                              className="w-full"
+                              disabled={isReadonly}
+                            >
+                              <PlusCircle className="h-4 w-4 mr-2" />
+                              Add Option
+                            </Button>
+                          )}
                       </div>
-                      {question.times && question.times.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Appears at:{" "}
-                          {question.times
-                            .map(
-                              (t) =>
-                                `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`
-                            )
-                            .join(", ")}
-                        </p>
                       )}
-                    </CardContent>
-                  </Card>
+                  </div>
                 ))}
-                {questions.length < 10 && (
+              </div>
+            )}
+
+            {questions.length < 10 && questions.length > 0 && (
                   <div>
                     <Button
                       type="button"
@@ -1566,11 +1892,13 @@ export function ContentSection({
                               {
                                 id: "",
                                 option_text: "",
+                            type: "discrete",
                                 is_correct: false,
                               },
                               {
                                 id: "",
                                 option_text: "",
+                            type: "discrete",
                                 is_correct: false,
                               },
                             ],
@@ -1581,10 +1909,9 @@ export function ContentSection({
                       disabled={isReadonly}
                       size="sm"
                     >
-                      <PlusCircle className="h-4 w-4 mr-2" /> Add question
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Question
                     </Button>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -1616,13 +1943,11 @@ export function ContentSection({
                 disabled={isReadonly}
               />
             </div>
-            {!useImage && (
               <p className="text-xs text-muted-foreground pl-5">
                 {useVideo
                   ? "Add images alongside video content"
                   : "Use scenario background image"}
               </p>
-            )}
           </div>
         </div>
 

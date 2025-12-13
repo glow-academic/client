@@ -148,20 +148,15 @@ export function ScenarioBasicInfoSection({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onRandomizeAll}
-                  disabled={isReadonly}
-                >
-                  <Shuffle className="h-4 w-4 mr-2" />
-                  Randomize All
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Randomize All</TooltipContent>
-            </Tooltip>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onRandomizeAll}
+              disabled={isReadonly}
+            >
+              <Shuffle className="h-4 w-4 mr-2" />
+              Randomize All
+            </Button>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
