@@ -1992,7 +1992,7 @@ export default function Scenario({
       setUseImage(imagesEnabled);
       const scenarioImages = scenarioDataWithFlags.scenario_images;
       if (
-        imageEnabled &&
+        imagesEnabled &&
         scenarioImages &&
         Array.isArray(scenarioImages) &&
         scenarioImages.length > 0
@@ -3745,7 +3745,12 @@ export default function Scenario({
               useObjectives={useObjectives}
               onUseObjectivesChange={(enabled) => {
                 setUseObjectives(enabled);
-                if (!enabled) {
+                if (enabled) {
+                  // Automatically add one objective if none exist
+                  if (currentObjectives.length === 0) {
+                    setCurrentObjectives([""]);
+                  }
+                } else {
                   setCurrentObjectives([]);
                 }
               }}
@@ -3817,7 +3822,31 @@ export default function Scenario({
               currentQuestionIds={currentQuestionIds}
               onUseQuestionsChange={(enabled) => {
                 setUseQuestions(enabled);
-                if (!enabled) {
+                if (enabled) {
+                  // Automatically add one question if none exist
+                  if (questions.length === 0) {
+                    setQuestions([
+                      {
+                        id: "",
+                        question_text: "",
+                        allow_multiple: false,
+                        options: [
+                          {
+                            id: "",
+                            option_text: "",
+                            is_correct: false,
+                          },
+                          {
+                            id: "",
+                            option_text: "",
+                            is_correct: false,
+                          },
+                        ],
+                        times: [],
+                      },
+                    ]);
+                  }
+                } else {
                   setQuestions([]);
                   setCurrentQuestionIds([]);
                 }

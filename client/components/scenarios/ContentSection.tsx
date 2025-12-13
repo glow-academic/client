@@ -100,7 +100,7 @@ function ObjectiveInputWithAutocomplete({
   onDragStart: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
-  onRemove: () => void;
+  onRemove?: () => void;
   totalObjectives: number;
   maxObjectives: number;
 }) {
@@ -188,17 +188,19 @@ function ObjectiveInputWithAutocomplete({
             </div>
           )}
         </div>
-        {/* Show delete button for all objectives */}
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={onRemove}
-          className="h-8 w-8 shrink-0"
-          disabled={disabled}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {/* Show delete button only if onRemove is provided */}
+        {onRemove && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={onRemove}
+            className="h-8 w-8 shrink-0"
+            disabled={disabled}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -649,19 +651,19 @@ export function ContentSection({
           />
         </div>
 
-        {/* Use Objectives Switch */}
+        {/* Objectives Switch */}
         <div className="space-y-2 pt-2">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Label
-                htmlFor="use-objectives"
+                htmlFor="objectives"
                 className="text-sm flex items-center gap-1.5"
               >
                 <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                Use Objectives
+                Objectives
               </Label>
               <Switch
-                id="use-objectives"
+                id="objectives"
                 checked={useObjectives}
                 onCheckedChange={(checked) => {
                   onUseObjectivesChange(checked);
@@ -674,7 +676,7 @@ export function ContentSection({
             </div>
             {!useObjectives && (
               <p className="text-xs text-muted-foreground pl-5">
-                Add learning objectives for this scenario
+                Define specific learning objectives for the scenario
               </p>
             )}
           </div>
@@ -683,86 +685,51 @@ export function ContentSection({
         {/* Objectives List (shown when useObjectives is true) */}
         {useObjectives && (
           <div className="space-y-2">
-            <Label>Objectives</Label>
             {objectives.length === 0 && (
-            <div>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={onAddObjective}
-                disabled={isReadonly}
-                size="sm"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-              </Button>
-            </div>
-          )}
-          {objectives.map((objective, index) => (
-            <ObjectiveInputWithAutocomplete
-              key={`objective-${index}`}
-              index={index}
-              value={objective || ""}
-              onChange={(value) => onUpdateObjective(index, value)}
-              placeholder={`Learning objective ${index + 1}`}
-              suggestions={objectivesHistory}
-              disabled={isReadonly}
-              draggedObjectiveIndex={draggedObjectiveIndex}
-              onDragStart={(e) => onDragStartObjective(e, index)}
-              onDragOver={onDragOverObjective}
-              onDrop={(e) => onDropObjective(e, index)}
-              onRemove={() => onRemoveObjective(index)}
-              totalObjectives={objectives.length}
-              maxObjectives={3}
-            />
-          ))}
-
-          {objectives.length < 3 && objectives.length > 0 && (
-            <div>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={onAddObjective}
-                disabled={isReadonly}
-                size="sm"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-              </Button>
-            </div>
-          )}
-          </div>
-        )}
-
-        {/* Use Image Switch (when video is enabled - allows enabling images alongside videos) */}
-        {useVideo && (
-          <div className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="use-image-with-video"
-                  className="text-sm flex items-center gap-1.5"
-                >
-                  <Image
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-label="Image icon"
-                  />
-                  Use Image
-                </Label>
-                <Switch
-                  id="use-image-with-video"
-                  checked={useImage}
-                  onCheckedChange={(checked) => {
-                    onUseImageChange(checked);
-                    if (!checked) {
-                      onImageSelect(null);
-                    }
-                  }}
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onAddObjective}
                   disabled={isReadonly}
-                />
+                  size="sm"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                Add images alongside video content
-              </p>
-            </div>
+            )}
+            {objectives.map((objective, index) => (
+              <ObjectiveInputWithAutocomplete
+                key={`objective-${index}`}
+                index={index}
+                value={objective || ""}
+                onChange={(value) => onUpdateObjective(index, value)}
+                placeholder={`Learning objective ${index + 1}`}
+                suggestions={objectivesHistory}
+                disabled={isReadonly}
+                draggedObjectiveIndex={draggedObjectiveIndex}
+                onDragStart={(e) => onDragStartObjective(e, index)}
+                onDragOver={onDragOverObjective}
+                onDrop={(e) => onDropObjective(e, index)}
+                onRemove={objectives.length > 1 ? () => onRemoveObjective(index) : undefined}
+                totalObjectives={objectives.length}
+                maxObjectives={3}
+              />
+            ))}
+
+            {objectives.length < 3 && objectives.length > 0 && (
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onAddObjective}
+                  disabled={isReadonly}
+                  size="sm"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1445,57 +1412,23 @@ export function ContentSection({
           )}
         </div>
 
-        {/* Use Image Switch (only when video is not enabled - for chat background) */}
-        {!useVideo && (
-          <div className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="use-image-chat"
-                  className="text-sm flex items-center gap-1.5"
-                >
-                  <Image
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-label="Image icon"
-                  />
-                  Use Image
-                </Label>
-                <Switch
-                  id="use-image-chat"
-                  checked={useImage}
-                  onCheckedChange={(checked) => {
-                    onUseImageChange(checked);
-                    if (!checked) {
-                      onImageSelect(null);
-                    }
-                  }}
-                  disabled={isReadonly}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                Use scenario background image
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Use Questions Switch (only when video is enabled) */}
+        {/* Questions Switch (only when video is enabled) */}
         {useVideo && (
           <div className="space-y-4 pt-2">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Label
-                  htmlFor="use-questions"
+                  htmlFor="questions"
                   className="text-sm flex items-center gap-1.5"
                 >
                   <MessageSquare
                     className="h-3.5 w-3.5 text-muted-foreground"
                     aria-label="Questions icon"
                   />
-                  Use Questions
+                  Questions
                 </Label>
                 <Switch
-                  id="use-questions"
+                  id="questions"
                   checked={useQuestions}
                   onCheckedChange={(checked) => {
                     onUseQuestionsChange(checked);
@@ -1506,67 +1439,192 @@ export function ContentSection({
                   disabled={isReadonly}
                 />
               </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                Add questions below the video
-              </p>
+              {!useQuestions && (
+                <p className="text-xs text-muted-foreground pl-5">
+                  Add questions below the video
+                </p>
+              )}
             </div>
           </div>
         )}
 
         {/* Questions Section (when video and questions are enabled) */}
-        {useVideo && useQuestions && questions.length > 0 && (
-          <div className="space-y-4 pt-4">
-            <Label>Questions</Label>
-            <div className="space-y-4">
-              {questions.map((question, index) => (
-                <Card key={question.id || index}>
-                  <CardHeader>
-                    <CardTitle className="text-sm">
-                      Question {index + 1}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm mb-3">{question.question_text}</p>
-                    <div className="space-y-2">
-                      {question.options.map((option) => (
-                        <div
-                          key={option.id}
-                          className={cn(
-                            "p-2 rounded border",
-                            option.is_correct
-                              ? "bg-green-50 border-green-200"
-                              : "bg-muted/50"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            {option.is_correct && (
-                              <Check className="h-4 w-4 text-green-600" />
+        {useVideo && useQuestions && (
+          <div className="space-y-4 pt-2">
+            {questions.length === 0 && (
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    onQuestionsChange([
+                      {
+                        id: "",
+                        question_text: "",
+                        allow_multiple: false,
+                        options: [
+                          {
+                            id: "",
+                            option_text: "",
+                            is_correct: false,
+                          },
+                          {
+                            id: "",
+                            option_text: "",
+                            is_correct: false,
+                          },
+                        ],
+                        times: [],
+                      },
+                    ]);
+                  }}
+                  disabled={isReadonly}
+                  size="sm"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add question
+                </Button>
+              </div>
+            )}
+            {questions.length > 0 && (
+              <div className="space-y-4">
+                {questions.map((question, index) => (
+                  <Card key={question.id || index}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm">
+                          Question {index + 1}
+                        </CardTitle>
+                        {questions.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              onQuestionsChange(
+                                questions.filter((_, i) => i !== index)
+                              );
+                            }}
+                            disabled={isReadonly}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm mb-3">{question.question_text}</p>
+                      <div className="space-y-2">
+                        {question.options.map((option) => (
+                          <div
+                            key={option.id}
+                            className={cn(
+                              "p-2 rounded border",
+                              option.is_correct
+                                ? "bg-green-50 border-green-200"
+                                : "bg-muted/50"
                             )}
-                            <span className="text-sm">
-                              {option.option_text}
-                            </span>
+                          >
+                            <div className="flex items-center gap-2">
+                              {option.is_correct && (
+                                <Check className="h-4 w-4 text-green-600" />
+                              )}
+                              <span className="text-sm">
+                                {option.option_text}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                    {question.times && question.times.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Appears at:{" "}
-                        {question.times
-                          .map(
-                            (t) =>
-                              `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`
-                          )
-                          .join(", ")}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                        ))}
+                      </div>
+                      {question.times && question.times.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Appears at:{" "}
+                          {question.times
+                            .map(
+                              (t) =>
+                                `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`
+                            )
+                            .join(", ")}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+                {questions.length < 10 && (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        onQuestionsChange([
+                          ...questions,
+                          {
+                            id: "",
+                            question_text: "",
+                            allow_multiple: false,
+                            options: [
+                              {
+                                id: "",
+                                option_text: "",
+                                is_correct: false,
+                              },
+                              {
+                                id: "",
+                                option_text: "",
+                                is_correct: false,
+                              },
+                            ],
+                            times: [],
+                          },
+                        ]);
+                      }}
+                      disabled={isReadonly}
+                      size="sm"
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" /> Add question
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
+        {/* Use Image/Images Switch (at the bottom of all switches) */}
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="use-image"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Image
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-label="Image icon"
+                />
+                {useVideo ? "Use Images" : "Use Image"}
+              </Label>
+              <Switch
+                id="use-image"
+                checked={useImage}
+                onCheckedChange={(checked) => {
+                  onUseImageChange(checked);
+                  if (!checked) {
+                    onImageSelect(null);
+                  }
+                }}
+                disabled={isReadonly}
+              />
+            </div>
+            {!useImage && (
+              <p className="text-xs text-muted-foreground pl-5">
+                {useVideo
+                  ? "Add images alongside video content"
+                  : "Use scenario background image"}
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Document Preview Dialog */}
         <Dialog
