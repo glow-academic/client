@@ -47,7 +47,6 @@ import type {
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
   SettingsActiveClient,
-  SettingsActiveOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "./layout-server";

@@ -12,8 +12,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getRedirectPathForRole, type ProfileRole } from "@/utils/route-permissions";
-import { AlertTriangle, Home, Shield, ShieldX, User, UserX } from "lucide-react";
+import {
+  getRedirectPathForRole,
+  type ProfileRole,
+} from "@/utils/route-permissions";
+import {
+  AlertTriangle,
+  Home,
+  Shield,
+  ShieldX,
+  User,
+  UserX,
+} from "lucide-react";
 import Link from "next/link";
 
 type AccessDeniedReason = "not-logged-in" | "route-denied" | "department";
@@ -183,12 +193,16 @@ export function UnifiedAccessDenied({
   }
 
   // Handle route denied state (role-based access)
-  const getAccessDeniedMessage = (role: ProfileRole | undefined, pathname: string) => {
+  const getAccessDeniedMessage = (
+    role: ProfileRole | undefined,
+    pathname: string
+  ) => {
     const section = pathname.split("/")[1];
 
     switch (role) {
       case "guest":
-        return "You need to log in to access this page.";
+        // Guest users are logged in but have limited permissions
+        return "You don't have permission to access this page.";
       case "member":
         if (
           section === "analytics" ||
@@ -231,8 +245,9 @@ export function UnifiedAccessDenied({
     }
   };
 
+  // Determine redirect path: use provided redirectPath, or role-based path, or fallback to home
   const finalRedirectPath =
-    redirectPath || (role ? getRedirectPathForRole(role) : "/");
+    redirectPath || (role ? getRedirectPathForRole(role) : "/home");
 
   return (
     <div className={containerClasses} data-access-denied="true">
@@ -252,16 +267,9 @@ export function UnifiedAccessDenied({
                 Go to Dashboard
               </Link>
             </Button>
-
-            {role === "guest" && (
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/login">Log In</Link>
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
-
