@@ -73,11 +73,8 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/auth/realms/master >/dev/null || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
+    # No healthcheck needed - nginx doesn't require Keycloak to be healthy, just started
+    # Keycloak will retry database connections automatically if needed
     networks:
       - internal
       - public_net
@@ -184,7 +181,7 @@ services:
       start_period: 30s
     depends_on:
       keycloak:
-        condition: service_healthy
+        condition: service_started
       pgbouncer:
         condition: service_healthy
       redis:
@@ -212,6 +209,12 @@ services:
         INTERNAL_API_BASE: http://server:8000
         APP_PREFIX: ${APP_PREFIX}
         NEXT_PUBLIC_APP_PREFIX: ${APP_PREFIX}
+        KEYCLOAK_PUBLIC_URL: ${ORIGIN}${APP_PREFIX}/auth
+        NEXT_PUBLIC_KEYCLOAK_URL: ${ORIGIN}${APP_PREFIX}/auth
+        KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
+        NEXT_PUBLIC_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
+        AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-glow-client}
+        NEXT_PUBLIC_AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-glow-client}
     env_file:
       - .env
     environment:
@@ -221,6 +224,12 @@ services:
       - APP_PREFIX=${APP_PREFIX}
       - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
       - ORIGIN=${ORIGIN}
+      - KEYCLOAK_PUBLIC_URL=${ORIGIN}${APP_PREFIX}/auth
+      - NEXT_PUBLIC_KEYCLOAK_URL=${ORIGIN}${APP_PREFIX}/auth
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-master}
+      - NEXT_PUBLIC_KEYCLOAK_REALM=${KEYCLOAK_REALM:-master}
+      - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID:-glow-client}
+      - NEXT_PUBLIC_AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID:-glow-client}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/health"]
       interval: 10s

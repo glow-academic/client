@@ -155,7 +155,8 @@ CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 log_info "🔄 Restoring from custom format backup: $backup_basename"
-pg_restore -d $DB_NAME "$latest_backup" || {
+# Use DB_USER instead of postgres user
+pg_restore -U "$DB_USER" -d $DB_NAME "$latest_backup" || {
   log_warning "⚠️  Some restore warnings occurred, but continuing..."
 }
 log_info "✅ Backup restoration completed"
@@ -237,6 +238,52 @@ docker-entrypoint.sh "$@" &
 PG_PID=$!
 
 log_success "PostgreSQL started with PID: $PG_PID"
+
+# Wait for PostgreSQL to be ready
+log_info "⏳ Waiting for PostgreSQL to be ready..."
+until pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; do
+  sleep 1
+done
+
+log_success "PostgreSQL is ready"
+
+# Wait for initialization scripts to complete (they run synchronously in docker-entrypoint.sh)
+# Give it a moment for any init scripts to finish
+sleep 3
+
+# Create keycloak database if it doesn't exist (works for both fresh and restored databases)
+# This MUST happen before database is marked healthy, so Keycloak can start
+DB_SUPERUSER="$DB_USER"
+log_info "🔑 Ensuring Keycloak database exists..."
+MAX_RETRIES=10
+RETRY_COUNT=0
+KEYCLOAK_CREATED=false
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+  if psql -U "$DB_SUPERUSER" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'keycloak'" 2>/dev/null | grep -q 1; then
+    log_success "✅ Keycloak database already exists"
+    KEYCLOAK_CREATED=true
+    break
+  else
+    log_info "🔑 Creating Keycloak database (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
+    if psql -U "$DB_SUPERUSER" -d postgres -c "CREATE DATABASE keycloak;" 2>&1; then
+      log_success "✅ Keycloak database created successfully"
+      KEYCLOAK_CREATED=true
+      break
+    else
+      RETRY_COUNT=$((RETRY_COUNT + 1))
+      if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+        sleep 2
+      fi
+    fi
+  fi
+done
+
+if [ "$KEYCLOAK_CREATED" = false ]; then
+  log_error "❌ Failed to create keycloak database after $MAX_RETRIES attempts"
+  exit 1
+fi
+
 log_success "🎉 Database is ready! Use 'yarn migrate' for schema changes."
 
 # Wait for PostgreSQL process
