@@ -233,6 +233,7 @@ export const getBreadcrumbSectionRoute = (
 
 /**
  * Creates a section change handler that navigates to the appropriate route
+ * Calls router.refresh() after navigation to ensure server components re-render
  */
 export const createSectionChangeHandler = (
   router: AppRouterInstance,
@@ -241,12 +242,15 @@ export const createSectionChangeHandler = (
   return (section: string) => {
     const route = getSectionRoute(section, currentPathname);
     router.push(route);
+    // Refresh to trigger server component re-render on route change
+    router.refresh();
   };
 };
 
 /**
  * Creates a breadcrumb-specific section change handler
  * This handles the special case where "Classes" breadcrumb should go to first class, not management
+ * Calls router.refresh() after navigation to ensure server components re-render
  */
 export const createBreadcrumbSectionChangeHandler = (
   router: AppRouterInstance,
@@ -255,11 +259,14 @@ export const createBreadcrumbSectionChangeHandler = (
   return (section: string) => {
     const route = getBreadcrumbSectionRoute(section, currentPathname);
     router.push(route);
+    // Refresh to trigger server component re-render on route change
+    router.refresh();
   };
 };
 
 /**
  * Creates a role-aware section change handler that ensures users can only navigate to allowed sections
+ * Calls router.refresh() after navigation to ensure server components re-render
  */
 export const createRoleAwareSectionChangeHandler = (
   router: AppRouterInstance,
@@ -284,12 +291,15 @@ export const createRoleAwareSectionChangeHandler = (
     // Otherwise, handle navigation internally
     const route = getSectionRoute(section, currentPathname);
     router.push(route);
+    // Refresh to trigger server component re-render on route change
+    router.refresh();
   };
 };
 
 /**
  * Creates a flexible section change handler with custom onSectionChange callback support
  * This is useful for components that might want to handle section changes differently
+ * Calls router.refresh() after navigation to ensure server components re-render
  */
 export const createFlexibleSectionChangeHandler = (
   router: AppRouterInstance,
@@ -306,5 +316,7 @@ export const createFlexibleSectionChangeHandler = (
     // Otherwise, handle navigation internally
     const route = getSectionRoute(section, currentPathname);
     router.push(route);
+    // Refresh to trigger server component re-render on route change
+    router.refresh();
   };
 };

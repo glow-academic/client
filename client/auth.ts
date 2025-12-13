@@ -330,6 +330,13 @@ export const {
 
 /**
  * Helper function to create a pseudo-session from guest/default account cookies
+ *
+ * This supports two auth modes:
+ * 1. Real sessions: NextAuth with Keycloak (has id_token) - fully authenticated users
+ * 2. Pseudo-sessions: Guest/default account cookies (no id_token) - unauthenticated users with profile cookies
+ *
+ * Pseudo-sessions allow unauthenticated users to have a session-like experience
+ * by storing profile IDs in cookies. These are used for guest users and default accounts.
  */
 async function createPseudoSessionFromCookies(): Promise<Session | null> {
   try {
@@ -378,7 +385,21 @@ async function createPseudoSessionFromCookies(): Promise<Session | null> {
   }
 }
 
+/**
+ * Unified session getter that supports both real and pseudo-sessions
+ *
+ * Auth flow:
+ * 1. Check for test headers (for E2E testing)
+ * 2. Try to get real NextAuth session (Keycloak authenticated users)
+ * 3. If no real session, check for pseudo-session cookies (guest/default account)
+ *
+ * Returns:
+ * - Real session: NextAuth session with id_token (authenticated users)
+ * - Pseudo-session: Session-like object from cookies (guest/default account users)
+ * - null: No session available
+ */
 export async function getSession() {
+  // Step 1: Check for test headers (E2E testing override)
   try {
     const headerList = await headers();
     const override = validateTestHeaders(headerList);
@@ -389,10 +410,11 @@ export async function getSession() {
     // Ignore header access errors and fall back to real auth.
   }
 
-  // Try to get authenticated session first
+  // Step 2: Try to get authenticated session (real NextAuth with Keycloak)
   const authSession = await auth();
 
-  // If no authenticated session, check for guest/default account cookies
+  // Step 3: If no authenticated session, check for pseudo-session cookies
+  // This allows guest/default account users to have a session-like experience
   if (!authSession?.user?.profileId) {
     const pseudoSession = await createPseudoSessionFromCookies();
     if (pseudoSession) {

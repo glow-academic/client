@@ -520,8 +520,10 @@ export function UnifiedSidebar({
       if (item.url && item.url !== "#") {
         // Navigate to the URL (for attempts)
         router.push(item.url);
+        // Refresh to trigger server component re-render on route change
+        router.refresh();
       } else if (item.section) {
-        // Handle section changes
+        // Handle section changes (handleSectionChange already calls router.refresh())
         handleSectionChange(item.section);
       }
 

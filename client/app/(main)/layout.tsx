@@ -22,6 +22,10 @@ import {
   switchEffectiveProfile,
 } from "./layout-server";
 
+// Force dynamic rendering to ensure layout re-renders on route changes
+// This fixes the issue where children don't update on client-side navigation
+export const dynamic = "force-dynamic";
+
 export default async function MainLayout({
   children,
 }: {

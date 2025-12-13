@@ -102,9 +102,21 @@ export type SafeSessionSnapshot = {
   isAuthenticated: boolean; // true if user has real NextAuth session (not guest/default account)
 };
 
+/**
+ * Fetches layout context data for the main layout
+ *
+ * Handles both auth modes:
+ * - Authenticated users: Real NextAuth session with id_token
+ * - Guest users: Pseudo-session from cookies (no id_token)
+ *
+ * Returns null initial if user doesn't have valid session or access,
+ * which triggers access denied UI in the layout.
+ */
 export async function getLayoutContextData() {
   const session = await getSession();
 
+  // Create session snapshot with authentication status
+  // isAuthenticated distinguishes real sessions (has id_token) from pseudo-sessions (no id_token)
   const snapshot: SafeSessionSnapshot = {
     effectiveProfileId: session?.effectiveProfileId ?? null,
     fullEmulation: !!session?.fullEmulation,
@@ -130,13 +142,13 @@ export async function getLayoutContextData() {
     activeSettings = null;
   }
 
-  // Only use profile IDs from session - no automatic guest profile fallback
-  // Guest profile is only used when explicitly in guest mode (handled by access control)
+  // Extract profile IDs from session (works for both real and pseudo-sessions)
+  // No automatic guest profile fallback - guest profile is only used when explicitly in guest mode
   const effectiveProfileId = session?.effectiveProfileId || null;
   const actualProfileId = session?.user?.profileId || null;
 
-  // If we don't have valid IDs from session, return early with null initial
-  // Access control in layout will handle showing access denied
+  // Early return if no valid session IDs (user not logged in or invalid session)
+  // Access control in layout will handle showing access denied UI
   if (!effectiveProfileId || !actualProfileId) {
     // Extract guestProfileId before passing to client (server-side only)
     const { guestProfileId: _, ...settingsWithoutGuest } = activeSettings || {};
