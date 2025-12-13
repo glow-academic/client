@@ -6,10 +6,9 @@
  */
 
 import Scenario from "@/components/scenarios/Scenario";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -69,12 +68,15 @@ export default async function NewScenarioPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/create/scenarios" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Parse search params
   const params = await searchParams;

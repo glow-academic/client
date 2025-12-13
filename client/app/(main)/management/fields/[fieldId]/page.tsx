@@ -9,6 +9,7 @@
 import Field from "@/components/fields/Field";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -41,23 +42,28 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { fieldId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const field = await getField(fieldId, profileId);
-    return {
-      title: `${field?.name || "Field"}`,
-      description:
-        field?.description ||
-        `${field?.name ? `${field.name} - ` : ""}Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.`,
-    };
-  } catch {
-    return {
-      title: "Field",
-      description:
-        "Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const field = await getField(fieldId, profileId);
+      return {
+        title: `${field?.name || "Field"}`,
+        description:
+          field?.description ||
+          `${field?.name ? `${field.name} - ` : ""}Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Field",
+    description:
+      "Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.",
+  };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -77,12 +83,15 @@ export default async function FieldEditPage({
   params: Promise<{ fieldId: string }>;
 }) {
   const { fieldId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/management/fields/${fieldId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch field data (always fresh - source of truth)
   const field = await getField(fieldId, profileId);

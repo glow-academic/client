@@ -6,12 +6,11 @@
  */
 
 import Leaderboard from "@/components/leaderboard/Leaderboard";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -59,17 +58,17 @@ const getProfileContext = async (input: {
 /** ---- Inline filters function for leaderboard page ---- */
 async function getLeaderboardFilters(
   searchParams?: URLSearchParams,
-  authResult?: { effectiveProfileId: string; actualProfileId: string }
+  profileIds?: { effectiveProfileId: string; actualProfileId: string }
 ) {
-  if (!authResult) {
-    throw new Error("Authentication required");
+  if (!profileIds) {
+    throw new Error("Profile IDs required");
   }
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await getProfileContext({
     body: {
-      actualProfileId: authResult.actualProfileId,
-      effectiveProfileId: authResult.effectiveProfileId,
+      actualProfileId: profileIds.actualProfileId,
+      effectiveProfileId: profileIds.effectiveProfileId,
       pathname: "/",
     },
   });
@@ -151,9 +150,15 @@ interface LeaderboardPageProps {
 export default async function LeaderboardPage({
   searchParams,
 }: LeaderboardPageProps) {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/leaderboard" />;
+  // Access control is handled server-side in layout
+  // Get profile IDs from session
+  const session = await getSession();
+  const effectiveProfileId = session?.effectiveProfileId;
+  const actualProfileId = session?.user?.profileId;
+
+  if (!effectiveProfileId || !actualProfileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
   }
 
   // Parse search params
@@ -172,7 +177,7 @@ export default async function LeaderboardPage({
   // Get filters from search params or defaults
   const filters = await getLeaderboardFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
-    authResult,
+    { effectiveProfileId, actualProfileId },
   );
 
   // Fetch leaderboard data server-side

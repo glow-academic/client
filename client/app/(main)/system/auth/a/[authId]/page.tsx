@@ -11,8 +11,9 @@ import type {
   UpdateKeyIn,
   UpdateKeyOut,
 } from "@/app/(main)/system/auth/page";
+import { getSession } from "@/auth";
 import Auth from "@/components/auth/Auth";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { requireAuthenticated } from "@/lib/auth-helpers";
@@ -54,21 +55,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { authId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const auth = await getAuth(authId, profileId);
-    return {
-      title: `${auth?.name || "Auth"} Auth`,
-      description: `${auth?.name ? `${auth.name} - ` : ""}Authentication method configuration for teaching assistant training platform.${auth?.description ? ` ${auth.description}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
-    };
-  } catch {
-    return {
-      title: "Auth",
-      description:
-        "Authentication method configuration for teaching assistant training platform. Manage identity providers and secure access mechanisms for educational institutions and L&D programs.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const auth = await getAuth(authId, profileId);
+      return {
+        title: `${auth?.name || "Auth"} Auth`,
+        description: `${auth?.name ? `${auth.name} - ` : ""}Authentication method configuration for teaching assistant training platform.${auth?.description ? ` ${auth.description}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Auth",
+    description:
+      "Authentication method configuration for teaching assistant training platform. Manage identity providers and secure access mechanisms for educational institutions and L&D programs.",
+  };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -123,12 +129,15 @@ export default async function AuthEditPage({
   params: Promise<{ authId: string }>;
 }) {
   const { authId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/system/auth/a/${authId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch auth detail (always fresh - source of truth)
   try {
@@ -149,7 +158,7 @@ export default async function AuthEditPage({
       </div>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (access denied)
+    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
@@ -157,13 +166,11 @@ export default async function AuthEditPage({
       error.status === 403
     ) {
       return (
-        <div className="space-y-6">
-          <div className="flex items-center justify-center h-96">
-            <p className="text-muted-foreground">
-              You don't have access to this auth entry.
-            </p>
-          </div>
-        </div>
+        <UnifiedAccessDenied
+          reason="department"
+          resourceType="department"
+          redirectPath="/system/auth"
+        />
       );
     }
     // Re-throw other errors

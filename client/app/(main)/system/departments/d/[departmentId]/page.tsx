@@ -5,11 +5,10 @@
  * 07/20/2025
  */
 
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Department from "@/components/departments/Department";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -34,7 +33,7 @@ type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
  */
 const getDepartment = async (
   departmentId: string,
-  profileId: string,
+  profileId: string
 ): Promise<DepartmentDetailOut> => {
   return api.post(
     "/departments/detail",
@@ -44,7 +43,7 @@ const getDepartment = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
@@ -57,13 +56,13 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 const getSettingsDetail = async (
   settingsId: string,
-  profileId: string,
+  profileId: string
 ): Promise<SettingsDetailOut> => {
   return api.post(
     "/settings/detail",
@@ -73,35 +72,41 @@ const getSettingsDetail = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ departmentId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { departmentId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const department = await getDepartment(departmentId, profileId);
-    return {
-      title: `${department?.title || "Department"} Department`,
-      description: `${department?.title ? `${department.title} - ` : ""}Academic department for teaching assistant training programs.${department?.description ? ` ${department.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
-    };
-  } catch {
-    return {
-      title: "Department",
-      description: "Academic department for teaching assistant training programs. Manage department-specific settings and coordinate L&D programs across different academic units.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const department = await getDepartment(departmentId, profileId);
+      return {
+        title: `${department?.title || "Department"} Department`,
+        description: `${department?.title ? `${department.title} - ` : ""}Academic department for teaching assistant training programs.${department?.description ? ` ${department.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Department",
+    description:
+      "Academic department for teaching assistant training programs. Manage department-specific settings and coordinate L&D programs across different academic units.",
+  };
 }
 
 /** ---- Strongly-typed server actions ---- */
 async function updateDepartment(
-  input: UpdateDepartmentIn,
+  input: UpdateDepartmentIn
 ): Promise<UpdateDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -130,7 +135,7 @@ async function getKeysListAction(profileId: string): Promise<KeysListOut> {
 
 async function getSettingsDetailAction(
   settingsId: string,
-  profileId: string,
+  profileId: string
 ): Promise<SettingsDetailOut> {
   "use server";
   return getSettingsDetail(settingsId, profileId);
@@ -143,12 +148,16 @@ export default async function DepartmentEditPage({
   params: Promise<{ departmentId: string }>;
 }) {
   const { departmentId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/system/departments/d/${departmentId}`} />;
-  }
 
-  const profileId = authResult.effectiveProfileId;
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch department detail (always fresh - source of truth)
   try {
@@ -163,7 +172,7 @@ export default async function DepartmentEditPage({
       try {
         settingsDetail = await getSettingsDetail(
           departmentDetail.settings_id,
-          profileId,
+          profileId
         );
       } catch {
         // Settings might not exist, continue without it
@@ -200,7 +209,8 @@ export default async function DepartmentEditPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="department"
           redirectPath="/system/departments"
         />
@@ -218,11 +228,10 @@ export type {
   DecryptKeyIn,
   DecryptKeyOut,
   DepartmentDetailOut,
+  KeysListOut,
+  SettingsDetailOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
   UpdateKeyIn,
   UpdateKeyOut,
-  KeysListOut,
-  SettingsDetailOut,
 };
-

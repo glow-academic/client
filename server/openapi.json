@@ -19439,7 +19439,7 @@
           "viewMode": {
             "type": "string",
             "enum": [
-              "ta",
+              "member",
               "instructional"
             ],
             "title": "Viewmode"

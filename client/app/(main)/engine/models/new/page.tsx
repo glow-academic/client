@@ -6,10 +6,9 @@
  */
 
 import Model from "@/components/models/Model";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -85,12 +84,15 @@ async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewModelPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/engine/models" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch default model data (provider mapping for picker)
   const modelDetailDefault = await getModelDetailDefault(profileId);

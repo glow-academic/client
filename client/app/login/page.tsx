@@ -60,7 +60,7 @@ async function getActiveSettings(
       "/settings/active",
       {
         body: {
-          profileId: null, // Use null for unauthenticated users (not "guest-profile-id")
+          profileId: null,
           departmentId: departmentId || null, // Optional department ID for department-specific settings
         },
       },

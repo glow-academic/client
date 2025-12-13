@@ -5,12 +5,11 @@
  * 06/08/2025
  */
 
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Persona from "@/components/personas/Persona";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -47,21 +46,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { personaId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const persona = await getPersona(personaId, profileId);
-    return {
-      title: `${persona?.name || "Persona"} Persona`,
-      description: `${persona?.name ? `${persona.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description ? ` ${persona.description}` : ""}`,
-    };
-  } catch {
-    return {
-      title: "Persona",
-      description:
-        "AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const persona = await getPersona(personaId, profileId);
+      return {
+        title: `${persona?.name || "Persona"} Persona`,
+        description: `${persona?.name ? `${persona.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description ? ` ${persona.description}` : ""}`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Persona",
+    description:
+      "AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.",
+  };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -96,12 +100,15 @@ export default async function PersonaEditPage({
   params: Promise<{ personaId: string }>;
 }) {
   const { personaId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/create/personas/p/${personaId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch persona detail (always fresh - source of truth)
   try {
@@ -131,7 +138,8 @@ export default async function PersonaEditPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="persona"
           redirectPath="/create/personas"
         />

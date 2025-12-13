@@ -3,12 +3,11 @@
  * Provider editing page
  */
 
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Provider from "@/components/providers/Provider";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -43,21 +42,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { providerId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const provider = await getProvider(providerId, profileId);
-    return {
-      title: `${provider?.name || "Provider"}`,
-      description: `${provider?.name ? `${provider.name} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
-    };
-  } catch {
-    return {
-      title: "Provider",
-      description:
-        "AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const provider = await getProvider(providerId, profileId);
+      return {
+        title: `${provider?.name || "Provider"}`,
+        description: `${provider?.name ? `${provider.name} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Provider",
+    description:
+      "AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.",
+  };
 }
 
 /** ---- Server renders client with typed data (read-only, mutations in child components) ---- */
@@ -67,12 +71,15 @@ export default async function EditProviderPage({
   params: Promise<{ providerId: string }>;
 }) {
   const { providerId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/system/providers/p/${providerId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch data for edit mode
   try {
@@ -96,7 +103,8 @@ export default async function EditProviderPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="provider"
           redirectPath="/system/providers"
         />

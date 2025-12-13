@@ -4,14 +4,14 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import { Suspense } from "react";
 
+import { getSession } from "@/auth";
 import Logs from "@/components/logs/Logs";
 import { LogsRunsClient } from "@/components/logs/LogsRunsClient";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { requireAuthenticated } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -93,12 +93,15 @@ interface SystemPageProps {
 }
 
 export default async function SystemPage({ searchParams }: SystemPageProps) {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/system/health" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Parse search params
   const params = await searchParams;
@@ -179,7 +182,7 @@ export default async function SystemPage({ searchParams }: SystemPageProps) {
         }
       >
         <LogsRunsSection
-          authResult={authResult}
+          profileId={profileId}
           logsPage={logsPage}
           logsPageSize={logsPageSize}
           logsSearch={logsSearch}
@@ -196,7 +199,7 @@ export default async function SystemPage({ searchParams }: SystemPageProps) {
 
 /** ---- Inline runs section component (only used here) ---- */
 async function LogsRunsSection({
-  authResult,
+  profileId,
   logsPage,
   logsPageSize,
   logsSearch,
@@ -206,7 +209,7 @@ async function LogsRunsSection({
   logsSortBy,
   logsSortOrder,
 }: {
-  authResult: { effectiveProfileId: string };
+  profileId: string;
   logsPage: number;
   logsPageSize: number;
   logsSearch?: string | undefined;
@@ -218,7 +221,7 @@ async function LogsRunsSection({
 }) {
   // Build runs filters with pagination/search/sorting/filtering params
   const runsFilters = {
-    profileId: authResult.effectiveProfileId,
+    profileId,
     page: logsPage,
     pageSize: logsPageSize,
     ...(logsSearch && { search: logsSearch }),
@@ -236,9 +239,12 @@ async function LogsRunsSection({
   };
 
   // Fetch runs data server-side
-  const runsData = await getLogsRuns({
-    body: runsFilters,
-  }, authResult);
+  const runsData = await getLogsRuns(
+    {
+      body: runsFilters,
+    },
+    { effectiveProfileId: profileId }
+  );
 
   return (
     <LogsRunsClient

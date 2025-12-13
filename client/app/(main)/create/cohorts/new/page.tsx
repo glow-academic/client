@@ -6,10 +6,9 @@
  */
 
 import Cohort from "@/components/cohorts/Cohort";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -91,12 +90,6 @@ async function searchCohortProfile(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  try {
-    await requireAuthenticated();
-  } catch {
-    // Metadata can be generated even if auth fails
-  }
-
   return {
     title: "New Cohort",
     description: "Create a new learning cohort for teaching assistant training programs. Organize groups of teaching assistants, configure cohort settings, and set up group-based learning activities for effective L&D program administration.",
@@ -104,12 +97,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewCohortPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/create/cohorts" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch cohort default data (for dropdowns and defaults)
   const cohortDetailDefault = await getCohortDefault(profileId);

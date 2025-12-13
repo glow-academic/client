@@ -246,6 +246,12 @@ export default function Auth({
             : { value: item.value || "" }), // For non-encrypted items, send value
         }));
 
+      // Ensure profileId exists - required for API calls
+      if (!effectiveProfile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        return;
+      }
+
       if (isEditMode) {
         await handleUpdateAuth({
           authId: authId!,
@@ -253,7 +259,7 @@ export default function Auth({
           description: formData.description!,
           active: formData.active || false,
           auth_items,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         });
 
         toast.success("Auth updated successfully!");
@@ -263,7 +269,7 @@ export default function Auth({
           description: formData.description!,
           active: formData.active || false,
           auth_items,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         });
 
         toast.success("Auth created successfully!");

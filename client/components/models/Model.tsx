@@ -475,6 +475,12 @@ export default function Model({
             }
           : { input: ["text"], output: ["text"] }; // Server-side default
 
+      // Ensure profileId exists - required for API calls
+      if (!effectiveProfile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        return;
+      }
+
       // Transform voices for API (only if enabled, otherwise all voices)
       // Empty array means "all voices" (like department picker)
       const voices =
@@ -508,7 +514,7 @@ export default function Model({
             formData.qualities.length > 0
               ? formData.qualities
               : null,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         });
         resetFormAndState();
         toast.success("Model updated successfully!");
@@ -538,7 +544,7 @@ export default function Model({
             formData.qualities.length > 0
               ? formData.qualities
               : null,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         });
         resetFormAndState();
         toast.success("Model created successfully!");

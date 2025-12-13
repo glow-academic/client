@@ -298,6 +298,11 @@ export default function Rubric({
         0
       );
 
+      // Ensure profileId exists - required for API calls
+      if (!effectiveProfile?.id) {
+        throw new Error("Profile not loaded. Please refresh the page.");
+      }
+
       return updateRubricAction({
         body: {
           rubricId,
@@ -308,7 +313,7 @@ export default function Rubric({
           passPoints: totalPassPoints,
           department_ids: updates.department_ids || [],
           standard_groups: allGroups,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
     },
@@ -317,6 +322,12 @@ export default function Rubric({
 
   // Handle save
   const handleSave = async () => {
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     try {
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
@@ -353,7 +364,7 @@ export default function Rubric({
             points: 0,
             passPoints: 0,
             standard_groups: [],
-            profileId: effectiveProfile?.id || "guest-profile-id",
+            profileId: effectiveProfile.id,
           },
         });
 

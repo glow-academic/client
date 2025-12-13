@@ -7,10 +7,9 @@
 
 import { createRubric } from "@/app/(main)/engine/rubrics/page";
 import Rubric from "@/components/rubrics/Rubric";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 import { cache } from "react";
 
@@ -35,12 +34,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** ---- Server renders client with typed data (mutations in child components) ---- */
 export default async function NewRubricPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/engine/rubrics" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch default rubric detail server-side
   const rubricNew = await getRubricDefault({

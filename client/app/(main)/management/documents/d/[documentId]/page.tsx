@@ -5,13 +5,12 @@
  * 01/21/2025
  */
 
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Document from "@/components/documents/Document";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import type { TemplateSchema } from "@/components/documents/TemplateForm";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -49,21 +48,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { documentId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const document = await getDocument(documentId, profileId);
-    return {
-      title: `${document?.name || "Document"}`,
-      description: `${document?.name ? `${document.name} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
-    };
-  } catch {
-    return {
-      title: "Document",
-      description:
-        "Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const document = await getDocument(documentId, profileId);
+      return {
+        title: `${document?.name || "Document"}`,
+        description: `${document?.name ? `${document.name} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Document",
+    description:
+      "Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.",
+  };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -93,12 +97,15 @@ export default async function DocumentEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { documentId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/management/documents/d/${documentId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch document detail (always fresh - source of truth)
   try {
@@ -185,7 +192,8 @@ export default async function DocumentEditPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="document"
           redirectPath="/management/documents"
         />

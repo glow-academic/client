@@ -2,12 +2,11 @@
  * app/(main)/system/keys/page.tsx
  * Keys list page
  */
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Keys from "@/components/keys/Keys";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -55,12 +54,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function KeysPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/system/keys" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch list data server-side
   const listData = await getKeysList(profileId);

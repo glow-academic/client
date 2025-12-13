@@ -787,6 +787,13 @@ export default function SystemAgent({
         const shouldCreateNewPrompt = hasPromptChanges;
 
         // Update existing agent using v3 API
+        // Ensure profileId exists - required for API calls
+        if (!effectiveProfile?.id) {
+          toast.error("Profile not loaded. Please refresh the page.");
+          setIsSubmitting(false);
+          return;
+        }
+
         // Note: profileId is added by the server action
         await handleUpdateAgent({
           agentId,
@@ -806,13 +813,20 @@ export default function SystemAgent({
             formData.model_voice_ids && formData.model_voice_ids.length > 0
               ? formData.model_voice_ids
               : null,
-          profileId: effectiveProfile?.id || "guest-profile-id", // Added by server action, but types require it
+          profileId: effectiveProfile.id,
         });
         toast.success("Agent updated successfully!");
         resetFormAndState();
         router.push("/engine/agents");
         setIsSubmitting(false);
       } else {
+        // Ensure profileId exists - required for API calls
+        if (!effectiveProfile?.id) {
+          toast.error("Profile not loaded. Please refresh the page.");
+          setIsSubmitting(false);
+          return;
+        }
+
         // Create new agent using v3 API
         // Note: profileId is added by the server action
         await handleCreateAgent({
@@ -831,7 +845,7 @@ export default function SystemAgent({
             formData.model_voice_ids && formData.model_voice_ids.length > 0
               ? formData.model_voice_ids
               : null,
-          profileId: effectiveProfile?.id || "guest-profile-id", // Added by server action, but types require it
+          profileId: effectiveProfile.id,
         });
         toast.success("Agent created successfully!");
         resetFormAndState();

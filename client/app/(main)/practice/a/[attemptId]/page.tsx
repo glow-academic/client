@@ -12,9 +12,9 @@ import type {
   UpdateChatCreatedAtOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuth } from "@/lib/auth-helpers";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Direct fetch (no caching - source of truth) ----
@@ -38,32 +38,29 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { attemptId } = await params;
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  try {
-    const authResult = await requireAuth();
-    if (!authResult) {
+  if (profileId) {
+    try {
+      const attemptData = await getAttemptFull(attemptId, {
+        body: { attemptId, profileId },
+      });
+      const simulationTitle = attemptData?.simulation?.["title"];
       return {
-        title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
-        description:
-          "Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.",
+        title: `Practice ${simulationTitle || "Attempt"}`,
+        description: `${simulationTitle ? `${simulationTitle} - ` : ""}Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.`,
       };
+    } catch {
+      // Fall through to default metadata
     }
-
-    const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId, profileId: authResult.effectiveProfileId },
-    });
-    const simulationTitle = attemptData?.simulation?.["title"];
-    return {
-      title: `Practice ${simulationTitle || "Attempt"}`,
-      description: `${simulationTitle ? `${simulationTitle} - ` : ""}Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.`,
-    };
-  } catch {
-    return {
-      title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
-      description:
-        "Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.",
-    };
   }
+
+  return {
+    title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
+    description:
+      "Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.",
+  };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -83,13 +80,15 @@ export default async function PracticeAttemptPage({
 }) {
   const { attemptId } = await params;
 
-  // Require auth (allows guest fallback via requireAuth)
-  const authResult = await requireAuth();
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/practice/a/${attemptId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session (allows guest fallback if route permits)
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch attempt data server-side
   try {
@@ -107,14 +106,20 @@ export default async function PracticeAttemptPage({
       </div>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (role-based access denied)
+    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
       "status" in error &&
       error.status === 403
     ) {
-      return <AccessDenied redirectPath={`/practice/a/${attemptId}`} />;
+      return (
+        <UnifiedAccessDenied
+          reason="department"
+          resourceType="scenario"
+          redirectPath="/practice"
+        />
+      );
     }
     // Re-throw other errors
     throw error;

@@ -28,7 +28,7 @@ async function getActiveSettings(): Promise<SettingsActiveOut | null> {
       "/settings/active",
       {
         body: {
-          profileId: null, // Use null for unauthenticated users (not "guest-profile-id")
+          profileId: null,
         },
       },
       {

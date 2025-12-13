@@ -5,13 +5,12 @@
  * 07/20/2025
  */
 
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Cohort from "@/components/cohorts/Cohort";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import { Trophy } from "lucide-react";
 import Link from "next/link";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -84,20 +83,25 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { cohortId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const cohort = await getCohort(cohortId, profileId);
-    return {
-      title: `${cohort?.title || "Cohort"} Edit`,
-      description: `${cohort?.title ? `${cohort.title} - ` : ""}Edit learning cohort for teaching assistant training programs.${cohort?.description ? ` ${cohort.description}` : ""} Manage group settings and coordinate group-based learning activities for effective L&D program administration.`,
-    };
-  } catch {
-    return {
-      title: "Cohort Edit",
-      description: "Edit learning cohort for teaching assistant training programs. Manage group settings and coordinate group-based learning activities for effective L&D program administration.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const cohort = await getCohort(cohortId, profileId);
+      return {
+        title: `${cohort?.title || "Cohort"} Edit`,
+        description: `${cohort?.title ? `${cohort.title} - ` : ""}Edit learning cohort for teaching assistant training programs.${cohort?.description ? ` ${cohort.description}` : ""} Manage group settings and coordinate group-based learning activities for effective L&D program administration.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Cohort Edit",
+    description: "Edit learning cohort for teaching assistant training programs. Manage group settings and coordinate group-based learning activities for effective L&D program administration.",
+  };
 }
 
 /** ---- Strongly-typed server action ---- */
@@ -128,12 +132,15 @@ export default async function CohortEditPage({
   params: Promise<{ cohortId: string }>;
 }) {
   const { cohortId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/create/cohorts/c/${cohortId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Check cohort access by fetching detail (will return 403 if no access)
   let cohortDetail: CohortDetailOut;
@@ -148,7 +155,8 @@ export default async function CohortEditPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="cohort"
           redirectPath="/create/cohorts"
         />

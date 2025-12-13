@@ -7,9 +7,8 @@
 
 import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Dashboard from "@/components/dashboard/Dashboard";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
@@ -176,9 +175,15 @@ interface DashboardPageProps {
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/analytics/dashboard" />;
+  // Access control is handled server-side in layout
+  // Get profile IDs from session
+  const session = await getSession();
+  const effectiveProfileId = session?.effectiveProfileId;
+  const actualProfileId = session?.user?.profileId;
+
+  if (!effectiveProfileId || !actualProfileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
   }
 
   // Parse search params
@@ -197,7 +202,7 @@ export default async function DashboardPage({
   // Get filters from search params or defaults
   const filters = await getDashboardFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
-    authResult,
+    { effectiveProfileId, actualProfileId },
   );
 
   // Dashboard bundle no longer uses profileId - removed from request

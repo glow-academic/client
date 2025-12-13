@@ -291,12 +291,18 @@ export default function Rubrics({
   const handleDelete = async () => {
     if (!deleteItem || !deleteRubricAction) return;
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsDeleting(true);
     try {
       await deleteRubricAction({
         body: {
           rubricId: deleteItem.id,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
       toast.success("Rubric deleted successfully");
@@ -316,12 +322,18 @@ export default function Rubrics({
       return;
     }
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsDuplicating(rubric.rubric_id);
     try {
       await duplicateRubricAction({
         body: {
           rubricId: rubric.rubric_id,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);

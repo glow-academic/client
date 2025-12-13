@@ -5,12 +5,11 @@
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -50,8 +49,10 @@ export async function generateMetadata(
   const { attemptId } = await params;
 
   try {
-    const authResult = await requireAuthenticated().catch(() => null);
-    if (!authResult) {
+    const session = await getSession();
+    const profileId = session?.effectiveProfileId;
+
+    if (!profileId) {
       return {
         title: `Attempt ${attemptId.substring(0, 8)}...`,
         description:
@@ -60,7 +61,7 @@ export async function generateMetadata(
     }
 
     const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId, profileId: authResult.effectiveProfileId },
+      body: { attemptId, profileId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
@@ -93,13 +94,15 @@ export default async function AttemptPage({
 }) {
   const { attemptId } = await params;
 
-  // Require authentication - attempt pages don't allow guest access
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/home/a/${attemptId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch attempt data server-side
   try {
@@ -117,7 +120,7 @@ export default async function AttemptPage({
       </div>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (role-based access denied)
+    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
@@ -125,7 +128,11 @@ export default async function AttemptPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied resourceType="scenario" redirectPath="/home" />
+        <UnifiedAccessDenied
+          reason="department"
+          resourceType="scenario"
+          redirectPath="/home"
+        />
       );
     }
     // Re-throw other errors

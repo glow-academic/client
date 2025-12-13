@@ -518,6 +518,13 @@ export default function Persona({
         personaData?.valid_department_ids || []
       );
 
+      // Ensure profileId exists - required for API calls
+      if (!effectiveProfile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        setIsSubmitting(false);
+        return;
+      }
+
       if (isEditMode) {
         updatePersona(
           {
@@ -533,7 +540,7 @@ export default function Persona({
             department_ids: finalDepartmentIds,
             parameter_ids: formData.parameterIds || [],
             example_ids: [],
-            profileId: effectiveProfile?.id || "guest-profile-id",
+            profileId: effectiveProfile.id,
           },
           {
             onSuccess: () => {
@@ -560,7 +567,7 @@ export default function Persona({
             department_ids: finalDepartmentIds,
             parameter_ids: formData.parameterIds || [],
             example_ids: currentExamples.filter((ex) => ex.trim()),
-            profileId: effectiveProfile?.id || "guest-profile-id",
+            profileId: effectiveProfile.id,
           },
           {
             onSuccess: () => {

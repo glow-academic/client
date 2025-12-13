@@ -5,12 +5,11 @@
  * 06/09/2025
  */
 
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Rubric from "@/components/rubrics/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { requireAuthenticated } from "@/lib/auth-helpers";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -60,21 +59,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { rubricId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const rubric = await getRubric(rubricId, profileId);
-    return {
-      title: `${rubric?.name || "Rubric"}`,
-      description: `${rubric?.name ? `${rubric.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description ? ` ${rubric.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
-    };
-  } catch {
-    return {
-      title: "Rubric",
-      description:
-        "Assessment rubric for teaching assistant evaluation. Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const rubric = await getRubric(rubricId, profileId);
+      return {
+        title: `${rubric?.name || "Rubric"}`,
+        description: `${rubric?.name ? `${rubric.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description ? ` ${rubric.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Rubric",
+    description:
+      "Assessment rubric for teaching assistant evaluation. Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.",
+  };
 }
 
 /** ---- Server renders client with typed data (read-only, mutations in child components) ---- */
@@ -84,12 +88,15 @@ export default async function EditRubricPage({
   params: Promise<{ rubricId: string }>;
 }) {
   const { rubricId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/engine/rubrics/r/${rubricId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch data based on mode (edit vs create)
   try {
@@ -125,7 +132,8 @@ export default async function EditRubricPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="rubric"
           redirectPath="/engine/rubrics"
         />

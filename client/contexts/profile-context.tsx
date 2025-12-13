@@ -51,22 +51,9 @@ export type CohortItem = LayoutContextResponse["cohorts"]["items"][number];
 export type SimulationContextItem =
   LayoutContextResponse["simulations"]["items"][number];
 
-// A generic, fallback guest profile for when no user is logged in or during loading states.
-const GUEST_PROFILE: ProfileItem = {
-  id: "guest-profile-id",
-  firstName: "Guest",
-  lastName: "User",
-  emails: ["redacted@purdue.edu"],
-  primaryEmail: "redacted@purdue.edu",
-  role: "guest",
-  active: true,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  lastLogin: new Date().toISOString(),
-  lastActive: new Date().toISOString(),
-  reqPerDay: null,
-  primaryDepartmentId: null,
-};
+// Note: With server-side access control, users without valid sessions won't reach pages
+// (they see UnifiedAccessDenied). However, we handle null profiles gracefully for
+// edge cases, loading states, and WebSocket connections that may legitimately use null profileId.
 
 interface ProfileContextType {
   // Profile data
@@ -152,8 +139,9 @@ export function ProfileProviderClient({
     []
   );
 
-  // Handle null initial (access denied case) - use default values
-  // AccessControl component will handle displaying the access denied UI
+  // Handle null initial (access denied case) - with server-side access control,
+  // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
+  // However, we handle null gracefully for edge cases and loading states.
   const bootstrapProfile = initial?.actualProfile ?? null;
   const effectiveProfile = initial?.effectiveProfile ?? null;
 
@@ -185,7 +173,9 @@ export function ProfileProviderClient({
   // Get profile ID for socket connection
   const profileId = effectiveProfile?.id ?? null;
 
-  // Initialize WebSocket connection when profileId is resolved (may be null for guest)
+  // Initialize WebSocket connection when profileId is resolved
+  // Note: profileId may be null for legitimate guest connections (e.g., practice page with guest role)
+  // WebSocket handles this by using guestIdRef for guest connections
   useEffect(() => {
     // Capture current rooms at effect creation time for cleanup
     const roomsToCleanup = currentRoomsRef.current;
@@ -313,8 +303,9 @@ export function ProfileProviderClient({
   ]);
 
   const resolvedActiveProfile = useMemo<ProfileItem | null>(() => {
-    // If not authenticated at all, fallback to guest
-    if (!bootstrapProfile) return GUEST_PROFILE;
+    // With server-side access control, if bootstrapProfile is null, user shouldn't be here
+    // (handled by layout). However, handle null gracefully for edge cases.
+    if (!bootstrapProfile) return null;
 
     // Three states:
     // 1. Normal: activeProfile = bootstrapProfile, effectiveProfile = bootstrapProfile
@@ -438,8 +429,7 @@ export function ProfileProviderClient({
     // Profile data
     activeProfile: resolvedActiveProfile,
     simulatedProfile,
-    effectiveProfile:
-      effectiveProfile ?? resolvedActiveProfile ?? GUEST_PROFILE,
+    effectiveProfile: effectiveProfile ?? resolvedActiveProfile ?? null,
     isSimulating: !!(
       bootstrapProfile &&
       effectiveProfile &&

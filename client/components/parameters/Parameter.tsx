@@ -406,7 +406,14 @@ export default function Parameter({
         });
       }
 
-      const profileId = effectiveProfile?.id || "guest-profile-id";
+      // With server-side access control, effectiveProfile should always exist
+      // But handle null gracefully for edge cases
+      if (!effectiveProfile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        return;
+      }
+
+      const profileId = effectiveProfile.id;
 
       if (isEditMode) {
         // V3 API: Single atomic update with field connections

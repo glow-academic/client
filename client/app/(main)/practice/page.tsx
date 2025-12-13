@@ -6,11 +6,10 @@
  */
 
 import SimulationHistory from "@/components/common/history/SimulationHistory";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Practice from "@/components/practice/Practice";
+import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { requireAuth } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -93,19 +92,17 @@ interface PracticePageProps {
 export default async function PracticePage({
   searchParams,
 }: PracticePageProps) {
-  // Allow guest access - practice page supports guest mode via guestProfileId
-  // When user clicks "Continue as Guest", they're redirected here and should be able to access
-  const authResult = await requireAuth();
-  if (!authResult) {
-    return (
-      <AccessDenied
-        message="You need to log in to access the practice page."
-        redirectPath="/practice"
-      />
-    );
-  }
+  // Access control is handled server-side in layout
+  // Practice page allows guest role users (authenticated users with guest role)
+  // Get profile IDs from session
+  const session = await getSession();
+  const effectiveProfileId = session?.effectiveProfileId;
+  const actualProfileId = session?.user?.profileId;
 
-  const { effectiveProfileId, actualProfileId } = authResult;
+  if (!effectiveProfileId || !actualProfileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Parse search params
   const paramsObj = await searchParams;

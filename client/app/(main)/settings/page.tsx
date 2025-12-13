@@ -4,10 +4,9 @@
  */
 
 import Settings from "@/components/settings/Settings";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type SettingsListOut = OutputOf<"/api/v3/settings/list", "post">;
@@ -131,12 +130,15 @@ async function getDepartmentsListAction(
 }
 
 export default async function SettingsPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/settings" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch settings list server-side
   const settingsListResponse = await getSettingsList(profileId);

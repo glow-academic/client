@@ -203,6 +203,12 @@ export default function Key({
       return;
     }
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -214,7 +220,7 @@ export default function Key({
           description: formData.description || "",
           active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         });
         resetFormAndState();
         toast.success("Key updated successfully!");
@@ -226,7 +232,7 @@ export default function Key({
           description: formData.description || "",
           active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         });
         resetFormAndState();
         toast.success("Key created successfully!");

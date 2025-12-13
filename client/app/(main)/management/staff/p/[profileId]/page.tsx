@@ -6,10 +6,11 @@
  */
 
 
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import StaffNewEdit from "@/components/staff/StaffNewEdit";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -43,21 +44,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { profileId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const currentProfileId = authResult.effectiveProfileId;
-    const staffDetail = await getStaff(profileId, currentProfileId);
-    return {
-      title: `Edit ${staffDetail.name}`,
-      description: `${staffDetail.name ? `Edit ${staffDetail.name} - ` : ""}Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.`,
-    };
-  } catch {
-    return {
-      title: "Edit Staff",
-      description:
-        "Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.",
-    };
+  const session = await getSession();
+  const currentProfileId = session?.effectiveProfileId;
+
+  if (currentProfileId) {
+    try {
+      const staffDetail = await getStaff(profileId, currentProfileId);
+      return {
+        title: `Edit ${staffDetail.name}`,
+        description: `${staffDetail.name ? `Edit ${staffDetail.name} - ` : ""}Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Edit Staff",
+    description:
+      "Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.",
+  };
 }
 
 /** ---- Strongly-typed server actions ---- */
@@ -77,12 +83,15 @@ export default async function StaffEditPage({
   params: Promise<{ profileId: string }>;
 }) {
   const { profileId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/management/staff/p/${profileId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const currentProfileId = session?.effectiveProfileId;
 
-  const currentProfileId = authResult.effectiveProfileId;
+  if (!currentProfileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch staff detail (always fresh - source of truth)
   try {
@@ -111,7 +120,8 @@ export default async function StaffEditPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="department"
           redirectPath="/management/staff"
         />

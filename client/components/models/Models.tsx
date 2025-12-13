@@ -228,12 +228,18 @@ export default function Models({
   const handleDelete = async () => {
     if (!deleteItem || !deleteModelAction) return;
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsDeleting(true);
     try {
       await deleteModelAction({
         body: {
           modelId: deleteItem.id,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
       toast.success("Model deleted successfully");
@@ -259,12 +265,18 @@ export default function Models({
   const handleDuplicateModelClick = async (model: (typeof models)[number]) => {
     if (!duplicateModelAction) return;
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsDuplicating(model.model_id);
     try {
       await duplicateModelAction({
         body: {
           modelId: model.model_id,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
       toast.success(`Model '${model.name}' duplicated successfully`);

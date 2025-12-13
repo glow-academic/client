@@ -6,11 +6,10 @@
  */
 
 import Parameter from "@/components/parameters/Parameter";
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -51,21 +50,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { parameterId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const parameter = await getParameter(parameterId, profileId);
-    return {
-      title: `${parameter?.name || "Parameter"} Parameter`,
-      description: `${parameter?.name ? `${parameter.name} - ` : ""}System parameter configuration for teaching assistant training platform.${parameter?.description ? ` ${parameter.description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
-    };
-  } catch {
-    return {
-      title: "Parameter",
-      description:
-        "System parameter configuration for teaching assistant training platform. Manage platform-wide settings and learning environment configurations for effective L&D program administration.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const parameter = await getParameter(parameterId, profileId);
+      return {
+        title: `${parameter?.name || "Parameter"} Parameter`,
+        description: `${parameter?.name ? `${parameter.name} - ` : ""}System parameter configuration for teaching assistant training platform.${parameter?.description ? ` ${parameter.description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Parameter",
+    description:
+      "System parameter configuration for teaching assistant training platform. Manage platform-wide settings and learning environment configurations for effective L&D program administration.",
+  };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -100,12 +104,15 @@ export default async function ParameterEditPage({
   params: Promise<{ parameterId: string }>;
 }) {
   const { parameterId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/management/parameters/p/${parameterId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch parameter detail (always fresh - source of truth)
   try {
@@ -135,7 +142,8 @@ export default async function ParameterEditPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="parameter"
           redirectPath="/management/parameters"
         />

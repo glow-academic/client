@@ -3,12 +3,11 @@
  * Key editing page
  */
 
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Key from "@/components/keys/Key";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { requireAuthenticated } from "@/lib/auth-helpers";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -43,21 +42,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { keyId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const key = await getKey(keyId, profileId);
-    return {
-      title: `${key?.name || "Key"}`,
-      description: `${key?.name ? `${key.name} - ` : ""}API key configuration for teaching assistant training platform. Manage secure access credentials and API integrations for educational institutions and L&D programs.`,
-    };
-  } catch {
-    return {
-      title: "Key",
-      description:
-        "API key configuration for teaching assistant training platform. Manage secure access credentials and API integrations for educational institutions and L&D programs.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const key = await getKey(keyId, profileId);
+      return {
+        title: `${key?.name || "Key"}`,
+        description: `${key?.name ? `${key.name} - ` : ""}API key configuration for teaching assistant training platform. Manage secure access credentials and API integrations for educational institutions and L&D programs.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Key",
+    description:
+      "API key configuration for teaching assistant training platform. Manage secure access credentials and API integrations for educational institutions and L&D programs.",
+  };
 }
 
 /** ---- Server renders client with typed data (read-only, mutations in child components) ---- */
@@ -67,12 +71,15 @@ export default async function EditKeyPage({
   params: Promise<{ keyId: string }>;
 }) {
   const { keyId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/system/keys/k/${keyId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch data for edit mode
   try {
@@ -96,7 +103,8 @@ export default async function EditKeyPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="key"
           redirectPath="/system/keys"
         />

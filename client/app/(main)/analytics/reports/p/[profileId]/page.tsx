@@ -7,12 +7,11 @@
 
 import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Report from "@/components/reports/Report";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 import { Suspense } from "react";
 
@@ -100,17 +99,17 @@ const getProfileContext = async (input: {
 /** ---- Inline filters function for profile reports page ---- */
 async function getProfileReportsFilters(
   searchParams?: URLSearchParams,
-  authResult?: { effectiveProfileId: string; actualProfileId: string }
+  profileIds?: { effectiveProfileId: string; actualProfileId: string }
 ) {
-  if (!authResult) {
-    throw new Error("Authentication required");
+  if (!profileIds) {
+    throw new Error("Profile IDs required");
   }
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await getProfileContext({
     body: {
-      actualProfileId: authResult.actualProfileId,
-      effectiveProfileId: authResult.effectiveProfileId,
+      actualProfileId: profileIds.actualProfileId,
+      effectiveProfileId: profileIds.effectiveProfileId,
       pathname: "/",
     },
   });
@@ -215,9 +214,15 @@ export default async function ReportsPage({
   searchParams,
 }: ProfileReportsPageProps) {
   const { profileId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/analytics/reports/p/${profileId}`} />;
+  // Access control is handled server-side in layout
+  // Get profile IDs from session
+  const session = await getSession();
+  const effectiveProfileId = session?.effectiveProfileId;
+  const actualProfileId = session?.user?.profileId;
+
+  if (!effectiveProfileId || !actualProfileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
   }
 
   // Parse search params
@@ -236,7 +241,7 @@ export default async function ReportsPage({
   // Get filters from search params or defaults
   const defaultFilters = await getProfileReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
-    authResult,
+    { effectiveProfileId, actualProfileId },
   );
   const reportsFilters = {
     ...defaultFilters,

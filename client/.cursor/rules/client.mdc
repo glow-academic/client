@@ -48,7 +48,7 @@ alwaysApply: false
 - **Purpose**: Ensures type safety between client and server without manual type definitions
 
 ### Profile ID in Server Actions
-- **Always include**: Get `profileId` from session: `session?.effectiveProfileId || "guest-profile-id"`
+- **Always include**: Get `profileId` from session: `session?.effectiveProfileId`
 - **Pattern**: Merge into request body: `{ ...input.body, profileId }`
 - **Never hardcode**: Always use session, fallback to guest profile
 

@@ -564,7 +564,11 @@ export default function Cohort({
     }
 
     // For instructional users, ensure they are always in the cohort
-    if (effectiveProfile?.role === "instructional" && !isEditMode) {
+    if (
+      effectiveProfile?.role === "instructional" &&
+      !isEditMode &&
+      effectiveProfile?.id
+    ) {
       const existingProfileIds =
         cohortData?.staff?.map((s) => s.profile_id) || [];
       const finalProfileIds = [

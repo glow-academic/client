@@ -5,12 +5,11 @@
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import SimulationHistory from "@/components/common/history/SimulationHistory";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Home from "@/components/home/Home";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { requireAuth } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
@@ -168,18 +167,16 @@ interface HomePageProps {
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  // Require auth (allows guest fallback via requireAuth)
-  const authResult = await requireAuth();
-  if (!authResult) {
-    return (
-      <AccessDenied
-        message="You need to log in to access the home page."
-        redirectPath="/home"
-      />
-    );
-  }
+  // Access control is handled server-side in layout
+  // Get profile IDs from session
+  const session = await getSession();
+  const effectiveProfileId = session?.effectiveProfileId;
+  const actualProfileId = session?.user?.profileId;
 
-  const { effectiveProfileId, actualProfileId } = authResult;
+  if (!effectiveProfileId || !actualProfileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Parse search params
   const paramsObj = await searchParams;
@@ -211,7 +208,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds, // Always non-empty
       departmentIds: defaultFilters.departmentIds, // Always non-empty
-      profileId: effectiveProfileId, // Use resolved profile ID (no guest-profile-id string)
+      profileId: effectiveProfileId,
     },
   };
 

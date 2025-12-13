@@ -113,34 +113,26 @@ export async function getLayoutContextData() {
   // CRITICAL: Fetch settings FIRST to get guest profile ID
   // This ensures we always have a valid UUID before making other API calls
   let activeSettings: SettingsActiveOut | null = null;
-  let guestProfileId: string | null = null;
 
   try {
-    // Use null or empty string for unauthenticated users (not "guest-profile-id")
     // Empty string is preferred to avoid type ambiguity in SQL
     const settingsProfileId = session?.effectiveProfileId || null;
     activeSettings = await getActiveSettings({
       body: { profileId: settingsProfileId },
     });
-    guestProfileId = activeSettings?.guestProfileId || null;
   } catch {
     // If settings fetch fails, just continue without settings data
     // This can happen if no active settings exist
     activeSettings = null;
   }
 
-  // Resolve profile IDs: use guestProfileId or defaultAccountProfileId from settings if session IDs are null/empty
-  // Check for default account mode first (stored in localStorage, but we can't access it server-side)
-  // So we'll check for it in requireAuth() instead
-  const effectiveProfileIdRaw = session?.effectiveProfileId || null;
-  const actualProfileIdRaw = session?.user?.profileId || null;
+  // Only use profile IDs from session - no automatic guest profile fallback
+  // Guest profile is only used when explicitly in guest mode (handled by access control)
+  const effectiveProfileId = session?.effectiveProfileId || null;
+  const actualProfileId = session?.user?.profileId || null;
 
-  // For now, use guestProfileId as fallback (default account will be handled in requireAuth)
-  const effectiveProfileId = effectiveProfileIdRaw || guestProfileId;
-  const actualProfileId = actualProfileIdRaw || guestProfileId;
-
-  // If we still don't have valid IDs, return early with null initial
-  // This allows the layout to handle access denied gracefully
+  // If we don't have valid IDs from session, return early with null initial
+  // Access control in layout will handle showing access denied
   if (!effectiveProfileId || !actualProfileId) {
     // Extract guestProfileId before passing to client (server-side only)
     const { guestProfileId: _, ...settingsWithoutGuest } = activeSettings || {};

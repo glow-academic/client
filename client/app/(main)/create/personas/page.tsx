@@ -4,11 +4,10 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import Personas from "@/components/personas/Personas";
+import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
@@ -44,11 +43,15 @@ async function duplicatePersona(
   input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/personas/duplicate", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 
@@ -56,11 +59,15 @@ async function deletePersona(
   input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/personas/delete", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 
@@ -73,12 +80,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PersonasPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/create/personas" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch list data server-side
   const listData = await getPersonasList(profileId);

@@ -5,13 +5,11 @@
  * 06/09/2025
  */
 
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
-import { requireAuthenticated } from "@/lib/auth-helpers";
-
 import Simulation from "@/components/simulations/Simulation";
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -52,21 +50,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { simulationId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
-    const simulation = await getSimulation(simulationId, profileId);
-    return {
-      title: `${simulation?.name || "Simulation"}`,
-      description: `${simulation?.name ? `${simulation.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
-    };
-  } catch {
-    return {
-      title: "Simulation",
-      description:
-        "Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.",
-    };
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (profileId) {
+    try {
+      const simulation = await getSimulation(simulationId, profileId);
+      return {
+        title: `${simulation?.name || "Simulation"}`,
+        description: `${simulation?.name ? `${simulation.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Simulation",
+    description:
+      "Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.",
+  };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -93,12 +96,15 @@ export default async function EditSimulationPage({
   params: Promise<{ simulationId: string }>;
 }) {
   const { simulationId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/create/simulations/s/${simulationId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch simulation detail (always fresh - source of truth)
   try {
@@ -127,7 +133,8 @@ export default async function EditSimulationPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="simulation"
           redirectPath="/create/simulations"
         />

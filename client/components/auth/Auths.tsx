@@ -64,12 +64,18 @@ export default function Auths({
       return;
     }
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsDuplicating(auth.auth_id);
     try {
       await duplicateAuthAction({
         body: {
           authId: auth.auth_id,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
       toast.success(`Auth "${auth.name}" duplicated successfully`);
@@ -88,11 +94,17 @@ export default function Auths({
   const handleDelete = async () => {
     if (!deleteItem || !deleteAuthAction) return;
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     try {
       await deleteAuthAction({
         body: {
           authId: deleteItem.id,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
       toast.success(`Auth "${deleteItem.name}" deleted successfully`);

@@ -327,12 +327,18 @@ export default function Personas({
   const handleDelete = async () => {
     if (!deleteItem || !deletePersonaAction) return;
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsDeleting(true);
     try {
       await deletePersonaAction({
         body: {
           personaId: deleteItem.id,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
       toast.success("Persona deleted successfully");
@@ -350,12 +356,18 @@ export default function Personas({
   const handleDuplicate = async (personaId: string, personaName: string) => {
     if (!duplicatePersonaAction) return;
 
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsDuplicating(personaId);
     try {
       await duplicatePersonaAction({
         body: {
           personaId,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         },
       });
       toast.success(`Persona "${personaName}" duplicated successfully`);

@@ -6,9 +6,8 @@
  */
 
 import Department from "@/components/departments/Department";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 import { cache } from "react";
 
@@ -46,12 +45,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewDepartmentPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/system/departments" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch default department detail server-side
   const departmentDetailDefault = await getDepartmentDefault({

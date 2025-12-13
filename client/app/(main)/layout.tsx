@@ -6,6 +6,8 @@
  */
 import { getSession } from "@/auth";
 import { AppShell } from "@/components/common/layout/AppShell";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { checkRouteAccess } from "@/lib/auth-helpers";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
@@ -25,22 +27,30 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getSession();
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "/";
+
+  // Check route access server-side
+  const accessResult = await checkRouteAccess(pathname, session);
+
+  // If access denied, show unified access denied component
+  if (!accessResult.allowed) {
+    return (
+      <UnifiedAccessDenied
+        reason={accessResult.reason || "route-denied"}
+        pathname={pathname}
+        {...(accessResult.role && { role: accessResult.role })}
+      />
+    );
+  }
+
+  // User has access, proceed with layout data fetching
   const { initial, snapshot, attemptData, activeSettings } =
     await getLayoutContextData();
 
-  // If initial is null, user doesn't have access - let AccessControl handle it
-  // This happens when there's no session and no guest profile ID, or when context fetch fails
-  // AccessControl component will show access denied UI
-
   // Check if we're on the staff page and fetch initial data if needed
-  const session = await getSession();
-  // Use guestProfileId from activeSettings if no session
-  const profileId =
-    session?.effectiveProfileId || activeSettings?.guestProfileId || null;
-
-  // Read pathname from headers to check if we're on staff page
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "/";
+  const profileId = session?.effectiveProfileId || null;
   const isStaffPage = pathname === "/management/staff";
 
   let initialCreateStaffData = null;

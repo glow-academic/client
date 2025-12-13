@@ -5,13 +5,11 @@
  * 06/09/2025
  */
 
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
-import { requireAuthenticated } from "@/lib/auth-helpers";
-
-import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -106,23 +104,26 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { scenarioId } = await params;
-  try {
-    const authResult = await requireAuthenticated();
-    const profileId = authResult.effectiveProfileId;
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  try {
-    const scenario = await getScenario(scenarioId, profileId);
-    return {
-      title: `${scenario?.name || "Scenario"}`,
-      description: `${scenario?.name ? `${scenario.name} - ` : ""}Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.${scenario?.problem_statement ? ` ${scenario.problem_statement}` : ""}`,
-    };
-  } catch {
-    return {
-      title: "Scenario",
-      description:
-        "Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.",
-    };
+  if (profileId) {
+    try {
+      const scenario = await getScenario(scenarioId, profileId);
+      return {
+        title: `${scenario?.name || "Scenario"}`,
+        description: `${scenario?.name ? `${scenario.name} - ` : ""}Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.${scenario?.problem_statement ? ` ${scenario.problem_statement}` : ""}`,
+      };
+    } catch {
+      // Fall through to default metadata
+    }
   }
+
+  return {
+    title: "Scenario",
+    description:
+      "Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.",
+  };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -151,12 +152,15 @@ export default async function EditScenarioPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { scenarioId } = await params;
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath={`/create/scenarios/s/${scenarioId}`} />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Parse search params
   const paramsObj = await searchParams;
@@ -344,7 +348,8 @@ export default async function EditScenarioPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
+        <UnifiedAccessDenied
+          reason="department"
           resourceType="scenario"
           redirectPath="/create/scenarios"
         />

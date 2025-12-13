@@ -26,7 +26,7 @@ export function AccessDenied({
   showLoginButton = true,
 }: AccessDeniedProps) {
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4" data-access-denied="true">
       <div className="flex items-center justify-center min-h-[60vh]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">

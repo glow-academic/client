@@ -5,17 +5,10 @@
  * 01/20/2025
  */
 
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
-import { requireAuthenticated } from "@/lib/auth-helpers";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  try {
-    await requireAuthenticated();
-  } catch {
-    // Metadata can be generated even if auth fails
-  }
-
   return {
     title: "Activity",
     description:
@@ -24,9 +17,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ActivityPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/analytics/activity" />;
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
   }
 
   return (

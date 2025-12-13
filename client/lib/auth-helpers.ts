@@ -4,6 +4,7 @@ import type { Session } from "next-auth";
 import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { OutputOf } from "@/lib/api/types";
+import { hasRouteAccess, type ProfileRole } from "@/utils/route-permissions";
 
 type HeaderLike = {
   get(name: string): string | null | undefined;
@@ -191,5 +192,57 @@ export async function requireAuthenticated(): Promise<ResolvedProfileIds> {
   return {
     effectiveProfileId: session.effectiveProfileId,
     actualProfileId: session.user.profileId,
+  };
+}
+
+/**
+ * Checks route access for a given pathname and session
+ * Returns access result without guest profile fallback
+ *
+ * @param pathname - The pathname to check access for
+ * @param session - The session object (can be null)
+ * @returns Access check result with allowed status, reason, and role
+ */
+export async function checkRouteAccess(
+  pathname: string,
+  session: Session | null
+): Promise<{
+  allowed: boolean;
+  reason?: "not-logged-in" | "route-denied";
+  role?: ProfileRole;
+}> {
+  // If no session, user is not logged in
+  if (!session?.effectiveProfileId || !session?.user?.profileId) {
+    return {
+      allowed: false,
+      reason: "not-logged-in",
+    };
+  }
+
+  // Get role from session
+  const role = (session?.user?.role as ProfileRole) || null;
+
+  if (!role) {
+    // If we have a session but no role, deny access
+    return {
+      allowed: false,
+      reason: "route-denied",
+    };
+  }
+
+  // Check route access using route permissions
+  const hasAccess = hasRouteAccess(pathname, role);
+
+  if (!hasAccess) {
+    return {
+      allowed: false,
+      reason: "route-denied",
+      role,
+    };
+  }
+
+  return {
+    allowed: true,
+    role,
   };
 }

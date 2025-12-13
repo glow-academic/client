@@ -5,10 +5,9 @@
  * 01/26/2025
  */
 import { EvalForm } from "@/components/evals/EvalForm";
-import { AccessDenied } from "@/components/common/layout/AccessDenied";
 import { api } from "@/lib/api/client";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -51,12 +50,15 @@ async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewEvalPage() {
-  const authResult = await requireAuthenticated().catch(() => null);
-  if (!authResult) {
-    return <AccessDenied redirectPath="/engine/evals" />;
-  }
+  // Access control is handled server-side in layout
+  // Get profileId from session
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
 
-  const profileId = authResult.effectiveProfileId;
+  if (!profileId) {
+    // This should not happen due to server-side access control, but handle gracefully
+    return null;
+  }
 
   // Fetch rubrics list
   const rubricsList = await getRubricsList(profileId);

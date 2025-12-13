@@ -20,15 +20,15 @@ import { useRouter } from "next/navigation";
 
 // Type-only import from server pages
 import type {
-  ProviderDetailOut,
-  UpdateProviderIn,
-  UpdateProviderOut,
-} from "@/app/(main)/system/providers/p/[providerId]/page";
-import type {
   CreateProviderIn,
   CreateProviderOut,
   ProviderNewOut,
 } from "@/app/(main)/system/providers/new/page";
+import type {
+  ProviderDetailOut,
+  UpdateProviderIn,
+  UpdateProviderOut,
+} from "@/app/(main)/system/providers/p/[providerId]/page";
 
 interface FormErrors {
   name?: string;
@@ -51,8 +51,12 @@ export interface ProviderProps {
   providerDetailDefault?: ProviderNewOut;
   // For edit mode: provider detail
   providerDetail?: ProviderDetailOut;
-  createProviderAction?: (input: CreateProviderIn) => Promise<CreateProviderOut>;
-  updateProviderAction?: (input: UpdateProviderIn) => Promise<UpdateProviderOut>;
+  createProviderAction?: (
+    input: CreateProviderIn
+  ) => Promise<CreateProviderOut>;
+  updateProviderAction?: (
+    input: UpdateProviderIn
+  ) => Promise<UpdateProviderOut>;
 }
 
 export default function Provider({
@@ -77,7 +81,7 @@ export default function Provider({
       active: true,
       base_url: "",
     }),
-    [],
+    []
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -87,8 +91,12 @@ export default function Provider({
   const providerDetail = serverProviderDetail;
 
   // Extract body types from server action types for type safety
-  type CreateProviderBody = CreateProviderIn extends { body: infer B } ? B : never;
-  type UpdateProviderBody = UpdateProviderIn extends { body: infer B } ? B : never;
+  type CreateProviderBody = CreateProviderIn extends { body: infer B }
+    ? B
+    : never;
+  type UpdateProviderBody = UpdateProviderIn extends { body: infer B }
+    ? B
+    : never;
 
   // Use server actions directly (no mutations needed)
   const handleCreateProvider = async (body: CreateProviderBody) => {
@@ -127,7 +135,13 @@ export default function Provider({
         clearEntityMetadata(providerId);
       }
     };
-  }, [providerDetail, providerId, isEditMode, setEntityMetadata, clearEntityMetadata]);
+  }, [
+    providerDetail,
+    providerId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
@@ -148,7 +162,7 @@ export default function Provider({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined,
+    value: string | boolean | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -163,6 +177,12 @@ export default function Provider({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Ensure profileId exists - required for API calls
+    if (!effectiveProfile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
 
     if (!formData.name) {
       setErrors((prev) => ({ ...prev, name: "Name is required" }));
@@ -185,7 +205,7 @@ export default function Provider({
           value: formData.value!,
           active: formData.active ?? true,
           base_url: formData.base_url || null,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         });
         resetFormAndState();
         toast.success("Provider updated successfully!");
@@ -197,7 +217,7 @@ export default function Provider({
           value: formData.value!,
           active: formData.active ?? true,
           base_url: formData.base_url || null,
-          profileId: effectiveProfile?.id || "guest-profile-id",
+          profileId: effectiveProfile.id,
         });
         resetFormAndState();
         toast.success("Provider created successfully!");
@@ -205,7 +225,7 @@ export default function Provider({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && providerId ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode && providerId ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       setIsSubmitting(false);
     }
@@ -292,7 +312,8 @@ export default function Provider({
             <p className="text-sm text-destructive">{errors.base_url}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Base URL for API endpoints (leave empty if using default provider endpoints)
+            Base URL for API endpoints (leave empty if using default provider
+            endpoints)
           </p>
         </div>
 
@@ -359,4 +380,3 @@ export default function Provider({
     </div>
   );
 }
-

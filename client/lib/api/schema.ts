@@ -8276,7 +8276,7 @@ export interface components {
              * Viewmode
              * @enum {string}
              */
-            viewMode: "ta" | "instructional";
+            viewMode: "member" | "instructional";
             /** Id */
             id: string;
             /** Simulationtitle */
