@@ -1496,35 +1496,39 @@ async def get_scenario_detail(
                 document_details=document_details,
             )
 
-        # Fixed ranges (server is source of truth, not based on available items)
-        # Personas: 1-3 (range), default value: 1
-        # The allowed range is always 1-3, request params are for current values
+        # Read ranges from database (scenario-specific) or use defaults
+        # Personas: read from scenario_persona_ranges or use defaults (1-3)
+        allowed_persona_min = scenario.get("persona_range_min", 1)
+        allowed_persona_max = scenario.get("persona_range_max", 3)
         persona_min = (
-            request_data.personaMin if request_data.personaMin is not None else 1
+            request_data.personaMin
+            if request_data.personaMin is not None
+            else allowed_persona_min
         )
         persona_max = (
-            request_data.personaMax if request_data.personaMax is not None else 1
+            request_data.personaMax
+            if request_data.personaMax is not None
+            else allowed_persona_min
         )
-        # Allowed range is always 1-3 (fixed limits)
-        allowed_persona_min = 1
-        allowed_persona_max = 3
         # Ensure requested values are within allowed range
         persona_min = max(allowed_persona_min, min(persona_min, allowed_persona_max))
         persona_max = max(allowed_persona_min, min(persona_max, allowed_persona_max))
         # Ensure min doesn't exceed max
         persona_min = min(persona_min, persona_max)
 
-        # Documents: 0-3 (range), default value: 1
-        # The allowed range is always 0-3, request params are for current values
+        # Documents: read from scenario_document_ranges or use defaults (0-3)
+        allowed_document_min = scenario.get("document_range_min", 0)
+        allowed_document_max = scenario.get("document_range_max", 3)
         document_min = (
-            request_data.documentMin if request_data.documentMin is not None else 0
+            request_data.documentMin
+            if request_data.documentMin is not None
+            else allowed_document_min
         )
         document_max = (
-            request_data.documentMax if request_data.documentMax is not None else 1
+            request_data.documentMax
+            if request_data.documentMax is not None
+            else allowed_document_min
         )
-        # Allowed range is always 0-3 (fixed limits)
-        allowed_document_min = 0
-        allowed_document_max = 3
         # Ensure requested values are within allowed range
         document_min = max(
             allowed_document_min, min(document_min, allowed_document_max)
@@ -1535,21 +1539,19 @@ async def get_scenario_detail(
         # Ensure min doesn't exceed max
         document_min = min(document_min, document_max)
 
-        # Parameters: 0-3 (range), default value: 3
-        # The allowed range is always 0-3, request params are for current values
+        # Parameters: read from scenario_parameter_ranges or use defaults (0-3)
+        allowed_parameter_min = scenario.get("parameter_range_min", 0)
+        allowed_parameter_max = scenario.get("parameter_range_max", 3)
         parameter_selection_min = (
             request_data.parameterSelectionMin
             if request_data.parameterSelectionMin is not None
-            else 0
+            else allowed_parameter_min
         )
         parameter_selection_max = (
             request_data.parameterSelectionMax
             if request_data.parameterSelectionMax is not None
-            else 3
+            else allowed_parameter_max
         )
-        # Allowed range is always 0-3 (fixed limits)
-        allowed_parameter_min = 0
-        allowed_parameter_max = 3
         # Ensure requested values are within allowed range
         parameter_selection_min = max(
             allowed_parameter_min, min(parameter_selection_min, allowed_parameter_max)
@@ -1566,21 +1568,37 @@ async def get_scenario_detail(
         max_valid_parameters = len(valid_parameter_ids)
 
         # Per-parameter field ranges
-        # Always set default ranges for all parameters (fixed ranges, not based on available items)
-        field_ranges_dict: dict[
-            str, dict[str, int]
-        ] = {}  # Renamed from parameter_items_ranges
+        # Read from database (scenario_field_ranges) or use defaults
+        field_ranges_from_db = parse_jsonb(scenario.get("field_ranges_json"))
+        field_ranges_dict: dict[str, dict[str, int]] = {}
+        allowed_field_ranges: dict[str, RangeMinMax] = {}
+        
         for param_id in parameter_mapping.keys():
-            # Parameter fields: 1-3 (default max: 1) - fixed range
+            # Get range from request, database, or use defaults
             if (
                 request_data.fieldRanges and param_id in request_data.fieldRanges
-            ):  # Renamed from parameterItemRanges
+            ):
+                # Use request value
                 param_range = request_data.fieldRanges[param_id]
                 param_min = param_range.get("min", 1)
                 param_max = param_range.get("max", 1)
+            elif (
+                isinstance(field_ranges_from_db, dict)
+                and param_id in field_ranges_from_db
+            ):
+                # Use database value
+                db_range = field_ranges_from_db[param_id]
+                if isinstance(db_range, dict):
+                    param_min = db_range.get("min", 1)
+                    param_max = db_range.get("max", 1)
+                else:
+                    param_min = 1
+                    param_max = 1
             else:
+                # Use defaults
                 param_min = 1
                 param_max = 1
+            
             # Ensure max doesn't exceed fixed limit
             param_max = min(param_max, 3)
             # Ensure min doesn't exceed max
@@ -1589,18 +1607,36 @@ async def get_scenario_detail(
             field_ranges_dict[param_id] = {
                 "min": param_min,
                 "max": param_max,
-            }  # Renamed from parameter_items_ranges
+            }
+            
+            # Allowed range for this parameter (from database or default)
+            if (
+                isinstance(field_ranges_from_db, dict)
+                and param_id in field_ranges_from_db
+            ):
+                db_range = field_ranges_from_db[param_id]
+                if isinstance(db_range, dict):
+                    allowed_field_ranges[param_id] = RangeMinMax(
+                        min=max(1, min(db_range.get("min", 1), 3)),
+                        max=max(1, min(db_range.get("max", 3), 3)),
+                    )
+                else:
+                    allowed_field_ranges[param_id] = RangeMinMax(min=1, max=3)
+            else:
+                allowed_field_ranges[param_id] = RangeMinMax(min=1, max=3)
 
-        # Allowed ranges are fixed limits (not current values)
-        # Personas: 1-3, Documents: 0-3, Parameters: 0-3, Fields: 1-3
+        # Allowed ranges from database (scenario-specific) or defaults
         allowed_ranges = AllowedRanges(
-            persona=RangeMinMax(min=1, max=3),  # Fixed allowed range
-            document=RangeMinMax(min=0, max=3),  # Fixed allowed range
-            parameter_selection=RangeMinMax(min=0, max=3),  # Fixed allowed range
-            fields={  # Renamed from parameter_items
-                param_id: RangeMinMax(min=1, max=3)  # Fixed allowed range per parameter
-                for param_id in field_ranges_dict.keys()
-            },
+            persona=RangeMinMax(
+                min=allowed_persona_min, max=allowed_persona_max
+            ),
+            document=RangeMinMax(
+                min=allowed_document_min, max=allowed_document_max
+            ),
+            parameter_selection=RangeMinMax(
+                min=allowed_parameter_min, max=allowed_parameter_max
+            ),
+            fields=allowed_field_ranges,
         )
 
         # Handle randomization if requested

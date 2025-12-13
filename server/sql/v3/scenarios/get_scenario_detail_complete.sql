@@ -1138,6 +1138,43 @@ has_template_documents AS (
 expected_agent_role AS (
     SELECT 'scenario'::agent_role as role
 ),
+-- Scenario randomization ranges (read from tables, fallback to defaults)
+scenario_persona_ranges_data AS (
+    SELECT 
+        COALESCE(spr.min_count, 1) as persona_min,
+        COALESCE(spr.max_count, 3) as persona_max
+    FROM scenario_core sc
+    LEFT JOIN scenario_persona_ranges spr ON spr.scenario_id = sc.id
+),
+scenario_document_ranges_data AS (
+    SELECT 
+        COALESCE(sdr.min_count, 0) as document_min,
+        COALESCE(sdr.max_count, 3) as document_max
+    FROM scenario_core sc
+    LEFT JOIN scenario_document_ranges sdr ON sdr.scenario_id = sc.id
+),
+scenario_parameter_ranges_data AS (
+    SELECT 
+        COALESCE(spr.min_count, 0) as parameter_min,
+        COALESCE(spr.max_count, 3) as parameter_max
+    FROM scenario_core sc
+    LEFT JOIN scenario_parameter_ranges spr ON spr.scenario_id = sc.id
+),
+scenario_field_ranges_data AS (
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                sfr.parameter_id::text,
+                jsonb_build_object(
+                    'min', sfr.min_count,
+                    'max', sfr.max_count
+                )
+            ),
+            '{}'::jsonb
+        ) as field_ranges_json
+    FROM scenario_core sc
+    LEFT JOIN scenario_field_ranges sfr ON sfr.scenario_id = sc.id
+),
 valid_agents AS (
     -- Filter agents by department access and expected role
     -- Include agents matching expected role OR base 'scenario' role (backward compatibility)
@@ -1212,7 +1249,15 @@ SELECT
     sc.scenario_agent_id,
     sc.image_agent_id,
     sc.video_agent_id,
-    COALESCE((SELECT array_agg(parameter_id::text) FROM linked_scenario_parameters), ARRAY[]::text[]) as parameter_ids
+    COALESCE((SELECT array_agg(parameter_id::text) FROM linked_scenario_parameters), ARRAY[]::text[]) as parameter_ids,
+    -- Randomization ranges from tables
+    COALESCE((SELECT persona_min FROM scenario_persona_ranges_data), 1) as persona_range_min,
+    COALESCE((SELECT persona_max FROM scenario_persona_ranges_data), 3) as persona_range_max,
+    COALESCE((SELECT document_min FROM scenario_document_ranges_data), 0) as document_range_min,
+    COALESCE((SELECT document_max FROM scenario_document_ranges_data), 3) as document_range_max,
+    COALESCE((SELECT parameter_min FROM scenario_parameter_ranges_data), 0) as parameter_range_min,
+    COALESCE((SELECT parameter_max FROM scenario_parameter_ranges_data), 3) as parameter_range_max,
+    COALESCE((SELECT field_ranges_json FROM scenario_field_ranges_data), '{}'::jsonb) as field_ranges_json
 FROM scenario_core sc
 CROSS JOIN user_profile up
 LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id
@@ -1241,4 +1286,8 @@ CROSS JOIN objectives_history_data ohd
 CROSS JOIN scenario_videos_data svd
 CROSS JOIN scenario_questions_data sqd
 CROSS JOIN valid_agents va
+CROSS JOIN scenario_persona_ranges_data sprd
+CROSS JOIN scenario_document_ranges_data sdrd
+CROSS JOIN scenario_parameter_ranges_data sprd2
+CROSS JOIN scenario_field_ranges_data sfrd
 

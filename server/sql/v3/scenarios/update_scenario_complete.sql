@@ -297,6 +297,43 @@ link_scenario_parameters AS (
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
+),
+-- Update/create randomization ranges for scenario
+-- Upsert persona ranges (create if not exists, update if exists)
+upsert_persona_ranges AS (
+    INSERT INTO scenario_persona_ranges (scenario_id, min_count, max_count)
+    SELECT us.scenario_id::uuid, 1, 3
+    FROM update_scenario us
+    ON CONFLICT (scenario_id) DO UPDATE SET
+        updated_at = NOW()
+),
+upsert_document_ranges AS (
+    INSERT INTO scenario_document_ranges (scenario_id, min_count, max_count)
+    SELECT us.scenario_id::uuid, 0, 3
+    FROM update_scenario us
+    ON CONFLICT (scenario_id) DO UPDATE SET
+        updated_at = NOW()
+),
+upsert_parameter_ranges AS (
+    INSERT INTO scenario_parameter_ranges (scenario_id, min_count, max_count)
+    SELECT us.scenario_id::uuid, 0, 3
+    FROM update_scenario us
+    ON CONFLICT (scenario_id) DO UPDATE SET
+        updated_at = NOW()
+),
+upsert_field_ranges AS (
+    -- Upsert field ranges for each parameter linked to the scenario
+    INSERT INTO scenario_field_ranges (scenario_id, parameter_id, min_count, max_count)
+    SELECT 
+        us.scenario_id::uuid,
+        param_id::uuid,
+        1,  -- default min
+        3   -- default max
+    FROM update_scenario us
+    CROSS JOIN UNNEST($18::text[]) as param_id
+    WHERE COALESCE(array_length($18::text[], 1), 0) > 0
+    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
+        updated_at = NOW()
 )
 SELECT scenario_id, name FROM update_scenario
 

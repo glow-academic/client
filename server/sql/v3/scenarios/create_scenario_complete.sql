@@ -349,6 +349,42 @@ link_question_times AS (
     ON CONFLICT (scenario_id, question_id, video_id, time) DO UPDATE SET
         active = true,
         updated_at = NOW()
+),
+-- Create default randomization ranges for new scenario
+create_persona_ranges AS (
+    INSERT INTO scenario_persona_ranges (scenario_id, min_count, max_count)
+    SELECT ns.scenario_id::uuid, 1, 3
+    FROM new_scenario ns
+    ON CONFLICT (scenario_id) DO UPDATE SET
+        updated_at = NOW()
+),
+create_document_ranges AS (
+    INSERT INTO scenario_document_ranges (scenario_id, min_count, max_count)
+    SELECT ns.scenario_id::uuid, 0, 3
+    FROM new_scenario ns
+    ON CONFLICT (scenario_id) DO UPDATE SET
+        updated_at = NOW()
+),
+create_parameter_ranges AS (
+    INSERT INTO scenario_parameter_ranges (scenario_id, min_count, max_count)
+    SELECT ns.scenario_id::uuid, 0, 3
+    FROM new_scenario ns
+    ON CONFLICT (scenario_id) DO UPDATE SET
+        updated_at = NOW()
+),
+create_field_ranges AS (
+    -- Create field ranges for each parameter linked to the scenario
+    INSERT INTO scenario_field_ranges (scenario_id, parameter_id, min_count, max_count)
+    SELECT 
+        ns.scenario_id::uuid,
+        param_id::uuid,
+        1,  -- default min
+        3   -- default max
+    FROM new_scenario ns
+    CROSS JOIN UNNEST($24::text[]) as param_id
+    WHERE COALESCE(array_length($24::text[], 1), 0) > 0
+    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
+        updated_at = NOW()
 )
 SELECT scenario_id FROM new_scenario
 

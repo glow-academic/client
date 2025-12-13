@@ -880,7 +880,15 @@ SELECT
     -- Video enabled flag (default false)
     false as video_enabled,
     -- Questions enabled flag (default false)
-    false as questions_enabled
+    false as questions_enabled,
+    -- Randomization ranges (defaults for new scenarios)
+    1 as persona_range_min,
+    3 as persona_range_max,
+    0 as document_range_min,
+    3 as document_range_max,
+    0 as parameter_range_min,
+    3 as parameter_range_max,
+    '{}'::jsonb as field_ranges_json
 FROM params
 WHERE ($2::boolean IS NOT NULL OR TRUE) AND ($3::boolean IS NOT NULL OR TRUE)
 

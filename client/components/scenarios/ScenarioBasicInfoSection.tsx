@@ -148,11 +148,12 @@ export function ScenarioBasicInfoSection({
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   onClick={onRandomizeAll}
                   disabled={isReadonly}
                 >
-                  <Shuffle className="h-4 w-4" />
+                  <Shuffle className="h-4 w-4 mr-2" />
+                  Randomize All
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Randomize All</TooltipContent>

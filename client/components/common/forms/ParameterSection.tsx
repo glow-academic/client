@@ -3,14 +3,7 @@
  * Reusable parameter selection section component
  */
 "use client";
-import {
-  ArrowRight,
-  Check,
-  Loader2,
-  RotateCcw,
-  Search,
-  Shuffle,
-} from "lucide-react";
+import { Check, Loader2, RotateCcw, Search, Shuffle } from "lucide-react";
 import { useMemo } from "react";
 
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
@@ -195,10 +188,7 @@ export function ParameterSection({
                           Randomizing...
                         </>
                       ) : (
-                        <>
-                          Randomize
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </>
+                        "Randomize"
                       )}
                     </Button>
                   </div>

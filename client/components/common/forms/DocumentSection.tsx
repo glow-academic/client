@@ -3,15 +3,7 @@
  * Reusable document selection section component
  */
 "use client";
-import {
-  ArrowRight,
-  Check,
-  Eye,
-  Loader2,
-  RotateCcw,
-  Search,
-  Shuffle,
-} from "lucide-react";
+import { Check, Eye, Loader2, RotateCcw, Search, Shuffle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import DocumentViewer, {
@@ -240,10 +232,7 @@ export function DocumentSection({
                         Randomizing...
                       </>
                     ) : (
-                      <>
-                        Randomize
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </>
+                      "Randomize"
                     )}
                   </Button>
                 </div>

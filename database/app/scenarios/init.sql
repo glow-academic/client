@@ -334,3 +334,65 @@ CREATE INDEX ON scenario_tree (parent_id);
 
 -- Enforce single parent per scenario (tree structure, not DAG)
 CREATE UNIQUE INDEX scenario_tree_one_parent_per_child ON scenario_tree(child_id);
+
+-- Scenario Randomization Ranges Tables (BCNF normalization)
+-- Store min/max ranges for randomization per scenario
+
+-- Scenario → Persona Ranges (one row per scenario)
+CREATE TABLE scenario_persona_ranges (
+    scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+    min_count INTEGER NOT NULL DEFAULT 1,
+    max_count INTEGER NOT NULL DEFAULT 3,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (scenario_id),
+    CONSTRAINT scenario_persona_ranges_min_max_check 
+        CHECK (min_count >= 1 AND max_count >= min_count)
+);
+
+CREATE INDEX ON scenario_persona_ranges (scenario_id);
+
+-- Scenario → Document Ranges (one row per scenario)
+CREATE TABLE scenario_document_ranges (
+    scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+    min_count INTEGER NOT NULL DEFAULT 0,
+    max_count INTEGER NOT NULL DEFAULT 3,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (scenario_id),
+    CONSTRAINT scenario_document_ranges_min_max_check 
+        CHECK (min_count >= 0 AND max_count >= min_count)
+);
+
+CREATE INDEX ON scenario_document_ranges (scenario_id);
+
+-- Scenario → Parameter Ranges (one row per scenario)
+CREATE TABLE scenario_parameter_ranges (
+    scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+    min_count INTEGER NOT NULL DEFAULT 0,
+    max_count INTEGER NOT NULL DEFAULT 3,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (scenario_id),
+    CONSTRAINT scenario_parameter_ranges_min_max_check 
+        CHECK (min_count >= 0 AND max_count >= min_count)
+);
+
+CREATE INDEX ON scenario_parameter_ranges (scenario_id);
+
+-- Scenario → Field Ranges (multiple rows per scenario, one per parameter)
+CREATE TABLE scenario_field_ranges (
+    scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+    parameter_id UUID NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+    min_count INTEGER NOT NULL DEFAULT 1,
+    max_count INTEGER NOT NULL DEFAULT 3,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (scenario_id, parameter_id),
+    CONSTRAINT scenario_field_ranges_min_max_check 
+        CHECK (min_count >= 1 AND max_count >= min_count)
+);
+
+CREATE INDEX ON scenario_field_ranges (scenario_id);
+CREATE INDEX ON scenario_field_ranges (parameter_id);
+CREATE INDEX ON scenario_field_ranges (scenario_id, parameter_id);
