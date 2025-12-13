@@ -24,7 +24,6 @@ class UpdateDocumentRequest(BaseModel):
     template: bool | None = None  # Enable/disable template mode
     department_id: str | None = None
     field_ids: list[str] = []
-    parameter_ids: list[str] | None = None
     classify_agent_id: str | None = None
     document_agent_id: str | None = None
     templateUploadId: str | None = None  # Template HTML upload

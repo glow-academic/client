@@ -248,6 +248,7 @@ valid_documents_filtered AS (
         )
 ),
 -- Document parameter relationships for valid documents
+-- Note: parameter_documents junction table removed - use document_parameter boolean flag instead
 valid_document_parameter_relationships AS (
     SELECT DISTINCT
         d.id as document_id,
@@ -255,15 +256,8 @@ valid_document_parameter_relationships AS (
     FROM valid_documents_filtered d
     CROSS JOIN parameters param
     WHERE param.active = true
+    AND param.document_parameter = true
     AND (
-        -- Direct relationship via parameter_documents
-        EXISTS (
-            SELECT 1 FROM parameter_documents pd
-            WHERE pd.document_id = d.id
-            AND pd.parameter_id = param.id
-            AND pd.active = true
-        )
-        OR
         -- Indirect relationship via document_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM document_fields df
@@ -273,13 +267,7 @@ valid_document_parameter_relationships AS (
             AND df.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no document restrictions, it's valid for all documents
-        NOT EXISTS (
-            SELECT 1 FROM parameter_documents pd2
-            WHERE pd2.parameter_id = param.id
-            AND pd2.active = true
-        )
+        -- If parameter has document_parameter flag, it's valid for all documents (no junction table restrictions)
     )
 ),
 valid_documents_data AS (

@@ -580,7 +580,8 @@ valid_personas_filtered AS (
             AND param.scenario_parameter = true
         )
 ),
--- Persona parameter relationships: direct (parameter_personas) and via fields (persona_fields → parameter_fields)
+-- Persona parameter relationships: via fields (persona_fields → parameter_fields) and persona_parameter flag
+-- Note: parameter_personas junction table removed - use persona_parameter boolean flag instead
 persona_parameter_relationships AS (
     SELECT DISTINCT
         p.id as persona_id,
@@ -588,15 +589,8 @@ persona_parameter_relationships AS (
     FROM valid_personas_filtered p
     CROSS JOIN parameters param
     WHERE param.active = true
+    AND param.persona_parameter = true
     AND (
-        -- Direct relationship via parameter_personas
-        EXISTS (
-            SELECT 1 FROM parameter_personas pp
-            WHERE pp.persona_id = p.id
-            AND pp.parameter_id = param.id
-            AND pp.active = true
-        )
-        OR
         -- Indirect relationship via persona_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM persona_fields pf
@@ -606,13 +600,7 @@ persona_parameter_relationships AS (
             AND pf.active = true
             AND pfield.active = true
         )
-        OR
-        -- No restrictions: if parameter has no persona restrictions, it's valid for all personas
-        NOT EXISTS (
-            SELECT 1 FROM parameter_personas pp2
-            WHERE pp2.parameter_id = param.id
-            AND pp2.active = true
-        )
+        -- If parameter has persona_parameter flag, it's valid for all personas (no junction table restrictions)
     )
 ),
 valid_personas_data AS (

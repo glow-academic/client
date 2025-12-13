@@ -361,14 +361,14 @@ parameter_data AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_documents pd WHERE pd.parameter_id = p.id AND pd.active = true) THEN true ELSE false END as document_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM parameter_personas pp WHERE pp.parameter_id = p.id AND pp.active = true) THEN true ELSE false END as persona_parameter
+        p.document_parameter,
+        p.persona_parameter
     FROM parameters p
     JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.active = true
     LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description
+    GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 

@@ -12535,8 +12535,6 @@ export interface components {
              * @default []
              */
             field_ids: string[];
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
             /** Classify Agent Id */
             classify_agent_id?: string | null;
             /** Document Agent Id */

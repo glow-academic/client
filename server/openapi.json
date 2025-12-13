@@ -30878,20 +30878,6 @@
             "title": "Field Ids",
             "default": []
           },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
           "classify_agent_id": {
             "anyOf": [
               {
