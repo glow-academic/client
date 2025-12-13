@@ -1,5 +1,5 @@
 /**
- * app/(main)/cohorts/new/page.tsx
+ * app/(main)/create/cohorts/new/page.tsx
  * New cohort page for the cohorts section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -132,3 +132,4 @@ export type {
   CreateCohortIn,
   CreateCohortOut,
 };
+

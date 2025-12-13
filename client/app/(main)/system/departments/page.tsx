@@ -1,5 +1,5 @@
 /**
- * app/(main)/departments/page.tsx
+ * app/(main)/system/departments/page.tsx
  * Departments list page
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
@@ -90,3 +90,4 @@ export type {
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
 };
+

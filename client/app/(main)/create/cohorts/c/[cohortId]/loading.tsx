@@ -1,6 +1,6 @@
 /**
- * app/(main)/departments/new/loading.tsx
- * Loading skeleton for department create page
+ * app/(main)/create/cohorts/c/[cohortId]/loading.tsx
+ * Loading skeleton for cohort edit page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
@@ -9,6 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Loading() {
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Skeleton className="h-10 w-40" />
+      </div>
       <form className="space-y-6">
         {/* Title Field */}
         <div className="space-y-2">
@@ -18,7 +21,7 @@ export default function Loading() {
 
         {/* Description Field */}
         <div className="space-y-2">
-          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-28" />
           <Skeleton className="h-20 w-full" />
         </div>
 
@@ -33,6 +36,18 @@ export default function Loading() {
           </div>
         </div>
 
+        {/* Department Selection */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+
+        {/* Simulation Selection */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+        </div>
+
         {/* Submit Buttons */}
         <div className="flex justify-end gap-4">
           <Skeleton className="h-10 w-20" />
@@ -42,3 +57,4 @@ export default function Loading() {
     </div>
   );
 }
+

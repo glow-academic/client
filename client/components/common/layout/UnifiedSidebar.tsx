@@ -50,7 +50,6 @@ import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   AlertCircle,
   Brain,
-  Building2,
   ChevronRight,
   ChevronsUpDown,
   ClipboardList,
@@ -58,11 +57,11 @@ import {
   LogOut,
   PieChart,
   Search,
+  Server,
   Settings,
   Sparkles,
   Target,
-  User,
-  Users,
+  Trophy,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
@@ -76,11 +75,11 @@ export interface UnifiedSidebarProps
   activeSection: string;
   onSectionChange?: (section: string) => void;
   switchEffectiveProfile: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn,
+    input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
 }
 
@@ -140,21 +139,9 @@ export function UnifiedSidebar({
     activeProfile,
     effectiveProfile,
     isLoading,
-    cohorts,
     availableSections,
     isFullEmulation,
   } = useProfile();
-
-  const getCohortSubItems = React.useMemo(() => {
-    if (!cohorts || !effectiveProfile) return [];
-
-    return cohorts.map((c: { id: string; title: string }) => ({
-      title: c.title,
-      url: `/cohorts/c/${c.id}`,
-      section: `cohort-${c.id}`,
-      isSubItem: true,
-    }));
-  }, [cohorts, effectiveProfile]);
 
   // Build navigation menu based on role with search filtering
   const navMain = useMemo(() => {
@@ -173,6 +160,16 @@ export function UnifiedSidebar({
       });
     }
 
+    // Leaderboard - Available for all authorized users as root-level item
+    if (availableSections.includes("leaderboard")) {
+      menu.push({
+        title: "Leaderboard",
+        url: "#",
+        icon: Trophy,
+        section: "leaderboard",
+      });
+    }
+
     // Practice - all users
     if (availableSections.includes("practice")) {
       menu.push({
@@ -183,58 +180,14 @@ export function UnifiedSidebar({
       });
     }
 
-    // Departments - root level (instructional+)
-    if (availableSections.includes("departments")) {
-      menu.push({
-        title: "Departments",
-        url: "#",
-        icon: Building2,
-        section: "departments",
-      });
-    }
-
-    // Cohorts sections based on role
-    if (availableSections.includes("cohorts")) {
-      if (["ta"].includes(effectiveProfile.role)) {
-        // TA/Instructor view - collapsible with sub-items
-        menu.push({
-          title: "Cohorts",
-          url: "#",
-          icon: Users,
-          items: [...getCohortSubItems],
-        });
-      } else {
-        // Staff/Admin view - single items, no sub-items, no "new"
-        menu.push({
-          title: "Cohorts",
-          url: "#",
-          icon: Users,
-          section: "cohorts",
-        });
-      }
-    }
-
-    // Leaderboard - Available for TA users as standalone item
-    if (
-      effectiveProfile.role === "ta" &&
-      availableSections.includes("leaderboard")
-    ) {
-      menu.push({
-        title: "Leaderboard",
-        url: "#",
-        icon: PieChart,
-        section: "leaderboard",
-      });
-    }
-
     // Analytics - Available from instructional level and up
     if (
       ["instructional", "admin", "superadmin"].includes(
-        effectiveProfile.role,
+        effectiveProfile.role
       ) &&
       (availableSections.includes("dashboard") ||
         availableSections.includes("reports") ||
-        availableSections.includes("leaderboard") ||
+        availableSections.includes("activity") ||
         availableSections.includes("pricing"))
     ) {
       const analyticsItems: MenuItem[] = [];
@@ -255,11 +208,11 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("leaderboard")) {
+      if (availableSections.includes("activity")) {
         analyticsItems.push({
-          title: "Leaderboard",
+          title: "Activity",
           url: "#",
-          section: "leaderboard",
+          section: "activity",
         });
       }
 
@@ -285,30 +238,51 @@ export function UnifiedSidebar({
     if (
       availableSections.includes("personas") ||
       availableSections.includes("scenarios") ||
-      availableSections.includes("simulations")
+      availableSections.includes("simulations") ||
+      availableSections.includes("cohorts")
     ) {
-      menu.push({
-        title: "Create",
-        url: "#",
-        icon: Sparkles,
-        items: [
-          {
-            title: "Simulations",
-            url: "#",
-            section: "simulations",
-          },
-          {
-            title: "Scenarios",
-            url: "#",
-            section: "scenarios",
-          },
-          {
-            title: "Personas",
-            url: "#",
-            section: "personas",
-          },
-        ],
-      });
+      const createItems: MenuItem[] = [];
+
+      if (availableSections.includes("cohorts")) {
+        createItems.push({
+          title: "Cohorts",
+          url: "#",
+          section: "cohorts",
+        });
+      }
+
+      if (availableSections.includes("simulations")) {
+        createItems.push({
+          title: "Simulations",
+          url: "#",
+          section: "simulations",
+        });
+      }
+
+      if (availableSections.includes("scenarios")) {
+        createItems.push({
+          title: "Scenarios",
+          url: "#",
+          section: "scenarios",
+        });
+      }
+
+      if (availableSections.includes("personas")) {
+        createItems.push({
+          title: "Personas",
+          url: "#",
+          section: "personas",
+        });
+      }
+
+      if (createItems.length > 0) {
+        menu.push({
+          title: "Create",
+          url: "#",
+          icon: Sparkles,
+          items: createItems,
+        });
+      }
     }
 
     // Management - Available from admin level and up
@@ -415,6 +389,14 @@ export function UnifiedSidebar({
     if (effectiveProfile.role === "superadmin") {
       const systemItems: MenuItem[] = [];
 
+      if (availableSections.includes("departments")) {
+        systemItems.push({
+          title: "Departments",
+          url: "#",
+          section: "departments",
+        });
+      }
+
       if (availableSections.includes("providers")) {
         systemItems.push({
           title: "Providers",
@@ -439,23 +421,29 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("settings")) {
-        systemItems.push({
-          title: "Settings",
-          url: "#",
-          section: "settings",
-        });
-      }
-
       // Only add System section if it has items
       if (systemItems.length > 0) {
         menu.push({
           title: "System",
           url: "#",
-          icon: Settings,
+          icon: Server,
           items: systemItems,
         });
       }
+    }
+
+    // Settings - Available for admin and superadmin, root level (bottom)
+    if (
+      (effectiveProfile.role === "admin" ||
+        effectiveProfile.role === "superadmin") &&
+      availableSections.includes("settings")
+    ) {
+      menu.push({
+        title: "Settings",
+        url: "#",
+        icon: Settings,
+        section: "settings",
+      });
     }
 
     // Apply search filter if search term exists
@@ -477,7 +465,7 @@ export function UnifiedSidebar({
             section.items?.filter(
               (item) =>
                 item.title.toLowerCase().includes(searchLower) ||
-                item.section?.toLowerCase().includes(searchLower),
+                item.section?.toLowerCase().includes(searchLower)
             ) || [];
 
           // Also check if the section title itself matches
@@ -501,16 +489,16 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [effectiveProfile, searchTerm, getCohortSubItems, availableSections]);
+  }, [effectiveProfile, searchTerm, availableSections]);
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
     onSectionChange,
-    pathname,
+    pathname
   );
 
   // Wrapper function that closes mobile sidebar on section change
-  const handleSectionChangeWithClose = useCallback(
+  const _handleSectionChangeWithClose = useCallback(
     (section: string) => {
       handleSectionChange(section);
       // Close mobile sidebar after navigation
@@ -518,7 +506,7 @@ export function UnifiedSidebar({
         setOpenMobile(false);
       }
     },
-    [handleSectionChange, isMobile, setOpenMobile],
+    [handleSectionChange, isMobile, setOpenMobile]
   );
 
   const handleItemClick = useCallback(
@@ -544,7 +532,7 @@ export function UnifiedSidebar({
       // Reset navigation state after a short delay
       setTimeout(() => setIsNavigating(false), 500);
     },
-    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile],
+    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
   );
 
   // Handle exit emulation
@@ -617,7 +605,7 @@ export function UnifiedSidebar({
           return "Logged out successfully";
         } catch (error) {
           throw new Error(
-            typeof error === "string" ? error : "Failed to log out",
+            typeof error === "string" ? error : "Failed to log out"
           );
         } finally {
           setIsLoggingOut(false);
@@ -627,7 +615,7 @@ export function UnifiedSidebar({
         loading: "Logging out...",
         success: (message) => message,
         error: (error) => error.message || "Failed to log out",
-      },
+      }
     );
   };
 
@@ -661,7 +649,7 @@ export function UnifiedSidebar({
                           : getInitials(
                               effectiveProfile?.firstName +
                                 " " +
-                                effectiveProfile?.lastName,
+                                effectiveProfile?.lastName
                             )}
                       </AvatarFallback>
                     </Avatar>
@@ -679,18 +667,6 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  {/* Profile - Available for all users including guests */}
-                  {activeProfile && (
-                    <>
-                      <DropdownMenuItem
-                        onClick={() => handleSectionChangeWithClose("profile")}
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
                   {/* Emulate or Exit Emulation - Hidden in full emulation mode */}
                   {!isFullEmulation && (
                     <>

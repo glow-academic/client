@@ -23,7 +23,7 @@ import type {
   UpdateSettingsIn,
   UpdateSettingsOut,
   StaffListOut,
-} from "@/app/(main)/system/settings/page";
+} from "@/app/(main)/settings/page";
 
 export interface SettingsProps {
   settingsList: SettingsDetailOut[];

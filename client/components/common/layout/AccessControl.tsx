@@ -39,7 +39,7 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
     // Small delay to prevent flickering during profile transitions
     const timer = setTimeout(() => {
       // Use route permissions check (more accurate than section check)
-      // This handles cases like TA accessing /analytics/leaderboard
+      // This handles cases like TA accessing /leaderboard
       const role = effectiveProfile.role as
         | "guest"
         | "ta"

@@ -352,8 +352,8 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     [pathname],
   );
   const isHomePage = useMemo(() => pathname === "/home", [pathname]);
-  const isTALeaderboardPage = useMemo(
-    () => pathname?.startsWith("/cohorts/c/") === true,
+  const isLeaderboardPage = useMemo(
+    () => pathname === "/leaderboard",
     [pathname],
   );
 
@@ -370,13 +370,13 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Resolve effective simulation filters: route-aware overrides, default to all when empty
   const effectiveSimulationFilters = useMemo<SimulationFilter[]>(() => {
     if (isPracticePage) return ["practice"];
-    if (isHomePage || isTALeaderboardPage) return ["general"];
+    if (isHomePage || isLeaderboardPage) return ["general"];
     // Empty selection means all simulation types
     if (simulationFilters.length === 0) {
       return ["general", "practice", "archived"];
     }
     return simulationFilters;
-  }, [isPracticePage, isHomePage, isTALeaderboardPage, simulationFilters]);
+  }, [isPracticePage, isHomePage, isLeaderboardPage, simulationFilters]);
 
   const setDateRange = useCallback((start: Date, end: Date) => {
     // Round to day boundaries for stable query keys

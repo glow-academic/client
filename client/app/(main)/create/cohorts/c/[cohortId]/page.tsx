@@ -1,5 +1,5 @@
 /**
- * app/(main)/cohorts/e/[cohortId]/page.tsx
+ * app/(main)/create/cohorts/c/[cohortId]/page.tsx
  * Cohort edit page for the cohort.
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
@@ -7,9 +7,13 @@
 
 import { getSession } from "@/auth";
 
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Cohort from "@/components/cohorts/Cohort";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { Trophy } from "lucide-react";
+import Link from "next/link";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -128,8 +132,28 @@ export default async function CohortEditPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch cohort detail (always fresh - source of truth)
-  const cohortDetail = await getCohort(cohortId, profileId);
+  // Check cohort access by fetching detail (will return 403 if no access)
+  let cohortDetail: CohortDetailOut;
+  try {
+    cohortDetail = await getCohort(cohortId, profileId);
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="cohort"
+          redirectPath="/create/cohorts"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 
   return (
     <div
@@ -137,6 +161,16 @@ export default async function CohortEditPage({
       data-page="cohort-edit"
       data-cohort-id={cohortId}
     >
+      {/* Link to leaderboard with cohort filter */}
+      <div className="flex justify-end">
+        <Link href={`/leaderboard?cohortIds=${cohortId}`}>
+          <Button variant="outline" className="gap-2">
+            <Trophy className="h-4 w-4" />
+            View Leaderboard
+          </Button>
+        </Link>
+      </div>
+
       <Cohort
         cohortId={cohortId}
         cohortDetail={cohortDetail}
@@ -155,3 +189,4 @@ export type {
   UpdateCohortIn,
   UpdateCohortOut,
 };
+

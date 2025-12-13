@@ -63,18 +63,18 @@ function MainLayoutContent({
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn,
+    input: RefreshAnalyticsIn
   ) => Promise<RefreshAnalyticsOut>;
   searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn,
+    input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
   processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
   bulkCreateOrUpdateStaffAction?: (
-    input: BulkCreateOrUpdateStaffIn,
+    input: BulkCreateOrUpdateStaffIn
   ) => Promise<BulkCreateOrUpdateStaffOut>;
   initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
@@ -86,8 +86,6 @@ function MainLayoutContent({
 
   // Check if we're on the staff management pages
   const isStaffManagementPage = pathname?.startsWith("/management/staff");
-
-
 
   // Generate breadcrumbs client-side and enrich with entity names from context
   const breadcrumbs = useMemo(() => {
@@ -131,6 +129,13 @@ function MainLayoutContent({
   }, [pathname]);
 
   const canShowAnalyticsFilters = useMemo(() => {
+    // Show filters on leaderboard page for all authorized users
+    if (pathname === "/leaderboard") {
+      const allowedRoles = ["ta", "instructional", "admin", "superadmin"];
+      return (
+        effectiveProfile?.role && allowedRoles.includes(effectiveProfile.role)
+      );
+    }
     const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
       effectiveProfile?.role &&
@@ -150,9 +155,9 @@ function MainLayoutContent({
 
   // Determine action button based on current path
   const getActionButton = () => {
-    if (pathname === "/cohorts") {
+    if (pathname === "/create/cohorts") {
       return (
-        <Button onClick={() => router.push("/cohorts/new")} size="sm">
+        <Button onClick={() => router.push("/create/cohorts/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Cohort
         </Button>
@@ -265,10 +270,7 @@ function MainLayoutContent({
 
     if (pathname === "/management/fields") {
       return (
-        <Button
-          onClick={() => router.push("/management/fields/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/management/fields/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Field
         </Button>
@@ -415,18 +417,18 @@ export function MainLayoutClient({
   attemptData: AttemptFullOut | null;
   activeSettings: SettingsActiveOut | null;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn,
+    input: RefreshAnalyticsIn
   ) => Promise<RefreshAnalyticsOut>;
   searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn,
+    input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
   processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
   bulkCreateOrUpdateStaffAction?: (
-    input: BulkCreateOrUpdateStaffIn,
+    input: BulkCreateOrUpdateStaffIn
   ) => Promise<BulkCreateOrUpdateStaffOut>;
   initialCreateStaffData?: CreateStaffDataOut | null;
 }) {

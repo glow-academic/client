@@ -29,7 +29,7 @@ import type {
   DuplicateCohortOut,
   LeaveCohortIn,
   LeaveCohortOut,
-} from "@/app/(main)/cohorts/page";
+} from "@/app/(main)/create/cohorts/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
@@ -359,15 +359,15 @@ export default function Cohorts({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/cohorts/e/${id}`);
+    router.push(`/create/cohorts/c/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/cohorts/e/${id}`);
+    router.push(`/create/cohorts/c/${id}`);
   };
 
   const handleCreateNew = () => {
-    router.push("/cohorts/new");
+    router.push("/create/cohorts/new");
   };
 
   const renderCohortCard = (cohort: (typeof cohorts)[number]) => (

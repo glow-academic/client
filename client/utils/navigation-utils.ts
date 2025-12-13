@@ -25,8 +25,8 @@ export {
  * Main screens are those with 1 or 2 slashes (main sections and their direct children)
  */
 export const isMainScreen = (pathname: string): boolean => {
-  // Special case: allow /cohorts/new to be treated as a main screen
-  if (pathname === "/cohorts/new") {
+  // Special case: allow /create/cohorts/new to be treated as a main screen
+  if (pathname === "/create/cohorts/new") {
     return false;
   }
 
@@ -72,24 +72,15 @@ export const getSectionRoute = (
       return "/analytics/dashboard";
     case "reports":
       return "/analytics/reports";
+    case "activity":
+      return "/analytics/activity";
     case "pricing":
       return "/analytics/pricing";
     case "leaderboard":
-      return "/analytics/leaderboard";
+      return "/leaderboard";
 
     case "departments":
-      return "/departments";
-
-    case "cohorts":
-      // For TA users, redirect to their first cohort sub-item page
-      // For other roles, go to the main cohorts page
-      if (currentPathname && currentPathname.includes("/cohorts/c/")) {
-        // If we're already on a cohort page, stay there
-        return currentPathname;
-      }
-      // For TAs, this will be handled by the sidebar to redirect to first cohort
-      // For other roles, go to main cohorts page
-      return "/cohorts";
+      return "/system/departments";
 
     // Create routes
     case "create":
@@ -102,6 +93,8 @@ export const getSectionRoute = (
       return "/create/videos";
     case "personas":
       return "/create/personas";
+    case "cohorts":
+      return "/create/cohorts";
 
     // Management routes
     case "management":
@@ -137,7 +130,7 @@ export const getSectionRoute = (
     case "health":
       return "/system/health";
     case "settings":
-      return "/system/settings";
+      return "/settings";
 
     // Profile route
     case "profile":
@@ -152,12 +145,8 @@ export const getSectionRoute = (
 
       if (section.startsWith("cohort-")) {
         const cohortId = section.replace("cohort-", "");
-        // Context-aware routing: if we're currently on a cohort editing page, route to editing
-        if (currentPathname && currentPathname.includes("/cohorts/e/")) {
-          return `/cohorts/e/${cohortId}`;
-        }
-        // Default to viewing context
-        return `/cohorts/c/${cohortId}`;
+        // Route to edit page (cohorts are now under create)
+        return `/create/cohorts/c/${cohortId}`;
       }
 
       if (section.startsWith("simulation-")) {

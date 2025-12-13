@@ -1,5 +1,5 @@
 /**
- * app/(main)/departments/loading.tsx
+ * app/(main)/system/departments/loading.tsx
  * Loading skeleton for departments page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
@@ -71,3 +71,4 @@ export default function Loading() {
     </div>
   );
 }
+

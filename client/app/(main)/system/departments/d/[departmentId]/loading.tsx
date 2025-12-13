@@ -1,6 +1,6 @@
 /**
- * app/(main)/cohorts/e/[cohortId]/loading.tsx
- * Loading skeleton for cohort edit page
+ * app/(main)/system/departments/d/[departmentId]/loading.tsx
+ * Loading skeleton for department edit page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
@@ -26,7 +26,7 @@ export default function Loading() {
 
         {/* Description Field */}
         <div className="space-y-2">
-          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-24" />
           <Skeleton className="h-20 w-full" />
         </div>
 
@@ -39,18 +39,6 @@ export default function Loading() {
             </div>
             <Skeleton className="h-3 w-64 ml-5" />
           </div>
-        </div>
-
-        {/* Department Selection */}
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-
-        {/* Simulation Selection */}
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-32 w-full rounded-lg" />
         </div>
 
         {/* Staff Management Section */}
@@ -157,3 +145,4 @@ export default function Loading() {
     </div>
   );
 }
+

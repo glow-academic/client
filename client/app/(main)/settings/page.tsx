@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/settings/page.tsx
+ * app/(main)/settings/page.tsx
  * Settings page
  */
 
@@ -109,63 +109,29 @@ async function getStaffListAction(profileId: string): Promise<StaffListOut> {
   return getStaffList(profileId);
 }
 
-/** ---- Server renders client with typed data and actions ---- */
 export default async function SettingsPage() {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch settings list
-  const listResult = await getSettingsList(profileId);
-
-  // Find active settings or use first one
-  const activeSettings = listResult.settings.find((s) => s.active);
-  const defaultSettings = activeSettings || listResult.settings[0] || null;
-
-  // Fetch detail for default settings
-  let settingsDetail: SettingsDetailOut | null = null;
-  let selectedSettingsId: string | null = null;
-
-  if (defaultSettings) {
-    selectedSettingsId = defaultSettings.settings_id;
-    settingsDetail = await getSettingsDetail(
-      defaultSettings.settings_id,
-      profileId,
-    );
-  }
-
-  // Fetch keys list
+  // Fetch settings list server-side
+  const settingsList = await getSettingsList(profileId);
   const keysList = await getKeysList(profileId);
-
-  // Fetch staff list for profile selection
-  const staffList = await getStaffList(profileId);
+  const staffList = await getStaffListAction({
+    body: { profileId },
+  });
 
   return (
     <div className="space-y-6" data-page="settings-index">
       <Settings
-        settingsList={listResult.settings as SettingsDetailOut[]}
-        settingsDetail={settingsDetail}
-        selectedSettingsId={selectedSettingsId}
-        profileId={profileId}
+        settingsList={settingsList}
         keysList={keysList}
         staffList={staffList}
-        getSettingsDetailAction={getSettingsDetailAction}
+        getSettingsDetailAction={getSettingsDetail}
+        updateSettingsAction={updateSettings}
         getKeysListAction={getKeysListAction}
         getStaffListAction={getStaffListAction}
-        updateSettingsAction={updateSettings}
       />
     </div>
   );
 }
 
-/** ---- Export types for client component (type-only imports) ---- */
-export type {
-  SettingsDetailIn,
-  SettingsDetailOut,
-  SettingsListIn,
-  SettingsListOut,
-  UpdateSettingsIn,
-  UpdateSettingsOut,
-  KeysListOut,
-  StaffListIn,
-  StaffListOut,
-};

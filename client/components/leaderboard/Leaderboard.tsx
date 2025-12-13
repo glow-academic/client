@@ -6,7 +6,7 @@
  */
 "use client";
 
-import type { LeaderboardOut } from "@/app/(main)/analytics/leaderboard/page";
+import type { LeaderboardOut } from "@/app/(main)/leaderboard/page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useProfile } from "@/contexts/profile-context";
 import { AnimatePresence, motion } from "framer-motion";

@@ -30,7 +30,7 @@ import type {
   DepartmentsListOut,
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
-} from "@/app/(main)/departments/page";
+} from "@/app/(main)/system/departments/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
@@ -261,7 +261,7 @@ export default function Departments({
   }, [priceSpentFacets]);
 
   const handleEdit = (id: string) => {
-    router.push(`/departments/d/${id}`);
+    router.push(`/system/departments/d/${id}`);
   };
 
   const handleDuplicate = async (department: (typeof departments)[number]) => {

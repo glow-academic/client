@@ -37,7 +37,7 @@ import type {
   CreateDepartmentIn,
   CreateDepartmentOut,
   DepartmentNewOut,
-} from "@/app/(main)/departments/new/page";
+} from "@/app/(main)/system/departments/new/page";
 // Import types from edit page (update action)
 import type {
   CreateKeyIn,
@@ -51,14 +51,14 @@ import type {
   UpdateDepartmentOut,
   UpdateKeyIn,
   UpdateKeyOut,
-} from "@/app/(main)/departments/d/[departmentId]/page";
+} from "@/app/(main)/system/departments/d/[departmentId]/page";
 // Import types from list page (delete/duplicate actions)
 import type {
   DeleteDepartmentIn,
   DeleteDepartmentOut,
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
-} from "@/app/(main)/departments/page";
+} from "@/app/(main)/system/departments/page";
 
 export interface DepartmentProps {
   departmentId?: string;
@@ -317,7 +317,7 @@ export default function Department({
         });
         resetFormAndState();
         toast.success("Department updated successfully!");
-        router.push("/departments");
+        router.push("/system/departments");
       } else {
         // CREATE mode
         await handleCreateDepartment({
@@ -327,7 +327,7 @@ export default function Department({
         });
         resetFormAndState();
         toast.success("Department created successfully!");
-        router.push("/departments");
+        router.push("/system/departments");
       }
     } catch (error) {
       toast.error(

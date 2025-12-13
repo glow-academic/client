@@ -1,5 +1,5 @@
 /**
- * app/(main)/cohorts/loading.tsx
+ * app/(main)/create/cohorts/loading.tsx
  * Loading skeleton for cohorts page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
@@ -80,3 +80,4 @@ export default function Loading() {
     </div>
   );
 }
+

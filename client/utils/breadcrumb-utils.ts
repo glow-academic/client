@@ -49,24 +49,10 @@ const getSectionFromSegments = (segments: string[]): string => {
         return `profile-${fourth}`;
       }
       if (second) {
-        return second; // dashboard, reports, history, leaderboard
+        return second; // dashboard, reports, activity, history
       }
       return "analytics";
 
-    case "departments":
-      if (second === "d" && third) {
-        return `department-${third}`;
-      }
-      return "departments";
-
-    case "cohorts":
-      if (second === "c" && third) {
-        return `cohort-${third}`;
-      }
-      if (second === "e" && third) {
-        return `cohort-${third}`;
-      }
-      return "cohorts";
 
     case "create":
       if (second === "personas") {
@@ -90,7 +76,19 @@ const getSectionFromSegments = (segments: string[]): string => {
       if (second === "videos") {
         return "videos";
       }
+      if (second === "cohorts") {
+        if (third === "c" && fourth) {
+          return `cohort-${fourth}`;
+        }
+        if (third === "new") {
+          return "cohorts";
+        }
+        return "cohorts";
+      }
       return "create";
+
+    case "leaderboard":
+      return "leaderboard";
 
     case "management":
       if (second === "staff") {
@@ -153,10 +151,16 @@ const getSectionFromSegments = (segments: string[]): string => {
       if (second === "health") {
         return "health";
       }
-      if (second === "settings") {
-        return "settings";
+      if (second === "departments") {
+        if (third === "d" && fourth) {
+          return `department-${fourth}`;
+        }
+        return "departments";
       }
       return "system";
+
+    case "settings":
+      return "settings";
 
     case "c":
       if (second) {
@@ -225,6 +229,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "create":
         title = "Create";
         break;
+      case "leaderboard":
+        title = "Leaderboard";
+        break;
 
       // Subsections
       case "overview":
@@ -259,6 +266,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "videos":
         title = "Videos";
+        break;
+      case "cohorts":
+        title = "Cohorts";
         break;
       case "auth":
         title = "Auth";

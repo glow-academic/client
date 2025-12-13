@@ -9,7 +9,7 @@
 import type {
   KeysListOut,
   SettingsDetailOut,
-} from "@/app/(main)/system/settings/page";
+} from "@/app/(main)/settings/page";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { AuthsTable } from "@/components/common/settings/AuthsTable";
 import { ProvidersTable } from "@/components/common/settings/ProvidersTable";

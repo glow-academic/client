@@ -1,5 +1,5 @@
 /**
- * app/(main)/departments/d/[departmentId]/page.tsx
+ * app/(main)/system/departments/d/[departmentId]/page.tsx
  * Department edit page
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
@@ -13,7 +13,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
-import { deleteDepartment } from "@/app/(main)/departments/page";
+import { deleteDepartment } from "@/app/(main)/system/departments/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;
@@ -150,10 +150,10 @@ export default async function DepartmentEditPage({
   // Fetch department detail (always fresh - source of truth)
   try {
     const departmentDetail = await getDepartment(departmentId, profileId);
-    
+
     // Fetch keys list
     const keysList = await getKeysList(profileId);
-    
+
     // Fetch settings detail if department has linked settings
     let settingsDetail: SettingsDetailOut | null = null;
     if (departmentDetail.settings_id) {
@@ -199,7 +199,7 @@ export default async function DepartmentEditPage({
       return (
         <DepartmentAccessDenied
           resourceType="department"
-          redirectPath="/departments"
+          redirectPath="/system/departments"
         />
       );
     }
@@ -222,3 +222,4 @@ export type {
   KeysListOut,
   SettingsDetailOut,
 };
+

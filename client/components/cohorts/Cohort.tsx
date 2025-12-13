@@ -75,13 +75,13 @@ import type {
   CohortNewOut,
   CreateCohortIn,
   CreateCohortOut,
-} from "@/app/(main)/cohorts/new/page";
+} from "@/app/(main)/create/cohorts/new/page";
 // Import types from edit page (update action)
 import type {
   CohortDetailOut,
   UpdateCohortIn,
   UpdateCohortOut,
-} from "@/app/(main)/cohorts/e/[cohortId]/page";
+} from "@/app/(main)/create/cohorts/c/[cohortId]/page";
 import type { ProfileListItem } from "@/app/(main)/management/staff/page";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
@@ -662,7 +662,7 @@ export default function Cohort({
       }
 
       resetFormAndState();
-      router.push(`/cohorts`);
+      router.push(`/create/cohorts`);
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;
       toast.error(
@@ -1950,7 +1950,7 @@ export default function Cohort({
             <Button
               variant="outline"
               type="button"
-              onClick={() => router.push("/cohorts")}
+              onClick={() => router.push("/create/cohorts")}
               data-testid="btn-cancel-cohort"
             >
               Back

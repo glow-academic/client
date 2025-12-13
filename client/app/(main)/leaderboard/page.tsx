@@ -1,6 +1,6 @@
 /**
- * app/(main)/analytics/leaderboard/page.tsx
- * Leaderboard page for the analytics section.
+ * app/(main)/leaderboard/page.tsx
+ * Root-level leaderboard page.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
@@ -108,7 +108,8 @@ async function getLeaderboardFilters(searchParams?: URLSearchParams) {
     };
   }
 
-  // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
+  // For TA users: scope cohort filter to their profile's cohorts if no cohortIds specified
+  // For instructional+: use all accessible cohorts from profile context if no cohortIds specified
   const cohortIds =
     filters.cohortIds && filters.cohortIds.length > 0
       ? filters.cohortIds
@@ -177,3 +178,4 @@ export default async function LeaderboardPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type { LeaderboardIn, LeaderboardOut };
+
