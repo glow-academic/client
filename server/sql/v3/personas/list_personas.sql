@@ -118,6 +118,9 @@ department_mapping_data AS (
     ) as mapping
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
+),
+agent_mapping_data AS (
+    SELECT '{}'::jsonb as mapping
 )
 SELECT 
     pd.persona_id,

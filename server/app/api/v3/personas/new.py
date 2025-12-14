@@ -330,9 +330,7 @@ async def get_persona_new(
             active=True,
             color=preset_colors[0] if preset_colors else "#3B82F6",
             icon=suggested_icons[0] if suggested_icons else "Sparkles",
-            instructions=result.get("instructions", "")
-            if result.get("instructions")
-            else "",
+            instructions="",  # Always blank for new persona
             text_agent_id=default_text_agent_id,
             voice_agent_id=None,
             # Usage and permissions

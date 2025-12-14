@@ -23,23 +23,19 @@ import type {
 } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
+import { PersonaColorSection } from "@/components/personas/PersonaColorSection";
+import { PersonaIconSection } from "@/components/personas/PersonaIconSection";
+import { PersonaContentSection } from "@/components/personas/PersonaContentSection";
 import { Button } from "@/components/ui/button";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -48,146 +44,15 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import {
-  getPersonaIconComponent,
-  PERSONA_ICON_MAP,
-} from "@/utils/persona-icons";
-import { Check, ChevronsUpDown, FileText, GripVertical, Mic, PlusCircle, Power, Trash2 } from "lucide-react";
+import { Check, Loader2, Power } from "lucide-react";
 
-// Component for example input with autocomplete
-function ExampleInputWithAutocomplete({
-  index,
-  value,
-  onChange,
-  placeholder,
-  suggestions,
-  disabled,
-  draggedExampleIndex,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onRemove,
-  totalExamples,
-}: {
-  index: number;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  suggestions: string[];
-  disabled: boolean;
-  draggedExampleIndex: number | null;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onRemove: () => void;
-  totalExamples: number;
-}) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+type StepStatus = "pending" | "active" | "completed";
 
-  // Filter suggestions based on current input value (completing the sentence)
-  const filteredSuggestions = useMemo(() => {
-    if (!value.trim() || !suggestions.length) return [];
-
-    const valueLower = value.toLowerCase().trim();
-
-    // Filter suggestions that start with or contain the typed text
-    // Exclude exact matches (case-insensitive) to avoid distraction
-    const matching = suggestions
-      .filter((s) => {
-        const sLower = s.toLowerCase().trim();
-        // Skip exact matches
-        if (sLower === valueLower) return false;
-        // Include if starts with or contains the typed text
-        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
-      })
-      .slice(0, 5); // Show top 5 matches
-
-    return matching;
-  }, [suggestions, value]);
-
-  const handleSelect = (suggestion: string) => {
-    onChange(suggestion);
-    setShowSuggestions(false);
-    inputRef.current?.focus();
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setShowSuggestions(true);
-  };
-
-  const handleFocus = () => {
-    if (value && filteredSuggestions.length > 0) {
-      setShowSuggestions(true);
-    }
-  };
-
-  const handleBlur = () => {
-    // Delay hiding suggestions to allow clicks
-    setTimeout(() => setShowSuggestions(false), 200);
-  };
-
-  return (
-    <div
-      className={`flex flex-col gap-2 ${
-        draggedExampleIndex === index ? "opacity-50" : ""
-      }`}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-    >
-      <div className="flex items-center gap-2">
-        <div
-          draggable={!disabled}
-          onDragStart={onDragStart}
-          className="cursor-grab active:cursor-grabbing shrink-0"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <div className="flex-1 relative">
-          <Input
-            ref={inputRef}
-            value={value}
-            onChange={handleInputChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            placeholder={placeholder}
-            className="flex-1"
-            disabled={disabled}
-            onDragStart={(e) => e.preventDefault()} // Prevent dragging from input
-          />
-          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
-              <div className="p-1">
-                {filteredSuggestions.map((suggestion, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleSelect(suggestion)}
-                    onMouseDown={(e) => e.preventDefault()} // Prevent input blur
-                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
-                  >
-                    {suggestion}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        {totalExamples > 1 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onRemove}
-            className="h-8 w-8 shrink-0"
-            disabled={disabled}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-    </div>
-  );
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
 }
 
 interface FormData {
@@ -251,10 +116,7 @@ export default function Persona({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>();
-  const [colorPickerOpen, setColorPickerOpen] = useState(false);
-  const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [currentExamples, setCurrentExamples] = useState<string[]>([]);
-  const [draggedExampleIndex, setDraggedExampleIndex] = useState<number | null>(null);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -546,62 +408,68 @@ export default function Persona({
     }
   };
 
-  // Dynamic icon component
-  const IconComponent = useMemo(() => {
-    if (!formData?.icon) return null;
-    return getPersonaIconComponent(formData.icon) || null;
-  }, [formData?.icon]);
+  // Step status logic
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      const hasName = !!formData?.name?.trim();
+      const hasDescription = !!formData?.description?.trim();
+      const hasColor = !!formData?.color?.trim();
+      const hasIcon = !!formData?.icon?.trim();
+      const hasInstructions = !!formData?.instructions?.trim();
 
-  // Get suggested icons from v2 response
-  const _suggestedIcons = useMemo(() => {
-    return personaData?.suggested_icons || [];
-  }, [personaData?.suggested_icons]);
+      switch (stepId) {
+        case "basic":
+          return hasName && hasDescription ? "completed" : "active";
+        case "color":
+          if (!hasName || !hasDescription) return "pending";
+          return hasColor ? "completed" : "active";
+        case "icon":
+          if (!hasName || !hasDescription) return "pending";
+          return hasIcon ? "completed" : "active";
+        case "content":
+          if (!hasName || !hasDescription) return "pending";
+          return hasInstructions ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    [formData]
+  );
 
-  // Example handlers
-  const addExample = () => {
-    if (currentExamples.length >= 10) {
-      toast.error("Maximum 10 examples allowed");
-      return;
-    }
-    setCurrentExamples((prev) => [...prev, ""]);
-  };
-
-  const removeExample = (index: number) => {
-    setCurrentExamples((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateExample = (index: number, value: string) => {
-    setCurrentExamples((prev) => {
-      const newExamples = [...prev];
-      newExamples[index] = value;
-      return newExamples;
-    });
-  };
-
-  const handleDragStartExample = (e: React.DragEvent, index: number) => {
-    setDraggedExampleIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOverExample = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDropExample = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    if (draggedExampleIndex === null) return;
-    const newExamples = [...currentExamples];
-    const [removed] = newExamples.splice(draggedExampleIndex, 1);
-    newExamples.splice(targetIndex, 0, removed || "");
-    setCurrentExamples(newExamples);
-    setDraggedExampleIndex(null);
-  };
+  // Steps array
+  const steps: Step[] = useMemo(() => {
+    return [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description: "Set the persona name, description, departments, and active status.",
+        status: getStepStatus("basic"),
+      },
+      {
+        id: "color",
+        title: "Color",
+        description: "Select a color for the persona.",
+        status: getStepStatus("color"),
+      },
+      {
+        id: "icon",
+        title: "Icon",
+        description: "Select an icon for the persona.",
+        status: getStepStatus("icon"),
+      },
+      {
+        id: "content",
+        title: "Personality",
+        description: "Define instructions and example messages for the persona.",
+        status: getStepStatus("content"),
+      },
+    ];
+  }, [getStepStatus]);
 
   return (
     <TooltipProvider>
       <div
-        className="space-y-6 py-4 px-4"
+        className="w-full p-6 space-y-8"
         data-page={`persona-${isEditMode ? "edit" : "new"}`}
       >
         {isReadonly && (
@@ -636,25 +504,57 @@ export default function Persona({
           </div>
         )}
 
-        <div className="w-full">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Persona Name *</Label>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Step 1: Basic Information */}
+          <Card className="transition-all">
+            <CardContent className="pt-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
+                    steps[0]?.status === "completed"
+                      ? "bg-green-500 text-white"
+                      : steps[0]?.status === "active"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                  )}
+                >
+                  {steps[0]?.status === "completed" ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <span>1</span>
+                  )}
+                </div>
+                <div className="flex-1">
               {formData?.name !== undefined ? (
-                <Input
+                    <input
+                      type="text"
                   id="name"
                   data-testid="input-persona-name"
                   value={formData.name}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
                   }
+                      className={cn(
+                        "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                      )}
                   placeholder="e.g., Enthusiastic Student"
                   required
                   disabled={isReadonly}
                 />
               ) : null}
+                  <p className="text-xs text-muted-foreground mt-1 px-2">
+                    {formData?.name === "" || !formData?.name
+                      ? "Click to edit • Name is required"
+                      : "Click to edit"}
+                  </p>
             </div>
-
+              </div>
+            </CardContent>
+            <CardContent className="pt-0 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
               {formData?.description !== undefined ? (
@@ -676,56 +576,6 @@ export default function Persona({
               ) : null}
             </div>
 
-            {/* Examples List */}
-            <div className="space-y-2">
-              <Label>Example Messages</Label>
-              {currentExamples.length === 0 && (
-                <div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addExample}
-                    disabled={isReadonly}
-                    size="sm"
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" /> Add example
-                  </Button>
-                </div>
-              )}
-              {currentExamples.map((example, index) => (
-                <ExampleInputWithAutocomplete
-                  key={`example-${index}`}
-                  index={index}
-                  value={example || ""}
-                  onChange={(value) => updateExample(index, value)}
-                  placeholder={`Example message ${index + 1}`}
-                  suggestions={examplesHistory}
-                  disabled={isReadonly}
-                  draggedExampleIndex={draggedExampleIndex}
-                  onDragStart={(e) => handleDragStartExample(e, index)}
-                  onDragOver={handleDragOverExample}
-                  onDrop={(e) => handleDropExample(e, index)}
-                  onRemove={() => removeExample(index)}
-                  totalExamples={currentExamples.length}
-                />
-              ))}
-
-              {currentExamples.length < 10 &&
-                currentExamples.length > 0 && (
-                  <div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={addExample}
-                      disabled={isReadonly}
-                      size="sm"
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" /> Add example
-                    </Button>
-                  </div>
-                )}
-            </div>
-
             {/* Department Selection */}
             {personaData?.valid_department_ids &&
             personaData.valid_department_ids.length > 1 ? (
@@ -744,7 +594,9 @@ export default function Persona({
                     }
                     getId={(dept) => (dept as unknown as { id: string }).id}
                     getLabel={(dept) => dept.name || ""}
-                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                      getSearchText={(dept) =>
+                        `${dept.name} ${dept.description || ""}`
+                      }
                     placeholder="All Departments"
                     disabled={isReadonly}
                     multiSelect={true}
@@ -853,257 +705,89 @@ export default function Persona({
                 </p>
               </div>
             </div>
+            </CardContent>
+          </Card>
 
-            {/* Color and Icon Selection Row */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {/* Color Picker */}
-              <div className="space-y-2">
-                <Label htmlFor="color">Persona Color</Label>
-                {formData?.color !== undefined ? (
-                  <Popover
-                    open={colorPickerOpen}
-                    onOpenChange={setColorPickerOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                        disabled={isReadonly}
-                        data-testid="button-persona-color"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded border"
-                            style={{ backgroundColor: formData.color }}
-                          />
-                          <span>{formData.color}</span>
-                        </div>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-4">
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="colorInput">Hex Color</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="colorInput"
-                              value={formData.color}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                // Allow any hex value (with or without #, any length)
-                                if (
-                                  value === "" ||
-                                  /^#?[0-9A-Fa-f]*$/.test(value)
-                                ) {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    color: value.startsWith("#")
-                                      ? value
-                                      : `#${value}`,
-                                  }));
-                                }
-                              }}
-                              placeholder="#000000"
-                              className="flex-1"
-                            />
-                            <div
-                              className="w-10 h-10 rounded border"
-                              style={{ backgroundColor: formData.color }}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Preset Colors</Label>
-                          <div className="grid grid-cols-8 gap-2">
-                            {(personaData?.preset_colors || []).map((color) => (
-                              <button
-                                key={color}
-                                type="button"
-                                className="w-8 h-8 rounded border-2 border-gray-200 hover:border-gray-400 transition-colors"
-                                style={{ backgroundColor: color }}
-                                onClick={() => {
-                                  setFormData((prev) => ({ ...prev, color }));
-                                  setColorPickerOpen(false);
-                                }}
-                                data-testid="preset-color"
-                                data-color={color}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                ) : null}
-              </div>
+          {/* Step 2: Color */}
+          {formData?.color !== undefined && (
+            <PersonaColorSection
+              color={formData.color}
+              presetColors={personaData?.preset_colors || []}
+              onColorChange={(color) =>
+                setFormData((prev) => ({ ...prev, color }))
+              }
+              stepStatus={getStepStatus("color")}
+              stepNumber={2}
+              stepTitle={steps[1]?.title || "Color"}
+              stepDescription={steps[1]?.description || "Select a color for the persona."}
+              isReadonly={isReadonly}
+            />
+          )}
 
-              {/* Icon Picker */}
-              <div className="space-y-2">
-                <Label htmlFor="icon">Persona Icon</Label>
-                {formData?.icon !== undefined ? (
-                  <Popover
-                    open={iconPickerOpen}
-                    onOpenChange={setIconPickerOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                        disabled={isReadonly}
-                        data-testid="button-persona-icon"
-                      >
-                        <div className="flex items-center gap-2">
-                          {IconComponent && (
-                            <IconComponent className="w-4 h-4" />
-                          )}
-                          <span>{formData.icon}</span>
-                          <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
-                        </div>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-0">
-                      <Command>
-                        <CommandInput placeholder="Search icons..." />
-                        <CommandList>
-                          <CommandEmpty>No icon found.</CommandEmpty>
-                          {_suggestedIcons.length > 0 && (
-                            <CommandGroup heading="Suggested for this persona">
-                              {_suggestedIcons
-                                .slice(0, 6)
-                                .map((iconName: string) => {
-                                  const IconComponent =
-                                    PERSONA_ICON_MAP[
-                                      iconName as keyof typeof PERSONA_ICON_MAP
-                                    ];
-                                  if (!IconComponent) return null;
+          {/* Step 3: Icon */}
+          {formData?.icon !== undefined && (
+            <PersonaIconSection
+              icon={formData.icon}
+              suggestedIcons={personaData?.suggested_icons || []}
+              validIcons={personaData?.valid_icons || []}
+              onIconChange={(icon) =>
+                setFormData((prev) => ({ ...prev, icon }))
+              }
+              stepStatus={getStepStatus("icon")}
+              stepNumber={3}
+              stepTitle={steps[2]?.title || "Icon"}
+              stepDescription={steps[2]?.description || "Select an icon for the persona."}
+              isReadonly={isReadonly}
+            />
+          )}
 
-                                  return (
-                                    <CommandItem
-                                      key={iconName}
-                                      value={iconName}
-                                      onSelect={() => {
-                                        setFormData((prev) => ({
-                                          ...prev,
-                                          icon: iconName,
-                                        }));
-                                        setIconPickerOpen(false);
-                                      }}
-                                      data-testid="icon-option"
-                                      data-icon={iconName}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          formData.icon === iconName
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        )}
-                                      />
-                                      <IconComponent className="mr-2 h-4 w-4" />
-                                      {iconName}
-                                    </CommandItem>
-                                  );
-                                })}
-                            </CommandGroup>
-                          )}
-                          <CommandGroup heading="All Icons">
-                            {(personaData?.valid_icons || []).map(
-                              (iconName: string) => {
-                                const IconComponent =
-                                  PERSONA_ICON_MAP[
-                                    iconName as keyof typeof PERSONA_ICON_MAP
-                                  ];
-                                if (!IconComponent) return null;
+          {/* Step 4: Personality */}
+          {formData?.instructions !== undefined && (
+            <PersonaContentSection
+              instructions={formData.instructions}
+              onInstructionsChange={(instructions) =>
+                setFormData((prev) => ({ ...prev, instructions }))
+              }
+              exampleMessages={currentExamples}
+              onExampleMessagesChange={setCurrentExamples}
+              examplesHistory={examplesHistory}
+              stepStatus={getStepStatus("content")}
+              stepNumber={4}
+              stepTitle={steps[3]?.title || "Personality"}
+              stepDescription={steps[3]?.description || "Define instructions and example messages for the persona."}
+              isReadonly={isReadonly}
+            />
+          )}
 
-                                return (
-                                  <CommandItem
-                                    key={iconName}
-                                    value={iconName}
-                                    onSelect={() => {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        icon: iconName,
-                                      }));
-                                      setIconPickerOpen(false);
-                                    }}
-                                    data-testid="icon-option"
-                                    data-icon={iconName}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        formData.icon === iconName
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      )}
-                                    />
-                                    <IconComponent className="mr-2 h-4 w-4" />
-                                    {iconName}
-                                  </CommandItem>
-                                );
-                              }
-                            )}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                ) : null}
-              </div>
-            </div>
-
-
-            {/* Instructions */}
-            <div className="space-y-2">
-              <Label htmlFor="instructions">Instructions *</Label>
-              {formData?.instructions !== undefined ? (
-                <Textarea
-                  id="instructions"
-                  data-testid="input-instructions"
-                  value={formData.instructions}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      instructions: e.target.value,
-                    }))
-                  }
-                  placeholder="Instructions that define how the persona should behave and respond."
-                  rows={8}
-                  required
-                  disabled={isReadonly}
-                />
-              ) : null}
-              <p className="text-sm text-muted-foreground">
-                Instructions define the persona's behavior and personality in
-                conversations.
-              </p>
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/create/personas")}
-                disabled={isSubmitting}
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || isReadonly}
-                data-testid="btn-submit-persona"
-              >
-                {isSubmitting
-                  ? isEditMode
-                    ? "Updating..."
-                    : "Creating..."
-                  : isEditMode
-                    ? "Update Persona"
-                    : "Create Persona"}
-              </Button>
-            </div>
-          </form>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => router.push("/create/personas")}
+              disabled={isSubmitting}
+            >
+              Back
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || isReadonly}
+              data-testid="btn-submit-persona"
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isEditMode ? "Updating..." : "Creating..."}
+                </>
+              ) : isEditMode ? (
+                "Update Persona"
+              ) : (
+                "Create Persona"
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
     </TooltipProvider>
   );
