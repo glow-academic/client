@@ -48,11 +48,14 @@ import { useProfile } from "@/contexts/profile-context";
 import { useFederatedLogout } from "@/hooks/useFederatedLogout";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
+  Activity,
   AlertCircle,
+  BarChart3,
   Brain,
   ChevronRight,
   ChevronsUpDown,
   ClipboardList,
+  Gauge,
   Home,
   LogOut,
   PieChart,
@@ -398,6 +401,14 @@ export function UnifiedSidebar({
         });
       }
 
+      if (availableSections.includes("keys")) {
+        systemItems.push({
+          title: "Keys",
+          url: "#",
+          section: "keys",
+        });
+      }
+
       if (availableSections.includes("providers")) {
         systemItems.push({
           title: "Providers",
@@ -414,14 +425,6 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("health")) {
-        systemItems.push({
-          title: "Health",
-          url: "#",
-          section: "health",
-        });
-      }
-
       // Only add System section if it has items
       if (systemItems.length > 0) {
         menu.push({
@@ -431,6 +434,32 @@ export function UnifiedSidebar({
           items: systemItems,
         });
       }
+    }
+
+    // Health - Available for superadmin only, top-level
+    if (
+      effectiveProfile.role === "superadmin" &&
+      availableSections.includes("health")
+    ) {
+      menu.push({
+        title: "Health",
+        url: "#",
+        icon: Activity,
+        section: "health",
+      });
+    }
+
+    // Benchmark - Available for superadmin only, top-level
+    if (
+      effectiveProfile.role === "superadmin" &&
+      availableSections.includes("benchmark")
+    ) {
+      menu.push({
+        title: "Benchmark",
+        url: "#",
+        icon: Gauge,
+        section: "benchmark",
+      });
     }
 
     // Settings - Available for admin and superadmin, root level (bottom)

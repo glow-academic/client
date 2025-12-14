@@ -42,25 +42,23 @@ key_data AS (
     FROM keys k
     WHERE k.id = $1::uuid
 ),
--- Get department_ids via provider_keys -> providers -> setting_providers -> settings -> department_settings
+-- Get department_ids via setting_provider_keys -> settings -> department_settings
 key_departments_data AS (
     SELECT 
-        ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id) as department_ids
-    FROM provider_keys pk
-    JOIN providers p ON p.id = pk.provider_id
-    JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
-    JOIN settings s ON s.id = sp.settings_id AND s.active = true
+        ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
+    FROM setting_provider_keys spk
+    JOIN settings s ON s.id = spk.settings_id AND s.active = true
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-    WHERE pk.key_id = $1::uuid AND pk.active = true
+    WHERE spk.key_id = $1::uuid AND spk.active = true
 ),
--- Get model_ids via provider_keys -> providers -> models
+-- Get model_ids via setting_provider_keys -> providers -> models
 key_models_data AS (
     SELECT 
         ARRAY_AGG(m.id::text ORDER BY m.name) as model_ids
-    FROM provider_keys pk
-    JOIN providers p ON p.id = pk.provider_id
+    FROM setting_provider_keys spk
+    JOIN providers p ON p.id = spk.provider_id
     JOIN models m ON m.provider_id = p.id
-    WHERE pk.key_id = $1::uuid AND pk.active = true AND m.active = true
+    WHERE spk.key_id = $1::uuid AND spk.active = true AND m.active = true
 ),
 valid_depts AS (
     SELECT 
@@ -86,16 +84,14 @@ profile_data AS (
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 user_has_key_access AS (
-    -- Check if user has access to key via provider_keys -> providers -> setting_providers -> settings -> department_settings
+    -- Check if user has access to key via setting_provider_keys -> settings -> department_settings
     SELECT EXISTS(
-        SELECT 1 FROM provider_keys pk
-        JOIN providers p ON p.id = pk.provider_id
-        JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
-        JOIN settings s ON s.id = sp.settings_id AND s.active = true
+        SELECT 1 FROM setting_provider_keys spk
+        JOIN settings s ON s.id = spk.settings_id AND s.active = true
         JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
         JOIN resolve_profile_id rpi ON true
         JOIN profile_departments pd ON pd.department_id = ds.department_id
-        WHERE pk.key_id = $1::uuid AND pk.active = true
+        WHERE spk.key_id = $1::uuid AND spk.active = true
         AND pd.profile_id = rpi.resolved_profile_id AND pd.active = true
     ) OR EXISTS(
         SELECT 1 FROM resolve_profile_id rpi
@@ -104,12 +100,10 @@ user_has_key_access AS (
     ) OR (
         -- Default keys (no department links via settings) are accessible to all admins
         NOT EXISTS (
-            SELECT 1 FROM provider_keys pk
-            JOIN providers p ON p.id = pk.provider_id
-            JOIN setting_providers sp ON sp.provider_id = p.id AND sp.active = true
-            JOIN settings s ON s.id = sp.settings_id AND s.active = true
+            SELECT 1 FROM setting_provider_keys spk
+            JOIN settings s ON s.id = spk.settings_id AND s.active = true
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-            WHERE pk.key_id = $1::uuid AND pk.active = true
+            WHERE spk.key_id = $1::uuid AND spk.active = true
         )
     ) as has_access
 ),
@@ -126,10 +120,10 @@ model_mapping_data AS (
         ) FILTER (WHERE m.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
-    FROM provider_keys pk
-    JOIN providers p ON p.id = pk.provider_id
+    FROM setting_provider_keys spk
+    JOIN providers p ON p.id = spk.provider_id
     JOIN models m ON m.provider_id = p.id
-    WHERE pk.key_id = $1::uuid AND pk.active = true AND m.active = true
+    WHERE spk.key_id = $1::uuid AND spk.active = true AND m.active = true
 )
 SELECT 
     kd.*,

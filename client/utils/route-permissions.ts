@@ -113,6 +113,12 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         title: "Pricing",
         redirectTo: "/analytics/pricing",
       },
+      {
+        path: "/analytics/pricing/r/[runId]",
+        roles: ["admin", "superadmin"],
+        title: "Run",
+        redirectTo: "/analytics/pricing",
+      },
     ],
   },
   {
@@ -400,16 +406,28 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/system/providers",
       },
       {
+        path: "/system/keys",
+        roles: ["admin", "superadmin"],
+        title: "Keys",
+        redirectTo: "/system/keys",
+      },
+      {
+        path: "/system/keys/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Key",
+        redirectTo: "/system/keys",
+      },
+      {
+        path: "/system/keys/k/[keyId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Key",
+        redirectTo: "/system/keys",
+      },
+      {
         path: "/system/auth",
         roles: ["superadmin"],
         title: "Auth",
         redirectTo: "/system/auth",
-      },
-      {
-        path: "/system/health",
-        roles: ["superadmin"],
-        title: "System Health",
-        redirectTo: "/system/health",
       },
       {
         path: "/system/departments",
@@ -450,6 +468,40 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
     ],
   },
   {
+    section: "health",
+    roles: ["superadmin"],
+    title: "Health",
+    description: "System health monitoring",
+    routes: [
+      {
+        path: "/health",
+        roles: ["superadmin"],
+        title: "System Health",
+        redirectTo: "/health",
+      },
+    ],
+  },
+  {
+    section: "benchmark",
+    roles: ["superadmin"],
+    title: "Benchmark",
+    description: "Run and manage evaluations",
+    routes: [
+      {
+        path: "/benchmark",
+        roles: ["superadmin"],
+        title: "Benchmark",
+        redirectTo: "/benchmark",
+      },
+      {
+        path: "/benchmark/er/[eval_run_id]",
+        roles: ["superadmin"],
+        title: "Evaluation Run",
+        redirectTo: "/benchmark",
+      },
+    ],
+  },
+  {
     section: "settings",
     roles: ["admin", "superadmin"],
     title: "Settings",
@@ -468,7 +520,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
 // Helper function to check if a user has access to a specific path
 export const hasRouteAccess = (
   pathname: string,
-  role: ProfileRole,
+  role: ProfileRole
 ): boolean => {
   // Handle dynamic routes by converting them to pattern matches
   const normalizedPath = normalizePathForMatching(pathname);
@@ -489,7 +541,7 @@ export const hasRouteAccess = (
 
 // Helper function to get route permission for a specific path
 export const getRoutePermission = (
-  pathname: string,
+  pathname: string
 ): RoutePermission | null => {
   const normalizedPath = normalizePathForMatching(pathname);
 
@@ -506,7 +558,7 @@ export const getRoutePermission = (
 
 // Helper function to get section permission for a specific path
 export const getSectionPermission = (
-  pathname: string,
+  pathname: string
 ): SectionPermission | null => {
   const normalizedPath = normalizePathForMatching(pathname);
 
@@ -622,7 +674,7 @@ export const getAvailableSubsectionsForRole = (role: ProfileRole): string[] => {
 // Helper function to check if a section is available for a role
 export const isSectionAvailableForRole = (
   section: string,
-  role: ProfileRole,
+  role: ProfileRole
 ): boolean => {
   return getAvailableSectionsForRole(role).includes(section);
 };

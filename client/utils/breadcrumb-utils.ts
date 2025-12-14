@@ -43,6 +43,9 @@ const getSectionFromSegments = (segments: string[]): string => {
 
     case "analytics":
       if (second === "pricing") {
+        if (third === "r" && fourth) {
+          return `pricing-run-${fourth}`;
+        }
         return "pricing";
       }
       if (second === "reports" && third === "p" && fourth) {
@@ -148,8 +151,11 @@ const getSectionFromSegments = (segments: string[]): string => {
       if (second === "auth") {
         return "auth";
       }
-      if (second === "health") {
-        return "health";
+      if (second === "keys") {
+        if (third === "k" && fourth) {
+          return `key-${fourth}`;
+        }
+        return "keys";
       }
       if (second === "departments") {
         if (third === "d" && fourth) {
@@ -158,6 +164,15 @@ const getSectionFromSegments = (segments: string[]): string => {
         return "departments";
       }
       return "system";
+
+    case "health":
+      return "health";
+
+    case "benchmark":
+      if (second === "er" && third) {
+        return `eval-run-${third}`;
+      }
+      return "benchmark";
 
     case "settings":
       return "settings";
@@ -293,6 +308,12 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "fields":
         title = "Fields";
+        break;
+      case "keys":
+        title = "Keys";
+        break;
+      case "benchmark":
+        title = "Benchmark";
         break;
       case "new":
         title = "New";

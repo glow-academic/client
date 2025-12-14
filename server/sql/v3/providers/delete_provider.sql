@@ -1,4 +1,4 @@
--- Delete provider (cascade deletes provider_endpoints, provider_keys)
+-- Delete provider (cascade deletes provider_endpoints, setting_provider_keys)
 -- Parameters: $1=providerId (uuid), $2=profileId (uuid or "guest-profile-id")
 -- Returns: provider_id if deletion successful
 -- Prevents deletion if provider is used by models

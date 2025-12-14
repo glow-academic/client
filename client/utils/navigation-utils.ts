@@ -127,10 +127,16 @@ export const getSectionRoute = (
       return "/system/providers";
     case "auth":
       return "/system/auth";
-    case "health":
-      return "/system/health";
+    case "keys":
+      return "/system/keys";
     case "settings":
       return "/settings";
+
+    // Top-level routes
+    case "health":
+      return "/health";
+    case "benchmark":
+      return "/benchmark";
 
     // Profile route
     case "profile":
@@ -210,6 +216,18 @@ export const getSectionRoute = (
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
         return `/engine/agents/a/${agentId}`;
+      }
+      if (section.startsWith("key-")) {
+        const keyId = section.replace("key-", "");
+        return `/system/keys/k/${keyId}`;
+      }
+      if (section.startsWith("eval-run-")) {
+        const evalRunId = section.replace("eval-run-", "");
+        return `/benchmark/er/${evalRunId}`;
+      }
+      if (section.startsWith("pricing-run-")) {
+        const runId = section.replace("pricing-run-", "");
+        return `/analytics/pricing/r/${runId}`;
       }
 
       return "/home"; // Default fallback to home

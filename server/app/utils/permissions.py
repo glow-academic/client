@@ -124,6 +124,12 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 title="Pricing",
                 redirectTo="/analytics/pricing",
             ),
+            RoutePermission(
+                path="/analytics/pricing/r/[runId]",
+                roles=["admin", "superadmin"],
+                title="Pricing Run",
+                redirectTo="/analytics/pricing",
+            ),
         ],
     ),
     SectionPermission(
@@ -449,12 +455,6 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 redirectTo="/system/auth",
             ),
             RoutePermission(
-                path="/system/health",
-                roles=["superadmin"],
-                title="System Health",
-                redirectTo="/system/health",
-            ),
-            RoutePermission(
                 path="/system/departments",
                 roles=["instructional", "admin", "superadmin"],
                 title="Departments",
@@ -489,6 +489,40 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 roles=["superadmin"],
                 title="Edit Provider",
                 redirectTo="/system/providers",
+            ),
+        ],
+    ),
+    SectionPermission(
+        section="health",
+        roles=["superadmin"],
+        title="Health",
+        description="System health monitoring",
+        routes=[
+            RoutePermission(
+                path="/health",
+                roles=["superadmin"],
+                title="System Health",
+                redirectTo="/health",
+            ),
+        ],
+    ),
+    SectionPermission(
+        section="benchmark",
+        roles=["superadmin"],
+        title="Benchmark",
+        description="Run and manage evaluations",
+        routes=[
+            RoutePermission(
+                path="/benchmark",
+                roles=["superadmin"],
+                title="Benchmark",
+                redirectTo="/benchmark",
+            ),
+            RoutePermission(
+                path="/benchmark/er/[eval_run_id]",
+                roles=["superadmin"],
+                title="Evaluation Run",
+                redirectTo="/benchmark",
             ),
         ],
     ),

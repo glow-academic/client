@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/health/page.tsx
+ * app/(main)/health/page.tsx
  * System health page for the user.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
@@ -82,17 +82,17 @@ async function bulkDeleteLogs(
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "System",
+    title: "Health",
     description:
       "System health monitoring and diagnostics for teaching assistant training platform. Monitor platform performance, check system status, and maintain operational health for educational institutions and L&D programs.",
   };
 }
 
-interface SystemPageProps {
+interface HealthPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function SystemPage({ searchParams }: SystemPageProps) {
+export default async function HealthPage({ searchParams }: HealthPageProps) {
   // Access control is handled server-side in layout
   // Get profileId from session
   const session = await getSession();
@@ -264,3 +264,4 @@ export type {
   LogsRunsIn,
   LogsRunsOut,
 };
+
