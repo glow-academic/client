@@ -32,11 +32,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { ScenarioCardGrid } from "@/components/common/simulations/ScenarioCardGrid";
 import {
   SimulationContentTable,
   type ContentItem,
 } from "@/components/common/simulations/SimulationContentTable";
-import { SimulationScenariosTable } from "@/components/common/simulations/SimulationScenariosTable";
 import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -45,7 +45,7 @@ import {
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { GraduationCap, Loader2, Power } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // Type-only import from server page
 import type {
@@ -105,7 +105,30 @@ export default function Simulation({
   );
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const isEditMode = !!simulationId;
+
+  // Helper function to update URL with query parameters
+  const updateUrlParams = useCallback(
+    (updates: Record<string, string | string[] | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || (Array.isArray(value) && value.length === 0)) {
+          params.delete(key);
+        } else if (Array.isArray(value)) {
+          // Use comma-separated values to match how page.tsx reads them
+          params.set(key, value.join(","));
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, pathname, router]
+  );
 
   // Use server-provided data (no React Query needed when server data is provided)
   const simulationDetail = serverSimulationDetail;
@@ -456,8 +479,21 @@ export default function Simulation({
     } else if (!isEditMode && simulationData) {
       setFormData(initialFormData);
       setOriginalFormData(initialFormData);
+
+      // Initialize scenario IDs from URL params in create mode
+      const scenarioIdsFromUrl =
+        searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [];
+      if (scenarioIdsFromUrl.length > 0) {
+        setCurrentScenarioIds(scenarioIdsFromUrl);
+      }
     }
-  }, [simulationData, isEditMode, initialFormData, simulationDetail]);
+  }, [
+    simulationData,
+    isEditMode,
+    initialFormData,
+    simulationDetail,
+    searchParams,
+  ]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -1196,23 +1232,31 @@ export default function Simulation({
     });
   }, []);
 
-  const handleContentRemove = useCallback((contentId: string) => {
-    const [type, id] = contentId.split(":");
-    if (type === "scenario") {
-      setCurrentScenarioIds((prev) => prev.filter((sid) => sid !== id));
-    }
-    setCurrentContentItems((prev) =>
-      prev.filter((item) => `${item.type}:${item.id}` !== contentId)
-    );
-    setStagedContentItems((prev) =>
-      prev.filter((item) => `${item.type}:${item.id}` !== contentId)
-    );
-    setContentActiveStates((prev) => {
-      const newStates = { ...prev };
-      delete newStates[contentId];
-      return newStates;
-    });
-  }, []);
+  const handleContentRemove = useCallback(
+    (contentId: string) => {
+      const [type, id] = contentId.split(":");
+      if (type === "scenario") {
+        const newScenarioIds = currentScenarioIds.filter((sid) => sid !== id);
+        setCurrentScenarioIds(newScenarioIds);
+        // Update URL params
+        updateUrlParams({
+          scenarioIds: newScenarioIds.length > 0 ? newScenarioIds : null,
+        });
+      }
+      setCurrentContentItems((prev) =>
+        prev.filter((item) => `${item.type}:${item.id}` !== contentId)
+      );
+      setStagedContentItems((prev) =>
+        prev.filter((item) => `${item.type}:${item.id}` !== contentId)
+      );
+      setContentActiveStates((prev) => {
+        const newStates = { ...prev };
+        delete newStates[contentId];
+        return newStates;
+      });
+    },
+    [currentScenarioIds, updateUrlParams]
+  );
 
   const handleAudioToggle = useCallback(
     (contentId: string, enabled: boolean) => {
@@ -1282,6 +1326,11 @@ export default function Simulation({
   // Handler for scenario picker selection - adds scenarios directly
   const handleScenarioSelect = useCallback(
     (scenarioIds: string[]) => {
+      // Update URL params with selected scenario IDs
+      updateUrlParams({
+        scenarioIds: scenarioIds.length > 0 ? scenarioIds : null,
+      });
+
       // Find newly selected scenarios (not already in currentContentItems)
       const existingScenarioIds = new Set(
         currentContentItems
@@ -1292,7 +1341,46 @@ export default function Simulation({
         (id) => !existingScenarioIds.has(id)
       );
 
-      if (newScenarioIds.length === 0) return;
+      // Handle removal: remove scenarios that are no longer selected
+      const removedScenarioIds = Array.from(existingScenarioIds).filter(
+        (id) => !scenarioIds.includes(id)
+      );
+
+      if (removedScenarioIds.length > 0) {
+        // Remove from content items
+        setCurrentContentItems((prev) =>
+          prev.filter(
+            (item) =>
+              !removedScenarioIds.includes(item.id) || item.type !== "scenario"
+          )
+        );
+        setStagedContentItems((prev) =>
+          prev.filter(
+            (item) =>
+              !removedScenarioIds.includes(item.id) || item.type !== "scenario"
+          )
+        );
+        // Clean up state
+        removedScenarioIds.forEach((id) => {
+          const contentId = `scenario:${id}`;
+          setContentActiveStates((prev) => {
+            const newStates = { ...prev };
+            delete newStates[contentId];
+            return newStates;
+          });
+          setContentSwitchStates((prev) => {
+            const newStates = { ...prev };
+            delete newStates[contentId];
+            return newStates;
+          });
+        });
+      }
+
+      if (newScenarioIds.length === 0) {
+        // Update currentScenarioIds even if no new items (handles removals)
+        setCurrentScenarioIds(scenarioIds);
+        return;
+      }
 
       const maxPosition = Math.max(
         ...currentContentItems.map((item) => item.position),
@@ -1315,9 +1403,9 @@ export default function Simulation({
         };
       });
       setStagedContentItems((prev) => [...prev, ...newItems]);
-      setCurrentScenarioIds((prev) => [...prev, ...newScenarioIds]);
+      setCurrentScenarioIds(scenarioIds);
     },
-    [currentContentItems, simulationData?.scenario_mapping]
+    [currentContentItems, simulationData?.scenario_mapping, updateUrlParams]
   );
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
@@ -1666,13 +1754,10 @@ export default function Simulation({
 
         {/* Content (Scenarios & Videos) */}
         <div className="space-y-6">
-          {/* Central Content Table - Shared Attributes */}
+          {/* Unified Content Table - All Attributes */}
           <div className="space-y-2">
             <div>
-              <Label htmlFor="content">Content</Label>
-              <p className="text-sm text-muted-foreground">
-                Manage position, usage, and shared settings for all content
-              </p>
+              <Label htmlFor="content">Scenarios</Label>
             </div>
 
             <SimulationContentTable
@@ -1685,14 +1770,6 @@ export default function Simulation({
               onShowProblemStatementToggle={handleShowProblemStatementToggle}
               onShowObjectivesToggle={handleShowObjectivesToggle}
               onShowImageToggle={handleShowImageToggle}
-              readonly={isReadonly}
-            />
-          </div>
-
-          {/* Scenarios Table - Scenario-Specific Attributes */}
-          <div className="space-y-2">
-            <SimulationScenariosTable
-              data={currentContentItems}
               onHintsToggle={handleHintsToggle}
               onCopyPasteToggle={handleCopyPasteToggle}
               onAudioToggle={handleAudioToggle}
@@ -1701,12 +1778,17 @@ export default function Simulation({
               onTimeLimitChange={handleTimeLimitChange}
               rubricMapping={simulationData?.rubric_mapping || {}}
               validRubricIds={validRubricIds}
-              agentMapping={agentMapping}
-              validAgentIds={validAgentIds}
+              readonly={isReadonly}
+            />
+          </div>
+
+          {/* Scenario Card Selection */}
+          <div className="space-y-2">
+            <ScenarioCardGrid
               scenarioMapping={simulationData?.scenario_mapping || {}}
               validScenarioIds={validScenarioIds}
               selectedScenarioIds={currentScenarioIds}
-              onScenarioSelect={handleScenarioSelect}
+              onSelect={handleScenarioSelect}
               readonly={isReadonly}
             />
           </div>
