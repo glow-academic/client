@@ -25,6 +25,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -653,7 +654,7 @@ export function SimulationContentTable({
 
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [table]);
+  }, [table, data]); // CRITICAL: 'data' must be in dependency array so tableRows recomputes when data prop changes
 
   return (
     <TooltipProvider>
