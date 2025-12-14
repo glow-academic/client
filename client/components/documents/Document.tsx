@@ -23,6 +23,8 @@ import type {
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
+import { DocumentBasicInfoSection } from "@/components/documents/DocumentBasicInfoSection";
+import { DocumentFieldsSection } from "@/components/documents/DocumentFieldsSection";
 import TemplateForm, {
   type TemplateSchema,
   isTemplateSchema,
@@ -31,6 +33,13 @@ import TemplatePreview from "@/components/documents/TemplatePreview";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,7 +78,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
@@ -79,6 +88,15 @@ type FileClassification = {
   parameterItemIds: string[];
   departmentIds?: string[];
 };
+
+type StepStatus = "pending" | "active" | "completed";
+
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
+}
 
 export interface DocumentProps {
   documentId?: string;
@@ -193,6 +211,7 @@ export default function Document({
   const [clientRenderedHtml, setClientRenderedHtml] = useState<string | null>(
     renderedHtml
   );
+  const [fieldSearchTerm, setFieldSearchTerm] = useState<string>("");
   const searchParams = useSearchParams();
 
   // Create mode: File upload state
@@ -1289,6 +1308,70 @@ export default function Document({
     await handleGenerateTemplate();
   };
 
+  // Step status logic
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      const hasName = !!formData.name?.trim();
+      const hasFields =
+        isEditMode && formData.parameterItemIds.length > 0
+          ? formData.parameterItemIds.length > 0
+          : globalDefaultParameterItemIds.length > 0;
+      const hasDocument = isEditMode
+        ? !!documentDetail?.upload_id || isTemplateDocument
+        : pendingFiles.length > 0 || (isTemplateMode && !!templateUploadId);
+
+      switch (stepId) {
+        case "basic":
+          return hasName ? "completed" : "active";
+        case "fields":
+          if (!hasName) return "pending";
+          return hasFields ? "completed" : "active";
+        case "document":
+          if (!hasName) return "pending";
+          return hasDocument ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    [
+      formData.name,
+      formData.parameterItemIds,
+      isEditMode,
+      globalDefaultParameterItemIds,
+      documentDetail?.upload_id,
+      isTemplateDocument,
+      pendingFiles.length,
+      isTemplateMode,
+      templateUploadId,
+    ]
+  );
+
+  // Steps array
+  const steps: Step[] = useMemo(() => {
+    return [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description:
+          "Set the document name, description, departments, and active status.",
+        status: getStepStatus("basic"),
+      },
+      {
+        id: "fields",
+        title: "Fields",
+        description: "Select fields (parameter items) for this document.",
+        status: getStepStatus("fields"),
+      },
+      {
+        id: "document",
+        title: "Document",
+        description:
+          "Upload a document file or generate a template document.",
+        status: getStepStatus("document"),
+      },
+    ];
+  }, [getStepStatus]);
+
   return (
     <div className="space-y-6">
       {/* Create Mode: File Classification Table */}
@@ -1613,524 +1696,483 @@ export default function Document({
         </div>
       )}
 
-      {/* Form Fields - Inline, No Cards */}
+      {/* Form Sections */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4">
-          {/* Document name */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="Document name"
-              required
-              disabled={isSubmitting}
-            />
-          </div>
+        {/* Basic Info Section */}
+        <DocumentBasicInfoSection
+          name={formData.name}
+          description={formData.description}
+          departmentIds={
+            isEditMode ? formData.departmentIds : selectedDepartmentIds
+          }
+          validDepartmentIds={validDepartmentIds}
+          departmentMapping={departmentMapping}
+          active={formData.active}
+          isTemplate={
+            isTemplateMode || (isEditMode && !!documentDetail?.template)
+          }
+          onNameChange={(name) =>
+            setFormData((prev) => ({ ...prev, name }))
+          }
+          onDescriptionChange={(description) =>
+            setFormData((prev) => ({ ...prev, description }))
+          }
+          onDepartmentIdsChange={(ids) => {
+            if (isEditMode) {
+              setFormData((prev) => ({ ...prev, departmentIds: ids }));
+            } else {
+              setSelectedDepartmentIds(ids);
+            }
+          }}
+          onActiveChange={(active) =>
+            setFormData((prev) => ({ ...prev, active }))
+          }
+          onTemplateChange={handleTemplateChange}
+          isReadonly={isSubmitting}
+        />
 
-          {/* Document description */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-              placeholder="Document description"
-              rows={3}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Department Selection */}
-          {validDepartmentIds && validDepartmentIds.length > 1 && (
-            <div className="flex flex-col gap-2">
-              <Label>Department</Label>
-              <GenericPicker
-                items={departmentMapping}
-                itemIds={validDepartmentIds}
-                selectedIds={
-                  isEditMode ? formData.departmentIds : selectedDepartmentIds
-                }
-                onSelect={(ids) => {
-                  if (isEditMode) {
-                    setFormData((prev) => ({ ...prev, departmentIds: ids }));
-                  } else {
-                    setSelectedDepartmentIds(ids);
-                  }
-                }}
-                getId={(dept) => (dept as unknown as { id: string }).id}
-                getLabel={(dept) => dept.name || ""}
-                getSearchText={(dept) =>
-                  `${dept.name} ${dept.description || ""}`
-                }
-                multiSelect={true}
-                hideSelectedChips={true}
-                disabled={isSubmitting}
-                buttonClassName="w-full"
-              />
-            </div>
-          )}
-
-          {/* Required Parameters */}
-          {isEditMode &&
-          documentDetail &&
-          documentDetail.linked_parameter_ids &&
-          documentDetail.linked_parameter_ids.length > 0 ? (
-            <div className="space-y-4">
-              <Label>Required Parameters</Label>
-              {formData?.parameterItemIds !== undefined ? (
-                <ParameterSelector
-                  parameterMapping={documentDetail.parameter_mapping || {}}
-                  fieldMapping={fieldMapping}
-                  validParameterItemIds={documentDetail.valid_field_ids || []}
-                  selectedParameterItemIds={formData.parameterItemIds}
-                  onParameterItemIdsChange={(ids) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      parameterItemIds: ids,
-                    }))
-                  }
-                  disabled={isSubmitting}
-                />
-              ) : null}
-            </div>
-          ) : null}
-
-          {/* Agent Selection */}
-          {isEditMode &&
-            (() => {
-              const classifyAgentIds =
-                documentDetail?.valid_agent_ids?.filter((id) => {
-                  const agent = agentMapping[id];
-                  return agent?.roles?.includes("classify");
-                }) || [];
-
-              const documentAgentIds =
-                documentDetail?.valid_agent_ids?.filter((id) => {
-                  const agent = agentMapping[id];
-                  return agent?.roles?.includes("document");
-                }) || [];
-
-              // Only show agent pickers if there's more than one option
-              const showClassifyPicker = classifyAgentIds.length > 1;
-              const showDocumentPicker = documentAgentIds.length > 1;
-
-              if (!showClassifyPicker && !showDocumentPicker) {
-                return null;
-              }
-
-              return (
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                  {/* Classify Agent */}
-                  {showClassifyPicker && (
-                    <div className="space-y-2">
-                      <Label htmlFor="classifyAgentId">Classify Agent</Label>
-                      {formData?.classifyAgentId !== undefined ? (
-                        <GenericPicker
-                          items={agentMapping}
-                          itemIds={classifyAgentIds}
-                          selectedIds={
-                            formData?.classifyAgentId
-                              ? [formData.classifyAgentId]
-                              : []
-                          }
-                          onSelect={(ids) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              classifyAgentId: ids[0] || null,
-                            }))
-                          }
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
-                          getLabel={(item) => item.name || ""}
-                          getSearchText={(item) =>
-                            `${item.name} ${item.description || ""}`
-                          }
-                          renderPreview={(item) => (
-                            <div className="grid gap-2">
-                              <h4 className="font-medium leading-none">
-                                {item.name || "No agent selected"}
-                              </h4>
-                              <div className="text-sm text-muted-foreground">
-                                {item.description || "No description available"}
-                              </div>
-                            </div>
-                          )}
-                          renderItem={(item) => (
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="flex-1 min-w-0">
-                                  <div className="truncate">{item.name}</div>
-                                  {item.description && (
-                                    <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                      {item.description}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          placeholder="Select classify agent"
-                          disabled={isSubmitting}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="w-full"
-                          groupHeading="Agents"
-                        />
-                      ) : null}
-                    </div>
-                  )}
-
-                  {/* Document Agent */}
-                  {showDocumentPicker && (
-                    <div className="space-y-2">
-                      <Label htmlFor="documentAgentId">Document Agent</Label>
-                      {formData?.documentAgentId !== undefined ? (
-                        <GenericPicker
-                          items={agentMapping}
-                          itemIds={documentAgentIds}
-                          selectedIds={
-                            formData?.documentAgentId
-                              ? [formData.documentAgentId]
-                              : []
-                          }
-                          onSelect={(ids) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              documentAgentId: ids[0] || null,
-                            }))
-                          }
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
-                          getLabel={(item) => item.name || ""}
-                          getSearchText={(item) =>
-                            `${item.name} ${item.description || ""}`
-                          }
-                          placeholder="Select document agent"
-                          disabled={isSubmitting}
-                          multiSelect={false}
-                          hideSelectedChips={true}
-                          buttonClassName="w-full"
-                          groupHeading="Agents"
-                        />
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-          {/* Active status */}
-          <div className="space-y-2 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="active"
-                  className="text-sm flex items-center gap-1.5"
-                >
-                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                  Active
-                </Label>
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, active: checked }))
-                  }
-                  disabled={isSubmitting}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                Inactive documents will not be available for use in scenarios or
-                simulations
-              </p>
-            </div>
-          </div>
-
-          {/* Fields */}
-          <div className="flex flex-col gap-2">
-            <Label>Fields</Label>
-            <ParameterItemPicker
-              mapping={fieldMapping}
-              selectedIds={
-                isEditMode
-                  ? formData.parameterItemIds
-                  : globalDefaultParameterItemIds
-              }
-              onSelect={(ids) => {
-                if (isEditMode) {
+        {/* Required Parameters - Only in edit mode */}
+        {isEditMode &&
+        documentDetail &&
+        documentDetail.linked_parameter_ids &&
+        documentDetail.linked_parameter_ids.length > 0 ? (
+          <div className="space-y-4">
+            <Label>Required Parameters</Label>
+            {formData?.parameterItemIds !== undefined ? (
+              <ParameterSelector
+                parameterMapping={documentDetail.parameter_mapping || {}}
+                fieldMapping={fieldMapping}
+                validParameterItemIds={documentDetail.valid_field_ids || []}
+                selectedParameterItemIds={formData.parameterItemIds}
+                onParameterItemIdsChange={(ids) =>
                   setFormData((prev) => ({
                     ...prev,
-                    parameterItemIds: ids as string[],
-                  }));
-                } else {
-                  setGlobalDefaultParameterItemIds(ids as string[]);
+                    parameterItemIds: ids,
+                  }))
                 }
-              }}
-              validIds={
-                isEditMode
-                  ? validParameterItemIds
-                  : filteredValidParameterItemIds
-              }
-              parameterId=""
-              parameterName="Fields"
-              allowCreate={false}
-              multiSelect={true}
-              badgesPosition="below"
-              showClearAll={true}
-              disabled={isSubmitting}
-            />
+                disabled={isSubmitting}
+              />
+            ) : null}
           </div>
+        ) : null}
 
-          {/* Template Switch with Generate Button */}
-          <div className="space-y-2 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="template"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <FileCode className="h-3.5 w-3.5 text-muted-foreground" />
-                    Template
-                  </Label>
-                  <Switch
-                    id="template"
-                    checked={
-                      isTemplateMode ||
-                      (isEditMode && !!documentDetail?.template)
-                    }
-                    onCheckedChange={handleTemplateChange}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                {(isTemplateMode ||
-                  (isEditMode && !!documentDetail?.template)) && (
-                  <div className="flex items-center gap-2">
-                    {isEditMode &&
-                      documentDetail &&
-                      Object.keys(templateMapping).length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <GenericPicker
-                            items={templateMapping}
-                            itemIds={Object.keys(templateMapping)}
-                            selectedIds={
-                              selectedTemplateId ? [selectedTemplateId] : []
-                            }
-                            onSelect={(ids) =>
-                              handleTemplateSelect(ids[0] || null)
-                            }
-                            getId={(item) =>
-                              (item as unknown as { id: string }).id
-                            }
-                            getLabel={(item) => {
-                              const date = new Date(item.updated_at);
-                              return `Version ${date.toLocaleDateString()}`;
-                            }}
-                            getSearchText={(item) => {
-                              const date = new Date(item.updated_at);
-                              const schema = item.template_args;
-                              const preview =
-                                schema &&
-                                typeof schema === "object" &&
-                                "name" in schema
-                                  ? String((schema as { name: unknown }).name)
-                                  : "Template";
-                              return `${date.toLocaleDateString()} ${preview}`;
-                            }}
-                            renderButton={(selectedItems) => {
-                              if (selectedItems.length === 0) {
-                                return "New Template";
-                              }
-                              const template = selectedItems[0];
-                              if (!template) {
-                                return "New Template";
-                              }
-                              const date = new Date(template.updated_at);
-                              return `Version ${date.toLocaleDateString()}`;
-                            }}
-                            renderItem={(item, isSelected) => {
-                              const date = new Date(item.updated_at);
-                              const schema = item.template_args;
-                              const preview =
-                                schema &&
-                                typeof schema === "object" &&
-                                "name" in schema
-                                  ? String((schema as { name: unknown }).name)
-                                  : "Template";
-                              return (
-                                <div className="flex flex-col items-start py-3 w-full">
-                                  <div className="flex items-center justify-between w-full">
-                                    <div className="flex items-center gap-2">
-                                      <Check
-                                        className={cn(
-                                          "h-4 w-4",
-                                          isSelected
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        )}
-                                      />
-                                      <span className="font-medium">
-                                        {date.toLocaleDateString()}{" "}
-                                        {date.toLocaleTimeString()}
-                                      </span>
-                                      {item.active && (
-                                        <span className="text-xs text-muted-foreground">
-                                          (Active)
-                                        </span>
-                                      )}
-                                    </div>
+        {/* Agent Selection - Only in edit mode */}
+        {isEditMode &&
+          (() => {
+            const classifyAgentIds =
+              documentDetail?.valid_agent_ids?.filter((id) => {
+                const agent = agentMapping[id];
+                return agent?.roles?.includes("classify");
+              }) || [];
+
+            const documentAgentIds =
+              documentDetail?.valid_agent_ids?.filter((id) => {
+                const agent = agentMapping[id];
+                return agent?.roles?.includes("document");
+              }) || [];
+
+            // Only show agent pickers if there's more than one option
+            const showClassifyPicker = classifyAgentIds.length > 1;
+            const showDocumentPicker = documentAgentIds.length > 1;
+
+            if (!showClassifyPicker && !showDocumentPicker) {
+              return null;
+            }
+
+            return (
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                {/* Classify Agent */}
+                {showClassifyPicker && (
+                  <div className="space-y-2">
+                    <Label htmlFor="classifyAgentId">Classify Agent</Label>
+                    {formData?.classifyAgentId !== undefined ? (
+                      <GenericPicker
+                        items={agentMapping}
+                        itemIds={classifyAgentIds}
+                        selectedIds={
+                          formData?.classifyAgentId
+                            ? [formData.classifyAgentId]
+                            : []
+                        }
+                        onSelect={(ids) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            classifyAgentId: ids[0] || null,
+                          }))
+                        }
+                        getId={(item) =>
+                          (item as unknown as { id: string }).id
+                        }
+                        getLabel={(item) => item.name || ""}
+                        getSearchText={(item) =>
+                          `${item.name} ${item.description || ""}`
+                        }
+                        renderPreview={(item) => (
+                          <div className="grid gap-2">
+                            <h4 className="font-medium leading-none">
+                              {item.name || "No agent selected"}
+                            </h4>
+                            <div className="text-sm text-muted-foreground">
+                              {item.description || "No description available"}
+                            </div>
+                          </div>
+                        )}
+                        renderItem={(item) => (
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate">{item.name}</div>
+                                {item.description && (
+                                  <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                    {item.description}
                                   </div>
-                                  <span className="text-xs text-muted-foreground mt-1">
-                                    {preview}
-                                  </span>
-                                </div>
-                              );
-                            }}
-                            disabled={isSubmitting || isGeneratingTemplate}
-                            multiSelect={false}
-                            hideSelectedChips={true}
-                            buttonClassName="h-8 justify-between"
-                            groupHeading="Version History"
-                            placeholder="Select template version..."
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleTemplateSelect(null)}
-                            disabled={isSubmitting || isGeneratingTemplate}
-                            className="h-8"
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            New
-                          </Button>
-                        </div>
-                      )}
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleGenerateTemplateWithSwitch}
-                      disabled={isGeneratingTemplate || activeUploads.size > 0}
-                      className="h-8"
-                    >
-                      {isGeneratingTemplate ? "Generating..." : "Generate"}
-                    </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        placeholder="Select classify agent"
+                        disabled={isSubmitting}
+                        multiSelect={false}
+                        hideSelectedChips={true}
+                        buttonClassName="w-full"
+                        groupHeading="Agents"
+                      />
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Document Agent */}
+                {showDocumentPicker && (
+                  <div className="space-y-2">
+                    <Label htmlFor="documentAgentId">Document Agent</Label>
+                    {formData?.documentAgentId !== undefined ? (
+                      <GenericPicker
+                        items={agentMapping}
+                        itemIds={documentAgentIds}
+                        selectedIds={
+                          formData?.documentAgentId
+                            ? [formData.documentAgentId]
+                            : []
+                        }
+                        onSelect={(ids) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            documentAgentId: ids[0] || null,
+                          }))
+                        }
+                        getId={(item) =>
+                          (item as unknown as { id: string }).id
+                        }
+                        getLabel={(item) => item.name || ""}
+                        getSearchText={(item) =>
+                          `${item.name} ${item.description || ""}`
+                        }
+                        placeholder="Select document agent"
+                        disabled={isSubmitting}
+                        multiSelect={false}
+                        hideSelectedChips={true}
+                        buttonClassName="w-full"
+                        groupHeading="Agents"
+                      />
+                    ) : null}
                   </div>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                Template documents can be dynamically rendered with variable
-                arguments for personalized content generation
-              </p>
-            </div>
-          </div>
-        </div>
+            );
+          })()}
 
-        {/* Document Viewer, Upload Dropzone, or Template Preview - Always in same spot */}
-        {isTemplateDocument ? (
-          /* Template Preview - side by side layout, 50% each */
-          templateSchemaForDisplay && templateHtmlForDisplay ? (
-            <div className="flex gap-4 min-h-[400px] max-h-[600px]">
-              {/* Template Preview - 50% width */}
-              <div className="w-1/2 flex flex-col min-h-0">
-                <div className="border rounded-md flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Fields Section */}
+        <DocumentFieldsSection
+          validFieldIds={
+            isEditMode ? validParameterItemIds : filteredValidParameterItemIds
+          }
+          fieldMapping={fieldMapping}
+          selectedFieldIds={
+            isEditMode
+              ? formData.parameterItemIds
+              : globalDefaultParameterItemIds
+          }
+          searchTerm={fieldSearchTerm}
+          onFieldIdsChange={(ids) => {
+            if (isEditMode) {
+              setFormData((prev) => ({
+                ...prev,
+                parameterItemIds: ids,
+              }));
+            } else {
+              setGlobalDefaultParameterItemIds(ids);
+            }
+          }}
+          onSearchTermChange={setFieldSearchTerm}
+          isReadonly={isSubmitting}
+          stepStatus={getStepStatus("fields")}
+          stepNumber={2}
+          stepTitle={steps[1]?.title || "Fields"}
+          stepDescription={steps[1]?.description || "Select fields (parameter items) for this document."}
+        />
+
+        {/* Document Section with Action Buttons */}
+        <Card
+          className={cn(
+            "transition-all",
+            getStepStatus("document") === "active" && "ring-2 ring-primary",
+            getStepStatus("document") === "pending" && "opacity-50"
+          )}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+            <div className="flex items-center space-x-3">
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                  getStepStatus("document") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("document") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                )}
+              >
+                {getStepStatus("document") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <span>3</span>
+                )}
+              </div>
+              <div>
+                <CardTitle className="text-lg">
+                  {steps[2]?.title || "Document"}
+                </CardTitle>
+                <CardDescription>
+                  {steps[2]?.description ||
+                    "Upload a document file or generate a template document."}
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {isTemplateDocument ? (
+                <div className="flex items-center gap-2">
+                  {isEditMode &&
+                    documentDetail &&
+                    Object.keys(templateMapping).length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <GenericPicker
+                          items={templateMapping}
+                          itemIds={Object.keys(templateMapping)}
+                          selectedIds={
+                            selectedTemplateId ? [selectedTemplateId] : []
+                          }
+                          onSelect={(ids) =>
+                            handleTemplateSelect(ids[0] || null)
+                          }
+                          getId={(item) =>
+                            (item as unknown as { id: string }).id
+                          }
+                          getLabel={(item) => {
+                            const date = new Date(item.updated_at);
+                            return `Version ${date.toLocaleDateString()}`;
+                          }}
+                          getSearchText={(item) => {
+                            const date = new Date(item.updated_at);
+                            const schema = item.template_args;
+                            const preview =
+                              schema &&
+                              typeof schema === "object" &&
+                              "name" in schema
+                                ? String((schema as { name: unknown }).name)
+                                : "Template";
+                            return `${date.toLocaleDateString()} ${preview}`;
+                          }}
+                          renderButton={(selectedItems) => {
+                            if (selectedItems.length === 0) {
+                              return "New Template";
+                            }
+                            const template = selectedItems[0];
+                            if (!template) {
+                              return "New Template";
+                            }
+                            const date = new Date(template.updated_at);
+                            return `Version ${date.toLocaleDateString()}`;
+                          }}
+                          renderItem={(item, isSelected) => {
+                            const date = new Date(item.updated_at);
+                            const schema = item.template_args;
+                            const preview =
+                              schema &&
+                              typeof schema === "object" &&
+                              "name" in schema
+                                ? String((schema as { name: unknown }).name)
+                                : "Template";
+                            return (
+                              <div className="flex flex-col items-start py-3 w-full">
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <Check
+                                      className={cn(
+                                        "h-4 w-4",
+                                        isSelected
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="font-medium">
+                                      {date.toLocaleDateString()}{" "}
+                                      {date.toLocaleTimeString()}
+                                    </span>
+                                    {item.active && (
+                                      <span className="text-xs text-muted-foreground">
+                                        (Active)
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-xs text-muted-foreground mt-1">
+                                  {preview}
+                                </span>
+                              </div>
+                            );
+                          }}
+                          disabled={isSubmitting || isGeneratingTemplate}
+                          multiSelect={false}
+                          hideSelectedChips={true}
+                          buttonClassName="h-8 justify-between"
+                          groupHeading="Version History"
+                          placeholder="Select template version..."
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleTemplateSelect(null)}
+                          disabled={isSubmitting || isGeneratingTemplate}
+                          className="h-8"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          New
+                        </Button>
+                      </div>
+                    )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleGenerateTemplateWithSwitch}
+                    disabled={isGeneratingTemplate || activeUploads.size > 0}
+                    className="h-8"
+                  >
+                    {isGeneratingTemplate ? "Generating..." : "Generate"}
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    // Placeholder - Classify button does nothing for now
+                  }}
+                  disabled={isSubmitting}
+                  className="h-8"
+                >
+                  Classify
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Document Viewer, Upload Dropzone, or Template Preview */}
+            {isTemplateDocument ? (
+              /* Template Preview - side by side layout, 50% each */
+              templateSchemaForDisplay && templateHtmlForDisplay ? (
+                <div className="flex gap-4 min-h-[400px] max-h-[600px]">
+                  {/* Template Preview - 50% width */}
+                  <div className="w-1/2 flex flex-col min-h-0">
+                    <div className="border rounded-md flex-1 min-h-0 flex flex-col overflow-hidden">
+                      <TemplatePreview
+                        documentId={documentId || null}
+                        templateHtml={templateHtmlForDisplay}
+                        renderedHtml={clientRenderedHtml}
+                      />
+                    </div>
+                  </div>
+                  {/* Template Args - 50% width with scroll */}
+                  <div className="w-1/2 flex flex-col min-h-0">
+                    <div className="border rounded-md flex-1 min-h-0 overflow-y-auto p-4">
+                      <TemplateForm
+                        schema={templateSchemaForDisplay}
+                        // values and onChange are no longer needed - search params are the source of truth
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Show empty template preview when template mode is on but no template exists */
+                <div className="border rounded-md min-h-[400px]">
                   <TemplatePreview
                     documentId={documentId || null}
-                    templateHtml={templateHtmlForDisplay}
-                    renderedHtml={clientRenderedHtml}
+                    templateHtml={null}
+                    renderedHtml={null}
                   />
                 </div>
+              )
+            ) : isEditMode && documentDetail?.upload_id ? (
+              /* Edit mode: Document Viewer - Show uploaded document */
+              <div className="border rounded-md min-h-[400px]">
+                <DocumentViewer
+                  document={{
+                    document_id: documentDetail.document_id || documentId || "",
+                    name: documentDetail.name || "",
+                    updatedAt:
+                      documentDetail.updated_at || new Date().toISOString(),
+                    extension: documentDetail.extension || "",
+                    scenario_ids: documentDetail.scenario_ids || [],
+                    can_edit: documentDetail.can_edit ?? true,
+                    can_delete: documentDetail.can_delete ?? false,
+                    active: documentDetail.active ?? true,
+                    department_ids: documentDetail.department_ids || null,
+                    upload_id: documentDetail.upload_id || null,
+                    field_ids: documentDetail.field_ids || [],
+                  }}
+                  bare={true}
+                />
               </div>
-              {/* Template Args - 50% width with scroll */}
-              <div className="w-1/2 flex flex-col min-h-0">
-                <div className="border rounded-md flex-1 min-h-0 overflow-y-auto p-4">
-                  <TemplateForm
-                    schema={templateSchemaForDisplay}
-                    // values and onChange are no longer needed - search params are the source of truth
-                  />
+            ) : !isEditMode ? (
+              /* Create mode: File Upload Dropzone */
+              <div className="space-y-4">
+                <div
+                  {...getRootProps()}
+                  className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+                    isDragActive
+                      ? "border-primary bg-primary/5"
+                      : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                  } ${activeUploads.size > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <input {...getInputProps()} />
+                  <UploadCloud className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-lg font-medium mb-2">
+                    {isDragActive
+                      ? "Drop files here"
+                      : "Drag & drop files here, or click to select"}
+                  </p>
                 </div>
-              </div>
-            </div>
-          ) : (
-            /* Show empty template preview when template mode is on but no template exists */
-            <div className="border rounded-md min-h-[400px]">
-              <TemplatePreview
-                documentId={documentId || null}
-                templateHtml={null}
-                renderedHtml={null}
-              />
-            </div>
-          )
-        ) : isEditMode && documentDetail?.upload_id ? (
-          /* Edit mode: Document Viewer - Show uploaded document */
-          <div className="border rounded-md min-h-[400px]">
-            <DocumentViewer
-              document={{
-                document_id: documentDetail.document_id || documentId || "",
-                name: documentDetail.name || "",
-                updatedAt:
-                  documentDetail.updated_at || new Date().toISOString(),
-                extension: documentDetail.extension || "",
-                scenario_ids: documentDetail.scenario_ids || [],
-                can_edit: documentDetail.can_edit ?? true,
-                can_delete: documentDetail.can_delete ?? false,
-                active: documentDetail.active ?? true,
-                department_ids: documentDetail.department_ids || null,
-                upload_id: documentDetail.upload_id || null,
-                field_ids: documentDetail.field_ids || [],
-              }}
-              bare={true}
-            />
-          </div>
-        ) : !isEditMode ? (
-          /* Create mode: File Upload Dropzone */
-          <div className="space-y-4">
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-                isDragActive
-                  ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
-              } ${activeUploads.size > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <input {...getInputProps()} />
-              <UploadCloud className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg font-medium mb-2">
-                {isDragActive
-                  ? "Drop files here"
-                  : "Drag & drop files here, or click to select"}
-              </p>
-            </div>
 
-            {/* Active uploads */}
-            {activeUploads.size > 0 && (
-              <div className="space-y-2">
-                {Array.from(activeUploads.values()).map((upload) => (
-                  <div
-                    key={upload.toastId}
-                    className="flex items-center justify-between p-2 bg-muted rounded"
-                  >
-                    <span className="text-sm">{upload.file.name}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {upload.progress}%
-                    </span>
+                {/* Active uploads */}
+                {activeUploads.size > 0 && (
+                  <div className="space-y-2">
+                    {Array.from(activeUploads.values()).map((upload) => (
+                      <div
+                        key={upload.toastId}
+                        className="flex items-center justify-between p-2 bg-muted rounded"
+                      >
+                        <span className="text-sm">{upload.file.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {upload.progress}%
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
-        ) : null}
+            ) : null}
+          </CardContent>
+        </Card>
 
         {/* Submit buttons */}
         <div className="flex justify-end gap-3">
@@ -2161,9 +2203,7 @@ export default function Document({
                 : "Uploading..."
               : isEditMode
                 ? "Update"
-                : isTemplateMode
-                  ? "Create Template Document"
-                  : "Start Upload"}
+                : "Create Document"}
           </Button>
         </div>
       </form>
