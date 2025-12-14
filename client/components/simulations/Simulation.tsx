@@ -192,16 +192,23 @@ export default function Simulation({
     [simulationData]
   );
   // Extract agent mapping (only available in detail endpoint, not new endpoint)
-  // Map to the expected type format: Record<string, { name: string; roles?: string[] }>
+  // Map to the expected type format: Record<string, { name: string; description: string; roles?: string[] }>
   const agentMapping = useMemo(() => {
     if (isEditMode && simulationDetail && "agent_mapping" in simulationDetail) {
       const mapping = simulationDetail.agent_mapping || {};
-      const mapped: Record<string, { name: string; roles?: string[] }> = {};
+      const mapped: Record<
+        string,
+        { name: string; description: string; roles?: string[] }
+      > = {};
       Object.entries(mapping).forEach(([key, value]) => {
         mapped[key] =
           value.roles && value.roles.length > 0
-            ? { name: value.name, roles: value.roles }
-            : { name: value.name };
+            ? {
+                name: value.name,
+                description: value.description,
+                roles: value.roles,
+              }
+            : { name: value.name, description: value.description };
       });
       return mapped;
     }
@@ -426,9 +433,15 @@ export default function Simulation({
         active: simulationData.active,
         practiceSimulation: simulationData.practice_simulation ?? false,
         departmentIds: deptIds,
-        hint_agent_id: (simulationData as { hint_agent_id?: string })?.hint_agent_id || null,
-        grade_text_agent_id: (simulationData as { grade_text_agent_id?: string })?.grade_text_agent_id || null,
-        grade_voice_agent_id: (simulationData as { grade_voice_agent_id?: string | null })?.grade_voice_agent_id || null,
+        hint_agent_id: isEditMode
+          ? simulationDetail?.hint_agent_id || null
+          : null,
+        grade_text_agent_id: isEditMode
+          ? simulationDetail?.grade_text_agent_id || null
+          : null,
+        grade_voice_agent_id: isEditMode
+          ? simulationDetail?.grade_voice_agent_id || null
+          : null,
       };
       setFormData(formDataFromServer);
       setOriginalFormData(formDataFromServer);
@@ -444,7 +457,7 @@ export default function Simulation({
       setFormData(initialFormData);
       setOriginalFormData(initialFormData);
     }
-  }, [simulationData, isEditMode, initialFormData]);
+  }, [simulationData, isEditMode, initialFormData, simulationDetail]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -691,6 +704,76 @@ export default function Simulation({
     setCurrentScenarioIds(scenarioIds);
   }, [unifiedContentItems]);
 
+  // Auto-select agents when there's only one option available (similar to Scenario.tsx)
+  useEffect(() => {
+    if (!simulationData || !agentMapping) return;
+
+    const hintAgentIds =
+      validAgentIds.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("hint");
+      }) || [];
+
+    const gradeTextAgentIds =
+      validAgentIds.filter((id) => {
+        const agent = agentMapping[id];
+        return (
+          agent?.roles?.includes("grade") ||
+          agent?.roles?.includes("grade-text")
+        );
+      }) || [];
+
+    const gradeVoiceAgentIds =
+      validAgentIds.filter((id) => {
+        const agent = agentMapping[id];
+        return (
+          agent?.roles?.includes("grade") ||
+          agent?.roles?.includes("grade-voice")
+        );
+      }) || [];
+
+    // Auto-select first hint agent if only one option and not already set
+    if (
+      hintAgentIds.length === 1 &&
+      (!formData?.hint_agent_id || formData.hint_agent_id === null)
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        hint_agent_id: hintAgentIds[0] || null,
+      }));
+    }
+
+    // Auto-select first grade text agent if only one option and not already set
+    if (
+      gradeTextAgentIds.length === 1 &&
+      (!formData?.grade_text_agent_id || formData.grade_text_agent_id === null)
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        grade_text_agent_id: gradeTextAgentIds[0] || null,
+      }));
+    }
+
+    // Auto-select first grade voice agent if only one option and not already set
+    if (
+      gradeVoiceAgentIds.length === 1 &&
+      (!formData?.grade_voice_agent_id ||
+        formData.grade_voice_agent_id === null)
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        grade_voice_agent_id: gradeVoiceAgentIds[0] || null,
+      }));
+    }
+  }, [
+    simulationData,
+    agentMapping,
+    validAgentIds,
+    formData?.hint_agent_id,
+    formData?.grade_text_agent_id,
+    formData?.grade_voice_agent_id,
+  ]);
+
   // Use ref to capture currentScenarioIds before they get filtered (legacy)
   const currentScenarioIdsRef = useRef<string[]>([]);
   useEffect(() => {
@@ -869,8 +952,12 @@ export default function Simulation({
         time_limit_seconds?: number | null;
       }
 
-      const contentItems: ContentItemPayload[] = currentContentItems.map(
-        (item) => {
+      const contentItems: ContentItemPayload[] = currentContentItems
+        .filter(
+          (item): item is ContentItem & { type: "scenario" } =>
+            item.type === "scenario"
+        )
+        .map((item) => {
           const key = `${item.type}:${item.id}`;
           const switchState = contentSwitchStates[key];
           const baseItem: ContentItemPayload = {
@@ -879,36 +966,28 @@ export default function Simulation({
             active: contentActiveStates[key] ?? item.active,
           };
 
-          if (item.type === "scenario") {
-            baseItem.hints_enabled =
-              switchState?.hints_enabled ?? item.hints_enabled ?? false;
-            baseItem.copy_paste_allowed =
-              switchState?.copy_paste_allowed ??
-              item.copy_paste_allowed ??
-              false;
-            baseItem.audio_enabled =
-              switchState?.audio_enabled ?? item.audio_enabled ?? false;
-            baseItem.text_enabled =
-              switchState?.text_enabled ?? item.text_enabled ?? true;
-            baseItem.show_problem_statement =
-              switchState?.show_problem_statement ??
-              item.show_problem_statement ??
-              true;
-            baseItem.show_objectives =
-              switchState?.show_objectives ?? item.show_objectives ?? true;
-            baseItem.show_image =
-              switchState?.show_image ?? item.show_image ?? true;
-            baseItem.rubric_id =
-              switchState?.rubric_id ?? item.rubric_id ?? null;
-            baseItem.time_limit_seconds =
-              switchState?.time_limit_seconds ??
-              item.time_limit_seconds ??
-              null;
-          }
+          baseItem.hints_enabled =
+            switchState?.hints_enabled ?? item.hints_enabled ?? false;
+          baseItem.copy_paste_allowed =
+            switchState?.copy_paste_allowed ?? item.copy_paste_allowed ?? false;
+          baseItem.audio_enabled =
+            switchState?.audio_enabled ?? item.audio_enabled ?? false;
+          baseItem.text_enabled =
+            switchState?.text_enabled ?? item.text_enabled ?? true;
+          baseItem.show_problem_statement =
+            switchState?.show_problem_statement ??
+            item.show_problem_statement ??
+            true;
+          baseItem.show_objectives =
+            switchState?.show_objectives ?? item.show_objectives ?? true;
+          baseItem.show_image =
+            switchState?.show_image ?? item.show_image ?? true;
+          baseItem.rubric_id = switchState?.rubric_id ?? item.rubric_id ?? null;
+          baseItem.time_limit_seconds =
+            switchState?.time_limit_seconds ?? item.time_limit_seconds ?? null;
 
           return baseItem;
-        }
-      );
+        });
 
       if (targetSimulationId) {
         // UPDATE mode - unified content items
@@ -1043,7 +1122,6 @@ export default function Simulation({
     },
     []
   );
-
 
   const handleCopyPasteToggle = useCallback(
     (contentId: string, enabled: boolean) => {
@@ -1347,6 +1425,186 @@ export default function Simulation({
             </div>
           )}
 
+        {/* Agent Selection */}
+        {validAgentIds.length > 0 && (
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {/* Hint Agent Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="hint_agent_id">Hint Agent</Label>
+              {formData?.hint_agent_id !== undefined ? (
+                <GenericPicker
+                  items={agentMapping}
+                  itemIds={validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("hint");
+                  })}
+                  selectedIds={
+                    formData.hint_agent_id ? [formData.hint_agent_id] : []
+                  }
+                  onSelect={(ids) =>
+                    handleInputChange("hint_agent_id", ids[0] || null)
+                  }
+                  getId={(item) => (item as unknown as { id: string }).id}
+                  getLabel={(item) => item.name || ""}
+                  getSearchText={(item) =>
+                    `${item.name} ${item.description || ""}`
+                  }
+                  renderPreview={(item) => (
+                    <div className="grid gap-2">
+                      <h4 className="font-medium leading-none">
+                        {item.name || "No agent selected"}
+                      </h4>
+                      <div className="text-sm text-muted-foreground">
+                        {item.description || "No description available"}
+                      </div>
+                    </div>
+                  )}
+                  renderItem={(item, _isSelected) => (
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">{item.name}</div>
+                          {item.description && (
+                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  placeholder="Select hint agent"
+                  disabled={isReadonly}
+                  multiSelect={false}
+                  hideSelectedChips={true}
+                  buttonClassName="w-full"
+                  groupHeading="Agents"
+                />
+              ) : null}
+            </div>
+
+            {/* Grade Text Agent Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="grade_text_agent_id">Grade Text Agent</Label>
+              {formData?.grade_text_agent_id !== undefined ? (
+                <GenericPicker
+                  items={agentMapping}
+                  itemIds={validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return (
+                      agent?.roles?.includes("grade") ||
+                      agent?.roles?.includes("grade-text")
+                    );
+                  })}
+                  selectedIds={
+                    formData.grade_text_agent_id
+                      ? [formData.grade_text_agent_id]
+                      : []
+                  }
+                  onSelect={(ids) =>
+                    handleInputChange("grade_text_agent_id", ids[0] || null)
+                  }
+                  getId={(item) => (item as unknown as { id: string }).id}
+                  getLabel={(item) => item.name || ""}
+                  getSearchText={(item) =>
+                    `${item.name} ${item.description || ""}`
+                  }
+                  renderPreview={(item) => (
+                    <div className="grid gap-2">
+                      <h4 className="font-medium leading-none">
+                        {item.name || "No agent selected"}
+                      </h4>
+                      <div className="text-sm text-muted-foreground">
+                        {item.description || "No description available"}
+                      </div>
+                    </div>
+                  )}
+                  renderItem={(item, _isSelected) => (
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">{item.name}</div>
+                          {item.description && (
+                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  placeholder="Select grade text agent"
+                  disabled={isReadonly}
+                  multiSelect={false}
+                  hideSelectedChips={true}
+                  buttonClassName="w-full"
+                  groupHeading="Agents"
+                />
+              ) : null}
+            </div>
+
+            {/* Grade Voice Agent Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="grade_voice_agent_id">Grade Voice Agent</Label>
+              {formData?.grade_voice_agent_id !== undefined ? (
+                <GenericPicker
+                  items={agentMapping}
+                  itemIds={validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return (
+                      agent?.roles?.includes("grade") ||
+                      agent?.roles?.includes("grade-voice")
+                    );
+                  })}
+                  selectedIds={
+                    formData.grade_voice_agent_id
+                      ? [formData.grade_voice_agent_id]
+                      : []
+                  }
+                  onSelect={(ids) =>
+                    handleInputChange("grade_voice_agent_id", ids[0] || null)
+                  }
+                  getId={(item) => (item as unknown as { id: string }).id}
+                  getLabel={(item) => item.name || ""}
+                  getSearchText={(item) =>
+                    `${item.name} ${item.description || ""}`
+                  }
+                  renderPreview={(item) => (
+                    <div className="grid gap-2">
+                      <h4 className="font-medium leading-none">
+                        {item.name || "No agent selected"}
+                      </h4>
+                      <div className="text-sm text-muted-foreground">
+                        {item.description || "No description available"}
+                      </div>
+                    </div>
+                  )}
+                  renderItem={(item, _isSelected) => (
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">{item.name}</div>
+                          {item.description && (
+                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  placeholder="Select grade voice agent"
+                  disabled={isReadonly}
+                  multiSelect={false}
+                  hideSelectedChips={true}
+                  buttonClassName="w-full"
+                  groupHeading="Agents"
+                />
+              ) : null}
+            </div>
+          </div>
+        )}
+
         {/* Active and Practice Simulation Switches */}
         <div className="space-y-2 pt-2">
           {/* Active Switch */}
@@ -1406,164 +1664,6 @@ export default function Simulation({
           )}
         </div>
 
-        {/* Agent Selection */}
-        {validAgentIds.length > 0 && (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {/* Hint Agent Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="hint_agent_id">Hint Agent</Label>
-              {formData?.hint_agent_id !== undefined ? (
-                <GenericPicker
-                  items={agentMapping}
-                  itemIds={validAgentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("hint");
-                  })}
-                  selectedIds={formData.hint_agent_id ? [formData.hint_agent_id] : []}
-                  onSelect={(ids) => handleInputChange("hint_agent_id", ids[0] || null)}
-                  getId={(item) => (item as unknown as { id: string }).id}
-                  getLabel={(item) => item.name || ""}
-                  getSearchText={(item) =>
-                    `${item.name} ${item.description || ""}`
-                  }
-                  renderPreview={(item) => (
-                    <div className="grid gap-2">
-                      <h4 className="font-medium leading-none">
-                        {item.name || "No agent selected"}
-                      </h4>
-                      <div className="text-sm text-muted-foreground">
-                        {item.description || "No description available"}
-                      </div>
-                    </div>
-                  )}
-                  renderItem={(item, _isSelected) => (
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate">{item.name}</div>
-                          {item.description && (
-                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                              {item.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  placeholder="Select hint agent"
-                  disabled={isReadonly}
-                  multiSelect={false}
-                  hideSelectedChips={true}
-                  buttonClassName="w-full"
-                  groupHeading="Agents"
-                />
-              ) : null}
-            </div>
-
-            {/* Grade Text Agent Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="grade_text_agent_id">Grade Text Agent</Label>
-              {formData?.grade_text_agent_id !== undefined ? (
-                <GenericPicker
-                  items={agentMapping}
-                  itemIds={validAgentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("grade") || agent?.roles?.includes("grade-text");
-                  })}
-                  selectedIds={formData.grade_text_agent_id ? [formData.grade_text_agent_id] : []}
-                  onSelect={(ids) => handleInputChange("grade_text_agent_id", ids[0] || null)}
-                  getId={(item) => (item as unknown as { id: string }).id}
-                  getLabel={(item) => item.name || ""}
-                  getSearchText={(item) =>
-                    `${item.name} ${item.description || ""}`
-                  }
-                  renderPreview={(item) => (
-                    <div className="grid gap-2">
-                      <h4 className="font-medium leading-none">
-                        {item.name || "No agent selected"}
-                      </h4>
-                      <div className="text-sm text-muted-foreground">
-                        {item.description || "No description available"}
-                      </div>
-                    </div>
-                  )}
-                  renderItem={(item, _isSelected) => (
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate">{item.name}</div>
-                          {item.description && (
-                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                              {item.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  placeholder="Select grade text agent"
-                  disabled={isReadonly}
-                  multiSelect={false}
-                  hideSelectedChips={true}
-                  buttonClassName="w-full"
-                  groupHeading="Agents"
-                />
-              ) : null}
-            </div>
-
-            {/* Grade Voice Agent Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="grade_voice_agent_id">Grade Voice Agent</Label>
-              {formData?.grade_voice_agent_id !== undefined ? (
-                <GenericPicker
-                  items={agentMapping}
-                  itemIds={validAgentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("grade") || agent?.roles?.includes("grade-voice");
-                  })}
-                  selectedIds={formData.grade_voice_agent_id ? [formData.grade_voice_agent_id] : []}
-                  onSelect={(ids) => handleInputChange("grade_voice_agent_id", ids[0] || null)}
-                  getId={(item) => (item as unknown as { id: string }).id}
-                  getLabel={(item) => item.name || ""}
-                  getSearchText={(item) =>
-                    `${item.name} ${item.description || ""}`
-                  }
-                  renderPreview={(item) => (
-                    <div className="grid gap-2">
-                      <h4 className="font-medium leading-none">
-                        {item.name || "No agent selected"}
-                      </h4>
-                      <div className="text-sm text-muted-foreground">
-                        {item.description || "No description available"}
-                      </div>
-                    </div>
-                  )}
-                  renderItem={(item, _isSelected) => (
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate">{item.name}</div>
-                          {item.description && (
-                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                              {item.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  placeholder="Select grade voice agent"
-                  disabled={isReadonly}
-                  multiSelect={false}
-                  hideSelectedChips={true}
-                  buttonClassName="w-full"
-                  groupHeading="Agents"
-                />
-              ) : null}
-            </div>
-          </div>
-        )}
-
         {/* Content (Scenarios & Videos) */}
         <div className="space-y-6">
           {/* Central Content Table - Shared Attributes */}
@@ -1610,7 +1710,6 @@ export default function Simulation({
               readonly={isReadonly}
             />
           </div>
-
         </div>
 
         {/* Submit Button */}

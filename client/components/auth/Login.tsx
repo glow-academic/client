@@ -768,7 +768,7 @@ export default function Login({
                   </motion.div>
                 )}
 
-              {/* Divider - only show if there are SSO providers and (guest login OR default account) is enabled */}
+              {/* Divider - only show if there are SSO providers AND there's something below (guest login OR default account button) */}
               {providers.length > 0 &&
                 (guest_login_enabled ||
                   (_show_default_account &&

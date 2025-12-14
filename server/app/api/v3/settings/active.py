@@ -3,9 +3,6 @@
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -14,6 +11,8 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
 from app.utils.theme.oklch_to_hex import hex_to_oklch
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -320,6 +319,7 @@ async def get_active_settings(
             warning_threshold=settings["warning_threshold"],
             danger_threshold=settings["danger_threshold"],
             guestProfileId=settings.get("default_guest_profile_id"),
+            defaultAccountProfileId=settings.get("default_account_profile_id"),
         )
 
         # Cache response

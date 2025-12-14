@@ -37,6 +37,7 @@ cohort_data AS (
         c.title,
         c.description,
         c.active,
+        c.updated_at,
         COALESCE(cdd.department_ids, NULL) as department_ids
     FROM cohorts c
     LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
@@ -354,6 +355,7 @@ SELECT
     cd.description,
     cd.department_ids,
     cd.active,
+    cd.updated_at,
     CASE 
         WHEN COALESCE(cd.department_ids, NULL) IS NULL AND upc.role != 'superadmin' THEN false
         WHEN upc.role IN ('admin', 'superadmin') THEN true

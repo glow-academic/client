@@ -5,11 +5,10 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 
 class ProviderOption(BaseModel):
@@ -122,9 +121,48 @@ async def get_login_providers(
     else:
         default_department_id = None
 
-    # Show "continue as default account" if no default providers exist
-    has_default_providers = any(p.is_default for p in providers)
-    show_default_account = not has_default_providers
+    # Show "continue as default account" if:
+    # 1. No providers exist for this department, AND
+    # 2. A default account profile exists (department-specific if department_id provided, else default settings)
+    has_any_providers = len(providers) > 0
+    
+    # Check department-specific default account (if department_id provided)
+    dept_default_account_sql = """
+        SELECT EXISTS (
+            SELECT 1
+            FROM settings s
+            JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+            JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
+            WHERE ds.department_id = $1::uuid AND s.active = true
+        )
+    """
+    # Check default settings default account (fallback)
+    default_settings_default_account_sql = """
+        SELECT EXISTS (
+            SELECT 1
+            FROM settings s
+            JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
+            WHERE s.active = true
+              AND NOT EXISTS (
+                  SELECT 1 FROM department_settings ds 
+                  WHERE ds.settings_id = s.id AND ds.active = true
+              )
+        )
+    """
+    dept_has_default_account = False
+    default_settings_has_default_account = False
+    if department_id:
+        dept_has_default_account = await conn.fetchval(dept_default_account_sql, department_id)
+    default_settings_has_default_account = await conn.fetchval(default_settings_default_account_sql)
+    
+    # Determine if default account should be shown
+    if department_id:
+        # For department-specific: check department settings first, fallback to default settings
+        has_default_account_for_dept = dept_has_default_account or default_settings_has_default_account
+        show_default_account = not has_any_providers and bool(has_default_account_for_dept)
+    else:
+        # For no department: check default settings only
+        show_default_account = not has_any_providers and bool(default_settings_has_default_account)
 
     return LoginProvidersResponse(
         providers=providers,

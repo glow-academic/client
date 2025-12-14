@@ -422,29 +422,32 @@ WITH user_departments AS (
             WHERE profile_id = $1 AND active = true
         ),
         valid_agents AS (
-            -- Get agents with roles 'hint' or 'grade'
+            -- Get agents with roles 'hint', 'grade', 'grade-text', or 'grade-voice'
             -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
             SELECT 
                 COALESCE(
                     jsonb_object_agg(
-                        a.id::text,
+                        filtered_agents.id::text,
                         jsonb_build_object(
-                            'name', a.name,
-                            'description', COALESCE(a.description, ''),
-                            'roles', ARRAY[a.role::text]
+                            'name', filtered_agents.name,
+                            'description', COALESCE(filtered_agents.description, ''),
+                            'roles', ARRAY[filtered_agents.role::text]
                         )
                     ),
                     '{}'::jsonb
                 ) as agent_mapping,
-                array_agg(a.id::text ORDER BY a.name) as agent_ids
-            FROM agents a
-            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-            WHERE a.active = true 
-            AND a.role IN ('hint', 'grade')
-            GROUP BY a.id
-            HAVING 
-                COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
-                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+                array_agg(filtered_agents.id::text ORDER BY filtered_agents.name) as agent_ids
+            FROM (
+                SELECT DISTINCT a.id, a.name, a.description, a.role
+                FROM agents a
+                LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+                WHERE a.active = true 
+                AND a.role IN ('hint', 'grade', 'grade-text', 'grade-voice')
+                GROUP BY a.id, a.name, a.description, a.role
+                HAVING 
+                    COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+                    OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+            ) filtered_agents
         )
         SELECT 
             sb.title,

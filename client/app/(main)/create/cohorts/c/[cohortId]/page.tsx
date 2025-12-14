@@ -7,12 +7,9 @@
 
 import Cohort from "@/components/cohorts/Cohort";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getSession } from "@/auth";
-import { Trophy } from "lucide-react";
-import Link from "next/link";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -172,16 +169,6 @@ export default async function CohortEditPage({
       data-page="cohort-edit"
       data-cohort-id={cohortId}
     >
-      {/* Link to leaderboard with cohort filter */}
-      <div className="flex justify-end">
-        <Link href={`/leaderboard?cohortIds=${cohortId}`}>
-          <Button variant="outline" className="gap-2">
-            <Trophy className="h-4 w-4" />
-            View Leaderboard
-          </Button>
-        </Link>
-      </div>
-
       <Cohort
         cohortId={cohortId}
         cohortDetail={cohortDetail}

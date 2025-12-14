@@ -470,15 +470,6 @@ export function MainLayoutClient({
     return () => clearInterval(interval);
   }, [pathname]);
 
-  // eslint-disable-next-line no-console
-  console.log("MainLayoutClient received:", {
-    hasInitial: !!initial,
-    effectiveProfileId: initial?.effectiveProfile?.id,
-    role: initial?.effectiveProfile?.role,
-    sessionEffectiveId: sessionSnapshot.effectiveProfileId,
-    isAuthenticated: sessionSnapshot.isAuthenticated,
-  });
-
   return (
     <>
       <ThemeHydrator activeSettings={activeSettings} />

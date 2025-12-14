@@ -281,16 +281,6 @@ export async function getLayoutContextData() {
     };
   }
 
-  // eslint-disable-next-line no-console
-  console.log("Returning valid initial:", {
-    hasInitial: !!initial,
-    effectiveProfileId,
-    actualProfileId,
-    initialEffectiveId: initial.effectiveProfile.id,
-    initialActualId: initial.actualProfile.id,
-    role: initial.effectiveProfile.role,
-  });
-
   // Read pathname from headers to check if we're on an attempt page
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";

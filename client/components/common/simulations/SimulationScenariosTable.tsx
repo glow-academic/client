@@ -382,13 +382,9 @@ export function SimulationScenariosTable({
       onTextToggle,
       onRubricChange,
       onTimeLimitChange,
-      onHintAgentChange,
-      onGradeAgentsChange,
       rubricMapping,
       validRubricIds,
       agentMapping,
-      hintAgentIds,
-      gradeAgentIds,
     ]
   );
 
