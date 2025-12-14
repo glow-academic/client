@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 
 import { SimulationControls } from "@/components/common/chat/SimulationControls";
 import { AccessControl } from "@/components/common/layout/AccessControl";
@@ -389,7 +389,12 @@ function MainLayoutContent({
           </header>
 
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <AccessControl pathname={pathname}>{children}</AccessControl>
+            <AccessControl
+              key={`access-control-${pathname}`}
+              pathname={pathname}
+            >
+              {children}
+            </AccessControl>
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -432,6 +437,48 @@ export function MainLayoutClient({
   ) => Promise<BulkCreateOrUpdateStaffOut>;
   initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
+  const pathname = usePathname();
+
+  // Check if children contain UnifiedAccessDenied and force refresh if stale
+  useEffect(() => {
+    const checkAccessDenied = () => {
+      const accessDeniedElement = document.querySelector(
+        '[data-access-denied="true"]'
+      );
+      const wrapperElement = document.querySelector(
+        `[data-route-pathname="${pathname}"]`
+      );
+      const wrapperPathname = wrapperElement?.getAttribute(
+        "data-route-pathname"
+      );
+
+      // If we're on an allowed route but see access denied component, force refresh
+      // This handles the case where navigation happens but React hasn't updated the DOM yet
+      // Simple check: if we're on /practice (always allowed for guests) and see access denied, refresh
+      // OR if wrapper says allowed but pathname doesn't match (stale wrapper)
+      if (
+        pathname === "/practice" &&
+        accessDeniedElement &&
+        (wrapperPathname !== pathname || !wrapperElement)
+      ) {
+        window.location.href = pathname || "/";
+      }
+    };
+
+    checkAccessDenied();
+    const interval = setInterval(checkAccessDenied, 100);
+    return () => clearInterval(interval);
+  }, [pathname]);
+
+  // eslint-disable-next-line no-console
+  console.log("MainLayoutClient received:", {
+    hasInitial: !!initial,
+    effectiveProfileId: initial?.effectiveProfile?.id,
+    role: initial?.effectiveProfile?.role,
+    sessionEffectiveId: sessionSnapshot.effectiveProfileId,
+    isAuthenticated: sessionSnapshot.isAuthenticated,
+  });
+
   return (
     <>
       <ThemeHydrator activeSettings={activeSettings} />

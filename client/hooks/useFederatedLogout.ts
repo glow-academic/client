@@ -16,6 +16,13 @@ export function useFederatedLogout() {
 
   return async () => {
     try {
+      // Mark logout in progress to prevent showing access denied flash
+      // Also store timestamp for timeout safety
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("logout-in-progress", "true");
+        sessionStorage.setItem("logout-start-time", Date.now().toString());
+      }
+
       // 1. Log out of NextAuth (Clears the local 'next-auth.session-token')
       // redirect: false prevents NextAuth from reloading the page immediately
       await signOut({ redirect: false });
@@ -54,10 +61,18 @@ export function useFederatedLogout() {
         logoutUrl += `&id_token_hint=${session.id_token}`;
       }
 
-      window.location.href = logoutUrl;
+      // Redirect to Keycloak logout (flag will be cleared by LogoutGuard when reaching login page)
+      if (typeof window !== "undefined") {
+        window.location.href = logoutUrl;
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Logout failed:", error);
+      // Clear logout flag on error
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("logout-in-progress");
+        sessionStorage.removeItem("logout-start-time");
+      }
       // Fallback: just reload to login if something breaks
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
       window.location.href = `${appPrefix}/login`;

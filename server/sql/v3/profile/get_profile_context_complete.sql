@@ -1,23 +1,89 @@
 -- Get profile context with emulation validation in a single transaction
--- Parameters: $1=actualProfileId (uuid), $2=effectiveProfileId (uuid)
+-- Parameters: 
+--   $1=actualProfileId (uuid or null), $2=effectiveProfileId (uuid or null)
+--   $3=departmentId (text, optional - from cookies), $4=authMode (text, optional - "default-guest" | "default-account")
 -- Returns: Complete profile context data, or NULL if emulation is unauthorized
--- Note: Guest profile IDs are resolved on the client side before calling this endpoint
-WITH emulation_validation AS (
+-- Note: If actualProfileId/effectiveProfileId are null, profile is resolved from department settings using cookies
+WITH resolve_profile_from_department AS (
+    -- Resolve profile ID from department settings when profile IDs are null
+    -- This happens when user is accessing via guest/default-account cookies
+    -- department-id ($3) can be NULL for default settings (no department-specific settings)
+    SELECT 
+        CASE 
+            -- If both profile IDs are null and we have auth_mode, resolve from settings
+            WHEN $1::uuid IS NULL AND $2::uuid IS NULL 
+                 AND $4::text IN ('default-guest', 'default-account') THEN
+                COALESCE(
+                    -- Try department-specific settings first (only if department_id is provided)
+                    CASE 
+                        WHEN $3::text IS NOT NULL AND $3::text != '' THEN
+                            CASE 
+                                WHEN $4::text = 'default-guest' THEN
+                                    (SELECT sdg.profile_id
+                                     FROM settings s
+                                     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+                                     JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
+                                     WHERE ds.department_id = $3::uuid AND s.active = true
+                                     LIMIT 1)
+                                WHEN $4::text = 'default-account' THEN
+                                    (SELECT sda.profile_id
+                                     FROM settings s
+                                     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+                                     JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
+                                     WHERE ds.department_id = $3::uuid AND s.active = true
+                                     LIMIT 1)
+                            END
+                        ELSE NULL::uuid
+                    END,
+                    -- Fallback to default settings (no department links) - always try this
+                    CASE 
+                        WHEN $4::text = 'default-guest' THEN
+                            (SELECT sdg.profile_id
+                             FROM settings s
+                             JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
+                             WHERE s.active = true
+                               AND NOT EXISTS (
+                                   SELECT 1 FROM department_settings ds 
+                                   WHERE ds.settings_id = s.id AND ds.active = true
+                               )
+                             LIMIT 1)
+                        WHEN $4::text = 'default-account' THEN
+                            (SELECT sda.profile_id
+                             FROM settings s
+                             JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
+                             WHERE s.active = true
+                               AND NOT EXISTS (
+                                   SELECT 1 FROM department_settings ds 
+                                   WHERE ds.settings_id = s.id AND ds.active = true
+                               )
+                             LIMIT 1)
+                    END
+                )
+            ELSE NULL::uuid
+        END as resolved_profile_id
+),
+resolved_profile_ids AS (
+    -- Use provided profile IDs if available, otherwise use resolved profile from department
+    SELECT 
+        COALESCE($1::uuid, (SELECT resolved_profile_id FROM resolve_profile_from_department)) as actual_profile_id,
+        COALESCE($2::uuid, (SELECT resolved_profile_id FROM resolve_profile_from_department)) as effective_profile_id
+),
+emulation_validation AS (
     -- Validate emulation is authorized when profiles differ
     SELECT 
-        $1::uuid as resolved_actual_profile_id,
-        $2::uuid as resolved_effective_profile_id,
+        (SELECT actual_profile_id FROM resolved_profile_ids) as resolved_actual_profile_id,
+        (SELECT effective_profile_id FROM resolved_profile_ids) as resolved_effective_profile_id,
         CASE 
-            WHEN $1::uuid = $2::uuid THEN true  -- Same profile, always allowed
+            WHEN (SELECT actual_profile_id FROM resolved_profile_ids) = (SELECT effective_profile_id FROM resolved_profile_ids) THEN true  -- Same profile, always allowed
             ELSE (
                 -- Check if effective profile is in simulatable list based on actual user's role
                 SELECT EXISTS (
                     SELECT 1
                     FROM profiles p_actual
                     CROSS JOIN profiles p_effective
-                    WHERE p_actual.id = $1::uuid
-                      AND p_effective.id = $2::uuid
-                      AND p_effective.id != $1::uuid
+                    WHERE p_actual.id = (SELECT actual_profile_id FROM resolved_profile_ids)
+                      AND p_effective.id = (SELECT effective_profile_id FROM resolved_profile_ids)
+                      AND p_effective.id != p_actual.id
                       AND CASE 
                         WHEN p_actual.role = 'superadmin' THEN true
                         WHEN p_actual.role = 'admin' THEN p_effective.role IN ('instructional', 'member', 'guest')
@@ -30,11 +96,11 @@ WITH emulation_validation AS (
 ),
 actual_profile_role AS (
     -- Use actual (logged-in) user's role for emulation permissions
-    SELECT role FROM profiles p WHERE p.id = $1::uuid
+    SELECT role FROM profiles p WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
 ),
 effective_profile_role AS (
     -- Use effective profile's role for UI permissions filtering
-    SELECT role FROM profiles p WHERE p.id = $2::uuid
+    SELECT role FROM profiles p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
 ),
 scoped_roles_computed AS (
     -- Compute scoped roles based on effective profile's role
@@ -75,7 +141,7 @@ actual_profile_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
-    WHERE p.id = $1::uuid
+    WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
              prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
@@ -107,7 +173,7 @@ effective_profile_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
-    WHERE p.id = $2::uuid
+    WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
              prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
@@ -122,7 +188,7 @@ dept_data AS (
         pd.is_primary
     FROM profile_departments pd
     JOIN departments d ON d.id = pd.department_id
-    WHERE pd.profile_id = $2::uuid
+    WHERE pd.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pd.active = true
 ),
 cohort_data AS (
@@ -143,7 +209,7 @@ cohort_data AS (
         WHERE cd.active = true
         GROUP BY cd.cohort_id
     ) cdd ON cdd.cohort_id = c.id
-    WHERE pc.profile_id = $2::uuid
+    WHERE pc.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pc.active = true
       AND c.active = true
 ),
@@ -188,7 +254,7 @@ earliest_attempt AS (
     JOIN attempt_profiles ap ON ap.profile_id = pd_all.profile_id
         AND ap.active = true
     JOIN simulation_attempts sa ON sa.id = ap.attempt_id
-    WHERE pd_effective.profile_id = $2::uuid
+    WHERE pd_effective.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pd_effective.active = true
 )
 SELECT 
@@ -261,8 +327,11 @@ SELECT
     (SELECT earliest FROM earliest_attempt) as earliest_attempt_date,
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles
 FROM emulation_validation ev
+CROSS JOIN resolved_profile_ids rpi
 CROSS JOIN actual_profile_data apd
 CROSS JOIN effective_profile_data epd
 CROSS JOIN scoped_roles_computed src
 WHERE ev.is_authorized = true  -- Only return data if emulation is authorized
+  AND rpi.actual_profile_id IS NOT NULL  -- Ensure we have valid profile IDs
+  AND rpi.effective_profile_id IS NOT NULL
 

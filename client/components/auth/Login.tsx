@@ -368,19 +368,20 @@ export default function Login({
       // Import server action dynamically to avoid SSR issues
       const { setGuestSession } = await import("@/app/(main)/layout-server");
 
-      // Set guest session cookie server-side
-      const result = await setGuestSession(activeSettings.guestProfileId);
+      // Set guest session cookies server-side (department-id + auth-mode)
+      // Pass selectedDepartmentId (can be null for default settings)
+      const result = await setGuestSession(selectedDepartmentId);
 
       if (!result.ok) {
         toast.error(result.reason || "Failed to set guest session");
         return;
       }
 
-      // Set guest mode in localStorage for client-side state
+      // Clear localStorage - cookies are now the source of truth
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedProfileId");
       localStorage.removeItem("defaultAccountMode");
-      localStorage.setItem("guestMode", "true");
+      localStorage.removeItem("defaultAccountProfileId");
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
@@ -415,25 +416,20 @@ export default function Login({
         "@/app/(main)/layout-server"
       );
 
-      // Set default account session cookie server-side
-      const result = await setDefaultAccountSession(
-        activeSettings.defaultAccountProfileId
-      );
+      // Set default account session cookies server-side (department-id + auth-mode)
+      // Pass selectedDepartmentId (can be null for default settings)
+      const result = await setDefaultAccountSession(selectedDepartmentId);
 
       if (!result.ok) {
         toast.error(result.reason || "Failed to set default account session");
         return;
       }
 
-      // Clear guest mode and simulated profile from localStorage
+      // Clear localStorage - cookies are now the source of truth
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedProfileId");
-      // Set default account mode flag
-      localStorage.setItem("defaultAccountMode", "true");
-      localStorage.setItem(
-        "defaultAccountProfileId",
-        activeSettings.defaultAccountProfileId
-      );
+      localStorage.removeItem("defaultAccountMode");
+      localStorage.removeItem("defaultAccountProfileId");
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 

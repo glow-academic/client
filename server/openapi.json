@@ -23548,11 +23548,25 @@
       "ProfileContextRequest": {
         "properties": {
           "actualProfileId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Actualprofileid"
           },
           "effectiveProfileId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Effectiveprofileid"
           },
           "pathname": {
@@ -23562,8 +23576,6 @@
         },
         "type": "object",
         "required": [
-          "actualProfileId",
-          "effectiveProfileId",
           "pathname"
         ],
         "title": "ProfileContextRequest",

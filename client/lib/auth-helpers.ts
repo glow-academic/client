@@ -1,9 +1,8 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import type { Session } from "next-auth";
+import { cookies } from "next/headers";
 
 import { getSession } from "@/auth";
-import { api } from "@/lib/api/client";
-import type { OutputOf } from "@/lib/api/types";
 import { hasRouteAccess, type ProfileRole } from "@/utils/route-permissions";
 
 type HeaderLike = {
@@ -18,8 +17,6 @@ export type TestProfileIds = {
   profileId: string;
   effectiveProfileId: string;
 };
-
-type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 
 export type ResolvedProfileIds = {
   effectiveProfileId: string;
@@ -91,90 +88,6 @@ export function createTestSession({
 }
 
 /**
- * Resolves profile IDs from session or guest profile
- * Returns null if authentication is required but not available
- *
- * This function handles both authenticated users and guest users:
- * - Authenticated: Returns profile IDs from session
- * - Guest: Fetches guestProfileId from settings and uses it as fallback
- *
- * @param departmentId - Optional department ID for department-specific guest profile lookup
- *
- * Note: guestProfileId is fetched fresh from settings each time (not cached client-side).
- * This ensures we always use the correct guest profile ID configured in settings.
- * When a guest user logs in via SSO, they get their own authenticated session,
- * so there's no need to track guestProfileId client-side for login purposes.
- */
-export async function requireAuth(
-  departmentId?: string | null
-): Promise<ResolvedProfileIds | null> {
-  const session = await getSession();
-
-  // If session has profile IDs, use them (authenticated user)
-  const effectiveProfileIdRaw = session?.effectiveProfileId || null;
-  const actualProfileIdRaw = session?.user?.profileId || null;
-
-  // If both are present, return them
-  if (effectiveProfileIdRaw && actualProfileIdRaw) {
-    return {
-      effectiveProfileId: effectiveProfileIdRaw,
-      actualProfileId: actualProfileIdRaw,
-    };
-  }
-
-  // If session is missing, try to resolve guest or default account profile ID from settings
-  // This allows guest users and default account users to access pages
-  // The profile IDs are fetched fresh from settings each time to ensure
-  // we're using the correct configured profiles (which may change in settings)
-  // If departmentId is provided, use it to get department-specific settings
-  let guestProfileId: string | null = null;
-  let defaultAccountProfileId: string | null = null;
-  try {
-    const activeSettings = (await api.post(
-      "/settings/active",
-      {
-        body: {
-          profileId: null, // null = get default settings (includes guestProfileId and defaultAccountProfileId)
-          departmentId: departmentId || null, // Optional department ID for department-specific settings
-        },
-      },
-      {
-        cache: "no-store",
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
-      }
-    )) as SettingsActiveOut;
-
-    guestProfileId = activeSettings?.guestProfileId || null;
-    defaultAccountProfileId = activeSettings?.defaultAccountProfileId || null;
-  } catch {
-    // If settings fetch fails, return null (access denied)
-    return null;
-  }
-
-  // Check if user is in default account mode (from localStorage, but we can't access it server-side)
-  // So we'll prioritize defaultAccountProfileId if available, otherwise use guestProfileId
-  // Note: In practice, the client-side code will set the profile ID correctly based on localStorage
-  // For server-side, we'll use defaultAccountProfileId as higher priority fallback
-  const fallbackProfileId = defaultAccountProfileId || guestProfileId;
-
-  // Use fallback profile ID if available
-  const effectiveProfileId = effectiveProfileIdRaw || fallbackProfileId;
-  const actualProfileId = actualProfileIdRaw || fallbackProfileId;
-
-  // If we still don't have valid IDs, return null (access denied)
-  if (!effectiveProfileId || !actualProfileId) {
-    return null;
-  }
-
-  return {
-    effectiveProfileId,
-    actualProfileId,
-  };
-}
-
-/**
  * Requires authenticated session (no guest fallback)
  * Use this for pages that require authentication (no guest access)
  *
@@ -211,8 +124,84 @@ export async function checkRouteAccess(
   reason?: "not-logged-in" | "route-denied";
   role?: ProfileRole;
 }> {
-  // If no session, user is not logged in
-  if (!session?.effectiveProfileId || !session?.user?.profileId) {
+  // Check if we have session profile IDs (authenticated user)
+  const hasSessionProfileIds =
+    session?.effectiveProfileId && session?.user?.profileId;
+
+  // If no session profile IDs, check for guest/default-account cookies
+  if (!hasSessionProfileIds) {
+    try {
+      const cookieStore = await cookies();
+      const authMode = cookieStore.get("auth-mode")?.value;
+
+      // If we have auth-mode cookie (guest/default-account), resolve profile to check role
+      if (
+        authMode &&
+        (authMode === "default-guest" || authMode === "default-account")
+      ) {
+        // Resolve profile from cookies to get role for permission check
+        // We need to do this here to properly deny access to unauthorized routes
+        try {
+          const { api } = await import("@/lib/api/client");
+          const cookieHeader = [
+            cookieStore.get("department-id")?.value &&
+              `department-id=${cookieStore.get("department-id")?.value}`,
+            cookieStore.get("auth-mode")?.value &&
+              `auth-mode=${cookieStore.get("auth-mode")?.value}`,
+          ]
+            .filter(Boolean)
+            .join("; ");
+
+          const profileContext = await api.post(
+            "/profile/context",
+            {
+              body: {
+                actualProfileId: null as unknown as string,
+                effectiveProfileId: null as unknown as string,
+                pathname: "/",
+              },
+            },
+            cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined
+          );
+
+          const role =
+            (profileContext.effectiveProfile?.role as ProfileRole) || null;
+
+          if (!role) {
+            return {
+              allowed: false,
+              reason: "route-denied",
+            };
+          }
+
+          // Check route access using route permissions
+          const hasAccess = hasRouteAccess(pathname, role);
+
+          if (!hasAccess) {
+            return {
+              allowed: false,
+              reason: "route-denied",
+              role,
+            };
+          }
+
+          return {
+            allowed: true,
+            role,
+          };
+        } catch {
+          // If profile resolution fails, deny access
+          return {
+            allowed: false,
+            reason: "not-logged-in",
+          };
+        }
+      }
+    } catch {
+      // Ignore cookie access errors
+    }
+
+    // No session IDs and no cookies - user is not logged in
     return {
       allowed: false,
       reason: "not-logged-in",

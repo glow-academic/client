@@ -5,9 +5,9 @@
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Practice from "@/components/practice/Practice";
-import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -64,17 +64,60 @@ const getPracticeHistory = async (
  */
 const getProfileContext = async (input: {
   body: {
-    actualProfileId: string;
-    effectiveProfileId: string;
+    actualProfileId: string | null;
+    effectiveProfileId: string | null;
     pathname: string;
   };
-}) => {
-  return api.post("/profile/context", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
+}): Promise<{
+  effectiveProfile: { id: string; role: string };
+  actualProfile: { id: string; role: string };
+  departmentIds: string[];
+  [key: string]: unknown;
+}> => {
+  // Forward cookies from server component context to API request
+  // This is needed because server components run server-side and cookies aren't automatically forwarded
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
+  const cookieHeader = [
+    cookieStore.get("department-id")?.value &&
+      `department-id=${cookieStore.get("department-id")?.value}`,
+    cookieStore.get("auth-mode")?.value &&
+      `auth-mode=${cookieStore.get("auth-mode")?.value}`,
+  ]
+    .filter(Boolean)
+    .join("; ");
+
+  return api.post(
+    "/profile/context",
+    {
+      body: {
+        actualProfileId:
+          input.body.actualProfileId ?? (null as unknown as string),
+        effectiveProfileId:
+          input.body.effectiveProfileId ?? (null as unknown as string),
+        pathname: input.body.pathname,
+      },
     },
-  });
+    cookieHeader
+      ? {
+          cache: "no-store",
+          headers: {
+            "X-Bypass-Cache": "1",
+            Cookie: cookieHeader,
+          },
+        }
+      : {
+          cache: "no-store",
+          headers: {
+            "X-Bypass-Cache": "1",
+          },
+        }
+  ) as Promise<{
+    effectiveProfile: { id: string; role: string };
+    actualProfile: { id: string; role: string };
+    departmentIds: string[];
+    [key: string]: unknown;
+  }>;
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -96,12 +139,45 @@ export default async function PracticePage({
   // Practice page allows guest role users (authenticated users with guest role)
   // Get profile IDs from session
   const session = await getSession();
-  const effectiveProfileId = session?.effectiveProfileId;
-  const actualProfileId = session?.user?.profileId;
+  let effectiveProfileId = session?.effectiveProfileId;
+  let actualProfileId = session?.user?.profileId;
 
+  // For guest/default-account users, session doesn't have profile IDs
+  // Resolve from cookies (same as layout does)
   if (!effectiveProfileId || !actualProfileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      const authMode = cookieStore.get("auth-mode")?.value;
+
+      if (
+        authMode &&
+        (authMode === "default-guest" || authMode === "default-account")
+      ) {
+        // Resolve profile from cookies
+        const profileContext = await getProfileContext({
+          body: {
+            actualProfileId: null,
+            effectiveProfileId: null,
+            pathname: "/practice",
+          },
+        });
+
+        if (
+          profileContext?.effectiveProfile?.id &&
+          profileContext?.actualProfile?.id
+        ) {
+          effectiveProfileId = profileContext.effectiveProfile.id;
+          actualProfileId = profileContext.actualProfile.id;
+        } else {
+          return null;
+        }
+      } else {
+        return null;
+      }
+    } catch {
+      return null;
+    }
   }
 
   // Parse search params
@@ -118,13 +194,32 @@ export default async function PracticePage({
   });
 
   // Get profileId and departmentIds from profile context with resolved UUIDs
-  const profileContext = await getProfileContext({
-    body: {
-      actualProfileId,
-      effectiveProfileId,
-      pathname: "/practice",
-    },
-  });
+  let profileContext;
+  try {
+    profileContext = await getProfileContext({
+      body: {
+        actualProfileId,
+        effectiveProfileId,
+        pathname: "/practice",
+      },
+    });
+  } catch (error) {
+    // Handle 401 Unauthorized (invalid session - profile doesn't exist)
+    // This can happen if the database was reset but the session still has old profile IDs
+    // The layout's getLayoutContextData will also fail with the same 401 error,
+    // and the layout will show access denied UI. Re-throw the error so the layout handles it.
+    if (
+      error instanceof Error &&
+      "status" in error &&
+      (error as { status: number }).status === 401
+    ) {
+      // Re-throw the error - the layout's getLayoutContextData will also fail with 401,
+      // and the updated layout code will show access denied UI
+      throw error;
+    }
+    // Re-throw other errors
+    throw error;
+  }
 
   // Build practice filters (only profileId and departmentIds)
   // Always pass departmentIds (never empty array) - use all IDs from profile context

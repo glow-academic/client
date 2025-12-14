@@ -21,6 +21,7 @@ import {
   searchSimulatableProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
+import { LogoutGuard } from "./logout-guard";
 
 // Force dynamic rendering to ensure layout re-renders on route changes
 // This fixes the issue where children don't update on client-side navigation
@@ -43,14 +44,17 @@ export default async function MainLayout({
     const reason = accessResult.reason || "route-denied";
 
     // If user is not logged in at all, show full-width access denied (no sidebar)
+    // But check if logout is in progress to avoid flash
     if (reason === "not-logged-in") {
       return (
-        <UnifiedAccessDenied
-          reason={reason}
-          pathname={pathname}
-          fullWidth={true}
-          {...(accessResult.role && { role: accessResult.role })}
-        />
+        <LogoutGuard>
+          <UnifiedAccessDenied
+            reason={reason}
+            pathname={pathname}
+            fullWidth={true}
+            {...(accessResult.role && { role: accessResult.role })}
+          />
+        </LogoutGuard>
       );
     }
 
@@ -60,24 +64,32 @@ export default async function MainLayout({
       await getLayoutContextData();
 
     return (
-      <MainLayoutClient
-        initial={initial}
-        sessionSnapshot={snapshot}
-        attemptData={attemptData}
-        activeSettings={activeSettings}
-        switchEffectiveProfileAction={switchEffectiveProfile}
-        createFeedbackAction={createFeedback}
-        refreshAnalyticsAction={refreshAnalytics}
-        searchSimulatableProfilesAction={searchSimulatableProfiles}
-        processCSVAction={processCSV}
-        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
+      <div
+        key={`access-denied-wrapper-${pathname}`}
+        data-route-pathname={pathname}
+        data-access-state="denied"
       >
-        <UnifiedAccessDenied
-          reason={reason}
-          pathname={pathname}
-          {...(accessResult.role && { role: accessResult.role })}
-        />
-      </MainLayoutClient>
+        <MainLayoutClient
+          key={`access-denied-${pathname}-${reason}`}
+          initial={initial}
+          sessionSnapshot={snapshot}
+          attemptData={attemptData}
+          activeSettings={activeSettings}
+          switchEffectiveProfileAction={switchEffectiveProfile}
+          createFeedbackAction={createFeedback}
+          refreshAnalyticsAction={refreshAnalytics}
+          searchSimulatableProfilesAction={searchSimulatableProfiles}
+          processCSVAction={processCSV}
+          bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
+        >
+          <UnifiedAccessDenied
+            key={`access-denied-content-${pathname}-${reason}`}
+            reason={reason}
+            pathname={pathname}
+            {...(accessResult.role && { role: accessResult.role })}
+          />
+        </MainLayoutClient>
+      </div>
     );
   }
 
@@ -85,8 +97,32 @@ export default async function MainLayout({
   const { initial, snapshot, attemptData, activeSettings } =
     await getLayoutContextData();
 
+  // If profile resolution failed, show access denied
+  // This can happen if:
+  // 1. Cookies are invalid (guest/default-account users)
+  // 2. Session has invalid profile ID (profile doesn't exist in database)
+  // 3. Database was reset but session still has old profile IDs
+  if (!initial || !initial.effectiveProfile?.id || !initial.actualProfile?.id) {
+    // If we have a session but profile resolution failed, the session is invalid
+    // Show access denied with "not-logged-in" reason to prompt re-authentication
+    const reason = session?.effectiveProfileId
+      ? "not-logged-in" // Invalid session - profile doesn't exist
+      : "not-logged-in"; // No session at all
+    return (
+      <LogoutGuard>
+        <UnifiedAccessDenied
+          key={`invalid-session-${pathname}`}
+          reason={reason}
+          pathname={pathname}
+          fullWidth={true}
+        />
+      </LogoutGuard>
+    );
+  }
+
   // Check if we're on the staff page and fetch initial data if needed
-  const profileId = session?.effectiveProfileId || null;
+  const profileId =
+    session?.effectiveProfileId || initial?.effectiveProfile.id || null;
   const isStaffPage = pathname === "/management/staff";
 
   let initialCreateStaffData = null;
@@ -106,21 +142,33 @@ export default async function MainLayout({
   }
 
   return (
-    <MainLayoutClient
-      initial={initial}
-      sessionSnapshot={snapshot}
-      attemptData={attemptData}
-      activeSettings={activeSettings}
-      switchEffectiveProfileAction={switchEffectiveProfile}
-      createFeedbackAction={createFeedback}
-      refreshAnalyticsAction={refreshAnalytics}
-      searchSimulatableProfilesAction={searchSimulatableProfiles}
-      processCSVAction={processCSV}
-      bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
-      initialCreateStaffData={initialCreateStaffData}
+    <div
+      key={`allowed-wrapper-${pathname}`}
+      data-route-pathname={pathname}
+      data-access-state="allowed"
     >
-      {/* Only the PAGE AREA suspends */}
-      <Suspense fallback={<AppShell.ContentSkeleton />}>{children}</Suspense>
-    </MainLayoutClient>
+      <MainLayoutClient
+        key={`allowed-${pathname}`}
+        initial={initial}
+        sessionSnapshot={snapshot}
+        attemptData={attemptData}
+        activeSettings={activeSettings}
+        switchEffectiveProfileAction={switchEffectiveProfile}
+        createFeedbackAction={createFeedback}
+        refreshAnalyticsAction={refreshAnalytics}
+        searchSimulatableProfilesAction={searchSimulatableProfiles}
+        processCSVAction={processCSV}
+        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
+        initialCreateStaffData={initialCreateStaffData}
+      >
+        {/* Only the PAGE AREA suspends */}
+        <Suspense
+          key={`suspense-${pathname}`}
+          fallback={<AppShell.ContentSkeleton />}
+        >
+          {children}
+        </Suspense>
+      </MainLayoutClient>
+    </div>
   );
 }

@@ -9797,9 +9797,9 @@ export interface components {
          */
         ProfileContextRequest: {
             /** Actualprofileid */
-            actualProfileId: string;
+            actualProfileId?: string | null;
             /** Effectiveprofileid */
-            effectiveProfileId: string;
+            effectiveProfileId?: string | null;
             /** Pathname */
             pathname: string;
         };

@@ -1,10 +1,9 @@
 // auth.ts
 import { api } from "@/lib/api/client";
 import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
-import type { Session } from "next-auth";
 import NextAuth from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
@@ -255,41 +254,6 @@ export const {
         }
       }
 
-      // Handle guest/default account cookies when no authenticated user
-      // This allows unauthenticated users to have a pseudo-session
-      if (!user && !token["profileId"]) {
-        try {
-          const cookieStore = await cookies();
-          const guestProfileId = cookieStore.get("guest-profile-id")?.value;
-          const defaultAccountProfileId = cookieStore.get(
-            "default-account-profile-id"
-          )?.value;
-
-          const profileId = defaultAccountProfileId || guestProfileId;
-
-          if (profileId) {
-            // Fetch profile to get role
-            try {
-              const profileResponse = (await api.post("/profile/detail", {
-                body: { profileId },
-              })) as { profile: { id: string; role: string } };
-              const profile = profileResponse.profile;
-
-              if (profile) {
-                token["profileId"] = profile.id;
-                token["effectiveProfileId"] = profile.id;
-                token["role"] = profile.role || "guest";
-              }
-            } catch {
-              // If profile fetch fails, clear the cookie and continue without session
-              // The cookie will be cleared by the server action on next request
-            }
-          }
-        } catch {
-          // Ignore cookie access errors
-        }
-      }
-
       // TTL auto-revert (hardening)
       if (token["emulationTTL"] && Date.now() > Number(token["emulationTTL"])) {
         token["effectiveProfileId"] = token["profileId"] ?? null;
@@ -302,8 +266,21 @@ export const {
 
     // 🌐 Expose to client session
     async session({ session, token }) {
+      // Ensure user object exists (for guest/default account users resolved from cookies)
+      if (!session.user && token["profileId"]) {
+        session.user = {
+          id: token["profileId"] as string,
+          name: null,
+          email: null,
+          image: null,
+        } as typeof session.user;
+      }
+
       if (session.user) {
-        session.user.id = session.user.id ?? (token.sub as string);
+        session.user.id =
+          session.user.id ??
+          (token.sub as string) ??
+          (token["profileId"] as string);
         session.user.role = (token["role"] as string) || "guest";
         const profileId = token["profileId"] as string | undefined;
         if (profileId) {
@@ -329,74 +306,18 @@ export const {
 });
 
 /**
- * Helper function to create a pseudo-session from guest/default account cookies
- *
- * This supports two auth modes:
- * 1. Real sessions: NextAuth with Keycloak (has id_token) - fully authenticated users
- * 2. Pseudo-sessions: Guest/default account cookies (no id_token) - unauthenticated users with profile cookies
- *
- * Pseudo-sessions allow unauthenticated users to have a session-like experience
- * by storing profile IDs in cookies. These are used for guest users and default accounts.
- */
-async function createPseudoSessionFromCookies(): Promise<Session | null> {
-  try {
-    const cookieStore = await cookies();
-    const guestProfileId = cookieStore.get("guest-profile-id")?.value;
-    const defaultAccountProfileId = cookieStore.get(
-      "default-account-profile-id"
-    )?.value;
-
-    const profileId = defaultAccountProfileId || guestProfileId;
-
-    if (!profileId) {
-      return null;
-    }
-
-    // Fetch profile to get role
-    try {
-      const profileResponse = (await api.post("/profile/detail", {
-        body: { profileId },
-      })) as { profile: { id: string; role: string } };
-      const profile = profileResponse.profile;
-
-      if (!profile) {
-        return null;
-      }
-
-      // Create a minimal session object
-      return {
-        user: {
-          id: profile.id,
-          profileId: profile.id,
-          role: (profile.role || "guest") as "guest" | "staff" | "admin",
-        },
-        effectiveProfileId: profile.id,
-        emulationTTL: null,
-        fullEmulation: false,
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      } as Session;
-    } catch {
-      // If profile fetch fails, return null (cookie might be invalid)
-      return null;
-    }
-  } catch {
-    // Ignore cookie access errors
-    return null;
-  }
-}
-
-/**
- * Unified session getter that supports both real and pseudo-sessions
+ * Unified session getter
  *
  * Auth flow:
  * 1. Check for test headers (for E2E testing)
- * 2. Try to get real NextAuth session (Keycloak authenticated users)
- * 3. If no real session, check for pseudo-session cookies (guest/default account)
+ * 2. Get NextAuth session (handles both authenticated users and guest/default account via JWT callback)
  *
  * Returns:
- * - Real session: NextAuth session with id_token (authenticated users)
- * - Pseudo-session: Session-like object from cookies (guest/default account users)
+ * - Session: NextAuth session (with id_token for authenticated users, without for guest/default account)
  * - null: No session available
+ *
+ * Note: Guest/default account users are handled by the JWT callback which resolves
+ * profile from department cookies. NextAuth creates a real session (just without id_token).
  */
 export async function getSession() {
   // Step 1: Check for test headers (E2E testing override)
@@ -410,17 +331,6 @@ export async function getSession() {
     // Ignore header access errors and fall back to real auth.
   }
 
-  // Step 2: Try to get authenticated session (real NextAuth with Keycloak)
-  const authSession = await auth();
-
-  // Step 3: If no authenticated session, check for pseudo-session cookies
-  // This allows guest/default account users to have a session-like experience
-  if (!authSession?.user?.profileId) {
-    const pseudoSession = await createPseudoSessionFromCookies();
-    if (pseudoSession) {
-      return pseudoSession;
-    }
-  }
-
-  return authSession;
+  // Step 2: Get NextAuth session (JWT callback handles guest/default account cookies)
+  return await auth();
 }

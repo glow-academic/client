@@ -53,6 +53,92 @@ async def resolve_profile_id(profile_id: str | None) -> str:
     return profile_id
 
 
+async def resolve_profile_from_department_cookies(
+    department_id: str | None, auth_mode: str | None
+) -> str | None:
+    """Resolve profile ID from department-id + auth-mode cookies.
+
+    Args:
+        department_id: Department ID from cookie (can be None for default settings)
+        auth_mode: Auth mode from cookie ("default-guest" or "default-account")
+
+    Returns:
+        Resolved profile ID UUID string, or None if not found
+    """
+    if not auth_mode or auth_mode not in ("default-guest", "default-account"):
+        return None
+
+    if _db_pool is None:
+        return None
+
+    try:
+        async with _db_pool.acquire() as conn:
+            sql = """
+                WITH resolve_profile_from_department AS (
+                    SELECT 
+                        CASE 
+                            WHEN $2::text = 'default-guest' THEN
+                                COALESCE(
+                                    -- Try department-specific settings first (only if department_id is provided)
+                                    CASE 
+                                        WHEN $1::text IS NOT NULL AND $1::text != '' THEN
+                                            (SELECT sdg.profile_id
+                                             FROM settings s
+                                             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+                                             JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
+                                             WHERE ds.department_id = $1::uuid AND s.active = true
+                                             LIMIT 1)
+                                        ELSE NULL::uuid
+                                    END,
+                                    -- Fallback to default settings (no department links) - always try this
+                                    (SELECT sdg.profile_id
+                                     FROM settings s
+                                     JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
+                                     WHERE s.active = true
+                                       AND NOT EXISTS (
+                                           SELECT 1 FROM department_settings ds 
+                                           WHERE ds.settings_id = s.id AND ds.active = true
+                                       )
+                                     LIMIT 1)
+                                )
+                            WHEN $2::text = 'default-account' THEN
+                                COALESCE(
+                                    -- Try department-specific settings first (only if department_id is provided)
+                                    CASE 
+                                        WHEN $1::text IS NOT NULL AND $1::text != '' THEN
+                                            (SELECT sda.profile_id
+                                             FROM settings s
+                                             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+                                             JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
+                                             WHERE ds.department_id = $1::uuid AND s.active = true
+                                             LIMIT 1)
+                                        ELSE NULL::uuid
+                                    END,
+                                    -- Fallback to default settings (no department links) - always try this
+                                    (SELECT sda.profile_id
+                                     FROM settings s
+                                     JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
+                                     WHERE s.active = true
+                                       AND NOT EXISTS (
+                                           SELECT 1 FROM department_settings ds 
+                                           WHERE ds.settings_id = s.id AND ds.active = true
+                                       )
+                                     LIMIT 1)
+                                )
+                        END as resolved_profile_id
+                )
+                SELECT resolved_profile_id::text FROM resolve_profile_from_department
+                WHERE resolved_profile_id IS NOT NULL
+            """
+            result = await conn.fetchval(sql, department_id, auth_mode)
+            return result
+    except Exception:
+        # Log error but don't break request processing
+        logger = logging.getLogger("app.utils.logging.db_logger")
+        logger.warning("Failed to resolve profile from department cookies", exc_info=True)
+        return None
+
+
 class DBLogHandler(logging.Handler):
     """Custom logging handler that writes to database asynchronously."""
 

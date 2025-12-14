@@ -3,11 +3,10 @@
 import json
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-
 from app.main import get_pool, server
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -74,7 +73,6 @@ async def profile_overview(
                 "last_login": result["last_login"].isoformat()
                 if result["last_login"]
                 else None,
-                "viewed_intro": result["viewed_intro"],
                 "active": result["active"],
                 "created_at": result["created_at"].isoformat()
                 if result["created_at"]

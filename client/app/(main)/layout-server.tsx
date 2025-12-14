@@ -64,7 +64,25 @@ export type SettingsActiveClient = Omit<SettingsActiveOut, "guestProfileId">;
 /** ---- Cached fetch ---- */
 const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
-    return api.post("/profile/context", input);
+    // Forward cookies from server action context to API request
+    // This is needed because server actions run server-side and cookies aren't automatically forwarded
+    const cookieStore = await cookies();
+    const cookieHeader = [
+      cookieStore.get("department-id")?.value &&
+        `department-id=${cookieStore.get("department-id")?.value}`,
+      cookieStore.get("auth-mode")?.value &&
+        `auth-mode=${cookieStore.get("auth-mode")?.value}`,
+    ]
+      .filter(Boolean)
+      .join("; ");
+
+    const result = await api.post(
+      "/profile/context",
+      input,
+      cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined
+    );
+
+    return result;
   }
 );
 
@@ -143,13 +161,116 @@ export async function getLayoutContextData() {
   }
 
   // Extract profile IDs from session (works for both real and pseudo-sessions)
-  // No automatic guest profile fallback - guest profile is only used when explicitly in guest mode
-  const effectiveProfileId = session?.effectiveProfileId || null;
-  const actualProfileId = session?.user?.profileId || null;
+  // For authenticated users: profile IDs come from session
+  // For guest/default-account users: profile IDs are null, will resolve from cookies
+  let effectiveProfileId = session?.effectiveProfileId || null;
+  let actualProfileId = session?.user?.profileId || null;
+  let initial: LayoutContextOut | null = null;
 
-  // Early return if no valid session IDs (user not logged in or invalid session)
-  // Access control in layout will handle showing access denied UI
+  // If no session IDs but we have cookies (guest/default-account), resolve from cookies
+  // This ensures we always pull from settings (source of truth) rather than storing profile IDs in tokens
   if (!effectiveProfileId || !actualProfileId) {
+    try {
+      const cookieStore = await cookies();
+      const authMode = cookieStore.get("auth-mode")?.value;
+
+      // If we have auth-mode cookie, try to resolve profile from cookies
+      if (
+        authMode &&
+        (authMode === "default-guest" || authMode === "default-account")
+      ) {
+        // Call profile context endpoint with null profile IDs
+        // Server will read cookies and resolve profile from department settings
+        try {
+          initial = await getLayoutContext({
+            body: {
+              actualProfileId: null as unknown as string,
+              effectiveProfileId: null as unknown as string,
+              pathname: "/",
+            },
+          });
+          // eslint-disable-next-line no-console
+          console.log("Profile context resolved:", {
+            hasInitial: !!initial,
+            effectiveProfileId: initial?.effectiveProfile?.id,
+            actualProfileId: initial?.actualProfile?.id,
+            effectiveProfileRole: initial?.effectiveProfile?.role,
+          });
+          // Extract resolved profile IDs from context response
+          if (initial?.effectiveProfile?.id && initial?.actualProfile?.id) {
+            effectiveProfileId = initial.effectiveProfile.id;
+            actualProfileId = initial.actualProfile.id;
+          } else {
+            // Profile context returned but IDs are missing - invalid response
+            // eslint-disable-next-line no-console
+            console.error(
+              "Profile context resolved but missing profile IDs:",
+              initial
+            );
+            initial = null;
+          }
+        } catch (error) {
+          // If profile context fetch fails, cookies might be invalid or settings don't exist
+          // Log error for debugging but don't break the flow
+          // eslint-disable-next-line no-console
+          console.error(
+            "Failed to resolve profile from cookies:",
+            error instanceof Error ? error.message : String(error)
+          );
+          initial = null;
+        }
+      }
+    } catch {
+      // Ignore cookie access errors
+    }
+  } else {
+    // Authenticated user: fetch profile context with session profile IDs
+    try {
+      initial = await getLayoutContext({
+        body: {
+          actualProfileId,
+          effectiveProfileId,
+          pathname: "/", // layout-level; pages can still supply their own on demand
+        },
+      });
+      // Verify profile IDs match what we expect
+      if (
+        initial?.effectiveProfile?.id &&
+        initial?.actualProfile?.id &&
+        initial.effectiveProfile.id !== effectiveProfileId
+      ) {
+        // Update effectiveProfileId if it changed (emulation case)
+        effectiveProfileId = initial.effectiveProfile.id;
+      }
+    } catch {
+      // If context fetch fails (e.g., 403/404), return null
+      // Layout will handle access denied via AccessControl component
+      initial = null;
+    }
+  }
+
+  // Ensure we have profile IDs - use from initial if extraction failed
+  // This handles the case where initial exists but IDs weren't extracted earlier
+  if (initial) {
+    if (!effectiveProfileId && initial.effectiveProfile?.id) {
+      effectiveProfileId = initial.effectiveProfile.id;
+    }
+    if (!actualProfileId && initial.actualProfile?.id) {
+      actualProfileId = initial.actualProfile.id;
+    }
+  }
+
+  // Early return if no valid profile context (user not logged in or invalid session)
+  // Only return null if we truly don't have valid profile data
+  if (!initial || !initial.effectiveProfile?.id || !initial.actualProfile?.id) {
+    // eslint-disable-next-line no-console
+    console.log("Returning null initial:", {
+      hasInitial: !!initial,
+      effectiveProfileId,
+      actualProfileId,
+      initialEffectiveId: initial?.effectiveProfile?.id,
+      initialActualId: initial?.actualProfile?.id,
+    });
     // Extract guestProfileId before passing to client (server-side only)
     const { guestProfileId: _, ...settingsWithoutGuest } = activeSettings || {};
     return {
@@ -160,22 +281,15 @@ export async function getLayoutContextData() {
     };
   }
 
-  // Now fetch profile context with resolved UUIDs (no string literals)
-  // Let errors propagate - if user doesn't have access, endpoint will return 403/404
-  let initial: LayoutContextOut | null = null;
-  try {
-    initial = await getLayoutContext({
-      body: {
-        actualProfileId,
-        effectiveProfileId,
-        pathname: "/", // layout-level; pages can still supply their own on demand
-      },
-    });
-  } catch {
-    // If context fetch fails (e.g., 403/404), return null
-    // Layout will handle access denied via AccessControl component
-    initial = null;
-  }
+  // eslint-disable-next-line no-console
+  console.log("Returning valid initial:", {
+    hasInitial: !!initial,
+    effectiveProfileId,
+    actualProfileId,
+    initialEffectiveId: initial.effectiveProfile.id,
+    initialActualId: initial.actualProfile.id,
+    role: initial.effectiveProfile.role,
+  });
 
   // Read pathname from headers to check if we're on an attempt page
   const headersList = await headers();
@@ -280,29 +394,34 @@ export async function switchEffectiveProfile(
 }
 
 /**
- * Server action to set guest session cookie.
- * Validates that the profile exists before setting the cookie.
+ * Server action to set guest session cookies.
+ * Sets department-id and auth-mode cookies instead of profile ID.
+ * Profile ID will be resolved server-side from department settings.
  */
 export async function setGuestSession(
-  guestProfileId: string
+  departmentId: string | null
 ): Promise<{ ok: boolean; reason?: string }> {
   "use server";
   try {
-    // Validate profile exists
-    const profileResponse = (await api.post("/profile/detail", {
-      body: { profileId: guestProfileId },
-    })) as { profile: { id: string; role: string } };
+    const cookieStore = await cookies();
 
-    if (!profileResponse.profile) {
-      return { ok: false, reason: "Guest profile not found" };
+    // Clear default account cookies if set
+    cookieStore.delete("department-id");
+    cookieStore.delete("auth-mode");
+
+    // Set department-id cookie (null means use default settings)
+    if (departmentId) {
+      cookieStore.set("department-id", departmentId, {
+        httpOnly: false, // Need to read it client-side for redirects
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: "/",
+      });
     }
 
-    // Clear default account cookie if set
-    const cookieStore = await cookies();
-    cookieStore.delete("default-account-profile-id");
-
-    // Set guest profile cookie (30 days expiry)
-    cookieStore.set("guest-profile-id", guestProfileId, {
+    // Set auth-mode cookie to "default-guest"
+    cookieStore.set("auth-mode", "default-guest", {
       httpOnly: false, // Need to read it client-side for redirects
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -319,29 +438,34 @@ export async function setGuestSession(
 }
 
 /**
- * Server action to set default account session cookie.
- * Validates that the profile exists before setting the cookie.
+ * Server action to set default account session cookies.
+ * Sets department-id and auth-mode cookies instead of profile ID.
+ * Profile ID will be resolved server-side from department settings.
  */
 export async function setDefaultAccountSession(
-  defaultAccountProfileId: string
+  departmentId: string | null
 ): Promise<{ ok: boolean; reason?: string }> {
   "use server";
   try {
-    // Validate profile exists
-    const profileResponse = (await api.post("/profile/detail", {
-      body: { profileId: defaultAccountProfileId },
-    })) as { profile: { id: string; role: string } };
+    const cookieStore = await cookies();
 
-    if (!profileResponse.profile) {
-      return { ok: false, reason: "Default account profile not found" };
+    // Clear guest cookies if set
+    cookieStore.delete("department-id");
+    cookieStore.delete("auth-mode");
+
+    // Set department-id cookie (null means use default settings)
+    if (departmentId) {
+      cookieStore.set("department-id", departmentId, {
+        httpOnly: false, // Need to read it client-side for redirects
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: "/",
+      });
     }
 
-    // Clear guest cookie if set
-    const cookieStore = await cookies();
-    cookieStore.delete("guest-profile-id");
-
-    // Set default account profile cookie (30 days expiry)
-    cookieStore.set("default-account-profile-id", defaultAccountProfileId, {
+    // Set auth-mode cookie to "default-account"
+    cookieStore.set("auth-mode", "default-account", {
       httpOnly: false, // Need to read it client-side for redirects
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -365,6 +489,9 @@ export async function clearGuestSessionCookies(): Promise<void> {
   "use server";
   try {
     const cookieStore = await cookies();
+    cookieStore.delete("department-id");
+    cookieStore.delete("auth-mode");
+    // Also clear old cookies for migration period
     cookieStore.delete("guest-profile-id");
     cookieStore.delete("default-account-profile-id");
   } catch {
@@ -442,5 +569,6 @@ export type {
   SettingsActiveIn,
   SettingsActiveOut,
   SwitchEffectiveProfileParams,
-  SwitchEffectiveProfileResult,
+  SwitchEffectiveProfileResult
 };
+
