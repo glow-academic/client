@@ -142,6 +142,7 @@ scenario_core AS (
     SELECT 
         s.id,
         s.name,
+        s.description,
         COALESCE(saps.problem_statement, '') as problem_statement,
         COALESCE(saps.problem_statement_id, NULL) as problem_statement_id,
         s.active,
@@ -156,7 +157,7 @@ scenario_core AS (
         s.image_agent_id::text,
         s.video_agent_id::text
     FROM scenarios s
-    LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
+    LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
     INNER JOIN scenario_department_access_check sdac ON sdac.scenario_id = s.id AND sdac.has_access = true
@@ -1212,6 +1213,7 @@ valid_agents AS (
 SELECT 
     sc.id,
     sc.name,
+    sc.description,
     sc.problem_statement,
     sc.problem_statement_id,
     sc.active,

@@ -100,8 +100,6 @@ class PersonaDetailResponse(BaseModel):
     color: str
     icon: str
     instructions: str
-    text_agent_id: str | None
-    voice_agent_id: str | None
 
     # Usage and permissions
     in_use: bool
@@ -425,12 +423,6 @@ async def get_persona_detail(
             color=result.get("color", ""),
             icon=result.get("icon", ""),
             instructions=result.get("instructions", ""),
-            text_agent_id=str(result.get("text_agent_id", ""))
-            if result.get("text_agent_id")
-            else None,
-            voice_agent_id=str(result.get("voice_agent_id", ""))
-            if result.get("voice_agent_id")
-            else None,
             in_use=in_use,
             scenario_count=scenario_count,
             can_edit=can_edit,

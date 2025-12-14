@@ -72,6 +72,8 @@ user_context AS (
                 s.hint_agent_id::text,
                 s.grade_text_agent_id::text,
                 s.grade_voice_agent_id::text,
+                s.simulation_text_agent_id::text,
+                s.simulation_voice_agent_id::text,
                 (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
                 COALESCE(
                     (SELECT SUM(stl.time_limit_seconds)
@@ -116,9 +118,6 @@ user_context AS (
                 ss.copy_paste_allowed,
                 ss.audio_enabled,
                 ss.text_enabled,
-                ss.show_problem_statement,
-                ss.show_objectives,
-                ss.show_image,
                 ss.rubric_id,
                 stl.time_limit_seconds,
                 COALESCE(
@@ -196,9 +195,6 @@ user_context AS (
                         'copy_paste_allowed', sb.copy_paste_allowed,
                         'audio_enabled', sb.audio_enabled,
                         'text_enabled', sb.text_enabled,
-                        'show_problem_statement', sb.show_problem_statement,
-                        'show_objectives', sb.show_objectives,
-                        'show_image', sb.show_image,
                         'rubric_id', sb.rubric_id::text,
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
@@ -588,6 +584,8 @@ user_context AS (
             sb.hint_agent_id,
             sb.grade_text_agent_id,
             sb.grade_voice_agent_id,
+            sb.simulation_text_agent_id,
+            sb.simulation_voice_agent_id,
             -- User context
             uc.role as user_role,
             COALESCE(cu.active_cohort_count, 0) as active_cohort_count,

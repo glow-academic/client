@@ -24,6 +24,8 @@ simulation_data AS (
         s.description,
         s.active,
         s.practice_simulation,
+        s.simulation_text_agent_id,
+        s.simulation_voice_agent_id,
         (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id
     FROM simulations s
     WHERE s.id = $1::uuid
@@ -197,8 +199,8 @@ scenario_full_data_raw AS (
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
     LEFT JOIN personas p ON p.id = sp.persona_id
-    LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
-    LEFT JOIN agents a ON a.id = pta.agent_id
+    CROSS JOIN simulation_data sd_agents
+    LEFT JOIN agents a ON a.id = sd_agents.simulation_text_agent_id AND a.active = true
     LEFT JOIN models m ON m.id = a.model_id
     -- Join temperature and reasoning from model levels via agent
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true

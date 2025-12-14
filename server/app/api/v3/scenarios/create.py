@@ -18,6 +18,7 @@ class CreateScenarioRequest(BaseModel):
     """Request to create a scenario."""
 
     name: str
+    description: str | None = None
     problem_statement: str
     problem_statement_name: str | None = None  # Optional, defaults to scenario name
     problem_statement_versions: list[str] | None = None
@@ -185,6 +186,7 @@ async def create_scenario(
         sql_query = load_sql("sql/v3/scenarios/create_scenario_complete.sql")
         sql_params = (
             request.name,
+            request.description,  # description
             request.active,
             request.objectives_enabled,
             request.images_enabled,

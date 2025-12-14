@@ -1,5 +1,5 @@
--- Update persona with agents and department links in a single transaction
--- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=text_agent_id (nullable), $9=voice_agent_id (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id"), $12=example_ids (nullable text array)
+-- Update persona with department links in a single transaction
+-- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=department_ids (nullable text array), $9=profile_id (uuid or "guest-profile-id"), $10=example_ids (nullable text array)
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -9,7 +9,7 @@ WITH resolve_guest_profile AS (
              JOIN settings s ON s.id = sdg.settings_id AND s.active = true
              JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
              JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $11::uuid AND sdg.active = true
+             WHERE pd.profile_id = $9::uuid AND sdg.active = true
              LIMIT 1),
             -- Fallback to default (active) settings guest profile
             (SELECT sdg.profile_id FROM settings_default_guest sdg
@@ -21,10 +21,10 @@ WITH resolve_guest_profile AS (
 resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $11::text = 'guest-profile-id' THEN
+            WHEN $9::text = 'guest-profile-id' THEN
                 (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $11::text IS NULL OR $11::text = '' THEN NULL::uuid
-            ELSE $11::uuid
+            WHEN $9::text IS NULL OR $9::text = '' THEN NULL::uuid
+            ELSE $9::uuid
         END as resolved_profile_id
 ),
 update_persona AS (
@@ -40,48 +40,6 @@ update_persona AS (
     WHERE id = $1::uuid
     RETURNING id::text as persona_id
 ),
-deactivate_text_agents AS (
-    -- Deactivate all existing text agent links for this persona
-    UPDATE persona_text_agents
-    SET active = false, updated_at = NOW()
-    WHERE persona_id = $1::uuid AND active = true
-),
-deactivate_voice_agents AS (
-    -- Deactivate all existing voice agent links for this persona
-    UPDATE persona_voice_agents
-    SET active = false, updated_at = NOW()
-    WHERE persona_id = $1::uuid AND active = true
-),
-link_text_agent AS (
-    -- Link text agent if provided (must have role simulation-text)
-    INSERT INTO persona_text_agents (persona_id, agent_id, active, created_at, updated_at)
-    SELECT 
-        $1::uuid,
-        $8::uuid,
-        true,
-        NOW(),
-        NOW()
-    WHERE $8::uuid IS NOT NULL
-    AND EXISTS (SELECT 1 FROM agents a WHERE a.id = $8::uuid AND a.role = 'simulation-text' AND a.active = true)
-    ON CONFLICT (persona_id, agent_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-),
-link_voice_agent AS (
-    -- Link voice agent if provided (must have role simulation-voice)
-    INSERT INTO persona_voice_agents (persona_id, agent_id, active, created_at, updated_at)
-    SELECT 
-        $1::uuid,
-        $9::uuid,
-        true,
-        NOW(),
-        NOW()
-    WHERE $9::uuid IS NOT NULL
-    AND EXISTS (SELECT 1 FROM agents a WHERE a.id = $9::uuid AND a.role = 'simulation-voice' AND a.active = true)
-    ON CONFLICT (persona_id, agent_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-),
 replace_departments AS (
     -- Delete all existing department links
     DELETE FROM persona_departments WHERE persona_id = $1::uuid
@@ -95,8 +53,8 @@ link_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($10::text[]) as dept_id
-    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
+    FROM UNNEST($8::text[]) as dept_id
+    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
     ON CONFLICT (persona_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -108,8 +66,8 @@ deactivate_parameters AS (
     WHERE persona_id = $1::uuid
     AND active = true
     AND (
-        COALESCE(array_length($12::text[], 1), 0) = 0
-        OR parameter_id NOT IN (SELECT unnest($12::text[])::uuid)
+        COALESCE(array_length($10::text[], 1), 0) = 0
+        OR parameter_id NOT IN (SELECT unnest($10::text[])::uuid)
     )
 ),
 link_parameters AS (
@@ -121,8 +79,8 @@ link_parameters AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($12::text[]) as param_id
-    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+    FROM UNNEST($10::text[]) as param_id
+    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
     ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -162,9 +120,9 @@ examples_with_index AS (
     SELECT 
         ex_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($13::text[]) as ex_text
+    FROM UNNEST($10::text[]) as ex_text
     WHERE EXISTS (SELECT 1 FROM update_persona)
-      AND COALESCE(array_length($13::text[], 1), 0) > 0
+      AND COALESCE(array_length($10::text[], 1), 0) > 0
 ),
 existing_examples AS (
     -- Find existing examples by text

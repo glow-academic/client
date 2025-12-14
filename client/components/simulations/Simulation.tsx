@@ -85,6 +85,8 @@ interface FormData {
   hint_agent_id?: string | null;
   grade_text_agent_id?: string | null;
   grade_voice_agent_id?: string | null;
+  simulation_text_agent_id?: string | null;
+  simulation_voice_agent_id?: string | null;
 }
 
 interface FormErrors {
@@ -276,9 +278,6 @@ export default function Simulation({
         copy_paste_allowed?: boolean;
         audio_enabled?: boolean;
         text_enabled?: boolean;
-        show_problem_statement?: boolean;
-        show_objectives?: boolean;
-        show_image?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
       }
@@ -293,9 +292,6 @@ export default function Simulation({
           copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
           text_enabled?: boolean;
-          show_problem_statement?: boolean;
-          show_objectives?: boolean;
-          show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -410,28 +406,6 @@ export default function Simulation({
             text_enabled:
               switchState?.text_enabled ??
               ("text_enabled" in scenario ? scenario.text_enabled : true) ??
-              true,
-            show_problem_statement:
-              switchState?.show_problem_statement ??
-              ("show_problem_statement" in scenario
-                ? scenario.show_problem_statement
-                : true) ??
-              true,
-            show_objectives:
-              switchState?.show_objectives ??
-              ("show_objectives" in scenario
-                ? scenario.show_objectives
-                : "objectives_enabled" in scenario
-                  ? scenario.objectives_enabled
-                  : true) ??
-              true,
-            show_image:
-              switchState?.show_image ??
-              ("show_image" in scenario
-                ? scenario.show_image
-                : "image_input_enabled" in scenario
-                  ? scenario.image_input_enabled
-                  : true) ??
               true,
             rubric_id: switchState?.rubric_id ?? scenario.rubric_id ?? null,
             time_limit_seconds:
@@ -561,6 +535,12 @@ export default function Simulation({
         grade_voice_agent_id: isEditMode
           ? simulationDetail?.grade_voice_agent_id || null
           : null,
+        simulation_text_agent_id: isEditMode
+          ? simulationDetail?.simulation_text_agent_id || null
+          : null,
+        simulation_voice_agent_id: isEditMode
+          ? simulationDetail?.simulation_voice_agent_id || null
+          : null,
       };
       setFormData(formDataFromServer);
       setOriginalFormData(formDataFromServer);
@@ -627,9 +607,6 @@ export default function Simulation({
           copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
           text_enabled?: boolean;
-          show_problem_statement?: boolean;
-          show_objectives?: boolean;
-          show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -643,9 +620,6 @@ export default function Simulation({
           copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
           text_enabled?: boolean;
-          show_problem_statement?: boolean;
-          show_objectives?: boolean;
-          show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -669,22 +643,6 @@ export default function Simulation({
             text_enabled:
               ("text_enabled" in scenario ? scenario.text_enabled : true) ??
               true,
-            show_problem_statement:
-              ("show_problem_statement" in scenario
-                ? scenario.show_problem_statement
-                : true) ?? true,
-            show_objectives:
-              ("show_objectives" in scenario
-                ? scenario.show_objectives
-                : "objectives_enabled" in scenario
-                  ? scenario.objectives_enabled
-                  : true) ?? true,
-            show_image:
-              ("show_image" in scenario
-                ? scenario.show_image
-                : "image_input_enabled" in scenario
-                  ? scenario.image_input_enabled
-                  : true) ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
@@ -700,22 +658,6 @@ export default function Simulation({
             text_enabled:
               ("text_enabled" in scenario ? scenario.text_enabled : true) ??
               true,
-            show_problem_statement:
-              ("show_problem_statement" in scenario
-                ? scenario.show_problem_statement
-                : true) ?? true,
-            show_objectives:
-              ("show_objectives" in scenario
-                ? scenario.show_objectives
-                : "objectives_enabled" in scenario
-                  ? scenario.objectives_enabled
-                  : true) ?? true,
-            show_image:
-              ("show_image" in scenario
-                ? scenario.show_image
-                : "image_input_enabled" in scenario
-                  ? scenario.image_input_enabled
-                  : true) ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
@@ -982,9 +924,6 @@ export default function Simulation({
         copy_paste_allowed?: boolean;
         audio_enabled?: boolean;
         text_enabled?: boolean;
-        show_problem_statement?: boolean;
-        show_objectives?: boolean;
-        show_image?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
       }
@@ -1011,14 +950,6 @@ export default function Simulation({
             switchState?.audio_enabled ?? item.audio_enabled ?? false;
           baseItem.text_enabled =
             switchState?.text_enabled ?? item.text_enabled ?? true;
-          baseItem.show_problem_statement =
-            switchState?.show_problem_statement ??
-            item.show_problem_statement ??
-            true;
-          baseItem.show_objectives =
-            switchState?.show_objectives ?? item.show_objectives ?? true;
-          baseItem.show_image =
-            switchState?.show_image ?? item.show_image ?? true;
           baseItem.rubric_id = switchState?.rubric_id ?? item.rubric_id ?? null;
           baseItem.time_limit_seconds =
             switchState?.time_limit_seconds ?? item.time_limit_seconds ?? null;
@@ -1038,6 +969,9 @@ export default function Simulation({
           hint_agent_id: formData?.hint_agent_id || null,
           grade_text_agent_id: formData?.grade_text_agent_id || null,
           grade_voice_agent_id: formData?.grade_voice_agent_id || null,
+          simulation_text_agent_id: formData?.simulation_text_agent_id || null,
+          simulation_voice_agent_id:
+            formData?.simulation_voice_agent_id || null,
           rubric_id: "", // Deprecated: kept for backward compatibility
           time_limit: null, // Deprecated: kept for backward compatibility
           content_items: contentItemsPayload,
@@ -1053,9 +987,9 @@ export default function Simulation({
           department_ids: finalDepartmentIds,
           active: formData?.active || true,
           practice_simulation: formData?.practiceSimulation || false,
-          hint_agent_id: formData?.hint_agent_id || null,
-          grade_text_agent_id: formData?.grade_text_agent_id || null,
-          grade_voice_agent_id: formData?.grade_voice_agent_id || null,
+          simulation_text_agent_id: formData?.simulation_text_agent_id || "",
+          simulation_voice_agent_id:
+            formData?.simulation_voice_agent_id || null,
           rubric_id: "", // Deprecated: kept for backward compatibility
           time_limit: null, // Deprecated: kept for backward compatibility
           content_items: contentItemsPayload,
@@ -1387,45 +1321,6 @@ export default function Simulation({
         [contentId]: {
           ...prev[contentId],
           text_enabled: enabled,
-        },
-      }));
-    },
-    []
-  );
-
-  const handleShowProblemStatementToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          show_problem_statement: enabled,
-        },
-      }));
-    },
-    []
-  );
-
-  const handleShowObjectivesToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          show_objectives: enabled,
-        },
-      }));
-    },
-    []
-  );
-
-  const handleShowImageToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          show_image: enabled,
         },
       }));
     },
@@ -1980,9 +1875,6 @@ export default function Simulation({
                 onMoveDown={handleContentMoveDown}
                 onRemove={handleContentRemove}
                 onEditScenario={editScenario}
-                onShowProblemStatementToggle={handleShowProblemStatementToggle}
-                onShowObjectivesToggle={handleShowObjectivesToggle}
-                onShowImageToggle={handleShowImageToggle}
                 onHintsToggle={handleHintsToggle}
                 onCopyPasteToggle={handleCopyPasteToggle}
                 onAudioToggle={handleAudioToggle}

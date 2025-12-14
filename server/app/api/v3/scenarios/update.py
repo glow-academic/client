@@ -19,6 +19,7 @@ class UpdateScenarioRequest(BaseModel):
 
     scenarioId: str
     name: str
+    description: str | None = None
     problem_statement: str
     problem_statement_name: str | None = None  # Optional, defaults to scenario name
     department_ids: list[str] | None
@@ -168,6 +169,7 @@ async def update_scenario(
         sql_params = (
             request.scenarioId,
             request.name,
+            request.description,  # description
             request.active,
             request.objectives_enabled,
             request.images_enabled,

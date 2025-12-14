@@ -245,9 +245,8 @@ LEFT JOIN (
 ) first_persona ON first_persona.scenario_id = s.id
 LEFT JOIN personas p ON p.id = first_persona.persona_id
 
--- Text agent joins (for backward compatibility)
-LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
-LEFT JOIN agents a ON a.id = pta.agent_id AND a.active = true
+-- Text agent joins (use simulation agent instead of persona agent)
+LEFT JOIN agents a ON a.id = sim.simulation_text_agent_id AND a.active = true
 LEFT JOIN models m ON m.id = a.model_id
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
 LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
@@ -268,9 +267,8 @@ LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id
     AND spk.active = true
 LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
 
--- Voice agent joins (for voice mode)
-LEFT JOIN persona_voice_agents pva ON pva.persona_id = p.id AND pva.active = true
-LEFT JOIN agents a_voice ON a_voice.id = pva.agent_id AND a_voice.active = true
+-- Voice agent joins (use simulation agent instead of persona agent)
+LEFT JOIN agents a_voice ON a_voice.id = sim.simulation_voice_agent_id AND a_voice.active = true
 LEFT JOIN models m_voice ON m_voice.id = a_voice.model_id
 LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
 LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.id = atl_voice.model_temperature_level_id AND mtl_voice.active = true AND mtl_voice.model_id = m_voice.id

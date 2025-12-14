@@ -6111,10 +6111,6 @@ export interface components {
             icon: string;
             /** Instructions */
             instructions: string;
-            /** Text Agent Id */
-            text_agent_id: string | null;
-            /** Voice Agent Id */
-            voice_agent_id: string | null;
             /** Parameter Ids */
             parameter_ids: string[] | null;
             /** Example Ids */
@@ -6250,6 +6246,8 @@ export interface components {
         CreateScenarioRequest: {
             /** Name */
             name: string;
+            /** Description */
+            description?: string | null;
             /** Problem Statement */
             problem_statement: string;
             /** Problem Statement Name */
@@ -6338,6 +6336,10 @@ export interface components {
             active: boolean;
             /** Practice Simulation */
             practice_simulation: boolean;
+            /** Simulation Text Agent Id */
+            simulation_text_agent_id: string;
+            /** Simulation Voice Agent Id */
+            simulation_voice_agent_id?: string | null;
             /** Time Limit */
             time_limit?: number | null;
             /**
@@ -12693,10 +12695,6 @@ export interface components {
             icon: string;
             /** Instructions */
             instructions: string;
-            /** Text Agent Id */
-            text_agent_id: string | null;
-            /** Voice Agent Id */
-            voice_agent_id: string | null;
             /** Parameter Ids */
             parameter_ids: string[] | null;
             /** Example Ids */
@@ -12850,6 +12848,8 @@ export interface components {
             scenarioId: string;
             /** Name */
             name: string;
+            /** Description */
+            description?: string | null;
             /** Problem Statement */
             problem_statement: string;
             /** Problem Statement Name */
@@ -13032,6 +13032,10 @@ export interface components {
             grade_text_agent_id?: string | null;
             /** Grade Voice Agent Id */
             grade_voice_agent_id?: string | null;
+            /** Simulation Text Agent Id */
+            simulation_text_agent_id?: string | null;
+            /** Simulation Voice Agent Id */
+            simulation_voice_agent_id?: string | null;
             /** Time Limit */
             time_limit?: number | null;
             /**
@@ -14862,10 +14866,6 @@ export interface components {
             icon: string;
             /** Instructions */
             instructions: string;
-            /** Text Agent Id */
-            text_agent_id: string | null;
-            /** Voice Agent Id */
-            voice_agent_id: string | null;
             /** In Use */
             in_use: boolean;
             /** Scenario Count */
@@ -16054,6 +16054,8 @@ export interface components {
         app__api__v3__scenarios__detail__ScenarioDetailResponse: {
             /** Name */
             name: string;
+            /** Description */
+            description?: string | null;
             /** Problem Statement */
             problem_statement: string;
             /** Problem Statement Id */
@@ -16643,12 +16645,6 @@ export interface components {
             audio_enabled?: boolean | null;
             /** Text Enabled */
             text_enabled?: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement?: boolean | null;
-            /** Show Objectives */
-            show_objectives?: boolean | null;
-            /** Show Image */
-            show_image?: boolean | null;
             /** Rubric Id */
             rubric_id?: string | null;
             /** Time Limit Seconds */
@@ -16791,12 +16787,6 @@ export interface components {
             audio_enabled: boolean;
             /** Text Enabled */
             text_enabled: boolean;
-            /** Show Problem Statement */
-            show_problem_statement: boolean;
-            /** Show Objectives */
-            show_objectives: boolean;
-            /** Show Image */
-            show_image: boolean;
             /** Rubric Id */
             rubric_id: string | null;
             /** Time Limit Seconds */
@@ -16871,6 +16861,10 @@ export interface components {
             grade_text_agent_id: string;
             /** Grade Voice Agent Id */
             grade_voice_agent_id: string | null;
+            /** Simulation Text Agent Id */
+            simulation_text_agent_id: string;
+            /** Simulation Voice Agent Id */
+            simulation_voice_agent_id: string | null;
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -17286,12 +17280,6 @@ export interface components {
             audio_enabled?: boolean | null;
             /** Text Enabled */
             text_enabled?: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement?: boolean | null;
-            /** Show Objectives */
-            show_objectives?: boolean | null;
-            /** Show Image */
-            show_image?: boolean | null;
             /** Rubric Id */
             rubric_id?: string | null;
             /** Time Limit Seconds */

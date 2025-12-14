@@ -24,8 +24,6 @@ class UpdatePersonaRequest(BaseModel):
     color: str
     icon: str
     instructions: str
-    text_agent_id: str | None
-    voice_agent_id: str | None
     parameter_ids: list[str] | None
     example_ids: list[str] | None
     profileId: str  # Required for auditing/access control
@@ -56,35 +54,6 @@ async def update_persona(
 
     try:
         async with transaction(conn):
-            # Validate: at least one agent must be provided
-            if not request.text_agent_id and not request.voice_agent_id:
-                raise ValueError("At least one agent (text or voice) must be provided")
-
-            # Validate agents exist and have correct role
-            if request.text_agent_id:
-                text_agent = await conn.fetchrow(
-                    "SELECT role FROM agents WHERE id = $1 AND active = true",
-                    request.text_agent_id,
-                )
-                if not text_agent:
-                    raise ValueError(f"Text agent not found: {request.text_agent_id}")
-                if text_agent["role"] != "simulation-text":
-                    raise ValueError(
-                        f"Agent {request.text_agent_id} is not a simulation-text agent"
-                    )
-
-            if request.voice_agent_id:
-                voice_agent = await conn.fetchrow(
-                    "SELECT role FROM agents WHERE id = $1 AND active = true",
-                    request.voice_agent_id,
-                )
-                if not voice_agent:
-                    raise ValueError(f"Voice agent not found: {request.voice_agent_id}")
-                if voice_agent["role"] != "simulation-voice":
-                    raise ValueError(
-                        f"Agent {request.voice_agent_id} is not a simulation-voice agent"
-                    )
-
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
 
@@ -99,11 +68,7 @@ async def update_persona(
                 request.instructions if request.instructions is not None else ""
             )
 
-            # Convert empty strings to None for agent IDs (PostgreSQL expects NULL, not empty string)
-            text_agent_id = request.text_agent_id if request.text_agent_id else None
-            voice_agent_id = request.voice_agent_id if request.voice_agent_id else None
-
-            # Update persona with agents and departments in single SQL (DHH style)
+            # Update persona with departments in single SQL (DHH style)
             sql_query = load_sql("sql/v3/personas/update_persona_complete.sql")
             sql_params = (
                 request.personaId,
@@ -113,8 +78,6 @@ async def update_persona(
                 request.color,
                 request.icon,
                 instructions,
-                text_agent_id,
-                voice_agent_id,
                 dept_ids,  # Always pass array (empty array if no departments)
                 request.profileId,
                 example_ids,  # Always pass array (empty array if no examples)

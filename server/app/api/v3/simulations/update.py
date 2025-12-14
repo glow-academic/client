@@ -26,14 +26,11 @@ class ContentItemInRequest(BaseModel):
     type: str  # "scenario"
     id: str  # scenario_id or video_id
     active: bool = True
-    # Switch fields (scenarios only, except show fields which apply to both)
+    # Switch fields (scenarios only)
     hints_enabled: bool | None = None
     copy_paste_allowed: bool | None = None  # Scenarios only
     audio_enabled: bool | None = None  # Scenarios only
     text_enabled: bool | None = None  # Scenarios only
-    show_problem_statement: bool | None = None  # Scenarios and videos
-    show_objectives: bool | None = None  # Scenarios and videos
-    show_image: bool | None = None  # Scenarios and videos
     rubric_id: str | None = None
     time_limit_seconds: int | None = None  # Per-scenario time limit in seconds
 
@@ -50,6 +47,8 @@ class UpdateSimulationRequest(BaseModel):
     hint_agent_id: str | None = None
     grade_text_agent_id: str | None = None
     grade_voice_agent_id: str | None = None
+    simulation_text_agent_id: str | None = None
+    simulation_voice_agent_id: str | None = None
     time_limit: int | None = (
         None  # Deprecated: use per-scenario time_limit_seconds in content_items
     )
@@ -92,9 +91,6 @@ async def update_simulation(
             scenario_copy_paste_allowed: list[bool] = []
             scenario_audio_enabled: list[bool] = []
             scenario_text_enabled: list[bool] = []
-            scenario_show_problem_statement: list[bool] = []
-            scenario_show_objectives: list[bool] = []
-            scenario_show_image: list[bool] = []
             scenario_rubric_ids: list[str] = []
             scenario_time_limit_seconds: list[int | None] = []
 
@@ -121,19 +117,6 @@ async def update_simulation(
                         )
                         scenario_text_enabled.append(
                             item.text_enabled if item.text_enabled is not None else True
-                        )
-                        scenario_show_problem_statement.append(
-                            item.show_problem_statement
-                            if item.show_problem_statement is not None
-                            else True
-                        )
-                        scenario_show_objectives.append(
-                            item.show_objectives
-                            if item.show_objectives is not None
-                            else True
-                        )
-                        scenario_show_image.append(
-                            item.show_image if item.show_image is not None else True
                         )
                         scenario_rubric_ids.append(
                             item.rubric_id if item.rubric_id else ""
@@ -168,17 +151,6 @@ async def update_simulation(
             scenario_text_enabled_array = (
                 scenario_text_enabled if scenario_text_enabled else []
             )
-            scenario_show_problem_statement_array = (
-                scenario_show_problem_statement
-                if scenario_show_problem_statement
-                else []
-            )
-            scenario_show_objectives_array = (
-                scenario_show_objectives if scenario_show_objectives else []
-            )
-            scenario_show_image_array = (
-                scenario_show_image if scenario_show_image else []
-            )
             scenario_rubric_ids_array = (
                 scenario_rubric_ids if scenario_rubric_ids else []
             )
@@ -204,15 +176,14 @@ async def update_simulation(
                 scenario_time_limit_seconds_array,
                 scenario_audio_enabled_array,
                 scenario_text_enabled_array,
-                scenario_show_problem_statement_array,
-                scenario_show_objectives_array,
-                scenario_show_image_array,
                 [],  # video_show_problem_statement (empty for now)
                 [],  # video_show_objectives (empty for now)
                 [],  # video_show_image (empty for now)
                 request.hint_agent_id,  # $22
                 request.grade_text_agent_id,  # $23
                 request.grade_voice_agent_id,  # $24
+                request.simulation_text_agent_id or "",  # $25
+                request.simulation_voice_agent_id or "",  # $26
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

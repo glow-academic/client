@@ -56,9 +56,6 @@ export interface SimulationScenarioSectionProps {
   onMoveDown: (contentId: string) => void;
   onRemove: (contentId: string) => void;
   onEditScenario?: (scenarioId: string) => void;
-  onShowProblemStatementToggle?: (contentId: string, enabled: boolean) => void;
-  onShowObjectivesToggle?: (contentId: string, enabled: boolean) => void;
-  onShowImageToggle?: (contentId: string, enabled: boolean) => void;
   onHintsToggle?: (contentId: string, enabled: boolean) => void;
   onCopyPasteToggle?: (contentId: string, enabled: boolean) => void;
   onAudioToggle?: (contentId: string, enabled: boolean) => void;
@@ -84,9 +81,6 @@ export function SimulationScenarioSection({
   onMoveDown,
   onRemove,
   onEditScenario,
-  onShowProblemStatementToggle,
-  onShowObjectivesToggle,
-  onShowImageToggle,
   onHintsToggle,
   onCopyPasteToggle,
   onAudioToggle,
@@ -248,64 +242,6 @@ export function SimulationScenarioSection({
               onCheckedChange={(checked) => onActiveToggle(contentId, checked)}
               disabled={readonly}
             />
-          </div>
-
-          {/* Show Fields Section */}
-          <div className="space-y-3">
-            <Label className="text-sm flex items-center gap-1.5">
-              <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-              Display Options
-            </Label>
-            <div className="space-y-3 pl-5">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor={`${contentId}-show-problem`}
-                  className="text-sm font-normal"
-                >
-                  Problem Statement
-                </Label>
-                <Switch
-                  id={`${contentId}-show-problem`}
-                  checked={item.show_problem_statement ?? true}
-                  onCheckedChange={(checked) =>
-                    onShowProblemStatementToggle?.(contentId, checked)
-                  }
-                  disabled={readonly || !onShowProblemStatementToggle}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor={`${contentId}-show-objectives`}
-                  className="text-sm font-normal"
-                >
-                  Objectives
-                </Label>
-                <Switch
-                  id={`${contentId}-show-objectives`}
-                  checked={item.show_objectives ?? true}
-                  onCheckedChange={(checked) =>
-                    onShowObjectivesToggle?.(contentId, checked)
-                  }
-                  disabled={readonly || !onShowObjectivesToggle}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor={`${contentId}-show-image`}
-                  className="text-sm font-normal"
-                >
-                  Image
-                </Label>
-                <Switch
-                  id={`${contentId}-show-image`}
-                  checked={item.show_image ?? true}
-                  onCheckedChange={(checked) =>
-                    onShowImageToggle?.(contentId, checked)
-                  }
-                  disabled={readonly || !onShowImageToggle}
-                />
-              </div>
-            </div>
           </div>
 
           {/* Hints Toggle */}

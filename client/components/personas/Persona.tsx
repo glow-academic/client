@@ -194,9 +194,6 @@ interface FormData {
   name?: string;
   description?: string;
   instructions?: string;
-  simulationType?: "text" | "voice" | "both";
-  textAgentId?: string | null;
-  voiceAgentId?: string | null;
   color?: string;
   icon?: string;
   active?: boolean;
@@ -244,9 +241,6 @@ export default function Persona({
       name: "",
       description: "",
       instructions: "",
-      simulationType: "text",
-      textAgentId: null,
-      voiceAgentId: null,
       color: "#000000",
       icon: "Zap",
       active: true,
@@ -333,15 +327,6 @@ export default function Persona({
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
 
-  // Determine simulation type from agent selection
-  const simulationTypeFromAgents = useMemo(() => {
-    if (!personaData) return "text";
-    const hasText = !!personaData.text_agent_id;
-    const hasVoice = !!personaData.voice_agent_id;
-    if (hasText && hasVoice) return "both";
-    if (hasVoice) return "voice";
-    return "text";
-  }, [personaData]);
 
   // Extract examples from example_mapping
   const exampleMapping = useMemo(() => {
@@ -417,9 +402,6 @@ export default function Persona({
         name: personaData.name,
         description: personaData.description || "",
         instructions: personaData.instructions || "",
-        simulationType: simulationTypeFromAgents,
-        textAgentId: personaData.text_agent_id || null,
-        voiceAgentId: personaData.voice_agent_id || null,
         color: personaData.color || "#000000",
         icon: personaData.icon || "Zap",
         active: personaData.active ?? true,
@@ -441,8 +423,6 @@ export default function Persona({
         ...initialFormData,
         color: personaData.color || initialFormData.color || "#000000",
         icon: personaData.icon || initialFormData.icon || "Zap",
-        textAgentId:
-          personaData.text_agent_id || initialFormData.textAgentId || null,
         instructions:
           personaData.instructions || initialFormData.instructions || "",
         parameterIds: [],
@@ -450,7 +430,7 @@ export default function Persona({
       });
       setCurrentExamples([]);
     }
-  }, [personaData, isEditMode, initialFormData, simulationTypeFromAgents, exampleMapping, getExamplesFromMapping]);
+  }, [personaData, isEditMode, initialFormData, exampleMapping, getExamplesFromMapping]);
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
@@ -489,25 +469,6 @@ export default function Persona({
     }
 
     // Validate: at least one agent must be selected based on simulation type
-    if (formData.simulationType === "text" && !formData.textAgentId) {
-      toast.error("Text agent is required for text simulation");
-      return;
-    }
-
-    if (formData.simulationType === "voice" && !formData.voiceAgentId) {
-      toast.error("Voice agent is required for voice simulation");
-      return;
-    }
-
-    if (formData.simulationType === "both") {
-      if (!formData.textAgentId || !formData.voiceAgentId) {
-        toast.error(
-          "Both text and voice agents are required for combined simulation"
-        );
-        return;
-      }
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -532,8 +493,6 @@ export default function Persona({
             name: formData.name,
             description: formData.description || null,
             instructions: formData.instructions || "",
-            text_agent_id: formData.textAgentId || null,
-            voice_agent_id: formData.voiceAgentId || null,
             color: formData.color || "#000000",
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
@@ -559,8 +518,6 @@ export default function Persona({
             name: formData.name,
             description: formData.description || null,
             instructions: formData.instructions || "",
-            text_agent_id: formData.textAgentId || null,
-            voice_agent_id: formData.voiceAgentId || null,
             color: formData.color || "#000000",
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
@@ -1095,205 +1052,6 @@ export default function Persona({
               </div>
             </div>
 
-            {/* Simulation Type Selection */}
-            <div className="space-y-2">
-              <Label>Simulation Type *</Label>
-              <RadioGroup
-                value={formData?.simulationType || "text"}
-                onValueChange={(value) => {
-                  const newType = value as "text" | "voice" | "both";
-                  setFormData((prev) => {
-                    const updated = {
-                      ...prev,
-                      simulationType: newType,
-                    };
-                    // Clear agents when switching types
-                    if (newType === "text") {
-                      updated.voiceAgentId = null;
-                    } else if (newType === "voice") {
-                      updated.textAgentId = null;
-                    }
-                    return updated;
-                  });
-                }}
-                className="grid grid-cols-3 gap-3"
-              >
-                {/* Text Only */}
-                <Label
-                  className={cn(
-                    "cursor-pointer block",
-                    "rounded-lg border-2 transition-colors",
-                    formData?.simulationType === "text"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <RadioGroupItem value="text" className="sr-only" />
-                  <div className="flex flex-col items-center justify-center p-4 gap-2">
-                    <FileText className="h-6 w-6" />
-                    <span className="text-sm font-medium">Text Only</span>
-                  </div>
-                </Label>
-
-                {/* Voice Only */}
-                <Label
-                  className={cn(
-                    "cursor-pointer block",
-                    "rounded-lg border-2 transition-colors",
-                    formData?.simulationType === "voice"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <RadioGroupItem value="voice" className="sr-only" />
-                  <div className="flex flex-col items-center justify-center p-4 gap-2">
-                    <Mic className="h-6 w-6" />
-                    <span className="text-sm font-medium">Voice Only</span>
-                  </div>
-                </Label>
-
-                {/* Both */}
-                <Label
-                  className={cn(
-                    "cursor-pointer block",
-                    "rounded-lg border-2 transition-colors",
-                    formData?.simulationType === "both"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <RadioGroupItem value="both" className="sr-only" />
-                  <div className="flex flex-col items-center justify-center p-4 gap-2">
-                    <div className="flex gap-1">
-                      <FileText className="h-6 w-6" />
-                      <Mic className="h-6 w-6" />
-                    </div>
-                    <span className="text-sm font-medium">Both</span>
-                  </div>
-                </Label>
-              </RadioGroup>
-            </div>
-
-            {/* Agent Selection */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {/* Text Agent */}
-              {(formData?.simulationType === "text" ||
-                formData?.simulationType === "both") && (
-                <div className="space-y-2">
-                  <Label htmlFor="textAgentId">Text Agent *</Label>
-                  {formData?.textAgentId !== undefined ? (
-                    <GenericPicker
-                      items={personaData?.agent_mapping || {}}
-                      itemIds={
-                        personaData?.valid_agent_ids?.filter((id) => {
-                          const agent = personaData?.agent_mapping?.[id];
-                          return agent?.roles?.includes("simulation-text");
-                        }) || []
-                      }
-                      selectedIds={
-                        formData?.textAgentId ? [formData.textAgentId] : []
-                      }
-                      onSelect={(ids) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          textAgentId: ids[0] || null,
-                        }))
-                      }
-                      getId={(item) => (item as unknown as { id: string }).id}
-                      getLabel={(item) => item.name || ""}
-                      getSearchText={(item) => `${item.name} ${item.description || ""}`}
-                      renderPreview={(item) => (
-                        <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
-                          <div className="text-sm text-muted-foreground">
-                            {item.description || "No description available"}
-                          </div>
-                        </div>
-                      )}
-                      renderItem={(item, _isSelected) => (
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="truncate">{item.name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      placeholder="Select text agent"
-                      disabled={isReadonly}
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                      groupHeading="Agents"
-                    />
-                  ) : null}
-                </div>
-              )}
-
-              {/* Voice Agent */}
-              {(formData?.simulationType === "voice" ||
-                formData?.simulationType === "both") && (
-                <div className="space-y-2">
-                  <Label htmlFor="voiceAgentId">Voice Agent *</Label>
-                  {formData?.voiceAgentId !== undefined ? (
-                    <GenericPicker
-                      items={personaData?.agent_mapping || {}}
-                      itemIds={
-                        personaData?.valid_agent_ids?.filter((id) => {
-                          const agent = personaData?.agent_mapping?.[id];
-                          return agent?.roles?.includes("simulation-voice");
-                        }) || []
-                      }
-                      selectedIds={
-                        formData?.voiceAgentId ? [formData.voiceAgentId] : []
-                      }
-                      onSelect={(ids) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          voiceAgentId: ids[0] || null,
-                        }))
-                      }
-                      getId={(item) => (item as unknown as { id: string }).id}
-                      getLabel={(item) => item.name || ""}
-                      getSearchText={(item) => `${item.name} ${item.description || ""}`}
-                      renderPreview={(item) => (
-                        <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
-                          <div className="text-sm text-muted-foreground">
-                            {item.description || "No description available"}
-                          </div>
-                        </div>
-                      )}
-                      renderItem={(item, _isSelected) => (
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="truncate">{item.name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      placeholder="Select voice agent"
-                      disabled={isReadonly}
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                      groupHeading="Agents"
-                    />
-                  ) : null}
-                </div>
-              )}
-            </div>
 
             {/* Instructions */}
             <div className="space-y-2">

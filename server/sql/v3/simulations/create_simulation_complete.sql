@@ -1,5 +1,5 @@
 -- Create simulation with departments and scenarios in a single transaction
--- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=department_ids (nullable text array), $6=scenario_ids (text array), $7=scenario_active_flags (bool array), $8=scenario_hints_enabled (bool array), $9=scenario_rubric_ids (text array, nullable), $10=scenario_time_limit_seconds (int array, nullable), $11=scenario_audio_enabled (bool array), $12=scenario_text_enabled (bool array), $13=scenario_show_problem_statement (bool array), $14=scenario_show_objectives (bool array), $15=scenario_show_image (bool array)
+-- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=department_ids (nullable text array), $6=scenario_ids (text array), $7=scenario_active_flags (bool array), $8=scenario_hints_enabled (bool array), $9=scenario_rubric_ids (text array, nullable), $10=scenario_time_limit_seconds (int array, nullable), $11=scenario_audio_enabled (bool array), $12=scenario_text_enabled (bool array), $13=simulation_text_agent_id (text), $14=simulation_voice_agent_id (text, nullable)
 -- Note: scenario_ids/scenario_active_flags must be same length and order
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
 WITH new_simulation AS (
@@ -8,10 +8,12 @@ WITH new_simulation AS (
         description,
         active,
         practice_simulation,
+        simulation_text_agent_id,
+        simulation_voice_agent_id,
         created_at,
         updated_at
     )
-    VALUES ($1, $2, $3, $4, NOW(), NOW())
+    VALUES ($1, $2, $3, $4, $13::uuid, NULLIF($14, '')::uuid, NOW(), NOW())
     RETURNING id::text as simulation_id
 ),
 link_departments AS (
@@ -38,9 +40,6 @@ scenarios_data AS (
         hints_enabled,
         audio_enabled,
         text_enabled,
-        show_problem_statement,
-        show_objectives,
-        show_image,
         rubric_id,
         time_limit_seconds,
         row_num
@@ -51,9 +50,6 @@ scenarios_data AS (
             COALESCE(hints_enabled, false) as hints_enabled,
             COALESCE(audio_enabled, false) as audio_enabled,
             COALESCE(text_enabled, true) as text_enabled,
-            COALESCE(show_problem_statement, true) as show_problem_statement,
-            COALESCE(show_objectives, true) as show_objectives,
-            COALESCE(show_image, true) as show_image,
             rubric_id,
             time_limit_seconds,
             ROW_NUMBER() OVER () as row_num
@@ -63,12 +59,9 @@ scenarios_data AS (
             COALESCE($8::bool[], ARRAY[]::bool[]),
             COALESCE($11::bool[], ARRAY[]::bool[]),
             COALESCE($12::bool[], ARRAY[]::bool[]),
-            COALESCE($13::bool[], ARRAY[]::bool[]),
-            COALESCE($14::bool[], ARRAY[]::bool[]),
-            COALESCE($15::bool[], ARRAY[]::bool[]),
             COALESCE($9::text[], ARRAY[]::text[]),
             COALESCE($10::int[], ARRAY[]::int[])
-        ) AS t(scenario_id, active_flag, hints_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, time_limit_seconds)
+        ) AS t(scenario_id, active_flag, hints_enabled, audio_enabled, text_enabled, rubric_id, time_limit_seconds)
     ) sub
 ),
 scenarios_with_order AS (
@@ -79,9 +72,6 @@ scenarios_with_order AS (
         hints_enabled,
         audio_enabled,
         text_enabled,
-        show_problem_statement,
-        show_objectives,
-        show_image,
         rubric_id,
         time_limit_seconds,
         ROW_NUMBER() OVER (
@@ -113,7 +103,7 @@ link_time_limits AS (
 ),
 link_scenarios AS (
     -- Link scenarios with proper ordering (active first, then inactive) and switch flags
-    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, created_at, updated_at)
+    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, audio_enabled, text_enabled, rubric_id, created_at, updated_at)
     SELECT 
         ns.simulation_id::uuid,
         swo.scenario_id::uuid,
@@ -122,9 +112,6 @@ link_scenarios AS (
         swo.hints_enabled,
         swo.audio_enabled,
         swo.text_enabled,
-        swo.show_problem_statement,
-        swo.show_objectives,
-        swo.show_image,
         CASE WHEN swo.rubric_id = '' OR swo.rubric_id IS NULL THEN NULL ELSE swo.rubric_id::uuid END,
         NOW(),
         NOW()

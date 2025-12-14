@@ -118,9 +118,6 @@ class ScenarioInSimulation(BaseModel):
     copy_paste_allowed: bool
     audio_enabled: bool
     text_enabled: bool
-    show_problem_statement: bool
-    show_objectives: bool
-    show_image: bool
     rubric_id: str | None
     time_limit_seconds: int | None  # Per-scenario time limit in seconds
 
@@ -179,6 +176,8 @@ class SimulationDetailResponse(BaseModel):
     hint_agent_id: str
     grade_text_agent_id: str
     grade_voice_agent_id: str | None
+    simulation_text_agent_id: str
+    simulation_voice_agent_id: str | None
 
     # Permission flags
     can_edit: bool
@@ -317,11 +316,6 @@ async def get_simulation_detail(
                             copy_paste_allowed=s_data.get("copy_paste_allowed", False),
                             audio_enabled=s_data.get("audio_enabled", False),
                             text_enabled=s_data.get("text_enabled", True),
-                            show_problem_statement=s_data.get(
-                                "show_problem_statement", True
-                            ),
-                            show_objectives=s_data.get("show_objectives", True),
-                            show_image=s_data.get("show_image", True),
                             rubric_id=s_data.get("rubric_id"),
                             time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),
@@ -545,6 +539,12 @@ async def get_simulation_detail(
             else "",
             grade_voice_agent_id=str(result.get("grade_voice_agent_id"))
             if result.get("grade_voice_agent_id")
+            else None,
+            simulation_text_agent_id=str(result.get("simulation_text_agent_id", ""))
+            if result.get("simulation_text_agent_id")
+            else "",
+            simulation_voice_agent_id=str(result.get("simulation_voice_agent_id"))
+            if result.get("simulation_voice_agent_id")
             else None,
             can_edit=can_edit,
             can_duplicate=can_duplicate,

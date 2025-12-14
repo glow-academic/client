@@ -15,6 +15,8 @@ WITH user_departments AS (
                 NULL::text as hint_agent_id,
                 NULL::text as grade_text_agent_id,
                 NULL::text as grade_voice_agent_id,
+                NULL::text as simulation_text_agent_id,
+                NULL::text as simulation_voice_agent_id,
                 NULL::uuid as rubric_id,
                 0 as time_limit
         ),
@@ -51,9 +53,6 @@ WITH user_departments AS (
                 NULL::boolean as copy_paste_allowed,
                 NULL::boolean as audio_enabled,
                 NULL::boolean as text_enabled,
-                NULL::boolean as show_problem_statement,
-                NULL::boolean as show_objectives,
-                NULL::boolean as show_image,
                 NULL::uuid as rubric_id,
                 NULL::integer as time_limit_seconds,
                 ARRAY[]::uuid[] as parameter_item_ids
@@ -82,9 +81,6 @@ WITH user_departments AS (
                         'copy_paste_allowed', sb.copy_paste_allowed,
                         'audio_enabled', sb.audio_enabled,
                         'text_enabled', sb.text_enabled,
-                        'show_problem_statement', sb.show_problem_statement,
-                        'show_objectives', sb.show_objectives,
-                        'show_image', sb.show_image,
                         'rubric_id', sb.rubric_id::text,
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
@@ -462,6 +458,8 @@ WITH user_departments AS (
             sb.hint_agent_id,
             sb.grade_text_agent_id,
             sb.grade_voice_agent_id,
+            sb.simulation_text_agent_id,
+            sb.simulation_voice_agent_id,
             uc.role as user_role,
             COALESCE(cu.active_cohort_count, 0) as active_cohort_count,
             COALESCE(cu.total_cohort_links, 0) as total_cohort_links,

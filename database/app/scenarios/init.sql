@@ -138,6 +138,7 @@ CREATE TABLE scenarios (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
+  description TEXT        NOT NULL DEFAULT '',
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   images_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   video_enabled BOOLEAN NOT NULL DEFAULT FALSE,

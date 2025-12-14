@@ -30,9 +30,6 @@ class ContentItemInRequest(BaseModel):
     hints_enabled: bool | None = None
     audio_enabled: bool | None = None
     text_enabled: bool | None = None
-    show_problem_statement: bool | None = None
-    show_objectives: bool | None = None
-    show_image: bool | None = None
     rubric_id: str | None = None
     time_limit_seconds: int | None = None  # Per-scenario time limit in seconds
 
@@ -45,6 +42,8 @@ class CreateSimulationRequest(BaseModel):
     department_ids: list[str] | None
     active: bool
     practice_simulation: bool
+    simulation_text_agent_id: str
+    simulation_voice_agent_id: str | None = None
     time_limit: int | None = (
         None  # Deprecated: use per-scenario time_limit_seconds in content_items
     )
@@ -87,9 +86,6 @@ async def create_simulation(
             scenario_hints_enabled: list[bool] = []
             scenario_audio_enabled: list[bool] = []
             scenario_text_enabled: list[bool] = []
-            scenario_show_problem_statement: list[bool] = []
-            scenario_show_objectives: list[bool] = []
-            scenario_show_image: list[bool] = []
             scenario_rubric_ids: list[str] = []
             scenario_time_limit_seconds: list[int | None] = []
 
@@ -111,19 +107,6 @@ async def create_simulation(
                         )
                         scenario_text_enabled.append(
                             item.text_enabled if item.text_enabled is not None else True
-                        )
-                        scenario_show_problem_statement.append(
-                            item.show_problem_statement
-                            if item.show_problem_statement is not None
-                            else True
-                        )
-                        scenario_show_objectives.append(
-                            item.show_objectives
-                            if item.show_objectives is not None
-                            else True
-                        )
-                        scenario_show_image.append(
-                            item.show_image if item.show_image is not None else True
                         )
                         scenario_rubric_ids.append(
                             item.rubric_id if item.rubric_id else ""
@@ -155,17 +138,6 @@ async def create_simulation(
             scenario_text_enabled_array = (
                 scenario_text_enabled if scenario_text_enabled else []
             )
-            scenario_show_problem_statement_array = (
-                scenario_show_problem_statement
-                if scenario_show_problem_statement
-                else []
-            )
-            scenario_show_objectives_array = (
-                scenario_show_objectives if scenario_show_objectives else []
-            )
-            scenario_show_image_array = (
-                scenario_show_image if scenario_show_image else []
-            )
             scenario_rubric_ids_array = (
                 scenario_rubric_ids if scenario_rubric_ids else []
             )
@@ -188,9 +160,8 @@ async def create_simulation(
                 scenario_time_limit_seconds_array,
                 scenario_audio_enabled_array,
                 scenario_text_enabled_array,
-                scenario_show_problem_statement_array,
-                scenario_show_objectives_array,
-                scenario_show_image_array,
+                request.simulation_text_agent_id,
+                request.simulation_voice_agent_id or "",
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

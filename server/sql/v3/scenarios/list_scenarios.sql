@@ -78,6 +78,7 @@ scenario_data AS (
     SELECT 
         s.id as scenario_id,
         s.name as title,
+        s.description,
         COALESCE(ps.problem_statement, '') as problem_statement,
         s.active,
         s.generated,
@@ -126,7 +127,7 @@ scenario_data AS (
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
     LEFT JOIN scenario_attributes sa ON sa.scenario_id = s.id
     CROSS JOIN user_profile up
-    GROUP BY s.id, s.name, ps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
+    GROUP BY s.id, s.name, s.description, ps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
              so.objective_ids, spa.persona_ids, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
              sc.cohort_ids, sdd.department_ids, sal.total_links, up.role,
              sa.hints_enabled, sa.objectives_enabled, sa.image_input_enabled
@@ -201,16 +202,13 @@ persona_mapping_data AS (
                 'description', COALESCE(p.description, ''),
                 'color', p.color,
                 'icon', p.icon,
-                'image_model', COALESCE(imc.image_model, false)
+                'image_model', false  -- No longer checking via persona agents
             )
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
     FROM personas p
-    LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
-    LEFT JOIN agents a ON a.id = pta.agent_id
-    LEFT JOIN models m ON m.id = a.model_id
-    LEFT JOIN image_model_check imc ON imc.model_id = m.id
+    LEFT JOIN image_model_check imc ON false  -- No longer checking via persona agents
     WHERE p.id IN (SELECT persona_id FROM all_persona_ids)
 ),
 all_simulation_ids AS (

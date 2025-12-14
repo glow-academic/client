@@ -17,7 +17,9 @@ CREATE TABLE simulations (
   practice_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE,
   hint_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
   grade_text_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
-  grade_voice_agent_id UUID REFERENCES agents(id) ON DELETE RESTRICT
+  grade_voice_agent_id UUID REFERENCES agents(id) ON DELETE RESTRICT,
+  simulation_text_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
+  simulation_voice_agent_id UUID REFERENCES agents(id) ON DELETE RESTRICT
   -- rubric_id moved to simulation_scenarios junction table
   -- time_limit moved to scenario_time_limits junction table (absence = infinite)
   -- Flags moved to simulation_scenarios junction table: hints_enabled
@@ -40,6 +42,8 @@ CREATE INDEX ON simulation_departments (department_id);
 CREATE INDEX ON simulations (hint_agent_id);
 CREATE INDEX ON simulations (grade_text_agent_id);
 CREATE INDEX ON simulations (grade_voice_agent_id);
+CREATE INDEX ON simulations (simulation_text_agent_id);
+CREATE INDEX ON simulations (simulation_voice_agent_id);
 
 -- Simulation → Scenarios junction table with ordering and scenario-specific settings
 CREATE TABLE simulation_scenarios (
@@ -51,9 +55,6 @@ CREATE TABLE simulation_scenarios (
   copy_paste_allowed BOOLEAN NOT NULL DEFAULT FALSE,
   audio_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   text_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-  show_problem_statement BOOLEAN NOT NULL DEFAULT TRUE,
-  show_objectives BOOLEAN NOT NULL DEFAULT TRUE,
-  show_image BOOLEAN NOT NULL DEFAULT TRUE,
   rubric_id UUID REFERENCES rubrics(id) ON DELETE CASCADE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

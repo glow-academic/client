@@ -277,6 +277,7 @@ class ScenarioDetailResponse(BaseModel):
 
     # Basic fields
     name: str
+    description: str | None = None
     problem_statement: str
     problem_statement_id: str | None
     active: bool
@@ -1909,6 +1910,7 @@ async def get_scenario_detail(
 
         response_data = ScenarioDetailResponse(
             name=scenario["name"],
+            description=scenario.get("description"),
             problem_statement=scenario["problem_statement"],
             problem_statement_id=scenario.get("problem_statement_id"),
             active=scenario["active"],

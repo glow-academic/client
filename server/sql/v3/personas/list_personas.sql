@@ -37,74 +37,6 @@ persona_departments_data AS (
     WHERE pd.active = true
     GROUP BY pd.persona_id
 ),
-persona_agents_data AS (
-    -- Combine text and voice agents with their metadata
-    SELECT 
-        pta.persona_id,
-        pta.agent_id,
-        'simulation-text'::text as role,
-        a.model_id,
-        mrl.reasoning_level as reasoning,
-        COALESCE(mtl.temperature, 0.0) as temperature
-    FROM persona_text_agents pta
-    JOIN agents a ON a.id = pta.agent_id
-    JOIN models m ON m.id = a.model_id
-    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
-    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-    -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
-    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
-    WHERE pta.active = true
-    UNION ALL
-    SELECT 
-        pva.persona_id,
-        pva.agent_id,
-        'simulation-voice'::text as role,
-        a.model_id,
-        mrl.reasoning_level as reasoning,
-        COALESCE(mtl.temperature, 0.0) as temperature
-    FROM persona_voice_agents pva
-    JOIN agents a ON a.id = pva.agent_id
-    JOIN models m ON m.id = a.model_id
-    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
-    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-    -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
-    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
-    WHERE pva.active = true
-),
-persona_primary_agent AS (
-    -- Get primary agent: prefer simulation-text, fallback to simulation-voice
-    SELECT DISTINCT ON (pad.persona_id)
-        pad.persona_id,
-        pad.agent_id,
-        pad.model_id,
-        pad.reasoning,
-        pad.temperature
-    FROM persona_agents_data pad
-    ORDER BY pad.persona_id, 
-             CASE WHEN pad.role = 'simulation-text' THEN 1 ELSE 2 END
-),
-all_agent_ids AS (
-    SELECT DISTINCT agent_id
-    FROM persona_agents_data
-),
-agent_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            a.id::text,
-            jsonb_build_object(
-                'name', a.name,
-                'description', COALESCE(a.description, ''),
-                'roles', ARRAY[a.role]::text[]
-            )
-        ) FILTER (WHERE a.id IS NOT NULL),
-        '{}'::jsonb
-    ) as mapping
-    FROM all_agent_ids aai
-    JOIN agents a ON a.id = aai.agent_id
-    WHERE a.active = true
-),
 persona_data AS (
     SELECT 
         p.id as persona_id,
@@ -112,19 +44,19 @@ persona_data AS (
         p.description,
         p.color,
         p.icon,
-        ppa.agent_id,
-        ppa.model_id,
-        ppa.reasoning,
-        ppa.temperature,
+        NULL::uuid as agent_id,
+        NULL::uuid as model_id,
+        NULL::text as reasoning,
+        NULL::numeric as temperature,
         p.active,
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(ps.num_scenarios, 0) as num_scenarios,
-        a.name as agent_name,
-        COALESCE(a.description, '') as agent_description,
-        m.name as model_name,
-        COALESCE(m.description, '') as model_description,
+        NULL::text as agent_name,
+        ''::text as agent_description,
+        NULL::text as model_name,
+        ''::text as model_description,
         COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
         COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
         CASE WHEN COUNT(pd.persona_id) > 0 THEN true ELSE false END as has_dept_links
@@ -132,13 +64,10 @@ persona_data AS (
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
     LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
     LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
-    LEFT JOIN persona_primary_agent ppa ON ppa.persona_id = p.id
-    LEFT JOIN agents a ON a.id = ppa.agent_id
-    LEFT JOIN models m ON m.id = ppa.model_id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id IN (SELECT department_id FROM user_departments)
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, ppa.agent_id, ppa.model_id, ppa.reasoning, ppa.temperature, p.active, p.updated_at, 
-             pdd.department_ids, ps.scenario_ids, ps.num_scenarios, a.name, a.description, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
+    GROUP BY p.id, p.name, p.description, p.color, p.icon, p.active, p.updated_at, 
+             pdd.department_ids, ps.scenario_ids, ps.num_scenarios, pasl.active_scenario_count, pasl_all.total_scenario_links
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true
     )

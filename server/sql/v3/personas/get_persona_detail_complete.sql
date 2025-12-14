@@ -63,20 +63,6 @@ persona_department_access_check AS (
     CROSS JOIN user_profile up
     WHERE p.id = $1
 ),
-text_agent_data AS (
-    SELECT 
-        pta.agent_id::text as text_agent_id
-    FROM persona_text_agents pta
-    WHERE pta.persona_id = $1 AND pta.active = true
-    LIMIT 1
-),
-voice_agent_data AS (
-    SELECT 
-        pva.agent_id::text as voice_agent_id
-    FROM persona_voice_agents pva
-    WHERE pva.persona_id = $1 AND pva.active = true
-    LIMIT 1
-),
 persona_data AS (
     SELECT 
         p.name,
@@ -85,13 +71,11 @@ persona_data AS (
         p.color,
         p.icon,
         p.instructions,
-        COALESCE(tad.text_agent_id, NULL)::text as text_agent_id,
-        COALESCE(vad.voice_agent_id, NULL)::text as voice_agent_id,
+        NULL::text as text_agent_id,
+        NULL::text as voice_agent_id,
         COALESCE(pdd.department_ids, NULL) as department_ids
     FROM personas p
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
-    LEFT JOIN text_agent_data tad ON true
-    LEFT JOIN voice_agent_data vad ON true
     INNER JOIN persona_department_access_check pdac ON pdac.persona_id = p.id AND pdac.has_access = true
     WHERE p.id = $1
 ),
@@ -120,29 +104,10 @@ user_departments AS (
     WHERE pd.active = true
 ),
 valid_agents AS (
-    -- Get agents with roles simulation-text or simulation-voice
-    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    -- Return empty mapping since personas no longer have agents
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                a.id::text,
-                jsonb_build_object(
-                    'name', a.name,
-                    'description', COALESCE(a.description, ''),
-                    'roles', ARRAY[a.role::text]
-                )
-            ),
-            '{}'::jsonb
-        ) as agent_mapping,
-        array_agg(a.id::text ORDER BY a.name) as agent_ids
-    FROM agents a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    WHERE a.active = true 
-    AND a.role IN ('simulation-text', 'simulation-voice')
-    GROUP BY a.id
-    HAVING 
-        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+        '{}'::jsonb as agent_mapping,
+        ARRAY[]::text[] as agent_ids
 ),
 usage_data AS (
     SELECT COUNT(*) as usage_count
