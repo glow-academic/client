@@ -95,14 +95,6 @@ department_mapping_data AS (
     LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
     LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
 ),
-image_model_check AS (
-    SELECT 
-        model_id,
-        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
-    FROM model_modalities
-    WHERE modality = 'image' AND is_input = false AND active = true
-    GROUP BY model_id
-),
 persona_data AS (
     SELECT 
         p.id,
@@ -110,15 +102,11 @@ persona_data AS (
         COALESCE(p.description, '') as description,
         p.color,
         p.icon,
-        COALESCE(imc.image_model, false) as image_model
+        false as image_model  -- No longer checking via persona agents
     FROM personas p
-    LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
-    LEFT JOIN agents a ON a.id = pta.agent_id
-    LEFT JOIN models m ON m.id = a.model_id
-    LEFT JOIN image_model_check imc ON imc.model_id = m.id
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, imc.image_model
+    GROUP BY p.id, p.name, p.description, p.color, p.icon
     HAVING 
         (
             COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0

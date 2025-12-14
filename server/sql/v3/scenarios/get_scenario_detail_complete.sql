@@ -338,14 +338,6 @@ merged_parameters_data AS (
         ), '{}'::jsonb) as parameters_json
     FROM all_parameters_data
 ),
-image_model_check AS (
-    SELECT 
-        model_id,
-        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
-    FROM model_modalities
-    WHERE modality = 'image' AND is_input = false AND active = true
-    GROUP BY model_id
-),
 valid_personas_filtered AS (
     SELECT DISTINCT
         p.id,
@@ -353,16 +345,12 @@ valid_personas_filtered AS (
         COALESCE(p.description, '') as description,
         p.color,
         p.icon,
-        COALESCE(imc.image_model, false) as image_model
+        false as image_model  -- No longer checking via persona agents
     FROM personas p
-    LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
-    LEFT JOIN agents a ON a.id = pta.agent_id
-    LEFT JOIN models m ON m.id = a.model_id
-    LEFT JOIN image_model_check imc ON imc.model_id = m.id
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, imc.image_model
+    GROUP BY p.id, p.name, p.description, p.color, p.icon
     HAVING 
         (
             COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
@@ -396,14 +384,10 @@ persona_data AS (
         COALESCE(p2.description, '') as description,
         p2.color,
         p2.icon,
-        COALESCE(imc2.image_model, false) as image_model
+        false as image_model  -- No longer checking via persona agents
     FROM scenario_personas_agg spa
     CROSS JOIN LATERAL unnest(spa.persona_ids) as persona_id
     JOIN personas p2 ON p2.id = persona_id::uuid
-    LEFT JOIN persona_text_agents pta2 ON pta2.persona_id = p2.id AND pta2.active = true
-    LEFT JOIN agents a2 ON a2.id = pta2.agent_id
-    LEFT JOIN models m2 ON m2.id = a2.model_id
-    LEFT JOIN image_model_check imc2 ON imc2.model_id = m2.id
     WHERE p2.active = true
 ),
 -- Persona parameter relationships: via fields (persona_fields → parameter_fields) and persona_parameter flag

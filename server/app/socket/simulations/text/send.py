@@ -927,25 +927,13 @@ async def _simulation_text_send_impl(
                             error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                         raise ValueError(error_message)
 
-                    # Get Simulation Text Agent ID from persona_text_agents table (required for runs table)
-                    # Personas are linked to text agents via persona_text_agents junction table
-                    simulation_agent_row = await conn.fetchrow(
-                        """
-                        SELECT pta.agent_id
-                        FROM persona_text_agents pta
-                        JOIN agents a ON a.id = pta.agent_id
-                        WHERE pta.persona_id = $1::uuid 
-                        AND pta.active = true
-                        AND a.active = true
-                        LIMIT 1
-                        """,
-                        uuid.UUID(context["persona_id"]),
-                    )
-                    if not simulation_agent_row:
+                    # Get Simulation Text Agent ID from context (already available from get_simulation_run_context.sql)
+                    # After migration 97, agents are on simulations (simulation_text_agent_id), not personas
+                    simulation_agent_id = context_row.get("agent_id")
+                    if not simulation_agent_id:
                         raise ValueError(
-                            f"Simulation Text Agent not found for persona {context['persona_id']}"
+                            f"Simulation Text Agent not found for simulation {context['simulation_id']}"
                         )
-                    simulation_agent_id = simulation_agent_row["agent_id"]
 
                     # Create model run with all junction records using SQL file (using persona, not agent)
                     sql_create_run = load_sql(

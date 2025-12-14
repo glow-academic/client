@@ -91,6 +91,7 @@ async def get_cohort_new(
                                 description=sim.get("description", ""),
                                 time_limit=sim.get("time_limit"),
                                 active=sim.get("active", False),
+                                position=sim.get("position", 0),
                                 usage_count=sim.get("usage_count", 0),
                                 success_rate=sim.get("success_rate", 0),
                                 last_used=last_used,
@@ -261,6 +262,28 @@ async def get_cohort_new(
         else:
             dept_ids = [primary_department_id] if primary_department_id else []
 
+        # Convert mapping Pydantic instances to dictionaries for FastAPI serialization
+        # FastAPI expects dict[str, dict] not dict[str, PydanticModel] for nested models
+        simulation_mapping_dict = {
+            k: v.model_dump() for k, v in simulation_mapping.items()
+        }
+        profile_mapping_dict = {
+            k: v.model_dump() for k, v in profile_mapping.items()
+        }
+        department_mapping_dict = {
+            k: v.model_dump() for k, v in department_mapping.items()
+        }
+        cohort_mapping_dict = (
+            {k: v.model_dump() for k, v in cohort_mapping.items()}
+            if cohort_mapping
+            else None
+        )
+        department_mapping_for_staff_dict = (
+            {k: v.model_dump() for k, v in department_mapping_for_staff.items()}
+            if department_mapping_for_staff
+            else None
+        )
+
         response_data = CohortDetailResponse(
             title=row.get("title", ""),
             description=row.get("description"),
@@ -274,11 +297,11 @@ async def get_cohort_new(
             valid_profile_ids=valid_profile_ids,
             simulations=simulations,
             staff=staff,
-            simulation_mapping=simulation_mapping,
-            profile_mapping=profile_mapping,
-            department_mapping=department_mapping,
-            cohort_mapping=cohort_mapping,
-            department_mapping_for_staff=department_mapping_for_staff,
+            simulation_mapping=simulation_mapping_dict,
+            profile_mapping=profile_mapping_dict,
+            department_mapping=department_mapping_dict,
+            cohort_mapping=cohort_mapping_dict,
+            department_mapping_for_staff=department_mapping_for_staff_dict,
         )
 
         # Cache response

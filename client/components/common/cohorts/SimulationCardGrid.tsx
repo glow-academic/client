@@ -8,102 +8,89 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  FileText,
+  PlayCircle,
   Search,
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { OutputOf } from "@/lib/api/types";
 
-// Extract types from API response (single source of truth)
-type SimulationsListOut = OutputOf<"/api/v3/simulations/list", "post">;
-type ScenarioMappingItem = SimulationsListOut["scenario_mapping"][string];
-
-
-export interface ScenarioCardGridProps<
-  T extends ScenarioMappingItem = ScenarioMappingItem,
-> {
-  scenarioMapping: Record<string, T>;
-  validScenarioIds: string[];
-  selectedScenarioIds: string[];
+export interface SimulationCardGridProps {
+  simulationMapping: Record<string, { name: string; description?: string }>;
+  validSimulationIds: string[];
+  selectedSimulationIds: string[];
   onSelect: (ids: string[]) => void;
   label?: string;
   description?: string;
   readonly?: boolean;
-  canRemoveMap?: Record<string, boolean>; // Map of scenario ID to can_remove
+  canRemoveMap?: Record<string, boolean>; // Map of simulation ID to can_remove
 }
 
-export function ScenarioCardGrid<
-  T extends ScenarioMappingItem = ScenarioMappingItem,
->({
-  scenarioMapping,
-  validScenarioIds,
-  selectedScenarioIds,
+export function SimulationCardGrid({
+  simulationMapping,
+  validSimulationIds,
+  selectedSimulationIds,
   onSelect,
-  label = "Scenarios",
-  description = "Select scenarios to add to the simulation",
+  label = "Simulations",
+  description = "Select simulations to add to the cohort",
   readonly = false,
   canRemoveMap = {},
-}: ScenarioCardGridProps<T>) {
+}: SimulationCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
 
-  // Build scenarios from mapping
-  const baseScenarios = React.useMemo(() => {
-    const scenarios = validScenarioIds.map((id) => ({
+  // Build simulations from mapping
+  const baseSimulations = React.useMemo(() => {
+    const simulations = validSimulationIds.map((id) => ({
       id,
-      ...scenarioMapping[id],
+      ...simulationMapping[id],
     }));
 
     // Sort by name
-    return scenarios.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-  }, [validScenarioIds, scenarioMapping]);
-
+    return simulations.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [validSimulationIds, simulationMapping]);
 
   // Apply search filter, then sort selected first
-  const filteredScenarios = React.useMemo(() => {
-    let filtered = baseScenarios;
+  const filteredSimulations = React.useMemo(() => {
+    let filtered = baseSimulations;
 
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (scenario) =>
-          scenario.name?.toLowerCase().includes(searchLower) ||
-          scenario.description?.toLowerCase().includes(searchLower),
+        (simulation) =>
+          simulation.name?.toLowerCase().includes(searchLower) ||
+          simulation.description?.toLowerCase().includes(searchLower),
       );
     }
 
-    // Sort: selected scenarios first (preserving order from selectedScenarioIds array), then unselected by name
+    // Sort: selected simulations first (preserving order from selectedSimulationIds array), then unselected by name
     return filtered.sort((a, b) => {
-      const aSelected = selectedScenarioIds.includes(a.id);
-      const bSelected = selectedScenarioIds.includes(b.id);
+      const aSelected = selectedSimulationIds.includes(a.id);
+      const bSelected = selectedSimulationIds.includes(b.id);
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
       if (aSelected && bSelected) {
-        // Both selected - preserve order from selectedScenarioIds array
-        const aIndex = selectedScenarioIds.indexOf(a.id);
-        const bIndex = selectedScenarioIds.indexOf(b.id);
+        // Both selected - preserve order from selectedSimulationIds array
+        const aIndex = selectedSimulationIds.indexOf(a.id);
+        const bIndex = selectedSimulationIds.indexOf(b.id);
         return aIndex - bIndex;
       }
       // Both unselected - sort by name
       return (a.name || "").localeCompare(b.name || "");
     });
-  }, [baseScenarios, searchTerm, selectedScenarioIds]);
+  }, [baseSimulations, searchTerm, selectedSimulationIds]);
 
-  const handleSelect = (scenarioId: string) => {
+  const handleSelect = (simulationId: string) => {
     if (readonly) return;
-    const isSelected = selectedScenarioIds.includes(scenarioId);
+    const isSelected = selectedSimulationIds.includes(simulationId);
     // Prevent unselection if can_remove is false
-    if (isSelected && canRemoveMap[scenarioId] === false) {
+    if (isSelected && canRemoveMap[simulationId] === false) {
       return;
     }
     const newIds = isSelected
-      ? selectedScenarioIds.filter((id) => id !== scenarioId)
-      : [...selectedScenarioIds, scenarioId];
+      ? selectedSimulationIds.filter((id) => id !== simulationId)
+      : [...selectedSimulationIds, simulationId];
     onSelect(newIds);
   };
-
-
 
   return (
     <TooltipProvider>
@@ -113,7 +100,7 @@ export function ScenarioCardGrid<
           <Search className="size-4 shrink-0 opacity-50" />
           <input
             type="text"
-            placeholder="Search scenarios..."
+            placeholder="Search simulations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
@@ -123,21 +110,21 @@ export function ScenarioCardGrid<
 
         {/* Card Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[272px] overflow-y-auto py-2 px-2">
-          {filteredScenarios.length === 0 ? (
+          {filteredSimulations.length === 0 ? (
             <div className="col-span-full text-center py-8 text-muted-foreground">
-              No scenarios found. Try adjusting your search or filters.
+              No simulations found. Try adjusting your search or filters.
             </div>
           ) : (
-            filteredScenarios.map((scenario) => {
-              const isSelected = selectedScenarioIds.includes(scenario.id);
-              const cannotRemove = isSelected && canRemoveMap[scenario.id] === false;
+            filteredSimulations.map((simulation) => {
+              const isSelected = selectedSimulationIds.includes(simulation.id);
+              const cannotRemove = isSelected && canRemoveMap[simulation.id] === false;
 
               return (
-                <Tooltip key={scenario.id}>
+                <Tooltip key={simulation.id}>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={() => handleSelect(scenario.id)}
+                      onClick={() => handleSelect(simulation.id)}
                       disabled={readonly || cannotRemove}
                       className={cn(
                         "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
@@ -156,14 +143,14 @@ export function ScenarioCardGrid<
                       )}
 
                       <div className="flex items-start gap-3">
-                        <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <PlayCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm leading-tight">
-                            {scenario.name || "Unnamed Scenario"}
+                            {simulation.name || "Unnamed Simulation"}
                           </h3>
-                          {scenario.description && (
+                          {simulation.description && (
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {scenario.description}
+                              {simulation.description}
                             </p>
                           )}
                         </div>
@@ -172,7 +159,7 @@ export function ScenarioCardGrid<
                   </TooltipTrigger>
                   {cannotRemove && (
                     <TooltipContent>
-                      <p>This scenario cannot be removed because it has active records</p>
+                      <p>This simulation cannot be removed because it has active records</p>
                     </TooltipContent>
                   )}
                 </Tooltip>

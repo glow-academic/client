@@ -2327,7 +2327,11 @@ export default function Simulation({
             <ScenarioCardGrid
               scenarioMapping={simulationData?.scenario_mapping || {}}
               validScenarioIds={validScenarioIds}
-              selectedScenarioIds={currentScenarioIds}
+              selectedScenarioIds={
+                // Use searchParams as source of truth for ordering
+                searchParams.get("scenarioIds")?.split(",").filter(Boolean) ||
+                currentScenarioIds
+              }
               onSelect={handleScenarioSelect}
               readonly={isReadonly}
               canRemoveMap={useMemo(() => {

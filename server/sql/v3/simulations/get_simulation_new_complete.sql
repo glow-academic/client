@@ -165,7 +165,7 @@ WITH user_departments AS (
             LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
             CROSS JOIN user_department_ids udi
             WHERE r.active = true
-              AND r.agent_role = 'grade-text'
+              AND r.agent_role = 'member'
               AND (
                   rd.department_id = ANY(udi.ids)
                   OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)

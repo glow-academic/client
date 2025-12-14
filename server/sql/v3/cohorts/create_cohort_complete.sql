@@ -42,18 +42,25 @@ link_profiles AS (
     ON CONFLICT (cohort_id, profile_id) DO UPDATE SET
         active = true
 ),
+simulations_with_order AS (
+    -- Prepare simulations with position based on array order
+    SELECT 
+        simulation_id::uuid,
+        ROW_NUMBER() OVER () as position
+    FROM UNNEST($6::text[]) as simulation_id
+    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
+),
 link_simulations AS (
-    -- Link simulations if provided (array may be empty)
-    INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
+    -- Link simulations with position if provided (array may be empty)
+    INSERT INTO cohort_simulations (cohort_id, simulation_id, active, position)
     SELECT 
         nc.id,
-        simulation_id::uuid,
-        true
+        swo.simulation_id,
+        true,
+        swo.position
     FROM new_cohort nc
-    CROSS JOIN UNNEST($6::text[]) as simulation_id
+    CROSS JOIN simulations_with_order swo
     WHERE COALESCE(array_length($6::text[], 1), 0) > 0
-    ON CONFLICT (cohort_id, simulation_id) DO UPDATE SET
-        active = true
 )
 -- Return cohort ID
 SELECT id FROM new_cohort

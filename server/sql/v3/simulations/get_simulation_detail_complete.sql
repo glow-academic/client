@@ -272,7 +272,7 @@ user_context AS (
             LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
             CROSS JOIN user_department_ids udi
             WHERE r.active = true
-              AND r.agent_role = 'simulation-text'
+              AND r.agent_role = 'member'
               AND (
                   rd.department_id = ANY(udi.ids)
                   OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -285,7 +285,7 @@ user_context AS (
                 COALESCE(r2.description, '') as description
             FROM simulation_base sb
             JOIN rubrics r2 ON r2.id = sb.rubric_id
-            WHERE sb.rubric_id IS NOT NULL AND r2.active = true AND r2.agent_role = 'simulation-text'
+            WHERE sb.rubric_id IS NOT NULL AND r2.active = true AND r2.agent_role = 'member'
             UNION
             -- Also include rubrics from selected scenarios (for edit mode - ensures selected rubrics are available)
             -- Include all rubrics from scenarios, regardless of agent_role, to ensure they appear in the mapping

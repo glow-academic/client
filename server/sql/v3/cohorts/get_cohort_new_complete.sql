@@ -40,7 +40,7 @@ cohort_profile_ids AS (
     WHERE cp.cohort_id = (SELECT id FROM default_cohort) AND cp.active = true
 ),
 cohort_simulation_ids AS (
-    SELECT cs.simulation_id, cs.active
+    SELECT cs.simulation_id, cs.active, cs.position
     FROM cohort_simulations cs
     WHERE cs.cohort_id = (SELECT id FROM default_cohort)
 ),
@@ -48,6 +48,7 @@ cohort_simulation_stats AS (
     SELECT 
         cs.simulation_id,
         cs.active,
+        cs.position,
         s.title as name,
         COALESCE(s.description, '') as description,
         COALESCE(
@@ -76,7 +77,7 @@ cohort_simulation_stats AS (
     LEFT JOIN grades scg ON scg.eval = false
     LEFT JOIN runs r_cohort_new ON r_cohort_new.id = scg.run_id
     LEFT JOIN chat_runs rc_cohort_new ON rc_cohort_new.run_id = r_cohort_new.id AND rc_cohort_new.chat_id = sc.id
-    GROUP BY cs.simulation_id, cs.active, s.id, s.title, s.description
+    GROUP BY cs.simulation_id, cs.active, cs.position, s.id, s.title, s.description
 ),
 valid_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -358,7 +359,7 @@ SELECT
     END as can_edit,
     (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
      FROM cohort_profile_ids) as profile_ids,
-    (SELECT COALESCE(array_agg(simulation_id::text), ARRAY[]::text[])
+    (SELECT COALESCE(array_agg(simulation_id::text ORDER BY position), ARRAY[]::text[])
      FROM cohort_simulation_ids
      WHERE active = true) as simulation_ids,
     (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
@@ -374,11 +375,12 @@ SELECT
             'description', css.description,
             'time_limit', css.time_limit,
             'active', css.active,
+            'position', css.position,
             'usage_count', css.usage_count,
             'success_rate', css.success_rate,
             'last_used', css.last_used,
             'can_remove', CASE WHEN css.usage_count = 0 THEN true ELSE false END
-        )
+        ) ORDER BY css.position
      ), '[]'::jsonb)
      FROM cohort_simulation_stats css
     ) as simulations_list,

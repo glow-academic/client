@@ -12023,13 +12023,6 @@
             "type": "array",
             "title": "Profile Ids"
           },
-          "valid_profile_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Profile Ids"
-          },
           "simulations": {
             "items": {
               "$ref": "#/components/schemas/SimulationInCohort"
@@ -12037,61 +12030,21 @@
             "type": "array",
             "title": "Simulations"
           },
-          "staff": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__cohorts__detail__StaffItem"
-            },
-            "type": "array",
-            "title": "Staff"
-          },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "additionalProperties": true,
+              "type": "object"
             },
             "type": "object",
             "title": "Simulation Mapping"
           },
-          "profile_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ProfileMappingItem"
-            },
-            "type": "object",
-            "title": "Profile Mapping"
-          },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__cohorts__detail__DepartmentMappingItem"
+              "additionalProperties": true,
+              "type": "object"
             },
             "type": "object",
             "title": "Department Mapping"
-          },
-          "cohort_mapping": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/CohortMappingItem"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Mapping"
-          },
-          "department_mapping_for_staff": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/app__api__v3__cohorts__detail__DepartmentMappingItem"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Mapping For Staff"
           }
         },
         "type": "object",
@@ -12105,11 +12058,8 @@
           "simulation_ids",
           "valid_simulation_ids",
           "profile_ids",
-          "valid_profile_ids",
           "simulations",
-          "staff",
           "simulation_mapping",
-          "profile_mapping",
           "department_mapping"
         ],
         "title": "CohortDetailResponse",
@@ -28781,6 +28731,10 @@
             "type": "boolean",
             "title": "Active"
           },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
           "usage_count": {
             "type": "integer",
             "title": "Usage Count"
@@ -28812,6 +28766,7 @@
           "description",
           "time_limit",
           "active",
+          "position",
           "usage_count",
           "success_rate",
           "last_used",
@@ -33538,53 +33493,6 @@
           "description": {
             "type": "string",
             "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__cohorts__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "staff_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Staff Ids"
           }
         },
         "type": "object",

@@ -59,30 +59,29 @@ link_profiles AS (
         active = true,
         updated_at = NOW()
 ),
-deactivate_simulations AS (
-    -- Deactivate existing simulation relationships not in the new list
-    UPDATE cohort_simulations
-    SET active = false, updated_at = NOW()
-    WHERE cohort_id = $1::uuid
-      AND COALESCE(array_length($7::text[], 1), 0) > 0
-      AND simulation_id NOT IN (
-          SELECT simulation_id::uuid
-          FROM UNNEST($7::text[]) as simulation_id
-      )
+replace_simulations AS (
+    -- Delete all existing simulation links to reset positions
+    DELETE FROM cohort_simulations WHERE cohort_id = $1::uuid
+),
+simulations_with_order AS (
+    -- Prepare simulations with position based on array order
+    SELECT 
+        simulation_id::uuid,
+        ROW_NUMBER() OVER () as position
+    FROM UNNEST($7::text[]) as simulation_id
+    WHERE COALESCE(array_length($7::text[], 1), 0) > 0
 ),
 link_simulations AS (
-    -- Link new simulations if provided
-    INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
+    -- Link simulations with position if provided
+    INSERT INTO cohort_simulations (cohort_id, simulation_id, active, position)
     SELECT 
         cu.id,
-        simulation_id::uuid,
-        true
+        swo.simulation_id,
+        true,
+        swo.position
     FROM cohort_update cu
-    CROSS JOIN UNNEST($7::text[]) as simulation_id
+    CROSS JOIN simulations_with_order swo
     WHERE COALESCE(array_length($7::text[], 1), 0) > 0
-    ON CONFLICT (cohort_id, simulation_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
 )
 -- Return updated cohort info
 SELECT id, title FROM cohort_update

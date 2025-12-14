@@ -35,15 +35,11 @@ original_persona AS (
         p.name,
         p.description,
         COALESCE(pr.system_prompt, '') as system_prompt,
-        pta.agent_id as text_agent_id,
-        pva.agent_id as voice_agent_id,
         p.color,
         p.icon
     FROM personas p
     LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
     LEFT JOIN prompts pr ON pr.id = pp.prompt_id
-    LEFT JOIN persona_text_agents pta ON pta.persona_id = p.id AND pta.active = true
-    LEFT JOIN persona_voice_agents pva ON pva.persona_id = p.id AND pva.active = true
     WHERE p.id = $1
 ),
 original_departments AS (
@@ -92,40 +88,6 @@ link_prompt AS (
         NOW()
     FROM new_persona np
     CROSS JOIN new_prompt newp
-    RETURNING persona_id::text
-),
-link_text_agent AS (
-    -- Link text agent if original persona had one
-    INSERT INTO persona_text_agents (persona_id, agent_id, active, created_at, updated_at)
-    SELECT 
-        np.persona_id::uuid,
-        op.text_agent_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM new_persona np
-    CROSS JOIN original_persona op
-    WHERE op.text_agent_id IS NOT NULL
-    ON CONFLICT (persona_id, agent_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-    RETURNING persona_id::text
-),
-link_voice_agent AS (
-    -- Link voice agent if original persona had one
-    INSERT INTO persona_voice_agents (persona_id, agent_id, active, created_at, updated_at)
-    SELECT 
-        np.persona_id::uuid,
-        op.voice_agent_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM new_persona np
-    CROSS JOIN original_persona op
-    WHERE op.voice_agent_id IS NOT NULL
-    ON CONFLICT (persona_id, agent_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
     RETURNING persona_id::text
 ),
 copy_departments AS (

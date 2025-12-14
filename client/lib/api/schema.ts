@@ -5282,32 +5282,20 @@ export interface components {
             valid_simulation_ids: string[];
             /** Profile Ids */
             profile_ids: string[];
-            /** Valid Profile Ids */
-            valid_profile_ids: string[];
             /** Simulations */
             simulations: components["schemas"]["SimulationInCohort"][];
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__cohorts__detail__StaffItem"][];
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: components["schemas"]["ProfileMappingItem"];
+                [key: string]: {
+                    [key: string]: unknown;
+                };
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__cohorts__detail__DepartmentMappingItem"];
+                [key: string]: {
+                    [key: string]: unknown;
+                };
             };
-            /** Cohort Mapping */
-            cohort_mapping?: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            } | null;
-            /** Department Mapping For Staff */
-            department_mapping_for_staff?: {
-                [key: string]: components["schemas"]["app__api__v3__cohorts__detail__DepartmentMappingItem"];
-            } | null;
         };
         /**
          * CohortDetailWithProfilesRequest
@@ -11680,6 +11668,8 @@ export interface components {
             time_limit: number | null;
             /** Active */
             active: boolean;
+            /** Position */
+            position: number;
             /** Usage Count */
             usage_count: number;
             /** Success Rate */
@@ -13444,20 +13434,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__cohorts__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Staff Ids */
-            staff_ids?: string[] | null;
         };
         /**
          * StaffItem
