@@ -211,7 +211,7 @@ parameter_data AS (
         p.document_parameter,
         p.persona_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
-        CASE WHEN EXISTS (SELECT 1 FROM video_parameters vp WHERE vp.parameter_id = p.id AND vp.active = true) THEN true ELSE false END as video_parameter
+        p.video_parameter as video_parameter
     FROM parameters p
     JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.active = true
     LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
