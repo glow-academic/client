@@ -42744,6 +42744,10 @@
           "can_remove": {
             "type": "boolean",
             "title": "Can Remove"
+          },
+          "has_active_video": {
+            "type": "boolean",
+            "title": "Has Active Video"
           }
         },
         "type": "object",
@@ -42763,7 +42767,8 @@
           "usage_count",
           "success_rate",
           "last_used",
-          "can_remove"
+          "can_remove",
+          "has_active_video"
         ],
         "title": "ScenarioInSimulation",
         "description": "Scenario with position in simulation."
@@ -42930,7 +42935,14 @@
             "title": "Grade Voice Agent Id"
           },
           "simulation_text_agent_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Simulation Text Agent Id"
           },
           "simulation_voice_agent_id": {
@@ -43641,6 +43653,10 @@
           "can_remove": {
             "type": "boolean",
             "title": "Can Remove"
+          },
+          "has_active_video": {
+            "type": "boolean",
+            "title": "Has Active Video"
           }
         },
         "type": "object",
@@ -43659,7 +43675,8 @@
           "usage_count",
           "success_rate",
           "last_used",
-          "can_remove"
+          "can_remove",
+          "has_active_video"
         ],
         "title": "ScenarioInSimulation",
         "description": "Scenario with position in simulation."
@@ -43820,6 +43837,61 @@
             "type": "boolean",
             "title": "Practice Simulation"
           },
+          "hint_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Agent Id"
+          },
+          "grade_text_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Text Agent Id"
+          },
+          "grade_voice_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Voice Agent Id"
+          },
+          "simulation_text_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Text Agent Id"
+          },
+          "simulation_voice_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Voice Agent Id"
+          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -43911,6 +43983,21 @@
             },
             "type": "object",
             "title": "Field Mapping"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
           }
         },
         "type": "object",
@@ -43928,6 +44015,11 @@
           "valid_video_ids",
           "active",
           "practice_simulation",
+          "hint_agent_id",
+          "grade_text_agent_id",
+          "grade_voice_agent_id",
+          "simulation_text_agent_id",
+          "simulation_voice_agent_id",
           "can_edit",
           "can_duplicate",
           "can_delete",
@@ -43942,7 +44034,9 @@
           "video_mapping",
           "rubric_mapping",
           "department_mapping",
-          "field_mapping"
+          "field_mapping",
+          "agent_mapping",
+          "valid_agent_ids"
         ],
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."

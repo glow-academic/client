@@ -77,6 +77,7 @@ export interface ContentItem {
   show_image?: boolean; // Scenarios and videos
   rubric_id?: string | null;
   time_limit_seconds?: number | null; // Per-scenario time limit in seconds
+  has_active_video?: boolean; // True if scenario has an active video attached
 }
 
 export interface SimulationContentTableProps {

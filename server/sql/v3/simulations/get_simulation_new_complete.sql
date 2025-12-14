@@ -90,7 +90,15 @@ WITH user_departments AS (
                         'usage_count', COALESCE(stats.usage_count, 0),
                         'success_rate', COALESCE(stats.success_rate, 0),
                         'last_used', stats.last_used_date,
-                        'can_remove', COALESCE(stats.usage_count, 0) = 0
+                        'can_remove', COALESCE(stats.usage_count, 0) = 0,
+                        'has_active_video', CASE 
+                            WHEN sb.scenario_id IS NOT NULL AND EXISTS (
+                                SELECT 1 FROM scenario_videos sv 
+                                WHERE sv.scenario_id = sb.scenario_id 
+                                AND sv.active = true
+                            ) THEN true 
+                            ELSE false 
+                        END
                     ) ORDER BY sb.position
                 ),
                 '[]'::jsonb
@@ -125,14 +133,9 @@ WITH user_departments AS (
                 v.id,
                 v.name
             FROM videos v
-            LEFT JOIN video_departments vd ON vd.video_id = v.id AND vd.active = true
-            CROSS JOIN user_department_ids udi
-            JOIN video_tree vt ON vt.parent_id = v.id AND vt.child_id = v.id
+            JOIN scenario_videos sv ON sv.video_id = v.id AND sv.active = true
+            JOIN valid_scenarios_list vsl ON vsl.id = sv.scenario_id
             WHERE v.active = true
-              AND (
-                  vd.department_id = ANY(udi.ids)
-                  OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = v.id AND vd2.active = true)
-              )
         ),
         valid_videos AS (
             SELECT ARRAY_AGG(id::text) as ids
@@ -162,6 +165,7 @@ WITH user_departments AS (
             LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
             CROSS JOIN user_department_ids udi
             WHERE r.active = true
+              AND r.agent_role = 'grade-text'
               AND (
                   rd.department_id = ANY(udi.ids)
                   OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)

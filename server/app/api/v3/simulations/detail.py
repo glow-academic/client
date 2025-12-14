@@ -127,6 +127,9 @@ class ScenarioInSimulation(BaseModel):
     last_used: str | None  # ISO timestamp or None
     can_remove: bool  # True if usage_count == 0
 
+    # Video detection
+    has_active_video: bool  # True if scenario has an active video attached
+
 
 class ParameterItem(BaseModel):
     """Parameter data for dropdown."""
@@ -176,7 +179,7 @@ class SimulationDetailResponse(BaseModel):
     hint_agent_id: str
     grade_text_agent_id: str
     grade_voice_agent_id: str | None
-    simulation_text_agent_id: str
+    simulation_text_agent_id: str | None
     simulation_voice_agent_id: str | None
 
     # Permission flags
@@ -322,6 +325,7 @@ async def get_simulation_detail(
                             success_rate=s_data.get("success_rate", 0),
                             last_used=s_data.get("last_used"),
                             can_remove=s_data.get("can_remove", True),
+                            has_active_video=s_data.get("has_active_video", False),
                         )
                     )
 
@@ -542,7 +546,7 @@ async def get_simulation_detail(
             else None,
             simulation_text_agent_id=str(result.get("simulation_text_agent_id", ""))
             if result.get("simulation_text_agent_id")
-            else "",
+            else None,
             simulation_voice_agent_id=str(result.get("simulation_voice_agent_id"))
             if result.get("simulation_voice_agent_id")
             else None,

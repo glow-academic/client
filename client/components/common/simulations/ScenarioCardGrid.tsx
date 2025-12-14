@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -31,6 +30,7 @@ export interface ScenarioCardGridProps<
   label?: string;
   description?: string;
   readonly?: boolean;
+  canRemoveMap?: Record<string, boolean>; // Map of scenario ID to can_remove
 }
 
 export function ScenarioCardGrid<
@@ -43,6 +43,7 @@ export function ScenarioCardGrid<
   label = "Scenarios",
   description = "Select scenarios to add to the simulation",
   readonly = false,
+  canRemoveMap = {},
 }: ScenarioCardGridProps<T>) {
   const [searchTerm, setSearchTerm] = React.useState("");
 
@@ -85,46 +86,16 @@ export function ScenarioCardGrid<
   const handleSelect = (scenarioId: string) => {
     if (readonly) return;
     const isSelected = selectedScenarioIds.includes(scenarioId);
+    // Prevent unselection if can_remove is false
+    if (isSelected && canRemoveMap[scenarioId] === false) {
+      return;
+    }
     const newIds = isSelected
       ? selectedScenarioIds.filter((id) => id !== scenarioId)
       : [...selectedScenarioIds, scenarioId];
     onSelect(newIds);
   };
 
-  // Helper to render parameter badges
-  const getScenarioParameterBadges = (scenario: { id: string } & T) => {
-    if (
-      !scenario.parameter_item_ids ||
-      scenario.parameter_item_ids.length === 0
-    ) {
-      return [];
-    }
-    const badges: {
-      parameterName: string;
-      value: string;
-      parameterId: string;
-    }[] = [];
-    scenario.parameter_item_ids.forEach((parameterItemId) => {
-      const parameterItem = scenario.parameter_item_mapping?.[parameterItemId] as {
-        parameter_name?: string;
-        name?: string;
-        parameter_id?: string;
-      } | undefined;
-      if (
-        parameterItem &&
-        parameterItem.parameter_name &&
-        parameterItem.name &&
-        parameterItem.parameter_id
-      ) {
-        badges.push({
-          parameterName: parameterItem.parameter_name,
-          value: parameterItem.name,
-          parameterId: parameterItem.parameter_id,
-        });
-      }
-    });
-    return badges;
-  };
 
 
   return (
@@ -152,65 +123,52 @@ export function ScenarioCardGrid<
           ) : (
             filteredScenarios.map((scenario) => {
               const isSelected = selectedScenarioIds.includes(scenario.id);
-              const badges = getScenarioParameterBadges(scenario);
+              const cannotRemove = isSelected && canRemoveMap[scenario.id] === false;
 
               return (
-                <button
-                  key={scenario.id}
-                  type="button"
-                  onClick={() => handleSelect(scenario.id)}
-                  disabled={readonly}
-                  className={cn(
-                    "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                    "hover:shadow-md hover:bg-accent/50",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    "disabled:pointer-events-none disabled:opacity-50",
-                    isSelected && "ring-2 ring-primary bg-accent"
-                  )}
-                >
-                  {/* Check icon - top right */}
-                  {isSelected && (
-                    <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                    </div>
-                  )}
-
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm leading-tight">
-                        {scenario.name || "Unnamed Scenario"}
-                      </h3>
-                      {scenario.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {scenario.description}
-                        </p>
+                <Tooltip key={scenario.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(scenario.id)}
+                      disabled={readonly || cannotRemove}
+                      className={cn(
+                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                        "hover:shadow-md hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        "disabled:pointer-events-none disabled:opacity-50",
+                        isSelected && "ring-2 ring-primary bg-accent",
+                        cannotRemove && "opacity-75 cursor-not-allowed"
                       )}
-                    </div>
-                  </div>
-
-                  {badges.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {badges.slice(0, 3).map((badge, idx) => (
-                        <Tooltip key={idx}>
-                          <TooltipTrigger asChild>
-                            <Badge variant="outline" className="text-xs">
-                              {badge.value}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{badge.parameterName}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
-                      {badges.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{badges.length - 3}
-                        </Badge>
+                    >
+                      {/* Check icon - top right */}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
                       )}
-                    </div>
+
+                      <div className="flex items-start gap-3">
+                        <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight">
+                            {scenario.name || "Unnamed Scenario"}
+                          </h3>
+                          {scenario.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {scenario.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  </TooltipTrigger>
+                  {cannotRemove && (
+                    <TooltipContent>
+                      <p>This scenario cannot be removed because it has active records</p>
+                    </TooltipContent>
                   )}
-                </button>
+                </Tooltip>
               );
             })
           )}

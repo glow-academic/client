@@ -117,6 +117,9 @@ class ScenarioInSimulation(BaseModel):
     last_used: str | None  # ISO timestamp or None
     can_remove: bool  # True if usage_count == 0
 
+    # Video detection
+    has_active_video: bool  # True if scenario has an active video attached
+
 
 class ParameterItem(BaseModel):
     """Parameter data for dropdown."""
@@ -163,6 +166,13 @@ class SimulationDetailResponse(BaseModel):
     active: bool
     practice_simulation: bool
 
+    # Agent IDs
+    hint_agent_id: str | None
+    grade_text_agent_id: str | None
+    grade_voice_agent_id: str | None
+    simulation_text_agent_id: str | None
+    simulation_voice_agent_id: str | None
+
     # Permission flags
     can_edit: bool
     can_duplicate: bool
@@ -187,6 +197,8 @@ class SimulationDetailResponse(BaseModel):
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
     field_mapping: FieldMapping
+    agent_mapping: dict[str, dict[str, Any]]  # Agent mapping
+    valid_agent_ids: list[str]  # Valid agent IDs for pickers
 
 
 router = APIRouter()
@@ -294,6 +306,7 @@ async def get_simulation_new(
                             success_rate=s_data.get("success_rate", 0),
                             last_used=s_data.get("last_used"),
                             can_remove=s_data.get("can_remove", True),
+                            has_active_video=s_data.get("has_active_video", False),
                         )
                     )
 
@@ -461,6 +474,19 @@ async def get_simulation_new(
                         )
                     )
 
+        # Parse agent_mapping
+        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
+        if isinstance(agent_mapping_data, dict):
+            agent_mapping = agent_mapping_data
+
+        valid_agent_ids_raw = result.get("valid_agent_ids") or []
+        valid_agent_ids = (
+            [str(aid) for aid in valid_agent_ids_raw]
+            if isinstance(valid_agent_ids_raw, list)
+            else []
+        )
+
         # Get user role and primary department for default behavior
         user_role_from_result = result.get("user_role", "trainee")
         is_superadmin = user_role_from_result == "superadmin"
@@ -490,6 +516,21 @@ async def get_simulation_new(
             valid_video_ids=valid_video_ids,
             active=result.get("active", False),
             practice_simulation=result.get("practice_simulation", False),
+            hint_agent_id=str(result.get("hint_agent_id"))
+            if result.get("hint_agent_id")
+            else None,
+            grade_text_agent_id=str(result.get("grade_text_agent_id"))
+            if result.get("grade_text_agent_id")
+            else None,
+            grade_voice_agent_id=str(result.get("grade_voice_agent_id"))
+            if result.get("grade_voice_agent_id")
+            else None,
+            simulation_text_agent_id=str(result.get("simulation_text_agent_id"))
+            if result.get("simulation_text_agent_id")
+            else None,
+            simulation_voice_agent_id=str(result.get("simulation_voice_agent_id"))
+            if result.get("simulation_voice_agent_id")
+            else None,
             can_edit=can_edit,
             can_duplicate=can_duplicate,
             can_delete=can_delete,
@@ -505,6 +546,8 @@ async def get_simulation_new(
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
             field_mapping=field_mapping_dict,
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response

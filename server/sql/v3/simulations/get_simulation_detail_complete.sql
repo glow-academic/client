@@ -110,7 +110,7 @@ user_context AS (
             SELECT 
                 s.id as scenario_id,
                 s.name,
-                ps.problem_statement,
+                COALESCE(s.description, '') as description,
                 ss.active,
                 (ss.position = 1) as default_scenario,
                 ss.position,
@@ -128,8 +128,6 @@ user_context AS (
                 ) as parameter_item_ids
             FROM scenarios s
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
-            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             LEFT JOIN scenario_time_limits stl ON stl.simulation_id = ss.simulation_id AND stl.scenario_id = ss.scenario_id AND stl.active = true
             WHERE ss.simulation_id = $1
             ORDER BY ss.position
@@ -187,7 +185,7 @@ user_context AS (
                     jsonb_build_object(
                         'scenario_id', sb.scenario_id::text,
                         'title', sb.name,
-                        'description', COALESCE(sb.problem_statement, ''),
+                        'description', sb.description,
                         'active', sb.active,
                         'default_scenario', COALESCE(sb.default_scenario, false),
                         'position', sb.position,
@@ -204,7 +202,15 @@ user_context AS (
                         'usage_count', COALESCE(stats.usage_count, 0),
                         'success_rate', COALESCE(stats.success_rate, 0),
                         'last_used', stats.last_used_date,
-                        'can_remove', COALESCE(stats.usage_count, 0) = 0
+                        'can_remove', COALESCE(stats.usage_count, 0) = 0,
+                        'has_active_video', CASE 
+                            WHEN sb.scenario_id IS NOT NULL AND EXISTS (
+                                SELECT 1 FROM scenario_videos sv 
+                                WHERE sv.scenario_id = sb.scenario_id 
+                                AND sv.active = true
+                            ) THEN true 
+                            ELSE false 
+                        END
                     ) ORDER BY sb.position
                 ),
                 '[]'::jsonb
@@ -219,10 +225,8 @@ user_context AS (
             SELECT DISTINCT
                 s.id,
                 s.name,
-                ps.problem_statement
+                COALESCE(s.description, '') as description
             FROM scenarios s
-            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             CROSS JOIN user_department_ids udi
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
             LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
@@ -243,7 +247,7 @@ user_context AS (
                     ssb.scenario_id
                 ) as id,
                 s2.name,
-                ps2.problem_statement
+                COALESCE(s2.description, '') as description
             FROM simulation_scenarios_base ssb
             JOIN scenarios s2 ON s2.id = COALESCE(
                 (SELECT st3.parent_id 
@@ -253,8 +257,6 @@ user_context AS (
                  LIMIT 1),
                 ssb.scenario_id
             )
-            LEFT JOIN scenario_problem_statements sps2 ON sps2.scenario_id = s2.id AND sps2.active = true
-            LEFT JOIN problem_statements ps2 ON ps2.id = sps2.problem_statement_id
             WHERE s2.active = true
         ),
         valid_scenarios AS (
@@ -270,19 +272,30 @@ user_context AS (
             LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
             CROSS JOIN user_department_ids udi
             WHERE r.active = true
+              AND r.agent_role = 'simulation-text'
               AND (
                   rd.department_id = ANY(udi.ids)
                   OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
               )
             UNION
-            -- Also include currently selected rubric (for edit mode - ensures selected item is available)
+            -- Also include currently selected rubric from simulation_base (for edit mode - ensures selected item is available)
             SELECT DISTINCT
                 r2.id,
                 r2.name,
                 COALESCE(r2.description, '') as description
             FROM simulation_base sb
             JOIN rubrics r2 ON r2.id = sb.rubric_id
-            WHERE sb.rubric_id IS NOT NULL AND r2.active = true
+            WHERE sb.rubric_id IS NOT NULL AND r2.active = true AND r2.agent_role = 'simulation-text'
+            UNION
+            -- Also include rubrics from selected scenarios (for edit mode - ensures selected rubrics are available)
+            -- Include all rubrics from scenarios, regardless of agent_role, to ensure they appear in the mapping
+            SELECT DISTINCT
+                r3.id,
+                r3.name,
+                COALESCE(r3.description, '') as description
+            FROM simulation_scenarios_base ssb
+            JOIN rubrics r3 ON r3.id = ssb.rubric_id
+            WHERE ssb.rubric_id IS NOT NULL AND r3.active = true
         ),
         rubric_mapping_data AS (
             SELECT COALESCE(
@@ -423,7 +436,7 @@ user_context AS (
                     vsl.id::text,
                     jsonb_build_object(
                         'name', vsl.name,
-                        'description', COALESCE(vsl.problem_statement, ''),
+                        'description', vsl.description,
                         'persona_id', spd.persona_id::text,
                         'persona_mapping', CASE 
                             WHEN spd.persona_id IS NOT NULL THEN
@@ -542,9 +555,30 @@ user_context AS (
             JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
             WHERE pd.active = true
         ),
+        selected_agents_from_simulation AS (
+            -- Get currently selected agents from simulation_base (for edit mode - ensures selected agents are available)
+            SELECT DISTINCT a.id, a.name, a.description, a.role
+            FROM simulation_base sb
+            JOIN agents a ON (
+                (a.id::text = sb.hint_agent_id AND a.role = 'hint')
+                OR (a.id::text = sb.grade_text_agent_id AND a.role IN ('grade', 'grade-text'))
+                OR (a.id::text = sb.grade_voice_agent_id AND a.role IN ('grade', 'grade-voice'))
+                OR (a.id::text = sb.simulation_text_agent_id AND a.role = 'simulation-text')
+                OR (a.id::text = sb.simulation_voice_agent_id AND a.role = 'simulation-voice')
+            )
+            WHERE a.active = true
+              AND (
+                  sb.hint_agent_id IS NOT NULL
+                  OR sb.grade_text_agent_id IS NOT NULL
+                  OR sb.grade_voice_agent_id IS NOT NULL
+                  OR sb.simulation_text_agent_id IS NOT NULL
+                  OR sb.simulation_voice_agent_id IS NOT NULL
+              )
+        ),
         valid_agents AS (
-            -- Get agents with roles 'hint', 'grade', 'grade-text', or 'grade-voice'
+            -- Get agents with roles 'hint', 'grade', 'grade-text', 'grade-voice', 'simulation-text', or 'simulation-voice'
             -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+            -- Also include currently selected agents (for edit mode - ensures selected agents are available)
             SELECT 
                 COALESCE(
                     jsonb_object_agg(
@@ -563,11 +597,14 @@ user_context AS (
                 FROM agents a
                 LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
                 WHERE a.active = true 
-                AND a.role IN ('hint', 'grade', 'grade-text', 'grade-voice')
+                AND a.role IN ('hint', 'grade', 'grade-text', 'grade-voice', 'simulation-text', 'simulation-voice')
                 GROUP BY a.id, a.name, a.description, a.role
                 HAVING 
                     COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
                     OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+                UNION
+                SELECT DISTINCT sas.id, sas.name, sas.description, sas.role
+                FROM selected_agents_from_simulation sas
             ) filtered_agents
         )
         SELECT 

@@ -50,7 +50,6 @@ import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   Activity,
   AlertCircle,
-  BarChart3,
   Brain,
   ChevronRight,
   ChevronsUpDown,
@@ -68,7 +67,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { EmulateProfileModal } from "./EmulateProfileModal";
 import { SidebarSkeleton } from "./SidebarSkeleton";
@@ -133,6 +132,16 @@ export function UnifiedSidebar({
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isEmulateModalOpen, setIsEmulateModalOpen] = useState(false);
   const federatedLogout = useFederatedLogout();
+
+  // Preserve scroll position across navigation
+  const savedScrollPositionRef = useRef<number | null>(null);
+  const isRestoringScrollRef = useRef<boolean>(false);
+  const getScrollContainer = () => {
+    // Find the scrollable SidebarContent element by data attribute
+    return document.querySelector(
+      '[data-sidebar="content"]'
+    ) as HTMLDivElement | null;
+  };
 
   // Get sidebar context to close mobile sidebar on navigation
   const { isMobile, setOpenMobile } = useSidebar();
@@ -401,14 +410,6 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("keys")) {
-        systemItems.push({
-          title: "Keys",
-          url: "#",
-          section: "keys",
-        });
-      }
-
       if (availableSections.includes("providers")) {
         systemItems.push({
           title: "Providers",
@@ -422,6 +423,14 @@ export function UnifiedSidebar({
           title: "Auth",
           url: "#",
           section: "auth",
+        });
+      }
+
+      if (availableSections.includes("keys")) {
+        systemItems.push({
+          title: "Keys",
+          url: "#",
+          section: "keys",
         });
       }
 
@@ -544,6 +553,16 @@ export function UnifiedSidebar({
       // Prevent rapid navigation clicks that could cause freezing
       if (isNavigating) return;
 
+      // Store scroll position before navigation to preserve it across re-renders
+      const scrollContainer = getScrollContainer();
+      const scrollBefore = scrollContainer?.scrollTop ?? null;
+      if (scrollBefore !== null && scrollBefore > 0) {
+        savedScrollPositionRef.current = scrollBefore;
+        sessionStorage.setItem("sidebar-scroll-position", String(scrollBefore));
+        sessionStorage.setItem("sidebar-is-restoring", "true");
+        isRestoringScrollRef.current = true;
+      }
+
       setIsNavigating(true);
 
       if (item.url && item.url !== "#") {
@@ -623,6 +642,29 @@ export function UnifiedSidebar({
     }
   }, [effectiveProfile, pathname, router, isLoading]);
   */
+
+  // Restore scroll position synchronously before paint to prevent flash
+  useLayoutEffect(() => {
+    const savedScrollFromStorage = sessionStorage.getItem(
+      "sidebar-scroll-position"
+    );
+    const isRestoringFromStorage =
+      sessionStorage.getItem("sidebar-is-restoring") === "true";
+
+    if (savedScrollFromStorage && isRestoringFromStorage) {
+      const savedScroll = Number(savedScrollFromStorage);
+      const scrollContainer = getScrollContainer();
+
+      if (scrollContainer && savedScroll > 0) {
+        scrollContainer.scrollTop = savedScroll;
+        // Clear saved position after restoration
+        sessionStorage.removeItem("sidebar-scroll-position");
+        sessionStorage.removeItem("sidebar-is-restoring");
+        savedScrollPositionRef.current = null;
+        isRestoringScrollRef.current = false;
+      }
+    }
+  }, [activeSection]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);

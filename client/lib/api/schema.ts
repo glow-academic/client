@@ -16799,6 +16799,8 @@ export interface components {
             last_used: string | null;
             /** Can Remove */
             can_remove: boolean;
+            /** Has Active Video */
+            has_active_video: boolean;
         };
         /**
          * ScenarioMappingItem
@@ -16862,7 +16864,7 @@ export interface components {
             /** Grade Voice Agent Id */
             grade_voice_agent_id: string | null;
             /** Simulation Text Agent Id */
-            simulation_text_agent_id: string;
+            simulation_text_agent_id: string | null;
             /** Simulation Voice Agent Id */
             simulation_voice_agent_id: string | null;
             /** Can Edit */
@@ -17151,6 +17153,8 @@ export interface components {
             last_used: string | null;
             /** Can Remove */
             can_remove: boolean;
+            /** Has Active Video */
+            has_active_video: boolean;
         };
         /**
          * ScenarioMappingItem
@@ -17211,6 +17215,16 @@ export interface components {
             active: boolean;
             /** Practice Simulation */
             practice_simulation: boolean;
+            /** Hint Agent Id */
+            hint_agent_id: string | null;
+            /** Grade Text Agent Id */
+            grade_text_agent_id: string | null;
+            /** Grade Voice Agent Id */
+            grade_voice_agent_id: string | null;
+            /** Simulation Text Agent Id */
+            simulation_text_agent_id: string | null;
+            /** Simulation Voice Agent Id */
+            simulation_voice_agent_id: string | null;
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -17257,6 +17271,14 @@ export interface components {
             field_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__simulations__new__FieldMappingItem"];
             };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
         };
         /**
          * ContentItemInRequest

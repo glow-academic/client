@@ -42,6 +42,7 @@ import { ScenarioCardGrid } from "@/components/common/simulations/ScenarioCardGr
 import type { ContentItem } from "@/components/common/simulations/SimulationContentTable";
 import { SimulationScenarioSection } from "@/components/common/simulations/SimulationScenarioSection";
 import { Switch } from "@/components/ui/switch";
+import { Accordion } from "@/components/ui/accordion";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
@@ -141,7 +142,8 @@ export default function Simulation({
         }
       });
 
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      const newParamsString = params.toString();
+      router.replace(`${pathname}?${newParamsString}`, { scroll: false });
     },
     [searchParams, pathname, router]
   );
@@ -232,13 +234,16 @@ export default function Simulation({
   );
   // Extract agent mapping (only available in detail endpoint, not new endpoint)
   // Map to the expected type format: Record<string, { name: string; description: string; roles?: string[] }>
+  // Always include selected agents even if they're not in the API response (for backward compatibility)
   const agentMapping = useMemo(() => {
-    if (isEditMode && simulationDetail && "agent_mapping" in simulationDetail) {
-      const mapping = simulationDetail.agent_mapping || {};
       const mapped: Record<
         string,
         { name: string; description: string; roles?: string[] }
       > = {};
+    
+    // Add agents from API response
+    if (isEditMode && simulationDetail && "agent_mapping" in simulationDetail) {
+      const mapping = simulationDetail.agent_mapping || {};
       Object.entries(mapping).forEach(([key, value]) => {
         mapped[key] =
           value.roles && value.roles.length > 0
@@ -249,10 +254,48 @@ export default function Simulation({
               }
             : { name: value.name, description: value.description };
       });
-      return mapped;
     }
-    return {};
-  }, [isEditMode, simulationDetail]);
+    
+    // Add selected agents that aren't in the mapping (for backward compatibility)
+    // This ensures GenericPicker can display selected agents even if they're not in valid_agent_ids
+    if (formData?.simulation_text_agent_id && !mapped[formData.simulation_text_agent_id]) {
+      mapped[formData.simulation_text_agent_id] = {
+        name: `Agent ${formData.simulation_text_agent_id.slice(0, 8)}...`,
+        description: "Selected simulation text agent",
+        roles: [],
+      };
+    }
+    if (formData?.simulation_voice_agent_id && !mapped[formData.simulation_voice_agent_id]) {
+      mapped[formData.simulation_voice_agent_id] = {
+        name: `Agent ${formData.simulation_voice_agent_id.slice(0, 8)}...`,
+        description: "Selected simulation voice agent",
+        roles: [],
+      };
+    }
+    if (formData?.hint_agent_id && !mapped[formData.hint_agent_id]) {
+      mapped[formData.hint_agent_id] = {
+        name: `Agent ${formData.hint_agent_id.slice(0, 8)}...`,
+        description: "Selected hint agent",
+        roles: [],
+      };
+    }
+    if (formData?.grade_text_agent_id && !mapped[formData.grade_text_agent_id]) {
+      mapped[formData.grade_text_agent_id] = {
+        name: `Agent ${formData.grade_text_agent_id.slice(0, 8)}...`,
+        description: "Selected grade text agent",
+        roles: [],
+      };
+    }
+    if (formData?.grade_voice_agent_id && !mapped[formData.grade_voice_agent_id]) {
+      mapped[formData.grade_voice_agent_id] = {
+        name: `Agent ${formData.grade_voice_agent_id.slice(0, 8)}...`,
+        description: "Selected grade voice agent",
+        roles: [],
+      };
+    }
+    
+    return mapped;
+  }, [isEditMode, simulationDetail, formData?.simulation_text_agent_id, formData?.simulation_voice_agent_id, formData?.hint_agent_id, formData?.grade_text_agent_id, formData?.grade_voice_agent_id]);
   const validAgentIds = useMemo(
     () =>
       (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [],
@@ -268,6 +311,11 @@ export default function Simulation({
   >({});
   const [originalContentActiveStates, setOriginalContentActiveStates] =
     useState<Record<string, boolean>>({});
+  
+  // State for accordion (only one section open at a time)
+  const [openAccordionItem, setOpenAccordionItem] = useState<string | null>(
+    null
+  );
 
   // Switch field states (includes agent IDs)
   const [contentSwitchStates, setContentSwitchStates] = useState<
@@ -368,18 +416,37 @@ export default function Simulation({
   // Includes: items from selected departments + cross-department items + currently selected items from content
   // Compute content items directly (DHH-style: inline, no memo chains)
   // Must be computed before useMemos that depend on it
-  const contentItems = (() => {
+  // Use searchParams to determine ordering (like Scenario.tsx) - guarantees consistent ordering
+  const contentItems = useMemo(() => {
     const items: ContentItem[] = [];
+    const itemsMap = new Map<string, ContentItem>();
+
+    // Get ordered scenario IDs from searchParams (source of truth for ordering)
+    // Prioritize URL params if they exist, otherwise derive order from simulationData.scenarios (ordered by position)
+    const scenarioIdsFromUrl = searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [];
+    const orderedScenarioIdsFromUrl = scenarioIdsFromUrl.length > 0
+      ? scenarioIdsFromUrl // Use URL params if available (source of truth)
+      : (isEditMode
+          ? (simulationData?.scenarios
+              ?.filter((s) => currentScenarioIds.includes(s.scenario_id))
+              .sort((a, b) => a.position - b.position)
+              .map((s) => s.scenario_id) || currentScenarioIds)
+          : currentScenarioIds);
+
+    // Track which scenario IDs are in server data
+    const serverScenarioIds = new Set(
+      simulationData?.scenarios?.map((s) => s.scenario_id) || []
+    );
 
     // Add scenarios from server data (only those in currentScenarioIds)
-    if (simulationData?.scenarios && currentScenarioIds.length > 0) {
-      const currentScenarioIdsSet = new Set(currentScenarioIds);
+    if (simulationData?.scenarios && orderedScenarioIdsFromUrl.length > 0) {
+      const currentScenarioIdsSet = new Set(orderedScenarioIdsFromUrl);
       simulationData.scenarios
         .filter((scenario) => currentScenarioIdsSet.has(scenario.scenario_id))
         .forEach((scenario) => {
           const key = `scenario:${scenario.scenario_id}`;
           const switchState = contentSwitchStates[key];
-          items.push({
+          const item: ContentItem = {
             type: "scenario",
             id: scenario.scenario_id,
             title: scenario.title,
@@ -412,22 +479,86 @@ export default function Simulation({
               switchState?.time_limit_seconds ??
               scenario.time_limit_seconds ??
               null,
-          });
+            has_active_video:
+              ("has_active_video" in scenario
+                ? scenario.has_active_video
+                : false) ?? false,
+          };
+          itemsMap.set(scenario.scenario_id, item);
         });
     }
 
     // Add staged items (newly added, not yet saved)
     stagedContentItems.forEach((item) => {
       const key = `${item.type}:${item.id}`;
-      items.push({
+      itemsMap.set(item.id, {
         ...item,
         active: contentActiveStates[key] ?? item.active,
       });
     });
 
-    // Sort by position
-    return items.sort((a, b) => a.position - b.position);
-  })();
+    // Add scenarios from URL params that aren't in server data (NEW scenarios)
+    orderedScenarioIdsFromUrl.forEach((scenarioId) => {
+      if (!itemsMap.has(scenarioId) && !serverScenarioIds.has(scenarioId)) {
+        // This scenario is in URL params but not in server data - it's NEW
+        const scenarioData = simulationData?.scenario_mapping?.[scenarioId];
+        const maxPosition = Math.max(
+          ...Array.from(itemsMap.values()).map((item) => item.position),
+          0
+        );
+        const item: ContentItem = {
+          type: "scenario",
+          id: scenarioId,
+          title: scenarioData?.name || "Unnamed Scenario",
+          description: scenarioData?.description || "",
+          active: contentActiveStates[`scenario:${scenarioId}`] ?? true,
+          position: maxPosition + 1,
+          usage_count: 0,
+          success_rate: 0,
+          last_used: null,
+          can_remove: true,
+          isNew: true,
+          hints_enabled: contentSwitchStates[`scenario:${scenarioId}`]?.hints_enabled ?? false,
+          copy_paste_allowed: contentSwitchStates[`scenario:${scenarioId}`]?.copy_paste_allowed ?? false,
+          audio_enabled: contentSwitchStates[`scenario:${scenarioId}`]?.audio_enabled ?? false,
+          text_enabled: contentSwitchStates[`scenario:${scenarioId}`]?.text_enabled ?? true,
+          rubric_id: contentSwitchStates[`scenario:${scenarioId}`]?.rubric_id ?? null,
+          time_limit_seconds: contentSwitchStates[`scenario:${scenarioId}`]?.time_limit_seconds ?? null,
+          has_active_video: false,
+        };
+        itemsMap.set(scenarioId, item);
+      }
+    });
+
+    // Build ordered list based on searchParams order (or currentScenarioIds in edit mode)
+    orderedScenarioIdsFromUrl.forEach((scenarioId, index) => {
+      const item = itemsMap.get(scenarioId);
+      if (item) {
+        items.push({
+          ...item,
+          position: index + 1, // Update position based on URL order
+        });
+      }
+    });
+
+    // Add any items not in the ordered list (shouldn't happen, but safety check)
+    itemsMap.forEach((item, id) => {
+      if (!orderedScenarioIdsFromUrl.includes(id)) {
+        items.push(item);
+      }
+    });
+
+    return items;
+  }, [
+    isEditMode,
+    currentScenarioIds,
+    searchParams,
+    simulationData?.scenarios,
+    simulationData?.scenario_mapping,
+    contentSwitchStates,
+    contentActiveStates,
+    stagedContentItems,
+  ]);
 
   const validRubricIds = useMemo(() => {
     const baseIds = simulationData?.valid_rubric_ids || [];
@@ -493,6 +624,30 @@ export default function Simulation({
     departmentMapping,
   ]);
 
+  // Extract rubric mapping and always include selected rubrics (for backward compatibility)
+  // This ensures GenericPicker can display selected rubrics even if they're not in valid_rubric_ids
+  // Check both simulationData and simulationDetail for rubric_mapping
+  // MUST be defined after contentItems since it depends on it
+  const rubricMapping = useMemo(() => {
+    const mapping = isEditMode && simulationDetail && "rubric_mapping" in simulationDetail
+      ? simulationDetail.rubric_mapping || {}
+      : simulationData?.rubric_mapping || {};
+    const mapped: Record<string, { id: string; name: string; description?: string }> = { ...mapping };
+    
+    // Add selected rubrics from content items that aren't in the mapping
+    contentItems.forEach((item) => {
+      if (item.type === "scenario" && item.rubric_id && !mapped[item.rubric_id]) {
+        mapped[item.rubric_id] = {
+          id: item.rubric_id,
+          name: `Rubric ${item.rubric_id.slice(0, 8)}...`,
+          description: "Selected rubric",
+        };
+      }
+    });
+    
+    return mapped;
+  }, [isEditMode, simulationDetail, simulationData?.rubric_mapping, contentItems]);
+
   // Note: Cohort filtering is not currently used in Simulation component
   // but kept for future use if cohorts are added to simulation forms
   // const validCohortIds = useMemo(() => {
@@ -517,8 +672,15 @@ export default function Simulation({
   //   return baseIds.filter((id) => deptCohortIds.has(id));
   // }, [simulationData?.valid_cohort_ids, formData?.departmentIds, departmentMapping]);
 
+  // Track if we've initialized to prevent resetting on searchParams changes
+  const hasInitializedRef = useRef(false);
+  // Track if we've set the initial accordion state to prevent reopening when user closes it
+  const hasSetInitialAccordionRef = useRef(false);
+
   useEffect(() => {
     if (simulationData && isEditMode) {
+      // Only initialize once in edit mode
+      if (!hasInitializedRef.current) {
       const deptIds = simulationData.department_ids || [];
       const formDataFromServer = {
         title: simulationData.name,
@@ -544,23 +706,31 @@ export default function Simulation({
       };
       setFormData(formDataFromServer);
       setOriginalFormData(formDataFromServer);
-      // Set current scenario IDs from server (already ordered by position)
-      setCurrentScenarioIds(simulationData.scenario_ids);
+        // Prioritize URL params if they exist, otherwise use server data (already ordered by position)
+        const scenarioIdsFromUrl = searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [];
+        const initialScenarioIds = scenarioIdsFromUrl.length > 0 
+          ? scenarioIdsFromUrl 
+          : simulationData.scenario_ids;
+        setCurrentScenarioIds(initialScenarioIds);
       // Initialize previousDepartmentIds when loading simulation data
       setPreviousDepartmentIds((prev) => (prev.length === 0 ? deptIds : prev));
-
-      // Initialize scenario active states from server data
-      // Note: This is legacy code - active states are now handled via contentActiveStates
-      // Keeping for backward compatibility during migration
+        hasInitializedRef.current = true;
+      }
     } else if (!isEditMode && simulationData) {
+      // Only initialize once in create mode, and only if currentScenarioIds is empty
+      if (!hasInitializedRef.current || currentScenarioIds.length === 0) {
       setFormData(initialFormData);
       setOriginalFormData(initialFormData);
 
-      // Initialize scenario IDs from URL params in create mode
+        // Initialize scenario IDs from URL params in create mode (only if not already set)
       const scenarioIdsFromUrl =
         searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [];
-      if (scenarioIdsFromUrl.length > 0) {
+        if (scenarioIdsFromUrl.length > 0 && currentScenarioIds.length === 0) {
         setCurrentScenarioIds(scenarioIdsFromUrl);
+        }
+        if (!hasInitializedRef.current) {
+          hasInitializedRef.current = true;
+        }
       }
     }
   }, [
@@ -568,7 +738,8 @@ export default function Simulation({
     isEditMode,
     initialFormData,
     simulationDetail,
-    searchParams,
+    // Remove searchParams from dependencies to prevent loops - we only read it on initial load
+    // searchParams,
   ]);
 
   const handleInputChange = (
@@ -683,6 +854,19 @@ export default function Simulation({
     }
   }, [isEditMode, simulationData]);
 
+  // Set first accordion item as open by default when contentItems are available (only once)
+  useEffect(() => {
+    if (!hasSetInitialAccordionRef.current && contentItems.length > 0) {
+      const firstScenarioItem = contentItems.find(
+        (item) => item.type === "scenario"
+      );
+      if (firstScenarioItem) {
+        setOpenAccordionItem(`${firstScenarioItem.type}:${firstScenarioItem.id}`);
+        hasSetInitialAccordionRef.current = true;
+      }
+    }
+  }, [contentItems]);
+
   // Auto-select agents when there's only one option available (similar to Scenario.tsx)
   useEffect(() => {
     if (!simulationData || !agentMapping) return;
@@ -709,6 +893,18 @@ export default function Simulation({
           agent?.roles?.includes("grade") ||
           agent?.roles?.includes("grade-voice")
         );
+      }) || [];
+
+    const simulationTextAgentIds =
+      validAgentIds.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("simulation-text");
+      }) || [];
+
+    const simulationVoiceAgentIds =
+      validAgentIds.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("simulation-voice");
       }) || [];
 
     // Auto-select first hint agent if only one option and not already set
@@ -744,6 +940,30 @@ export default function Simulation({
         grade_voice_agent_id: gradeVoiceAgentIds[0] || null,
       }));
     }
+
+    // Auto-select first simulation text agent if only one option and not already set
+    if (
+      simulationTextAgentIds.length === 1 &&
+      (!formData?.simulation_text_agent_id ||
+        formData.simulation_text_agent_id === null)
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        simulation_text_agent_id: simulationTextAgentIds[0] || null,
+      }));
+    }
+
+    // Auto-select first simulation voice agent if only one option and not already set
+    if (
+      simulationVoiceAgentIds.length === 1 &&
+      (!formData?.simulation_voice_agent_id ||
+        formData.simulation_voice_agent_id === null)
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        simulation_voice_agent_id: simulationVoiceAgentIds[0] || null,
+      }));
+    }
   }, [
     simulationData,
     agentMapping,
@@ -751,6 +971,8 @@ export default function Simulation({
     formData?.hint_agent_id,
     formData?.grade_text_agent_id,
     formData?.grade_voice_agent_id,
+    formData?.simulation_text_agent_id,
+    formData?.simulation_voice_agent_id,
   ]);
 
   // Use ref to capture currentScenarioIds before they get filtered (legacy)
@@ -865,16 +1087,34 @@ export default function Simulation({
 
   // Clear selections when they become invalid after department changes
   // (but preserve cross-department entities and staged selections)
+  // Use ref to track previous validScenarioIds to prevent loops
+  const prevValidScenarioIdsRef = useRef<string[]>([]);
   useEffect(() => {
+    // Only run if validScenarioIds actually changed (not just currentScenarioIds)
+    const validScenarioIdsChanged = 
+      prevValidScenarioIdsRef.current.length !== validScenarioIds.length ||
+      !prevValidScenarioIdsRef.current.every((id, idx) => id === validScenarioIds[idx]);
+    
+    if (!validScenarioIdsChanged) {
+      return;
+    }
+    
     // Clear scenarios that are no longer valid
     if (currentScenarioIds.length > 0) {
       const validSet = new Set(validScenarioIds);
       const filtered = currentScenarioIds.filter((id) => validSet.has(id));
       if (filtered.length !== currentScenarioIds.length) {
         setCurrentScenarioIds(filtered);
+        // Also update URL params to keep them in sync
+        updateUrlParams({
+          scenarioIds: filtered.length > 0 ? filtered : null,
+        });
       }
     }
-  }, [currentScenarioIds, validScenarioIds]);
+    
+    // Update ref to track current validScenarioIds
+    prevValidScenarioIdsRef.current = [...validScenarioIds];
+  }, [currentScenarioIds, validScenarioIds, updateUrlParams]);
 
   // Note: rubric_id is now per-scenario, not simulation-level, so we don't clear it here
 
@@ -883,6 +1123,47 @@ export default function Simulation({
 
     if (!formData?.title?.trim()) {
       newErrors.title = "Title is required";
+    }
+
+    // Validate scenarios: each scenario must have at least one of text_enabled or audio_enabled
+    // Also validate that if time limit is enabled, it must have a valid value
+    const scenarioItems = contentItems.filter(
+      (item) => item.type === "scenario"
+    );
+    const invalidScenarios: string[] = [];
+    const invalidTimeLimitScenarios: string[] = [];
+    scenarioItems.forEach((item) => {
+      const key = `scenario:${item.id}`;
+      const switchState = contentSwitchStates[key];
+      const textEnabled = switchState?.text_enabled ?? item.text_enabled ?? true;
+      const audioEnabled = switchState?.audio_enabled ?? item.audio_enabled ?? false;
+      const timeLimitSeconds = switchState?.time_limit_seconds ?? item.time_limit_seconds ?? null;
+      const hasTimeLimit = timeLimitSeconds !== null && timeLimitSeconds > 0;
+      
+      if (!textEnabled && !audioEnabled) {
+        invalidScenarios.push(item.title || item.id);
+      }
+      
+      // Check if time limit is enabled but has invalid value
+      if (hasTimeLimit && (!timeLimitSeconds || timeLimitSeconds <= 0)) {
+        invalidTimeLimitScenarios.push(item.title || item.id);
+      }
+    });
+
+    if (invalidScenarios.length > 0) {
+      toast.error(
+        `Each scenario must have at least one input method enabled (text or audio). Please fix: ${invalidScenarios.join(", ")}`
+      );
+      setErrors(newErrors);
+      return false;
+    }
+
+    if (invalidTimeLimitScenarios.length > 0) {
+      toast.error(
+        `Time limit is enabled but has no value. Please enter a time limit or disable it for: ${invalidTimeLimitScenarios.join(", ")}`
+      );
+      setErrors(newErrors);
+      return false;
     }
 
     setErrors(newErrors);
@@ -1094,20 +1375,52 @@ export default function Simulation({
               (item) => item.id === scenarioId
             );
             if (scenarioIndex === -1) return "pending";
+            
             // Previous scenarios must be completed before this one is active
             const previousScenariosCompleted = scenarioItems
               .slice(0, scenarioIndex)
               .every((item) => {
-                // Consider a scenario "completed" if it has been configured
-                // (has at least one non-default setting or is active)
-                return item.active !== undefined;
+                const key = `scenario:${item.id}`;
+                const switchState = contentSwitchStates[key];
+                const textEnabled = switchState?.text_enabled ?? item.text_enabled ?? true;
+                const audioEnabled = switchState?.audio_enabled ?? item.audio_enabled ?? false;
+                const hasRubric = (switchState?.rubric_id ?? item.rubric_id) !== null;
+                const timeLimitSeconds = switchState?.time_limit_seconds ?? item.time_limit_seconds ?? null;
+                const hasTimeLimit = timeLimitSeconds !== null && timeLimitSeconds > 0;
+                
+                // Scenario is "completed" if:
+                // 1. Has at least one input method enabled (text or audio)
+                // 2. Has a rubric selected
+                // 3. If time limit switch is on, must have a valid time limit value
+                const hasValidTimeLimit = !hasTimeLimit || (timeLimitSeconds !== null && timeLimitSeconds > 0);
+                return (textEnabled || audioEnabled) && hasRubric && hasValidTimeLimit;
               });
-            return previousScenariosCompleted ? "active" : "pending";
+            
+            if (!previousScenariosCompleted) return "pending";
+            
+            // Check if current scenario is completed
+            const currentScenario = scenarioItems[scenarioIndex];
+            const currentKey = `scenario:${currentScenario.id}`;
+            const currentSwitchState = contentSwitchStates[currentKey];
+            const currentTextEnabled = currentSwitchState?.text_enabled ?? currentScenario.text_enabled ?? true;
+            const currentAudioEnabled = currentSwitchState?.audio_enabled ?? currentScenario.audio_enabled ?? false;
+            const currentHasRubric = (currentSwitchState?.rubric_id ?? currentScenario.rubric_id) !== null;
+            const currentTimeLimitSeconds = currentSwitchState?.time_limit_seconds ?? currentScenario.time_limit_seconds ?? null;
+            const currentHasTimeLimit = currentTimeLimitSeconds !== null && currentTimeLimitSeconds > 0;
+            
+            // Scenario is completed if:
+            // 1. Has at least one input method enabled (text or audio)
+            // 2. Has a rubric selected
+            // 3. If time limit switch is on, must have a valid time limit value
+            const hasValidTimeLimit = !currentHasTimeLimit || (currentTimeLimitSeconds !== null && currentTimeLimitSeconds > 0);
+            const isCurrentCompleted = (currentTextEnabled || currentAudioEnabled) && currentHasRubric && hasValidTimeLimit;
+            
+            return isCurrentCompleted ? "completed" : "active";
           }
           return "pending";
       }
     },
-    [formData?.title, currentScenarioIds.length, contentItems]
+    [formData?.title, currentScenarioIds.length, contentItems, contentSwitchStates]
   );
 
   // Steps array - dynamically includes steps for each scenario
@@ -1209,68 +1522,54 @@ export default function Simulation({
 
   const handleContentMoveUp = useCallback(
     (contentId: string) => {
-      const items = [...contentItems];
-      const index = items.findIndex(
-        (item) => `${item.type}:${item.id}` === contentId
-      );
+      const [type, id] = contentId.split(":");
+      if (type !== "scenario") return;
+      
+      // Get ordered scenario IDs from searchParams (source of truth)
+      const orderedIds = isEditMode
+        ? [...currentScenarioIds]
+        : searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [...currentScenarioIds];
+      
+      const index = orderedIds.indexOf(id);
       if (index <= 0) return;
-      const prevItem = items[index - 1];
-      const currentItem = items[index];
-      if (!prevItem || !currentItem) return;
-      [items[index - 1], items[index]] = [currentItem, prevItem];
-      // Update positions and sync to currentScenarioIds
-      const reordered = items.map((item, idx) => ({
-        ...item,
-        position: idx + 1,
-      }));
-      const scenarioIds = reordered
-        .filter((item) => item.type === "scenario")
-        .map((item) => item.id);
-      setCurrentScenarioIds(scenarioIds);
-      // Update staged items with new positions
-      setStagedContentItems((prev) =>
-        prev.map((item) => {
-          const updated = reordered.find(
-            (r) => r.id === item.id && r.type === item.type
-          );
-          return updated ? { ...item, position: updated.position } : item;
-        })
-      );
+      
+      // Swap with previous item
+      const reorderedIds = [...orderedIds];
+      [reorderedIds[index - 1], reorderedIds[index]] = [reorderedIds[index], reorderedIds[index - 1]];
+      
+      // Update state and URL params (URL params are source of truth)
+      setCurrentScenarioIds(reorderedIds);
+      updateUrlParams({
+        scenarioIds: reorderedIds.length > 0 ? reorderedIds : null,
+      });
     },
-    [contentItems]
+    [contentItems, currentScenarioIds, isEditMode, searchParams, updateUrlParams]
   );
 
   const handleContentMoveDown = useCallback(
     (contentId: string) => {
-      const items = [...contentItems];
-      const index = items.findIndex(
-        (item) => `${item.type}:${item.id}` === contentId
-      );
-      if (index < 0 || index >= items.length - 1) return;
-      const currentItem = items[index];
-      const nextItem = items[index + 1];
-      if (!currentItem || !nextItem) return;
-      [items[index], items[index + 1]] = [nextItem, currentItem];
-      // Update positions and sync to currentScenarioIds
-      const reordered = items.map((item, idx) => ({
-        ...item,
-        position: idx + 1,
-      }));
-      const scenarioIds = reordered
-        .filter((item) => item.type === "scenario")
-        .map((item) => item.id);
-      setCurrentScenarioIds(scenarioIds);
-      // Update staged items with new positions
-      setStagedContentItems((prev) =>
-        prev.map((item) => {
-          const updated = reordered.find(
-            (r) => r.id === item.id && r.type === item.type
-          );
-          return updated ? { ...item, position: updated.position } : item;
-        })
-      );
+      const [type, id] = contentId.split(":");
+      if (type !== "scenario") return;
+      
+      // Get ordered scenario IDs from searchParams (source of truth)
+      const orderedIds = isEditMode
+        ? [...currentScenarioIds]
+        : searchParams.get("scenarioIds")?.split(",").filter(Boolean) || [...currentScenarioIds];
+      
+      const index = orderedIds.indexOf(id);
+      if (index < 0 || index >= orderedIds.length - 1) return;
+      
+      // Swap with next item
+      const reorderedIds = [...orderedIds];
+      [reorderedIds[index], reorderedIds[index + 1]] = [reorderedIds[index + 1], reorderedIds[index]];
+      
+      // Update state and URL params (URL params are source of truth)
+      setCurrentScenarioIds(reorderedIds);
+      updateUrlParams({
+        scenarioIds: reorderedIds.length > 0 ? reorderedIds : null,
+      });
     },
-    [contentItems]
+    [contentItems, currentScenarioIds, isEditMode, searchParams, updateUrlParams]
   );
 
   const handleContentRemove = useCallback(
@@ -1303,28 +1602,64 @@ export default function Simulation({
 
   const handleAudioToggle = useCallback(
     (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          audio_enabled: enabled,
-        },
-      }));
+      setContentSwitchStates((prev) => {
+        const currentState = prev[contentId] || {};
+        const currentTextEnabled = currentState.text_enabled;
+        
+        // Find the item in contentItems to get base/default state
+        const item = contentItems.find(
+          (i) => `${i.type}:${i.id}` === contentId
+        );
+        const baseTextEnabled = item?.text_enabled ?? true;
+        
+        // Determine actual text_enabled state (switch state overrides base)
+        const actualTextEnabled = currentTextEnabled ?? baseTextEnabled;
+        
+        // If disabling audio and text is also disabled, enable text
+        const newTextEnabled = !enabled && !actualTextEnabled ? true : undefined;
+        
+        return {
+          ...prev,
+          [contentId]: {
+            ...prev[contentId],
+            audio_enabled: enabled,
+            ...(newTextEnabled !== undefined && { text_enabled: newTextEnabled }),
+          },
+        };
+      });
     },
-    []
+    [contentItems]
   );
 
   const handleTextToggle = useCallback(
     (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          text_enabled: enabled,
-        },
-      }));
+      setContentSwitchStates((prev) => {
+        const currentState = prev[contentId] || {};
+        const currentAudioEnabled = currentState.audio_enabled;
+        
+        // Find the item in contentItems to get base/default state
+        const item = contentItems.find(
+          (i) => `${i.type}:${i.id}` === contentId
+        );
+        const baseAudioEnabled = item?.audio_enabled ?? false;
+        
+        // Determine actual audio_enabled state (switch state overrides base)
+        const actualAudioEnabled = currentAudioEnabled ?? baseAudioEnabled;
+        
+        // If disabling text and audio is also disabled, enable audio
+        const newAudioEnabled = !enabled && !actualAudioEnabled ? true : undefined;
+        
+        return {
+          ...prev,
+          [contentId]: {
+            ...prev[contentId],
+            text_enabled: enabled,
+            ...(newAudioEnabled !== undefined && { audio_enabled: newAudioEnabled }),
+          },
+        };
+      });
     },
-    []
+    [contentItems]
   );
 
   // Handler for scenario picker selection - adds scenarios directly
@@ -1737,6 +2072,154 @@ export default function Simulation({
                     />
                   ) : null}
                 </div>
+
+                {/* Simulation Text Agent Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="simulation_text_agent_id">
+                    Simulation Text Agent
+                  </Label>
+                  {formData?.simulation_text_agent_id !== undefined ? (
+                    <GenericPicker
+                      items={agentMapping}
+                      itemIds={(() => {
+                        const roleFilteredIds = validAgentIds.filter((id) => {
+                        const agent = agentMapping[id];
+                        return agent?.roles?.includes("simulation-text");
+                        });
+                        // Always include selected agent ID even if it doesn't have the role
+                        // (for backward compatibility with agents that may not have roles set)
+                        if (
+                          formData.simulation_text_agent_id &&
+                          agentMapping[formData.simulation_text_agent_id] &&
+                          !roleFilteredIds.includes(formData.simulation_text_agent_id)
+                        ) {
+                          return [...roleFilteredIds, formData.simulation_text_agent_id];
+                        }
+                        return roleFilteredIds;
+                      })()}
+                      selectedIds={(() => {
+                        const agentId = formData.simulation_text_agent_id;
+                        const hasAgent = agentId && agentMapping[agentId];
+                        return hasAgent ? [agentId] : [];
+                      })()}
+                      onSelect={(ids) => {
+                        handleInputChange(
+                          "simulation_text_agent_id",
+                          ids[0] || null
+                        );
+                      }}
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) =>
+                        `${item.name} ${item.description || ""}`
+                      }
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">
+                            {item.name || "No agent selected"}
+                          </h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, _isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      placeholder="Select simulation text agent"
+                      disabled={isReadonly}
+                      multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Agents"
+                    />
+                  ) : null}
+                </div>
+
+                {/* Simulation Voice Agent Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="simulation_voice_agent_id">
+                    Simulation Voice Agent
+                  </Label>
+                  {formData?.simulation_voice_agent_id !== undefined ? (
+                    <GenericPicker
+                      items={agentMapping}
+                      itemIds={(() => {
+                        const roleFilteredIds = validAgentIds.filter((id) => {
+                        const agent = agentMapping[id];
+                        return agent?.roles?.includes("simulation-voice");
+                        });
+                        // Always include selected agent ID even if it doesn't have the role
+                        // (for backward compatibility with agents that may not have roles set)
+                        if (
+                          formData.simulation_voice_agent_id &&
+                          agentMapping[formData.simulation_voice_agent_id] &&
+                          !roleFilteredIds.includes(formData.simulation_voice_agent_id)
+                        ) {
+                          return [...roleFilteredIds, formData.simulation_voice_agent_id];
+                        }
+                        return roleFilteredIds;
+                      })()}
+                      selectedIds={(() => {
+                        const agentId = formData.simulation_voice_agent_id;
+                        const hasAgent = agentId && agentMapping[agentId];
+                        return hasAgent ? [agentId] : [];
+                      })()}
+                      onSelect={(ids) => {
+                        handleInputChange(
+                          "simulation_voice_agent_id",
+                          ids[0] || null
+                        );
+                      }}
+                      getId={(item) => (item as unknown as { id: string }).id}
+                      getLabel={(item) => item.name || ""}
+                      getSearchText={(item) =>
+                        `${item.name} ${item.description || ""}`
+                      }
+                      renderPreview={(item) => (
+                        <div className="grid gap-2">
+                          <h4 className="font-medium leading-none">
+                            {item.name || "No agent selected"}
+                          </h4>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description || "No description available"}
+                          </div>
+                        </div>
+                      )}
+                      renderItem={(item, _isSelected) => (
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      placeholder="Select simulation voice agent"
+                      disabled={isReadonly}
+                      multiSelect={false}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                      groupHeading="Agents"
+                    />
+                  ) : null}
+                </div>
               </div>
             )}
 
@@ -1847,11 +2330,27 @@ export default function Simulation({
               selectedScenarioIds={currentScenarioIds}
               onSelect={handleScenarioSelect}
               readonly={isReadonly}
+              canRemoveMap={useMemo(() => {
+                const map: Record<string, boolean> = {};
+                if (simulationData?.scenarios) {
+                  simulationData.scenarios.forEach((scenario) => {
+                    map[scenario.scenario_id] = scenario.can_remove;
+                  });
+                }
+                return map;
+              }, [simulationData?.scenarios])}
             />
           </CardContent>
         </Card>
 
         {/* Individual Scenario Configuration Steps */}
+        <Accordion
+          type="single"
+          collapsible
+          value={openAccordionItem || undefined}
+          onValueChange={(value) => setOpenAccordionItem(value || null)}
+          className="space-y-4"
+        >
         {contentItems
           .filter((item) => item.type === "scenario")
           .map((item, index) => {
@@ -1861,6 +2360,7 @@ export default function Simulation({
             const scenarioItems = contentItems.filter(
               (i) => i.type === "scenario"
             );
+              const accordionValue = `${item.type}:${item.id}`;
 
             return (
               <SimulationScenarioSection
@@ -1868,7 +2368,7 @@ export default function Simulation({
                 item={item}
                 position={item.position}
                 totalItems={scenarioItems.length}
-                rubricMapping={simulationData?.rubric_mapping || {}}
+                  rubricMapping={rubricMapping}
                 validRubricIds={validRubricIds}
                 onActiveToggle={handleContentActiveToggle}
                 onMoveUp={handleContentMoveUp}
@@ -1885,9 +2385,16 @@ export default function Simulation({
                 stepStatus={stepStatus}
                 stepNumber={stepIndex + 1}
                 isEditMode={isEditMode}
+                practiceSimulation={formData?.practiceSimulation ?? false}
+                  accordionValue={accordionValue}
+                  isAccordionOpen={openAccordionItem === accordionValue}
+                  onAccordionToggle={(open) =>
+                    setOpenAccordionItem(open ? accordionValue : null)
+                  }
               />
             );
           })}
+        </Accordion>
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
@@ -1948,3 +2455,4 @@ export default function Simulation({
     </div>
   );
 }
+
