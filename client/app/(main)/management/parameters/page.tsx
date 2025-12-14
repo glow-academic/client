@@ -50,11 +50,15 @@ async function duplicateParameter(
   input: DuplicateParameterIn
 ): Promise<DuplicateParameterOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/duplicate", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 
@@ -62,11 +66,15 @@ async function deleteParameter(
   input: DeleteParameterIn
 ): Promise<DeleteParameterOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/delete", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

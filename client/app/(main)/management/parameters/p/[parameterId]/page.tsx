@@ -77,11 +77,15 @@ async function createParameter(
   input: CreateParameterIn,
 ): Promise<CreateParameterOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/create", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 
@@ -89,11 +93,15 @@ async function updateParameter(
   input: UpdateParameterIn,
 ): Promise<UpdateParameterOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/update", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

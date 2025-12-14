@@ -69,10 +69,14 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions ---- */
 async function updateStaff(input: UpdateStaffIn): Promise<UpdateStaffOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
 
   return api.post("/profile/staff/update", {
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

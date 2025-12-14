@@ -34,11 +34,15 @@ const getProviderDefault = async (profileId: string): Promise<ProviderNewOut> =>
 /** ---- Strongly-typed server action ---- */
 async function createProvider(input: CreateProviderIn): Promise<CreateProviderOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/providers/create", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

@@ -118,11 +118,15 @@ export default async function EditKeyPage({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/update", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

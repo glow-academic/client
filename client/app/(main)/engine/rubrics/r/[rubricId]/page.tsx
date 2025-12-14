@@ -147,11 +147,15 @@ export default async function EditRubricPage({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/rubrics/update", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

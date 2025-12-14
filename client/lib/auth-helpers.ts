@@ -2,7 +2,6 @@ import { createHmac, timingSafeEqual } from "crypto";
 import type { Session } from "next-auth";
 import { cookies } from "next/headers";
 
-import { getSession } from "@/auth";
 import { hasRouteAccess, type ProfileRole } from "@/utils/route-permissions";
 
 type HeaderLike = {
@@ -85,27 +84,6 @@ export function createTestSession({
     emulationTTL: null,
     fullEmulation: false,
   } as Session;
-}
-
-/**
- * Requires authenticated session (no guest fallback)
- * Use this for pages that require authentication (no guest access)
- *
- * Throws an error if user is not authenticated, which should be caught
- * and handled by showing AccessDenied component
- */
-export async function requireAuthenticated(): Promise<ResolvedProfileIds> {
-  const session = await getSession();
-
-  // Check if user has a valid session (not guest)
-  if (!session?.effectiveProfileId || !session?.user?.profileId) {
-    throw new Error("Authentication required");
-  }
-
-  return {
-    effectiveProfileId: session.effectiveProfileId,
-    actualProfileId: session.user.profileId,
-  };
 }
 
 /**

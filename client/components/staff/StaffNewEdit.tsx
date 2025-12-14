@@ -6,6 +6,8 @@
  */
 "use client";
 
+import { Switch } from "@/components/ui/switch";
+import { Check, Clock, Power, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -24,24 +26,43 @@ import type {
   UpdateStaffOut,
 } from "@/app/(main)/management/staff/p/[profileId]/page";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
-import { cn } from "@/lib/utils";
+import { StaffCohortsSection } from "@/components/staff/StaffCohortsSection";
+import { StaffEmailsSection } from "@/components/staff/StaffEmailsSection";
+import { StaffRoleSection } from "@/components/staff/StaffRoleSection";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Check, CheckCircle2, Clock, PlusCircle, Trash2, User } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Building2 } from "lucide-react";
+
+type StepStatus = "pending" | "active" | "completed";
+
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
+}
 
 interface FormData {
   firstName?: string;
   lastName?: string;
   emails?: string[];
-  primaryEmailIndex?: number;
+  primaryEmailIndex?: number | undefined;
   role?: string;
   reqPerDay?: number | "";
   requestsPerDayEnabled?: boolean;
-  primaryDepartmentId?: string;
+  cohortIds?: string[];
+  departmentIds?: string[];
+  primaryDepartmentIndex?: number | undefined;
   active?: boolean;
 }
 
@@ -66,29 +87,30 @@ export default function StaffNewEdit({
 }: StaffNewEditProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!profileId;
-  const { effectiveProfile, scopedRoles } = useProfile();
+  const { scopedRoles } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   const initialFormData: FormData = useMemo(
     () => ({
       firstName: "",
       lastName: "",
-      emails: [""],
-      primaryEmailIndex: 0,
+      emails: [],
+      primaryEmailIndex: undefined,
       role: "instructional",
       reqPerDay: "",
       requestsPerDayEnabled: false,
-      primaryDepartmentId: "",
+      cohortIds: [],
+      departmentIds: [],
+      primaryDepartmentIndex: undefined,
       active: true,
     }),
-    [],
+    []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>();
   const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
+  const [primaryDeptSearchTerm, setPrimaryDeptSearchTerm] = useState("");
 
   // Use server-provided data directly
   const staffDetail = serverStaffDetail;
@@ -129,18 +151,43 @@ export default function StaffNewEdit({
       const primaryIndex =
         emails.length > 0
           ? emails.findIndex(
-              (e) => e === (staffData as { primary_email?: string | null })?.primary_email || e === emails[0],
+              (e) =>
+                e ===
+                  (staffData as { primary_email?: string | null })
+                    ?.primary_email || e === emails[0]
             )
-          : 0;
+          : undefined;
+      // Type guard: StaffDetailOut has department_ids, StaffNewOut doesn't
+      const departmentIds =
+        "department_ids" in staffData && staffData.department_ids
+          ? staffData.department_ids
+          : [];
+      const primaryDeptIndex =
+        departmentIds.length > 0 && "primary_department_id" in staffData
+          ? departmentIds.findIndex(
+              (id: string) => id === staffData.primary_department_id
+            )
+          : -1;
+      // Type guard: StaffDetailOut has cohort_ids, StaffNewOut doesn't
+      const cohortIds =
+        "cohort_ids" in staffData && staffData.cohort_ids
+          ? staffData.cohort_ids
+          : [];
       setFormData({
         firstName: staffData.first_name || "",
         lastName: staffData.last_name || "",
-        emails: emails.length > 0 ? emails : [""],
-        primaryEmailIndex: primaryIndex >= 0 ? primaryIndex : 0,
+        emails: emails,
+        primaryEmailIndex:
+          primaryIndex !== undefined && primaryIndex >= 0
+            ? primaryIndex
+            : undefined,
         role: staffData.role || "",
         reqPerDay: staffData.requests_per_day ?? "",
         requestsPerDayEnabled: staffData.requests_per_day != null,
-        primaryDepartmentId: staffData.primary_department_id || "",
+        cohortIds: cohortIds,
+        departmentIds: departmentIds,
+        primaryDepartmentIndex:
+          primaryDeptIndex >= 0 ? primaryDeptIndex : undefined,
         active: staffData.active ?? true,
       });
       setRequestsPerDayEnabled(staffData.requests_per_day != null);
@@ -150,9 +197,8 @@ export default function StaffNewEdit({
         ...initialFormData,
         firstName: staffData.first_name || "",
         lastName: staffData.last_name || "",
-        emails: staffData.emails || [""],
+        emails: staffData.emails || [],
         role: staffData.role || initialFormData.role || "",
-        primaryDepartmentId: staffData.primary_department_id || "",
         active: staffData.active ?? true,
       });
     }
@@ -177,67 +223,166 @@ export default function StaffNewEdit({
     clearEntityMetadata,
   ]);
 
-  // Email management functions
-  const addEmail = useCallback(() => {
-    setFormData((prev) => ({
-      ...prev,
-      emails: [...(prev?.emails || [""]), ""],
-    }));
-  }, []);
-
-  const removeEmail = useCallback((index: number) => {
-    setFormData((prev) => {
-      const newEmails = (prev?.emails || [""]).filter((_, i) => i !== index);
-      // Ensure at least one email
-      if (newEmails.length === 0) {
-        return { ...prev, emails: [""], primaryEmailIndex: 0 };
-      }
-      // Adjust primary index if needed
-      let newPrimaryIndex = prev?.primaryEmailIndex || 0;
-      if (index === newPrimaryIndex) {
-        // If removing primary, set first email as primary
-        newPrimaryIndex = 0;
-      } else if (index < newPrimaryIndex) {
-        // If removing before primary, adjust index
-        newPrimaryIndex = newPrimaryIndex - 1;
-      }
-      return { ...prev, emails: newEmails, primaryEmailIndex: newPrimaryIndex };
-    });
-  }, []);
-
-  const updateEmail = useCallback((index: number, value: string) => {
-    setFormData((prev) => {
-      const newEmails = [...(prev?.emails || [""])];
-      newEmails[index] = value;
-      return { ...prev, emails: newEmails };
-    });
-  }, []);
-
-  const setPrimaryEmail = useCallback((index: number) => {
-    setFormData((prev) => ({ ...prev, primaryEmailIndex: index }));
-  }, []);
-
   const handleInputChange = useCallback(
-    (field: string, value: string | number | boolean) => {
+    (
+      field: string,
+      value: string | number | boolean | string[] | undefined
+    ) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    [],
+    []
   );
+
+  // Step status logic
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      const hasFirstName = !!formData?.firstName?.trim();
+      const hasRole = !!formData?.role?.trim();
+      const hasDepartments =
+        (formData?.departmentIds || []).length > 0 ||
+        (staffData?.valid_department_ids || []).length > 1;
+      const hasPrimaryDepartment =
+        formData?.primaryDepartmentIndex !== undefined &&
+        formData.primaryDepartmentIndex >= 0;
+      const hasEmails = (formData?.emails || []).some(
+        (e) => e.trim().length > 0
+      );
+      const hasPrimaryEmail =
+        formData?.primaryEmailIndex !== undefined &&
+        formData.primaryEmailIndex >= 0;
+
+      switch (stepId) {
+        case "role":
+          if (!hasFirstName) return "pending";
+          return hasRole ? "completed" : "active";
+        case "primaryDepartment":
+          if (!hasFirstName || !hasRole) return "pending";
+          // Only show as required if there are multiple departments
+          if (!hasDepartments) return "pending";
+          return hasPrimaryDepartment ? "completed" : "active";
+        case "emails":
+          if (!hasFirstName || !hasRole) return "pending";
+          // If departments exist, require primary department first
+          if (hasDepartments && !hasPrimaryDepartment) return "pending";
+          return hasEmails && hasPrimaryEmail ? "completed" : "active";
+        case "cohorts":
+          // Cohorts are optional, so always completed if previous steps are done
+          if (!hasFirstName || !hasRole) return "pending";
+          if (hasDepartments && !hasPrimaryDepartment) return "pending";
+          if (!hasEmails || !hasPrimaryEmail) return "pending";
+          return "completed";
+        default:
+          return "pending";
+      }
+    },
+    [formData, staffData]
+  );
+
+  // Steps array
+  const steps: Step[] = useMemo(() => {
+    const hasDepartments =
+      (formData?.departmentIds || []).length > 0 ||
+      (staffData?.valid_department_ids || []).length > 1;
+    const baseSteps: Step[] = [
+      {
+        id: "role",
+        title: "Role",
+        description: "Select a role for this staff member.",
+        status: getStepStatus("role"),
+      },
+    ];
+
+    // Add Primary Department step if there are multiple departments
+    if (hasDepartments) {
+      baseSteps.push({
+        id: "primaryDepartment",
+        title: "Primary Department",
+        description:
+          "Select which department is primary for this staff member.",
+        status: getStepStatus("primaryDepartment"),
+      });
+    }
+
+    baseSteps.push(
+      {
+        id: "emails",
+        title: "Email",
+        description: "Select the primary email address for this staff member.",
+        status: getStepStatus("emails"),
+      },
+      {
+        id: "cohorts",
+        title: "Cohorts",
+        description: "Select cohorts for this staff member (optional).",
+        status: getStepStatus("cohorts"),
+      }
+    );
+
+    return baseSteps;
+  }, [getStepStatus, formData, staffData]);
+
+  // Filtered departments for primary department selection
+  const filteredPrimaryDeptIds = useMemo(() => {
+    if (
+      !formData ||
+      !staffData?.department_mapping ||
+      !staffData?.valid_department_ids
+    ) {
+      return [];
+    }
+    const availableDeptIds =
+      (formData.departmentIds?.length || 0) === 0
+        ? staffData.valid_department_ids || []
+        : formData.departmentIds || [];
+
+    if (!primaryDeptSearchTerm.trim()) {
+      return availableDeptIds;
+    }
+
+    const searchLower = primaryDeptSearchTerm.toLowerCase();
+    return availableDeptIds.filter((deptId) => {
+      const dept = staffData.department_mapping?.[deptId];
+      return (
+        dept?.name?.toLowerCase().includes(searchLower) ||
+        dept?.description?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [
+    formData,
+    staffData?.valid_department_ids,
+    staffData?.department_mapping,
+    primaryDeptSearchTerm,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData?.firstName || !formData?.lastName) {
-      toast.error("First name and last name are required");
+    if (!formData?.firstName || typeof formData.firstName !== "string") {
+      toast.error("First name is required");
       return;
+    }
+
+    if (!formData.lastName || typeof formData.lastName !== "string") {
+      // lastName is optional, but we need it to be a string if present
+      formData.lastName = "";
     }
 
     // Validate emails
     const validEmails = (formData.emails || []).filter(
-      (e) => e.trim().length > 0,
+      (e) => e.trim().length > 0
     );
     if (validEmails.length === 0) {
       toast.error("At least one email is required");
+      return;
+    }
+
+    // Validate primary email index
+    if (
+      formData.primaryEmailIndex === undefined ||
+      formData.primaryEmailIndex < 0 ||
+      formData.primaryEmailIndex >= validEmails.length
+    ) {
+      toast.error("Please select a primary email");
       return;
     }
 
@@ -253,34 +398,39 @@ export default function StaffNewEdit({
 
       if (isEditMode) {
         // Update staff
-        const departmentId =
-          formData.primaryDepartmentId ||
-          (staffData?.valid_department_ids &&
-          staffData.valid_department_ids.length > 0
-            ? staffData.valid_department_ids[0]
-            : "") ||
-          "";
-
         if (!updateStaffAction) {
           toast.error("Update action not available");
           setIsSubmitting(false);
           return;
         }
 
+        // Determine which departments to use for primary index calculation
+        const deptIdsForPrimary =
+          (formData.departmentIds?.length || 0) === 0
+            ? staffData?.valid_department_ids || []
+            : formData.departmentIds || [];
+
         await handleUpdateStaff({
           profileId: profileId!,
           first_name: formData.firstName,
-          last_name: formData.lastName,
+          last_name: formData.lastName || "",
           emails: validEmails,
           primary_email_index:
             formData.primaryEmailIndex != null &&
             formData.primaryEmailIndex >= 0 &&
             formData.primaryEmailIndex < validEmails.length
               ? formData.primaryEmailIndex
-              : 0,
+              : null,
           role: formData.role || "",
           requests_per_day: parsedReqPerDay,
-          primary_department_id: departmentId,
+          cohort_ids: formData.cohortIds || [],
+          department_ids: formData.departmentIds || [],
+          primary_department_index:
+            formData.primaryDepartmentIndex != null &&
+            formData.primaryDepartmentIndex >= 0 &&
+            formData.primaryDepartmentIndex < deptIdsForPrimary.length
+              ? formData.primaryDepartmentIndex
+              : null,
           active: formData.active ?? true,
         });
 
@@ -294,18 +444,31 @@ export default function StaffNewEdit({
           return;
         }
 
+        // Determine which departments to use for primary index calculation
+        const deptIdsForPrimary =
+          (formData.departmentIds?.length || 0) === 0
+            ? staffData?.valid_department_ids || []
+            : formData.departmentIds || [];
+
         await handleCreateStaff({
           firstName: formData.firstName,
-          lastName: formData.lastName,
+          lastName: formData.lastName || "",
           emails: validEmails,
           primary_email_index:
             formData.primaryEmailIndex != null &&
             formData.primaryEmailIndex >= 0 &&
             formData.primaryEmailIndex < validEmails.length
               ? formData.primaryEmailIndex
-              : 0,
+              : null,
           role: formData.role || "",
-          primary_department_id: formData.primaryDepartmentId || null,
+          cohort_ids: formData.cohortIds || [],
+          department_ids: formData.departmentIds || [],
+          primary_department_index:
+            formData.primaryDepartmentIndex != null &&
+            formData.primaryDepartmentIndex >= 0 &&
+            formData.primaryDepartmentIndex < deptIdsForPrimary.length
+              ? formData.primaryDepartmentIndex
+              : null,
         });
 
         toast.success("Staff created successfully!");
@@ -315,7 +478,7 @@ export default function StaffNewEdit({
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} staff: ${errorMessage}`,
+        `Failed to ${isEditMode ? "update" : "create"} staff: ${errorMessage}`
       );
       setIsSubmitting(false);
     }
@@ -324,7 +487,7 @@ export default function StaffNewEdit({
   return (
     <TooltipProvider>
       <div
-        className="space-y-6 py-4 px-4"
+        className="w-full p-6 space-y-8"
         data-page={`staff-${isEditMode ? "edit" : "new"}`}
       >
         {isReadonly && (
@@ -359,365 +522,565 @@ export default function StaffNewEdit({
         )}
 
         <div className="w-full">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
-                {formData?.firstName !== undefined ? (
-                  <Input
-                    id="firstName"
-                    data-testid="input-staff-first-name"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
-                    }
-                    placeholder="Jane"
-                    required
-                    disabled={isReadonly || isSubmitting}
-                  />
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
-                {formData?.lastName !== undefined ? (
-                  <Input
-                    id="lastName"
-                    data-testid="input-staff-last-name"
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      handleInputChange("lastName", e.target.value)
-                    }
-                    placeholder="Smith"
-                    required
-                    disabled={isReadonly || isSubmitting}
-                  />
-                ) : null}
-              </div>
-            </div>
-
-            {/* Emails Section */}
-            <div className="space-y-2">
-              <Label>Emails *</Label>
-              {formData?.emails !== undefined ? (
-                <div className="space-y-2">
-                  {formData.emails.map((email, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="flex-1 relative">
-                        <Input
-                          type="email"
-                          value={email}
-                          onChange={(e) => updateEmail(index, e.target.value)}
-                          placeholder="redacted@purdue.edu"
-                          disabled={isReadonly || isSubmitting}
-                          data-testid={`input-staff-email-${index}`}
-                          className={
-                            formData.primaryEmailIndex === index
-                              ? "border-primary"
-                              : ""
-                          }
-                          required={index === 0}
-                        />
-                        {formData.primaryEmailIndex === index && (
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
-                            Primary
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          variant={
-                            formData.primaryEmailIndex === index
-                              ? "default"
-                              : "outline"
-                          }
-                          size="icon"
-                          onClick={() => setPrimaryEmail(index)}
-                          disabled={
-                            isReadonly ||
-                            isSubmitting ||
-                            formData.primaryEmailIndex === index
-                          }
-                          className="h-8 w-8 shrink-0"
-                          title="Set as primary"
-                        >
-                          <CheckCircle2 className="h-4 w-4" />
-                        </Button>
-                        {formData?.emails && formData.emails.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => removeEmail(index)}
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-8">
+              {/* First Name Section */}
+              {formData?.firstName !== undefined &&
+                staffData?.department_mapping &&
+                staffData?.valid_department_ids !== undefined && (
+                  <Card className="transition-all">
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <div>
+                          <input
+                            type="text"
+                            id="firstName"
+                            data-testid="input-staff-first-name"
+                            value={formData.firstName}
+                            onChange={(e) =>
+                              handleInputChange("firstName", e.target.value)
+                            }
+                            className={cn(
+                              "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                            )}
+                            placeholder="First Name"
+                            required
                             disabled={isReadonly || isSubmitting}
-                            className="h-8 w-8 shrink-0"
-                            title="Remove email"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addEmail}
-                    disabled={isReadonly || isSubmitting}
-                    size="sm"
-                    className="w-full"
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" /> Add email
-                  </Button>
-                </div>
-              ) : null}
-            </div>
+                          />
+                          <p className="text-xs text-muted-foreground mt-1 px-2">
+                            {formData.firstName === "" || !formData.firstName
+                              ? "Click to edit • Name will be auto-generated if unchanged"
+                              : "Click to edit"}
+                          </p>
+                        </div>
 
-            {/* Role Section */}
-            <div className="space-y-2">
-              <Label htmlFor="role">Role *</Label>
-              {formData?.role !== undefined ? (
-                <div data-testid="input-staff-role">
-                  <GenericPicker
-                    items={STAFF_ROLES.filter((r) =>
-                      (scopedRoles || []).includes(r.id)
-                    )}
-                    selectedIds={formData.role ? [formData.role] : []}
-                    onSelect={(ids) => handleInputChange("role", ids[0] || "")}
-                    getId={(role) => role.id}
-                    getLabel={(role) => role.name}
-                    getSearchText={(role) => `${role.name} ${role.description || ""}`}
-                    renderItem={(role, isSelected) => {
-                      const IconComponent = role.icon || User;
-                      const hexColor = role.color || "#64748b";
-                      const generateGradient = (hex: string) => {
-                        const cleanHex = hex.replace("#", "");
-                        const r = parseInt(cleanHex.substr(0, 2), 16);
-                        const g = parseInt(cleanHex.substr(2, 2), 16);
-                        const b = parseInt(cleanHex.substr(4, 2), 16);
-                        const lighterR = Math.min(255, r + 60);
-                        const lighterG = Math.min(255, g + 60);
-                        const lighterB = Math.min(255, b + 60);
-                        const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                        return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                      };
-                      return (
-                        <div className="flex items-center gap-3 w-full">
-                          <div
-                            className="p-2 rounded-lg shadow-lg flex-shrink-0"
-                            style={{
-                              background: generateGradient(hexColor),
-                            }}
-                          >
-                            <IconComponent className="h-4 w-4 text-white" />
+                        {/* Last Name */}
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Last Name</Label>
+                          <Input
+                            id="lastName"
+                            data-testid="input-staff-last-name"
+                            value={formData.lastName || ""}
+                            onChange={(e) =>
+                              handleInputChange("lastName", e.target.value)
+                            }
+                            placeholder="Last Name (optional)"
+                            disabled={isReadonly || isSubmitting}
+                          />
+                        </div>
+
+                        {/* Department Selection */}
+                        {staffData.valid_department_ids.length > 1 && (
+                          <div className="space-y-2">
+                            <Label htmlFor="department">Department</Label>
+                            {formData?.departmentIds !== undefined ? (
+                              <GenericPicker
+                                items={staffData.department_mapping}
+                                itemIds={Array.from(
+                                  new Set([
+                                    ...staffData.valid_department_ids,
+                                    ...(formData.departmentIds || []),
+                                  ])
+                                )}
+                                selectedIds={formData.departmentIds || []}
+                                onSelect={(ids) => {
+                                  handleInputChange("departmentIds", ids);
+                                  // Update primary department index if needed
+                                  const currentPrimaryId =
+                                    formData?.departmentIds &&
+                                    formData?.primaryDepartmentIndex !==
+                                      undefined &&
+                                    formData.primaryDepartmentIndex >= 0 &&
+                                    formData.primaryDepartmentIndex <
+                                      formData.departmentIds.length
+                                      ? formData.departmentIds[
+                                          formData.primaryDepartmentIndex
+                                        ]
+                                      : undefined;
+                                  if (
+                                    currentPrimaryId &&
+                                    ids.includes(currentPrimaryId)
+                                  ) {
+                                    // Keep the same primary if it's still in the list
+                                    const newIndex =
+                                      ids.indexOf(currentPrimaryId);
+                                    handleInputChange(
+                                      "primaryDepartmentIndex",
+                                      newIndex
+                                    );
+                                  } else if (ids.length > 0) {
+                                    // Set first department as primary if none selected
+                                    if (
+                                      formData?.primaryDepartmentIndex ===
+                                      undefined
+                                    ) {
+                                      handleInputChange(
+                                        "primaryDepartmentIndex",
+                                        0
+                                      );
+                                    }
+                                  } else {
+                                    // Clear primary if no departments
+                                    handleInputChange(
+                                      "primaryDepartmentIndex",
+                                      undefined
+                                    );
+                                  }
+                                }}
+                                getId={(dept) =>
+                                  (dept as unknown as { id: string }).id
+                                }
+                                getLabel={(dept) => dept.name || ""}
+                                getSearchText={(dept) =>
+                                  `${dept.name} ${dept.description || ""}`
+                                }
+                                placeholder="All Departments"
+                                disabled={isReadonly}
+                                multiSelect={true}
+                                hideSelectedChips={true}
+                                buttonClassName="w-full"
+                              />
+                            ) : null}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">{role.name}</div>
-                            {role.description && (
-                              <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                {role.description}
+                        )}
+
+                        {/* Active Switch */}
+                        <div className="space-y-2 pt-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <label
+                                htmlFor="active"
+                                className="text-sm flex items-center gap-1.5"
+                              >
+                                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                                Active
+                              </label>
+                              <Switch
+                                id="active"
+                                checked={formData.active ?? true}
+                                onCheckedChange={(checked) =>
+                                  handleInputChange("active", checked)
+                                }
+                                disabled={isReadonly || isSubmitting}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground pl-5">
+                              Whether this staff member is active
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Requests Per Day Switch */}
+                        <div className="space-y-2 pt-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <label
+                                htmlFor="requestsPerDayEnabled"
+                                className="text-sm flex items-center gap-1.5"
+                              >
+                                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                                Requests per day
+                              </label>
+                              <Switch
+                                id="requestsPerDayEnabled"
+                                checked={requestsPerDayEnabled}
+                                onCheckedChange={(checked) => {
+                                  setRequestsPerDayEnabled(checked);
+                                  if (!checked) {
+                                    handleInputChange("reqPerDay", "");
+                                  }
+                                }}
+                                disabled={isReadonly || isSubmitting}
+                              />
+                            </div>
+                            {!requestsPerDayEnabled && (
+                              <p className="text-xs text-muted-foreground pl-6">
+                                Set a daily request limit for this staff member
+                              </p>
+                            )}
+                            {requestsPerDayEnabled && (
+                              <div className="space-y-2 pt-2 pl-6">
+                                <Input
+                                  id="reqPerDay"
+                                  type="number"
+                                  value={
+                                    formData.reqPerDay === ""
+                                      ? ""
+                                      : String(formData.reqPerDay)
+                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "") {
+                                      handleInputChange("reqPerDay", "");
+                                    } else {
+                                      const num = parseInt(val, 10);
+                                      handleInputChange(
+                                        "reqPerDay",
+                                        Number.isNaN(num) ? "" : num
+                                      );
+                                    }
+                                  }}
+                                  placeholder="Enter number"
+                                  min={1}
+                                  step={1}
+                                  disabled={isReadonly || isSubmitting}
+                                  data-testid="input-staff-requests-per-day"
+                                  className="w-full"
+                                />
                               </div>
                             )}
                           </div>
-                          <Check
-                            className={cn(
-                              "ml-auto",
-                              isSelected ? "opacity-100" : "opacity-0",
-                            )}
-                          />
                         </div>
-                      );
-                    }}
-                    renderButton={(selectedItems) => {
-                      if (selectedItems.length === 0) return "Select role...";
-                      const role = selectedItems[0];
-                      const IconComponent = role?.icon || User;
-                      const hexColor = role?.color || "#64748b";
-                      const generateGradient = (hex: string) => {
-                        const cleanHex = hex.replace("#", "");
-                        const r = parseInt(cleanHex.substr(0, 2), 16);
-                        const g = parseInt(cleanHex.substr(2, 2), 16);
-                        const b = parseInt(cleanHex.substr(4, 2), 16);
-                        const lighterR = Math.min(255, r + 60);
-                        const lighterG = Math.min(255, g + 60);
-                        const lighterB = Math.min(255, b + 60);
-                        const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                        return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                      };
-                      return (
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div
-                            className="p-1 rounded-md shadow-sm flex-shrink-0"
-                            style={{
-                              background: generateGradient(hexColor),
-                            }}
-                          >
-                            <IconComponent className="h-3.5 w-3.5 text-white" />
-                          </div>
-                          <span className="truncate">{role?.name || "Select role"}</span>
-                        </div>
-                      );
-                    }}
-                    placeholder="Select role"
-                    multiSelect={false}
-                    hideSelectedChips={true}
-                    disabled={isReadonly || isSubmitting}
-                    buttonClassName="h-10"
-                    groupHeading="Staff Roles"
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            {/* Requests Per Day Section */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="requestsPerDayEnabled"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    Requests per day
-                  </Label>
-                  <Switch
-                    id="requestsPerDayEnabled"
-                    checked={requestsPerDayEnabled}
-                    onCheckedChange={(checked) => {
-                      setRequestsPerDayEnabled(checked);
-                      if (!checked) {
-                        handleInputChange("reqPerDay", "");
-                      }
-                    }}
-                    disabled={isReadonly || isSubmitting}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Set a daily request limit for this staff member
-                </p>
-                {requestsPerDayEnabled && (
-                  <div className="space-y-2 pt-2">
-                    <Input
-                      id="reqPerDay"
-                      type="number"
-                      value={
-                        formData?.reqPerDay === ""
-                          ? ""
-                          : String(formData?.reqPerDay || "")
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "") {
-                          handleInputChange("reqPerDay", "");
-                        } else {
-                          const num = parseInt(val, 10);
-                          handleInputChange(
-                            "reqPerDay",
-                            Number.isNaN(num) ? "" : num,
-                          );
-                        }
-                      }}
-                      placeholder="e.g. 100"
-                      min={1}
-                      step={1}
-                      disabled={isReadonly || isSubmitting}
-                      data-testid="input-staff-requests-per-day"
-                    />
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
-              </div>
-            </div>
 
-            {/* Primary Department Section (superadmin only) */}
-            {isSuperadmin &&
-              staffData?.valid_department_ids &&
-              staffData.valid_department_ids.length > 1 && (
-                <div className="space-y-2 pt-2">
-                  <Label htmlFor="primaryDepartment">Primary Department</Label>
-                  {formData?.primaryDepartmentId !== undefined ? (
-                    <GenericPicker
-                      items={staffData?.department_mapping || {}}
-                      itemIds={staffData?.valid_department_ids || []}
-                      selectedIds={
-                        formData.primaryDepartmentId
-                          ? [formData.primaryDepartmentId]
-                          : []
-                      }
-                      onSelect={(ids) => {
-                        const deptId = ids.length > 0 ? ids[0] : "";
-                        if (deptId !== undefined) {
-                          handleInputChange("primaryDepartmentId", deptId);
-                        }
-                      }}
-                      getId={(dept) => (dept as unknown as { id: string }).id}
-                      getLabel={(dept) => dept.name || ""}
-                      getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
-                      multiSelect={false}
-                      placeholder="Select primary department"
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
+              {/* Step 1: Role */}
+              {formData?.role !== undefined && (
+                <Card
+                  className={cn(
+                    "transition-all",
+                    !isEditMode &&
+                      steps[0]?.status === "active" &&
+                      "ring-2 ring-primary",
+                    !isEditMode &&
+                      steps[0]?.status === "pending" &&
+                      "opacity-50"
+                  )}
+                >
+                  <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                          steps[0]?.status === "completed"
+                            ? "bg-green-500 text-white"
+                            : steps[0]?.status === "active"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                        )}
+                      >
+                        {steps[0]?.status === "completed" ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <span>1</span>
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">
+                          {steps[0]?.title || "Role"}
+                        </CardTitle>
+                        <CardDescription>
+                          {steps[0]?.description ||
+                            "Select a role for this staff member."}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 px-6">
+                    <StaffRoleSection
+                      role={formData.role}
+                      scopedRoles={scopedRoles || []}
+                      onRoleChange={(role) => handleInputChange("role", role)}
+                      isReadonly={isReadonly}
+                      isSubmitting={isSubmitting}
                     />
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">
-                    Set the primary department for this staff member
-                  </p>
-                </div>
+                  </CardContent>
+                </Card>
               )}
 
-            {/* Active Switch (edit mode only) */}
-            {isEditMode && (
-              <div className="space-y-2 pt-2">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="active"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      Active
-                    </Label>
-                    {formData?.active !== undefined ? (
-                      <Switch
-                        id="active"
-                        checked={formData.active ?? true}
-                        onCheckedChange={(checked) =>
-                          handleInputChange("active", checked)
-                        }
-                        disabled={isReadonly || isSubmitting}
-                      />
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Whether this staff member is active
-                  </p>
-                </div>
-              </div>
-            )}
+              {/* Step 2: Primary Department */}
+              {formData?.departmentIds !== undefined &&
+                staffData?.department_mapping &&
+                staffData?.valid_department_ids !== undefined &&
+                (formData.departmentIds.length > 0 ||
+                  staffData.valid_department_ids.length > 1) && (
+                  <Card
+                    className={cn(
+                      "transition-all",
+                      !isEditMode &&
+                        steps[1]?.status === "active" &&
+                        "ring-2 ring-primary",
+                      !isEditMode &&
+                        steps[1]?.status === "pending" &&
+                        "opacity-50"
+                    )}
+                  >
+                    <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                            steps[1]?.status === "completed"
+                              ? "bg-green-500 text-white"
+                              : steps[1]?.status === "active"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                          )}
+                        >
+                          {steps[1]?.status === "completed" ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <span>2</span>
+                          )}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            {steps[1]?.title || "Primary Department"}
+                          </CardTitle>
+                          <CardDescription>
+                            {steps[1]?.description ||
+                              "Select which department is primary for this staff member."}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 px-6">
+                      {/* Search Bar */}
+                      <div className="flex h-9 items-center gap-2 border-b px-0 w-full">
+                        <Search className="size-4 shrink-0 opacity-50" />
+                        <input
+                          type="text"
+                          placeholder="Search departments..."
+                          value={primaryDeptSearchTerm}
+                          onChange={(e) =>
+                            setPrimaryDeptSearchTerm(e.target.value)
+                          }
+                          className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={isReadonly}
+                        />
+                      </div>
 
-            {/* Action buttons */}
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isSubmitting}
-                data-testid="btn-cancel-staff"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isReadonly || isSubmitting}
-                data-testid="btn-submit-staff"
-              >
-                {isSubmitting
-                  ? isEditMode
-                    ? "Updating..."
-                    : "Creating..."
-                  : isEditMode
-                    ? "Update Staff"
-                    : "Create Staff"}
-              </Button>
+                      {/* Filtered departments */}
+                      {!filteredPrimaryDeptIds ||
+                      filteredPrimaryDeptIds.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No departments found. Try adjusting your search.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {filteredPrimaryDeptIds.map((deptId) => {
+                            const dept = staffData.department_mapping[deptId];
+                            // For primary selection, if departmentIds is empty, use all valid departments
+                            const availableDeptIds =
+                              (formData.departmentIds?.length || 0) === 0
+                                ? staffData.valid_department_ids
+                                : formData.departmentIds || [];
+                            const isPrimary =
+                              formData?.primaryDepartmentIndex !== undefined &&
+                              formData.primaryDepartmentIndex >= 0 &&
+                              formData.primaryDepartmentIndex <
+                                availableDeptIds.length &&
+                              availableDeptIds[
+                                formData.primaryDepartmentIndex
+                              ] === deptId;
+
+                            return (
+                              <div
+                                key={deptId}
+                                className={cn(
+                                  "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all cursor-pointer",
+                                  "hover:shadow-md hover:bg-accent/50",
+                                  isPrimary && "ring-2 ring-primary bg-accent"
+                                )}
+                                onClick={() => {
+                                  if (!isReadonly) {
+                                    const index =
+                                      availableDeptIds.indexOf(deptId);
+                                    handleInputChange(
+                                      "primaryDepartmentIndex",
+                                      index
+                                    );
+                                  }
+                                }}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <Building2 className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-sm leading-tight">
+                                      {dept?.name || "Unnamed Department"}
+                                    </h3>
+                                    {dept?.description && (
+                                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                        {dept.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Step 3: Email */}
+              {formData?.emails !== undefined && (
+                <Card
+                  className={cn(
+                    "transition-all",
+                    !isEditMode &&
+                      steps.find((s) => s.id === "emails")?.status ===
+                        "active" &&
+                      "ring-2 ring-primary",
+                    !isEditMode &&
+                      steps.find((s) => s.id === "emails")?.status ===
+                        "pending" &&
+                      "opacity-50"
+                  )}
+                >
+                  <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                          steps.find((s) => s.id === "emails")?.status ===
+                            "completed"
+                            ? "bg-green-500 text-white"
+                            : steps.find((s) => s.id === "emails")?.status ===
+                                "active"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                        )}
+                      >
+                        {steps.find((s) => s.id === "emails")?.status ===
+                        "completed" ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <span>
+                            {steps.findIndex((s) => s.id === "emails") + 1}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">
+                          {steps.find((s) => s.id === "emails")?.title ||
+                            "Email"}
+                        </CardTitle>
+                        <CardDescription>
+                          {steps.find((s) => s.id === "emails")?.description ||
+                            "Select the primary email address for this staff member."}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 px-6">
+                    <StaffEmailsSection
+                      emails={formData.emails}
+                      primaryEmailIndex={formData.primaryEmailIndex}
+                      onEmailsChange={(emails) =>
+                        handleInputChange("emails", emails)
+                      }
+                      onPrimaryEmailIndexChange={(index) =>
+                        handleInputChange("primaryEmailIndex", index)
+                      }
+                      isReadonly={isReadonly}
+                      isSubmitting={isSubmitting}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Step 4: Cohorts */}
+              {staffData?.cohort_mapping &&
+                "valid_cohort_ids" in staffData &&
+                staffData.valid_cohort_ids !== undefined && (
+                  <Card
+                    className={cn(
+                      "transition-all",
+                      !isEditMode &&
+                        steps.find((s) => s.id === "cohorts")?.status ===
+                          "active" &&
+                        "ring-2 ring-primary",
+                      !isEditMode &&
+                        steps.find((s) => s.id === "cohorts")?.status ===
+                          "pending" &&
+                        "opacity-50"
+                    )}
+                  >
+                    <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                            steps.find((s) => s.id === "cohorts")?.status ===
+                              "completed"
+                              ? "bg-green-500 text-white"
+                              : steps.find((s) => s.id === "cohorts")
+                                    ?.status === "active"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                          )}
+                        >
+                          {steps.find((s) => s.id === "cohorts")?.status ===
+                          "completed" ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <span>
+                              {steps.findIndex((s) => s.id === "cohorts") + 1}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            {steps.find((s) => s.id === "cohorts")?.title ||
+                              "Cohorts"}
+                          </CardTitle>
+                          <CardDescription>
+                            {steps.find((s) => s.id === "cohorts")
+                              ?.description ||
+                              "Select cohorts for this staff member (optional)."}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 px-6">
+                      <StaffCohortsSection
+                        cohortIds={formData?.cohortIds || []}
+                        validCohortIds={
+                          "valid_cohort_ids" in staffData
+                            ? staffData.valid_cohort_ids || []
+                            : []
+                        }
+                        cohortMapping={staffData.cohort_mapping}
+                        onCohortIdsChange={(ids) =>
+                          handleInputChange("cohortIds", ids)
+                        }
+                        isReadonly={isReadonly}
+                        isSubmitting={isSubmitting}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Action buttons */}
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={isSubmitting}
+                  data-testid="btn-cancel-staff"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isReadonly || isSubmitting}
+                  data-testid="btn-submit-staff"
+                >
+                  {isSubmitting
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Creating..."
+                    : isEditMode
+                      ? "Update Staff"
+                      : "Create Staff"}
+                </Button>
+              </div>
             </div>
           </form>
         </div>

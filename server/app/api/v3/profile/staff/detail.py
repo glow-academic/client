@@ -23,8 +23,16 @@ class DepartmentMappingItem(BaseModel):
     description: str
 
 
+class CohortMappingItem(BaseModel):
+    """Cohort mapping item."""
+
+    name: str
+    description: str
+
+
 # Type alias for Dict mapping
 DepartmentMapping = dict[str, DepartmentMappingItem]
+CohortMapping = dict[str, CohortMappingItem]
 
 router = APIRouter()
 
@@ -47,11 +55,15 @@ class StaffDetailResponse(BaseModel):
     primary_email: str | None  # Primary email (first in emails array if exists)
     role: str
     requests_per_day: int | None
+    cohort_ids: list[str]  # List of cohort IDs (no primary flag)
+    department_ids: list[str]  # List of department IDs
     primary_department_id: str | None
     active: bool
     can_edit: bool
     valid_department_ids: list[str]
     department_mapping: DepartmentMapping
+    cohort_mapping: CohortMapping
+    valid_cohort_ids: list[str]  # List of all valid cohort IDs user can assign
 
 
 def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
@@ -81,9 +93,14 @@ async def get_staff_detail(
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
+        # Handle cached data that might be missing new fields (backward compatibility)
+        cached_data = cached["data"]
+        # If cached data is missing valid_cohort_ids, provide default empty list
+        if "valid_cohort_ids" not in cached_data:
+            cached_data["valid_cohort_ids"] = []
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return StaffDetailResponse.model_validate(cached["data"])
+        return StaffDetailResponse.model_validate(cached_data)
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -123,9 +140,32 @@ async def get_staff_detail(
                         description=ddata.get("description", ""),
                     )
 
+        # Parse cohort_mapping
+        cohort_mapping_data = parse_jsonb(row.get("cohort_mapping"))
+        cohort_mapping: CohortMapping = {}
+        if isinstance(cohort_mapping_data, dict):
+            for cohort_id, cdata in cohort_mapping_data.items():
+                if isinstance(cdata, dict):
+                    cohort_mapping[cohort_id] = CohortMappingItem(
+                        name=cdata.get("name", ""),
+                        description=cdata.get("description", ""),
+                    )
+
         valid_department_ids = row.get("valid_department_ids") or []
         if not isinstance(valid_department_ids, list):
             valid_department_ids = []
+
+        valid_cohort_ids = row.get("valid_cohort_ids") or []
+        if not isinstance(valid_cohort_ids, list):
+            valid_cohort_ids = []
+
+        cohort_ids = row.get("cohort_ids") or []
+        if not isinstance(cohort_ids, list):
+            cohort_ids = []
+
+        department_ids = row.get("department_ids") or []
+        if not isinstance(department_ids, list):
+            department_ids = []
 
         # Handle primary_department_id - convert to string if not None
         primary_department_id = row.get("primary_department_id")
@@ -141,11 +181,15 @@ async def get_staff_detail(
             primary_email=primary_email,
             role=row.get("role", ""),
             requests_per_day=row.get("requests_per_day"),
+            cohort_ids=cohort_ids,
+            department_ids=department_ids,
             primary_department_id=primary_department_id,
             active=row.get("active", True),
             can_edit=row.get("can_edit", False),
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
+            cohort_mapping=cohort_mapping,
+            valid_cohort_ids=valid_cohort_ids,
         )
 
         # Cache response

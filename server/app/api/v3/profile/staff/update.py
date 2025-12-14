@@ -28,7 +28,11 @@ class UpdateStaffRequest(BaseModel):
     )
     role: str
     requests_per_day: int | None
-    primary_department_id: str
+    cohort_ids: list[str]  # List of cohort IDs (no primary flag)
+    department_ids: list[str]  # List of department IDs
+    primary_department_index: int | None = (
+        None  # Index in department_ids array for primary (defaults to 0)
+    )
     active: bool
 
 
@@ -68,6 +72,21 @@ async def update_profile(
 
         primary_email = request.emails[primary_index]
 
+        # Determine primary department index (default to 0)
+        primary_dept_index = (
+            request.primary_department_index
+            if request.primary_department_index is not None
+            else (0 if request.department_ids else None)
+        )
+        if request.department_ids and (
+            primary_dept_index is None
+            or primary_dept_index < 0
+            or primary_dept_index >= len(request.department_ids)
+        ):
+            raise HTTPException(
+                status_code=400, detail="Invalid primary_department_index"
+            )
+
         # Single consolidated query: checks existence, updates profile, department, and request limit
         sql_query = load_sql("sql/v3/profile/staff/update_profile_complete.sql")
         sql_params = (
@@ -77,7 +96,9 @@ async def update_profile(
             primary_email,
             request.role,
             request.active,
-            request.primary_department_id,
+            request.cohort_ids,
+            request.department_ids,
+            primary_dept_index,
             request.requests_per_day,
         )
 

@@ -3,7 +3,7 @@
  * Extracted from StaffRolePicker for reuse
  */
 
-import { BookOpen, Crown, GraduationCap, Shield, User } from "lucide-react";
+import { BookOpen, Crown, GraduationCap, Shield, User, Users } from "lucide-react";
 
 // Utility function to generate gradient from hex color
 export const generateGradientFromHex = (hexColor: string): string => {
@@ -63,6 +63,13 @@ export const STAFF_ROLES = [
     description: "Limited access, not logged in or not registered",
     icon: User,
     color: "#6b7280", // gray
+  },
+  {
+    id: "member",
+    name: "Member",
+    description: "Standard member access",
+    icon: Users,
+    color: "#6366f1", // indigo
   },
 ] as const;
 

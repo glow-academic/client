@@ -23,8 +23,16 @@ class DepartmentMappingItem(BaseModel):
     description: str
 
 
+class CohortMappingItem(BaseModel):
+    """Cohort mapping item."""
+
+    name: str
+    description: str
+
+
 # Type alias for Dict mapping
 DepartmentMapping = dict[str, DepartmentMappingItem]
+CohortMapping = dict[str, CohortMappingItem]
 
 router = APIRouter()
 
@@ -52,10 +60,12 @@ class StaffNewResponse(BaseModel):
 
     # Metadata/Options
     valid_department_ids: list[str]
+    valid_cohort_ids: list[str]
     role_options: list[str]
 
     # Mappings
     department_mapping: DepartmentMapping
+    cohort_mapping: CohortMapping
 
 
 def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
@@ -109,6 +119,10 @@ async def get_staff_new(
         if not valid_department_ids:
             valid_department_ids = []
 
+        valid_cohort_ids = result.get("valid_cohort_ids", [])
+        if not valid_cohort_ids:
+            valid_cohort_ids = []
+
         # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
         is_superadmin = user_role == "superadmin"
@@ -123,6 +137,17 @@ async def get_staff_new(
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
+                    )
+
+        # Parse cohort_mapping
+        cohort_mapping_data = parse_jsonb(result.get("cohort_mapping"))
+        cohort_mapping: CohortMapping = {}
+        if isinstance(cohort_mapping_data, dict):
+            for cohort_id, cdata in cohort_mapping_data.items():
+                if isinstance(cdata, dict):
+                    cohort_mapping[cohort_id] = CohortMappingItem(
+                        name=cdata.get("name", ""),
+                        description=cdata.get("description", ""),
                     )
 
         # Role options
@@ -142,9 +167,11 @@ async def get_staff_new(
             can_edit=True,  # User can always create staff
             # Metadata
             valid_department_ids=valid_department_ids,
+            valid_cohort_ids=valid_cohort_ids,
             role_options=role_options,
             # Mappings
             department_mapping=department_mapping,
+            cohort_mapping=cohort_mapping,
         )
 
         # Cache response

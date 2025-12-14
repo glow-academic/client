@@ -11,7 +11,6 @@ import Logs from "@/components/logs/Logs";
 import { LogsRunsClient } from "@/components/logs/LogsRunsClient";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { requireAuthenticated } from "@/lib/auth-helpers";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -66,8 +65,11 @@ async function bulkDeleteLogs(
   input: BulkDeleteLogsIn
 ): Promise<BulkDeleteLogsOut> {
   "use server";
-  const authResult = await requireAuthenticated();
-  const profileId = authResult.effectiveProfileId;
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
 
   // Override profileId from session (security)
   const out = await api.post("/logs/bulk-delete", {

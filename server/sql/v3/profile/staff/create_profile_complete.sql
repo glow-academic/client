@@ -1,6 +1,6 @@
--- Create staff profile with validation and department insert in single query (DHH style)
+-- Create staff profile with validation, cohort, and department insert in single query (DHH style)
 -- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=email, $5=role, 
---             $6=active, $7=department_id (uuid, nullable)
+--             $6=active, $7=cohort_ids (uuid[]), $8=department_ids (uuid[]), $9=primary_department_index (int, nullable)
 -- Returns: id, first_name, last_name, email_exists (boolean)
 
 WITH email_check AS (
@@ -25,13 +25,31 @@ email_insert AS (
     FROM profile_insert pi
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
 ),
+cohort_insert AS (
+    -- Insert cohort relationships if provided and profile was created
+    INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+    SELECT 
+        cohort_id,
+        pi.id,
+        true
+    FROM profile_insert pi
+    CROSS JOIN unnest($7::uuid[]) as cohort_id
+    WHERE COALESCE(array_length($7::uuid[], 1), 0) > 0
+        AND NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
+    ON CONFLICT (cohort_id, profile_id) DO NOTHING
+),
 department_insert AS (
-    -- Insert department relationship if provided and profile was created
+    -- Insert department relationships if provided and profile was created (set primary based on index)
     INSERT INTO profile_departments (profile_id, department_id, is_primary, active)
     SELECT 
-        pi.id, $7::uuid, true, true
+        pi.id,
+        dept.dept_id,
+        (dept.ord - 1 = COALESCE($9::int, 0)) as is_primary,
+        true
     FROM profile_insert pi
-    WHERE $7::uuid IS NOT NULL
+    CROSS JOIN unnest($8::uuid[]) WITH ORDINALITY AS dept(dept_id, ord)
+    WHERE COALESCE(array_length($8::uuid[], 1), 0) > 0
+        AND NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
     ON CONFLICT (profile_id, department_id) DO NOTHING
 )
 -- Return profile info and email check result (always returns a row)

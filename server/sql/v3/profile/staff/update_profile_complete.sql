@@ -1,6 +1,7 @@
--- Update staff profile with lookup, update, department, and request limit in single query (DHH style)
+-- Update staff profile with lookup, update, department, cohorts, and request limit in single query (DHH style)
 -- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=email, $5=role, $6=active, 
---             $7=primary_department_id (uuid), $8=requests_per_day (int, nullable)
+--             $7=cohort_ids (uuid[]), $8=department_ids (uuid[]), $9=primary_department_index (int, nullable),
+--             $10=requests_per_day (int, nullable)
 -- Note: $4=email is now the primary email to update (replaces existing primary email)
 -- Returns: id, first_name, last_name, name (concatenated)
 
@@ -51,38 +52,74 @@ email_update AS (
         active = true,
         updated_at = NOW()
 ),
-department_deactivate_primary AS (
-    -- Deactivate current primary department (if different from new one)
+cohort_deactivate AS (
+    -- Deactivate existing cohort relationships not in the new list (or all if empty array)
+    UPDATE cohort_profiles SET
+        active = false,
+        updated_at = NOW()
+    WHERE profile_id = $1::uuid
+        AND EXISTS (SELECT 1 FROM profile_update)
+        AND (
+            COALESCE(array_length($7::uuid[], 1), 0) = 0
+            OR cohort_id NOT IN (
+                SELECT unnest($7::uuid[])
+            )
+        )
+),
+cohort_insert AS (
+    -- Insert or activate cohort relationships
+    INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+    SELECT 
+        cohort_id,
+        pu.id,
+        true
+    FROM profile_update pu
+    CROSS JOIN unnest($7::uuid[]) as cohort_id
+    WHERE COALESCE(array_length($7::uuid[], 1), 0) > 0
+        AND EXISTS (SELECT 1 FROM profile_update)
+    ON CONFLICT (cohort_id, profile_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+department_deactivate_all AS (
+    -- Deactivate all existing department relationships (or all if empty array)
     UPDATE profile_departments SET
+        active = false,
         is_primary = false,
         updated_at = NOW()
     WHERE profile_id = $1::uuid
-        AND is_primary = true
         AND EXISTS (SELECT 1 FROM profile_update)
-        AND $7::uuid IS NOT NULL
-        AND department_id != $7::uuid
+        AND (
+            COALESCE(array_length($8::uuid[], 1), 0) = 0
+            OR department_id NOT IN (
+                SELECT unnest($8::uuid[])
+            )
+        )
 ),
-department_update AS (
-    -- Insert or update department relationship (set as primary)
+department_insert AS (
+    -- Insert or update department relationships (set primary based on index)
     INSERT INTO profile_departments (profile_id, department_id, is_primary, active)
     SELECT 
-        pu.id, $7::uuid, true, true
+        pu.id,
+        dept.dept_id,
+        (dept.ord - 1 = COALESCE($9::int, 0)) as is_primary,
+        true
     FROM profile_update pu
-    WHERE $7::uuid IS NOT NULL
+    CROSS JOIN unnest($8::uuid[]) WITH ORDINALITY AS dept(dept_id, ord)
+    WHERE COALESCE(array_length($8::uuid[], 1), 0) > 0
         AND EXISTS (SELECT 1 FROM profile_update)
     ON CONFLICT (profile_id, department_id) DO UPDATE SET
-        is_primary = true,
+        is_primary = EXCLUDED.is_primary,
         active = true,
         updated_at = NOW()
-    RETURNING profile_id
 ),
 request_limit_upsert AS (
     -- Upsert request limit if provided
     INSERT INTO profile_request_limits (profile_id, requests_per_day, active)
     SELECT 
-        pu.id, $8::int, true
+        pu.id, $10::int, true
     FROM profile_update pu
-    WHERE $8::int IS NOT NULL
+    WHERE $10::int IS NOT NULL
         AND EXISTS (SELECT 1 FROM profile_update)
     ON CONFLICT (profile_id)
     DO UPDATE SET 

@@ -5,11 +5,11 @@
  * 01/26/2025
  */
 
+import { getSession } from "@/auth";
 import { EvalDetail } from "@/components/evals/EvalDetail";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -22,7 +22,7 @@ type StopEvalOut = OutputOf<"/api/v3/evals/stop", "post">;
 /** ---- Direct fetch for eval detail ---- */
 const getEvalDetail = async (
   evalId: string,
-  profileId: string,
+  profileId: string
 ): Promise<EvalDetailOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -35,7 +35,7 @@ const getEvalDetail = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
@@ -51,19 +51,27 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions ---- */
 async function runEval(input: RunEvalIn): Promise<RunEvalOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   return api.post("/evals/run", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 
 async function stopEval(input: StopEvalIn): Promise<StopEvalOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   return api.post("/evals/stop", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

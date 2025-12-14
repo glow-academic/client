@@ -6395,8 +6395,18 @@ export interface components {
             primary_email_index?: number | null;
             /** Role */
             role: string;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
+            /**
+             * Cohort Ids
+             * @default []
+             */
+            cohort_ids: string[];
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /** Primary Department Index */
+            primary_department_index?: number | null;
         };
         /**
          * CreateStaffResponse
@@ -11942,6 +11952,10 @@ export interface components {
             role: string;
             /** Requests Per Day */
             requests_per_day: number | null;
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
             /** Primary Department Id */
             primary_department_id: string | null;
             /** Active */
@@ -11954,6 +11968,12 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__profile__staff__detail__DepartmentMappingItem"];
             };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Valid Cohort Ids */
+            valid_cohort_ids: string[];
         };
         /**
          * StaffFilters
@@ -12028,11 +12048,17 @@ export interface components {
             can_edit: boolean;
             /** Valid Department Ids */
             valid_department_ids: string[];
+            /** Valid Cohort Ids */
+            valid_cohort_ids: string[];
             /** Role Options */
             role_options: string[];
             /** Department Mapping */
             department_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__profile__staff__new__DepartmentMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
             };
         };
         /**
@@ -13067,8 +13093,12 @@ export interface components {
             role: string;
             /** Requests Per Day */
             requests_per_day: number | null;
-            /** Primary Department Id */
-            primary_department_id: string;
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Primary Department Index */
+            primary_department_index?: number | null;
             /** Active */
             active: boolean;
         };

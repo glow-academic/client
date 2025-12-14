@@ -14808,16 +14808,32 @@
             "type": "string",
             "title": "Role"
           },
-          "primary_department_id": {
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids",
+            "default": []
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids",
+            "default": []
+          },
+          "primary_department_index": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Primary Department Id"
+            "title": "Primary Department Index"
           }
         },
         "type": "object",
@@ -29392,6 +29408,20 @@
             ],
             "title": "Requests Per Day"
           },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
           "primary_department_id": {
             "anyOf": [
               {
@@ -29424,6 +29454,20 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "valid_cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Cohort Ids"
           }
         },
         "type": "object",
@@ -29436,11 +29480,15 @@
           "primary_email",
           "role",
           "requests_per_day",
+          "cohort_ids",
+          "department_ids",
           "primary_department_id",
           "active",
           "can_edit",
           "valid_department_ids",
-          "department_mapping"
+          "department_mapping",
+          "cohort_mapping",
+          "valid_cohort_ids"
         ],
         "title": "StaffDetailResponse",
         "description": "Response for staff detail endpoint."
@@ -29616,6 +29664,13 @@
             "type": "array",
             "title": "Valid Department Ids"
           },
+          "valid_cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Cohort Ids"
+          },
           "role_options": {
             "items": {
               "type": "string"
@@ -29629,6 +29684,13 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
           }
         },
         "type": "object",
@@ -29642,8 +29704,10 @@
           "active",
           "can_edit",
           "valid_department_ids",
+          "valid_cohort_ids",
           "role_options",
-          "department_mapping"
+          "department_mapping",
+          "cohort_mapping"
         ],
         "title": "StaffNewResponse",
         "description": "Response with default staff details and metadata."
@@ -32440,9 +32504,30 @@
             ],
             "title": "Requests Per Day"
           },
-          "primary_department_id": {
-            "type": "string",
-            "title": "Primary Department Id"
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "primary_department_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Index"
           },
           "active": {
             "type": "boolean",
@@ -32457,7 +32542,8 @@
           "emails",
           "role",
           "requests_per_day",
-          "primary_department_id",
+          "cohort_ids",
+          "department_ids",
           "active"
         ],
         "title": "UpdateStaffRequest",

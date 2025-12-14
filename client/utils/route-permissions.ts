@@ -258,6 +258,12 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/management/staff",
       },
       {
+        path: "/management/staff/new",
+        roles: ["superadmin"],
+        title: "Create Staff",
+        redirectTo: "/management/staff",
+      },
+      {
         path: "/management/staff/p/[profileId]",
         roles: ["superadmin"],
         title: "Staff Profile",
@@ -391,6 +397,12 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         title: "Evals",
         redirectTo: "/engine/evals",
       },
+      {
+        path: "/engine/evals/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Eval",
+        redirectTo: "/engine/evals",
+      },
     ],
   },
   {
@@ -427,6 +439,12 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         path: "/system/auth",
         roles: ["superadmin"],
         title: "Auth",
+        redirectTo: "/system/auth",
+      },
+      {
+        path: "/system/auth/new",
+        roles: ["superadmin"],
+        title: "Create Auth",
         redirectTo: "/system/auth",
       },
       {

@@ -37,11 +37,15 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function deleteKey(input: DeleteKeyIn): Promise<DeleteKeyOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/delete", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

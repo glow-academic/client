@@ -36,10 +36,14 @@ const getEvalsList = async (profileId: string): Promise<EvalsListOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   "use server";
-  const authResult = await requireAuthenticated();
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
   return api.post("/evals/delete", {
     ...input,
-    body: { ...input.body, profileId: authResult.effectiveProfileId },
+    body: { ...input.body, profileId },
   });
 }
 

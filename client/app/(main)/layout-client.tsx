@@ -84,8 +84,8 @@ function MainLayoutContent({
   const { effectiveProfile, activeProfile } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
 
-  // Check if we're on the staff management pages
-  const isStaffManagementPage = pathname?.startsWith("/management/staff");
+  // Check if we're on the staff management pages (but not on /new page)
+  const isStaffManagementPage = pathname?.startsWith("/management/staff") && !pathname.includes("/new");
 
   // Generate breadcrumbs client-side and enrich with entity names from context
   const breadcrumbs = useMemo(() => {
@@ -155,6 +155,11 @@ function MainLayoutContent({
 
   // Determine action button based on current path
   const getActionButton = () => {
+    // Don't show buttons on /new pages
+    if (pathname.includes("/new")) {
+      return null;
+    }
+
     if (pathname === "/create/cohorts") {
       return (
         <Button onClick={() => router.push("/create/cohorts/new")} size="sm">
@@ -233,15 +238,6 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/create/videos") {
-      return (
-        <Button onClick={() => router.push("/create/videos/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Video
-        </Button>
-      );
-    }
-
     if (pathname === "/management/staff") {
       // CreateStaffButton is now handled directly in Staff.tsx component
       return null;
@@ -295,11 +291,20 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/departments") {
+    if (pathname === "/system/departments") {
       return (
-        <Button onClick={() => router.push("/departments/new")} size="sm">
+        <Button onClick={() => router.push("/system/departments/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Department
+        </Button>
+      );
+    }
+
+    if (pathname === "/system/keys") {
+      return (
+        <Button onClick={() => router.push("/system/keys/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Key
         </Button>
       );
     }

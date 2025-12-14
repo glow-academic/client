@@ -24,7 +24,11 @@ class CreateStaffRequest(BaseModel):
         None  # Index in emails array for primary (defaults to 0)
     )
     role: str
-    primary_department_id: str | None = None
+    cohort_ids: list[str] = []  # List of cohort IDs (no primary flag)
+    department_ids: list[str] = []  # List of department IDs
+    primary_department_index: int | None = (
+        None  # Index in department_ids array for primary (defaults to 0)
+    )
 
 
 class CreateStaffResponse(BaseModel):
@@ -66,6 +70,21 @@ async def create_profile(
 
         primary_email = request.emails[primary_index]
 
+        # Determine primary department index (default to 0)
+        primary_dept_index = (
+            request.primary_department_index
+            if request.primary_department_index is not None
+            else (0 if request.department_ids else None)
+        )
+        if request.department_ids and (
+            primary_dept_index is None
+            or primary_dept_index < 0
+            or primary_dept_index >= len(request.department_ids)
+        ):
+            raise HTTPException(
+                status_code=400, detail="Invalid primary_department_index"
+            )
+
         # Single consolidated query: validates email, creates profile, and inserts department
         # Note: For now, we create profile with primary email, then insert other emails
         # TODO: Update SQL to handle multiple emails in one query
@@ -77,7 +96,9 @@ async def create_profile(
             primary_email,
             request.role,
             True,  # active
-            request.primary_department_id,
+            request.cohort_ids,
+            request.department_ids,
+            primary_dept_index,
         )
 
         async with transaction(conn):
