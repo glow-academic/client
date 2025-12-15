@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import SystemAgent from "@/components/agents/SystemAgent";
+import Agent from "@/components/agents/Agent";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getSession } from "@/auth";
@@ -101,7 +101,7 @@ export default async function NewAgentPage() {
       data-page="agent-new"
       aria-label="Create new agent page"
     >
-      <SystemAgent
+      <Agent
         agentDetailDefault={agentDetailDefault}
         createAgentAction={createAgent}
         updateAgentAction={updateAgent}

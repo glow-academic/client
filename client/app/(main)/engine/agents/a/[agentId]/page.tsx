@@ -5,12 +5,11 @@
  * 06/08/2025
  */
 
-
-import SystemAgent from "@/components/agents/SystemAgent";
+import { getSession } from "@/auth";
+import Agent from "@/components/agents/Agent";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -29,7 +28,7 @@ type DeleteAgentPromptOut = OutputOf<"/api/v3/agents/delete-prompt", "post">;
  */
 const getAgent = async (
   agentId: string,
-  profileId: string,
+  profileId: string
 ): Promise<AgentDetailOut> => {
   return api.post(
     "/agents/detail",
@@ -39,14 +38,14 @@ const getAgent = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { agentId } = await params;
   const session = await getSession();
@@ -101,7 +100,7 @@ async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
 }
 
 async function deleteAgentPrompt(
-  input: DeleteAgentPromptIn,
+  input: DeleteAgentPromptIn
 ): Promise<DeleteAgentPromptOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -131,7 +130,7 @@ export default async function AgentEditPage({
 
     return (
       <div className="space-y-6" data-page="agent-edit" data-agent-id={agentId}>
-        <SystemAgent
+        <Agent
           agentId={agentId}
           {...(agentDetail && { agentDetail })}
           createAgentAction={createAgent}
@@ -163,9 +162,9 @@ export default async function AgentEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  AgentDetailOut,
   AgentNewIn,
   AgentNewOut,
-  AgentDetailOut,
   CreateAgentIn,
   CreateAgentOut,
   DeleteAgentPromptIn,
