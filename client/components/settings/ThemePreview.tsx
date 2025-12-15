@@ -156,11 +156,19 @@ export function ThemePreview({
             className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
               stepStatus === "completed"
-                ? "bg-green-500 text-white"
+                ? ""
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted"
             )}
+            style={
+              stepStatus === "completed"
+                ? {
+                    backgroundColor: primary_color,
+                    color: isLightColor(primary_color) ? "#000000" : "#ffffff",
+                  }
+                : undefined
+            }
           >
             {stepStatus === "completed" ? (
               <Check className="w-4 h-4" />

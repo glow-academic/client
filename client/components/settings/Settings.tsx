@@ -18,7 +18,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { SettingsAIProviderConfigSection } from "@/components/settings/SettingsAIProviderConfigSection";
 import { SettingsAIProvidersSection } from "@/components/settings/SettingsAIProvidersSection";
 import { SettingsAuthMethodConfigSection } from "@/components/settings/SettingsAuthMethodConfigSection";
@@ -89,6 +88,25 @@ export interface SettingsProps {
 }
 
 type StepStatus = "pending" | "active" | "completed";
+
+/**
+ * Helper function to determine if a color is light or dark
+ * Returns true if the color is light (should use dark text)
+ */
+function isLightColor(hex: string): boolean {
+  // Remove # if present
+  const color = hex.replace("#", "");
+
+  // Convert to RGB
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+
+  // Calculate luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.5;
+}
 
 export default function Settings({
   settingsList,
@@ -1715,11 +1733,23 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("primary-color") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("primary-color") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("primary-color") === "completed"
+                                  ? {
+                                      backgroundColor: formData.primary_color,
+                                      color: isLightColor(
+                                        formData.primary_color
+                                      )
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("primary-color") ===
                               "completed" ? (
@@ -1883,11 +1913,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("accent") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("accent") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("accent") === "completed"
+                                  ? {
+                                      backgroundColor: formData.accent,
+                                      color: isLightColor(formData.accent)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("accent") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -2046,11 +2086,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("background") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("background") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("background") === "completed"
+                                  ? {
+                                      backgroundColor: formData.background,
+                                      color: isLightColor(formData.background)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("background") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -2211,11 +2261,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("surface") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("surface") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("surface") === "completed"
+                                  ? {
+                                      backgroundColor: formData.surface,
+                                      color: isLightColor(formData.surface)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("surface") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -2373,11 +2433,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("success") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("success") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("success") === "completed"
+                                  ? {
+                                      backgroundColor: formData.success,
+                                      color: isLightColor(formData.success)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("success") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -2391,33 +2461,6 @@ export default function Settings({
                           </div>
                         </AccordionTrigger>
                         <div className="flex items-center gap-2 shrink-0">
-                          <div className="w-48 shrink-0">
-                            <RangeSlider
-                              min={formData.warning_threshold}
-                              max={100}
-                              value={[
-                                formData.warning_threshold,
-                                Math.max(
-                                  formData.warning_threshold,
-                                  Math.min(100, formData.success_threshold)
-                                ),
-                              ]}
-                              onValueChange={(range) => {
-                                const newValue = Math.max(
-                                  range[1],
-                                  formData.warning_threshold + 1
-                                );
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  success_threshold: Math.min(100, newValue),
-                                }));
-                              }}
-                              disabled={
-                                isSubmitting || submittingSection === "theme"
-                              }
-                              className="space-y-0"
-                            />
-                          </div>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -2580,11 +2623,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("warning") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("warning") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("warning") === "completed"
+                                  ? {
+                                      backgroundColor: formData.warning,
+                                      color: isLightColor(formData.warning)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("warning") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -2598,39 +2651,6 @@ export default function Settings({
                           </div>
                         </AccordionTrigger>
                         <div className="flex items-center gap-2 shrink-0">
-                          <div className="w-48 shrink-0">
-                            <RangeSlider
-                              min={formData.danger_threshold}
-                              max={formData.success_threshold}
-                              value={[
-                                formData.danger_threshold,
-                                Math.max(
-                                  formData.danger_threshold + 1,
-                                  Math.min(
-                                    formData.warning_threshold,
-                                    formData.success_threshold - 1
-                                  )
-                                ),
-                              ]}
-                              onValueChange={(range) => {
-                                const newValue = Math.max(
-                                  formData.danger_threshold + 1,
-                                  Math.min(
-                                    range[1],
-                                    formData.success_threshold - 1
-                                  )
-                                );
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  warning_threshold: newValue,
-                                }));
-                              }}
-                              disabled={
-                                isSubmitting || submittingSection === "theme"
-                              }
-                              className="space-y-0"
-                            />
-                          </div>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -2796,11 +2816,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("error") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("error") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("error") === "completed"
+                                  ? {
+                                      backgroundColor: formData.error,
+                                      color: isLightColor(formData.error)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("error") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -2814,33 +2844,6 @@ export default function Settings({
                           </div>
                         </AccordionTrigger>
                         <div className="flex items-center gap-2 shrink-0">
-                          <div className="w-48 shrink-0">
-                            <RangeSlider
-                              min={0}
-                              max={formData.warning_threshold}
-                              value={[
-                                0,
-                                Math.min(
-                                  formData.danger_threshold,
-                                  formData.warning_threshold - 1
-                                ),
-                              ]}
-                              onValueChange={(range) => {
-                                const newValue = Math.min(
-                                  range[1],
-                                  formData.warning_threshold - 1
-                                );
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  danger_threshold: Math.max(0, newValue),
-                                }));
-                              }}
-                              disabled={
-                                isSubmitting || submittingSection === "theme"
-                              }
-                              className="space-y-0"
-                            />
-                          </div>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3006,12 +3009,26 @@ export default function Settings({
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("sidebar-background") ===
                                   "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("sidebar-background") ===
                                       "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("sidebar-background") ===
+                                "completed"
+                                  ? {
+                                      backgroundColor:
+                                        formData.sidebar_background,
+                                      color: isLightColor(
+                                        formData.sidebar_background
+                                      )
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("sidebar-background") ===
                               "completed" ? (
@@ -3182,12 +3199,24 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("sidebar-primary") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("sidebar-primary") ===
                                       "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("sidebar-primary") === "completed"
+                                  ? {
+                                      backgroundColor: formData.sidebar_primary,
+                                      color: isLightColor(
+                                        formData.sidebar_primary
+                                      )
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("sidebar-primary") ===
                               "completed" ? (
@@ -3351,11 +3380,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("chart1") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("chart1") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("chart1") === "completed"
+                                  ? {
+                                      backgroundColor: formData.chart1,
+                                      color: isLightColor(formData.chart1)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("chart1") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -3513,11 +3552,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("chart2") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("chart2") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("chart2") === "completed"
+                                  ? {
+                                      backgroundColor: formData.chart2,
+                                      color: isLightColor(formData.chart2)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("chart2") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -3675,11 +3724,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("chart3") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("chart3") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("chart3") === "completed"
+                                  ? {
+                                      backgroundColor: formData.chart3,
+                                      color: isLightColor(formData.chart3)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("chart3") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -3837,11 +3896,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("chart4") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("chart4") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("chart4") === "completed"
+                                  ? {
+                                      backgroundColor: formData.chart4,
+                                      color: isLightColor(formData.chart4)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("chart4") === "completed" ? (
                                 <Check className="w-4 h-4" />
@@ -3999,11 +4068,21 @@ export default function Settings({
                               className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                                 getStepStatus("chart5") === "completed"
-                                  ? "bg-green-500 text-white"
+                                  ? ""
                                   : getStepStatus("chart5") === "active"
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted"
                               )}
+                              style={
+                                getStepStatus("chart5") === "completed"
+                                  ? {
+                                      backgroundColor: formData.chart5,
+                                      color: isLightColor(formData.chart5)
+                                        ? "#000000"
+                                        : "#ffffff",
+                                    }
+                                  : undefined
+                              }
                             >
                               {getStepStatus("chart5") === "completed" ? (
                                 <Check className="w-4 h-4" />

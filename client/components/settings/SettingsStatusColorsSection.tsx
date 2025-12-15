@@ -298,6 +298,21 @@ export const StatusColorCard = forwardRef<HTMLDivElement, StatusColorCardProps>(
             />
           </div>
         </div>
+
+        {/* Threshold Slider - rendered in content when not in header */}
+        {threshold && !renderThresholdInHeader && (
+          <div className="space-y-2">
+            <Label>Threshold</Label>
+            <RangeSlider
+              min={threshold.min}
+              max={threshold.max}
+              value={[threshold.min, Math.max(threshold.min, Math.min(threshold.max, threshold.value))]}
+              onValueChange={handleThresholdRangeChange}
+              disabled={isReadonly}
+              className="space-y-0"
+            />
+          </div>
+        )}
       </div>
     );
 
