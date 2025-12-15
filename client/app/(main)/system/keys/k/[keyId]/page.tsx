@@ -17,6 +17,9 @@ type KeyDetailOut = OutputOf<"/api/v3/keys/detail", "post">;
 type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
 type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
+type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
+type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
+
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -91,7 +94,12 @@ export default async function EditKeyPage({
 
     return (
       <div className="space-y-6" data-page="key-edit" data-key-id={keyId}>
-        <Key keyId={keyId} keyDetail={keyDetail} updateKeyAction={updateKey} />
+        <Key
+          keyId={keyId}
+          keyDetail={keyDetail}
+          updateKeyAction={updateKey}
+          decryptKeyAction={decryptKey}
+        />
       </div>
     );
   } catch (error: unknown) {
@@ -130,5 +138,25 @@ async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   });
 }
 
+async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
+  "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
+  return api.post("/keys/decrypt-key", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
+}
+
 /** ---- Export types for client component (type-only imports) ---- */
-export type { KeyDetailIn, KeyDetailOut, UpdateKeyIn, UpdateKeyOut };
+export type {
+  KeyDetailIn,
+  KeyDetailOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
+};

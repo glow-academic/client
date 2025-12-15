@@ -188,24 +188,6 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/create/simulations",
       },
       {
-        path: "/create/videos",
-        roles: ["instructional", "admin", "superadmin"],
-        title: "Videos",
-        redirectTo: "/create/videos",
-      },
-      {
-        path: "/create/videos/new",
-        roles: ["instructional", "admin", "superadmin"],
-        title: "Create Video",
-        redirectTo: "/create/videos",
-      },
-      {
-        path: "/create/videos/v/[videoId]",
-        roles: ["instructional", "admin", "superadmin"],
-        title: "Edit Video",
-        redirectTo: "/create/videos",
-      },
-      {
         path: "/create/cohorts",
         roles: ["instructional", "admin", "superadmin"],
         title: "Cohorts Management",

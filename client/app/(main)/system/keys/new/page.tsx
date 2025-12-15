@@ -15,6 +15,9 @@ type KeyNewOut = OutputOf<"/api/v3/keys/new", "post">;
 type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
 
+type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
+type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
+
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -31,7 +34,7 @@ const getKeyDefault = async (profileId: string): Promise<KeyNewOut> => {
   );
 };
 
-/** ---- Strongly-typed server action ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
   const session = await getSession();
@@ -41,6 +44,19 @@ async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
+}
+
+async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
+  "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId;
+  if (!profileId) {
+    throw new Error("Authentication required");
+  }
+  return api.post("/keys/decrypt-key", {
     ...input,
     body: { ...input.body, profileId },
   });
@@ -74,10 +90,21 @@ export default async function NewKeyPage() {
       data-page="key-new"
       aria-label="Create new key page"
     >
-      <Key keyDetailDefault={keyDetailDefault} createKeyAction={createKey} />
+      <Key
+        keyDetailDefault={keyDetailDefault}
+        createKeyAction={createKey}
+        decryptKeyAction={decryptKey}
+      />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { CreateKeyIn, CreateKeyOut, KeyNewIn, KeyNewOut };
+export type {
+  CreateKeyIn,
+  CreateKeyOut,
+  KeyNewIn,
+  KeyNewOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
+};

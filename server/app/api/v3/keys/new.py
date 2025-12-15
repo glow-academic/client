@@ -119,6 +119,7 @@ async def get_key_new(
             name=row.get("name", ""),
             key_masked=row.get("key_masked", "****"),
             type=row.get("type", "api"),
+            description=row.get("description", ""),
             active=row.get("active", True),
             created_at=row.get("created_at").isoformat()
             if row.get("created_at")
