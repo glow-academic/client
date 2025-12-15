@@ -4780,6 +4780,13 @@ export interface components {
              * @default true
              */
             encrypted: boolean;
+            /** Position */
+            position?: number | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
         };
         /** AuthItemDetail */
         AuthItemDetail: {
@@ -4789,6 +4796,10 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /** Position */
+            position: number;
+            /** Active */
+            active: boolean;
             /** Value Masked */
             value_masked: string;
             /** Key Id */
@@ -4814,6 +4825,13 @@ export interface components {
              * @default true
              */
             encrypted: boolean;
+            /** Position */
+            position?: number | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
         };
         /** AuthListResponse */
         AuthListResponse: {

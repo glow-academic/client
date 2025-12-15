@@ -31,10 +31,13 @@ CREATE TABLE auth_items (
   auth_id    UUID        NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  encrypted  BOOLEAN     NOT NULL DEFAULT TRUE -- TRUE for encrypted secrets (use auth_item_keys), FALSE for plain text config (use auth_item_values)
+  encrypted  BOOLEAN     NOT NULL DEFAULT TRUE, -- TRUE for encrypted secrets (use auth_item_keys), FALSE for plain text config (use auth_item_values)
+  position   INT         NOT NULL DEFAULT 1,
+  active     BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
 CREATE INDEX ON auth_items (auth_id);
 CREATE INDEX ON auth_items (auth_id, name);
 CREATE INDEX ON auth_items (encrypted);
+CREATE INDEX ON auth_items (auth_id, position);
 

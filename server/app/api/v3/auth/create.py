@@ -21,6 +21,8 @@ class AuthItemCreate(BaseModel):
     value: str | None = None  # Plain text value for non-encrypted items
     key_id: str | None = None  # Key ID for encrypted items
     encrypted: bool = True  # Default to encrypted for backward compatibility
+    position: int | None = None  # Position in the list (defaults to array order)
+    active: bool = True  # Whether this item is active
 
 
 class CreateAuthRequest(BaseModel):
@@ -64,24 +66,17 @@ async def create_auth(
 
             items_data = []
             for item in request.auth_items:
-                if item.encrypted:
-                    # For encrypted items, use key_id (value is ignored)
-                    item_dict = {
-                        "name": item.name,
-                        "description": item.description,
-                        "encrypted": True,
-                        "key_id": item.key_id
-                        if hasattr(item, "key_id") and item.key_id
-                        else None,
-                    }
-                else:
-                    # For non-encrypted items, use value (key_id is ignored)
-                    item_dict = {
-                        "name": item.name,
-                        "description": item.description,
-                        "encrypted": False,
-                        "value": item.value,
-                    }
+                # Values are managed separately in settings, not included here
+                item_dict = {
+                    "name": item.name,
+                    "description": item.description,
+                    "encrypted": item.encrypted,
+                    "position": item.position,
+                    "active": item.active,
+                }
+                # Only include key_id for encrypted items if provided
+                if item.encrypted and hasattr(item, "key_id") and item.key_id:
+                    item_dict["key_id"] = item.key_id
                 items_data.append(item_dict)
 
             items_json = json.dumps(items_data)

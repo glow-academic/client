@@ -1,8 +1,8 @@
--- Update auth with items (encrypted items use keys, non-encrypted use values table)
+-- Update auth with items (encrypted items use keys, values managed separately in settings)
 -- Parameters: $1=auth_id, $2=name, $3=description, $4=active, $5=items_json (jsonb array)
--- items_json format: [{"name": "Item 1", "description": "Desc 1", "value": "value", "encrypted": true, "key_id": "uuid"}, ...]
--- For encrypted items: key_id must be provided, value is ignored
--- For non-encrypted items: value must be provided, key_id is ignored
+-- items_json format: [{"name": "Item 1", "description": "Desc 1", "encrypted": true, "key_id": "uuid", "position": 1, "active": true}, ...]
+-- For encrypted items: key_id can be provided to link keys
+-- Values are managed separately in settings page, not included here
 WITH auth_id_resolved AS (
     SELECT $1::uuid as auth_id
 ),
@@ -42,9 +42,10 @@ items_expanded AS (
     SELECT 
         (item->>'name')::text as item_name,
         (item->>'description')::text as item_description,
-        (item->>'value')::text as item_value,
         (item->>'key_id')::text as item_key_id,
         COALESCE((item->>'encrypted')::boolean, true) as item_encrypted,
+        COALESCE((item->>'position')::int, ordinality) as item_position,
+        COALESCE((item->>'active')::boolean, true) as item_active,
         ordinality as item_order
     FROM jsonb_array_elements(COALESCE($5::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
     WHERE COALESCE(jsonb_array_length(COALESCE($5::jsonb, '[]'::jsonb)), 0) > 0
@@ -55,13 +56,17 @@ new_items AS (
         auth_id,
         name,
         description,
-        encrypted
+        encrypted,
+        position,
+        active
     )
     SELECT 
         ua.auth_id::uuid,
         ie.item_name,
         ie.item_description,
-        ie.item_encrypted
+        ie.item_encrypted,
+        ie.item_position,
+        ie.item_active
     FROM update_auth ua
     CROSS JOIN items_expanded ie
     RETURNING id::text as item_id, encrypted
@@ -82,21 +87,6 @@ link_encrypted_keys AS (
       AND ie.item_key_id != ''
     ON CONFLICT (auth_item_id, key_id) DO UPDATE SET
         active = true,
-        updated_at = NOW()
-),
-store_non_encrypted_values AS (
-    -- Store non-encrypted items in auth_item_values
-    INSERT INTO auth_item_values (auth_item_id, value, created_at, updated_at)
-    SELECT 
-        ni.item_id::uuid,
-        COALESCE(ie.item_value, ''),
-        NOW(),
-        NOW()
-    FROM new_items ni
-    JOIN items_expanded ie ON ni.encrypted = ie.item_encrypted
-    WHERE ni.encrypted = false
-    ON CONFLICT (auth_item_id) DO UPDATE SET
-        value = EXCLUDED.value,
         updated_at = NOW()
 )
 SELECT auth_id FROM update_auth

@@ -10649,6 +10649,22 @@
             "type": "boolean",
             "title": "Encrypted",
             "default": true
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
           }
         },
         "type": "object",
@@ -10672,6 +10688,14 @@
           "description": {
             "type": "string",
             "title": "Description"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
           },
           "value_masked": {
             "type": "string",
@@ -10698,6 +10722,8 @@
           "auth_item_id",
           "name",
           "description",
+          "position",
+          "active",
           "value_masked",
           "encrypted"
         ],
@@ -10738,6 +10764,22 @@
           "encrypted": {
             "type": "boolean",
             "title": "Encrypted",
+            "default": true
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
             "default": true
           }
         },

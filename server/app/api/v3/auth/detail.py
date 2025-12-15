@@ -26,6 +26,8 @@ class AuthItemDetail(BaseModel):
     auth_item_id: str
     name: str
     description: str
+    position: int
+    active: bool
     value_masked: str  # Masked encrypted value or plain value for non-encrypted
     key_id: str | None = None  # Key ID for encrypted items
     encrypted: bool  # Whether this item is encrypted
@@ -105,6 +107,8 @@ async def get_auth_detail(
                             auth_item_id=item_data.get("auth_item_id", ""),
                             name=item_data.get("name", ""),
                             description=item_data.get("description", ""),
+                            position=item_data.get("position", 1),
+                            active=item_data.get("active", True),
                             value_masked=item_data.get("value_masked", "****"),
                             key_id=item_data.get("key_id"),
                             encrypted=item_data.get("encrypted", True),
