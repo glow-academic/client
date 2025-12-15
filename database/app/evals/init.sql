@@ -34,6 +34,20 @@ CREATE TABLE eval_runs (
 CREATE INDEX ON eval_runs (run_id);
 CREATE INDEX ON eval_runs (eval_id);
 
+-- Eval → Departments junction table (BCNF normalization)
+-- No records = available to all departments (cross-department)
+CREATE TABLE eval_departments (
+  eval_id       UUID NOT NULL REFERENCES evals(id)       ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id)  ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (eval_id, department_id)
+);
+
+CREATE INDEX ON eval_departments (eval_id);
+CREATE INDEX ON eval_departments (department_id);
+
 -- Note: eval_grades and eval_feedbacks are now unified into grades and feedbacks tables
 -- See database/app/simulations/init.sql for unified tables
 

@@ -144,9 +144,10 @@ export function EvalForm({
         setSelectedRubricId([]);
       }
     }
-  }, [selectedAgentId, validRubricIds, selectedRubricId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAgentId, validRubricIds]);
 
-  const handleSubmit = async (run: boolean) => {
+  const handleSubmit = async () => {
     if (!name.trim()) {
       toast.error("Name is required");
       return;
@@ -178,35 +179,13 @@ export function EvalForm({
           rubric_id: selectedRubricId[0]!,
           model_run_ids: selectedModelRunIds,
           profileId: "", // Will be filled by server action
-          run: false, // Always create first, then run if needed
+          run: false,
         },
       });
 
       if (result.success) {
-        if (run) {
-          // If run flag is set, call run endpoint
-          try {
-            const runResult = await api.post("/evals/run", {
-              body: {
-                evalId: result.evalId,
-                profileId: "", // Will be filled by server action
-              },
-            });
-            if (runResult.success) {
-              toast.success(`Eval "${name}" created and started successfully`);
-              router.push(`/engine/evals/e/${result.evalId}`);
-            } else {
-              toast.success(`Eval "${name}" created successfully`);
-              router.push("/engine/evals");
-            }
-          } catch (runError) {
-            toast.error(`Eval created but failed to start: ${runError}`);
-            router.push("/engine/evals");
-          }
-        } else {
-          toast.success(`Eval "${name}" created successfully`);
-          router.push("/engine/evals");
-        }
+        toast.success(`Eval "${name}" created successfully`);
+        router.push("/engine/evals");
       }
     } catch (error) {
       toast.error(`Failed to create eval: ${error}`);
@@ -267,7 +246,9 @@ export function EvalForm({
               getSearchText={(item) => `${item.name} ${item.description || ""}`}
               renderPreview={(item) => (
                 <div className="grid gap-2">
-                  <h4 className="font-medium leading-none">{item.name || "No agent selected"}</h4>
+                  <h4 className="font-medium leading-none">
+                    {item.name || "No agent selected"}
+                  </h4>
                   <div className="text-sm text-muted-foreground">
                     {item.description || "No description available"}
                   </div>
@@ -352,20 +333,8 @@ export function EvalForm({
           >
             Back
           </Button>
-          <Button
-            type="button"
-            onClick={() => handleSubmit(false)}
-            disabled={isSubmitting}
-          >
+          <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
             Create
-          </Button>
-          <Button
-            type="button"
-            onClick={() => handleSubmit(true)}
-            disabled={isSubmitting}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            Create and Run
           </Button>
         </div>
       </form>
