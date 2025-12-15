@@ -4,27 +4,32 @@
  * @AshokSaravanan222
  * 01/26/2025
  */
-import { EvalForm } from "@/components/evals/EvalForm";
+import Eval from "@/components/evals/Eval";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getSession } from "@/auth";
 import type { Metadata } from "next";
+import { isHardRefresh } from "@/lib/cache-utils";
 
 /** ---- Strong types from OpenAPI ---- */
+type EvalNewIn = InputOf<"/api/v3/evals/new", "post">;
+type EvalNewOut = OutputOf<"/api/v3/evals/new", "post">;
 type CreateEvalIn = InputOf<"/api/v3/evals/create", "post">;
 type CreateEvalOut = OutputOf<"/api/v3/evals/create", "post">;
-type RubricsListOut = OutputOf<"/api/v3/rubrics/list", "post">;
 
-/** ---- Direct fetch for rubrics list ---- */
-const getRubricsList = async (profileId: string): Promise<RubricsListOut> => {
+/** ---- Direct fetch (no caching - source of truth) ---- */
+const getEvalDefault = async (profileId: string): Promise<EvalNewOut> => {
+  const bypassCache = await isHardRefresh();
   return api.post(
-    "/rubrics/list",
+    "/evals/new",
     { body: { profileId } },
     {
       cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
     },
   );
 };
@@ -64,17 +69,22 @@ export default async function NewEvalPage() {
     return null;
   }
 
-  // Fetch rubrics list
-  const rubricsList = await getRubricsList(profileId);
+  // Fetch eval default data (for dropdowns and defaults)
+  const evalDetailDefault = await getEvalDefault(profileId);
 
   return (
-    <EvalForm
-      rubricsList={rubricsList}
-      profileId={profileId}
-      createEvalAction={createEval}
-    />
+    <div
+      className="space-y-6"
+      data-page="eval-new"
+      aria-label="Create new eval page"
+    >
+      <Eval
+        evalDetailDefault={evalDetailDefault}
+        createEvalAction={createEval}
+      />
+    </div>
   );
 }
 
 /** ---- Export types for client component ---- */
-export type { CreateEvalIn, CreateEvalOut, RubricsListOut };
+export type { EvalNewIn, EvalNewOut, CreateEvalIn, CreateEvalOut };

@@ -20,8 +20,11 @@ class CreateEvalRequest(BaseModel):
     name: str
     description: str
     rubric_id: str
-    agent_id: str
+    agent_id: str  # Agent being evaluated
+    eval_agent_id: str  # Agent performing evaluation
     model_run_ids: list[str]
+    department_ids: list[str] | None = None
+    active: bool = True
     profileId: str  # Required for auditing/access control
     run: bool = False  # Whether to run the eval immediately after creation
 
@@ -77,7 +80,7 @@ async def create_eval(
                 else []
             )
 
-            # Validate agent exists
+            # Validate agent exists (agent being evaluated)
             agent_check = await conn.fetchrow(
                 "SELECT id FROM agents WHERE id = $1 AND active = true",
                 request.agent_id,
@@ -85,14 +88,32 @@ async def create_eval(
             if not agent_check:
                 raise ValueError(f"Agent not found: {request.agent_id}")
 
-            # Create eval with model_runs in single SQL (DHH style)
+            # Validate eval_agent exists (agent performing evaluation)
+            eval_agent_check = await conn.fetchrow(
+                "SELECT id FROM agents WHERE id = $1 AND active = true",
+                request.eval_agent_id,
+            )
+            if not eval_agent_check:
+                raise ValueError(f"Eval agent not found: {request.eval_agent_id}")
+
+            # Convert department_ids to UUID array if provided
+            department_ids_uuid = None
+            if request.department_ids:
+                department_ids_uuid = [
+                    uuid.UUID(did) for did in request.department_ids
+                ]
+
+            # Create eval with model_runs and departments in single SQL (DHH style)
             sql_query = load_sql("sql/v3/evals/create_eval_complete.sql")
             sql_params = (
                 request.name,
                 request.description,
                 request.rubric_id,
                 request.agent_id,
+                request.eval_agent_id,
                 model_run_ids_uuid,
+                department_ids_uuid,
+                request.active,
                 request.profileId,
             )
             result = await conn.fetchrow(sql_query, *sql_params)

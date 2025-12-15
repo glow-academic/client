@@ -40,7 +40,9 @@ eval_data AS (
         e.name,
         e.description,
         e.rubric_id,
+        e.agent_id::text,
         e.eval_agent_id::text,
+        e.active,
         e.created_at,
         e.updated_at,
         r.name as rubric_name,
@@ -50,6 +52,14 @@ eval_data AS (
     FROM evals e
     JOIN rubrics r ON r.id = e.rubric_id
     WHERE e.id = $1
+),
+eval_departments_data AS (
+    SELECT 
+        ed.eval_id,
+        ARRAY_AGG(ed.department_id::text ORDER BY ed.created_at) as department_ids
+    FROM eval_departments ed
+    WHERE ed.eval_id = $1 AND ed.active = true
+    GROUP BY ed.eval_id
 ),
 rubric_departments_data AS (
     SELECT 
@@ -135,7 +145,7 @@ runs_json AS (
 user_profile AS (
     SELECT role FROM profiles WHERE id = (SELECT resolved_profile_id FROM resolve_profile_id)
 ),
-department_mapping_data AS (
+eval_department_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             d.id::text,
@@ -146,9 +156,60 @@ department_mapping_data AS (
         ) FILTER (WHERE d.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
-    FROM rubric_departments_data rdd
-    LEFT JOIN departments d ON d.id::text = ANY(rdd.department_ids)
+    FROM eval_departments_data edd
+    LEFT JOIN departments d ON d.id::text = ANY(edd.department_ids)
     WHERE d.active = true
+),
+valid_departments_for_eval AS (
+    SELECT DISTINCT d.id, d.title as name, COALESCE(d.description, '') as description
+    FROM departments d
+    JOIN profile_departments pd ON pd.department_id = d.id
+    WHERE pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND d.active = true
+),
+valid_dept_ids AS (
+    SELECT id FROM valid_departments_for_eval
+),
+all_department_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            d.id::text,
+            jsonb_build_object(
+                'name', d.name,
+                'description', d.description
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping
+    FROM valid_departments_for_eval d
+),
+user_departments_for_agents_eval AS (
+    SELECT department_id
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    WHERE pd.active = true
+),
+valid_agents_for_eval AS (
+    -- Get all active agents (for agent_id picker - agents being evaluated)
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        array_agg(a.id::text ORDER BY a.name) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents_eval)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
 ),
 user_departments_for_agents AS (
     SELECT department_id
@@ -180,20 +241,68 @@ valid_agents AS (
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+user_department_ids_for_rubrics AS (
+    SELECT ARRAY_AGG(id) as ids
+    FROM departments d
+    JOIN profile_departments pd ON d.id = pd.department_id
+    WHERE pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND d.active = true
+),
+valid_rubrics_data AS (
+    SELECT DISTINCT
+        r.id,
+        r.name,
+        COALESCE(r.description, '') as description,
+        r.agent_role::text as agent_role
+    FROM rubrics r
+    LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+    CROSS JOIN user_department_ids_for_rubrics udi
+    WHERE r.active = true
+      AND (
+          rd.department_id = ANY(udi.ids)
+          OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+      )
+    -- Also include the current eval's rubric (for edit mode - ensures selected item is available)
+    UNION
+    SELECT DISTINCT
+        r2.id,
+        r2.name,
+        COALESCE(r2.description, '') as description,
+        r2.agent_role::text as agent_role
+    FROM eval_data ed
+    JOIN rubrics r2 ON r2.id = ed.rubric_id
+    WHERE r2.active = true
+),
+rubric_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            vr.id::text,
+            jsonb_build_object(
+                'name', vr.name,
+                'description', vr.description,
+                'agent_role', vr.agent_role
+            )
+        ),
+        '{}'::jsonb
+    ) as rubric_mapping,
+    COALESCE(ARRAY_AGG(vr.id::text), ARRAY[]::text[]) as rubric_ids
+    FROM valid_rubrics_data vr
 )
 SELECT 
     ed.eval_id::text,
     ed.name,
     ed.description,
     ed.rubric_id::text,
+    ed.agent_id,
     ed.eval_agent_id,
+    ed.active,
     ed.rubric_name,
     ed.rubric_description,
     ed.rubric_points,
     ed.rubric_pass_points,
     ed.created_at,
     ed.updated_at,
-    COALESCE(rdd.department_ids, NULL) as department_ids,
+    COALESCE(edd.department_ids, NULL) as department_ids,
     COALESCE(ess.total_runs, 0) as total_runs,
     COALESCE(ess.completed_runs, 0) as completed_runs,
     COALESCE(ess.pending_runs, 0) as pending_runs,
@@ -203,10 +312,15 @@ SELECT
         WHEN ess.completed_runs = ess.total_runs THEN 'completed'
         ELSE 'pending'
     END as status,
-    rj.runs,
-    dm.mapping as department_mapping,
-    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
-    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    rj.runs as model_runs,
+    COALESCE(edm.mapping, adm.mapping, '{}'::jsonb) as department_mapping,
+    COALESCE((SELECT ids FROM valid_dept_ids), ARRAY[]::text[]) as valid_department_ids,
+    COALESCE(va.agent_mapping, '{}'::jsonb) as eval_agent_mapping,
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_eval_agent_ids,
+    COALESCE(vae.agent_mapping, '{}'::jsonb) as agent_mapping,
+    COALESCE(vae.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    COALESCE((SELECT rubric_mapping FROM rubric_mapping_data), '{}'::jsonb) as rubric_mapping,
+    COALESCE((SELECT rubric_ids FROM rubric_mapping_data), ARRAY[]::text[]) as valid_rubric_ids,
     CASE 
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
@@ -216,20 +330,23 @@ SELECT
         ELSE false
     END as can_delete
 FROM eval_data ed
-LEFT JOIN rubric_departments_data rdd ON rdd.rubric_id = ed.rubric_id
+LEFT JOIN eval_departments_data edd ON edd.eval_id = ed.eval_id
 LEFT JOIN eval_status_summary ess ON ess.eval_id = ed.eval_id
 CROSS JOIN runs_json rj
 CROSS JOIN user_profile up
-CROSS JOIN department_mapping_data dm
+CROSS JOIN eval_department_mapping_data edm
+CROSS JOIN all_department_mapping_data adm
 CROSS JOIN valid_agents va
+CROSS JOIN valid_agents_for_eval vae
+CROSS JOIN rubric_mapping_data
 WHERE 
-    -- Filter by department access (if rubric has departments, user must have access)
+    -- Filter by department access (if eval has departments, user must have access)
     (
-        rdd.department_ids IS NULL 
-        OR array_length(rdd.department_ids, 1) IS NULL
+        edd.department_ids IS NULL 
+        OR array_length(edd.department_ids, 1) IS NULL
         OR EXISTS (
             SELECT 1 FROM user_departments ud
-            WHERE ud.department_id::text = ANY(rdd.department_ids)
+            WHERE ud.department_id::text = ANY(edd.department_ids)
         )
         OR up.role IN ('admin', 'superadmin')
     )

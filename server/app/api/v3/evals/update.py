@@ -21,8 +21,11 @@ class UpdateEvalRequest(BaseModel):
     name: str
     description: str
     rubric_id: str
-    eval_agent_id: str | None = None
+    agent_id: str | None = None  # Agent being evaluated
+    eval_agent_id: str | None = None  # Agent performing evaluation
     model_run_ids: list[str] | None = None  # If provided, replaces all existing
+    department_ids: list[str] | None = None  # If provided, replaces all existing
+    active: bool | None = None
     profileId: str
 
 
@@ -79,6 +82,13 @@ async def update_eval(
                 if len(existing_runs) != len(model_run_ids_uuid):
                     raise ValueError("One or more model_run_ids not found")
 
+            # Convert department_ids to UUID array if provided
+            department_ids_uuid = None
+            if request.department_ids:
+                department_ids_uuid = [
+                    uuid.UUID(did) for did in request.department_ids
+                ]
+
             # Update eval
             sql_query = load_sql("sql/v3/evals/update_eval.sql")
             sql_params = (
@@ -86,8 +96,11 @@ async def update_eval(
                 request.name,
                 request.description,
                 request.rubric_id,
-                model_run_ids_uuid,
+                uuid.UUID(request.agent_id) if request.agent_id else None,
                 uuid.UUID(request.eval_agent_id) if request.eval_agent_id else None,
+                model_run_ids_uuid,
+                department_ids_uuid,
+                request.active,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

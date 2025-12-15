@@ -2207,6 +2207,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/evals/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Eval New
+         * @description Get default eval detail with departments, agents, and rubrics mappings.
+         */
+        post: operations["get_eval_new_api_v3_evals_new_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/evals/create": {
         parameters: {
             query?: never;
@@ -5770,8 +5790,17 @@ export interface components {
             rubric_id: string;
             /** Agent Id */
             agent_id: string;
+            /** Eval Agent Id */
+            eval_agent_id: string;
             /** Model Run Ids */
             model_run_ids: string[];
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
             /** Profileid */
             profileId: string;
             /**
@@ -7575,8 +7604,12 @@ export interface components {
             description: string;
             /** Rubric Id */
             rubric_id: string;
+            /** Agent Id */
+            agent_id: string | null;
             /** Eval Agent Id */
-            eval_agent_id: string;
+            eval_agent_id: string | null;
+            /** Active */
+            active: boolean;
             /** Rubric Name */
             rubric_name: string;
             /** Rubric Description */
@@ -7605,6 +7638,16 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__evals__detail__DepartmentMappingItem"];
             };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Eval Agent Mapping */
+            eval_agent_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            /** Valid Eval Agent Ids */
+            valid_eval_agent_ids: string[] | null;
             /** Agent Mapping */
             agent_mapping: {
                 [key: string]: {
@@ -7613,6 +7656,14 @@ export interface components {
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
+            /** Rubric Mapping */
+            rubric_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids: string[] | null;
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
@@ -7655,6 +7706,14 @@ export interface components {
             can_edit: boolean;
             /** Can Delete */
             can_delete: boolean;
+        };
+        /**
+         * EvalNewRequest
+         * @description Request for default eval detail.
+         */
+        EvalNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /**
          * EvalsFilters
@@ -12518,10 +12577,16 @@ export interface components {
             description: string;
             /** Rubric Id */
             rubric_id: string;
+            /** Agent Id */
+            agent_id?: string | null;
             /** Eval Agent Id */
             eval_agent_id?: string | null;
             /** Model Run Ids */
             model_run_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
             /** Profileid */
             profileId: string;
         };
@@ -20578,6 +20643,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EvalDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_eval_new_api_v3_evals_new_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalNewRequest"];
             };
         };
         responses: {

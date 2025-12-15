@@ -4642,6 +4642,53 @@
         ]
       }
     },
+    "/api/v3/evals/new": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Get Eval New",
+        "description": "Get default eval detail with departments, agents, and rubrics mappings.",
+        "operationId": "get_eval_new_api_v3_evals_new_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalNewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
     "/api/v3/evals/create": {
       "post": {
         "tags": [
@@ -13220,12 +13267,35 @@
             "type": "string",
             "title": "Agent Id"
           },
+          "eval_agent_id": {
+            "type": "string",
+            "title": "Eval Agent Id"
+          },
           "model_run_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
             "title": "Model Run Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
           },
           "profileId": {
             "type": "string",
@@ -13243,6 +13313,7 @@
           "description",
           "rubric_id",
           "agent_id",
+          "eval_agent_id",
           "model_run_ids",
           "profileId"
         ],
@@ -17621,9 +17692,31 @@
             "type": "string",
             "title": "Rubric Id"
           },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
           "eval_agent_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Eval Agent Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
           },
           "rubric_name": {
             "type": "string",
@@ -17693,6 +17786,42 @@
             "type": "object",
             "title": "Department Mapping"
           },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "eval_agent_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Agent Mapping"
+          },
+          "valid_eval_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Eval Agent Ids"
+          },
           "agent_mapping": {
             "additionalProperties": {
               "additionalProperties": true,
@@ -17707,6 +17836,35 @@
             },
             "type": "array",
             "title": "Valid Agent Ids"
+          },
+          "rubric_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Mapping"
+          },
+          "valid_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Rubric Ids"
           },
           "can_edit": {
             "type": "boolean",
@@ -17723,7 +17881,9 @@
           "name",
           "description",
           "rubric_id",
+          "agent_id",
           "eval_agent_id",
+          "active",
           "rubric_name",
           "rubric_description",
           "rubric_points",
@@ -17737,8 +17897,13 @@
           "status",
           "model_runs",
           "department_mapping",
+          "valid_department_ids",
+          "eval_agent_mapping",
+          "valid_eval_agent_ids",
           "agent_mapping",
           "valid_agent_ids",
+          "rubric_mapping",
+          "valid_rubric_ids",
           "can_edit",
           "can_delete"
         ],
@@ -17843,6 +18008,20 @@
         ],
         "title": "EvalItem",
         "description": "Individual eval item in the response."
+      },
+      "EvalNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "EvalNewRequest",
+        "description": "Request for default eval detail."
       },
       "EvalsFilters": {
         "properties": {
@@ -30828,6 +31007,17 @@
             "type": "string",
             "title": "Rubric Id"
           },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
           "eval_agent_id": {
             "anyOf": [
               {
@@ -30852,6 +31042,31 @@
               }
             ],
             "title": "Model Run Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
           },
           "profileId": {
             "type": "string",

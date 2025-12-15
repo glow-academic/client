@@ -1,12 +1,12 @@
 /**
  * app/(main)/engine/evals/e/[evalId]/page.tsx
- * Eval detail/status view page (read-only)
+ * Eval detail/edit page
  * @AshokSaravanan222
  * 01/26/2025
  */
 
 import { getSession } from "@/auth";
-import { EvalDetail } from "@/components/evals/EvalDetail";
+import Eval from "@/components/evals/Eval";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -14,6 +14,8 @@ import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type EvalDetailOut = OutputOf<"/api/v3/evals/detail", "post">;
+type UpdateEvalIn = InputOf<"/api/v3/evals/update", "post">;
+type UpdateEvalOut = OutputOf<"/api/v3/evals/update", "post">;
 type RunEvalIn = InputOf<"/api/v3/evals/run", "post">;
 type RunEvalOut = OutputOf<"/api/v3/evals/run", "post">;
 type StopEvalIn = InputOf<"/api/v3/evals/stop", "post">;
@@ -44,32 +46,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Eval Details",
     description:
-      "View automated evaluation status and results for teaching assistant assessments. Monitor batch evaluation progress, review pedagogical performance metrics, and analyze teaching effectiveness across multiple practice sessions.",
+      "View and edit automated evaluation runs for teaching assistant assessments. Monitor batch evaluation progress, review pedagogical performance metrics, and analyze teaching effectiveness across multiple practice sessions.",
   };
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function runEval(input: RunEvalIn): Promise<RunEvalOut> {
+async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId;
   if (!profileId) {
     throw new Error("Authentication required");
   }
-  return api.post("/evals/run", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
-}
-
-async function stopEval(input: StopEvalIn): Promise<StopEvalOut> {
-  "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/evals/stop", {
+  return api.post("/evals/update", {
     ...input,
     body: { ...input.body, profileId },
   });
@@ -96,15 +85,27 @@ export default async function EvalDetailPage({
   const evalDetail = await getEvalDetail(evalId, profileId);
 
   return (
-    <div className="space-y-6">
-      <EvalDetail
+    <div
+      className="space-y-6"
+      data-page="eval-edit"
+      aria-label="Edit eval page"
+    >
+      <Eval
+        evalId={evalId}
         evalDetail={evalDetail}
-        runEvalAction={runEval}
-        stopEvalAction={stopEval}
+        updateEvalAction={updateEval}
       />
     </div>
   );
 }
 
 /** ---- Export types for client component ---- */
-export type { EvalDetailOut, RunEvalIn, RunEvalOut, StopEvalIn, StopEvalOut };
+export type {
+  EvalDetailOut,
+  UpdateEvalIn,
+  UpdateEvalOut,
+  RunEvalIn,
+  RunEvalOut,
+  StopEvalIn,
+  StopEvalOut,
+};

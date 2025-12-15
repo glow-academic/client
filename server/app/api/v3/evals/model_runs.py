@@ -150,7 +150,7 @@ async def get_model_runs(
 
         # Parse model_runs list
         model_runs: list[ModelRunItem] = []
-        model_runs_data = result.get("model_runs")
+        model_runs_data = result.get("runs")  # SQL returns 'runs', not 'model_runs'
         if isinstance(model_runs_data, str):
             model_runs_data = json.loads(model_runs_data)
         if isinstance(model_runs_data, list):
