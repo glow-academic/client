@@ -43,6 +43,7 @@ export interface ThemePreviewProps {
   stepStatus?: "pending" | "active" | "completed";
   onScrollToTop?: () => void;
   onScrollToBottom?: () => void;
+  onAccordionOpen?: (accordionValue: string) => void;
   scrollRefs?: {
     primaryColorRef?: React.RefObject<HTMLDivElement | null>;
     accentRef?: React.RefObject<HTMLDivElement | null>;
@@ -101,13 +102,30 @@ export function ThemePreview({
   stepStatus = "active",
   onScrollToTop,
   onScrollToBottom,
+  onAccordionOpen,
   scrollRefs,
 }: ThemePreviewProps) {
   const primaryIsLight = isLightColor(primary_color);
 
-  const handleScrollTo = (ref?: React.RefObject<HTMLDivElement>) => {
+  const handleScrollTo = (
+    ref?: React.RefObject<HTMLDivElement>,
+    accordionValue?: string
+  ) => {
     if (ref?.current) {
-      ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Open accordion FIRST, then scroll after layout adjusts
+      if (accordionValue && onAccordionOpen) {
+        onAccordionOpen(accordionValue);
+        // Wait for accordion animation to complete (typically 200-300ms), then scroll
+        // Using a longer timeout ensures the accordion is fully expanded before scrolling
+        setTimeout(() => {
+          if (ref?.current) {
+            ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 175); // Wait for accordion animation to complete
+      } else {
+        // No accordion to open, scroll immediately
+        ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
   };
 
@@ -222,7 +240,9 @@ export function ThemePreview({
             <div
               className="w-12 shrink-0 border-r border-border/50 cursor-pointer hover:opacity-80 transition-opacity"
               style={{ backgroundColor: sidebar_background }}
-              onClick={() => handleScrollTo(scrollRefs?.sidebarBackgroundRef)}
+              onClick={() =>
+                handleScrollTo(scrollRefs?.sidebarBackgroundRef, "sidebar-background")
+              }
             >
               {/* Sidebar accent elements */}
               <div className="p-2 space-y-2">
@@ -231,7 +251,7 @@ export function ThemePreview({
                   style={{ backgroundColor: sidebar_primary }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleScrollTo(scrollRefs?.sidebarPrimaryRef);
+                    handleScrollTo(scrollRefs?.sidebarPrimaryRef, "sidebar-primary");
                   }}
                 />
                 <div
@@ -251,7 +271,7 @@ export function ThemePreview({
               <div
                 className="rounded-lg p-3 border border-border/30 shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
                 style={{ backgroundColor: surface }}
-                onClick={() => handleScrollTo(scrollRefs?.surfaceRef)}
+                onClick={() => handleScrollTo(scrollRefs?.surfaceRef, "surface")}
               >
                 {/* Primary Button */}
                 <div className="mb-2">
@@ -263,7 +283,7 @@ export function ThemePreview({
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleScrollTo(scrollRefs?.primaryColorRef);
+                      handleScrollTo(scrollRefs?.primaryColorRef, "primary-color");
                     }}
                   >
                     {/* Visual button representation */}
@@ -275,7 +295,7 @@ export function ThemePreview({
                   className="flex items-center gap-2 mb-2 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleScrollTo(scrollRefs?.accentRef);
+                    handleScrollTo(scrollRefs?.accentRef, "accent");
                   }}
                 >
                   <div
@@ -295,7 +315,7 @@ export function ThemePreview({
                     style={{ backgroundColor: success }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleScrollTo(scrollRefs?.successRef);
+                      handleScrollTo(scrollRefs?.successRef, "success");
                     }}
                   />
                   <div
@@ -303,7 +323,7 @@ export function ThemePreview({
                     style={{ backgroundColor: warning }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleScrollTo(scrollRefs?.warningRef);
+                      handleScrollTo(scrollRefs?.warningRef, "warning");
                     }}
                   />
                   <div
@@ -311,7 +331,7 @@ export function ThemePreview({
                     style={{ backgroundColor: error }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleScrollTo(scrollRefs?.errorRef);
+                      handleScrollTo(scrollRefs?.errorRef, "error");
                     }}
                   />
                 </div>
@@ -320,17 +340,17 @@ export function ThemePreview({
               {/* Chart Colors Row */}
               <div className="flex items-center gap-1.5">
                 {[
-                  { color: chart1, ref: scrollRefs?.chart1Ref },
-                  { color: chart2, ref: scrollRefs?.chart2Ref },
-                  { color: chart3, ref: scrollRefs?.chart3Ref },
-                  { color: chart4, ref: scrollRefs?.chart4Ref },
-                  { color: chart5, ref: scrollRefs?.chart5Ref },
+                  { color: chart1, ref: scrollRefs?.chart1Ref, accordion: "chart1" },
+                  { color: chart2, ref: scrollRefs?.chart2Ref, accordion: "chart2" },
+                  { color: chart3, ref: scrollRefs?.chart3Ref, accordion: "chart3" },
+                  { color: chart4, ref: scrollRefs?.chart4Ref, accordion: "chart4" },
+                  { color: chart5, ref: scrollRefs?.chart5Ref, accordion: "chart5" },
                 ].map((item, index) => (
                   <div
                     key={index}
                     className="flex-1 h-8 rounded border border-border/30 cursor-pointer hover:opacity-80 transition-opacity"
                     style={{ backgroundColor: item.color }}
-                    onClick={() => handleScrollTo(item.ref)}
+                    onClick={() => handleScrollTo(item.ref, item.accordion)}
                   />
                 ))}
               </div>

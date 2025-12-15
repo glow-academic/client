@@ -1335,73 +1335,10 @@ export default function Settings({
     ]
   );
 
-  // IntersectionObserver to auto-open accordion when scrolling to color cards
-  useEffect(() => {
-    const refToAccordionMap = new Map<HTMLElement, string>([
-      [primaryColorRef.current!, "primary-color"],
-      [accentRef.current!, "accent"],
-      [backgroundRef.current!, "background"],
-      [surfaceRef.current!, "surface"],
-      [successRef.current!, "success"],
-      [warningRef.current!, "warning"],
-      [errorRef.current!, "error"],
-      [sidebarBackgroundRef.current!, "sidebar-background"],
-      [sidebarPrimaryRef.current!, "sidebar-primary"],
-      [chart1Ref.current!, "chart1"],
-      [chart2Ref.current!, "chart2"],
-      [chart3Ref.current!, "chart3"],
-      [chart4Ref.current!, "chart4"],
-      [chart5Ref.current!, "chart5"],
-    ]);
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
-            const accordionValue = refToAccordionMap.get(
-              entry.target as HTMLElement
-            );
-            if (accordionValue) {
-              setOpenAccordionItem(accordionValue);
-            }
-          }
-        });
-      },
-      { threshold: 0.3 }
-    );
-
-    // Observe all color card refs
-    const refs = [
-      primaryColorRef.current,
-      accentRef.current,
-      backgroundRef.current,
-      surfaceRef.current,
-      successRef.current,
-      warningRef.current,
-      errorRef.current,
-      sidebarBackgroundRef.current,
-      sidebarPrimaryRef.current,
-      chart1Ref.current,
-      chart2Ref.current,
-      chart3Ref.current,
-      chart4Ref.current,
-      chart5Ref.current,
-    ];
-
-    refs.forEach((ref) => {
-      if (ref) {
-        observer.observe(ref);
-      }
-    });
-
-    return () => {
-      refs.forEach((ref) => {
-        if (ref) {
-          observer.unobserve(ref);
-        }
-      });
-    };
-  }, []);
+  // Handler to open accordion when theme preview item is clicked
+  const handleAccordionOpenFromTheme = (accordionValue: string) => {
+    setOpenAccordionItem(accordionValue);
+  };
 
   // Arrow navigation handlers
   const handleScrollToTop = () => {
@@ -1721,9 +1658,10 @@ export default function Settings({
                   chart5={formData.chart5}
                   onResetAll={handleResetAllColors}
                   hasChanges={hasThemeChanges}
-                  stepStatus={getStepStatus("theme")}
+                  stepStatus="completed"
                   onScrollToTop={handleScrollToTop}
                   onScrollToBottom={handleScrollToBottom}
+                  onAccordionOpen={handleAccordionOpenFromTheme}
                   themePicker={
                     <SettingsThemePresetPicker
                       onThemeSelect={handlePresetThemeSelect}
@@ -1771,7 +1709,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -1939,7 +1877,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -2102,7 +2040,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -2267,7 +2205,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -2429,7 +2367,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -2453,6 +2391,33 @@ export default function Settings({
                           </div>
                         </AccordionTrigger>
                         <div className="flex items-center gap-2 shrink-0">
+                          <div className="w-48 shrink-0">
+                            <RangeSlider
+                              min={formData.warning_threshold}
+                              max={100}
+                              value={[
+                                formData.warning_threshold,
+                                Math.max(
+                                  formData.warning_threshold,
+                                  Math.min(100, formData.success_threshold)
+                                ),
+                              ]}
+                              onValueChange={(range) => {
+                                const newValue = Math.max(
+                                  range[1],
+                                  formData.warning_threshold + 1
+                                );
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  success_threshold: Math.min(100, newValue),
+                                }));
+                              }}
+                              disabled={
+                                isSubmitting || submittingSection === "theme"
+                              }
+                              className="space-y-0"
+                            />
+                          </div>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -2486,33 +2451,6 @@ export default function Settings({
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                          <div className="w-48 shrink-0">
-                            <RangeSlider
-                              min={formData.warning_threshold}
-                              max={100}
-                              value={[
-                                formData.warning_threshold,
-                                Math.max(
-                                  formData.warning_threshold,
-                                  Math.min(100, formData.success_threshold)
-                                ),
-                              ]}
-                              onValueChange={(range) => {
-                                const newValue = Math.max(
-                                  range[1],
-                                  formData.warning_threshold + 1
-                                );
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  success_threshold: Math.min(100, newValue),
-                                }));
-                              }}
-                              disabled={
-                                isSubmitting || submittingSection === "theme"
-                              }
-                              className="space-y-0"
-                            />
-                          </div>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -2636,7 +2574,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -2660,39 +2598,6 @@ export default function Settings({
                           </div>
                         </AccordionTrigger>
                         <div className="flex items-center gap-2 shrink-0">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenAccordionItem(
-                                      openAccordionItem === "warning"
-                                        ? null
-                                        : "warning"
-                                    );
-                                  }}
-                                >
-                                  {openAccordionItem === "warning" ? (
-                                    <ChevronUp className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronDown className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {openAccordionItem === "warning"
-                                    ? "Collapse"
-                                    : "Expand"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
                           <div className="w-48 shrink-0">
                             <RangeSlider
                               min={formData.danger_threshold}
@@ -2726,6 +2631,39 @@ export default function Settings({
                               className="space-y-0"
                             />
                           </div>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenAccordionItem(
+                                      openAccordionItem === "warning"
+                                        ? null
+                                        : "warning"
+                                    );
+                                  }}
+                                >
+                                  {openAccordionItem === "warning" ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {openAccordionItem === "warning"
+                                    ? "Collapse"
+                                    : "Expand"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -2852,7 +2790,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -2876,6 +2814,33 @@ export default function Settings({
                           </div>
                         </AccordionTrigger>
                         <div className="flex items-center gap-2 shrink-0">
+                          <div className="w-48 shrink-0">
+                            <RangeSlider
+                              min={0}
+                              max={formData.warning_threshold}
+                              value={[
+                                0,
+                                Math.min(
+                                  formData.danger_threshold,
+                                  formData.warning_threshold - 1
+                                ),
+                              ]}
+                              onValueChange={(range) => {
+                                const newValue = Math.min(
+                                  range[1],
+                                  formData.warning_threshold - 1
+                                );
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  danger_threshold: Math.max(0, newValue),
+                                }));
+                              }}
+                              disabled={
+                                isSubmitting || submittingSection === "theme"
+                              }
+                              className="space-y-0"
+                            />
+                          </div>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -2909,33 +2874,6 @@ export default function Settings({
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                          <div className="w-48 shrink-0">
-                            <RangeSlider
-                              min={0}
-                              max={formData.warning_threshold}
-                              value={[
-                                0,
-                                Math.min(
-                                  formData.danger_threshold,
-                                  formData.warning_threshold - 1
-                                ),
-                              ]}
-                              onValueChange={(range) => {
-                                const newValue = Math.min(
-                                  range[1],
-                                  formData.warning_threshold - 1
-                                );
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  danger_threshold: Math.max(0, newValue),
-                                }));
-                              }}
-                              disabled={
-                                isSubmitting || submittingSection === "theme"
-                              }
-                              className="space-y-0"
-                            />
-                          </div>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3061,7 +2999,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -3238,7 +3176,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -3407,7 +3345,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -3569,7 +3507,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -3731,7 +3669,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -3893,7 +3831,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
@@ -4055,7 +3993,7 @@ export default function Settings({
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden">
+                        <AccordionTrigger className="flex-1 hover:no-underline [&>svg]:hidden cursor-pointer">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div
                               className={cn(
