@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
@@ -20,16 +20,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { Badge } from "@/components/ui/badge";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { Loader2, Power, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Power, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 // Import types from new page (create action)
 import type {
@@ -39,17 +41,9 @@ import type {
 } from "@/app/(main)/system/departments/new/page";
 // Import types from edit page (update action)
 import type {
-  CreateKeyIn,
-  CreateKeyOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
   DepartmentDetailOut,
-  KeysListOut,
-  SettingsDetailOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
 } from "@/app/(main)/system/departments/d/[departmentId]/page";
 // Import types from list page (delete/duplicate actions)
 import type {
@@ -64,8 +58,6 @@ export interface DepartmentProps {
   // Optional server-provided data (for server-side rendering)
   departmentDetail?: DepartmentDetailOut;
   departmentDetailDefault?: DepartmentNewOut;
-  keysList?: KeysListOut;
-  settingsDetail?: SettingsDetailOut | null;
   // Server actions (replaces useMutation)
   createDepartmentAction?: (
     input: CreateDepartmentIn
@@ -79,15 +71,6 @@ export interface DepartmentProps {
   deleteDepartmentAction?: (
     input: DeleteDepartmentIn
   ) => Promise<DeleteDepartmentOut>;
-  // Key management actions
-  createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
-  decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
-  updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
-  getKeysListAction?: (profileId: string) => Promise<KeysListOut>;
-  getSettingsDetailAction?: (
-    settingsId: string,
-    profileId: string
-  ) => Promise<SettingsDetailOut>;
 }
 
 interface FormErrors {
@@ -99,24 +82,25 @@ interface FormData {
   title?: string;
   description?: string;
   active?: boolean;
-  settingsId?: string | null;
+}
+
+type StepStatus = "pending" | "active" | "completed";
+
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
 }
 
 export default function Department({
   departmentId,
   departmentDetail: serverDepartmentDetail,
   departmentDetailDefault: serverDepartmentDetailDefault,
-  keysList: initialKeysList,
-  settingsDetail: initialSettingsDetail,
   createDepartmentAction,
   updateDepartmentAction,
   duplicateDepartmentAction: _duplicateDepartmentAction,
   deleteDepartmentAction,
-  createKeyAction: _createKeyAction,
-  decryptKeyAction: _decryptKeyAction,
-  updateKeyAction: _updateKeyAction,
-  getKeysListAction,
-  getSettingsDetailAction,
 }: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -126,10 +110,9 @@ export default function Department({
 
   const initialFormData: FormData = useMemo(
     () => ({
-      title: "",
+      title: "New Department",
       description: "",
       active: true,
-      settingsId: null,
     }),
     []
   );
@@ -140,14 +123,6 @@ export default function Department({
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
-  // Keys and settings state
-  const [keysList, setKeysList] = useState<KeysListOut | undefined>(
-    initialKeysList
-  );
-  const [settingsDetail, setSettingsDetail] = useState<
-    SettingsDetailOut | null | undefined
-  >(initialSettingsDetail);
 
 
   // Use server-provided data (no React Query needed when server data is provided)
@@ -220,22 +195,19 @@ export default function Department({
         title: departmentData.title,
         description: departmentData.description || "",
         active: departmentData.active ?? true,
-        settingsId: departmentData.settings_id || null,
       };
       setFormData((prev) => {
         const hasChanged =
           prev?.title !== departmentFormData.title ||
           prev?.description !== departmentFormData.description ||
-          prev?.active !== departmentFormData.active ||
-          prev?.settingsId !== departmentFormData.settingsId;
+          prev?.active !== departmentFormData.active;
         return hasChanged ? departmentFormData : prev;
       });
       setOriginalFormData((prev) => {
         const hasChanged =
           prev?.title !== departmentFormData.title ||
           prev?.description !== departmentFormData.description ||
-          prev?.active !== departmentFormData.active ||
-          prev?.settingsId !== departmentFormData.settingsId;
+          prev?.active !== departmentFormData.active;
         return hasChanged ? departmentFormData : prev;
       });
     } else if (!isEditMode && departmentData) {
@@ -255,8 +227,7 @@ export default function Department({
     return (
       current?.title !== original?.title ||
       current?.description !== original?.description ||
-      current?.active !== original?.active ||
-      current?.settingsId !== original?.settingsId
+      current?.active !== original?.active
     );
   }, [formData, originalFormData, isEditMode]);
 
@@ -270,6 +241,30 @@ export default function Department({
     }
   };
 
+  // Step status logic
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      const hasTitle = !!formData?.title?.trim();
+      if (stepId === "basic") {
+        return hasTitle ? "completed" : "active";
+      }
+      return "pending";
+    },
+    [formData?.title]
+  );
+
+  // Steps array - extensible for future steps
+  const steps: Step[] = useMemo(() => {
+    return [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description: "Set the department name, description, and active status.",
+        status: getStepStatus("basic"),
+      },
+    ];
+  }, [getStepStatus]);
+
   const resetFormAndState = () => {
     setFormData(initialFormData);
     setOriginalFormData(initialFormData);
@@ -280,18 +275,9 @@ export default function Department({
     e.preventDefault();
 
     // Validation
-    if (!formData?.title) {
+    if (!formData?.title?.trim()) {
       setErrors((prev) => ({ ...prev, title: "Title is required" }));
       toast.error("Title is required");
-      return;
-    }
-
-    if (!formData?.description) {
-      setErrors((prev) => ({
-        ...prev,
-        description: "Description is required",
-      }));
-      toast.error("Description is required");
       return;
     }
 
@@ -305,7 +291,6 @@ export default function Department({
           title: formData.title || "",
           description: formData.description || "",
           active: formData.active ?? true,
-          settingsId: formData.settingsId || null,
         });
         resetFormAndState();
         toast.success("Department updated successfully!");
@@ -329,39 +314,6 @@ export default function Department({
       setIsSubmitting(false);
     }
   };
-
-
-  // Initialize key mappings and provider enabled state from settings detail
-
-  // Settings picker handler
-  const handleSettingsSelect = async (settingsId: string | null) => {
-    setFormData((prev) => ({
-      ...prev,
-      settingsId: settingsId,
-    }));
-
-    // Fetch settings detail when settings changes
-    if (settingsId && getSettingsDetailAction && effectiveProfile?.id) {
-      try {
-        const detail = await getSettingsDetailAction(
-          settingsId,
-          effectiveProfile.id
-        );
-        setSettingsDetail(detail);
-        // Refresh keys list
-        if (getKeysListAction) {
-          const freshKeysList = await getKeysListAction(effectiveProfile.id);
-          setKeysList(freshKeysList);
-        }
-      } catch {
-        // Settings might not exist
-        setSettingsDetail(null);
-      }
-    } else {
-      setSettingsDetail(null);
-    }
-  };
-
   const handleDelete = async () => {
     if (!departmentId || !deleteDepartmentAction) return;
 
@@ -422,181 +374,119 @@ export default function Department({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title Field */}
-        <div className="space-y-2">
-          <Label htmlFor="title">Title *</Label>
-          {formData?.title !== undefined ? (
-            <Input
-              id="title"
-              data-testid="input-department-title"
-              value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="Enter department title"
-              className={errors.title ? "border-destructive" : ""}
-              required
-              disabled={isReadonly}
-            />
-          ) : null}
-          {errors.title && (
-            <p className="text-sm text-destructive">{errors.title}</p>
-          )}
-        </div>
-
-        {/* Description Field */}
-        <div className="space-y-2">
-          <Label htmlFor="description">Description *</Label>
-          {formData?.description !== undefined ? (
-            <Textarea
-              id="description"
-              data-testid="input-department-description"
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Enter department description"
-              rows={3}
-              className={errors.description ? "border-destructive" : ""}
-              required
-              disabled={isReadonly}
-            />
-          ) : null}
-          {errors.description && (
-            <p className="text-sm text-destructive">{errors.description}</p>
-          )}
-        </div>
-
-        {/* Active Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="active"
-                className="text-sm flex items-center gap-1.5"
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Step 1: Basic Information */}
+        <Card className="transition-all">
+          <CardContent className="pt-3">
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
+                  steps[0]?.status === "completed"
+                    ? "bg-green-500 text-white"
+                    : steps[0]?.status === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                )}
               >
-                <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                Active
-              </Label>
-              {formData?.active !== undefined ? (
-                <Switch
-                  id="active"
-                  data-testid="switch-department-active"
-                  checked={formData.active ?? true}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("active", checked)
+                {steps[0]?.status === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <span>1</span>
+                )}
+              </div>
+              <div className="flex-1">
+                {formData?.title !== undefined ? (
+                  <input
+                    type="text"
+                    id="title"
+                    data-testid="input-department-title"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange("title", e.target.value)}
+                    onFocus={(e) => {
+                      if (e.target.value === "New Department") {
+                        e.target.select();
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // If empty on blur, revert to default name
+                      if (!e.target.value || e.target.value.trim() === "") {
+                        handleInputChange("title", "New Department");
+                      }
+                    }}
+                    className={cn(
+                      "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
+                      errors.title && "border-destructive"
+                    )}
+                    placeholder="New Department"
+                    disabled={isReadonly}
+                  />
+                ) : null}
+                <p className="text-xs text-muted-foreground mt-1 px-2">
+                  {formData?.title === "New Department" || !formData?.title
+                    ? "Click to edit • Name will be auto-generated if unchanged"
+                    : "Click to edit"}
+                </p>
+                {errors.title && (
+                  <p className="text-sm text-destructive mt-1 px-2">
+                    {errors.title}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+          <CardContent className="pt-0 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              {formData?.description !== undefined ? (
+                <Textarea
+                  id="description"
+                  data-testid="input-department-description"
+                  value={formData.description || ""}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
                   }
+                  placeholder="Enter a brief description (optional)"
+                  rows={3}
+                  className={errors.description ? "border-destructive" : ""}
                   disabled={isReadonly}
                 />
               ) : null}
+              {errors.description && (
+                <p className="text-sm text-destructive">{errors.description}</p>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Inactive departments will not be visible to users
-            </p>
-          </div>
-        </div>
 
-        {/* Settings Picker */}
-        {isEditMode && departmentData && departmentData.settings_mapping && (
-          <div className="space-y-2">
-            <Label htmlFor="settings">Settings</Label>
-            {formData?.settingsId !== undefined && (
-              <GenericPicker
-                items={
-                  departmentData.settings_mapping as Record<
-                    string,
-                    {
-                      settings_id: string;
-                      created_at: string;
-                      active: boolean;
-                      department_ids: string[] | null;
-                    }
+            {/* Active Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="active"
+                    className="text-sm flex items-center gap-1.5"
                   >
-                }
-                itemIds={Object.keys(departmentData.settings_mapping)}
-                selectedIds={formData.settingsId ? [formData.settingsId] : []}
-                onSelect={(ids) => handleSettingsSelect(ids[0] || null)}
-                getId={(item) => (item as unknown as { id: string }).id}
-                getLabel={(item) => {
-                  const date = new Date(item.created_at);
-                  return `Settings (${date.toLocaleDateString()})`;
-                }}
-                getSearchText={(item) => {
-                  const date = new Date(item.created_at);
-                  return `Settings ${date.toLocaleDateString()} ${item.active ? "Active" : "Inactive"}`;
-                }}
-                renderButton={(selectedItems) => {
-                  if (selectedItems.length === 0) {
-                    return "Select settings...";
-                  }
-                  const setting = selectedItems[0];
-                  if (!setting) return "Select settings...";
-                  const date = new Date(setting.created_at);
-                  const defaultSettingsId =
-                    Object.values(departmentData.settings_mapping).find(
-                      (s) => !s.department_ids || s.department_ids.length === 0
-                    )?.settings_id || null;
-                  const isDefault = setting.settings_id === defaultSettingsId;
-                  return (
-                    <div className="flex items-center gap-2 truncate">
-                      {isDefault && (
-                        <Badge
-                          variant="secondary"
-                          className="text-xs h-5 px-1.5 flex-shrink-0"
-                        >
-                          Default
-                        </Badge>
-                      )}
-                      <span className="truncate">
-                        Settings ({date.toLocaleDateString()})
-                      </span>
-                    </div>
-                  );
-                }}
-                renderItem={(item, _isSelected) => {
-                  const date = new Date(item.created_at);
-                  const defaultSettingsId =
-                    Object.values(departmentData.settings_mapping).find(
-                      (s) => !s.department_ids || s.department_ids.length === 0
-                    )?.settings_id || null;
-                  const isDefault = item.settings_id === defaultSettingsId;
-                  return (
-                    <div className="flex items-center gap-3 w-full">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          {isDefault && (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs h-5 px-1.5"
-                            >
-                              Default
-                            </Badge>
-                          )}
-                          <div className="font-medium truncate">
-                            Settings ({date.toLocaleDateString()})
-                          </div>
-                        </div>
-                        <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                          {item.active ? "Active" : "Inactive"}
-                        </div>
-                        {item.department_ids &&
-                          item.department_ids.length > 0 && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {item.department_ids.length} department
-                              {item.department_ids.length !== 1 ? "s" : ""}
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  );
-                }}
-                placeholder="Select settings..."
-                disabled={isReadonly}
-                multiSelect={false}
-                hideSelectedChips={true}
-                buttonClassName="h-10 w-full"
-                groupHeading="Settings"
-              />
-            )}
-          </div>
-        )}
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                    Active
+                  </Label>
+                  {formData?.active !== undefined ? (
+                    <Switch
+                      id="active"
+                      data-testid="switch-department-active"
+                      checked={formData.active ?? true}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("active", checked)
+                      }
+                      disabled={isReadonly}
+                    />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Inactive departments will not be visible to users
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
 
         {/* Submit Button */}
