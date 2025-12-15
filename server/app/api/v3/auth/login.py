@@ -5,10 +5,11 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from app.main import get_db
-from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
+from app.main import get_db
+from app.utils.sql_helper import load_sql
 
 
 class ProviderOption(BaseModel):
@@ -125,7 +126,7 @@ async def get_login_providers(
     # 1. No providers exist for this department, AND
     # 2. A default account profile exists (department-specific if department_id provided, else default settings)
     has_any_providers = len(providers) > 0
-    
+
     # Check department-specific default account (if department_id provided)
     dept_default_account_sql = """
         SELECT EXISTS (
@@ -152,17 +153,27 @@ async def get_login_providers(
     dept_has_default_account = False
     default_settings_has_default_account = False
     if department_id:
-        dept_has_default_account = await conn.fetchval(dept_default_account_sql, department_id)
-    default_settings_has_default_account = await conn.fetchval(default_settings_default_account_sql)
-    
+        dept_has_default_account = await conn.fetchval(
+            dept_default_account_sql, department_id
+        )
+    default_settings_has_default_account = await conn.fetchval(
+        default_settings_default_account_sql
+    )
+
     # Determine if default account should be shown
     if department_id:
         # For department-specific: check department settings first, fallback to default settings
-        has_default_account_for_dept = dept_has_default_account or default_settings_has_default_account
-        show_default_account = not has_any_providers and bool(has_default_account_for_dept)
+        has_default_account_for_dept = (
+            dept_has_default_account or default_settings_has_default_account
+        )
+        show_default_account = not has_any_providers and bool(
+            has_default_account_for_dept
+        )
     else:
         # For no department: check default settings only
-        show_default_account = not has_any_providers and bool(default_settings_has_default_account)
+        show_default_account = not has_any_providers and bool(
+            default_settings_has_default_account
+        )
 
     return LoginProvidersResponse(
         providers=providers,

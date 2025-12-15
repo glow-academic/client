@@ -4,15 +4,14 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -28,6 +27,14 @@ class ModelMappingItem(BaseModel):
 
     name: str
     description: str
+    # Optional fields that may be present in model_mapping
+    input_modalities: list[str] | None = None
+    output_modalities: list[str] | None = None
+    temperature_lower: float | None = None
+    temperature_upper: float | None = None
+    temperature_levels: list[dict[str, str | bool]] | None = None
+    reasoning_options: list[dict[str, str]] | None = None
+    available_voices: list[dict[str, str]] | None = None  # List of {id, voice} objects
 
 
 class ReasoningMappingItem(BaseModel):
@@ -112,16 +119,67 @@ async def get_agent_new(
         valid_department_ids: list[str] = []
 
         if result:
-            # Parse model_mapping from JSONB
+            # Parse model_mapping from JSONB (with modalities, temperature_levels, reasoning_options)
             model_mapping_data = result["model_mapping"]
+            model_mapping_with_modalities: dict[str, dict[str, Any]] = {}
             if isinstance(model_mapping_data, str):
                 model_mapping_data = json.loads(model_mapping_data)
             if model_mapping_data and isinstance(model_mapping_data, dict):
                 for model_id, model_data in model_mapping_data.items():
                     if isinstance(model_data, dict):
+                        # Parse modalities
+                        modalities_data = model_data.get("modalities")
+                        modalities_dict: dict[str, list[str]] = {"input": [], "output": []}
+                        if modalities_data:
+                            if isinstance(modalities_data, str):
+                                modalities_data = json.loads(modalities_data)
+                            if isinstance(modalities_data, dict):
+                                input_mods = modalities_data.get("input", [])
+                                output_mods = modalities_data.get("output", [])
+                                if isinstance(input_mods, str):
+                                    input_mods = json.loads(input_mods)
+                                if isinstance(output_mods, str):
+                                    output_mods = json.loads(output_mods)
+                                modalities_dict = {
+                                    "input": [str(m) for m in input_mods]
+                                    if isinstance(input_mods, list)
+                                    else [],
+                                    "output": [str(m) for m in output_mods]
+                                    if isinstance(output_mods, list)
+                                    else [],
+                                }
+                        
+                        # Parse temperature_levels and reasoning_options
+                        temperature_levels_data = model_data.get("temperature_levels", [])
+                        if isinstance(temperature_levels_data, str):
+                            temperature_levels_data = json.loads(temperature_levels_data)
+                        if not isinstance(temperature_levels_data, list):
+                            temperature_levels_data = []
+                        
+                        reasoning_options_data = model_data.get("reasoning_options", [])
+                        if isinstance(reasoning_options_data, str):
+                            reasoning_options_data = json.loads(reasoning_options_data)
+                        if not isinstance(reasoning_options_data, list):
+                            reasoning_options_data = []
+                        
+                        # Parse available_voices
+                        available_voices_data = model_data.get("available_voices", [])
+                        if isinstance(available_voices_data, str):
+                            available_voices_data = json.loads(available_voices_data)
+                        if not isinstance(available_voices_data, list):
+                            available_voices_data = []
+                        
+                        # Create ModelMappingItem for typed response (with optional fields)
                         model_mapping[model_id] = ModelMappingItem(
                             name=model_data.get("name", ""),
                             description=model_data.get("description", ""),
+                            input_modalities=modalities_dict["input"] if modalities_dict["input"] else None,
+                            output_modalities=modalities_dict["output"] if modalities_dict["output"] else None,
+                            temperature_lower=float(model_data.get("temperature_lower", 0.0)) if model_data.get("temperature_lower") is not None else None,
+                            temperature_upper=float(model_data.get("temperature_upper", 1.0)) if model_data.get("temperature_upper") is not None else None,
+                            temperature_levels=temperature_levels_data if temperature_levels_data else None,
+                            reasoning_options=reasoning_options_data if reasoning_options_data else None,
+                            available_voices=available_voices_data if available_voices_data else None,
                         )
 
             # Parse valid_model_ids from JSONB
@@ -215,7 +273,7 @@ async def get_agent_new(
             can_edit=can_edit,
         )
 
-        # Cache response
+        # Cache response (model_mapping now includes all fields via ModelMappingItem)
         await set_cached(
             cache_key_val,
             {"data": response_data.model_dump()},
@@ -225,6 +283,7 @@ async def get_agent_new(
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
+        # Return response (model_mapping already includes modalities and options via ModelMappingItem)
         return response_data
     except HTTPException:
         raise

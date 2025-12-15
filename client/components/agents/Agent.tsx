@@ -1,5 +1,5 @@
 /**
- * SystemAgent.tsx
+ * Agent.tsx
  * Used to create and edit system agents
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
@@ -7,17 +7,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
-import { AGENT_ROLES } from "@/components/common/forms/AgentRolePicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import {
-  PromptInfo,
-  PromptPicker,
-} from "@/components/common/forms/PromptPicker";
-import { VOICES } from "@/components/common/forms/voices";
+import { PromptInfo } from "@/components/common/forms/PromptPicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,25 +23,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Bug, Eye, Power, RotateCcw, Trash2 } from "lucide-react";
-import AgentDebugInfo from "./AgentDebugInfo";
+import { Check, Power } from "lucide-react";
+import { AgentModelSection } from "./AgentModelSection";
+import { AgentPromptSection } from "./AgentPromptSection";
+import { AgentReasoningSection } from "./AgentReasoningSection";
+import { AgentRoleSection } from "./AgentRoleSection";
+import { AgentTemperatureSection } from "./AgentTemperatureSection";
+import { AgentVoiceSection } from "./AgentVoiceSection";
 
 // Type-only import from server page
 import type {
@@ -60,13 +54,28 @@ import type {
   UpdateAgentIn,
   UpdateAgentOut,
 } from "@/app/(main)/engine/agents/a/[agentId]/page";
+import type { OutputOf } from "@/lib/api/types";
 
 // Extract model_mapping type from AgentDetailOut
 // The API returns modalities in model_mapping, so we extract the actual type
 type AgentModelMapping = NonNullable<AgentDetailOut["model_mapping"]>;
-type AgentModelMappingItem = AgentModelMapping[string];
+// Get the proper type from the OpenAPI schema - includes all fields (input_modalities, output_modalities, temperature_levels, reasoning_options, etc.)
+type AgentModelMappingItem = OutputOf<
+  "/api/v3/agents/detail",
+  "post"
+>["model_mapping"][string];
 
-interface SystemAgentFormData {
+type StepStatus = "pending" | "active" | "completed";
+
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
+  optional?: boolean;
+}
+
+interface AgentFormData {
   name?: string;
   description?: string;
   systemPrompt?: string;
@@ -85,7 +94,7 @@ interface SystemAgentFormData {
   voices?: string[];
 }
 
-export interface SystemAgentProps {
+export interface AgentProps {
   agentId?: string;
   // Optional server-provided data and actions (for server-side rendering)
   agentDetail?: AgentDetailOut;
@@ -104,21 +113,21 @@ interface FormErrors {
   modelId?: string;
 }
 
-export default function SystemAgent({
+export default function Agent({
   agentId,
   agentDetail: serverAgentDetail,
   agentDetailDefault: serverAgentDetailDefault,
   createAgentAction,
   updateAgentAction,
   deleteAgentPromptAction,
-}: SystemAgentProps) {
+}: AgentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<SystemAgentFormData>();
+  const [formData, setFormData] = useState<AgentFormData>();
   const [errors, setErrors] = useState<FormErrors>({});
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
     "editor"
@@ -166,89 +175,127 @@ export default function SystemAgent({
     await deleteAgentPromptAction({ body });
   };
 
+  // Type-safe model mapping - use the actual type from AgentDetailOut
+  // Define this BEFORE temperatureBounds since temperatureBounds depends on it
+  const modelMapping = useMemo((): AgentModelMapping => {
+    const mapping =
+      (agentData?.model_mapping as AgentModelMapping) ||
+      ({} as AgentModelMapping);
+    return mapping;
+  }, [agentData?.model_mapping]);
+
   // Get temperature bounds and levels from selected model
   const temperatureBounds = useMemo(() => {
-    const agentDetailData = isEditMode ? agentDetail : agentDetailDefault;
-    const agentDetailWithLevels = agentDetailData as typeof agentDetailData & {
-      temperature_levels?: Array<{
+    // Get temperature bounds from selected model in model_mapping, fallback to agentDetail
+    const selectedModelId = formData?.modelId;
+    let lower = 0.0;
+    let upper = 1.0;
+    let levels: Array<{ id: string; temperature: string; is_upper: boolean }> =
+      [];
+
+    if (selectedModelId && modelMapping && selectedModelId in modelMapping) {
+      const modelInfo = modelMapping[selectedModelId];
+      if (modelInfo) {
+        // Read temperature bounds and levels from model_mapping (type-safe)
+        lower =
+          typeof modelInfo.temperature_lower === "number"
+            ? modelInfo.temperature_lower
+            : 0.0;
+        upper =
+          typeof modelInfo.temperature_upper === "number"
+            ? modelInfo.temperature_upper
+            : 1.0;
+        const tempLevels = modelInfo.temperature_levels;
+        if (Array.isArray(tempLevels) && tempLevels.length > 0) {
+          levels = tempLevels.map((l) => {
+            const levelObj = l as Record<string, string | boolean>;
+            return {
+              id: String(levelObj["id"] || ""),
+              temperature: String(levelObj["temperature"] || ""),
+              is_upper: Boolean(levelObj["is_upper"] || false),
+            };
+          });
+        }
+      }
+    }
+
+    // Fallback to agentDetail if no model selected or model doesn't have data
+    if (levels.length === 0) {
+      const agentDetailData = isEditMode ? agentDetail : agentDetailDefault;
+      const agentDetailWithLevels =
+        agentDetailData as typeof agentDetailData & {
+          temperature_levels?: Array<{
+            id: string;
+            temperature: string;
+            is_upper: boolean;
+          }>;
+        };
+      levels = (agentDetailWithLevels?.temperature_levels || []) as Array<{
         id: string;
         temperature: string;
         is_upper: boolean;
       }>;
-    };
-    const levels = (agentDetailWithLevels?.temperature_levels || []) as Array<{
-      id: string;
-      temperature: string;
-      is_upper: boolean;
-    }>;
+      lower = agentDetailData?.temperature_lower ?? 0.0;
+      upper = agentDetailData?.temperature_upper ?? 1.0;
+    }
+
     const values = levels
       .filter((l) => !l.is_upper)
       .map((l) => l.temperature?.toString() || "")
       .filter(Boolean);
 
     return {
-      lower: agentDetailData?.temperature_lower ?? 0.0,
-      upper: agentDetailData?.temperature_upper ?? 1.0,
+      lower,
+      upper,
       values: values.length > 0 ? values : [],
       levels: levels,
     };
-  }, [isEditMode, agentDetail, agentDetailDefault]);
-
-  // Helper to get temperature level ID from temperature value
-  const getTemperatureLevelId = useMemo(() => {
-    const levels = temperatureBounds.levels || [];
-    return (temperature: number) => {
-      // Find the closest matching level (prefer non-upper bounds)
-      const matchingLevel = levels.find(
-        (l) =>
-          !l.is_upper &&
-          Math.abs(parseFloat(l.temperature) - temperature) < 0.001
-      );
-      return matchingLevel?.id || null;
-    };
-  }, [temperatureBounds.levels]);
-
-  // Helper to get reasoning option ID from reasoning level value
-  const getReasoningOptionId = useMemo(() => {
-    const options = (agentDetail?.reasoning_options || []) as Array<{
-      id: string;
-      reasoning_level: string;
-    }>;
-    const mapping = new Map<string, string>();
-    options.forEach((opt) => {
-      if (opt.id && opt.reasoning_level) {
-        mapping.set(opt.reasoning_level, opt.id);
-      }
-    });
-    return (reasoningLevel: string) => mapping.get(reasoningLevel) || null;
-  }, [agentDetail?.reasoning_options]);
-
-  // Helper to get reasoning level value from option ID
-  const getReasoningLevelFromId = useMemo(() => {
-    const options = (agentDetail?.reasoning_options || []) as Array<{
-      id: string;
-      reasoning_level: string;
-    }>;
-    const mapping = new Map<string, string>();
-    options.forEach((opt) => {
-      if (opt.id && opt.reasoning_level) {
-        mapping.set(opt.id, opt.reasoning_level);
-      }
-    });
-    return (optionId: string) => mapping.get(optionId) || "none";
-  }, [agentDetail?.reasoning_options]);
+  }, [
+    isEditMode,
+    agentDetail,
+    agentDetailDefault,
+    formData?.modelId,
+    modelMapping,
+  ]);
 
   // Helper to get available voice IDs and names
   const availableVoices = useMemo(() => {
-    const voices = (agentDetail?.available_voices || []) as Array<{
-      id: string;
-      voice: string;
-    }>;
-    return voices.map((v) => ({
-      id: v.id || "",
-      voice: v.voice || "",
-    }));
-  }, [agentDetail?.available_voices]);
+    // Get voices from selected model in model_mapping, not from agentDetail
+    const selectedModelId = formData?.modelId;
+    let voices: Array<{ id: string; voice: string }> = [];
+
+    if (selectedModelId && modelMapping && selectedModelId in modelMapping) {
+      const modelInfo = modelMapping[selectedModelId];
+      if (modelInfo && "available_voices" in modelInfo) {
+        const modelVoices = (
+          modelInfo as AgentModelMappingItem & {
+            available_voices?: Array<{ id: string; voice: string }>;
+          }
+        ).available_voices;
+        if (Array.isArray(modelVoices)) {
+          voices = modelVoices.map((v) => ({
+            id: String(v["id"] || ""),
+            voice: String(v["voice"] || ""),
+          }));
+        }
+      }
+    }
+
+    // Fallback to agentDetail if no model selected or model doesn't have voices
+    if (voices.length === 0 && agentDetail?.available_voices) {
+      voices = (
+        agentDetail.available_voices as Array<{
+          id: string;
+          voice: string;
+        }>
+      ).map((v) => ({
+        id: v.id || "",
+        voice: v.voice || "",
+      }));
+    }
+
+    return voices;
+  }, [formData?.modelId, modelMapping, agentDetail?.available_voices]);
 
   // Filter prompt_mapping client-side based on selected departments from form
   // API returns all prompts user has access to, then we filter by selected departments
@@ -411,14 +458,6 @@ export default function SystemAgent({
     }
   };
 
-  // Type-safe model mapping - use the actual type from AgentDetailOut
-  const modelMapping = useMemo((): AgentModelMapping => {
-    return (
-      (agentData?.model_mapping as AgentModelMapping) ||
-      ({} as AgentModelMapping)
-    );
-  }, [agentData?.model_mapping]);
-
   // Helper to extract modalities from model info
   // The API returns input_modalities and output_modalities as separate fields
   const getModelModalities = (
@@ -426,33 +465,30 @@ export default function SystemAgent({
   ): { input: string[]; output: string[] } => {
     if (!modelInfo) return { input: [], output: [] };
 
-    // Type assertion needed because the OpenAPI schema may not be fully updated
-    // but the runtime data includes these fields
-    const modelInfoWithModalities = modelInfo as AgentModelMappingItem & {
-      input_modalities?: string[];
-      output_modalities?: string[];
-      modalities?: {
-        input: string[];
-        output: string[];
-      };
-    };
-
-    // New format: separate fields (from our API update)
-    if (
-      modelInfoWithModalities.input_modalities ||
-      modelInfoWithModalities.output_modalities
-    ) {
+    // New format: separate fields (from our API update) - type-safe
+    if (modelInfo.input_modalities || modelInfo.output_modalities) {
       return {
-        input: modelInfoWithModalities.input_modalities || [],
-        output: modelInfoWithModalities.output_modalities || [],
+        input: Array.isArray(modelInfo.input_modalities)
+          ? modelInfo.input_modalities
+          : [],
+        output: Array.isArray(modelInfo.output_modalities)
+          ? modelInfo.output_modalities
+          : [],
       };
     }
 
     // Old format: nested modalities object (backward compatibility)
-    if (modelInfoWithModalities.modalities) {
+    // Type assertion needed for old format
+    const modelInfoWithOldFormat = modelInfo as AgentModelMappingItem & {
+      modalities?: {
+        input?: string[];
+        output?: string[];
+      };
+    };
+    if (modelInfoWithOldFormat.modalities) {
       return {
-        input: modelInfoWithModalities.modalities.input || [],
-        output: modelInfoWithModalities.modalities.output || [],
+        input: modelInfoWithOldFormat.modalities.input || [],
+        output: modelInfoWithOldFormat.modalities.output || [],
       };
     }
 
@@ -474,6 +510,16 @@ export default function SystemAgent({
 
       const { input: modelInputMods, output: modelOutputMods } =
         getModelModalities(modelInfo);
+
+      // Special rule: Models with audio input AND output should ONLY be available for simulation-voice role
+      const hasAudioInput = modelInputMods.includes("audio");
+      const hasAudioOutput = modelOutputMods.includes("audio");
+      const isAudioModel = hasAudioInput && hasAudioOutput;
+
+      if (isAudioModel && formData.role !== "simulation-voice") {
+        // Skip audio models for non-voice roles
+        continue;
+      }
 
       // If no modalities configured, include the model (backward compatibility)
       // Otherwise, check if it has required modalities
@@ -506,7 +552,9 @@ export default function SystemAgent({
     }
 
     const modelInfo = modelMapping[formData.modelId];
-    if (!modelInfo) return null;
+    if (!modelInfo) {
+      return null;
+    }
 
     const { input: inputMods, output: outputMods } =
       getModelModalities(modelInfo);
@@ -515,15 +563,16 @@ export default function SystemAgent({
       input_modalities: inputMods,
       output_modalities: outputMods,
       has_text_output: outputMods.includes("text"),
+      has_audio_input: inputMods.includes("audio"),
       has_audio_output: outputMods.includes("audio"),
       has_image_output: outputMods.includes("image"),
       has_video_output: outputMods.includes("video"),
     };
   }, [formData?.modelId, modelMapping]);
 
-  const initialFormData: SystemAgentFormData = useMemo(
+  const initialFormData: AgentFormData = useMemo(
     () => ({
-      name: "",
+      name: "New Agent",
       description: "",
       systemPrompt: "",
       promptId: null,
@@ -569,7 +618,7 @@ export default function SystemAgent({
           : "");
 
       const deptIds = agentDetail.department_ids || [];
-      setFormData({
+      const formDataToSet = {
         name: agentDetail.name,
         description: agentDetail.description,
         systemPrompt: agentDetail.system_prompt,
@@ -586,15 +635,21 @@ export default function SystemAgent({
         model_voice_ids: agentDetail.selected_voice_ids || [],
         // Display values (for backward compatibility)
         temperature: agentDetail.temperature,
-        reasoning:
-          (agentDetail.reasoning as
-            | "minimal"
-            | "low"
-            | "medium"
-            | "high"
-            | undefined) || "none",
+        reasoning: ((agentDetail.reasoning as
+          | "none"
+          | "minimal"
+          | "low"
+          | "medium"
+          | "high"
+          | undefined) || "none") as
+          | "none"
+          | "minimal"
+          | "low"
+          | "medium"
+          | "high",
         voices: agentDetail.valid_voices || [],
-      });
+      };
+      setFormData(formDataToSet);
       // Initialize the ref for department change tracking
       prevDepartmentIdsRef.current = [...deptIds];
     } else if (!isEditMode && agentDetailDefault) {
@@ -675,7 +730,7 @@ export default function SystemAgent({
   ]);
 
   const handleInputChange = (
-    field: keyof SystemAgentFormData,
+    field: keyof AgentFormData,
     value: string | number | boolean | string[] | null | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -867,6 +922,173 @@ export default function SystemAgent({
     return !agentData.can_edit;
   }, [isEditMode, agentData]);
 
+  // Step status logic
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      const hasRole = !!formData?.role;
+      const hasModel = !!formData?.modelId?.trim();
+
+      switch (stepId) {
+        case "role":
+          return hasRole ? "completed" : "active";
+        case "model":
+          if (!hasRole) return "pending";
+          return hasModel ? "completed" : "active";
+        case "temperature":
+          if (!hasModel) return "pending";
+          // Always completed if model selected (optional step)
+          return "completed";
+        case "reasoning":
+          if (!hasModel) return "pending";
+          // Always completed if model selected (optional step)
+          return "completed";
+        case "voice":
+          if (!hasModel) return "pending";
+          // Always completed if model selected (optional step)
+          return "completed";
+        case "prompt":
+          if (!hasModel) return "pending";
+          return formData?.systemPrompt?.trim() ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    [formData]
+  );
+
+  // Steps array
+  const steps: Step[] = useMemo(() => {
+    const baseSteps: Step[] = [
+      {
+        id: "role",
+        title: "Role",
+        description: "Select the agent role that defines its capabilities.",
+        status: getStepStatus("role"),
+      },
+      {
+        id: "model",
+        title: "Model",
+        description: "Select the AI model for this agent.",
+        status: getStepStatus("model"),
+      },
+    ];
+
+    // Conditionally add configuration steps based on model capabilities
+    const configSteps: Step[] = [];
+
+    if (selectedModelCapabilities) {
+      configSteps.push({
+        id: "temperature",
+        title: "Temperature",
+        description: "Configure the temperature setting for the model.",
+        status: getStepStatus("temperature"),
+        optional: true,
+      });
+
+      if (selectedModelCapabilities.has_text_output) {
+        configSteps.push({
+          id: "reasoning",
+          title: "Reasoning Effort",
+          description: "Configure the reasoning effort level.",
+          status: getStepStatus("reasoning"),
+          optional: true,
+        });
+      }
+
+      // Only show voice configuration for models with BOTH input and output audio (e.g., gpt-realtime)
+      if (
+        selectedModelCapabilities.has_audio_input &&
+        selectedModelCapabilities.has_audio_output
+      ) {
+        configSteps.push({
+          id: "voice",
+          title: "Voices",
+          description: "Select voices for audio output.",
+          status: getStepStatus("voice"),
+          optional: true,
+        });
+      }
+    }
+
+    const promptStep: Step = {
+      id: "prompt",
+      title: "Prompt Instructions",
+      description: "Define the system prompt that controls agent behavior.",
+      status: getStepStatus("prompt"),
+    };
+
+    return [...baseSteps, ...configSteps, promptStep];
+  }, [getStepStatus, selectedModelCapabilities]);
+
+  // Handle role change - do NOT reset model when role is unselected
+  const handleRoleChange = (roleId: string) => {
+    handleInputChange("role", roleId);
+
+    // If unselecting role (empty string), do NOT reset model - just update role
+    if (!roleId || roleId === "") {
+      return;
+    }
+
+    // If a role is selected, check if current model matches role requirements
+    const requiredModalities = getRequiredModalities(roleId);
+    const currentModelId = formData?.modelId;
+    if (currentModelId && modelMapping) {
+      const modelInfo = modelMapping[currentModelId];
+      if (modelInfo) {
+        const { input: modelInputMods, output: modelOutputMods } =
+          getModelModalities(modelInfo);
+
+        // Special rule: Audio models (with both audio input and output) should only work with simulation-voice
+        const hasAudioInput = modelInputMods.includes("audio");
+        const hasAudioOutput = modelOutputMods.includes("audio");
+        const isAudioModel = hasAudioInput && hasAudioOutput;
+
+        if (isAudioModel && roleId !== "simulation-voice") {
+          // Reset model if audio model selected but role is not simulation-voice
+          handleInputChange("modelId", "");
+          return;
+        }
+
+        const hasRequiredInput = requiredModalities.input.every((mod) =>
+          modelInputMods.includes(mod)
+        );
+        const hasRequiredOutput = requiredModalities.output.every((mod) =>
+          modelOutputMods.includes(mod)
+        );
+        if (!hasRequiredInput || !hasRequiredOutput) {
+          // Reset to first valid model or empty
+          const filteredIds =
+            agentData?.valid_model_ids?.filter((id) => {
+              const info = modelMapping[id];
+              if (!info) return false;
+              const { input: inputMods, output: outputMods } =
+                getModelModalities(info);
+
+              // Special rule: Audio models only for simulation-voice
+              const modelHasAudioInput = inputMods.includes("audio");
+              const modelHasAudioOutput = outputMods.includes("audio");
+              const modelIsAudio = modelHasAudioInput && modelHasAudioOutput;
+
+              if (modelIsAudio && roleId !== "simulation-voice") {
+                return false;
+              }
+
+              return (
+                requiredModalities.input.every((mod) =>
+                  inputMods.includes(mod)
+                ) &&
+                requiredModalities.output.every((mod) =>
+                  outputMods.includes(mod)
+                )
+              );
+            }) || [];
+          handleInputChange("modelId", filteredIds[0] || "");
+        }
+      }
+    }
+  };
+  // #endregion
+
   return (
     <TooltipProvider>
       <div className="space-y-6 py-4 px-4">
@@ -902,64 +1124,90 @@ export default function SystemAgent({
           </div>
         )}
         <div className="w-full">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Agent Name *</Label>
-              {formData?.name !== undefined ? (
-                <Input
-                  id="name"
-                  data-testid="input-agent-name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="e.g., Enthusiastic Student Agent"
-                  className={errors.name ? "border-destructive" : ""}
-                  required
-                />
-              ) : null}
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
-              )}
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Step 1: Basic Information (Name, Description, Departments, Active) */}
+            <Card className="transition-all">
+              <CardContent className="pt-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-green-500 text-white shrink-0">
+                    <Check className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      data-testid="input-agent-name"
+                      value={formData?.name || ""}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
+                      onFocus={(e) => {
+                        if (e.target.value === "New Agent") {
+                          e.target.select();
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // If empty on blur, revert to default name
+                        if (!e.target.value || e.target.value.trim() === "") {
+                          handleInputChange("name", "New Agent");
+                        }
+                      }}
+                      className="w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                      placeholder="New Agent"
+                      disabled={isReadonly}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1 px-2">
+                      {formData?.name === "New Agent" || !formData?.name
+                        ? "Click to edit • Name will be auto-generated if unchanged"
+                        : "Click to edit"}
+                    </p>
+                    {errors?.name && (
+                      <p className="text-sm text-destructive mt-1 px-2">
+                        {errors.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+              <CardContent className="pt-0 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description *</Label>
+                  <Textarea
+                    id="description"
+                    data-testid="input-agent-description"
+                    value={formData?.description || ""}
+                    onChange={(e) =>
+                      handleInputChange("description", e.target.value)
+                    }
+                    placeholder="Detailed behavior description and personality traits"
+                    rows={4}
+                    className={cn(errors?.description && "border-destructive")}
+                    disabled={isReadonly}
+                    required
+                  />
+                  {errors?.description && (
+                    <p className="text-sm text-destructive">
+                      {errors.description}
+                    </p>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              {formData?.description !== undefined ? (
-                <Textarea
-                  id="description"
-                  data-testid="input-agent-description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  placeholder="Detailed behavior description and personality traits"
-                  rows={4}
-                  className={errors.description ? "border-destructive" : ""}
-                  required
-                />
-              ) : null}
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
-              )}
-            </div>
-
-            {/* Role and Department Selection */}
-            <div className="space-y-4">
-              {/* Department Picker */}
-              {agentData?.valid_department_ids &&
-                agentData.valid_department_ids.length > 1 && (
+                {/* Department Selection */}
+                {agentData?.valid_department_ids &&
+                agentData.valid_department_ids.length > 1 ? (
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
-                    {formData?.departmentIds !== undefined &&
-                    agentData?.department_mapping !== undefined ? (
+                    {formData?.departmentIds !== undefined ? (
                       <GenericPicker
-                        items={agentData.department_mapping || {}}
-                        itemIds={agentData.valid_department_ids || []}
+                        items={
+                          (agentData?.department_mapping || {}) as Record<
+                            string,
+                            { id: string; name: string; description?: string }
+                          >
+                        }
+                        itemIds={agentData.valid_department_ids}
                         selectedIds={formData.departmentIds || []}
                         onSelect={(ids) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            departmentIds: ids,
-                          }))
+                          handleInputChange("departmentIds", ids)
                         }
                         getId={(dept) => (dept as unknown as { id: string }).id}
                         getLabel={(dept) => dept.name || ""}
@@ -967,570 +1215,293 @@ export default function SystemAgent({
                           `${dept.name} ${dept.description || ""}`
                         }
                         placeholder="All Departments"
-                        disabled={isSubmitting}
+                        disabled={isReadonly}
                         multiSelect={true}
                         hideSelectedChips={true}
                         buttonClassName="w-full"
                       />
                     ) : null}
                   </div>
-                )}
+                ) : null}
 
-              {/* Role Picker */}
-              <div className="space-y-2">
-                <Label htmlFor="role">Role *</Label>
-                {formData?.role !== undefined ? (
-                  <GenericPicker
-                    items={[...AGENT_ROLES]}
-                    selectedIds={formData.role ? [formData.role] : []}
-                    onSelect={(ids) => {
-                      const role = ids[0] || "";
-                      handleInputChange("role", role);
-                      // If current model doesn't match new role requirements, reset modelId
-                      const requiredModalities = getRequiredModalities(role);
-                      const currentModelId = formData?.modelId;
-                      if (currentModelId && modelMapping) {
-                        const modelInfo = modelMapping[currentModelId];
-                        if (modelInfo) {
-                          const {
-                            input: modelInputMods,
-                            output: modelOutputMods,
-                          } = getModelModalities(modelInfo);
-                          const hasRequiredInput =
-                            requiredModalities.input.every((mod) =>
-                              modelInputMods.includes(mod)
-                            );
-                          const hasRequiredOutput =
-                            requiredModalities.output.every((mod) =>
-                              modelOutputMods.includes(mod)
-                            );
-                          if (!hasRequiredInput || !hasRequiredOutput) {
-                            // Reset to first valid model or empty
-                            const filteredIds =
-                              agentData?.valid_model_ids?.filter((id) => {
-                                const info = modelMapping[id];
-                                if (!info) return false;
-                                const { input: inputMods, output: outputMods } =
-                                  getModelModalities(info);
-                                return (
-                                  requiredModalities.input.every((mod) =>
-                                    inputMods.includes(mod)
-                                  ) &&
-                                  requiredModalities.output.every((mod) =>
-                                    outputMods.includes(mod)
-                                  )
-                                );
-                              }) || [];
-                            handleInputChange("modelId", filteredIds[0] || "");
-                          }
+                {/* Active Switch */}
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="active"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                        Active
+                      </Label>
+                      <Switch
+                        id="active"
+                        checked={formData?.active ?? true}
+                        onCheckedChange={(checked) =>
+                          handleInputChange("active", checked)
                         }
-                      }
-                    }}
-                    getId={(role) => (role as { id: string }).id}
-                    getLabel={(role) => (role as { name: string }).name}
-                    getSearchText={(role) =>
-                      `${(role as { name: string }).name} ${(role as { description?: string }).description || ""}`
-                    }
-                    placeholder="Select role"
-                    multiSelect={false}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                    groupHeading="Agent Roles"
-                  />
-                ) : null}
-              </div>
-            </div>
-
-            {/* Active Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="active"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                  {formData?.active !== undefined ? (
-                    <Switch
-                      id="active"
-                      checked={formData.active ?? true}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("active", checked)
-                      }
-                    />
-                  ) : null}
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Inactive agents will not be available to perform operations
-                  for departments
-                </p>
-              </div>
-            </div>
-
-            {/* Model, Reasoning Effort, and Temperature - Dynamic Grid */}
-            <div
-              className={`grid gap-4 ${
-                selectedModelCapabilities?.has_text_output
-                  ? "grid-cols-1 md:grid-cols-3"
-                  : "grid-cols-1 md:grid-cols-2"
-              }`}
-            >
-              {/* Model Selection - filtered by agent_type */}
-              <div className="space-y-2">
-                <Label htmlFor="modelId">
-                  {formData?.role === "image"
-                    ? "Image Model"
-                    : formData?.role === "video"
-                      ? "Video Model"
-                      : formData?.role === "simulation-voice"
-                        ? "Voice Model"
-                        : "Text Model"}{" "}
-                  *
-                </Label>
-                {formData?.modelId !== undefined ? (
-                  <>
-                    <GenericPicker
-                      items={modelMapping}
-                      itemIds={filteredValidModelIds}
-                      selectedIds={formData?.modelId ? [formData.modelId] : []}
-                      onSelect={(ids) => {
-                        const newModelId = ids[0] || "";
-                        handleInputChange("modelId", newModelId);
-                        // If selected model doesn't support current reasoning level, reset to "none"
-                        // This will be handled by conditional rendering below
-                      }}
-                      getId={(item) => (item as unknown as { id: string }).id}
-                      getLabel={(item) => item.name || ""}
-                      getSearchText={(item) =>
-                        `${item.name} ${item.description || ""}`
-                      }
-                      renderPreview={(item) => (
-                        <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">
-                            {item.name || "No model selected"}
-                          </h4>
-                          <div className="text-sm text-muted-foreground">
-                            {item.description || "No description available"}
-                          </div>
-                        </div>
-                      )}
-                      renderItem={(item, _isSelected) => (
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="truncate">{item.name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      placeholder="Select a model"
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName={
-                        errors.modelId ? "border-destructive w-full" : "w-full"
-                      }
-                      groupHeading="Models"
-                    />
-                    {filteredValidModelIds.length === 0 && formData?.role && (
-                      <p className="text-xs text-muted-foreground">
-                        No models available for this agent type. Please select a
-                        different role or configure models with the required
-                        modalities.
-                      </p>
-                    )}
-                    {errors.modelId && (
-                      <p className="text-sm text-destructive">
-                        {errors.modelId}
-                      </p>
-                    )}
-                  </>
-                ) : null}
-              </div>
-
-              {/* Reasoning Effort - Show only if model supports text output */}
-              {selectedModelCapabilities?.has_text_output && (
-                <div className="space-y-2">
-                  <Label htmlFor="reasoning">Reasoning Effort</Label>
-                  {formData?.model_reasoning_level_id !== undefined ? (
-                    <GenericPicker
-                      items={agentDetail?.reasoning_mapping || {}}
-                      itemIds={
-                        agentDetail?.reasoning_options &&
-                        Array.isArray(agentDetail.reasoning_options) &&
-                        agentDetail.reasoning_options.length > 0
-                          ? (
-                              agentDetail.reasoning_options as Array<{
-                                id: string;
-                                reasoning_level: string;
-                              }>
-                            ).map((opt) => opt.reasoning_level)
-                          : ["none", "minimal", "low", "medium", "high"]
-                      }
-                      selectedIds={
-                        formData.model_reasoning_level_id
-                          ? [
-                              getReasoningLevelFromId(
-                                formData.model_reasoning_level_id
-                              ),
-                            ]
-                          : formData.reasoning
-                            ? [formData.reasoning]
-                            : ["none"]
-                      }
-                      onSelect={(ids) => {
-                        const reasoningLevel = ids[0] || "none";
-                        const optionId = getReasoningOptionId(reasoningLevel);
-                        handleInputChange("model_reasoning_level_id", optionId);
-                        handleInputChange(
-                          "reasoning",
-                          reasoningLevel as
-                            | "none"
-                            | "minimal"
-                            | "low"
-                            | "medium"
-                            | "high"
-                        );
-                      }}
-                      getId={(item) => (item as unknown as { id: string }).id}
-                      getLabel={(item) => item.name || ""}
-                      getSearchText={(item) =>
-                        `${item.name} ${item.description || ""}`
-                      }
-                      renderPreview={(item) => (
-                        <div className="grid gap-2">
-                          <h4 className="font-medium leading-none">
-                            {item.name || "No level selected"}
-                          </h4>
-                          <div className="text-sm text-muted-foreground">
-                            {item.description || "No description available"}
-                          </div>
-                        </div>
-                      )}
-                      renderItem={(item, _isSelected) => (
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="truncate">{item.name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      placeholder="Select reasoning effort"
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                      groupHeading="Reasoning Effort"
-                    />
-                  ) : null}
-                </div>
-              )}
-
-              {/* Voices - Show if model supports audio output */}
-              {selectedModelCapabilities?.has_audio_output && (
-                <div className="space-y-2">
-                  <Label htmlFor="voices">Voices</Label>
-                  {formData?.model_voice_ids !== undefined ? (
-                    <GenericPicker
-                      items={[...VOICES]}
-                      selectedIds={
-                        formData.model_voice_ids &&
-                        formData.model_voice_ids.length > 0
-                          ? availableVoices
-                              .filter((v) =>
-                                formData.model_voice_ids?.includes(v.id)
-                              )
-                              .map((v) => v.voice)
-                          : formData.voices || []
-                      }
-                      onSelect={(voiceIds) => {
-                        // Map voice IDs back to option IDs
-                        const selectedIds = availableVoices
-                          .filter((v) => voiceIds.includes(v.voice))
-                          .map((v) => v.id);
-                        handleInputChange("model_voice_ids", selectedIds);
-                        handleInputChange("voices", voiceIds);
-                      }}
-                      getId={(item) => (item as { id: string }).id}
-                      getLabel={(item) => (item as { name: string }).name}
-                      getSearchText={(item) => (item as { name: string }).name}
-                      disabled={isSubmitting || isReadonly}
-                      multiSelect={true}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                      groupHeading="Voices"
-                    />
-                  ) : null}
-                </div>
-              )}
-
-              {/* Temperature - Show only if model supports temperature configuration */}
-              {selectedModelCapabilities && (
-                <div className="space-y-2">
-                  <Label htmlFor="temperature">
-                    Temperature:{" "}
-                    {formData?.temperature !== undefined
-                      ? formData.temperature.toFixed(2)
-                      : "0.00"}
-                  </Label>
-                  {formData?.temperature !== undefined ? (
-                    <>
-                      {temperatureBounds.values.length > 0 ? (
-                        // Use dropdown picker if specific temperature values are provided
-                        <select
-                          id="temperature"
-                          data-testid="temperature-picker"
-                          value={formData.temperature?.toString() || "0.7"}
-                          onChange={(e) => {
-                            const tempValue = parseFloat(e.target.value);
-                            const levelId = getTemperatureLevelId(tempValue);
-                            handleInputChange("temperature", tempValue);
-                            handleInputChange(
-                              "model_temperature_level_id",
-                              levelId
-                            );
-                          }}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {temperatureBounds.values.map((val: string) => (
-                            <option key={val} value={val}>
-                              {parseFloat(val).toFixed(2)}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        // Use slider if temperature range is provided
-                        <>
-                          <Slider
-                            id="temperature"
-                            data-testid="temperature-slider"
-                            min={temperatureBounds.lower}
-                            max={temperatureBounds.upper}
-                            step={0.01}
-                            value={[formData?.temperature || 0]}
-                            onValueChange={(value) => {
-                              const tempValue = value[0] || 0;
-                              const levelId = getTemperatureLevelId(tempValue);
-                              handleInputChange("temperature", tempValue);
-                              handleInputChange(
-                                "model_temperature_level_id",
-                                levelId
-                              );
-                            }}
-                            className="w-full"
-                          />
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>
-                              {temperatureBounds.lower.toFixed(2)}{" "}
-                              (Deterministic)
-                            </span>
-                            <span>
-                              {temperatureBounds.upper.toFixed(2)} (Creative)
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </>
-                  ) : null}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="systemPrompt">System Prompt *</Label>
-                <div className="flex gap-2">
-                  {isEditMode &&
-                    agentDetail &&
-                    filteredPromptMapping &&
-                    (Object.keys(filteredPromptMapping).length > 0 ||
-                      (formData?.departmentIds &&
-                        formData.departmentIds.length > 0)) && (
-                      <PromptPicker
-                        promptMapping={filteredPromptMapping}
-                        selectedPromptId={formData?.promptId || null}
-                        defaultPromptId={agentDetail?.prompt_id || null}
-                        onSelect={(promptId) => {
-                          if (promptId && filteredPromptMapping[promptId]) {
-                            const prompt = filteredPromptMapping[promptId];
-                            setFormData((prev) => ({
-                              ...prev,
-                              promptId: promptId,
-                              systemPrompt: prompt.system_prompt,
-                            }));
-                          } else {
-                            setFormData((prev) => ({
-                              ...prev,
-                              promptId: null,
-                            }));
-                          }
-                        }}
-                        placeholder="Select prompt..."
-                        disabled={false}
-                        buttonClassName="h-8"
+                        disabled={isReadonly}
                       />
-                    )}
-                  {formData?.systemPrompt !== undefined && (
-                    <>
-                      {hasPromptChanges && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  systemPrompt: resolvedPromptContent,
-                                  promptId: resolvedPrompt.promptId,
-                                }));
-                              }}
-                              className="h-8 w-8 p-0"
-                              data-testid="btn-reset-changes"
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Reset to saved prompt</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant={
-                              editorMode === "preview" ? "default" : "secondary"
-                            }
-                            size="sm"
-                            onClick={() =>
-                              setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview"
-                              )
-                            }
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Preview</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      {isEditMode && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant={
-                                editorMode === "debug" ? "default" : "secondary"
-                              }
-                              size="sm"
-                              onClick={() =>
-                                setEditorMode(
-                                  editorMode === "debug" ? "editor" : "debug"
-                                )
-                              }
-                              className="h-8 w-8 p-0"
-                            >
-                              <Bug className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Debug</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      {isEditMode &&
-                        !isReadonly &&
-                        formData?.promptId &&
-                        filteredPromptMapping[formData.promptId]
-                          ?.can_delete && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                  const promptId = formData.promptId!;
-                                  const promptInfo =
-                                    filteredPromptMapping[promptId];
-                                  if (!promptInfo) return;
-                                  setPromptToDelete({
-                                    promptId,
-                                    isDepartmentSpecific:
-                                      !!promptInfo.department_ids &&
-                                      promptInfo.department_ids.length > 0,
-                                  });
-                                  setShowDeletePromptDialog(true);
-                                }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                    </>
-                  )}
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Inactive agents will not be available to perform
+                      operations for departments
+                    </p>
+                  </div>
                 </div>
-              </div>
-              {formData?.systemPrompt !== undefined ? (
-                <div className="h-[500px]" data-testid="editor-system-prompt">
-                  <UnifiedPromptEditor
-                    value={formData?.systemPrompt || ""}
-                    onChange={(value) => {
-                      handleInputChange("systemPrompt", value);
-                      // Clear promptId when editing, indicating new prompt
-                      setFormData((prev) => ({
-                        ...prev,
-                        promptId: null,
-                      }));
-                    }}
-                    placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
-                    className="h-full"
-                    debugContent={
-                      isEditMode &&
-                      agentDetail &&
-                      effectiveProfile?.role === "superadmin" ? (
-                        <AgentDebugInfo
-                          debugInfo={agentDetail.debug_info}
-                          modelMapping={agentDetail.model_mapping}
-                        />
-                      ) : undefined
+              </CardContent>
+            </Card>
+
+            {/* Step 2: Role Selection */}
+            <AgentRoleSection
+              selectedRoleId={formData?.role || ""}
+              selectedModelId={formData?.modelId}
+              modelMapping={
+                modelMapping as Record<
+                  string,
+                  {
+                    input_modalities?: string[] | null;
+                    output_modalities?: string[] | null;
+                  }
+                >
+              }
+              onRoleChange={handleRoleChange}
+              stepStatus={getStepStatus("role")}
+              stepTitle={steps[0]?.title || ""}
+              stepDescription={steps[0]?.description || ""}
+              stepNumber={2}
+              isReadonly={isReadonly}
+            />
+
+            {/* Step 3: Model Selection */}
+            <AgentModelSection
+              modelId={formData?.modelId || ""}
+              modelMapping={
+                modelMapping as Record<
+                  string,
+                  { id: string; name: string; description?: string }
+                >
+              }
+              validModelIds={agentData?.valid_model_ids || []}
+              filteredValidModelIds={filteredValidModelIds}
+              onModelChange={(modelId) => {
+                handleInputChange("modelId", modelId);
+
+                // Bidirectional filtering: Auto-set role based on model capabilities
+                if (modelId && modelMapping && modelId in modelMapping) {
+                  const modelInfo = modelMapping[modelId];
+                  const { input: modelInputMods, output: modelOutputMods } =
+                    getModelModalities(modelInfo);
+
+                  // Special rule: Audio models (with both audio input and output) should only work with simulation-voice
+                  const hasAudioInput = modelInputMods.includes("audio");
+                  const hasAudioOutput = modelOutputMods.includes("audio");
+                  const isAudioModel = hasAudioInput && hasAudioOutput;
+
+                  // Special rule: Image models (with image output) should work with image role
+                  const hasImageOutput = modelOutputMods.includes("image");
+                  const hasVideoOutput = modelOutputMods.includes("video");
+
+                  if (isAudioModel && formData?.role !== "simulation-voice") {
+                    // Auto-set role to simulation-voice for audio models
+                    handleInputChange("role", "simulation-voice");
+                  } else if (
+                    hasImageOutput &&
+                    !hasVideoOutput &&
+                    formData?.role !== "image" &&
+                    !formData?.role
+                  ) {
+                    // If image model selected and no role selected, suggest image role
+                    // But don't force it if user has already selected a different role
+                    // Only auto-set if role is empty
+                  } else if (
+                    hasVideoOutput &&
+                    formData?.role !== "video" &&
+                    !formData?.role
+                  ) {
+                    // If video model selected and no role selected, suggest video role
+                    // But don't force it if user has already selected a different role
+                    // Only auto-set if role is empty
+                  }
+                }
+              }}
+              stepStatus={getStepStatus("model")}
+              stepTitle={steps[1]?.title || ""}
+              stepDescription={steps[1]?.description || ""}
+              stepNumber={3}
+              isReadonly={isReadonly}
+              errors={errors}
+              {...(formData?.role ? { role: formData.role } : {})}
+            />
+
+            {/* Step 4: Temperature Configuration */}
+            {selectedModelCapabilities && (
+              <AgentTemperatureSection
+                temperature={formData?.temperature ?? 0.7}
+                temperatureBounds={temperatureBounds}
+                model_temperature_level_id={
+                  formData?.model_temperature_level_id || null
+                }
+                onTemperatureChange={(temp) =>
+                  handleInputChange("temperature", temp)
+                }
+                onTemperatureLevelIdChange={(levelId) =>
+                  handleInputChange("model_temperature_level_id", levelId)
+                }
+                stepStatus={getStepStatus("temperature")}
+                stepTitle={
+                  steps.find((s) => s.id === "temperature")?.title || ""
+                }
+                stepDescription={
+                  steps.find((s) => s.id === "temperature")?.description || ""
+                }
+                stepNumber={steps.findIndex((s) => s.id === "temperature") + 1}
+                isReadonly={isReadonly}
+              />
+            )}
+
+            {/* Step 5: Reasoning Configuration */}
+            {selectedModelCapabilities?.has_text_output && (
+              <>
+                <AgentReasoningSection
+                  model_reasoning_level_id={
+                    formData?.model_reasoning_level_id || null
+                  }
+                  reasoning={formData?.reasoning || "none"}
+                  reasoningMapping={
+                    (agentDetail?.reasoning_mapping || {}) as Record<
+                      string,
+                      { id: string; name: string; description?: string }
+                    >
+                  }
+                  reasoningOptions={(() => {
+                    // Get reasoning options from selected model in model_mapping, fallback to agentDetail
+                    const selectedModelId = formData?.modelId;
+                    if (
+                      selectedModelId &&
+                      modelMapping &&
+                      selectedModelId in modelMapping
+                    ) {
+                      const modelInfo = modelMapping[selectedModelId];
+                      if (
+                        modelInfo?.reasoning_options &&
+                        Array.isArray(modelInfo.reasoning_options) &&
+                        modelInfo.reasoning_options.length > 0
+                      ) {
+                        return modelInfo.reasoning_options.map((opt) => {
+                          const optObj = opt as Record<string, string>;
+                          return {
+                            id: String(optObj["id"] || ""),
+                            reasoning_level: String(
+                              optObj["reasoning_level"] || ""
+                            ),
+                          };
+                        }) as Array<{
+                          id: string;
+                          reasoning_level: string;
+                        }>;
+                      }
                     }
-                    activeMode={editorMode}
-                  />
-                </div>
-              ) : null}
-              <p className="text-sm text-muted-foreground">
-                This prompt defines the agent's behavior and personality in
-                conversations. You can use markdown formatting for better
-                organization.
-              </p>
-              {errors.systemPrompt && (
-                <p className="text-sm text-destructive">
-                  {errors.systemPrompt}
-                </p>
+                    // Fallback to agentDetail
+                    return (agentDetail?.reasoning_options || []) as Array<{
+                      id: string;
+                      reasoning_level: string;
+                    }>;
+                  })()}
+                  onReasoningChange={(reasoningLevel, optionId) => {
+                    handleInputChange("model_reasoning_level_id", optionId);
+                    // If reasoningLevel is null, it means unselected - set to "none"
+                    if (reasoningLevel === null) {
+                      handleInputChange("reasoning", "none");
+                    } else {
+                      handleInputChange(
+                        "reasoning",
+                        reasoningLevel as
+                          | "none"
+                          | "minimal"
+                          | "low"
+                          | "medium"
+                          | "high"
+                      );
+                    }
+                  }}
+                  stepStatus={getStepStatus("reasoning")}
+                  stepTitle={
+                    steps.find((s) => s.id === "reasoning")?.title || ""
+                  }
+                  stepDescription={
+                    steps.find((s) => s.id === "reasoning")?.description || ""
+                  }
+                  stepNumber={steps.findIndex((s) => s.id === "reasoning") + 1}
+                  isReadonly={isReadonly}
+                />
+              </>
+            )}
+
+            {/* Step 6: Voice Configuration */}
+            {/* Only show for models with BOTH input and output audio (e.g., gpt-realtime) */}
+            {selectedModelCapabilities?.has_audio_input &&
+              selectedModelCapabilities?.has_audio_output && (
+                <AgentVoiceSection
+                  model_voice_ids={formData?.model_voice_ids || []}
+                  voices={formData?.voices || []}
+                  availableVoices={availableVoices}
+                  onVoiceChange={(voiceIds, optionIds) => {
+                    handleInputChange("model_voice_ids", optionIds);
+                    handleInputChange("voices", voiceIds);
+                  }}
+                  stepStatus={getStepStatus("voice")}
+                  stepTitle={steps.find((s) => s.id === "voice")?.title || ""}
+                  stepDescription={
+                    steps.find((s) => s.id === "voice")?.description || ""
+                  }
+                  stepNumber={steps.findIndex((s) => s.id === "voice") + 1}
+                  isReadonly={isReadonly}
+                />
               )}
-            </div>
+
+            {/* Final Step: Prompt Instructions */}
+            <AgentPromptSection
+              systemPrompt={formData?.systemPrompt || ""}
+              promptId={formData?.promptId || null}
+              promptMapping={agentDetail?.prompt_mapping || {}}
+              filteredPromptMapping={filteredPromptMapping}
+              hasPromptChanges={hasPromptChanges}
+              resolvedPrompt={resolvedPrompt}
+              resolvedPromptContent={resolvedPromptContent}
+              onPromptChange={(prompt) =>
+                handleInputChange("systemPrompt", prompt)
+              }
+              onPromptIdChange={(promptId) =>
+                handleInputChange("promptId", promptId)
+              }
+              onResetPrompt={() => {
+                setFormData((prev) => ({
+                  ...prev,
+                  systemPrompt: resolvedPromptContent,
+                  promptId: resolvedPrompt.promptId,
+                }));
+              }}
+              editorMode={editorMode}
+              onEditorModeChange={setEditorMode}
+              onDeletePrompt={(promptId, isDepartmentSpecific) => {
+                setPromptToDelete({
+                  promptId,
+                  isDepartmentSpecific,
+                });
+                setShowDeletePromptDialog(true);
+              }}
+              stepStatus={getStepStatus("prompt")}
+              stepTitle={steps[steps.length - 1]?.title || ""}
+              stepDescription={steps[steps.length - 1]?.description || ""}
+              stepNumber={steps.length}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              {...(agentDetail ? { agentDetail } : {})}
+              {...(effectiveProfile ? { effectiveProfile } : {})}
+              errors={errors}
+            />
 
             <div className="flex gap-2 justify-end">
               <Button

@@ -135,7 +135,9 @@ async def resolve_profile_from_department_cookies(
     except Exception:
         # Log error but don't break request processing
         logger = logging.getLogger("app.utils.logging.db_logger")
-        logger.warning("Failed to resolve profile from department cookies", exc_info=True)
+        logger.warning(
+            "Failed to resolve profile from department cookies", exc_info=True
+        )
         return None
 
 

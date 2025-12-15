@@ -13261,6 +13261,26 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /** Input Modalities */
+            input_modalities?: string[] | null;
+            /** Output Modalities */
+            output_modalities?: string[] | null;
+            /** Temperature Lower */
+            temperature_lower?: number | null;
+            /** Temperature Upper */
+            temperature_upper?: number | null;
+            /** Temperature Levels */
+            temperature_levels?: {
+                [key: string]: string | boolean;
+            }[] | null;
+            /** Reasoning Options */
+            reasoning_options?: {
+                [key: string]: string;
+            }[] | null;
+            /** Available Voices */
+            available_voices?: {
+                [key: string]: string;
+            }[] | null;
         };
         /**
          * DepartmentMappingItem
@@ -13362,6 +13382,26 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /** Input Modalities */
+            input_modalities?: string[] | null;
+            /** Output Modalities */
+            output_modalities?: string[] | null;
+            /** Temperature Lower */
+            temperature_lower?: number | null;
+            /** Temperature Upper */
+            temperature_upper?: number | null;
+            /** Temperature Levels */
+            temperature_levels?: {
+                [key: string]: string | boolean;
+            }[] | null;
+            /** Reasoning Options */
+            reasoning_options?: {
+                [key: string]: string;
+            }[] | null;
+            /** Available Voices */
+            available_voices?: {
+                [key: string]: string;
+            }[] | null;
         };
         /** PersonaItem */
         app__api__v3__attempts__full__PersonaItem: {

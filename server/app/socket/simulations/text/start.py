@@ -5,11 +5,12 @@ import uuid
 from typing import Any
 
 from agents import gen_trace_id
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, sio
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -235,13 +236,12 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                     # Use randomization function to select attributes and create child scenario
                     # Allow None department_id - will use empty array for randomization to select general items
-                    from app.utils.scenario.randomize_attributes import \
-                        randomize_scenario_attributes
+                    from app.utils.scenario.randomize_attributes import (
+                        randomize_scenario_attributes,
+                    )
 
                     attempt_profile_uuid = (
-                        uuid.UUID(attempt_profile_id)
-                        if attempt_profile_id
-                        else None
+                        uuid.UUID(attempt_profile_id) if attempt_profile_id else None
                     )
 
                     if not department_id:
@@ -258,9 +258,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             persona_ids=None,
                             document_ids=None,
                             parameter_item_ids=None,
-                            department_ids=[
-                                department_id
-                            ] if department_id else [],  # Empty array if no department
+                            department_ids=[department_id]
+                            if department_id
+                            else [],  # Empty array if no department
                             scenario_id=scenario_id,
                             profile_id=attempt_profile_uuid,
                             targets=None,  # Randomize all
@@ -278,9 +278,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         )
 
                         # Update chat to use child scenario instead of parent
-                        sql = load_sql(
-                            "sql/v3/simulations/update_chat_scenario_id.sql"
-                        )
+                        sql = load_sql("sql/v3/simulations/update_chat_scenario_id.sql")
                         await conn.execute(sql, row["chat_id"], new_scenario_id)
                         logger.info(
                             f"Updated chat {row['chat_id']} to use child scenario {new_scenario_id}"
@@ -307,9 +305,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             # Update row data for result (convert Record to dict first)
                             row_dict = dict(row)
                             row_dict["scenario_id"] = new_scenario_id
-                            row_dict["scenario_name"] = child_scenario.get(
-                                "name", ""
-                            )
+                            row_dict["scenario_name"] = child_scenario.get("name", "")
                             row_dict["problem_statement"] = (
                                 child_problem_statement or ""
                             )
@@ -317,12 +313,12 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             scenario_metadata["generated"] = True
 
                     except Exception as gen_error:
-                            # Log error but don't fail the entire simulation start
-                            logger.error(
-                                f"Failed to generate scenario {scenario_id}: {str(gen_error)}",
-                                exc_info=True,
-                            )
-                            # Continue with existing scenario (may have no problem statement)
+                        # Log error but don't fail the entire simulation start
+                        logger.error(
+                            f"Failed to generate scenario {scenario_id}: {str(gen_error)}",
+                            exc_info=True,
+                        )
+                        # Continue with existing scenario (may have no problem statement)
 
                 # Build payload for scenarios
                 start_payload = {

@@ -215,11 +215,17 @@ async def _simulation_text_practice_impl(
 
                 # Link department (only if we have one)
                 if selected_dept_id:
-                    sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
+                    sql = load_sql(
+                        "sql/v3/scenarios/insert_scenario_department_link.sql"
+                    )
                     await conn.execute(sql, new_scenario_id, selected_dept_id, True)
-                    logger.info(f"Linked department {selected_dept_id} to child scenario")
+                    logger.info(
+                        f"Linked department {selected_dept_id} to child scenario"
+                    )
                 else:
-                    logger.info("No department to link - scenario will be cross-department")
+                    logger.info(
+                        "No department to link - scenario will be cross-department"
+                    )
 
                 scenario_id_override = str(new_scenario_id)
 

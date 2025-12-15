@@ -4,15 +4,18 @@ import json
 from typing import Annotated, Any, cast
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.permissions import (ProfileRole,
-                                   get_available_subsections_for_role,
-                                   get_redirect_path_for_role)
+from app.utils.permissions import (
+    ProfileRole,
+    get_available_subsections_for_role,
+    get_redirect_path_for_role,
+)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -20,8 +23,12 @@ router = APIRouter()
 class ProfileContextRequest(BaseModel):
     """Request to get consolidated profile context."""
 
-    actualProfileId: str | None = None  # The logged-in user's profile ID (null if resolving from cookies)
-    effectiveProfileId: str | None = None  # Could be same as actual, or emulated profile ID (null if resolving from cookies)
+    actualProfileId: str | None = (
+        None  # The logged-in user's profile ID (null if resolving from cookies)
+    )
+    effectiveProfileId: str | None = (
+        None  # Could be same as actual, or emulated profile ID (null if resolving from cookies)
+    )
     pathname: str  # Current path for breadcrumb generation
 
 
@@ -123,7 +130,10 @@ async def get_profile_context(
             )
 
         # Validate auth_mode is valid
-        if auth_mode_cookie and auth_mode_cookie not in ("default-guest", "default-account"):
+        if auth_mode_cookie and auth_mode_cookie not in (
+            "default-guest",
+            "default-account",
+        ):
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid auth-mode: {auth_mode_cookie}. Must be 'default-guest' or 'default-account'",
@@ -138,34 +148,41 @@ async def get_profile_context(
             department_id_cookie,
             auth_mode_cookie,
         )
-        
+
         # Check if profiles exist before running the main query
         # This prevents unnecessary SQL execution and provides clearer error messages
         if request.actualProfileId:
             profile_check_sql = "SELECT id FROM profiles WHERE id = $1::uuid"
-            actual_exists = await conn.fetchrow(profile_check_sql, request.actualProfileId)
+            actual_exists = await conn.fetchrow(
+                profile_check_sql, request.actualProfileId
+            )
             if not actual_exists:
                 raise HTTPException(
                     status_code=401,
                     detail=f"Session invalid: Profile {request.actualProfileId} not found. Please sign in again.",
                 )
-        
-        if request.effectiveProfileId and request.effectiveProfileId != request.actualProfileId:
+
+        if (
+            request.effectiveProfileId
+            and request.effectiveProfileId != request.actualProfileId
+        ):
             profile_check_sql = "SELECT id FROM profiles WHERE id = $1::uuid"
-            effective_exists = await conn.fetchrow(profile_check_sql, request.effectiveProfileId)
+            effective_exists = await conn.fetchrow(
+                profile_check_sql, request.effectiveProfileId
+            )
             if not effective_exists:
                 raise HTTPException(
                     status_code=401,
                     detail=f"Session invalid: Effective profile {request.effectiveProfileId} not found. Please sign in again.",
                 )
-        
+
         result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
             # Check if it's an authorization failure (profiles differ) or not found
             resolved_actual = request.actualProfileId
             resolved_effective = request.effectiveProfileId
-            
+
             # If we resolved from cookies, we need to check the result to see what was resolved
             # But if result is None, resolution failed
             if not resolved_actual or not resolved_effective:
@@ -173,7 +190,7 @@ async def get_profile_context(
                     status_code=404,
                     detail="Profile context not found: Could not resolve profile from department settings",
                 )
-            
+
             if resolved_actual != resolved_effective:
                 raise HTTPException(
                     status_code=403,

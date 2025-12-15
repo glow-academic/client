@@ -1103,7 +1103,9 @@ async def get_scenario_new(
         )
         sql_params = (
             request_data.profileId,  # $1
-            request_data.useImage if request_data.useImage is not None else False,  # $2: boolean (unused)
+            request_data.useImage
+            if request_data.useImage is not None
+            else False,  # $2: boolean (unused)
             use_objectives,  # $3: boolean (unused)
             document_ids_uuid,  # $4
             problem_statement_ids_uuid,  # $5
@@ -1385,7 +1387,7 @@ async def get_scenario_new(
         scenario_agent_id = str(result.get("scenario_agent_id", "")) or ""
         image_agent_id = str(result.get("image_agent_id", "")) or ""
         video_agent_id = str(result.get("video_agent_id", "")) or ""
-        
+
         # Extract video and questions flags
         video_enabled = bool(result.get("video_enabled", False))
         questions_enabled = bool(result.get("questions_enabled", False))
@@ -1562,13 +1564,11 @@ async def get_scenario_new(
         field_ranges_from_db = parse_jsonb(result.get("field_ranges_json"))
         field_ranges_dict: dict[str, dict[str, int]] = {}
         allowed_field_ranges: dict[str, RangeMinMax] = {}
-        
+
         # Use valid_parameter_ids to ensure we include all valid parameters
         for param_id in valid_parameter_ids:
             # Get range from request, database, or use defaults
-            if (
-                request_data.fieldRanges and param_id in request_data.fieldRanges
-            ):
+            if request_data.fieldRanges and param_id in request_data.fieldRanges:
                 # Use request value
                 param_range = request_data.fieldRanges[param_id]
                 param_min = param_range.get("min", 1)
@@ -1589,7 +1589,7 @@ async def get_scenario_new(
                 # Use defaults
                 param_min = 1
                 param_max = 1
-            
+
             # Ensure max doesn't exceed fixed limit
             param_max = min(param_max, 3)
             # Ensure min doesn't exceed max
@@ -1599,7 +1599,7 @@ async def get_scenario_new(
                 "min": param_min,
                 "max": param_max,
             }
-            
+
             # Allowed range for this parameter (from database or default)
             if (
                 isinstance(field_ranges_from_db, dict)
@@ -1618,12 +1618,8 @@ async def get_scenario_new(
 
         # Allowed ranges from database (defaults for new scenarios)
         allowed_ranges = AllowedRanges(
-            persona=RangeMinMax(
-                min=allowed_persona_min, max=allowed_persona_max
-            ),
-            document=RangeMinMax(
-                min=allowed_document_min, max=allowed_document_max
-            ),
+            persona=RangeMinMax(min=allowed_persona_min, max=allowed_persona_max),
+            document=RangeMinMax(min=allowed_document_min, max=allowed_document_max),
             parameter_selection=RangeMinMax(
                 min=allowed_parameter_min, max=allowed_parameter_max
             ),

@@ -189,7 +189,6 @@ async def get_cohort_detail(
                             )
                         )
 
-
         # Parse mappings
         simulation_mapping: dict[str, SimulationMappingItem] = {}
         if row.get("simulation_mapping"):
@@ -210,7 +209,6 @@ async def get_cohort_detail(
                             if isinstance(dept_ids, list)
                             else None,
                         )
-
 
         department_mapping: dict[str, DepartmentMappingItem] = {}
         if row.get("department_mapping"):

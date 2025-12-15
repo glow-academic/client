@@ -1000,7 +1000,9 @@ async def get_scenario_detail(
         sql_params = (
             request_data.scenarioId,
             request_data.profileId,
-            request_data.useImage if request_data.useImage is not None else False,  # $3: boolean (unused, but needed for type inference)
+            request_data.useImage
+            if request_data.useImage is not None
+            else False,  # $3: boolean (unused, but needed for type inference)
             use_objectives,  # $4: boolean (unused, but needed for type inference)
             document_ids_uuid,
             problem_statement_ids_uuid,
@@ -1572,12 +1574,10 @@ async def get_scenario_detail(
         field_ranges_from_db = parse_jsonb(scenario.get("field_ranges_json"))
         field_ranges_dict: dict[str, dict[str, int]] = {}
         allowed_field_ranges: dict[str, RangeMinMax] = {}
-        
+
         for param_id in parameter_mapping.keys():
             # Get range from request, database, or use defaults
-            if (
-                request_data.fieldRanges and param_id in request_data.fieldRanges
-            ):
+            if request_data.fieldRanges and param_id in request_data.fieldRanges:
                 # Use request value
                 param_range = request_data.fieldRanges[param_id]
                 param_min = param_range.get("min", 1)
@@ -1598,7 +1598,7 @@ async def get_scenario_detail(
                 # Use defaults
                 param_min = 1
                 param_max = 1
-            
+
             # Ensure max doesn't exceed fixed limit
             param_max = min(param_max, 3)
             # Ensure min doesn't exceed max
@@ -1608,7 +1608,7 @@ async def get_scenario_detail(
                 "min": param_min,
                 "max": param_max,
             }
-            
+
             # Allowed range for this parameter (from database or default)
             if (
                 isinstance(field_ranges_from_db, dict)
@@ -1627,12 +1627,8 @@ async def get_scenario_detail(
 
         # Allowed ranges from database (scenario-specific) or defaults
         allowed_ranges = AllowedRanges(
-            persona=RangeMinMax(
-                min=allowed_persona_min, max=allowed_persona_max
-            ),
-            document=RangeMinMax(
-                min=allowed_document_min, max=allowed_document_max
-            ),
+            persona=RangeMinMax(min=allowed_persona_min, max=allowed_persona_max),
+            document=RangeMinMax(min=allowed_document_min, max=allowed_document_max),
             parameter_selection=RangeMinMax(
                 min=allowed_parameter_min, max=allowed_parameter_max
             ),

@@ -32,6 +32,16 @@ import { cn } from "@/lib/utils";
 export const AGENT_ROLES = [
   { id: "classify", name: "Classify", description: "Classification agent" },
   { id: "grade", name: "Grade", description: "Grading agent" },
+  {
+    id: "grade-text",
+    name: "Grade Text",
+    description: "Text-based grading agent",
+  },
+  {
+    id: "grade-voice",
+    name: "Grade Voice",
+    description: "Voice-based grading agent",
+  },
   { id: "hint", name: "Hint", description: "Hint generation agent" },
   {
     id: "scenario",
@@ -63,6 +73,7 @@ export const AGENT_ROLES = [
     name: "Document",
     description: "Document generation agent",
   },
+  { id: "member", name: "Member", description: "Member agent" },
 ] as const;
 
 export type AgentRole = (typeof AGENT_ROLES)[number]["id"];
@@ -139,7 +150,7 @@ export function RolePicker({
                     <Check
                       className={cn(
                         "ml-auto flex-shrink-0",
-                        selectedRole === role.id ? "opacity-100" : "opacity-0",
+                        selectedRole === role.id ? "opacity-100" : "opacity-0"
                       )}
                     />
                   </div>

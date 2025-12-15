@@ -374,10 +374,20 @@ SELECT
             jsonb_build_object(
                 'name', amwm.name, 
                 'description', amwm.description,
-                'modalities', amwm.modalities
+                'modalities', amwm.modalities,
+                'input_modalities', COALESCE((amwm.modalities->>'input')::jsonb, '[]'::jsonb),
+                'output_modalities', COALESCE((amwm.modalities->>'output')::jsonb, '[]'::jsonb),
+                'temperature_lower', COALESCE(mtl.temperature_lower, 0.0),
+                'temperature_upper', COALESCE(mtl.temperature_upper, 1.0),
+                'temperature_levels', COALESCE(mtl.temperature_levels, '[]'::jsonb),
+                'reasoning_options', COALESCE(mrl.reasoning_levels, '[]'::jsonb),
+                'available_voices', COALESCE(mv.voices, '[]'::jsonb)
             )
         )
-        FROM all_models_with_modalities amwm),
+        FROM all_models_with_modalities amwm
+        LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = amwm.model_id
+        LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = amwm.model_id
+        LEFT JOIN model_voices_data mv ON mv.model_id = amwm.model_id),
         '{}'::jsonb
     ) as model_mapping,
     COALESCE(

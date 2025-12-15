@@ -14,9 +14,11 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.utils.logging.db_logger import get_logger
-from app.utils.scenario.generate_problem_statement import \
-    generate_scenario_problem_statement
+from app.utils.scenario.generate_problem_statement import (
+    generate_scenario_problem_statement,
+)
 from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
@@ -281,20 +283,30 @@ async def randomize_scenario_attributes(
                     # Get range for this parameter from field_ranges_json
                     param_id_str = str(param["id"])
                     param_range = field_ranges_json.get(param_id_str, {})
-                    param_min = param_range.get("min", 1) if isinstance(param_range, dict) else 1
-                    param_max = param_range.get("max", 3) if isinstance(param_range, dict) else 3
-                    
+                    param_min = (
+                        param_range.get("min", 1)
+                        if isinstance(param_range, dict)
+                        else 1
+                    )
+                    param_max = (
+                        param_range.get("max", 3)
+                        if isinstance(param_range, dict)
+                        else 3
+                    )
+
                     # Use range to determine how many items to select for this parameter
                     available_count = len(param_items)
                     capped_max = min(param_max, available_count)
                     effective_min = min(param_min, available_count)
-                    
+
                     if effective_min <= capped_max:
                         count = random.randint(effective_min, capped_max)
                         shuffled = param_items.copy()
                         random.shuffle(shuffled)
                         selected_items = shuffled[:count]
-                        persona_param_ids.extend([item["id"] for item in selected_items])
+                        persona_param_ids.extend(
+                            [item["id"] for item in selected_items]
+                        )
                     else:
                         # Fallback: select at least one
                         selected_item = random.choice(param_items)
@@ -340,7 +352,7 @@ async def randomize_scenario_attributes(
             else:
                 # Fallback: select at least one if available
                 selected_parameters = [random.choice(general_parameters)]
-            
+
             # For each selected parameter, use per-parameter field ranges to determine item count
             for param in selected_parameters:
                 param_items = parameter_items_by_param_id.get(param["id"], [])
@@ -348,14 +360,22 @@ async def randomize_scenario_attributes(
                     # Get range for this parameter from field_ranges_json
                     param_id_str = str(param["id"])
                     param_range = field_ranges_json.get(param_id_str, {})
-                    param_min = param_range.get("min", 1) if isinstance(param_range, dict) else 1
-                    param_max = param_range.get("max", 3) if isinstance(param_range, dict) else 3
-                    
+                    param_min = (
+                        param_range.get("min", 1)
+                        if isinstance(param_range, dict)
+                        else 1
+                    )
+                    param_max = (
+                        param_range.get("max", 3)
+                        if isinstance(param_range, dict)
+                        else 3
+                    )
+
                     # Use range to determine how many items to select for this parameter
                     available_count = len(param_items)
                     capped_max = min(param_max, available_count)
                     effective_min = min(param_min, available_count)
-                    
+
                     if effective_min <= capped_max:
                         count = random.randint(effective_min, capped_max)
                         shuffled = param_items.copy()
@@ -415,7 +435,9 @@ async def randomize_scenario_attributes(
             )
 
         # Use ranges to determine how many documents to select
-        available_documents = matching_documents if matching_documents else active_documents
+        available_documents = (
+            matching_documents if matching_documents else active_documents
+        )
         if available_documents:
             available_count = len(available_documents)
             capped_max = min(document_max, available_count)
@@ -653,4 +675,3 @@ def parse_jsonb(data: Any) -> list[dict[str, Any]]:
     if not isinstance(data, list):
         return []
     return [dict(item) for item in data]
-

@@ -267,9 +267,7 @@ async def get_cohort_new(
         simulation_mapping_dict = {
             k: v.model_dump() for k, v in simulation_mapping.items()
         }
-        profile_mapping_dict = {
-            k: v.model_dump() for k, v in profile_mapping.items()
-        }
+        profile_mapping_dict = {k: v.model_dump() for k, v in profile_mapping.items()}
         department_mapping_dict = {
             k: v.model_dump() for k, v in department_mapping.items()
         }

@@ -11,12 +11,12 @@ from pydantic import BaseModel
 # Reuse models from detail.py
 from app.api.v3.cohorts.detail import (
     CohortDetailResponse,
-    SimulationInCohort,
-    StaffItem,
-    DepartmentMappingItem,
     CohortMappingItem,
+    DepartmentMappingItem,
     ProfileMappingItem,
+    SimulationInCohort,
     SimulationMappingItem,
+    StaffItem,
 )
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -265,29 +265,30 @@ async def get_cohort_new(
         # Convert mapping Pydantic instances to dictionaries for FastAPI serialization
         # FastAPI expects dict[str, dict] not dict[str, PydanticModel] for nested models
         from typing import cast
+
         simulation_mapping_dict = cast(
             dict[str, dict[str, Any]],
-            {k: v.model_dump() for k, v in simulation_mapping.items()}
+            {k: v.model_dump() for k, v in simulation_mapping.items()},
         )
         profile_mapping_dict = cast(
             dict[str, dict[str, Any]],
-            {k: v.model_dump() for k, v in profile_mapping.items()}
+            {k: v.model_dump() for k, v in profile_mapping.items()},
         )
         department_mapping_dict = cast(
             dict[str, dict[str, Any]],
-            {k: v.model_dump() for k, v in department_mapping.items()}
+            {k: v.model_dump() for k, v in department_mapping.items()},
         )
         cohort_mapping_dict = cast(
             dict[str, dict[str, Any]] | None,
             {k: v.model_dump() for k, v in cohort_mapping.items()}
             if cohort_mapping
-            else None
+            else None,
         )
         department_mapping_for_staff_dict = cast(
             dict[str, dict[str, Any]] | None,
             {k: v.model_dump() for k, v in department_mapping_for_staff.items()}
             if department_mapping_for_staff
-            else None
+            else None,
         )
 
         # MyPy type errors here are false positives - we convert Pydantic models to dicts via model_dump()

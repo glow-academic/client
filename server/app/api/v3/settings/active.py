@@ -3,6 +3,9 @@
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -11,16 +14,18 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
 from app.utils.theme.oklch_to_hex import hex_to_oklch
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline request/response schemas
 class SettingsActiveRequest(BaseModel):
     """Request to get active settings."""
 
-    profileId: str | None = None  # Can be null, empty string, UUID, or "guest-profile-id" for backward compatibility
-    departmentId: str | None = None  # Optional department ID for department-specific settings lookup
+    profileId: str | None = (
+        None  # Can be null, empty string, UUID, or "guest-profile-id" for backward compatibility
+    )
+    departmentId: str | None = (
+        None  # Optional department ID for department-specific settings lookup
+    )
 
 
 class ThemePrimitives(BaseModel):
@@ -116,8 +121,12 @@ class SettingsActiveResponse(BaseModel):
     success_threshold: int
     warning_threshold: int
     danger_threshold: int
-    guestProfileId: str | None = None  # Guest profile ID from settings_default_guest table
-    defaultAccountProfileId: str | None = None  # Default account profile ID from settings_default_account table
+    guestProfileId: str | None = (
+        None  # Guest profile ID from settings_default_guest table
+    )
+    defaultAccountProfileId: str | None = (
+        None  # Default account profile ID from settings_default_account table
+    )
 
 
 router = APIRouter()
