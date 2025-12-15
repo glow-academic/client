@@ -29,6 +29,8 @@ class StandardGroupItem(BaseModel):
     description: str | None = None
     points: int
     passPoints: int
+    position: int | None = None
+    active: bool = True
     standards: list[StandardItem] = []
 
 
@@ -79,6 +81,8 @@ async def create_rubric(
                     "description": group.description,
                     "points": group.points,
                     "passPoints": group.passPoints,
+                    "position": group.position,
+                    "active": group.active,
                     "standards": [
                         {
                             "name": standard.name,

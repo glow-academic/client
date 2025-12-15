@@ -44,6 +44,8 @@ class StandardGroupDetail(BaseModel):
 
     points: int
     passPoints: int
+    position: int
+    active: bool
     standard_ids: list[str]
 
 
@@ -146,6 +148,8 @@ async def get_rubric_detail(
                         standard_groups_detail[group_id] = StandardGroupDetail(
                             points=group.get("points", 0),
                             passPoints=group.get("passPoints", 0),
+                            position=group.get("position", 1),
+                            active=group.get("active", True),
                             standard_ids=standard_ids,
                         )
                         standard_groups_mapping[group_id] = {

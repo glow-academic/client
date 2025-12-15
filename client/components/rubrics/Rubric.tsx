@@ -1,40 +1,36 @@
 /**
  * Rubric.tsx
- * Refactored rubric editing component with grid-based interface
- * Uses TanStack React Table for grid layout with standard groups as rows and standards as columns
+ * Step-based rubric editing component with 4 steps:
+ * 1. Basic Information (name, description, department, active)
+ * 2. Standard Groups (card grid for adding/editing groups)
+ * 3. Group Configuration (accordion with standards/levels per group)
+ * 4. Preview (grid view with generate button)
  */
 "use client";
 
 import {
   ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
-import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
-import { Badge } from "@/components/ui/badge";
+import {
+  RubricStandardGroupCardGrid,
+  type StandardGroupCard,
+} from "@/components/rubrics/RubricStandardGroupCardGrid";
+import { RubricStandardSection } from "@/components/rubrics/RubricStandardSection";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -48,8 +44,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { cn } from "@/lib/utils";
 import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpers";
-import { Edit, Plus, Power, Sparkles, Trash2, X } from "lucide-react";
+import { Check, Power, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 // Type-only import from server page
@@ -71,7 +68,18 @@ type StandardGroup = {
   description: string;
   points: number;
   passPoints: number;
+  position: number;
+  active: boolean;
 };
+
+type StepStatus = "pending" | "active" | "completed";
+
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
+}
 
 type Standard = {
   id: string;
@@ -113,7 +121,7 @@ export default function Rubric({
 
   // Form state for rubric metadata
   const [formData, setFormData] = useState({
-    name: rubricData?.name || "",
+    name: rubricData?.name || "New Rubric",
     description: rubricData?.description || "",
     active: rubricData?.active ?? true,
     departmentIds: rubricData?.department_ids || [],
@@ -123,27 +131,6 @@ export default function Rubric({
   const [standardGroups, setStandardGroups] = useState<StandardGroup[]>([]);
   const [standards, setStandards] = useState<Standard[]>([]);
   const [gridCells, setGridCells] = useState<GridCell[]>([]);
-
-  // Modal states
-  const [showAddGroupModal, setShowAddGroupModal] = useState(false);
-  const [showAddStandardModal, setShowAddStandardModal] = useState(false);
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
-  const [editingStandardId, setEditingStandardId] = useState<string | null>(
-    null
-  );
-
-  // Form states for modals
-  const [groupFormData, setGroupFormData] = useState({
-    name: "",
-    description: "",
-    points: "5",
-    passPoints: "4",
-  });
-
-  const [standardFormData, setStandardFormData] = useState({
-    name: "",
-    points: "1",
-  });
 
   // Loading states
   const [isSaving, setIsSaving] = useState(false);
@@ -171,7 +158,7 @@ export default function Rubric({
   useEffect(() => {
     if (rubricData) {
       setFormData({
-        name: rubricData.name || "",
+        name: rubricData.name || "New Rubric",
         description: rubricData.description || "",
         active: rubricData.active ?? true,
         departmentIds: rubricData.department_ids || [],
@@ -188,7 +175,7 @@ export default function Rubric({
       return;
     }
 
-    // Transform standard groups
+    // Transform standard groups - sort by position
     const groups: StandardGroup[] = [];
     if (rubricData.standard_group_ids) {
       rubricData.standard_group_ids.forEach((groupId) => {
@@ -201,10 +188,14 @@ export default function Rubric({
             description: groupMapping["description"] || "",
             points: groupDetail["points"] || 0,
             passPoints: groupDetail["passPoints"] || 0,
+            position: groupDetail["position"] ?? 1,
+            active: groupDetail["active"] ?? true,
           });
         }
       });
     }
+    // Sort by position
+    groups.sort((a, b) => a.position - b.position);
     setStandardGroups(groups);
 
     // Transform standards
@@ -247,6 +238,62 @@ export default function Rubric({
     return !rubricData.can_edit;
   }, [isEditMode, rubricData]);
 
+  // Step status logic
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      const hasName = !!formData.name?.trim();
+      const hasGroups = standardGroups.length > 0;
+      const hasStandards = standards.length > 0;
+
+      switch (stepId) {
+        case "basic":
+          return hasName ? "completed" : "active";
+        case "groups":
+          if (!hasName) return "pending";
+          return hasGroups ? "completed" : "active";
+        case "configuration":
+          if (!hasName || !hasGroups) return "pending";
+          return hasStandards ? "completed" : "active";
+        case "preview":
+          if (!hasName || !hasGroups || !hasStandards) return "pending";
+          return "completed";
+        default:
+          return "pending";
+      }
+    },
+    [formData.name, standardGroups.length, standards.length]
+  );
+
+  // Steps array
+  const steps: Step[] = useMemo(() => {
+    return [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description:
+          "Set the rubric name, description, departments, and active status.",
+        status: getStepStatus("basic"),
+      },
+      {
+        id: "groups",
+        title: "Standard Groups",
+        description: "Add standard groups to organize your rubric.",
+        status: getStepStatus("groups"),
+      },
+      {
+        id: "configuration",
+        title: "Group Configuration",
+        description: "Configure standards and levels for each group.",
+        status: getStepStatus("configuration"),
+      },
+      {
+        id: "preview",
+        title: "Preview",
+        description: "Review your rubric grid and generate if needed.",
+        status: getStepStatus("preview"),
+      },
+    ];
+  }, [getStepStatus]);
 
   // Unified update helper
   const updateRubricUnified = useCallback(
@@ -264,8 +311,11 @@ export default function Rubric({
       }
 
       // Build standard groups array for API
-      // Group standards by their standardGroupId
-      const allGroups = updates.standardGroups.map((group) => {
+      // Group standards by their standardGroupId, preserve position order
+      const sortedGroups = [...updates.standardGroups].sort(
+        (a, b) => a.position - b.position
+      );
+      const allGroups = sortedGroups.map((group) => {
         // Find standards that belong to this group
         const groupStandards = updates.standards.filter(
           (s) => s.standardGroupId === group.id
@@ -276,6 +326,8 @@ export default function Rubric({
           description: group.description,
           points: group.points,
           passPoints: group.passPoints,
+          position: group.position,
+          active: group.active,
           standards: groupStandards.map((s) => {
             // Get description from grid cell for this group-standard pair
             // If not found, use empty string (will be set from standard's description on first save)
@@ -355,15 +407,45 @@ export default function Rubric({
           return;
         }
         setIsCreating(true);
+        // Calculate total points from standard groups
+        const totalPoints = standardGroups.reduce(
+          (sum, g) => sum + g.points,
+          0
+        );
+        const totalPassPoints = standardGroups.reduce(
+          (sum, g) => sum + g.passPoints,
+          0
+        );
+
         const data = await createRubricAction({
           body: {
             name: formData.name,
             description: formData.description,
             department_ids: finalDepartmentIds ?? [],
             active: formData.active,
-            points: 0,
-            passPoints: 0,
-            standard_groups: [],
+            points: totalPoints,
+            passPoints: totalPassPoints,
+            standard_groups: standardGroups.map((g, index) => ({
+              name: g.name,
+              short_name: g.name.substring(0, 10).toUpperCase(),
+              description: g.description,
+              points: g.points,
+              passPoints: g.passPoints,
+              position: g.position ?? index + 1,
+              active: g.active ?? true,
+              standards: standards
+                .filter((s) => s.standardGroupId === g.id)
+                .map((s) => {
+                  const cell = gridCells.find(
+                    (c) => c.standardGroupId === g.id && c.standardId === s.id
+                  );
+                  return {
+                    name: s.name,
+                    description: cell?.description || "",
+                    points: s.points,
+                  };
+                }),
+            })),
             profileId: effectiveProfile.id,
           },
         });
@@ -386,291 +468,163 @@ export default function Rubric({
     }
   };
 
-  // Handle add standard group
-  const handleAddGroup = () => {
-    setGroupFormData({
-      name: "",
-      description: "",
-      points: "5",
-      passPoints: "4",
-    });
-    setEditingGroupId(null);
-    setShowAddGroupModal(true);
-  };
+  // Handle standard groups change from card grid
+  const handleStandardGroupsChange = useCallback(
+    (newGroups: StandardGroupCard[]) => {
+      // Update positions to maintain order
+      const updatedGroups = newGroups.map((g, index) => ({
+        id: g.id,
+        name: g.name,
+        description: g.description || "",
+        points: g.points || 5,
+        passPoints: g.passPoints || 4,
+        position: index + 1,
+        active: g.active ?? true,
+      }));
 
-  // Handle edit standard group
-  const handleEditGroup = useCallback(
-    (groupId: string) => {
-      const group = standardGroups.find((g) => g.id === groupId);
-      if (group) {
-        setGroupFormData({
-          name: group.name,
-          description: group.description,
-          points: group.points.toString(),
-          passPoints: group.passPoints.toString(),
-        });
-        setEditingGroupId(groupId);
-        setShowAddGroupModal(true);
+      // Find deleted groups (groups that were in standardGroups but not in newGroups)
+      const existingGroupIds = new Set(standardGroups.map((g) => g.id));
+      const newGroupIds = new Set(newGroups.map((g) => g.id));
+      const deletedGroupIds = Array.from(existingGroupIds).filter(
+        (id) => !newGroupIds.has(id)
+      );
+      const addedGroupIds = Array.from(newGroupIds).filter(
+        (id) => !existingGroupIds.has(id)
+      );
+
+      // Clean up standards and grid cells for deleted groups
+      if (deletedGroupIds.length > 0) {
+        setStandards((prev) =>
+          prev.filter((s) => !deletedGroupIds.includes(s.standardGroupId))
+        );
+        setGridCells((prev) =>
+          prev.filter((c) => !deletedGroupIds.includes(c.standardGroupId))
+        );
       }
+
+      // Auto-create first standard for newly added groups
+      if (addedGroupIds.length > 0) {
+        const newStandards: Standard[] = [];
+        const newGridCells: GridCell[] = [];
+
+        addedGroupIds.forEach((groupId, index) => {
+          const group = updatedGroups.find((g) => g.id === groupId);
+          if (!group) return;
+
+          // First standard always gets 1 point
+          const newStandard: Standard = {
+            id: `temp-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+            name: "",
+            points: 1,
+            standardGroupId: groupId,
+          };
+          newStandards.push(newStandard);
+
+          // Initialize grid cells for the new standard across all groups
+          updatedGroups.forEach((g) => {
+            newGridCells.push({
+              standardGroupId: g.id,
+              standardId: newStandard.id,
+              description: "",
+            });
+          });
+        });
+
+        // Initialize grid cells for all existing standards in the new groups
+        standards.forEach((existingStandard) => {
+          addedGroupIds.forEach((groupId) => {
+            newGridCells.push({
+              standardGroupId: groupId,
+              standardId: existingStandard.id,
+              description: "",
+            });
+          });
+        });
+
+        setStandards((prev) => [...prev, ...newStandards]);
+        setGridCells((prev) => [...prev, ...newGridCells]);
+      }
+
+      setStandardGroups(updatedGroups);
     },
-    [standardGroups]
+    [standardGroups, standards]
   );
 
-  // Handle save standard group
-  const handleSaveGroup = () => {
-    if (!groupFormData.name.trim()) {
-      toast.error("Group name is required");
-      return;
-    }
-
-    const points = parseInt(groupFormData.points);
-    const passPoints = parseInt(groupFormData.passPoints);
-
-    if (isNaN(points) || points <= 0) {
-      toast.error("Points must be a valid number greater than 0");
-      return;
-    }
-
-    if (isNaN(passPoints) || passPoints <= 0) {
-      toast.error("Pass points must be a valid number greater than 0");
-      return;
-    }
-
-    if (passPoints > points) {
-      toast.error("Pass points cannot exceed maximum points");
-      return;
-    }
-
-    if (editingGroupId) {
-      // Update existing group
+  // Handle group metadata change
+  const handleGroupChange = useCallback(
+    (groupId: string, updates: Partial<StandardGroup>) => {
       setStandardGroups((prev) =>
-        prev.map((g) =>
-          g.id === editingGroupId
-            ? {
-                ...g,
-                name: groupFormData.name,
-                description: groupFormData.description,
-                points,
-                passPoints,
-              }
-            : g
-        )
+        prev.map((g) => (g.id === groupId ? { ...g, ...updates } : g))
       );
-    } else {
-      // Add new group
-      const newGroup: StandardGroup = {
-        id: `temp-${Date.now()}`,
-        name: groupFormData.name,
-        description: groupFormData.description,
-        points,
-        passPoints,
-      };
-      setStandardGroups((prev) => [...prev, newGroup]);
-    }
-
-    setShowAddGroupModal(false);
-    setEditingGroupId(null);
-  };
-
-  // Handle delete standard group
-  const handleDeleteGroup = useCallback(
-    async (groupId: string) => {
-      if (
-        !confirm(
-          "Are you sure you want to delete this standard group? This will also delete all associated standards."
-        )
-      ) {
-        return;
-      }
-
-      // Remove group and its standards
-      setStandardGroups((prev) => prev.filter((g) => g.id !== groupId));
-      setStandards((prev) => prev.filter((s) => s.standardGroupId !== groupId));
-      setGridCells((prev) => prev.filter((c) => c.standardGroupId !== groupId));
-
-      // If in edit mode, save immediately
-      if (isEditMode && updateRubricAction) {
-        try {
-          const finalDepartmentIds = transformDepartmentIdsForSubmit(
-            formData.departmentIds || [],
-            isSuperadmin,
-            rubricData?.valid_department_ids || []
-          );
-          await updateRubricUnified({
-            name: formData.name,
-            description: formData.description,
-            department_ids: finalDepartmentIds,
-            active: formData.active,
-            standardGroups: standardGroups.filter((g) => g.id !== groupId),
-            standards: standards.filter((s) => s.standardGroupId !== groupId),
-            gridCells: gridCells.filter((c) => c.standardGroupId !== groupId),
-          });
-          toast.success("Standard group deleted successfully");
-          router.refresh();
-        } catch (error) {
-          toast.error("Failed to delete standard group", {
-            description: error instanceof Error ? error.message : "Unknown error",
-          });
-        }
-      }
     },
-    [
-      isEditMode,
-      updateRubricAction,
-      formData,
-      isSuperadmin,
-      rubricData,
-      standardGroups,
-      standards,
-      gridCells,
-      router,
-      updateRubricUnified,
-    ]
+    []
   );
 
   // Handle add standard
-  const handleAddStandard = () => {
-    setStandardFormData({
-      name: "",
-      points: "1",
-    });
-    setEditingStandardId(null);
-    setShowAddStandardModal(true);
-  };
+  const handleAddStandard = useCallback(
+    (groupId: string) => {
+      const group = standardGroups.find((g) => g.id === groupId);
+      if (!group) return;
 
-  // Handle edit standard
-  const handleEditStandard = useCallback(
-    (standardId: string) => {
-      const standard = standards.find((s) => s.id === standardId);
-      if (standard) {
-        setStandardFormData({
-          name: standard.name,
-          points: standard.points.toString(),
-        });
-        setEditingStandardId(standardId);
-        setShowAddStandardModal(true);
-      }
-    },
-    [standards]
-  );
-
-  // Handle save standard
-  const handleSaveStandard = () => {
-    if (!standardFormData.name.trim()) {
-      toast.error("Standard name is required");
-      return;
-    }
-
-    const points = parseInt(standardFormData.points);
-    if (isNaN(points) || points <= 0) {
-      toast.error("Points must be a valid number greater than 0");
-      return;
-    }
-
-    // For now, we need to assign to a group - use first group or prompt user
-    if (standardGroups.length === 0) {
-      toast.error("Please add a standard group first");
-      return;
-    }
-
-    if (editingStandardId) {
-      // Update existing standard
-      setStandards((prev) =>
-        prev.map((s) =>
-          s.id === editingStandardId
-            ? { ...s, name: standardFormData.name, points }
-            : s
-        )
+      const groupStandards = standards.filter(
+        (s) => s.standardGroupId === groupId
       );
-    } else {
-      // Add new standard - assign to first group for now
-      // In a true grid, standards would appear in all groups, but for now
-      // we assign to one group and display across all groups
-      const firstGroup = standardGroups[0];
-      if (!firstGroup) {
-        toast.error("No standard group available");
+
+      // Check if we've reached the maximum number of standards (group points)
+      if (groupStandards.length >= group.points) {
+        return; // Don't add if we've reached the limit
+      }
+
+      // Find the next available points value that doesn't conflict
+      const usedPoints = new Set(groupStandards.map((s) => s.points));
+      let nextPoints = 1;
+      while (usedPoints.has(nextPoints) && nextPoints <= group.points) {
+        nextPoints++;
+      }
+
+      // If we've exceeded the group points, don't add
+      if (nextPoints > group.points) {
         return;
       }
+
       const newStandard: Standard = {
         id: `temp-${Date.now()}`,
-        name: standardFormData.name,
-        points,
-        standardGroupId: firstGroup.id,
+        name: "",
+        points: nextPoints,
+        standardGroupId: groupId,
       };
       setStandards((prev) => [...prev, newStandard]);
-
-      // Initialize grid cells for this standard across all groups
-      // This allows editing descriptions per group-standard pair
-      standardGroups.forEach((group) => {
+      // Initialize grid cells for this standard
+      standardGroups.forEach((g) => {
         const existingCell = gridCells.find(
-          (c) =>
-            c.standardGroupId === group.id && c.standardId === newStandard.id
+          (c) => c.standardGroupId === g.id && c.standardId === newStandard.id
         );
         if (!existingCell) {
           setGridCells((prev) => [
             ...prev,
             {
-              standardGroupId: group.id,
+              standardGroupId: g.id,
               standardId: newStandard.id,
               description: "",
             },
           ]);
         }
       });
-    }
-
-    setShowAddStandardModal(false);
-    setEditingStandardId(null);
-  };
-
-  // Handle delete standard
-  const handleDeleteStandard = useCallback(
-    async (standardId: string) => {
-      if (!confirm("Are you sure you want to delete this standard?")) {
-        return;
-      }
-
-      setStandards((prev) => prev.filter((s) => s.id !== standardId));
-      setGridCells((prev) => prev.filter((c) => c.standardId !== standardId));
-
-      // If in edit mode, save immediately
-      if (isEditMode && updateRubricAction) {
-        try {
-          const finalDepartmentIds = transformDepartmentIdsForSubmit(
-            formData.departmentIds || [],
-            isSuperadmin,
-            rubricData?.valid_department_ids || []
-          );
-          await updateRubricUnified({
-            name: formData.name,
-            description: formData.description,
-            department_ids: finalDepartmentIds,
-            active: formData.active,
-            standardGroups,
-            standards: standards.filter((s) => s.id !== standardId),
-            gridCells: gridCells.filter((c) => c.standardId !== standardId),
-          });
-          toast.success("Standard deleted successfully");
-          router.refresh();
-        } catch (error) {
-          toast.error("Failed to delete standard", {
-            description: error instanceof Error ? error.message : "Unknown error",
-          });
-        }
-      }
     },
-    [
-      isEditMode,
-      updateRubricAction,
-      formData,
-      isSuperadmin,
-      rubricData,
-      standardGroups,
-      standards,
-      gridCells,
-      router,
-      updateRubricUnified,
-    ]
+    [standardGroups, standards, gridCells]
+  );
+
+  // Handle remove standard
+  const handleRemoveStandard = useCallback(
+    (groupId: string, standardId: string) => {
+      setStandards((prev) => prev.filter((s) => s.id !== standardId));
+      setGridCells((prev) =>
+        prev.filter(
+          (c) => !(c.standardGroupId === groupId && c.standardId === standardId)
+        )
+      );
+    },
+    []
   );
 
   // Handle grid cell change
@@ -697,7 +651,7 @@ export default function Rubric({
 
   // Get unique standards grouped by name (for columns) sorted by points descending (most to least)
   // This avoids duplicate columns when multiple rubrics have standards with the same name
-  const uniqueStandardsByName = useMemo(() => {
+  const _uniqueStandardsByName = useMemo(() => {
     const standardsByName = new Map<string, Standard>();
     // Group by name, keeping the standard with highest points (or first encountered if tie)
     standards.forEach((s) => {
@@ -713,7 +667,7 @@ export default function Rubric({
   }, [standards]);
 
   // Helper function to find the standard ID for a given group and standard name
-  const findStandardIdForGroup = useCallback(
+  const _findStandardIdForGroup = useCallback(
     (groupId: string, standardName: string): string | null => {
       const standard = standards.find(
         (s) => s.standardGroupId === groupId && s.name === standardName
@@ -723,119 +677,89 @@ export default function Rubric({
     [standards]
   );
 
+  // Group level names by uniqueness for column headers
+  const levelNameGroups = useMemo(() => {
+    const nameMap = new Map<
+      string,
+      { name: string; count: number; groups: string[] }
+    >();
+
+    standardGroups.forEach((group) => {
+      const groupStandards = standards.filter(
+        (s) => s.standardGroupId === group.id
+      );
+      groupStandards.forEach((standard) => {
+        const existing = nameMap.get(standard.name);
+        if (existing) {
+          existing.count++;
+          if (!existing.groups.includes(group.id)) {
+            existing.groups.push(group.id);
+          }
+        } else {
+          nameMap.set(standard.name, {
+            name: standard.name,
+            count: 1,
+            groups: [group.id],
+          });
+        }
+      });
+    });
+
+    return Array.from(nameMap.values());
+  }, [standardGroups, standards]);
+
   // Table columns definition
   const columns = useMemo<ColumnDef<StandardGroup>[]>(() => {
     const cols: ColumnDef<StandardGroup>[] = [
       {
         id: "group",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Standard Group" />
-        ),
-        accessorFn: (row) => `${row.name} ${row.description}`,
-        filterFn: (row, _id, value) => {
-          const searchValue = String(value).toLowerCase();
-          const name = String(row.original.name).toLowerCase();
-          const description = String(row.original.description).toLowerCase();
-          return (
-            name.includes(searchValue) || description.includes(searchValue)
-          );
-        },
+        header: () => <div></div>, // Empty header
         cell: ({ row }) => (
-          <div className="space-y-1">
-            <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {row.original.description}
-            </div>
-            <div className="flex gap-2 text-xs">
-              <Badge variant="outline">{row.original.points} pts</Badge>
-              <Badge variant="outline">
-                Pass: {row.original.passPoints} pts
-              </Badge>
-            </div>
-            {!isReadonly && (
-              <div className="flex gap-1 mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEditGroup(row.original.id)}
-                  className="h-7 px-2"
-                >
-                  <Edit className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteGroup(row.original.id)}
-                  className="h-7 px-2"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
+          <div className="font-medium whitespace-normal break-words max-w-[200px]">
+            {row.original.name}
           </div>
         ),
       },
     ];
 
-    // Add a column for each unique standard name (grouped by name to avoid duplicates)
-    uniqueStandardsByName.forEach((standard) => {
+    // Add a column for each level name group
+    levelNameGroups.forEach((levelGroup, index) => {
+      const headerName =
+        levelGroup.count > 1
+          ? `${levelGroup.name} ${index + 1}`
+          : levelGroup.name;
+
       cols.push({
-        id: `standard-${standard.name}`, // Use name-based ID instead of standard.id
-        header: () => (
-          <div className="space-y-1">
-            <div className="font-medium">{standard.name}</div>
-            <Badge variant="outline" className="text-xs">
-              {standard.points} pts
-            </Badge>
-            {!isReadonly && (
-              <div className="flex gap-1 mt-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEditStandard(standard.id)}
-                  className="h-6 px-1"
-                >
-                  <Edit className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteStandard(standard.id)}
-                  className="h-6 px-1"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-          </div>
-        ),
+        id: `level-${levelGroup.name}-${index}`,
+        header: () => <div className="font-medium">{headerName}</div>,
         cell: ({ row }) => {
           const group = row.original;
-          // Find the actual standard ID for this group and standard name
-          const actualStandardId = findStandardIdForGroup(
-            group.id,
-            standard.name
+          // Find the standard for this group with this name
+          const standard = standards.find(
+            (s) => s.standardGroupId === group.id && s.name === levelGroup.name
           );
-          if (!actualStandardId) {
+
+          if (!standard) {
             return (
               <div className="text-xs text-muted-foreground text-center py-4">
-                Standard not in this group
+                —
               </div>
             );
           }
+
           const cell = gridCells.find(
             (c) =>
-              c.standardGroupId === group.id &&
-              c.standardId === actualStandardId
+              c.standardGroupId === group.id && c.standardId === standard.id
           );
+
           return (
             <Textarea
               value={cell?.description || ""}
               onChange={(e) =>
-                handleCellChange(group.id, actualStandardId, e.target.value)
+                handleCellChange(group.id, standard.id, e.target.value)
               }
               placeholder="Description..."
-              className="min-h-[80px] resize-none"
+              className="min-h-[140px] resize-none"
               disabled={isReadonly}
             />
           );
@@ -844,38 +768,13 @@ export default function Rubric({
     });
 
     return cols;
-  }, [
-    uniqueStandardsByName,
-    gridCells,
-    isReadonly,
-    findStandardIdForGroup,
-    handleEditStandard,
-    handleDeleteStandard,
-    handleEditGroup,
-    handleDeleteGroup,
-  ]);
+  }, [levelNameGroups, standards, gridCells, isReadonly]);
 
-  // Table state
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = useState<SortingState>([]);
-
+  // Table state - simplified, no filters or sorting
   const table = useReactTable({
     data: standardGroups,
     columns,
-    state: {
-      columnVisibility,
-      columnFilters,
-      sorting,
-    },
-    onColumnVisibilityChange: setColumnVisibility,
-    onColumnFiltersChange: setColumnFilters,
-    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   // Error state
@@ -931,186 +830,293 @@ export default function Rubric({
         </div>
       )}
 
-      {/* Inline form for rubric metadata */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="rubric-name">Name</Label>
-          <Input
-            id="rubric-name"
-            value={formData.name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, name: e.target.value }))
-            }
-            className="text-2xl"
-            placeholder="Rubric Name"
-            disabled={isReadonly}
-            data-testid="input-rubric-name"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="rubric-description">Description</Label>
-          <Textarea
-            id="rubric-description"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, description: e.target.value }))
-            }
-            placeholder="Rubric Description"
-            disabled={isReadonly}
-            data-testid="input-rubric-description"
-          />
-        </div>
-
-        {/* Department Selection */}
-        {rubricData?.valid_department_ids &&
-          rubricData.valid_department_ids.length > 1 && (
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              <GenericPicker
-                items={rubricData.department_mapping || {}}
-                itemIds={rubricData.valid_department_ids}
-                selectedIds={formData.departmentIds || []}
-                onSelect={(ids) =>
-                  setFormData((prev) => ({ ...prev, departmentIds: ids }))
-                }
-                getId={(dept) => (dept as unknown as { id: string }).id}
-                getLabel={(dept) => dept.name || ""}
-                getSearchText={(dept) =>
-                  `${dept.name} ${dept.description || ""}`
-                }
-                placeholder="All Departments"
-                disabled={isReadonly}
-                multiSelect={true}
-                hideSelectedChips={true}
-                buttonClassName="w-full"
-              />
-            </div>
-          )}
-
-        {/* Active Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="active"
-              className="text-sm flex items-center gap-1.5"
+      {/* Step 1: Basic Information */}
+      <Card className="transition-all">
+        <CardContent className="pt-3">
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
+                steps[0]?.status === "completed"
+                  ? "bg-green-500 text-white"
+                  : steps[0]?.status === "active"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+              )}
             >
-              <Power className="h-3.5 w-3.5 text-muted-foreground" />
-              Active
-            </Label>
-            <Switch
-              id="active"
-              checked={formData.active}
-              onCheckedChange={(checked) =>
-                setFormData((prev) => ({ ...prev, active: checked }))
+              {steps[0]?.status === "completed" ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <span>1</span>
+              )}
+            </div>
+            <div className="flex-1">
+              <input
+                type="text"
+                id="rubric-name"
+                data-testid="input-rubric-name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                onFocus={(e) => {
+                  if (e.target.value === "New Rubric") {
+                    e.target.select();
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!e.target.value || e.target.value.trim() === "") {
+                    setFormData((prev) => ({ ...prev, name: "New Rubric" }));
+                  }
+                }}
+                className={cn(
+                  "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                )}
+                placeholder="New Rubric"
+                disabled={isReadonly}
+              />
+              <p className="text-xs text-muted-foreground mt-1 px-2">
+                {formData.name === "New Rubric" || !formData.name
+                  ? "Click to edit • Name will be auto-generated if unchanged"
+                  : "Click to edit"}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        <CardContent className="pt-0 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="rubric-description">Description</Label>
+            <Textarea
+              id="rubric-description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
               }
+              placeholder="Rubric Description"
               disabled={isReadonly}
-              data-testid="switch-rubric-active"
+              data-testid="input-rubric-description"
+              rows={3}
             />
           </div>
-          <p className="text-xs text-muted-foreground pl-5">
-            Inactive rubrics will not be available for simulations
-          </p>
-        </div>
-      </div>
 
-      {/* Toolbar */}
-      {isEditMode && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddGroup}
-              disabled={isReadonly}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Row (Group)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddStandard}
-              disabled={isReadonly || standardGroups.length === 0}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Column (Standard)
-            </Button>
+          {/* Department Selection */}
+          {rubricData?.valid_department_ids &&
+            rubricData.valid_department_ids.length > 1 && (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <GenericPicker
+                  items={rubricData.department_mapping || {}}
+                  itemIds={rubricData.valid_department_ids}
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({ ...prev, departmentIds: ids }))
+                  }
+                  getId={(dept) => (dept as unknown as { id: string }).id}
+                  getLabel={(dept) => dept.name || ""}
+                  getSearchText={(dept) =>
+                    `${dept.name} ${dept.description || ""}`
+                  }
+                  placeholder="All Departments"
+                  disabled={isReadonly}
+                  multiSelect={true}
+                  hideSelectedChips={true}
+                  buttonClassName="w-full"
+                />
+              </div>
+            )}
+
+          {/* Active Switch */}
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="active"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                Active
+              </Label>
+              <Switch
+                id="active"
+                checked={formData.active}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, active: checked }))
+                }
+                disabled={isReadonly}
+                data-testid="switch-rubric-active"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Inactive rubrics will not be available for simulations
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Generate button placeholder */}
-            <Button
-              variant="default"
-              size="sm"
-              disabled={isReadonly}
-              onClick={() => {
-                toast.info("Generate feature coming soon");
-              }}
+        </CardContent>
+      </Card>
+
+      {/* Step 2: Standard Groups */}
+      <Card
+        className={cn(
+          "transition-all",
+          !isEditMode && steps[1]?.status === "active" && "ring-2 ring-primary",
+          !isEditMode && steps[1]?.status === "pending" && "opacity-50"
+        )}
+      >
+        <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+          <div className="flex items-center space-x-3">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                steps[1]?.status === "completed"
+                  ? "bg-green-500 text-white"
+                  : steps[1]?.status === "active"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+              )}
             >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Generate
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || isReadonly}
-              data-testid="btn-save-rubric"
-            >
-              {isSaving ? "Saving..." : "Save"}
-            </Button>
+              {steps[1]?.status === "completed" ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <span>2</span>
+              )}
+            </div>
+            <div>
+              <CardTitle className="text-lg">
+                {steps[1]?.title || "Standard Groups"}
+              </CardTitle>
+              <CardDescription>
+                {steps[1]?.description ||
+                  "Add standard groups to organize your rubric."}
+              </CardDescription>
+            </div>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-4 px-6">
+          <RubricStandardGroupCardGrid
+            groups={standardGroups.map((g) => ({
+              id: g.id,
+              name: g.name,
+              description: g.description || "",
+              points: g.points || 5,
+              passPoints: g.passPoints || 4,
+              position: g.position || standardGroups.indexOf(g) + 1,
+              active: g.active ?? true,
+            }))}
+            onGroupsChange={handleStandardGroupsChange}
+            readonly={isReadonly}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Step 3: Individual Standard Configuration Blocks */}
+      {standardGroups.length > 0 && (
+        <div className="space-y-4">
+          {standardGroups.map((group, index) => {
+            const stepIndex = 2 + index; // After basic (0), groups (1)
+            const groupStandards = standards.filter(
+              (s) => s.standardGroupId === group.id
+            );
+            const hasStandards = groupStandards.length > 0;
+            // Step status: pending if previous groups aren't done, active if this group has no standards, completed if it has standards
+            const baseStatus = getStepStatus("configuration");
+            const actualStepStatus: StepStatus =
+              baseStatus === "pending"
+                ? "pending"
+                : !hasStandards
+                  ? "active"
+                  : "completed";
+
+            return (
+              <RubricStandardSection
+                key={group.id}
+                group={group}
+                standards={standards}
+                gridCells={gridCells}
+                position={index + 1}
+                totalGroups={standardGroups.length}
+                onGroupChange={handleGroupChange}
+                onStandardsChange={setStandards}
+                onGridCellChange={handleCellChange}
+                onAddStandard={handleAddStandard}
+                onRemoveStandard={handleRemoveStandard}
+                readonly={isReadonly}
+                stepStatus={actualStepStatus}
+                stepNumber={stepIndex + 1}
+                isEditMode={isEditMode}
+              />
+            );
+          })}
         </div>
       )}
 
-      {/* Grid Table - Only show in edit mode */}
-      {isEditMode && (
-        <div className="space-y-4">
-          {/* Toolbar with filters */}
-          <div className="flex items-center justify-between">
-            <div className="flex flex-1 items-center space-x-2 flex-wrap">
-              <div className="w-full md:w-auto">
-                <Input
-                  placeholder="Search standard groups..."
-                  value={
-                    (table.getColumn("group")?.getFilterValue() as string) ?? ""
-                  }
-                  onChange={(event) =>
-                    table.getColumn("group")?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-full md:w-[200px]"
-                />
+      {/* Step 4: Grid Preview */}
+      {standardGroups.length > 0 && standards.length > 0 && (
+        <Card
+          className={cn(
+            "transition-all",
+            !isEditMode &&
+              steps[3]?.status === "active" &&
+              "ring-2 ring-primary",
+            !isEditMode && steps[3]?.status === "pending" && "opacity-50"
+          )}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+            <div className="flex items-center space-x-3">
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                  steps[3]?.status === "completed"
+                    ? "bg-green-500 text-white"
+                    : steps[3]?.status === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                )}
+              >
+                {steps[3]?.status === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <span>4</span>
+                )}
               </div>
-              {table.getState().columnFilters.length > 0 && (
-                <Button
-                  variant="ghost"
-                  onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3"
-                >
-                  Reset
-                  <X className="ml-2 h-4 w-4" />
-                </Button>
-              )}
+              <div>
+                <CardTitle className="text-lg">
+                  {steps[3]?.title || "Preview"}
+                </CardTitle>
+                <CardDescription>
+                  {steps[3]?.description ||
+                    "Review your rubric grid and generate if needed."}
+                </CardDescription>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <DataTableViewOptions table={table} />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                disabled={isReadonly}
+                onClick={() => {
+                  toast.info("Generate feature coming soon");
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate
+              </Button>
             </div>
-          </div>
-
-          {/* Table */}
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      // Skip rendering hidden columns
-                      if (!header.column.getIsVisible()) return null;
-                      return (
+          </CardHeader>
+          <CardContent className="space-y-4 px-6">
+            {/* Grid Table */}
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
                         <TableHead
                           key={header.id}
                           colSpan={header.colSpan}
-                          className={`border-r py-2 text-xs text-center min-w-[200px] ${
+                          className={`border-r py-2 text-xs text-center ${
                             header.id === "group"
-                              ? "sticky left-0 bg-background z-10"
+                              ? "max-w-[200px] whitespace-normal"
                               : ""
                           }`}
                         >
@@ -1121,235 +1127,78 @@ export default function Rubric({
                                 header.getContext()
                               )}
                         </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className={`border-r px-3 py-2 ${
-                            cell.column.id === "group"
-                              ? "sticky left-0 bg-background z-10"
-                              : ""
-                          }`}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
                       ))}
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={table.getAllColumns().length}
-                      className="h-24 text-center px-6"
-                    >
-                      No standard groups yet. Click "Add Row" to get started.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className={`border-r px-3 py-2 ${
+                              cell.column.id === "group"
+                                ? "max-w-[200px] whitespace-normal"
+                                : ""
+                            }`}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={table.getAllColumns().length}
+                        className="h-24 text-center px-6"
+                      >
+                        No standard groups yet.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Create mode message */}
-      {!isEditMode && (
-        <div className="p-4 bg-muted/20 rounded-lg border text-center">
-          <p className="text-sm text-muted-foreground">
-            Create the rubric first, then you'll be able to add standard groups
-            and standards.
-          </p>
-        </div>
-      )}
-
-      {/* Create mode - show save button */}
-      {!isEditMode && (
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSave}
-            disabled={isCreating || !formData.name.trim()}
-            data-testid="btn-create-rubric"
-          >
-            {isCreating ? "Creating..." : "Create Rubric"}
-          </Button>
-        </div>
-      )}
-
-      {/* Add Standard Group Modal */}
-      <Dialog open={showAddGroupModal} onOpenChange={setShowAddGroupModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingGroupId ? "Edit Standard Group" : "Add Standard Group"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingGroupId
-                ? "Update the standard group details."
-                : "Create a new standard group for this rubric."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="group-name">Name *</Label>
-              <Input
-                id="group-name"
-                value={groupFormData.name}
-                onChange={(e) =>
-                  setGroupFormData((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                placeholder="Standard Group Name"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="group-description">Description</Label>
-              <Textarea
-                id="group-description"
-                value={groupFormData.description}
-                onChange={(e) =>
-                  setGroupFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Standard Group Description"
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="group-points">Points *</Label>
-                <Input
-                  id="group-points"
-                  type="number"
-                  value={groupFormData.points}
-                  onChange={(e) =>
-                    setGroupFormData((prev) => ({
-                      ...prev,
-                      points: e.target.value,
-                    }))
-                  }
-                  min="1"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="group-pass-points">Pass Points *</Label>
-                <Input
-                  id="group-pass-points"
-                  type="number"
-                  value={groupFormData.passPoints}
-                  onChange={(e) =>
-                    setGroupFormData((prev) => ({
-                      ...prev,
-                      passPoints: e.target.value,
-                    }))
-                  }
-                  min="1"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowAddGroupModal(false);
-                setEditingGroupId(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSaveGroup}>
-              {editingGroupId ? "Update" : "Add"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Standard Modal */}
-      <Dialog
-        open={showAddStandardModal}
-        onOpenChange={setShowAddStandardModal}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingStandardId ? "Edit Standard" : "Add Standard"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingStandardId
-                ? "Update the standard details."
-                : "Create a new standard for this rubric."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="standard-name">Name *</Label>
-              <Input
-                id="standard-name"
-                value={standardFormData.name}
-                onChange={(e) =>
-                  setStandardFormData((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                placeholder="Standard Name"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="standard-points">Points *</Label>
-              <Input
-                id="standard-points"
-                type="number"
-                value={standardFormData.points}
-                onChange={(e) =>
-                  setStandardFormData((prev) => ({
-                    ...prev,
-                    points: e.target.value,
-                  }))
-                }
-                min="1"
-                required
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowAddStandardModal(false);
-                setEditingStandardId(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSaveStandard}>
-              {editingStandardId ? "Update" : "Add"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Bottom Actions */}
+      <div className="flex justify-end gap-3">
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => router.back()}
+          disabled={isSaving || isCreating}
+        >
+          Back
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={
+            (isSaving || isCreating || isReadonly) &&
+            (!isEditMode || !formData.name.trim())
+          }
+          data-testid={isEditMode ? "btn-save-rubric" : "btn-create-rubric"}
+        >
+          {isSaving || isCreating
+            ? isEditMode
+              ? "Saving..."
+              : "Creating..."
+            : isEditMode
+              ? "Update Rubric"
+              : "Create Rubric"}
+        </Button>
+      </div>
     </div>
   );
 }

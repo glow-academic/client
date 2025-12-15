@@ -12084,6 +12084,10 @@ export interface components {
             points: number;
             /** Passpoints */
             passPoints: number;
+            /** Position */
+            position: number;
+            /** Active */
+            active: boolean;
             /** Standard Ids */
             standard_ids: string[];
         };
@@ -15810,6 +15814,13 @@ export interface components {
             points: number;
             /** Passpoints */
             passPoints: number;
+            /** Position */
+            position?: number | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
             /**
              * Standards
              * @default []
@@ -15883,6 +15894,13 @@ export interface components {
             points: number;
             /** Passpoints */
             passPoints: number;
+            /** Position */
+            position?: number | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
             /**
              * Standards
              * @default []

@@ -70,6 +70,8 @@ standard_groups_data AS (
         NULLIF(group_data.value->>'description', '')::text as description,
         (group_data.value->>'points')::int as points,
         (group_data.value->>'passPoints')::int as pass_points,
+        COALESCE((group_data.value->>'position')::int, group_data.ordinality) as position,
+        COALESCE((group_data.value->>'active')::boolean, true) as active,
         COALESCE(group_data.value->'standards', '[]'::jsonb) as standards_json,
         group_data.ordinality as group_order
     FROM new_rubric nr
@@ -84,7 +86,9 @@ new_standard_groups AS (
         short_name,
         description,
         points,
-        pass_points
+        pass_points,
+        position,
+        active
     )
     SELECT 
         rubric_id::uuid,
@@ -92,9 +96,11 @@ new_standard_groups AS (
         short_name,
         description,
         points,
-        pass_points
+        pass_points,
+        position,
+        active
     FROM standard_groups_data
-    RETURNING id, rubric_id, name, short_name, description, points, pass_points
+    RETURNING id, rubric_id, name, short_name, description, points, pass_points, position, active
 ),
 standard_groups_with_order AS (
     -- Match created groups back to their standards_json using all attributes

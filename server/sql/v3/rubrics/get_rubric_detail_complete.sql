@@ -95,6 +95,8 @@ standard_groups_with_standards AS (
                     'description', COALESCE(sg.description, ''),
                     'points', sg.points,
                     'passPoints', sg.pass_points,
+                    'position', sg.position,
+                    'active', sg.active,
                     'standards', (
                         SELECT COALESCE(
                             jsonb_agg(
@@ -112,7 +114,7 @@ standard_groups_with_standards AS (
                         WHERE s.standard_group_id = sg.id
                     )
                 )
-                ORDER BY sg.name
+                ORDER BY sg.position
             ),
             '[]'::jsonb
         ) as groups_json

@@ -40,8 +40,12 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     description TEXT        NOT NULL,
     points INTEGER     NOT NULL,
     pass_points INTEGER     NOT NULL,
+    position INT        NOT NULL DEFAULT 1,
+    active BOOLEAN     NOT NULL DEFAULT TRUE,
     rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE
   );
+
+  CREATE UNIQUE INDEX standard_groups_position_uniq ON standard_groups(rubric_id, position);
 
   CREATE TABLE standards (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
