@@ -4,13 +4,13 @@
  */
 "use client";
 
-import { Check, PlayCircle, Power } from "lucide-react";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { cn } from "@/lib/utils";
+import { Check, PlayCircle, Power } from "lucide-react";
 
 type MappingItem = {
   name: string;
@@ -73,7 +73,7 @@ export function ParameterBasicInfoSection({
   onVideoParameterChange,
   isReadonly,
   stepStatus = "active",
-  defaultName = "",
+  defaultName = "New Parameter",
 }: ParameterBasicInfoSectionProps) {
   const isCompleted = stepStatus === "completed";
 
@@ -91,11 +91,7 @@ export function ParameterBasicInfoSection({
                   : "bg-muted"
             )}
           >
-            {isCompleted ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <span>1</span>
-            )}
+            {isCompleted ? <Check className="w-4 h-4" /> : <span>1</span>}
           </div>
           <div className="flex-1">
             <input
@@ -154,9 +150,7 @@ export function ParameterBasicInfoSection({
               }
               getId={(dept) => (dept as unknown as { id: string }).id}
               getLabel={(dept) => dept.name || ""}
-              getSearchText={(dept) =>
-                `${dept.name} ${dept.description || ""}`
-              }
+              getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
               placeholder="All Departments"
               multiSelect={true}
               hideSelectedChips={true}
@@ -232,4 +226,3 @@ export function ParameterBasicInfoSection({
     </Card>
   );
 }
-
