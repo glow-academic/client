@@ -28,7 +28,7 @@ resolve_profile_id AS (
         END as resolved_profile_id
 ),
 user_profile AS (
-    SELECT role FROM resolve_profile_id rpi
+    SELECT role as user_role FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 )
 SELECT 

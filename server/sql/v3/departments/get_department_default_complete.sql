@@ -27,7 +27,7 @@ settings_mapping_data AS (
         '{}'::jsonb
     ) as settings_mapping
     FROM settings s
-    LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id::text
+    LEFT JOIN settings_departments_data sdd ON sdd.settings_id::text = s.id::text
     WHERE s.active = true
 )
 SELECT 

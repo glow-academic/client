@@ -3,11 +3,15 @@
  * Used to create and manage providers for the admin dashboard
  */
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -15,7 +19,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { Power } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Type-only import from server pages
@@ -34,7 +39,6 @@ interface FormErrors {
   name?: string;
   value?: string;
   description?: string;
-  base_url?: string;
 }
 
 interface FormData {
@@ -42,8 +46,9 @@ interface FormData {
   description?: string;
   value?: string;
   active?: boolean;
-  base_url?: string;
 }
+
+type StepStatus = "pending" | "active" | "completed";
 
 export interface ProviderProps {
   providerId?: string;
@@ -75,11 +80,10 @@ export default function Provider({
 
   const initialFormData: FormData = useMemo(
     () => ({
-      name: "",
+      name: "New Provider",
       description: "",
       value: "",
       active: true,
-      base_url: "",
     }),
     []
   );
@@ -143,6 +147,20 @@ export default function Provider({
     clearEntityMetadata,
   ]);
 
+  // Step status logic
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      const hasName = !!formData?.name?.trim() && formData.name !== "New Provider";
+      switch (stepId) {
+        case "basic":
+          return hasName ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    [formData?.name]
+  );
+
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
     if (isEditMode && providerDetail) {
@@ -152,7 +170,6 @@ export default function Provider({
         description: providerDetail.description || "",
         value: providerDetail.value || "",
         active: providerDetail.active,
-        base_url: providerDetail.base_url || "",
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
@@ -204,7 +221,6 @@ export default function Provider({
           description: formData.description || "",
           value: formData.value!,
           active: formData.active ?? true,
-          base_url: formData.base_url || null,
           profileId: effectiveProfile.id,
         });
         resetFormAndState();
@@ -216,7 +232,6 @@ export default function Provider({
           description: formData.description || "",
           value: formData.value!,
           active: formData.active ?? true,
-          base_url: formData.base_url || null,
           profileId: effectiveProfile.id,
         });
         resetFormAndState();
@@ -231,124 +246,151 @@ export default function Provider({
     }
   };
 
+  const stepStatus = getStepStatus("basic");
+
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Provider Information */}
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          {formData.name !== undefined ? (
-            <Input
-              id="name"
-              data-testid="input-provider-name"
-              value={formData.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
-              placeholder="Enter provider name (e.g., OpenAI, Gemini)"
-              className={errors.name ? "border-destructive" : ""}
-              disabled={isReadonly || isSubmitting}
-            />
-          ) : null}
-          {errors.name && (
-            <p className="text-sm text-destructive">{errors.name}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="value">Value</Label>
-          {formData.value !== undefined ? (
-            <Input
-              id="value"
-              data-testid="input-provider-value"
-              value={formData.value}
-              onChange={(e) => handleInputChange("value", e.target.value)}
-              placeholder="Enter provider value identifier (e.g., openai, gemini, custom)"
-              className={errors.value ? "border-destructive" : ""}
-              disabled={isReadonly || isSubmitting}
-            />
-          ) : null}
-          {errors.value && (
-            <p className="text-sm text-destructive">{errors.value}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Unique identifier for this provider (used in API calls)
-          </p>
-        </div>
-
-        {/* Description */}
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          {formData.description !== undefined ? (
-            <Textarea
-              id="description"
-              data-testid="input-provider-description"
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Enter provider description"
-              className={errors.description ? "border-destructive" : ""}
-              disabled={isReadonly || isSubmitting}
-              rows={3}
-            />
-          ) : null}
-          {errors.description && (
-            <p className="text-sm text-destructive">{errors.description}</p>
-          )}
-        </div>
-
-        {/* Base URL (optional) */}
-        <div className="space-y-2">
-          <Label htmlFor="base_url">Base URL (Optional)</Label>
-          {formData.base_url !== undefined ? (
-            <Input
-              id="base_url"
-              data-testid="input-provider-base-url"
-              value={formData.base_url}
-              onChange={(e) => handleInputChange("base_url", e.target.value)}
-              placeholder="Enter base URL (e.g., https://api.openai.com/v1)"
-              className={errors.base_url ? "border-destructive" : ""}
-              disabled={isReadonly || isSubmitting}
-            />
-          ) : null}
-          {errors.base_url && (
-            <p className="text-sm text-destructive">{errors.base_url}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Base URL for API endpoints (leave empty if using default provider
-            endpoints)
-          </p>
-        </div>
-
-        {/* Active Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="active"
-                className="text-sm flex items-center gap-1.5"
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Step 1: Basic Information */}
+        <Card className="transition-all">
+          <CardContent className="pt-3">
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
+                  stepStatus === "completed"
+                    ? "bg-green-500 text-white"
+                    : stepStatus === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                )}
               >
-                <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                Active
-              </Label>
-              {formData.active !== undefined ? (
-                <Switch
-                  id="active"
-                  data-testid="switch-provider-active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("active", checked)
-                  }
+                {stepStatus === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <span>1</span>
+                )}
+              </div>
+              <div className="flex-1">
+                {formData?.name !== undefined ? (
+                  <input
+                    type="text"
+                    id="name"
+                    data-testid="input-provider-name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    onFocus={(e) => {
+                      if (e.target.value === "New Provider") {
+                        e.target.select();
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // If empty on blur, revert to default name
+                      if (!e.target.value || e.target.value.trim() === "") {
+                        handleInputChange("name", "New Provider");
+                      }
+                    }}
+                    className={cn(
+                      "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
+                      errors.name && "border-destructive"
+                    )}
+                    placeholder="New Provider"
+                    disabled={isReadonly || isSubmitting}
+                  />
+                ) : null}
+                <p className="text-xs text-muted-foreground mt-1 px-2">
+                  {formData?.name === "New Provider" || !formData?.name
+                    ? "Click to edit • Name will be auto-generated if unchanged"
+                    : "Click to edit"}
+                </p>
+                {errors.name && (
+                  <p className="text-sm text-destructive mt-1 px-2">
+                    {errors.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+          <CardContent className="pt-0 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="value">Value</Label>
+              {formData.value !== undefined ? (
+                <Input
+                  id="value"
+                  data-testid="input-provider-value"
+                  value={formData.value}
+                  onChange={(e) => handleInputChange("value", e.target.value)}
+                  placeholder="Enter provider value identifier (e.g., openai, gemini, custom)"
+                  className={errors.value ? "border-destructive" : ""}
                   disabled={isReadonly || isSubmitting}
                 />
               ) : null}
+              {errors.value && (
+                <p className="text-sm text-destructive">{errors.value}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Unique identifier for this provider (used in API calls)
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Inactive providers will not be available for selection
-            </p>
-          </div>
-        </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              {formData.description !== undefined ? (
+                <Textarea
+                  id="description"
+                  data-testid="input-provider-description"
+                  value={formData.description || ""}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
+                  placeholder="Enter a brief description (optional)"
+                  rows={3}
+                  disabled={isReadonly || isSubmitting}
+                  className={errors.description ? "border-destructive" : ""}
+                />
+              ) : null}
+              {errors.description && (
+                <p className="text-sm text-destructive">
+                  {errors.description}
+                </p>
+              )}
+            </div>
+
+            {/* Active Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="active"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                    Active
+                  </Label>
+                  {formData.active !== undefined ? (
+                    <Switch
+                      id="active"
+                      data-testid="switch-provider-active"
+                      checked={formData.active ?? true}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("active", checked)
+                      }
+                      disabled={isReadonly || isSubmitting}
+                    />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Inactive providers will not be available for selection
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Submit Button */}
         {!isReadonly && (
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-3">
             <Button
               type="button"
               variant="outline"
