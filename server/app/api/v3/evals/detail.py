@@ -88,11 +88,17 @@ class EvalDetailResponse(BaseModel):
     # Mappings
     department_mapping: DepartmentMapping
     valid_department_ids: list[str]
-    eval_agent_mapping: dict[str, dict[str, Any]] | None  # Eval agent mapping (agents with 'eval' role)
+    eval_agent_mapping: (
+        dict[str, dict[str, Any]] | None
+    )  # Eval agent mapping (agents with 'eval' role)
     valid_eval_agent_ids: list[str] | None
-    agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format (agents being evaluated)
+    agent_mapping: dict[
+        str, dict[str, Any]
+    ]  # AgentMapping format (agents being evaluated)
     valid_agent_ids: list[str]
-    rubric_mapping: dict[str, dict[str, Any]] | None  # Rubric mapping (filtered by agent role)
+    rubric_mapping: (
+        dict[str, dict[str, Any]] | None
+    )  # Rubric mapping (filtered by agent role)
     valid_rubric_ids: list[str] | None
 
     # Permissions
@@ -237,9 +243,7 @@ async def get_eval_detail(
         if isinstance(rubric_mapping_data, dict):
             rubric_mapping = rubric_mapping_data
 
-        valid_rubric_ids = [
-            str(rid) for rid in (result.get("valid_rubric_ids") or [])
-        ]
+        valid_rubric_ids = [str(rid) for rid in (result.get("valid_rubric_ids") or [])]
 
         # Parse model_runs list
         model_runs: list[ModelRunItem] = []

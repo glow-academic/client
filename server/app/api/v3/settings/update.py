@@ -16,6 +16,8 @@ from app.utils.sql_helper import load_sql
 class UpdateSettingsRequest(BaseModel):
     """Request to update settings."""
 
+    name: str
+    description: str
     primary_color: str
     accent: str
     background: str
@@ -101,6 +103,8 @@ async def update_settings(
             )
 
             sql_params = (
+                request.name,
+                request.description,
                 request.primary_color,
                 request.accent,
                 request.background,
@@ -131,6 +135,8 @@ async def update_settings(
             )
             result = await conn.fetchrow(
                 sql_query,
+                request.name,
+                request.description,
                 request.primary_color,
                 request.accent,
                 request.background,

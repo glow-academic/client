@@ -99,9 +99,7 @@ async def create_eval(
             # Convert department_ids to UUID array if provided
             department_ids_uuid = None
             if request.department_ids:
-                department_ids_uuid = [
-                    uuid.UUID(did) for did in request.department_ids
-                ]
+                department_ids_uuid = [uuid.UUID(did) for did in request.department_ids]
 
             # Create eval with model_runs and departments in single SQL (DHH style)
             sql_query = load_sql("sql/v3/evals/create_eval_complete.sql")

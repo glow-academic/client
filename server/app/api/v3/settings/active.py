@@ -115,6 +115,8 @@ class SettingsActiveResponse(BaseModel):
     settings_id: str
     created_at: str
     active: bool
+    name: str
+    description: str
     mode: Literal["light", "dark", "system"] = "light"
     tokens: ThemeTokens
     guest_login_enabled: bool
@@ -321,6 +323,8 @@ async def get_active_settings(
             if settings["created_at"]
             else "",
             active=settings["active"],
+            name=settings["name"],
+            description=settings["description"],
             mode="light",
             tokens=theme_tokens,
             guest_login_enabled=settings["guest_login_enabled"],

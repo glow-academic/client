@@ -203,6 +203,8 @@ SELECT
     s.id::text as settings_id,
     s.created_at,
     s.active,
+    s.name,
+    s.description,
     s.primary_color,
     s.accent,
     s.background,

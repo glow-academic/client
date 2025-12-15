@@ -1,33 +1,35 @@
 -- Update settings: deactivate current active row, insert new active row
 -- Copy links from old settings to new, then apply new key mappings
 -- Parameters: 
---   $1 = primary_color (text)
---   $2 = accent (text)
---   $3 = background (text)
---   $4 = surface (text)
---   $5 = success (text)
---   $6 = warning (text)
---   $7 = error (text)
---   $8 = sidebar_background (text)
---   $9 = sidebar_primary (text)
---   $10 = chart1 (text)
---   $11 = chart2 (text)
---   $12 = chart3 (text)
---   $13 = chart4 (text)
---   $14 = chart5 (text)
---   $15 = guest_login_enabled (boolean)
---   $16 = success_threshold (integer)
---   $17 = warning_threshold (integer)
---   $18 = danger_threshold (integer)
---   $19 = profile_id (uuid or "guest-profile-id")
---   $20 = provider_key_mapping (jsonb, optional) - {provider_id: key_id}
---   $21 = auth_key_mapping (jsonb, optional) - {auth_id: {auth_item_id: key_id}}
---   $22 = default_admin_profile_id (text, optional) - Default admin/superadmin profile ID
---   $23 = default_guest_profile_id (text, optional) - Default guest profile ID
---   $24 = provider_enabled (jsonb, optional) - {provider_id: enabled (boolean)}
---   $25 = auth_enabled (jsonb, optional) - {auth_id: enabled (boolean)}
---   $26 = auth_value_mapping (jsonb, optional) - {auth_id: {auth_item_id: value}} for non-encrypted items
---   $27 = department_ids (text array, nullable) - Empty array = global settings, non-empty = department-specific
+--   $1 = name (text)
+--   $2 = description (text)
+--   $3 = primary_color (text)
+--   $4 = accent (text)
+--   $5 = background (text)
+--   $6 = surface (text)
+--   $7 = success (text)
+--   $8 = warning (text)
+--   $9 = error (text)
+--   $10 = sidebar_background (text)
+--   $11 = sidebar_primary (text)
+--   $12 = chart1 (text)
+--   $13 = chart2 (text)
+--   $14 = chart3 (text)
+--   $15 = chart4 (text)
+--   $16 = chart5 (text)
+--   $17 = guest_login_enabled (boolean)
+--   $18 = success_threshold (integer)
+--   $19 = warning_threshold (integer)
+--   $20 = danger_threshold (integer)
+--   $21 = profile_id (uuid or "guest-profile-id")
+--   $22 = provider_key_mapping (jsonb, optional) - {provider_id: key_id}
+--   $23 = auth_key_mapping (jsonb, optional) - {auth_id: {auth_item_id: key_id}}
+--   $24 = default_admin_profile_id (text, optional) - Default admin/superadmin profile ID
+--   $25 = default_guest_profile_id (text, optional) - Default guest profile ID
+--   $26 = provider_enabled (jsonb, optional) - {provider_id: enabled (boolean)}
+--   $27 = auth_enabled (jsonb, optional) - {auth_id: enabled (boolean)}
+--   $28 = auth_value_mapping (jsonb, optional) - {auth_id: {auth_item_id: value}} for non-encrypted items
+--   $29 = department_ids (text array, nullable) - Empty array = global settings, non-empty = department-specific
 WITH resolve_guest_profile AS (
     -- Resolve guest-profile-id using settings system (department-specific or default)
     SELECT 
@@ -69,6 +71,8 @@ insert_new AS (
     -- Insert new active settings row
     INSERT INTO settings (
         active,
+        name,
+        description,
         primary_color,
         accent,
         background,
@@ -104,10 +108,12 @@ insert_new AS (
         $12::text,
         $13::text,
         $14::text,
-        $15::boolean,
-        $16::integer,
-        $17::integer,
-        $18::integer
+        $15::text,
+        $16::text,
+        $17::boolean,
+        $18::integer,
+        $19::integer,
+        $20::integer
     )
     RETURNING id::text as settings_id
 ),
@@ -121,7 +127,7 @@ manage_setting_providers AS (
         (enabled::boolean),
         NOW(),
         NOW()
-    FROM jsonb_each_text(COALESCE($24::jsonb, '{}'::jsonb)) AS t(provider_id, enabled)
+    FROM jsonb_each_text(COALESCE($26::jsonb, '{}'::jsonb)) AS t(provider_id, enabled)
     WHERE provider_id IS NOT NULL AND provider_id != ''
     ON CONFLICT (settings_id, provider_id) DO UPDATE SET
         active = (EXCLUDED.active),
@@ -140,7 +146,7 @@ copy_setting_providers_fallback AS (
     CROSS JOIN setting_providers sp
     WHERE sp.settings_id = osi.old_id::uuid AND sp.active = true
       AND NOT EXISTS (
-          SELECT 1 FROM jsonb_each_text(COALESCE($24::jsonb, '{}'::jsonb)) AS t(provider_id, enabled)
+          SELECT 1 FROM jsonb_each_text(COALESCE($26::jsonb, '{}'::jsonb)) AS t(provider_id, enabled)
           WHERE t.provider_id = sp.provider_id::text
       )
     ON CONFLICT (settings_id, provider_id) DO UPDATE SET
@@ -157,7 +163,7 @@ manage_setting_auths AS (
         (enabled::boolean),
         NOW(),
         NOW()
-    FROM jsonb_each_text(COALESCE($25::jsonb, '{}'::jsonb)) AS t(auth_id, enabled)
+    FROM jsonb_each_text(COALESCE($27::jsonb, '{}'::jsonb)) AS t(auth_id, enabled)
     WHERE auth_id IS NOT NULL AND auth_id != ''
     ON CONFLICT (settings_id, auth_id) DO UPDATE SET
         active = (EXCLUDED.active),
@@ -176,7 +182,7 @@ copy_setting_auths_fallback AS (
     CROSS JOIN setting_auths sa
     WHERE sa.settings_id = osi.old_id::uuid AND sa.active = true
       AND NOT EXISTS (
-          SELECT 1 FROM jsonb_each_text(COALESCE($25::jsonb, '{}'::jsonb)) AS t(auth_id, enabled)
+          SELECT 1 FROM jsonb_each_text(COALESCE($27::jsonb, '{}'::jsonb)) AS t(auth_id, enabled)
           WHERE t.auth_id = sa.auth_id::text
       )
     ON CONFLICT (settings_id, auth_id) DO UPDATE SET
@@ -193,7 +199,7 @@ manage_setting_auth_values AS (
         (value::text),
         NOW(),
         NOW()
-    FROM jsonb_each($26::jsonb) AS auth_level(auth_id, auth_items)
+    FROM jsonb_each($28::jsonb) AS auth_level(auth_id, auth_items)
     CROSS JOIN jsonb_each_text(auth_items) AS item_level(auth_item_id, value)
     WHERE auth_id IS NOT NULL AND auth_id != '' AND auth_item_id IS NOT NULL AND auth_item_id != ''
     ON CONFLICT (settings_id, auth_id, auth_item_id) DO UPDATE SET
@@ -223,13 +229,13 @@ copy_setting_default_account AS (
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
         sda.profile_id,
-        CASE WHEN $22::text IS NULL OR $22::text = '' THEN sda.active ELSE false END,
+        CASE WHEN $24::text IS NULL OR $24::text = '' THEN sda.active ELSE false END,
         NOW(),
         NOW()
     FROM old_settings_id osi
     CROSS JOIN settings_default_account sda
     WHERE sda.settings_id = osi.old_id::uuid AND sda.active = true
-      AND ($22::text IS NULL OR $22::text = '')
+      AND ($24::text IS NULL OR $24::text = '')
     ON CONFLICT (settings_id, profile_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
@@ -240,13 +246,13 @@ copy_setting_default_guest AS (
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
         sdg.profile_id,
-        CASE WHEN $23::text IS NULL OR $23::text = '' THEN sdg.active ELSE false END,
+        CASE WHEN $25::text IS NULL OR $25::text = '' THEN sdg.active ELSE false END,
         NOW(),
         NOW()
     FROM old_settings_id osi
     CROSS JOIN settings_default_guest sdg
     WHERE sdg.settings_id = osi.old_id::uuid AND sdg.active = true
-      AND ($23::text IS NULL OR $23::text = '')
+      AND ($25::text IS NULL OR $25::text = '')
     ON CONFLICT (settings_id, profile_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
@@ -256,18 +262,18 @@ apply_default_admin_account AS (
     UPDATE settings_default_account
     SET active = false, updated_at = NOW()
     WHERE settings_id = (SELECT settings_id FROM insert_new LIMIT 1)::uuid
-      AND ($22::text IS NOT NULL AND $22::text != '')
+      AND ($24::text IS NOT NULL AND $24::text != '')
 ),
 insert_default_admin_account AS (
     -- Insert new default admin account
     INSERT INTO settings_default_account (settings_id, profile_id, active, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
-        $22::uuid,
+        $24::uuid,
         true,
         NOW(),
         NOW()
-    WHERE $22::text IS NOT NULL AND $22::text != ''
+    WHERE $24::text IS NOT NULL AND $24::text != ''
     ON CONFLICT (settings_id, profile_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -277,18 +283,18 @@ apply_default_guest_account AS (
     UPDATE settings_default_guest
     SET active = false, updated_at = NOW()
     WHERE settings_id = (SELECT settings_id FROM insert_new LIMIT 1)::uuid
-      AND ($23::text IS NOT NULL AND $23::text != '')
+      AND ($25::text IS NOT NULL AND $25::text != '')
 ),
 insert_default_guest_account AS (
     -- Insert new default guest account
     INSERT INTO settings_default_guest (settings_id, profile_id, active, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1)::uuid,
-        $23::uuid,
+        $25::uuid,
         true,
         NOW(),
         NOW()
-    WHERE $23::text IS NOT NULL AND $23::text != ''
+    WHERE $25::text IS NOT NULL AND $25::text != ''
     ON CONFLICT (settings_id, profile_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -310,7 +316,7 @@ insert_provider_keys AS (
         true,
         NOW(),
         NOW()
-    FROM jsonb_each_text(COALESCE($20::jsonb, '{}'::jsonb)) AS t(provider_id, key_id)
+    FROM jsonb_each_text(COALESCE($22::jsonb, '{}'::jsonb)) AS t(provider_id, key_id)
     WHERE provider_id IS NOT NULL AND key_id IS NOT NULL AND provider_id != '' AND key_id != ''
     ON CONFLICT (settings_id, provider_id, key_id) DO UPDATE SET
         active = true,
@@ -334,7 +340,7 @@ insert_auth_keys AS (
         true,
         NOW(),
         NOW()
-    FROM jsonb_each(COALESCE($21::jsonb, '{}'::jsonb)) AS auth_entry(auth_id, items)
+    FROM jsonb_each(COALESCE($23::jsonb, '{}'::jsonb)) AS auth_entry(auth_id, items)
     CROSS JOIN jsonb_each_text(items) AS item_entry(auth_item_id, key_id)
     WHERE auth_id IS NOT NULL AND auth_item_id IS NOT NULL AND key_id IS NOT NULL
       AND auth_id != '' AND auth_item_id != '' AND key_id != ''
@@ -354,7 +360,7 @@ copy_department_settings AS (
     FROM old_settings_id osi
     CROSS JOIN department_settings ds
     WHERE ds.settings_id = osi.old_id::uuid AND ds.active = true
-      AND ($27::text[] IS NULL OR array_length($27::text[], 1) IS NULL)
+      AND ($29::text[] IS NULL OR array_length($29::text[], 1) IS NULL)
     ON CONFLICT (settings_id, department_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
@@ -364,7 +370,7 @@ replace_department_settings AS (
     UPDATE department_settings
     SET active = false, updated_at = NOW()
     WHERE settings_id = (SELECT settings_id FROM insert_new LIMIT 1)::uuid
-      AND ($27::text[] IS NOT NULL AND array_length($27::text[], 1) IS NOT NULL)
+      AND ($29::text[] IS NOT NULL AND array_length($29::text[], 1) IS NOT NULL)
 ),
 link_department_settings AS (
     -- Insert new department_settings links based on department_ids array
@@ -376,8 +382,8 @@ link_department_settings AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($27::text[]) as dept_id
-    WHERE $27::text[] IS NOT NULL AND array_length($27::text[], 1) > 0
+    FROM UNNEST($29::text[]) as dept_id
+    WHERE $29::text[] IS NOT NULL AND array_length($29::text[], 1) > 0
     ON CONFLICT (settings_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

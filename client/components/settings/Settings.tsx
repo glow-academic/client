@@ -211,6 +211,8 @@ export default function Settings({
 
   // Form data state with all ThemePrimitives and new settings
   const [formData, setFormData] = useState({
+    name: "",
+    description: "",
     primary_color: "#171717",
     accent: "#f5f5f5",
     background: "#ffffff",
@@ -237,6 +239,8 @@ export default function Settings({
   useEffect(() => {
     if (settingsDetail) {
       setFormData({
+        name: settingsDetail.name || "",
+        description: settingsDetail.description || "",
         primary_color: settingsDetail.primary_color || "#171717",
         accent: settingsDetail.accent || "#f5f5f5",
         background: settingsDetail.background || "#ffffff",
@@ -635,6 +639,8 @@ export default function Settings({
     try {
       const result = await updateSettingsAction({
         body: {
+          name: formData.name,
+          description: formData.description,
           primary_color: formData.primary_color,
           accent: formData.accent,
           background: formData.background,
@@ -734,12 +740,11 @@ export default function Settings({
             onSelect={(ids) => handleSelectSettings(ids[0] || null)}
             getId={(item) => (item as unknown as { id: string }).id}
             getLabel={(item) => {
-              const date = new Date(item.created_at);
-              return `Settings (${date.toLocaleDateString()})`;
+              return item.name || `Settings (${new Date(item.created_at).toLocaleDateString()})`;
             }}
             getSearchText={(item) => {
               const date = new Date(item.created_at);
-              return `Settings ${date.toLocaleDateString()} ${item.active ? "Active" : "Inactive"}`;
+              return `${item.name || "Settings"} ${item.description || ""} ${date.toLocaleDateString()} ${item.active ? "Active" : "Inactive"}`;
             }}
             renderButton={(selectedItems) => {
               if (selectedItems.length === 0) {
@@ -761,7 +766,7 @@ export default function Settings({
                     </Badge>
                   )}
                   <span className="truncate">
-                    Settings ({date.toLocaleDateString()})
+                    {setting.name || `Settings (${date.toLocaleDateString()})`}
                   </span>
                 </div>
               );
@@ -783,9 +788,14 @@ export default function Settings({
                         </Badge>
                       )}
                       <div className="font-medium truncate">
-                        Settings ({date.toLocaleDateString()})
+                        {item.name || `Settings (${date.toLocaleDateString()})`}
                       </div>
                     </div>
+                    {item.description && (
+                      <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                        {item.description}
+                      </div>
+                    )}
                     <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
                       {item.active ? "Active" : "Inactive"}
                     </div>
@@ -810,6 +820,44 @@ export default function Settings({
         {/* Settings Form */}
         {settingsDetail && (
           <div className="space-y-8">
+            {/* Basic Information Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Basic Information</h3>
+              <Separator />
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                    placeholder="Settings name"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    placeholder="Settings description"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Authentication Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">

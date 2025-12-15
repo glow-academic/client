@@ -117,6 +117,8 @@ CREATE TABLE settings (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   active          BOOLEAN     NOT NULL,
+  name            TEXT        NOT NULL,
+  description     TEXT        NOT NULL,
   -- Theme primitives (user-editable high-level theme configuration)
   primary_color   TEXT        NOT NULL,   -- Main brand/action color
   accent          TEXT        NOT NULL,   -- Secondary brand color

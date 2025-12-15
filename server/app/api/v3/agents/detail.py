@@ -5,14 +5,15 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -191,17 +192,28 @@ async def get_agent_detail(
         model_mapping_data = result["model_mapping"]
         if isinstance(model_mapping_data, str):
             model_mapping_data = json.loads(model_mapping_data)
-        
+
         # Debug: Log first model's keys to see what SQL returns
-        if model_mapping_data and isinstance(model_mapping_data, dict) and len(model_mapping_data) > 0:
+        if (
+            model_mapping_data
+            and isinstance(model_mapping_data, dict)
+            and len(model_mapping_data) > 0
+        ):
             first_model_id = next(iter(model_mapping_data.keys()))
             first_model_data = model_mapping_data[first_model_id]
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.warning(f"DEBUG: First model {first_model_id} keys: {list(first_model_data.keys()) if isinstance(first_model_data, dict) else 'not dict'}")
-            logger.warning(f"DEBUG: First model has modalities: {'modalities' in first_model_data if isinstance(first_model_data, dict) else False}")
-            logger.warning(f"DEBUG: First model has temperature_lower: {'temperature_lower' in first_model_data if isinstance(first_model_data, dict) else False}")
-        
+            logger.warning(
+                f"DEBUG: First model {first_model_id} keys: {list(first_model_data.keys()) if isinstance(first_model_data, dict) else 'not dict'}"
+            )
+            logger.warning(
+                f"DEBUG: First model has modalities: {'modalities' in first_model_data if isinstance(first_model_data, dict) else False}"
+            )
+            logger.warning(
+                f"DEBUG: First model has temperature_lower: {'temperature_lower' in first_model_data if isinstance(first_model_data, dict) else False}"
+            )
+
         if model_mapping_data and isinstance(model_mapping_data, dict):
             for model_id, model_data in model_mapping_data.items():
                 if isinstance(model_data, dict):
@@ -232,31 +244,49 @@ async def get_agent_detail(
                         temperature_levels_data = json.loads(temperature_levels_data)
                     if not isinstance(temperature_levels_data, list):
                         temperature_levels_data = []
-                    
+
                     reasoning_options_data = model_data.get("reasoning_options", [])
                     if isinstance(reasoning_options_data, str):
                         reasoning_options_data = json.loads(reasoning_options_data)
                     if not isinstance(reasoning_options_data, list):
                         reasoning_options_data = []
-                    
+
                     # Parse available_voices
                     available_voices_data = model_data.get("available_voices", [])
                     if isinstance(available_voices_data, str):
                         available_voices_data = json.loads(available_voices_data)
                     if not isinstance(available_voices_data, list):
                         available_voices_data = []
-                    
+
                     # Create ModelMappingItem for typed response (with optional fields)
                     model_mapping[model_id] = ModelMappingItem(
                         name=model_data.get("name", ""),
                         description=model_data.get("description", ""),
-                        input_modalities=modalities_dict["input"] if modalities_dict["input"] else None,
-                        output_modalities=modalities_dict["output"] if modalities_dict["output"] else None,
-                        temperature_lower=float(model_data.get("temperature_lower", 0.0)) if model_data.get("temperature_lower") is not None else None,
-                        temperature_upper=float(model_data.get("temperature_upper", 1.0)) if model_data.get("temperature_upper") is not None else None,
-                        temperature_levels=temperature_levels_data if temperature_levels_data else None,
-                        reasoning_options=reasoning_options_data if reasoning_options_data else None,
-                        available_voices=available_voices_data if available_voices_data else None,
+                        input_modalities=modalities_dict["input"]
+                        if modalities_dict["input"]
+                        else None,
+                        output_modalities=modalities_dict["output"]
+                        if modalities_dict["output"]
+                        else None,
+                        temperature_lower=float(
+                            model_data.get("temperature_lower", 0.0)
+                        )
+                        if model_data.get("temperature_lower") is not None
+                        else None,
+                        temperature_upper=float(
+                            model_data.get("temperature_upper", 1.0)
+                        )
+                        if model_data.get("temperature_upper") is not None
+                        else None,
+                        temperature_levels=temperature_levels_data
+                        if temperature_levels_data
+                        else None,
+                        reasoning_options=reasoning_options_data
+                        if reasoning_options_data
+                        else None,
+                        available_voices=available_voices_data
+                        if available_voices_data
+                        else None,
                     )
                     # Store full data with modalities, temperature_levels, and reasoning_options for response
                     # (Note: model_mapping_with_modalities is no longer needed since ModelMappingItem includes all fields)

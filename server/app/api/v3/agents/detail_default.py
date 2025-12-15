@@ -131,7 +131,10 @@ async def get_agent_new(
                     if isinstance(model_data, dict):
                         # Parse modalities
                         modalities_data = model_data.get("modalities")
-                        modalities_dict: dict[str, list[str]] = {"input": [], "output": []}
+                        modalities_dict: dict[str, list[str]] = {
+                            "input": [],
+                            "output": [],
+                        }
                         if modalities_data:
                             if isinstance(modalities_data, str):
                                 modalities_data = json.loads(modalities_data)
@@ -150,37 +153,59 @@ async def get_agent_new(
                                     if isinstance(output_mods, list)
                                     else [],
                                 }
-                        
+
                         # Parse temperature_levels and reasoning_options
-                        temperature_levels_data = model_data.get("temperature_levels", [])
+                        temperature_levels_data = model_data.get(
+                            "temperature_levels", []
+                        )
                         if isinstance(temperature_levels_data, str):
-                            temperature_levels_data = json.loads(temperature_levels_data)
+                            temperature_levels_data = json.loads(
+                                temperature_levels_data
+                            )
                         if not isinstance(temperature_levels_data, list):
                             temperature_levels_data = []
-                        
+
                         reasoning_options_data = model_data.get("reasoning_options", [])
                         if isinstance(reasoning_options_data, str):
                             reasoning_options_data = json.loads(reasoning_options_data)
                         if not isinstance(reasoning_options_data, list):
                             reasoning_options_data = []
-                        
+
                         # Parse available_voices
                         available_voices_data = model_data.get("available_voices", [])
                         if isinstance(available_voices_data, str):
                             available_voices_data = json.loads(available_voices_data)
                         if not isinstance(available_voices_data, list):
                             available_voices_data = []
-                        
+
                         model_mapping[model_id] = ModelMappingItem(
                             name=model_data.get("name", ""),
                             description=model_data.get("description", ""),
-                            input_modalities=modalities_dict["input"] if modalities_dict["input"] else None,
-                            output_modalities=modalities_dict["output"] if modalities_dict["output"] else None,
-                            temperature_lower=float(model_data.get("temperature_lower", 0.0)) if model_data.get("temperature_lower") is not None else None,
-                            temperature_upper=float(model_data.get("temperature_upper", 1.0)) if model_data.get("temperature_upper") is not None else None,
-                            temperature_levels=temperature_levels_data if temperature_levels_data else None,
-                            reasoning_options=reasoning_options_data if reasoning_options_data else None,
-                            available_voices=available_voices_data if available_voices_data else None,
+                            input_modalities=modalities_dict["input"]
+                            if modalities_dict["input"]
+                            else None,
+                            output_modalities=modalities_dict["output"]
+                            if modalities_dict["output"]
+                            else None,
+                            temperature_lower=float(
+                                model_data.get("temperature_lower", 0.0)
+                            )
+                            if model_data.get("temperature_lower") is not None
+                            else None,
+                            temperature_upper=float(
+                                model_data.get("temperature_upper", 1.0)
+                            )
+                            if model_data.get("temperature_upper") is not None
+                            else None,
+                            temperature_levels=temperature_levels_data
+                            if temperature_levels_data
+                            else None,
+                            reasoning_options=reasoning_options_data
+                            if reasoning_options_data
+                            else None,
+                            available_voices=available_voices_data
+                            if available_voices_data
+                            else None,
                         )
 
             # Parse valid_model_ids from JSONB

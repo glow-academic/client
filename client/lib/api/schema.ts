@@ -11454,6 +11454,10 @@ export interface components {
             created_at: string;
             /** Active */
             active: boolean;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /**
              * Mode
              * @default light
@@ -11495,6 +11499,10 @@ export interface components {
             created_at: string;
             /** Active */
             active: boolean;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Primary Color */
             primary_color: string;
             /** Accent */
@@ -11607,6 +11615,10 @@ export interface components {
             created_at: string;
             /** Active */
             active: boolean;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Department Ids */
             department_ids?: string[] | null;
         };
@@ -13031,6 +13043,10 @@ export interface components {
          * @description Request to update settings.
          */
         UpdateSettingsRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Primary Color */
             primary_color: string;
             /** Accent */

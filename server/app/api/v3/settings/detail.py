@@ -28,6 +28,8 @@ class SettingsDetailResponse(BaseModel):
     settings_id: str
     created_at: str
     active: bool
+    name: str
+    description: str
     primary_color: str
     accent: str
     background: str
@@ -242,6 +244,8 @@ async def get_settings_detail(
             if settings["created_at"]
             else "",
             active=settings["active"],
+            name=settings["name"],
+            description=settings["description"],
             primary_color=settings["primary_color"],
             accent=settings["accent"],
             background=settings["background"],

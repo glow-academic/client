@@ -28177,6 +28177,14 @@
             "type": "boolean",
             "title": "Active"
           },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
           "mode": {
             "type": "string",
             "enum": [
@@ -28234,6 +28242,8 @@
           "settings_id",
           "created_at",
           "active",
+          "name",
+          "description",
           "tokens",
           "guest_login_enabled",
           "success_threshold",
@@ -28275,6 +28285,14 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
           },
           "primary_color": {
             "type": "string",
@@ -28532,6 +28550,8 @@
           "settings_id",
           "created_at",
           "active",
+          "name",
+          "description",
           "primary_color",
           "accent",
           "background",
@@ -28584,6 +28604,14 @@
             "type": "boolean",
             "title": "Active"
           },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
           "department_ids": {
             "anyOf": [
               {
@@ -28603,7 +28631,9 @@
         "required": [
           "settings_id",
           "created_at",
-          "active"
+          "active",
+          "name",
+          "description"
         ],
         "title": "SettingsItem",
         "description": "Settings item."
@@ -32313,6 +32343,14 @@
       },
       "UpdateSettingsRequest": {
         "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
           "primary_color": {
             "type": "string",
             "title": "Primary Color"
@@ -32504,6 +32542,8 @@
         },
         "type": "object",
         "required": [
+          "name",
+          "description",
           "primary_color",
           "accent",
           "background",

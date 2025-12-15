@@ -25,6 +25,8 @@ class SettingsItem(BaseModel):
     settings_id: str
     created_at: str
     active: bool
+    name: str
+    description: str
     department_ids: list[str] | None = None
 
 
@@ -78,6 +80,8 @@ async def list_settings(
                     if row["created_at"]
                     else "",
                     active=row["active"],
+                    name=row["name"],
+                    description=row["description"],
                     department_ids=department_ids,
                 )
             )

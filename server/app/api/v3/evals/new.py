@@ -11,7 +11,6 @@ from pydantic import BaseModel
 from app.api.v3.evals.detail import (
     DepartmentMappingItem,
     EvalDetailResponse,
-    ModelRunItem,
 )
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -143,13 +142,9 @@ async def get_eval_new(
         valid_eval_agent_ids = [
             str(aid) for aid in (row.get("valid_eval_agent_ids") or [])
         ]
-        valid_agent_ids = [
-            str(aid) for aid in (row.get("valid_agent_ids") or [])
-        ]
+        valid_agent_ids = [str(aid) for aid in (row.get("valid_agent_ids") or [])]
         # Combine valid agent IDs
-        all_valid_agent_ids = list(
-            set(valid_eval_agent_ids + valid_agent_ids)
-        )
+        all_valid_agent_ids = list(set(valid_eval_agent_ids + valid_agent_ids))
 
         # Parse rubric mapping
         rubric_mapping: dict[str, dict[str, Any]] = {}
@@ -157,9 +152,7 @@ async def get_eval_new(
         if isinstance(rubric_mapping_data, dict):
             rubric_mapping = rubric_mapping_data
 
-        valid_rubric_ids = [
-            str(rid) for rid in (row.get("valid_rubric_ids") or [])
-        ]
+        valid_rubric_ids = [str(rid) for rid in (row.get("valid_rubric_ids") or [])]
 
         # Parse agent_ids (selected agents being evaluated)
         raw_agent_ids = row.get("agent_ids")
@@ -231,4 +224,3 @@ async def get_eval_new(
             sql_params=sql_params,
             request=request,
         )
-
