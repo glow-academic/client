@@ -6678,7 +6678,7 @@ export interface components {
             staff: components["schemas"]["StaffItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__staff__data__create__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__staff__data__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -17485,7 +17485,7 @@ export interface components {
          * DepartmentMappingItem
          * @description Department mapping item.
          */
-        app__api__v3__staff__data__create__DepartmentMappingItem: {
+        app__api__v3__staff__data__DepartmentMappingItem: {
             /** Name */
             name: string;
             /** Description */
