@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -46,7 +47,13 @@ class CreateAuthResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateAuthResponse)
+@router.post(
+    "/create",
+    response_model=CreateAuthResponse,
+    dependencies=[
+        audit_activity("auth.created", "{{ actor.name }} created auth '{{ auth.name }}'")
+    ],
+)
 async def create_auth(
     request: CreateAuthRequest,
     http_request: Request,
@@ -88,6 +95,7 @@ async def create_auth(
                 request.description,
                 request.active,
                 items_json,  # JSONB array of items
+                request.profileId,
             )
             auth_result = await conn.fetchrow(sql_query, *sql_params)
 
@@ -95,6 +103,15 @@ async def create_auth(
                 raise ValueError("Failed to create auth")
 
             auth_id = auth_result["auth_id"]
+            actor_name = auth_result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": request.profileId},
+                    auth={"name": request.name, "id": auth_id},
+                )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

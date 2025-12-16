@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -32,7 +33,16 @@ class CreateDepartmentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateDepartmentResponse)
+@router.post(
+    "/create",
+    response_model=CreateDepartmentResponse,
+    dependencies=[
+        audit_activity(
+            "department.created",
+            "{{ actor.name }} created department '{{ department.title }}'",
+        )
+    ],
+)
 async def create_department(
     request: CreateDepartmentRequest,
     http_request: Request,
@@ -47,6 +57,9 @@ async def create_department(
 
     try:
         async with transaction(conn):
+            # Get profile_id from headers (middleware resolves it)
+            profile_id = http_request.headers.get("X-Profile-Id") or "guest-profile-id"
+
             # Single consolidated query: creates department and settings relationship
             sql_query = load_sql("sql/v3/departments/create_department_complete.sql")
             sql_params = (
@@ -54,6 +67,7 @@ async def create_department(
                 request.description,
                 request.active,
                 request.settingsId,
+                profile_id,
             )
             dept_row = await conn.fetchrow(sql_query, *sql_params)
 
@@ -63,6 +77,15 @@ async def create_department(
                 )
 
             department_id = dept_row["department_id"]
+            actor_name = dept_row.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    department={"title": request.title, "id": department_id},
+                )
 
         result = CreateDepartmentResponse(
             success=True,

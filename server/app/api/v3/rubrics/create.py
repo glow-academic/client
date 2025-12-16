@@ -4,13 +4,13 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class StandardItem(BaseModel):
@@ -58,7 +58,15 @@ class CreateRubricResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateRubricResponse)
+@router.post(
+    "/create",
+    response_model=CreateRubricResponse,
+    dependencies=[
+        audit_activity(
+            "rubric.created", "{{ actor.name }} created rubric '{{ rubric.name }}'"
+        )
+    ],
+)
 async def create_rubric(
     request: CreateRubricRequest,
     http_request: Request,
@@ -117,6 +125,15 @@ async def create_rubric(
             raise HTTPException(status_code=500, detail="Failed to create rubric")
 
         rubric_id = row["rubric_id"]
+        actor_name = row.get("actor_name")
+
+        # Set audit context with data from SQL query
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": request.profileId},
+                rubric={"name": request.name, "id": rubric_id},
+            )
 
         result = CreateRubricResponse(
             success=True,

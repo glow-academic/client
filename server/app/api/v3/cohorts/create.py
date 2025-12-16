@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -34,7 +35,15 @@ class CreateCohortResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateCohortResponse)
+@router.post(
+    "/create",
+    response_model=CreateCohortResponse,
+    dependencies=[
+        audit_activity(
+            "cohort.created", "{{ actor.name }} created cohort '{{ cohort.title }}'"
+        )
+    ],
+)
 async def create_cohort(
     request: CreateCohortRequest,
     http_request: Request,
@@ -51,6 +60,9 @@ async def create_cohort(
         # Handle None description (cohorts.description is NOT NULL, so use empty string)
         description = request.description if request.description is not None else ""
 
+        # Get profile_id from headers (middleware resolves it)
+        profile_id = http_request.headers.get("X-Profile-Id") or "guest-profile-id"
+
         # Single consolidated query: creates cohort and all relationships using arrays
         sql_query = load_sql("sql/v3/cohorts/create_cohort_complete.sql")
         sql_params = (
@@ -60,6 +72,7 @@ async def create_cohort(
             request.department_ids if request.department_ids else [],
             request.profile_ids if request.profile_ids else [],
             request.simulation_ids if request.simulation_ids else [],
+            profile_id,
         )
 
         async with transaction(conn):
@@ -69,6 +82,15 @@ async def create_cohort(
                 raise HTTPException(status_code=500, detail="Failed to create cohort")
 
             cohort_id = str(row["id"])
+            actor_name = row.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    cohort={"title": request.title, "id": cohort_id},
+                )
 
         result = CreateCohortResponse(
             success=True,

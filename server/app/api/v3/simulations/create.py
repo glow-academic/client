@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -65,7 +66,16 @@ class CreateSimulationResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateSimulationResponse)
+@router.post(
+    "/create",
+    response_model=CreateSimulationResponse,
+    dependencies=[
+        audit_activity(
+            "simulation.created",
+            "{{ actor.name }} created simulation '{{ simulation.title }}'",
+        )
+    ],
+)
 async def create_simulation(
     request: CreateSimulationRequest,
     http_request: Request,
@@ -144,6 +154,9 @@ async def create_simulation(
             scenario_time_limit_seconds_array = (
                 scenario_time_limit_seconds if scenario_time_limit_seconds else []
             )
+            # Get profile_id from headers (middleware resolves it)
+            profile_id = http_request.headers.get("X-Profile-Id") or "guest-profile-id"
+
             # Create simulation with departments and scenarios in single SQL (DHH style)
             # Note: rubric_id and time_limit are now per-scenario, not simulation-level
             sql_query = load_sql("sql/v3/simulations/create_simulation_complete.sql")
@@ -162,6 +175,7 @@ async def create_simulation(
                 scenario_text_enabled_array,
                 request.simulation_text_agent_id,
                 request.simulation_voice_agent_id or "",
+                profile_id,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 
@@ -169,6 +183,15 @@ async def create_simulation(
                 raise ValueError("Failed to create simulation")
 
             simulation_id = result["simulation_id"]
+            actor_name = result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    simulation={"title": request.title, "id": simulation_id},
+                )
 
             result_data = CreateSimulationResponse(
                 success=True,

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -53,7 +54,16 @@ class CreateScenarioResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateScenarioResponse)
+@router.post(
+    "/create",
+    response_model=CreateScenarioResponse,
+    dependencies=[
+        audit_activity(
+            "scenario.created",
+            "{{ actor.name }} created scenario '{{ scenario.name }}'",
+        )
+    ],
+)
 async def create_scenario(
     request: CreateScenarioRequest,
     http_request: Request,
@@ -182,6 +192,9 @@ async def create_scenario(
         if request.video_enabled and not request.video_agent_id:
             raise ValueError("video_agent_id is required when video_enabled is true")
 
+        # Get profile_id from headers (middleware resolves it)
+        profile_id = http_request.headers.get("X-Profile-Id") or "guest-profile-id"
+
         # Create scenario with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/create_scenario_complete.sql")
         sql_params = (
@@ -209,6 +222,7 @@ async def create_scenario(
             question_timestamps_json,
             None,  # run_id (for linking AI-generated problem_statements and objectives to runs)
             parameter_ids if parameter_ids else None,
+            profile_id,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 
@@ -216,6 +230,15 @@ async def create_scenario(
             raise ValueError("Failed to create scenario")
 
         scenario_id = result["scenario_id"]
+        actor_name = result.get("actor_name")
+
+        # Set audit context with data from SQL query
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                scenario={"name": request.name, "id": scenario_id},
+            )
 
         result_data = CreateScenarioResponse(
             success=True,

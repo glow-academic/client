@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -40,7 +41,15 @@ class CreateEvalResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateEvalResponse)
+@router.post(
+    "/create",
+    response_model=CreateEvalResponse,
+    dependencies=[
+        audit_activity(
+            "eval.created", "{{ actor.name }} created eval '{{ eval.name }}'"
+        )
+    ],
+)
 async def create_eval(
     request: CreateEvalRequest,
     http_request: Request,
@@ -120,6 +129,15 @@ async def create_eval(
                 raise ValueError("Failed to create eval")
 
             eval_id = result["eval_id"]
+            actor_name = result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": request.profileId},
+                    eval={"name": request.name, "id": eval_id},
+                )
 
         result_data = CreateEvalResponse(
             success=True,

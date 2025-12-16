@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -54,7 +55,15 @@ class CreateModelResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateModelResponse)
+@router.post(
+    "/create",
+    response_model=CreateModelResponse,
+    dependencies=[
+        audit_activity(
+            "model.created", "{{ actor.name }} created model '{{ model.name }}'"
+        )
+    ],
+)
 async def create_model(
     request: CreateModelRequest,
     http_request: Request,
@@ -99,6 +108,15 @@ async def create_model(
                 raise ValueError("Failed to create model")
 
             model_id = str(result["id"])
+            actor_name = result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": request.profileId},
+                    model={"name": request.name, "id": model_id},
+                )
 
             # Handle temperature bounds if provided
             if request.temperature_bounds:

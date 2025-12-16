@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -36,7 +37,15 @@ class CreateFieldResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateFieldResponse)
+@router.post(
+    "/create",
+    response_model=CreateFieldResponse,
+    dependencies=[
+        audit_activity(
+            "field.created", "{{ actor.name }} created field '{{ field.name }}'"
+        )
+    ],
+)
 async def create_field(
     request: CreateFieldRequest,
     http_request: Request,
@@ -66,6 +75,15 @@ async def create_field(
                 raise ValueError("Failed to create field")
 
             field_id = field_result["field_id"]
+            actor_name = field_result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": request.profileId},
+                    field={"name": request.name, "id": field_id},
+                )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -28,7 +29,15 @@ class CreateFeedbackResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateFeedbackResponse)
+@router.post(
+    "/create",
+    response_model=CreateFeedbackResponse,
+    dependencies=[
+        audit_activity(
+            "feedback.created", "{{ actor.name }} submitted {{ feedback.type }} feedback"
+        )
+    ],
+)
 async def create_feedback(
     request: CreateFeedbackRequest,
     http_request: Request,
@@ -64,6 +73,16 @@ async def create_feedback(
 
         if not result:
             raise HTTPException(status_code=500, detail="Failed to create feedback")
+
+        actor_name = result.get("actor_name")
+
+        # Set audit context with data from SQL query
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": request.profileId},
+                feedback={"type": request.type},
+            )
 
         result_data = CreateFeedbackResponse(
             feedback_id=str(result["feedback_id"]),  # Convert UUID to string

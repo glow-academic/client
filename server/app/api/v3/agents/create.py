@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -38,7 +39,15 @@ class CreateAgentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreateAgentResponse)
+@router.post(
+    "/create",
+    response_model=CreateAgentResponse,
+    dependencies=[
+        audit_activity(
+            "agent.created", "{{ actor.name }} created agent '{{ agent.name }}'"
+        )
+    ],
+)
 async def create_agent(
     request: CreateAgentRequest,
     http_request: Request,
@@ -90,6 +99,15 @@ async def create_agent(
                 raise HTTPException(status_code=500, detail="Failed to create agent")
 
             agent_id = agent_row["agent_id"]
+            actor_name = agent_row.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": request.profileId},
+                    agent={"name": request.name, "id": agent_id},
+                )
 
             # Handle temperature level if provided
             if request.model_temperature_level_id:

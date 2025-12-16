@@ -1,9 +1,44 @@
 -- Create auth with items (encrypted items use keys, values managed separately in settings)
--- Parameters: $1=name, $2=description, $3=active, $4=items_json (jsonb array)
+-- Parameters: $1=name, $2=description, $3=active, $4=items_json (jsonb array), $5=profile_id (uuid or "guest-profile-id")
 -- items_json format: [{"name": "Item 1", "description": "Desc 1", "encrypted": true, "key_id": "uuid", "position": 1, "active": true}, ...]
 -- For encrypted items: key_id can be provided to link keys
 -- Values are managed separately in settings page, not included here
-WITH new_auth AS (
+-- Returns: auth_id, actor_name
+WITH resolve_guest_profile AS (
+    -- Resolve guest-profile-id using settings system (department-specific or default)
+    SELECT 
+        COALESCE(
+            -- Department-specific settings guest profile (if user has departments)
+            (SELECT sdg.profile_id FROM settings_default_guest sdg
+             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
+             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
+             WHERE pd.profile_id = $5::uuid AND sdg.active = true
+             LIMIT 1),
+            -- Fallback to default (active) settings guest profile
+            (SELECT sdg.profile_id FROM settings_default_guest sdg
+             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+             WHERE sdg.active = true
+             LIMIT 1)
+        ) as guest_profile_id
+),
+resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $5::text = 'guest-profile-id' THEN
+                (SELECT guest_profile_id FROM resolve_guest_profile)
+            WHEN $5::text IS NULL OR $5::text = '' THEN NULL::uuid
+            ELSE $5::uuid
+        END as resolved_profile_id
+),
+actor_profile AS (
+    SELECT 
+        rpi.resolved_profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
+new_auth AS (
     INSERT INTO auth (
         name,
         description,
@@ -64,5 +99,9 @@ link_encrypted_keys AS (
         active = true,
         updated_at = NOW()
 )
-SELECT auth_id FROM new_auth
+SELECT 
+    na.auth_id,
+    ap.actor_name
+FROM new_auth na
+CROSS JOIN actor_profile ap
 
