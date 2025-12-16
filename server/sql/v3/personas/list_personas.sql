@@ -73,7 +73,10 @@ persona_data AS (
     )
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $1
 ),
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
@@ -156,7 +159,8 @@ SELECT
     END as can_delete,
     sm.mapping as scenario_mapping,
     am.mapping as agent_mapping,
-    dm.mapping as department_mapping
+    dm.mapping as department_mapping,
+    up.actor_name
 FROM persona_data pd
 CROSS JOIN user_profile up
 CROSS JOIN scenario_mapping_data sm

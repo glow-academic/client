@@ -29,7 +29,10 @@ resolve_profile_id AS (
         END as resolved_profile_id
 ),
 user_profile AS (
-    SELECT role FROM resolve_profile_id rpi
+    SELECT 
+        p.role,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 persona_departments_data AS (
@@ -115,9 +118,12 @@ usage_data AS (
     WHERE sp.persona_id = $1 AND sp.active = true
 ),
 profile_data AS (
-    SELECT role as user_role 
+    SELECT 
+        up.role as user_role,
+        up.actor_name
     FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
+    CROSS JOIN user_profile up
 ),
 parameter_mapping_data AS (
     -- Note: parameter_personas junction table removed - parameters no longer directly linked to personas
@@ -205,6 +211,7 @@ SELECT
     COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     u.usage_count,
     pr.user_role,
+    pr.actor_name,
     COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
     COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
     COALESCE(fmd.field_mapping, '{}'::jsonb) as field_mapping,

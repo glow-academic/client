@@ -29,6 +29,12 @@ resolve_profile_id AS (
             ELSE $2::uuid
         END as resolved_profile_id
 ),
+user_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
 usage_check AS (
     SELECT COUNT(*)::integer as usage_count
     FROM scenario_personas
@@ -47,5 +53,6 @@ delete_result AS (
 SELECT 
     (SELECT usage_count FROM usage_check) as usage_count,
     (SELECT name FROM persona_info) as name,
-    CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted
+    CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted,
+    (SELECT actor_name FROM user_profile) as actor_name
 

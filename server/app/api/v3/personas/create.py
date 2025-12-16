@@ -3,13 +3,13 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -39,7 +39,15 @@ class CreatePersonaResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create", response_model=CreatePersonaResponse)
+@router.post(
+    "/create",
+    response_model=CreatePersonaResponse,
+    dependencies=[
+        audit_activity(
+            "persona.created", "{{ actor.name }} created persona '{{ persona.name }}'"
+        )
+    ],
+)
 async def create_persona(
     request: CreatePersonaRequest,
     http_request: Request,
@@ -87,6 +95,14 @@ async def create_persona(
                 raise ValueError("Failed to create persona")
 
             persona_id = result["persona_id"]
+            actor_name = result["actor_name"]  # From SQL query
+
+            # Set audit context with data from SQL query
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": request.profileId},
+                persona={"name": request.name, "id": persona_id},
+            )
 
         result_data = CreatePersonaResponse(
             success=True,

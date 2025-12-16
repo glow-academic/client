@@ -29,6 +29,12 @@ resolve_profile_id AS (
             ELSE $2::uuid
         END as resolved_profile_id
 ),
+user_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
 original_persona AS (
     SELECT 
         p.id,
@@ -105,5 +111,6 @@ copy_departments AS (
 )
 SELECT 
     (SELECT persona_id FROM new_persona LIMIT 1) as new_persona_id,
-    (SELECT name FROM original_persona LIMIT 1) as original_name
+    (SELECT name FROM original_persona LIMIT 1) as original_name,
+    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
 

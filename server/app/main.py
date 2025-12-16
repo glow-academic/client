@@ -719,6 +719,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             setup_db_logger(pool)
             logger.info("Database logger initialized")
 
+            # Setup activity logger
+            from app.utils.activity.logger import \
+                setup_activity_logger  # noqa: E402
+
+            setup_activity_logger(pool)
+            logger.info("Activity logger initialized")
+
             # Add DBLogHandler to Socket.IO loggers so they write to database
             from app.utils.logging.db_logger import DBLogHandler  # noqa: E402
 
@@ -1378,26 +1385,20 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
             except Exception:
                 pass  # Don't break request if metrics fail
 
-            # Log to database (fire and forget - don't block response)
+            # Log activity to database (fire and forget - don't block response)
             try:
-                extra_data: dict[str, Any] = {
-                    "method": request.method,
-                    "path": str(request.url.path),
-                    "status_code": status_code,
-                    "duration_ms": round(duration_ms, 2),
-                    "client": request.client.host if request.client else None,
-                }
-                if error_msg:
-                    extra_data["error"] = error_msg
+                from app.utils.activity.logger import log_activity
+                from app.utils.logging.db_logger import profile_id_context
 
-                # Use logger with extra data
-                import logging
-
-                log_level = logging.INFO if status_code < 500 else logging.ERROR
-                log_message = f"{request.method} {request.url.path} -> {status_code} ({duration_ms:.2f}ms)"
-
-                # Log directly with extra data
-                logger.log(log_level, log_message, extra={"extra_data": extra_data})
+                # Get resolved profile_id for activity logging
+                resolved_profile_id = profile_id_context.get(None)
+                if resolved_profile_id:
+                    # Log activity if audit intent is present
+                    asyncio.create_task(
+                        log_activity(
+                            request, status_code, duration_ms, resolved_profile_id
+                        )
+                    )
             except Exception:
                 # Never break the request because logging failed
                 pass

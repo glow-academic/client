@@ -1,18 +1,18 @@
 CREATE TYPE feedback_type AS ENUM ('feature', 'bug', 'question', 'other');
 
--- Application logs table (Chris Date: No Nulls, BCNF)
--- Profile relationship moved to app_logs_profiles junction table
-CREATE TABLE app_logs (
-  id          bigserial PRIMARY KEY,
-  ts          timestamptz NOT NULL DEFAULT now(),
-  level       text NOT NULL,                    -- 'debug' | 'info' | 'warn' | 'error'
-  logger_name text NOT NULL,                    -- logger/component name (e.g., "app.api.v3.profile.detail")
-  message     text NOT NULL,                    -- log message
-  extra       jsonb                             -- additional context data (can be NULL)
+-- Activity table (Chris Date: No Nulls, BCNF)
+-- Simple activity logging with semantic audit events
+CREATE TABLE activity (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  message     text NOT NULL,                    -- fully rendered activity message (no placeholders)
+  endpoint    text NOT NULL,                    -- route path
+  profile_id  UUID NOT NULL REFERENCES profiles(id)
 );
 
-CREATE INDEX ON app_logs (ts);
-CREATE INDEX ON app_logs (level);
+CREATE INDEX ON activity (created_at);
+CREATE INDEX ON activity (profile_id);
+CREATE INDEX ON activity (endpoint);
 
 -- Application metrics table (snapshot-based metrics tracking)
 CREATE TABLE app_metrics (
@@ -60,17 +60,6 @@ CREATE TABLE app_feedback_profiles (
 CREATE INDEX ON app_feedback_profiles (profile_id);
 CREATE INDEX ON app_feedback_profiles (app_feedback_id);
 
--- App logs ↔ Profiles junction table (BCNF normalization - replaces app_logs.profile_id)
-CREATE TABLE app_logs_profiles (
-  app_log_id  bigint NOT NULL REFERENCES app_logs(id) ON DELETE CASCADE,
-  profile_id  UUID NOT NULL REFERENCES profiles(id) ON DELETE SET NULL,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (app_log_id, profile_id)
-);
-
-CREATE INDEX ON app_logs_profiles (profile_id);
-CREATE INDEX ON app_logs_profiles (app_log_id);
 
 -- ============================================================================
 -- PROMPTS INFRASTRUCTURE

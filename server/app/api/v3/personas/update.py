@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -39,7 +40,15 @@ class UpdatePersonaResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdatePersonaResponse)
+@router.post(
+    "/update",
+    response_model=UpdatePersonaResponse,
+    dependencies=[
+        audit_activity(
+            "persona.updated", "{{ actor.name }} updated persona '{{ persona.name }}'"
+        )
+    ],
+)
 async def update_persona(
     request: UpdatePersonaRequest,
     http_request: Request,
@@ -86,6 +95,16 @@ async def update_persona(
 
             if not result:
                 raise ValueError(f"Persona not found: {request.personaId}")
+
+            persona_id = result["persona_id"]
+            actor_name = result["actor_name"]  # From SQL query
+
+            # Set audit context with data from SQL query
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": request.profileId},
+                persona={"name": request.name, "id": persona_id},
+            )
 
         result_data = UpdatePersonaResponse(
             success=True,

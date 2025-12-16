@@ -4,15 +4,15 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -132,7 +132,15 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     return data or {}
 
 
-@router.post("/new", response_model=PersonaDetailResponse)
+@router.post(
+    "/new",
+    response_model=PersonaDetailResponse,
+    dependencies=[
+        audit_activity(
+            "persona.viewed_default", "{{ actor.name }} viewed default persona"
+        )
+    ],
+)
 async def get_persona_new(
     request: PersonaNewRequest,
     http_request: Request,
@@ -168,6 +176,11 @@ async def get_persona_new(
             raise HTTPException(
                 status_code=404, detail="Failed to fetch default persona data"
             )
+
+        # Set audit context
+        actor_name = result.get("actor_name")
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": request.profileId})
 
         valid_department_ids = result.get("valid_department_ids", [])
         valid_text_model_ids = result.get("valid_text_model_ids", [])

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,15 @@ class DeletePersonaResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeletePersonaResponse)
+@router.post(
+    "/delete",
+    response_model=DeletePersonaResponse,
+    dependencies=[
+        audit_activity(
+            "persona.deleted", "{{ actor.name }} deleted persona '{{ persona.name }}'"
+        )
+    ],
+)
 async def delete_persona(
     request: DeletePersonaRequest,
     http_request: Request,
@@ -63,6 +72,15 @@ async def delete_persona(
                 raise ValueError(f"Persona not found: {request.personaId}")
 
             persona_name = result.get("name", "Unknown")
+            actor_name = result.get("actor_name")  # From SQL query
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": request.profileId},
+                    persona={"name": persona_name, "id": request.personaId},
+                )
 
         result_data = DeletePersonaResponse(
             success=True,

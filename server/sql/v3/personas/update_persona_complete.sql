@@ -27,6 +27,12 @@ resolve_profile_id AS (
             ELSE $9::uuid
         END as resolved_profile_id
 ),
+user_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
 update_persona AS (
     UPDATE personas
     SET 
@@ -160,4 +166,8 @@ insert_examples AS (
     FROM examples_with_index ewi
     JOIN all_examples ae ON ae.example = ewi.ex_text
 )
-SELECT persona_id FROM update_persona
+SELECT 
+    up.persona_id,
+    ap.actor_name
+FROM update_persona up
+CROSS JOIN user_profile ap

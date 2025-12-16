@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -123,7 +124,13 @@ def disambiguate_scenarios(smap: ScenarioMapping) -> list[dict[str, str]]:
     return out
 
 
-@router.post("/list", response_model=PersonasListResponse)
+@router.post(
+    "/list",
+    response_model=PersonasListResponse,
+    dependencies=[
+        audit_activity("personas.list", "{{ actor.name }} visited the Personas page")
+    ],
+)
 async def get_personas_list(
     filters: PersonasFilters,
     request: Request,
@@ -158,6 +165,13 @@ async def get_personas_list(
 
         # Execute query
         result = await conn.fetch(sql_query, filters.profileId)
+
+        # Get actor name from first row (same for all rows)
+        actor_name = result[0]["actor_name"] if result else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": filters.profileId})
 
         # Build response - transform database rows
         personas = []

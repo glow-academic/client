@@ -28,6 +28,12 @@ resolve_profile_id AS (
             ELSE $1::uuid
         END as resolved_profile_id
 ),
+user_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
 user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM resolve_profile_id rpi
@@ -188,7 +194,8 @@ SELECT
     COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
     COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as valid_parameter_ids,
     COALESCE(fmd.field_mapping, '{}'::jsonb) as field_mapping,
-    COALESCE(fmd.parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids
+    COALESCE(fmd.parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
+    up.actor_name
 FROM persona_data p
 CROSS JOIN valid_depts vd
 CROSS JOIN valid_agents va
@@ -197,3 +204,4 @@ CROSS JOIN profile_data pr
 LEFT JOIN primary_department_id pdi ON true
 CROSS JOIN parameter_mapping_data pmd
 CROSS JOIN field_mapping_data fmd
+CROSS JOIN user_profile up

@@ -4,7 +4,10 @@ WITH user_departments AS (
     WHERE profile_id = $1 AND active = true
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $1
 ),
 cohort_profiles_agg AS (
     SELECT 
@@ -184,6 +187,7 @@ SELECT
         WHEN uic.cohort_id IS NOT NULL THEN true
         ELSE false
     END as can_leave,
+    up.actor_name,
     (
         SELECT COALESCE(jsonb_object_agg(
             p.id::text,
@@ -246,7 +250,7 @@ WHERE (
         up.role != 'instructional'
     )
 GROUP BY c.id, c.title, c.description, c.active, c.updated_at,
-         cdd.department_ids, cp.profile_ids, cprf.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id, dmd.mapping, sm.mapping
+         cdd.department_ids, cp.profile_ids, cprf.profile_ids, cs.simulation_ids, cu.usage_count, up.role, up.actor_name, uic.cohort_id, dmd.mapping, sm.mapping
 HAVING 
     COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0
     OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)

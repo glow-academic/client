@@ -27,6 +27,13 @@ resolve_profile_id AS (
             ELSE $8::uuid
         END as resolved_profile_id
 ),
+actor_profile AS (
+    SELECT 
+        rpi.resolved_profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
 new_persona AS (
     INSERT INTO personas (name, description, active, color, icon, instructions, created_at, updated_at)
     VALUES ($1, COALESCE($2, ''), $3, $4, $5, COALESCE($6, ''), NOW(), NOW())
@@ -93,4 +100,8 @@ link_examples AS (
     CROSS JOIN examples_with_index ewi
     JOIN all_examples ae ON ae.example = ewi.ex_text
 )
-SELECT persona_id FROM new_persona
+SELECT 
+    np.persona_id,
+    ap.actor_name
+FROM new_persona np
+CROSS JOIN actor_profile ap

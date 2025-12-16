@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -31,7 +32,16 @@ class DuplicatePersonaResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicatePersonaResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicatePersonaResponse,
+    dependencies=[
+        audit_activity(
+            "persona.duplicated",
+            "{{ actor.name }} duplicated persona '{{ persona.name }}'",
+        )
+    ],
+)
 async def duplicate_persona(
     request: DuplicatePersonaRequest,
     http_request: Request,
@@ -58,6 +68,15 @@ async def duplicate_persona(
 
             persona_id = result["new_persona_id"]
             original_name = result.get("original_name", "Unknown")
+            actor_name = result.get("actor_name")  # From SQL query
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": request.profileId},
+                    persona={"name": original_name, "id": request.personaId},
+                )
 
             result_data = DuplicatePersonaResponse(
                 success=True,

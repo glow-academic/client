@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -144,7 +145,11 @@ def disambiguate_simulations(
     return out
 
 
-@router.post("/list", response_model=CohortsListResponse)
+@router.post(
+    "/list",
+    response_model=CohortsListResponse,
+    dependencies=[audit_activity("cohorts.list", "{{ actor.name }} visited the Cohorts page")],
+)
 async def get_cohorts_list(
     filters: CohortsListRequest,
     request: Request,
@@ -172,6 +177,13 @@ async def get_cohorts_list(
         sql_query = load_sql("sql/v3/cohorts/list_cohorts.sql")
         sql_params = (filters.profileId,)
         rows = await conn.fetch(sql_query, filters.profileId)
+
+        # Get actor name from first row (same for all rows)
+        actor_name = rows[0]["actor_name"] if rows else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": filters.profileId})
 
         cohorts = []
         profile_mapping: dict[str, ProfileMappingItem] = {}
