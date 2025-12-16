@@ -17,12 +17,6 @@ type ModelDetailOut = OutputOf<"/api/v3/models/detail", "post">;
 
 type UpdateModelIn = InputOf<"/api/v3/models/update", "post">;
 type UpdateModelOut = OutputOf<"/api/v3/models/update", "post">;
-type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
-type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
-type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
-type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
-type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
-type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -88,37 +82,6 @@ async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   });
 }
 
-async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
-  "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/keys/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
-}
-
-async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
-  "use server";
-  return api.post("/keys/decrypt-key", input);
-}
-
-async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
-  "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/keys/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
-}
-
 /** ---- Server renders client with typed data and actions ---- */
 export default async function ModelEditPage({
   params,
@@ -145,9 +108,6 @@ export default async function ModelEditPage({
         modelId={modelId}
         modelDetail={model}
         updateModelAction={updateModel}
-        createKeyAction={createKey}
-        decryptKeyAction={decryptKey}
-        updateKeyAction={updateKey}
       />
     </div>
   );
@@ -155,14 +115,8 @@ export default async function ModelEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateKeyIn,
-  CreateKeyOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
   ModelDetailIn,
   ModelDetailOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
   UpdateModelIn,
   UpdateModelOut,
 };

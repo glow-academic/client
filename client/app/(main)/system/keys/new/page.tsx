@@ -18,22 +18,6 @@ type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
 type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
 type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
-const getKeyDefault = async (profileId: string): Promise<KeyNewOut> => {
-  return api.post(
-    "/keys/new",
-    { body: { profileId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
-};
-
 /** ---- Strongly-typed server actions ---- */
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
@@ -82,8 +66,6 @@ export default async function NewKeyPage() {
   }
 
   // Fetch key default data (for dropdowns and defaults)
-  const keyDetailDefault = await getKeyDefault(profileId);
-
   return (
     <div
       className="space-y-6"
@@ -91,7 +73,6 @@ export default async function NewKeyPage() {
       aria-label="Create new key page"
     >
       <Key
-        keyDetailDefault={keyDetailDefault}
         createKeyAction={createKey}
         decryptKeyAction={decryptKey}
       />

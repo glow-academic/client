@@ -27,7 +27,6 @@ import { useRouter } from "next/navigation";
 import type {
   CreateProviderIn,
   CreateProviderOut,
-  ProviderNewOut,
 } from "@/app/(main)/system/providers/new/page";
 import type {
   ProviderDetailOut,
@@ -52,8 +51,6 @@ type StepStatus = "pending" | "active" | "completed";
 
 export interface ProviderProps {
   providerId?: string;
-  // For create mode: default provider detail
-  providerDetailDefault?: ProviderNewOut;
   // For edit mode: provider detail
   providerDetail?: ProviderDetailOut;
   createProviderAction?: (
@@ -66,7 +63,6 @@ export interface ProviderProps {
 
 export default function Provider({
   providerId,
-  providerDetailDefault: _providerDetailDefault,
   providerDetail: serverProviderDetail,
   createProviderAction,
   updateProviderAction,

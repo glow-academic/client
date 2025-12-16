@@ -49,8 +49,6 @@ import type {
 import type {
   DeleteDepartmentIn,
   DeleteDepartmentOut,
-  DuplicateDepartmentIn,
-  DuplicateDepartmentOut,
 } from "@/app/(main)/system/departments/page";
 
 export interface DepartmentProps {
@@ -65,9 +63,6 @@ export interface DepartmentProps {
   updateDepartmentAction?: (
     input: UpdateDepartmentIn
   ) => Promise<UpdateDepartmentOut>;
-  duplicateDepartmentAction?: (
-    input: DuplicateDepartmentIn
-  ) => Promise<DuplicateDepartmentOut>;
   deleteDepartmentAction?: (
     input: DeleteDepartmentIn
   ) => Promise<DeleteDepartmentOut>;
@@ -99,7 +94,6 @@ export default function Department({
   departmentDetailDefault: serverDepartmentDetailDefault,
   createDepartmentAction,
   updateDepartmentAction,
-  duplicateDepartmentAction: _duplicateDepartmentAction,
   deleteDepartmentAction,
 }: DepartmentProps) {
   const router = useRouter();

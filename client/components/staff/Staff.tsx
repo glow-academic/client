@@ -139,12 +139,10 @@ export type BulkCreateOrUpdateStaffAction = (
 export interface StaffProps {
   // Server-provided data (fetched server-side, no client fetching)
   listData: StaffListOut;
-  initialSearchData?: SearchStaffOut;
   initialCreateStaffData?: CreateStaffDataOut;
   // Server actions (pure server actions, no client-side mutations)
   deleteStaffAction?: DeleteStaffAction;
   bulkDeleteStaffAction?: BulkDeleteStaffAction;
-  searchStaffAction?: SearchStaffAction;
   processCSVAction?: ProcessCSVAction;
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
 }
@@ -405,11 +403,9 @@ import TotalRequestsKPI from "./kpis/TotalRequestsKPI";
 
 export default function Staff({
   listData: serverListData,
-  initialSearchData: _initialSearchData,
   initialCreateStaffData,
   deleteStaffAction,
   bulkDeleteStaffAction,
-  searchStaffAction: _searchStaffAction,
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
 }: StaffProps) {

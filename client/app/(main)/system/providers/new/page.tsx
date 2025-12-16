@@ -15,22 +15,6 @@ type ProviderNewOut = OutputOf<"/api/v3/providers/new", "post">;
 type CreateProviderIn = InputOf<"/api/v3/providers/create", "post">;
 type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
-const getProviderDefault = async (profileId: string): Promise<ProviderNewOut> => {
-  return api.post(
-    "/providers/new",
-    { body: { profileId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    },
-  );
-};
-
 /** ---- Strongly-typed server action ---- */
 async function createProvider(input: CreateProviderIn): Promise<CreateProviderOut> {
   "use server";
@@ -64,16 +48,13 @@ export default async function NewProviderPage() {
     return null;
   }
 
-  // Fetch provider default data (for dropdowns and defaults)
-  const providerDetailDefault = await getProviderDefault(profileId);
-
   return (
     <div
       className="space-y-6"
       data-page="provider-new"
       aria-label="Create new provider page"
     >
-      <Provider providerDetailDefault={providerDetailDefault} createProviderAction={createProvider} />
+      <Provider createProviderAction={createProvider} />
     </div>
   );
 }

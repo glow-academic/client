@@ -51,8 +51,6 @@ import type {
   DeleteDocumentIn,
   DeleteDocumentOut,
   DocumentsListOut,
-  GenerateTemplateIn,
-  GenerateTemplateOut,
 } from "@/app/(main)/management/documents/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -73,15 +71,11 @@ export interface DocumentsProps {
   deleteDocumentAction?: (
     input: DeleteDocumentIn,
   ) => Promise<DeleteDocumentOut>;
-  generateTemplateAction?: (
-    input: GenerateTemplateIn,
-  ) => Promise<GenerateTemplateOut>;
 }
 
 export default function Documents({
   listData: serverListData,
   deleteDocumentAction,
-  generateTemplateAction: _generateTemplateAction,
 }: DocumentsProps) {
   const router = useRouter();
   const { departmentIds } = useProfile();

@@ -11,7 +11,6 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { getSession } from "@/auth";
 import type { Metadata } from "next";
-import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type StaffListIn = InputOf<"/api/v3/profile/staff/list", "post">;
@@ -67,12 +66,6 @@ const getStaffList = async (input: StaffListIn): Promise<StaffListOut> => {
   });
 };
 
-const getInitialSearchData = cache(
-  async (input: SearchStaffIn): Promise<SearchStaffOut> => {
-    return api.post("/profile/staff/search-staff", input);
-  }
-);
-
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function deleteStaff(
   input: DeleteStaffIn
@@ -88,13 +81,6 @@ async function bulkDeleteStaff(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/profile/staff/bulk-delete", input);
-}
-
-async function searchStaff(
-  input: SearchStaffIn
-): Promise<SearchStaffOut> {
-  "use server";
-  return api.post("/profile/staff/search-staff", input);
 }
 
 async function getCreateStaffData(
@@ -141,17 +127,6 @@ export default async function StaffPage() {
     body: { profileId },
   });
 
-  // Fetch initial search data (empty query) for SearchExistingStaffModal
-  const initialSearchData = await getInitialSearchData({
-    body: {
-      query: null,
-      cohortIds: null,
-      departmentIds: null,
-      limit: 200,
-      profileId,
-    },
-  });
-
   // Fetch initial create staff data for CreateStaffButton
   const initialCreateStaffData = await getCreateStaffData({
     body: {
@@ -164,11 +139,9 @@ export default async function StaffPage() {
     <div className="space-y-6">
       <Staff
         listData={listData}
-        initialSearchData={initialSearchData}
         initialCreateStaffData={initialCreateStaffData}
         deleteStaffAction={deleteStaff}
         bulkDeleteStaffAction={bulkDeleteStaff}
-        searchStaffAction={searchStaff}
         processCSVAction={processCSV}
         bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
       />

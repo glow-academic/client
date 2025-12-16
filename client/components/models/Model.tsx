@@ -110,15 +110,9 @@ import type {
   UpdateModelOut,
 } from "@/app/(main)/engine/models/[modelId]/page";
 import type {
-  CreateKeyIn,
-  CreateKeyOut,
   CreateModelIn,
   CreateModelOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
   ModelNewOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
 } from "@/app/(main)/engine/models/new/page";
 
 export interface ModelProps {
@@ -129,10 +123,6 @@ export interface ModelProps {
   modelDetail?: ModelDetailOut;
   createModelAction?: (input: CreateModelIn) => Promise<CreateModelOut>;
   updateModelAction?: (input: UpdateModelIn) => Promise<UpdateModelOut>;
-  // Key management actions
-  createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
-  decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
-  updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
 }
 
 export default function Model({
@@ -141,9 +131,6 @@ export default function Model({
   modelDetail: serverModelDetail,
   createModelAction,
   updateModelAction,
-  createKeyAction: _createKeyAction,
-  decryptKeyAction: _decryptKeyAction,
-  updateKeyAction: _updateKeyAction,
 }: ModelProps) {
   const router = useRouter();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();

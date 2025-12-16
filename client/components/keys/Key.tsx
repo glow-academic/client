@@ -43,7 +43,6 @@ import type {
   CreateKeyOut,
   DecryptKeyIn as DecryptKeyInNew,
   DecryptKeyOut as DecryptKeyOutNew,
-  KeyNewOut,
 } from "@/app/(main)/system/keys/new/page";
 
 interface FormErrors {
@@ -61,8 +60,6 @@ interface FormData {
 
 export interface KeyProps {
   keyId?: string;
-  // For create mode: default key detail
-  keyDetailDefault?: KeyNewOut;
   // For edit mode: key detail
   keyDetail?: KeyDetailOut;
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
@@ -74,7 +71,6 @@ export interface KeyProps {
 
 export default function Key({
   keyId,
-  keyDetailDefault: _keyDetailDefault,
   keyDetail: serverKeyDetail,
   createKeyAction,
   updateKeyAction,

@@ -16,12 +16,6 @@ type ModelNewIn = InputOf<"/api/v3/models/new", "post">;
 type ModelNewOut = OutputOf<"/api/v3/models/new", "post">;
 type CreateModelIn = InputOf<"/api/v3/models/create", "post">;
 type CreateModelOut = OutputOf<"/api/v3/models/create", "post">;
-type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
-type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
-type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
-type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
-type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
-type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
@@ -63,37 +57,6 @@ async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
   });
 }
 
-async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
-  "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/keys/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
-}
-
-async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
-  "use server";
-  return api.post("/keys/decrypt-key", input);
-}
-
-async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
-  "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/keys/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
-}
-
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewModelPage() {
   // Access control is handled server-side in layout
@@ -114,9 +77,6 @@ export default async function NewModelPage() {
       <Model
         modelDetailDefault={modelDetailDefault}
         createModelAction={createModel}
-        createKeyAction={createKey}
-        decryptKeyAction={decryptKey}
-        updateKeyAction={updateKey}
       />
     </div>
   );
@@ -128,10 +88,4 @@ export type {
   CreateModelOut,
   ModelNewIn,
   ModelNewOut,
-  CreateKeyIn,
-  CreateKeyOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
 };
