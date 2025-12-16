@@ -16,7 +16,7 @@ server_router = APIRouter()
 
 # Pydantic models
 class VoiceUserDeltaPayload(BaseModel):
-    """Client-to-server payload for simulation_voice_user_delta."""
+    """Request to send incremental user speech delta in voice simulation."""
 
     chat_id: str
     item_id: str
@@ -82,6 +82,6 @@ async def simulation_voice_user_delta_api(request: VoiceUserDeltaPayload) -> dic
 
 
 @server_router.post("/delta", response_model=dict[str, bool])
-async def simulation_voice_user_delta_api(request: VoiceUserDeltaPayload) -> dict[str, bool]:
+async def simulation_voice_user_delta_server_api(request: VoiceUserDeltaPayload) -> dict[str, bool]:
     """Server-to-client event: User speech delta from voice simulation."""
     return {"success": True}

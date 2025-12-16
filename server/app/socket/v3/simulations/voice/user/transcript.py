@@ -18,7 +18,7 @@ server_router = APIRouter()
 
 # Pydantic models
 class VoiceUserTranscriptPayload(BaseModel):
-    """Client-to-server payload for simulation_voice_user_transcript."""
+    """Request to send user transcript from voice simulation."""
 
     chat_id: str
     item_id: str
@@ -252,6 +252,6 @@ async def simulation_voice_user_transcript_api(request: VoiceUserTranscriptPaylo
 
 
 @server_router.post("/transcript", response_model=dict[str, bool])
-async def simulation_voice_user_transcript_api(request: VoiceUserTranscriptPayload) -> dict[str, bool]:
+async def simulation_voice_user_transcript_server_api(request: VoiceUserTranscriptPayload) -> dict[str, bool]:
     """Server-to-client event: User transcript from voice simulation."""
     return {"success": True}

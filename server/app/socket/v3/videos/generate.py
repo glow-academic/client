@@ -22,6 +22,8 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class VideoGenerationProgressPayload(BaseModel):
+    """Response indicating progress in video generation."""
+
     type: str  # "start", "polling", "completed"
     message: str | None = None
     status: str | None = None  # "created", "processing", "completed", "failed"
@@ -30,6 +32,8 @@ class VideoGenerationProgressPayload(BaseModel):
 
 
 class VideoGenerationCompletePayload(BaseModel):
+    """Response indicating video generation completed successfully."""
+
     success: bool
     message: str
     videoUrl: str | None = None
@@ -37,6 +41,8 @@ class VideoGenerationCompletePayload(BaseModel):
 
 
 class VideoGenerationErrorPayload(BaseModel):
+    """Response indicating an error occurred in video generation."""
+
     success: bool
     message: str
     video_id: str | None = None
@@ -44,6 +50,8 @@ class VideoGenerationErrorPayload(BaseModel):
 
 # Pydantic model for client-to-server event
 class GenerateVideoPayload(BaseModel):
+    """Request to generate a video."""
+
     videoId: str
     prompt: str
     imageReferenceId: str | None = None

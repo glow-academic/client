@@ -28,6 +28,8 @@ except ImportError:
 
 
 class GenerateImagePayload(BaseModel):
+    """Request to generate an image."""
+
     image_id: str
     name: str
     prompt: str

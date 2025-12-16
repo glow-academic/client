@@ -16,20 +16,20 @@ server_router = APIRouter()
 
 # Pydantic models
 class StopVoicePayload(BaseModel):
-    """Client-to-server payload for simulation_voice_stop."""
+    """Request to stop a voice simulation session."""
 
     chat_id: str
 
 
 class StopVoiceErrorPayload(BaseModel):
-    """Server-to-client error payload."""
+    """Response indicating an error occurred while stopping voice simulation."""
 
     success: bool
     message: str
 
 
 class StopVoiceResponsePayload(BaseModel):
-    """Server-to-client response payload."""
+    """Response from stopping a voice simulation session."""
 
     success: bool
     message: str

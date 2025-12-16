@@ -29,22 +29,28 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class DocumentTemplateGenerationProgressPayload(BaseModel):
+    """Response indicating progress in document template generation."""
+
     type: str  # "start", "complete"
     message: str | None = None
     trace_id: str | None = None
 
 
 class DocumentTemplateGenerationCompletePayload(BaseModel):
+    """Response indicating document template generation completed successfully."""
+
     success: bool
     message: str
     template_html: str
-    template_schema: dict[str, Any]
+    template_schema: dict[str, Any]  # Dynamic JSON schema for template variables
     upload_id: str
-    template_mapping: dict[str, Any] | None = None
+    template_mapping: dict[str, Any] | None = None  # Dynamic mapping of template uploads
     trace_id: str | None = None
 
 
 class DocumentTemplateGenerationErrorPayload(BaseModel):
+    """Response indicating an error occurred in document template generation."""
+
     success: bool
     message: str
     trace_id: str | None = None
@@ -52,6 +58,8 @@ class DocumentTemplateGenerationErrorPayload(BaseModel):
 
 # Pydantic model for client-to-server event
 class GenerateDocumentTemplatePayload(BaseModel):
+    """Request to generate a document template."""
+
     departmentId: str
     profileId: str | None = None
     documentId: str | None = None

@@ -5696,10 +5696,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Voice User Start Api
+         * Simulation Voice User Start Server Api
          * @description Server-to-client event: User speech started in voice simulation.
          */
-        post: operations["simulation_voice_user_start_api_socket_v3_server_simulations_voice_user_start_post"];
+        post: operations["simulation_voice_user_start_server_api_socket_v3_server_simulations_voice_user_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5716,10 +5716,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Voice User Delta Api
+         * Simulation Voice User Delta Server Api
          * @description Server-to-client event: User speech delta from voice simulation.
          */
-        post: operations["simulation_voice_user_delta_api_socket_v3_server_simulations_voice_user_delta_post"];
+        post: operations["simulation_voice_user_delta_server_api_socket_v3_server_simulations_voice_user_delta_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5736,10 +5736,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Voice User Transcript Api
+         * Simulation Voice User Transcript Server Api
          * @description Server-to-client event: User transcript from voice simulation.
          */
-        post: operations["simulation_voice_user_transcript_api_socket_v3_server_simulations_voice_user_transcript_post"];
+        post: operations["simulation_voice_user_transcript_server_api_socket_v3_server_simulations_voice_user_transcript_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5796,10 +5796,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Voice Assistant Done Api
-         * @description Client-to-server event: Assistant tool call done in voice simulation.
+         * Simulation Voice Assistant Done Server Api
+         * @description Server-to-client event: Assistant tool call done in voice simulation.
          */
-        post: operations["simulation_voice_assistant_done_api_socket_v3_server_simulations_voice_assistant_done_post"];
+        post: operations["simulation_voice_assistant_done_server_api_socket_v3_server_simulations_voice_assistant_done_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5816,10 +5816,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Voice Assistant Interrupted Api
-         * @description Client-to-server event: Signal that assistant was interrupted in voice simulation.
+         * Simulation Voice Assistant Interrupted Server Api
+         * @description Server-to-client event: Signal that assistant was interrupted in voice simulation.
          */
-        post: operations["simulation_voice_assistant_interrupted_api_socket_v3_server_simulations_voice_assistant_interrupted_post"];
+        post: operations["simulation_voice_assistant_interrupted_server_api_socket_v3_server_simulations_voice_assistant_interrupted_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6911,6 +6911,18 @@ export interface components {
             /** Message */
             message: string;
         };
+        /**
+         * CachedTokenDetails
+         * @description Cached token details within input token details.
+         */
+        CachedTokenDetails: {
+            /** Audio Tokens */
+            audio_tokens?: number | null;
+            /** Text Tokens */
+            text_tokens?: number | null;
+            /** Image Tokens */
+            image_tokens?: number | null;
+        };
         /** ChatData */
         ChatData: {
             chat: components["schemas"]["ChatItem"];
@@ -6959,7 +6971,10 @@ export interface components {
             /** Documentids */
             documentIds: string[];
         };
-        /** ChatStoppedPayload */
+        /**
+         * ChatStoppedPayload
+         * @description Response indicating chat session stopped successfully.
+         */
         ChatStoppedPayload: {
             /** Chat Id */
             chat_id: string;
@@ -7390,7 +7405,10 @@ export interface components {
                 [key: string]: string;
             }[];
         };
-        /** ConnectionConfirmedPayload */
+        /**
+         * ConnectionConfirmedPayload
+         * @description Response indicating WebSocket connection was confirmed.
+         */
         ConnectionConfirmedPayload: {
             /** Sid */
             sid: string;
@@ -7423,14 +7441,20 @@ export interface components {
             /** Timetaken */
             timeTaken: number | null;
         };
-        /** ContinueSimulationErrorPayload */
+        /**
+         * ContinueSimulationErrorPayload
+         * @description Response indicating an error occurred while continuing simulation.
+         */
         ContinueSimulationErrorPayload: {
             /** Success */
             success: boolean;
             /** Message */
             message: string;
         };
-        /** ContinueSimulationPayload */
+        /**
+         * ContinueSimulationPayload
+         * @description Request to continue simulation to next chat.
+         */
         ContinueSimulationPayload: {
             /** Chat Id */
             chat_id: string;
@@ -7988,14 +8012,20 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** CreatePracticeScenarioErrorPayload */
+        /**
+         * CreatePracticeScenarioErrorPayload
+         * @description Response indicating an error occurred while creating practice scenario.
+         */
         CreatePracticeScenarioErrorPayload: {
             /** Success */
             success: boolean;
             /** Message */
             message: string;
         };
-        /** CreatePracticeScenarioPayload */
+        /**
+         * CreatePracticeScenarioPayload
+         * @description Request to create and start a practice scenario simulation.
+         */
         CreatePracticeScenarioPayload: {
             /** Persona Id */
             persona_id?: string | null;
@@ -9134,7 +9164,10 @@ export interface components {
             /** Can Delete */
             can_delete: boolean;
         };
-        /** DocumentTemplateGenerationCompletePayload */
+        /**
+         * DocumentTemplateGenerationCompletePayload
+         * @description Response indicating document template generation completed successfully.
+         */
         DocumentTemplateGenerationCompletePayload: {
             /** Success */
             success: boolean;
@@ -9155,7 +9188,10 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** DocumentTemplateGenerationErrorPayload */
+        /**
+         * DocumentTemplateGenerationErrorPayload
+         * @description Response indicating an error occurred in document template generation.
+         */
         DocumentTemplateGenerationErrorPayload: {
             /** Success */
             success: boolean;
@@ -9164,7 +9200,10 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** DocumentTemplateGenerationProgressPayload */
+        /**
+         * DocumentTemplateGenerationProgressPayload
+         * @description Response indicating progress in document template generation.
+         */
         DocumentTemplateGenerationProgressPayload: {
             /** Type */
             type: string;
@@ -9173,7 +9212,10 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** DocumentToolCompletePayload */
+        /**
+         * DocumentToolCompletePayload
+         * @description Response indicating document tool completed successfully.
+         */
         DocumentToolCompletePayload: {
             /** Success */
             success: boolean;
@@ -9186,7 +9228,10 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /** DocumentToolErrorPayload */
+        /**
+         * DocumentToolErrorPayload
+         * @description Response indicating an error occurred in document tool.
+         */
         DocumentToolErrorPayload: {
             /** Success */
             success: boolean;
@@ -9195,7 +9240,10 @@ export interface components {
             /** Trace Id */
             trace_id: string;
         };
-        /** DocumentToolPayload */
+        /**
+         * DocumentToolPayload
+         * @description Request to create document from scenario generation tool.
+         */
         DocumentToolPayload: {
             /** Trace Id */
             trace_id: string;
@@ -9511,7 +9559,10 @@ export interface components {
             /** Totalpossiblepoints */
             totalPossiblePoints: number;
         };
-        /** EndAllCompletedPayload */
+        /**
+         * EndAllCompletedPayload
+         * @description Response indicating end all operation completed.
+         */
         EndAllCompletedPayload: {
             /** Success */
             success: boolean;
@@ -9528,14 +9579,20 @@ export interface components {
             /** All Completed */
             all_completed?: boolean | null;
         };
-        /** EndAllStartedPayload */
+        /**
+         * EndAllStartedPayload
+         * @description Response indicating end all operation started.
+         */
         EndAllStartedPayload: {
             /** Chat Id */
             chat_id: string;
             /** Attempt Id */
             attempt_id: string;
         };
-        /** EndChatStartedPayload */
+        /**
+         * EndChatStartedPayload
+         * @description Response indicating end chat operation started.
+         */
         EndChatStartedPayload: {
             /** Chat Id */
             chat_id: string;
@@ -10031,7 +10088,10 @@ export interface components {
             /** Profileid */
             profileId: string;
         };
-        /** GenerateDocumentTemplatePayload */
+        /**
+         * GenerateDocumentTemplatePayload
+         * @description Request to generate a document template.
+         */
         GenerateDocumentTemplatePayload: {
             /** Departmentid */
             departmentId: string;
@@ -10046,7 +10106,10 @@ export interface components {
             /** Fieldids */
             fieldIds?: string[] | null;
         };
-        /** GenerateImagePayload */
+        /**
+         * GenerateImagePayload
+         * @description Request to generate an image.
+         */
         GenerateImagePayload: {
             /** Image Id */
             image_id: string;
@@ -10065,7 +10128,10 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** GenerateScenarioAIPayload */
+        /**
+         * GenerateScenarioAIPayload
+         * @description Request to generate a scenario using AI.
+         */
         GenerateScenarioAIPayload: {
             /** Departmentid */
             departmentId: string;
@@ -10110,7 +10176,10 @@ export interface components {
              */
             questionsEnabled: boolean;
         };
-        /** GenerateVideoPayload */
+        /**
+         * GenerateVideoPayload
+         * @description Request to generate a video.
+         */
         GenerateVideoPayload: {
             /** Videoid */
             videoId: string;
@@ -10259,7 +10328,10 @@ export interface components {
             database: components["schemas"]["HealthKPI"];
             authentication: components["schemas"]["HealthKPI"];
         };
-        /** HintGenerationProgressPayload */
+        /**
+         * HintGenerationProgressPayload
+         * @description Response indicating progress in hint generation.
+         */
         HintGenerationProgressPayload: {
             /** Type */
             type: string;
@@ -10482,7 +10554,10 @@ export interface components {
             /** Cohortnames */
             cohortNames?: string | null;
         };
-        /** ImageGenerationCompletePayload */
+        /**
+         * ImageGenerationCompletePayload
+         * @description Request to complete image generation.
+         */
         ImageGenerationCompletePayload: {
             /** Image Id */
             image_id: string;
@@ -10497,7 +10572,10 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** ImageToolCompletePayload */
+        /**
+         * ImageToolCompletePayload
+         * @description Response indicating image tool completed successfully.
+         */
         ImageToolCompletePayload: {
             /** Success */
             success: boolean;
@@ -10508,7 +10586,10 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /** ImageToolPayload */
+        /**
+         * ImageToolPayload
+         * @description Request to create image from scenario generation tool.
+         */
         ImageToolPayload: {
             /** Trace Id */
             trace_id: string;
@@ -10524,6 +10605,21 @@ export interface components {
             profile_id?: string | null;
             /** Scenario Id */
             scenario_id?: string | null;
+        };
+        /**
+         * InputTokenDetails
+         * @description Input token details from Realtime API usage.
+         */
+        InputTokenDetails: {
+            /** Audio Tokens */
+            audio_tokens?: number | null;
+            /** Text Tokens */
+            text_tokens?: number | null;
+            /** Image Tokens */
+            image_tokens?: number | null;
+            /** Cached Tokens */
+            cached_tokens?: number | null;
+            cached_tokens_details?: components["schemas"]["CachedTokenDetails"] | null;
         };
         /**
          * KeyDetailRequest
@@ -10826,7 +10922,10 @@ export interface components {
             /** Created At */
             created_at: string;
         };
-        /** LogRunPayload */
+        /**
+         * LogRunPayload
+         * @description Request to log run pricing and metrics.
+         */
         LogRunPayload: {
             /** Runid */
             runId: string;
@@ -10849,9 +10948,7 @@ export interface components {
             /** Systemprompt */
             systemPrompt?: string | null;
             /** Inputitems */
-            inputItems?: {
-                [key: string]: unknown;
-            }[] | null;
+            inputItems?: components["schemas"]["ResponseInputItem"][] | null;
             /** Assistantoutput */
             assistantOutput?: string | null;
             /** Departmentid */
@@ -10994,7 +11091,10 @@ export interface components {
             /** Personaid */
             personaId?: string | null;
         };
-        /** MessageSentPayload */
+        /**
+         * MessageSentPayload
+         * @description Response indicating a message was sent.
+         */
         MessageSentPayload: {
             /** Message Id */
             message_id: string;
@@ -11302,7 +11402,10 @@ export interface components {
             /** Description */
             description: string;
         };
-        /** ObjectivesToolCompletePayload */
+        /**
+         * ObjectivesToolCompletePayload
+         * @description Response indicating objectives tool completed successfully.
+         */
         ObjectivesToolCompletePayload: {
             /** Success */
             success: boolean;
@@ -11313,7 +11416,10 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /** ObjectivesToolPayload */
+        /**
+         * ObjectivesToolPayload
+         * @description Request to create objectives from scenario generation tool.
+         */
         ObjectivesToolPayload: {
             /** Trace Id */
             trace_id: string;
@@ -11332,6 +11438,16 @@ export interface components {
             type: string;
             /** Iscorrect */
             isCorrect: boolean;
+        };
+        /**
+         * OutputTokenDetails
+         * @description Output token details from Realtime API usage.
+         */
+        OutputTokenDetails: {
+            /** Audio Tokens */
+            audio_tokens?: number | null;
+            /** Text Tokens */
+            text_tokens?: number | null;
         };
         /**
          * ParameterDetail
@@ -11581,6 +11697,18 @@ export interface components {
             description: string | null;
             /** Score */
             score: number;
+        };
+        /**
+         * PersonaTool
+         * @description Persona tool definition for voice agent.
+         */
+        PersonaTool: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Parameters */
+            parameters: string;
         };
         /**
          * PersonaToolContext
@@ -12002,7 +12130,10 @@ export interface components {
                 [key: string]: string;
             };
         };
-        /** ProblemStatementToolCompletePayload */
+        /**
+         * ProblemStatementToolCompletePayload
+         * @description Response indicating problem statement tool completed successfully.
+         */
         ProblemStatementToolCompletePayload: {
             /** Success */
             success: boolean;
@@ -12013,7 +12144,10 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /** ProblemStatementToolPayload */
+        /**
+         * ProblemStatementToolPayload
+         * @description Request to create problem statement from scenario generation tool.
+         */
         ProblemStatementToolPayload: {
             /** Trace Id */
             trace_id: string;
@@ -12562,8 +12696,20 @@ export interface components {
             /** Sql */
             sql: string;
         };
+        /**
+         * QuestionItem
+         * @description Question item for scenario questions tool.
+         */
+        "QuestionItem-Input": {
+            /** Question Text */
+            question_text: string;
+            /** Allow Multiple */
+            allow_multiple: boolean;
+            /** Options */
+            options: components["schemas"]["QuestionOption"][];
+        };
         /** QuestionItem */
-        QuestionItem: {
+        "QuestionItem-Output": {
             /** Id */
             id: string;
             /** Questiontext */
@@ -12576,6 +12722,16 @@ export interface components {
             times: number[];
             /** Options */
             options: components["schemas"]["OptionItem"][];
+        };
+        /**
+         * QuestionOption
+         * @description Option for a question.
+         */
+        QuestionOption: {
+            /** Option Text */
+            option_text: string;
+            /** Is Correct */
+            is_correct: boolean;
         };
         /** QuizItem */
         QuizItem: {
@@ -12622,6 +12778,36 @@ export interface components {
             max: number;
         };
         /**
+         * RealtimeContentItem
+         * @description Content item within a RealtimeItem message.
+         */
+        RealtimeContentItem: {
+            /** Type */
+            type: string;
+            /** Text */
+            text?: string | null;
+            /** Audio */
+            audio?: string | null;
+            /** Transcript */
+            transcript?: string | null;
+        };
+        /**
+         * RealtimeItem
+         * @description RealtimeItem format for conversation history.
+         */
+        RealtimeItem: {
+            /** Type */
+            type: string;
+            /** Role */
+            role: string;
+            /** Content */
+            content: components["schemas"]["RealtimeContentItem"][];
+            /** Status */
+            status: string;
+            /** Itemid */
+            itemId?: string | null;
+        };
+        /**
          * ReasoningMappingItem
          * @description Reasoning mapping item.
          */
@@ -12664,7 +12850,10 @@ export interface components {
             /** Status */
             status: string;
         };
-        /** RegenerateScenarioPayload */
+        /**
+         * RegenerateScenarioPayload
+         * @description Request to regenerate a scenario.
+         */
         RegenerateScenarioPayload: {
             /** Scenarioid */
             scenarioId: string;
@@ -12928,6 +13117,18 @@ export interface components {
             profileId: string;
             /** Departmentids */
             departmentIds?: string[] | null;
+        };
+        /**
+         * ResponseInputItem
+         * @description Input item for agent conversation (TResponseInputItem format).
+         */
+        ResponseInputItem: {
+            /** Role */
+            role: string;
+            /** Content */
+            content: string | {
+                [key: string]: unknown;
+            }[];
         };
         /**
          * RubricDetailRequest
@@ -13375,7 +13576,10 @@ export interface components {
             /** Completedattempts */
             completedAttempts: number;
         };
-        /** ScenarioGenerationCompletePayload */
+        /**
+         * ScenarioGenerationCompletePayload
+         * @description Response indicating scenario generation completed successfully.
+         */
         ScenarioGenerationCompletePayload: {
             /** Success */
             success: boolean;
@@ -13384,7 +13588,10 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** ScenarioGenerationErrorPayload */
+        /**
+         * ScenarioGenerationErrorPayload
+         * @description Response indicating an error occurred in scenario generation.
+         */
         ScenarioGenerationErrorPayload: {
             /** Success */
             success: boolean;
@@ -13393,7 +13600,10 @@ export interface components {
             /** Trace Id */
             trace_id?: string | null;
         };
-        /** ScenarioGenerationProgressPayload */
+        /**
+         * ScenarioGenerationProgressPayload
+         * @description Response indicating progress in scenario generation.
+         */
         ScenarioGenerationProgressPayload: {
             /** Type */
             type: string;
@@ -13516,7 +13726,10 @@ export interface components {
              */
             status: "success" | "warning" | "danger" | "neutral";
         };
-        /** ScenarioQuestionsToolCompletePayload */
+        /**
+         * ScenarioQuestionsToolCompletePayload
+         * @description Response indicating questions tool completed successfully.
+         */
         ScenarioQuestionsToolCompletePayload: {
             /** Success */
             success: boolean;
@@ -13527,7 +13740,10 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /** ScenarioQuestionsToolErrorPayload */
+        /**
+         * ScenarioQuestionsToolErrorPayload
+         * @description Response indicating an error occurred in questions tool.
+         */
         ScenarioQuestionsToolErrorPayload: {
             /** Success */
             success: boolean;
@@ -13536,14 +13752,15 @@ export interface components {
             /** Trace Id */
             trace_id: string;
         };
-        /** ScenarioQuestionsToolPayload */
+        /**
+         * ScenarioQuestionsToolPayload
+         * @description Request to create questions from scenario generation tool.
+         */
         ScenarioQuestionsToolPayload: {
             /** Trace Id */
             trace_id: string;
             /** Questions */
-            questions: {
-                [key: string]: unknown;
-            }[];
+            questions: components["schemas"]["QuestionItem-Input"][];
             /** Scenario Id */
             scenario_id: string;
             /** Video Id */
@@ -13588,7 +13805,10 @@ export interface components {
              */
             status: "success" | "warning" | "danger" | "neutral";
         };
-        /** ScenarioVideoToolCompletePayload */
+        /**
+         * ScenarioVideoToolCompletePayload
+         * @description Response indicating video tool completed successfully.
+         */
         ScenarioVideoToolCompletePayload: {
             /** Success */
             success: boolean;
@@ -13601,7 +13821,10 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /** ScenarioVideoToolErrorPayload */
+        /**
+         * ScenarioVideoToolErrorPayload
+         * @description Response indicating an error occurred in video tool.
+         */
         ScenarioVideoToolErrorPayload: {
             /** Success */
             success: boolean;
@@ -13610,7 +13833,10 @@ export interface components {
             /** Trace Id */
             trace_id: string;
         };
-        /** ScenarioVideoToolPayload */
+        /**
+         * ScenarioVideoToolPayload
+         * @description Request to generate video from scenario generation tool.
+         */
         ScenarioVideoToolPayload: {
             /** Trace Id */
             trace_id: string;
@@ -13776,14 +14002,20 @@ export interface components {
              */
             parameterItemIds: string[];
         };
-        /** SendSimulationMessageErrorPayload */
+        /**
+         * SendSimulationMessageErrorPayload
+         * @description Response indicating an error occurred while sending simulation message.
+         */
         SendSimulationMessageErrorPayload: {
             /** Success */
             success: boolean;
             /** Message */
             message: string;
         };
-        /** SendSimulationMessagePayload */
+        /**
+         * SendSimulationMessagePayload
+         * @description Request to send a simulation message.
+         */
         SendSimulationMessagePayload: {
             /** Chat Id */
             chat_id: string;
@@ -14080,7 +14312,10 @@ export interface components {
             /** Practicesimulation */
             practiceSimulation: boolean;
         };
-        /** SimulationContinuedPayload */
+        /**
+         * SimulationContinuedPayload
+         * @description Response indicating simulation was continued successfully.
+         */
         SimulationContinuedPayload: {
             /** Success */
             success: boolean;
@@ -14129,7 +14364,10 @@ export interface components {
          * @enum {string}
          */
         SimulationFilter: "general" | "practice" | "archived";
-        /** SimulationGradingProgressPayload */
+        /**
+         * SimulationGradingProgressPayload
+         * @description Response indicating progress in simulation grading.
+         */
         SimulationGradingProgressPayload: {
             /** Type */
             type: string;
@@ -14196,14 +14434,20 @@ export interface components {
             /** Can Remove */
             can_remove: boolean;
         };
-        /** SimulationJoinErrorPayload */
+        /**
+         * SimulationJoinErrorPayload
+         * @description Response indicating an error occurred while joining simulation chat room.
+         */
         SimulationJoinErrorPayload: {
             /** Success */
             success: boolean;
             /** Message */
             message: string;
         };
-        /** SimulationJoinPayload */
+        /**
+         * SimulationJoinPayload
+         * @description Request to join a simulation chat room for real-time updates.
+         */
         SimulationJoinPayload: {
             /** Chat Id */
             chat_id: string;
@@ -14213,21 +14457,30 @@ export interface components {
              */
             chat_type: string;
         };
-        /** SimulationJoinedPayload */
+        /**
+         * SimulationJoinedPayload
+         * @description Response indicating successfully joined simulation chat room.
+         */
         SimulationJoinedPayload: {
             /** Chat Id */
             chat_id: string;
             /** Chat Type */
             chat_type: string;
         };
-        /** SimulationLeaveErrorPayload */
+        /**
+         * SimulationLeaveErrorPayload
+         * @description Response indicating an error occurred while leaving simulation chat room.
+         */
         SimulationLeaveErrorPayload: {
             /** Success */
             success: boolean;
             /** Message */
             message: string;
         };
-        /** SimulationLeavePayload */
+        /**
+         * SimulationLeavePayload
+         * @description Request to leave a simulation chat room.
+         */
         SimulationLeavePayload: {
             /** Chat Id */
             chat_id: string;
@@ -14251,7 +14504,10 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /** SimulationMessageCancelledPayload */
+        /**
+         * SimulationMessageCancelledPayload
+         * @description Response indicating a simulation message was cancelled.
+         */
         SimulationMessageCancelledPayload: {
             /** Message Id */
             message_id: string;
@@ -14260,7 +14516,10 @@ export interface components {
             /** Final Content */
             final_content: string;
         };
-        /** SimulationMessageCompletePayload */
+        /**
+         * SimulationMessageCompletePayload
+         * @description Response indicating a simulation message was completed.
+         */
         SimulationMessageCompletePayload: {
             /** Message Id */
             message_id: string;
@@ -14269,14 +14528,20 @@ export interface components {
             /** Final Content */
             final_content: string;
         };
-        /** SimulationMessageErrorPayload */
+        /**
+         * SimulationMessageErrorPayload
+         * @description Response indicating an error occurred in a simulation message.
+         */
         SimulationMessageErrorPayload: {
             /** Chat Id */
             chat_id: string;
             /** Error */
             error: string;
         };
-        /** SimulationMessageTokenPayload */
+        /**
+         * SimulationMessageTokenPayload
+         * @description Response indicating a token was received for a simulation message.
+         */
         SimulationMessageTokenPayload: {
             /** Message Id */
             message_id: string;
@@ -14287,7 +14552,10 @@ export interface components {
             /** Accumulated Content */
             accumulated_content: string;
         };
-        /** SimulationNewMessagePayload */
+        /**
+         * SimulationNewMessagePayload
+         * @description Response indicating a new simulation message was created.
+         */
         SimulationNewMessagePayload: {
             /** Message Id */
             message_id: string;
@@ -14409,7 +14677,10 @@ export interface components {
             /** Score */
             score: number;
         };
-        /** SimulationStartedPayload */
+        /**
+         * SimulationStartedPayload
+         * @description Response indicating simulation started successfully.
+         */
         SimulationStartedPayload: {
             /** Success */
             success: boolean;
@@ -14418,7 +14689,10 @@ export interface components {
             /** Attempt Id */
             attempt_id: string;
         };
-        /** SimulationStoppedPayload */
+        /**
+         * SimulationStoppedPayload
+         * @description Response indicating simulation was stopped successfully.
+         */
         SimulationStoppedPayload: {
             /** Chat Id */
             chat_id: string;
@@ -14427,14 +14701,20 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** SimulationTextEndErrorPayload */
+        /**
+         * SimulationTextEndErrorPayload
+         * @description Response indicating an error occurred while ending simulation chat session.
+         */
         SimulationTextEndErrorPayload: {
             /** Success */
             success: boolean;
             /** Message */
             message: string;
         };
-        /** SimulationTextEndPayload */
+        /**
+         * SimulationTextEndPayload
+         * @description Request to end a simulation chat session.
+         */
         SimulationTextEndPayload: {
             /** Chat Id */
             chat_id: string;
@@ -14739,14 +15019,20 @@ export interface components {
             /** Points */
             points: number;
         };
-        /** StartSimulationErrorPayload */
+        /**
+         * StartSimulationErrorPayload
+         * @description Response indicating an error occurred while starting simulation.
+         */
         StartSimulationErrorPayload: {
             /** Success */
             success: boolean;
             /** Message */
             message: string;
         };
-        /** StartSimulationPayload */
+        /**
+         * StartSimulationPayload
+         * @description Request to start a text simulation attempt.
+         */
         StartSimulationPayload: {
             /** Simulation Id */
             simulation_id: string;
@@ -14764,7 +15050,7 @@ export interface components {
         };
         /**
          * StartVoiceErrorPayload
-         * @description Server-to-client error payload.
+         * @description Response indicating an error occurred while starting voice simulation.
          */
         StartVoiceErrorPayload: {
             /** Success */
@@ -14774,7 +15060,7 @@ export interface components {
         };
         /**
          * StartVoicePayload
-         * @description Client-to-server payload for simulation_voice_start.
+         * @description Request to start a voice simulation session.
          */
         StartVoicePayload: {
             /** Chat Id */
@@ -14782,7 +15068,7 @@ export interface components {
         };
         /**
          * StartVoiceResponsePayload
-         * @description Server-to-client response payload.
+         * @description Response from starting a voice simulation session.
          */
         StartVoiceResponsePayload: {
             /** Success */
@@ -14792,9 +15078,7 @@ export interface components {
             /** Ephemeral Key */
             ephemeral_key: string;
             /** Persona Tools */
-            persona_tools: {
-                [key: string]: string;
-            }[];
+            persona_tools: components["schemas"]["PersonaTool"][];
             /** Tool Context Map */
             tool_context_map: {
                 [key: string]: components["schemas"]["PersonaToolContext"];
@@ -14813,9 +15097,7 @@ export interface components {
              * History
              * @default []
              */
-            history: {
-                [key: string]: unknown;
-            }[];
+            history: components["schemas"]["RealtimeItem"][];
         };
         /**
          * StopEvalRequest
@@ -14841,21 +15123,27 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** StopSimulationErrorPayload */
+        /**
+         * StopSimulationErrorPayload
+         * @description Response indicating an error occurred while stopping simulation.
+         */
         StopSimulationErrorPayload: {
             /** Success */
             success: boolean;
             /** Message */
             message: string;
         };
-        /** StopSimulationPayload */
+        /**
+         * StopSimulationPayload
+         * @description Request to stop an active simulation run.
+         */
         StopSimulationPayload: {
             /** Chat Id */
             chat_id: string;
         };
         /**
          * StopVoiceErrorPayload
-         * @description Server-to-client error payload.
+         * @description Response indicating an error occurred while stopping voice simulation.
          */
         StopVoiceErrorPayload: {
             /** Success */
@@ -14865,7 +15153,7 @@ export interface components {
         };
         /**
          * StopVoicePayload
-         * @description Client-to-server payload for simulation_voice_stop.
+         * @description Request to stop a voice simulation session.
          */
         StopVoicePayload: {
             /** Chat Id */
@@ -14873,7 +15161,7 @@ export interface components {
         };
         /**
          * StopVoiceResponsePayload
-         * @description Server-to-client response payload.
+         * @description Response from stopping a voice simulation session.
          */
         StopVoiceResponsePayload: {
             /** Success */
@@ -15906,7 +16194,10 @@ export interface components {
             /** Uploadid */
             uploadId: string | null;
         };
-        /** VideoGenerationCompletePayload */
+        /**
+         * VideoGenerationCompletePayload
+         * @description Response indicating video generation completed successfully.
+         */
         VideoGenerationCompletePayload: {
             /** Success */
             success: boolean;
@@ -15917,7 +16208,10 @@ export interface components {
             /** Videoid */
             videoId?: string | null;
         };
-        /** VideoGenerationErrorPayload */
+        /**
+         * VideoGenerationErrorPayload
+         * @description Response indicating an error occurred in video generation.
+         */
         VideoGenerationErrorPayload: {
             /** Success */
             success: boolean;
@@ -15926,7 +16220,10 @@ export interface components {
             /** Video Id */
             video_id?: string | null;
         };
-        /** VideoGenerationProgressPayload */
+        /**
+         * VideoGenerationProgressPayload
+         * @description Response indicating progress in video generation.
+         */
         VideoGenerationProgressPayload: {
             /** Type */
             type: string;
@@ -15952,13 +16249,13 @@ export interface components {
             /** Videodocuments */
             videoDocuments: components["schemas"]["VideoDocumentItem"][];
             /** Questions */
-            questions: components["schemas"]["QuestionItem"][];
+            questions: components["schemas"]["QuestionItem-Output"][];
             /** Showimage */
             showImage: boolean;
         };
         /**
          * VoiceDebugInfoErrorPayload
-         * @description Server-to-client error payload.
+         * @description Response indicating an error occurred while processing debug info.
          */
         VoiceDebugInfoErrorPayload: {
             /** Success */
@@ -15968,7 +16265,7 @@ export interface components {
         };
         /**
          * VoiceDebugInfoPayload
-         * @description Client-to-server payload for simulation_voice_debug_info.
+         * @description Request to send debug info in voice simulation.
          */
         VoiceDebugInfoPayload: {
             /** Chat Id */
@@ -15978,7 +16275,7 @@ export interface components {
         };
         /**
          * VoiceInterruptedPayload
-         * @description Client-to-server payload for simulation_voice_assistant_interrupted.
+         * @description Request to signal that assistant was interrupted in voice simulation.
          */
         VoiceInterruptedPayload: {
             /** Chat Id */
@@ -15986,7 +16283,7 @@ export interface components {
         };
         /**
          * VoiceToolCallDeltaPayload
-         * @description Client-to-server payload for simulation_voice_assistant_delta.
+         * @description Request to send assistant tool call delta in voice simulation.
          */
         VoiceToolCallDeltaPayload: {
             /** Chat Id */
@@ -16002,7 +16299,7 @@ export interface components {
         };
         /**
          * VoiceToolCallDonePayload
-         * @description Client-to-server payload for simulation_voice_assistant_done.
+         * @description Request to signal that assistant tool call is done in voice simulation.
          */
         VoiceToolCallDonePayload: {
             /** Chat Id */
@@ -16018,7 +16315,7 @@ export interface components {
         };
         /**
          * VoiceToolCallErrorPayload
-         * @description Server-to-client error payload.
+         * @description Response indicating an error occurred in assistant tool call.
          */
         VoiceToolCallErrorPayload: {
             /** Success */
@@ -16027,8 +16324,20 @@ export interface components {
             message: string;
         };
         /**
+         * VoiceUsage
+         * @description Token usage information from Realtime API.
+         */
+        VoiceUsage: {
+            input_token_details: components["schemas"]["InputTokenDetails"];
+            output_token_details: components["schemas"]["OutputTokenDetails"];
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+        };
+        /**
          * VoiceUserDeltaPayload
-         * @description Client-to-server payload for simulation_voice_user_delta.
+         * @description Request to send incremental user speech delta in voice simulation.
          */
         VoiceUserDeltaPayload: {
             /** Chat Id */
@@ -16042,7 +16351,7 @@ export interface components {
         };
         /**
          * VoiceUserMessageErrorPayload
-         * @description Server-to-client error payload.
+         * @description Response indicating an error occurred while sending user message.
          */
         VoiceUserMessageErrorPayload: {
             /** Success */
@@ -16052,7 +16361,7 @@ export interface components {
         };
         /**
          * VoiceUserMessagePayload
-         * @description Client-to-server payload for simulation_voice_user_text.
+         * @description Request to send user text message in voice simulation.
          */
         VoiceUserMessagePayload: {
             /** Chat Id */
@@ -16064,7 +16373,7 @@ export interface components {
         };
         /**
          * VoiceUserSpeechPayload
-         * @description Client-to-server payload for simulation_voice_user_speech.
+         * @description Request to send user speech audio in voice simulation.
          */
         VoiceUserSpeechPayload: {
             /** Chat Id */
@@ -16075,14 +16384,11 @@ export interface components {
             response_id: string;
             /** Conversation Id */
             conversation_id: string;
-            /** Usage */
-            usage: {
-                [key: string]: unknown;
-            };
+            usage: components["schemas"]["VoiceUsage"];
         };
         /**
          * VoiceUserStartPayload
-         * @description Client-to-server payload for simulation_voice_user_start.
+         * @description Request to start user speech input in voice simulation.
          */
         VoiceUserStartPayload: {
             /** Chat Id */
@@ -16092,7 +16398,7 @@ export interface components {
         };
         /**
          * VoiceUserTranscriptPayload
-         * @description Client-to-server payload for simulation_voice_user_transcript.
+         * @description Request to send user transcript from voice simulation.
          */
         VoiceUserTranscriptPayload: {
             /** Chat Id */
@@ -29335,7 +29641,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_user_start_api_socket_v3_server_simulations_voice_user_start_post: {
+    simulation_voice_user_start_server_api_socket_v3_server_simulations_voice_user_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29370,7 +29676,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_user_delta_api_socket_v3_server_simulations_voice_user_delta_post: {
+    simulation_voice_user_delta_server_api_socket_v3_server_simulations_voice_user_delta_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29405,7 +29711,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_user_transcript_api_socket_v3_server_simulations_voice_user_transcript_post: {
+    simulation_voice_user_transcript_server_api_socket_v3_server_simulations_voice_user_transcript_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29510,7 +29816,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_assistant_done_api_socket_v3_server_simulations_voice_assistant_done_post: {
+    simulation_voice_assistant_done_server_api_socket_v3_server_simulations_voice_assistant_done_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29545,7 +29851,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_assistant_interrupted_api_socket_v3_server_simulations_voice_assistant_interrupted_post: {
+    simulation_voice_assistant_interrupted_server_api_socket_v3_server_simulations_voice_assistant_interrupted_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -17,12 +17,16 @@ server_router = APIRouter()
 
 
 class ObjectivesToolPayload(BaseModel):
+    """Request to create objectives from scenario generation tool."""
+
     trace_id: str
     objectives: list[str]
     scenario_id: str | None = None
 
 
 class ObjectivesToolCompletePayload(BaseModel):
+    """Response indicating objectives tool completed successfully."""
+
     success: bool
     objective_ids: list[str]
     trace_id: str
@@ -30,6 +34,8 @@ class ObjectivesToolCompletePayload(BaseModel):
 
 
 class ObjectivesToolErrorPayload(BaseModel):
+    """Response indicating an error occurred in objectives tool."""
+
     success: bool
     message: str
     trace_id: str

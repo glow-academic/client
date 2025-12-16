@@ -22,6 +22,8 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class ConnectionConfirmedPayload(BaseModel):
+    """Response indicating WebSocket connection was confirmed."""
+
     sid: str
     profile_id: str | None
     guest_id: str | None

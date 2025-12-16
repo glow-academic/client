@@ -23,13 +23,13 @@ server_router = APIRouter()
 
 # Pydantic models
 class StartVoicePayload(BaseModel):
-    """Client-to-server payload for simulation_voice_start."""
+    """Request to start a voice simulation session."""
 
     chat_id: str
 
 
 class StartVoiceErrorPayload(BaseModel):
-    """Server-to-client error payload."""
+    """Response indicating an error occurred while starting voice simulation."""
 
     success: bool
     message: str
@@ -42,18 +42,41 @@ class PersonaToolContext(BaseModel):
     profile_id: str | None
 
 
+class PersonaTool(BaseModel):
+    """Persona tool definition for voice agent."""
+
+    name: str
+    description: str
+    parameters: str  # JSON string of tool parameters schema
+
+
+class RealtimeContentItem(BaseModel):
+    """Content item within a RealtimeItem message."""
+
+    type: str  # "input_text" | "output_text" | "input_audio" | "output_audio"
+    text: str | None = None  # Text content (for input_text/output_text)
+    audio: str | None = None  # Audio content (for input_audio/output_audio)
+    transcript: str | None = None  # Transcript (for input_audio)
+
+
+class RealtimeItem(BaseModel):
+    """RealtimeItem format for conversation history."""
+
+    type: str  # "message"
+    role: str  # "user" | "assistant"
+    content: list[RealtimeContentItem]
+    status: str  # "completed" | "in_progress" | etc.
+    itemId: str | None = None  # Optional item ID
+
+
 class StartVoiceResponsePayload(BaseModel):
-    """Server-to-client response payload."""
+    """Response from starting a voice simulation session."""
 
     success: bool
     message: str
     ephemeral_key: str
-    persona_tools: list[
-        dict[str, str]
-    ]  # List of {name, description, parameters} for each tool
-    tool_context_map: dict[
-        str, PersonaToolContext
-    ]  # Map of tool_name -> PersonaToolContext
+    persona_tools: list[PersonaTool]
+    tool_context_map: dict[str, PersonaToolContext]
     instructions: str  # Voice agent instructions telling model to use tools
     model: str  # Model name (e.g., "gpt-realtime-mini")
     voice: str | None = None  # Voice ID for audio output
@@ -61,7 +84,7 @@ class StartVoiceResponsePayload(BaseModel):
         None  # Transcription model (e.g., "gpt-4o-mini-transcribe")
     )
     transcription_prompt: str | None = None  # Transcription prompt
-    history: list[dict[str, Any]] = []  # Conversation history in RealtimeItem format
+    history: list[RealtimeItem] = []  # Conversation history in RealtimeItem format
 
 
 # Emit helper functions
@@ -485,7 +508,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Format all tools for client (persona tools + debug_info)
             # Include both persona tools and debug_info tool in the same format
-            persona_tools_response: list[dict[str, str]] = []
+            persona_tools_response: list[PersonaTool] = []
             for tool in all_tools:
                 # Handle different tool types - only FunctionTool has description
                 tool_description = ""
@@ -665,11 +688,11 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 # The persona is determined from the tool arguments (persona parameter)
 
                 persona_tools_response.append(
-                    {
-                        "name": tool_name_str,
-                        "description": str(tool_description),
-                        "parameters": json.dumps(tool_parameters),
-                    }
+                    PersonaTool(
+                        name=tool_name_str,
+                        description=str(tool_description),
+                        parameters=json.dumps(tool_parameters),
+                    )
                 )
 
             # Build session config with simple typed fields
@@ -686,7 +709,11 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             messages = [dict(row) for row in message_rows]
 
             # Convert messages to RealtimeItem format
-            realtime_history = get_realtime_history(messages)
+            realtime_history_dicts = get_realtime_history(messages)
+            # Convert dicts to RealtimeItem Pydantic models
+            realtime_history = [
+                RealtimeItem(**item) for item in realtime_history_dicts
+            ]
 
             logger.info(
                 f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools and {len(realtime_history)} history items"

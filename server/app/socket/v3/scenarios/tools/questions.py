@@ -18,11 +18,26 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 
+class QuestionOption(BaseModel):
+    """Option for a question."""
+
+    option_text: str
+    is_correct: bool
+
+
+class QuestionItem(BaseModel):
+    """Question item for scenario questions tool."""
+
+    question_text: str
+    allow_multiple: bool
+    options: list[QuestionOption]
+
+
 class ScenarioQuestionsToolPayload(BaseModel):
+    """Request to create questions from scenario generation tool."""
+
     trace_id: str
-    questions: list[
-        dict[str, Any]
-    ]  # List of question dicts with question_text, allow_multiple, options
+    questions: list[QuestionItem]
     scenario_id: str
     video_id: str | None = (
         None  # Optional: if provided, link question timestamps to video
@@ -33,6 +48,8 @@ class ScenarioQuestionsToolPayload(BaseModel):
 
 
 class ScenarioQuestionsToolCompletePayload(BaseModel):
+    """Response indicating questions tool completed successfully."""
+
     success: bool
     question_ids: list[str]
     trace_id: str
@@ -40,6 +57,8 @@ class ScenarioQuestionsToolCompletePayload(BaseModel):
 
 
 class ScenarioQuestionsToolErrorPayload(BaseModel):
+    """Response indicating an error occurred in questions tool."""
+
     success: bool
     message: str
     trace_id: str
@@ -108,7 +127,8 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
             )
 
             # Convert questions to JSON format expected by SQL
-            questions_json = json.dumps(validated.questions)
+            questions_dicts = [q.model_dump() for q in validated.questions]
+            questions_json = json.dumps(questions_dicts)
 
             # Create questions and link to scenario
             sql = load_sql("sql/v3/questions/create_questions_with_options.sql")

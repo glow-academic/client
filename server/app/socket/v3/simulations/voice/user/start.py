@@ -17,7 +17,7 @@ server_router = APIRouter()
 
 # Pydantic models
 class VoiceUserStartPayload(BaseModel):
-    """Client-to-server payload for simulation_voice_user_start."""
+    """Request to start user speech input in voice simulation."""
 
     chat_id: str
     item_id: str
@@ -104,6 +104,6 @@ async def simulation_voice_user_start_api(request: VoiceUserStartPayload) -> dic
 
 
 @server_router.post("/start", response_model=dict[str, bool])
-async def simulation_voice_user_start_api(request: VoiceUserStartPayload) -> dict[str, bool]:
+async def simulation_voice_user_start_server_api(request: VoiceUserStartPayload) -> dict[str, bool]:
     """Server-to-client event: User speech started in voice simulation."""
     return {"success": True}

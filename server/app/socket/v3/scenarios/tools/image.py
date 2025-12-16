@@ -22,6 +22,8 @@ _pending_video_generations: dict[str, dict[str, Any]] = {}
 
 
 class ImageToolPayload(BaseModel):
+    """Request to create image from scenario generation tool."""
+
     trace_id: str
     name: str
     prompt: str
@@ -32,6 +34,8 @@ class ImageToolPayload(BaseModel):
 
 
 class ImageToolCompletePayload(BaseModel):
+    """Response indicating image tool completed successfully."""
+
     success: bool
     image_id: str
     trace_id: str
@@ -39,6 +43,8 @@ class ImageToolCompletePayload(BaseModel):
 
 
 class ImageToolErrorPayload(BaseModel):
+    """Response indicating an error occurred in image tool."""
+
     success: bool
     message: str
     trace_id: str

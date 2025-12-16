@@ -17,17 +17,23 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events (imported by server/join.py)
 class SimulationJoinedPayload(BaseModel):
+    """Response indicating successfully joined simulation chat room."""
+
     chat_id: str
     chat_type: str
 
 
 class SimulationJoinErrorPayload(BaseModel):
+    """Response indicating an error occurred while joining simulation chat room."""
+
     success: bool
     message: str
 
 
 # Pydantic model for client-to-server event
 class SimulationJoinPayload(BaseModel):
+    """Request to join a simulation chat room for real-time updates."""
+
     chat_id: str
     chat_type: str = "assistant"
 

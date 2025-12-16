@@ -18,6 +18,8 @@ server_router = APIRouter()
 
 
 class ProblemStatementToolPayload(BaseModel):
+    """Request to create problem statement from scenario generation tool."""
+
     trace_id: str
     title: str
     description: str
@@ -25,6 +27,8 @@ class ProblemStatementToolPayload(BaseModel):
 
 
 class ProblemStatementToolCompletePayload(BaseModel):
+    """Response indicating problem statement tool completed successfully."""
+
     success: bool
     problem_statement_id: str
     trace_id: str
@@ -32,6 +36,8 @@ class ProblemStatementToolCompletePayload(BaseModel):
 
 
 class ProblemStatementToolErrorPayload(BaseModel):
+    """Response indicating an error occurred in problem statement tool."""
+
     success: bool
     message: str
     trace_id: str

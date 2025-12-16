@@ -34,6 +34,8 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class ScenarioGenerationProgressPayload(BaseModel):
+    """Response indicating progress in scenario generation."""
+
     type: str  # "start", "tool_call", "complete"
     message: str | None = None
     tool_name: str | None = None
@@ -41,18 +43,24 @@ class ScenarioGenerationProgressPayload(BaseModel):
 
 
 class ScenarioGenerationCompletePayload(BaseModel):
+    """Response indicating scenario generation completed successfully."""
+
     success: bool
     message: str
     trace_id: str | None = None
 
 
 class ScenarioGenerationErrorPayload(BaseModel):
+    """Response indicating an error occurred in scenario generation."""
+
     success: bool
     message: str
     trace_id: str | None = None
 
 
 class ScenarioImageGenerationProgressPayload(BaseModel):
+    """Response indicating progress in scenario image generation."""
+
     type: str  # "start", "generating", "completed"
     message: str | None = None
     image_id: str | None = None
@@ -60,6 +68,8 @@ class ScenarioImageGenerationProgressPayload(BaseModel):
 
 
 class ScenarioImageGenerationCompletePayload(BaseModel):
+    """Response indicating scenario image generation completed successfully."""
+
     success: bool
     image_id: str
     upload_id: str
@@ -68,6 +78,8 @@ class ScenarioImageGenerationCompletePayload(BaseModel):
 
 
 class ScenarioImageGenerationErrorPayload(BaseModel):
+    """Response indicating an error occurred in scenario image generation."""
+
     success: bool
     image_id: str
     message: str
@@ -76,6 +88,8 @@ class ScenarioImageGenerationErrorPayload(BaseModel):
 
 # Pydantic model for client-to-server event
 class GenerateScenarioAIPayload(BaseModel):
+    """Request to generate a scenario using AI."""
+
     departmentId: str
     scenarioAgentId: str  # Required: UI filters and selects appropriate agent for scenario generation
     imageAgentId: str | None = (

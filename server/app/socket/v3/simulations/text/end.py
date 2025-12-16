@@ -17,17 +17,23 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class ChatStoppedPayload(BaseModel):
+    """Response indicating chat session stopped successfully."""
+
     chat_id: str
     chat_type: str
 
 
 class SimulationTextEndErrorPayload(BaseModel):
+    """Response indicating an error occurred while ending simulation chat session."""
+
     success: bool
     message: str
 
 
 # Pydantic model for client-to-server event
 class SimulationTextEndPayload(BaseModel):
+    """Request to end a simulation chat session."""
+
     chat_id: str
     chat_type: str = "assistant"
 

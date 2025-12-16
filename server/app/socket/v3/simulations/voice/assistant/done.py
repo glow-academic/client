@@ -25,7 +25,7 @@ server_router = APIRouter()
 
 # Pydantic models
 class VoiceToolCallDonePayload(BaseModel):
-    """Client-to-server payload for simulation_voice_assistant_done."""
+    """Request to signal that assistant tool call is done in voice simulation."""
 
     chat_id: str
     call_id: str
@@ -35,7 +35,7 @@ class VoiceToolCallDonePayload(BaseModel):
 
 
 class VoiceToolCallErrorPayload(BaseModel):
-    """Server-to-client error payload."""
+    """Response indicating an error occurred in assistant tool call."""
 
     success: bool
     message: str
@@ -443,6 +443,6 @@ async def simulation_voice_assistant_done_api(request: VoiceToolCallDonePayload)
 
 
 @server_router.post("/done", response_model=dict[str, bool])
-async def simulation_voice_assistant_done_api(request: VoiceToolCallDonePayload) -> dict[str, bool]:
-    """Client-to-server event: Assistant tool call done in voice simulation."""
+async def simulation_voice_assistant_done_server_api(request: VoiceToolCallDonePayload) -> dict[str, bool]:
+    """Server-to-client event: Assistant tool call done in voice simulation."""
     return {"success": True}

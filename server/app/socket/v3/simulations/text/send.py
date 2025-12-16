@@ -133,6 +133,8 @@ def extract_new_message_chars(
 
 # Pydantic models for server-to-client events
 class SendSimulationMessageErrorPayload(BaseModel):
+    """Response indicating an error occurred while sending simulation message."""
+
     success: bool
     message: str
 
@@ -145,6 +147,8 @@ class HintItem(BaseModel):
 
 
 class HintGenerationProgressPayload(BaseModel):
+    """Response indicating progress in hint generation."""
+
     type: str
     message: str | None = None
     error: str | None = None
@@ -156,6 +160,8 @@ class HintGenerationProgressPayload(BaseModel):
 
 
 class SimulationNewMessagePayload(BaseModel):
+    """Response indicating a new simulation message was created."""
+
     message_id: str
     chat_id: str
     role: str
@@ -166,6 +172,8 @@ class SimulationNewMessagePayload(BaseModel):
 
 
 class SimulationMessageTokenPayload(BaseModel):
+    """Response indicating a token was received for a simulation message."""
+
     message_id: str
     chat_id: str
     token: str
@@ -173,27 +181,37 @@ class SimulationMessageTokenPayload(BaseModel):
 
 
 class SimulationMessageCompletePayload(BaseModel):
+    """Response indicating a simulation message was completed."""
+
     message_id: str
     chat_id: str
     final_content: str
 
 
 class SimulationMessageErrorPayload(BaseModel):
+    """Response indicating an error occurred in a simulation message."""
+
     chat_id: str
     error: str
 
 
 class SimulationMessageCancelledPayload(BaseModel):
+    """Response indicating a simulation message was cancelled."""
+
     message_id: str
     chat_id: str
     final_content: str
 
 
 class SimulationRunCompletePayload(BaseModel):
+    """Response indicating a simulation run was completed."""
+
     chat_id: str
 
 
 class MessageSentPayload(BaseModel):
+    """Response indicating a message was sent."""
+
     message_id: str
     chat_id: str
     message: str
@@ -202,6 +220,8 @@ class MessageSentPayload(BaseModel):
 
 # Pydantic model for client-to-server event
 class SendSimulationMessagePayload(BaseModel):
+    """Request to send a simulation message."""
+
     chat_id: str
     message: str | None = None
     is_retry: bool = False

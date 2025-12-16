@@ -39,23 +39,29 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class ScenarioRegenerationProgressPayload(BaseModel):
+    """Response indicating progress in scenario regeneration."""
+
     type: str  # "start", "complete"
     message: str | None = None
     trace_id: str | None = None
 
 
 class ScenarioRegenerationCompletePayload(BaseModel):
+    """Response indicating scenario regeneration completed successfully."""
+
     success: bool
     message: str
     title: str
     description: str
     objectives: list[str]
-    dynamic_document_mapping: dict[str, Any] | None = None
+    dynamic_document_mapping: dict[str, Any] | None = None  # Dynamic mapping of document uploads
     generated_image_ids: list[str] | None = None
     trace_id: str | None = None
 
 
 class ScenarioRegenerationErrorPayload(BaseModel):
+    """Response indicating an error occurred in scenario regeneration."""
+
     success: bool
     message: str
     trace_id: str | None = None
@@ -63,6 +69,8 @@ class ScenarioRegenerationErrorPayload(BaseModel):
 
 # Pydantic model for client-to-server event
 class RegenerateScenarioPayload(BaseModel):
+    """Request to regenerate a scenario."""
+
     scenarioId: str
     userInstructions: str
     departmentId: str

@@ -18,14 +18,14 @@ server_router = APIRouter()
 
 # Pydantic models
 class VoiceDebugInfoPayload(BaseModel):
-    """Client-to-server payload for simulation_voice_debug_info."""
+    """Request to send debug info in voice simulation."""
 
     chat_id: str
     content: str
 
 
 class VoiceDebugInfoErrorPayload(BaseModel):
-    """Server-to-client error payload."""
+    """Response indicating an error occurred while processing debug info."""
 
     success: bool
     message: str

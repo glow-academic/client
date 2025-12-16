@@ -17,6 +17,8 @@ server_router = APIRouter()
 
 
 class DocumentToolPayload(BaseModel):
+    """Request to create document from scenario generation tool."""
+
     trace_id: str
     parent_document_id: str
     file_path: str
@@ -30,6 +32,8 @@ class DocumentToolPayload(BaseModel):
 
 
 class DocumentToolCompletePayload(BaseModel):
+    """Response indicating document tool completed successfully."""
+
     success: bool
     document_id: str
     parent_document_id: str
@@ -38,6 +42,8 @@ class DocumentToolCompletePayload(BaseModel):
 
 
 class DocumentToolErrorPayload(BaseModel):
+    """Response indicating an error occurred in document tool."""
+
     success: bool
     message: str
     trace_id: str

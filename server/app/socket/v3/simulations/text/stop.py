@@ -18,17 +18,23 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class StopSimulationErrorPayload(BaseModel):
+    """Response indicating an error occurred while stopping simulation."""
+
     success: bool
     message: str
 
 
 class SimulationMessageCancelledPayload(BaseModel):
+    """Response indicating a simulation message was cancelled."""
+
     message_id: str
     chat_id: str
     final_content: str
 
 
 class SimulationStoppedPayload(BaseModel):
+    """Response indicating simulation was stopped successfully."""
+
     chat_id: str
     success: bool
     message: str
@@ -36,6 +42,8 @@ class SimulationStoppedPayload(BaseModel):
 
 # Pydantic model for client-to-server event
 class StopSimulationPayload(BaseModel):
+    """Request to stop an active simulation run."""
+
     chat_id: str
 
 

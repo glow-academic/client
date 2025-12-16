@@ -35,11 +35,15 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class ContinueSimulationErrorPayload(BaseModel):
+    """Response indicating an error occurred while continuing simulation."""
+
     success: bool
     message: str
 
 
 class SimulationGradingProgressPayload(BaseModel):
+    """Response indicating progress in simulation grading."""
+
     type: str
     chat_id: str
     message: str | None = None
@@ -62,16 +66,22 @@ class SimulationGradingProgressPayload(BaseModel):
 
 
 class EndAllStartedPayload(BaseModel):
+    """Response indicating end all operation started."""
+
     chat_id: str
     attempt_id: str
 
 
 class EndChatStartedPayload(BaseModel):
+    """Response indicating end chat operation started."""
+
     chat_id: str
     attempt_id: str
 
 
 class EndAllCompletedPayload(BaseModel):
+    """Response indicating end all operation completed."""
+
     success: bool
     message: str
     chat_id: str
@@ -82,6 +92,8 @@ class EndAllCompletedPayload(BaseModel):
 
 
 class SimulationContinuedPayload(BaseModel):
+    """Response indicating simulation was continued successfully."""
+
     success: bool
     message: str
     completed_chat_id: str
@@ -92,6 +104,8 @@ class SimulationContinuedPayload(BaseModel):
 
 # Pydantic model for client-to-server event
 class ContinueSimulationPayload(BaseModel):
+    """Request to continue simulation to next chat."""
+
     chat_id: str
     attempt_id: str
     end_all: bool = False

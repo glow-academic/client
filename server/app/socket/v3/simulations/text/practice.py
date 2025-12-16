@@ -19,12 +19,16 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class CreatePracticeScenarioErrorPayload(BaseModel):
+    """Response indicating an error occurred while creating practice scenario."""
+
     success: bool
     message: str
 
 
 # Pydantic model for client-to-server event
 class CreatePracticeScenarioPayload(BaseModel):
+    """Request to create and start a practice scenario simulation."""
+
     persona_id: str | None = None
     parameter_item_ids: list[str] = []
     department_id: str | None = None

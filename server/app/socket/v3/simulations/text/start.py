@@ -20,11 +20,15 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events
 class StartSimulationErrorPayload(BaseModel):
+    """Response indicating an error occurred while starting simulation."""
+
     success: bool
     message: str
 
 
 class SimulationStartedPayload(BaseModel):
+    """Response indicating simulation started successfully."""
+
     success: bool
     message: str
     attempt_id: str
@@ -32,6 +36,8 @@ class SimulationStartedPayload(BaseModel):
 
 # Pydantic model for client-to-server event
 class StartSimulationPayload(BaseModel):
+    """Request to start a text simulation attempt."""
+
     simulation_id: str
     profile_id: str | None = None
     scenario_id: str | None = None

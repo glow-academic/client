@@ -17,12 +17,16 @@ server_router = APIRouter()
 
 # Pydantic models for server-to-client events (imported by server/leave.py)
 class SimulationLeaveErrorPayload(BaseModel):
+    """Response indicating an error occurred while leaving simulation chat room."""
+
     success: bool
     message: str
 
 
 # Pydantic model for client-to-server event
 class SimulationLeavePayload(BaseModel):
+    """Request to leave a simulation chat room."""
+
     chat_id: str
     chat_type: str = "assistant"
 

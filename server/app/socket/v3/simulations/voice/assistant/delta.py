@@ -6,14 +6,12 @@ from typing import Any
 
 from app.main import (get_pool, get_simulation_tool_calls_dict,
                       get_simulation_tool_calls_locks, sio)
-from app.socket.v3.simulations.text.send import (
-    SimulationMessageTokenPayload,
-    SimulationNewMessagePayload,
-    extract_new_message_chars,
-    extract_persona_from_json,
-    simulation_message_token,
-    simulation_new_message,
-)
+from app.socket.v3.simulations.text.send import (SimulationMessageTokenPayload,
+                                                 SimulationNewMessagePayload,
+                                                 extract_new_message_chars,
+                                                 extract_persona_from_json,
+                                                 simulation_message_token,
+                                                 simulation_new_message)
 from app.utils.agents.tools.create_persona_tools import find_persona_by_name
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -28,7 +26,7 @@ server_router = APIRouter()
 
 # Pydantic models
 class VoiceToolCallDeltaPayload(BaseModel):
-    """Client-to-server payload for simulation_voice_assistant_delta."""
+    """Request to send assistant tool call delta in voice simulation."""
 
     chat_id: str
     call_id: str
@@ -38,7 +36,7 @@ class VoiceToolCallDeltaPayload(BaseModel):
 
 
 class VoiceToolCallErrorPayload(BaseModel):
-    """Server-to-client error payload."""
+    """Response indicating an error occurred in assistant tool call."""
 
     success: bool
     message: str

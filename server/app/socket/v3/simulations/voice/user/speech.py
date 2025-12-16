@@ -3,14 +3,12 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter
-
 from app.main import _voice_message_ids, get_internal_sio, get_pool, sio
-from app.socket.v3.simulations.text.send import (
-    SimulationRunCompletePayload,
+from app.socket.v3.simulations.text.send import (SimulationRunCompletePayload,
                                                  simulation_run_complete)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
@@ -21,14 +19,48 @@ server_router = APIRouter()
 
 
 # Pydantic models
+class CachedTokenDetails(BaseModel):
+    """Cached token details within input token details."""
+
+    audio_tokens: int | None = None
+    text_tokens: int | None = None
+    image_tokens: int | None = None
+
+
+class InputTokenDetails(BaseModel):
+    """Input token details from Realtime API usage."""
+
+    audio_tokens: int | None = None
+    text_tokens: int | None = None
+    image_tokens: int | None = None
+    cached_tokens: int | None = None
+    cached_tokens_details: CachedTokenDetails | None = None
+
+
+class OutputTokenDetails(BaseModel):
+    """Output token details from Realtime API usage."""
+
+    audio_tokens: int | None = None
+    text_tokens: int | None = None
+
+
+class VoiceUsage(BaseModel):
+    """Token usage information from Realtime API."""
+
+    input_token_details: InputTokenDetails
+    output_token_details: OutputTokenDetails
+    input_tokens: int
+    output_tokens: int
+
+
 class VoiceUserSpeechPayload(BaseModel):
-    """Client-to-server payload for simulation_voice_user_speech."""
+    """Request to send user speech audio in voice simulation."""
 
     chat_id: str
     event_id: str
     response_id: str
     conversation_id: str
-    usage: dict[str, Any]
+    usage: VoiceUsage
 
 
 async def _simulation_voice_user_speech_impl(
@@ -248,19 +280,21 @@ async def _simulation_voice_user_speech_impl(
 
                 # Extract usage data
                 usage = data.usage
-                input_token_details = usage.get("input_token_details", {})
-                output_token_details = usage.get("output_token_details", {})
-                cached_token_details = input_token_details.get(
-                    "cached_tokens_details", {}
+                input_token_details = usage.input_token_details
+                output_token_details = usage.output_token_details
+                cached_token_details = (
+                    input_token_details.cached_tokens_details
+                    if input_token_details.cached_tokens_details
+                    else None
                 )
 
-                input_text_tokens = input_token_details.get("text_tokens", 0) or 0
-                input_audio_tokens = input_token_details.get("audio_tokens", 0) or 0
-                input_image_tokens = input_token_details.get("image_tokens", 0) or 0
-                output_text_tokens = output_token_details.get("text_tokens", 0) or 0
-                output_audio_tokens = output_token_details.get("audio_tokens", 0) or 0
-                cached_text_tokens = cached_token_details.get("text_tokens", 0) or 0
-                cached_audio_tokens = cached_token_details.get("audio_tokens", 0) or 0
+                input_text_tokens = (input_token_details.text_tokens or 0) if input_token_details.text_tokens is not None else 0
+                input_audio_tokens = (input_token_details.audio_tokens or 0) if input_token_details.audio_tokens is not None else 0
+                input_image_tokens = (input_token_details.image_tokens or 0) if input_token_details.image_tokens is not None else 0
+                output_text_tokens = (output_token_details.text_tokens or 0) if output_token_details.text_tokens is not None else 0
+                output_audio_tokens = (output_token_details.audio_tokens or 0) if output_token_details.audio_tokens is not None else 0
+                cached_text_tokens = (cached_token_details.text_tokens or 0) if cached_token_details and cached_token_details.text_tokens is not None else 0
+                cached_audio_tokens = (cached_token_details.audio_tokens or 0) if cached_token_details and cached_token_details.audio_tokens is not None else 0
 
                 # Create a run for each message ID
                 sql_create_run = load_sql(

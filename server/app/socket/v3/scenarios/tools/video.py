@@ -16,6 +16,8 @@ server_router = APIRouter()
 
 
 class ScenarioVideoToolPayload(BaseModel):
+    """Request to generate video from scenario generation tool."""
+
     trace_id: str
     prompt: str
     scenario_id: str
@@ -26,6 +28,8 @@ class ScenarioVideoToolPayload(BaseModel):
 
 
 class ScenarioVideoToolCompletePayload(BaseModel):
+    """Response indicating video tool completed successfully."""
+
     success: bool
     generation_id: str | None = None
     video_id: str | None = None
@@ -34,6 +38,8 @@ class ScenarioVideoToolCompletePayload(BaseModel):
 
 
 class ScenarioVideoToolErrorPayload(BaseModel):
+    """Response indicating an error occurred in video tool."""
+
     success: bool
     message: str
     trace_id: str

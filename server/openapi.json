@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema",
+    "description": "Auto-generated OpenAPI schema from FastAPI v3 API",
     "version": "0.1.0"
   },
   "paths": {
@@ -46,7 +46,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/update": {
@@ -89,7 +93,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/by-email": {
@@ -132,7 +140,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/context": {
@@ -175,7 +187,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/authorize-emulation": {
@@ -218,7 +234,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/overview": {
@@ -261,7 +281,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/search": {
@@ -308,7 +332,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/search-simulatable-profiles": {
@@ -351,7 +379,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/simulation-report": {
@@ -394,7 +426,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/staff/list": {
@@ -438,7 +474,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/detail": {
@@ -482,7 +523,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/new": {
@@ -526,7 +572,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/create": {
@@ -570,7 +621,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/bulk-create": {
@@ -614,7 +670,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/update": {
@@ -658,7 +719,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/bulk-update": {
@@ -702,7 +768,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/delete": {
@@ -746,7 +817,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/bulk-delete": {
@@ -790,7 +866,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/create-staff-data": {
@@ -834,7 +915,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/search-staff": {
@@ -878,7 +964,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/process-csv": {
@@ -922,7 +1013,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/create-or-update-staff": {
@@ -966,7 +1062,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/bulk-create-or-update-staff": {
@@ -1010,7 +1111,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/scenarios/list": {
@@ -1053,7 +1159,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/detail": {
@@ -1096,7 +1206,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/new": {
@@ -1139,7 +1253,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/create": {
@@ -1182,7 +1300,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/update": {
@@ -1225,7 +1347,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/duplicate": {
@@ -1268,7 +1394,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/delete": {
@@ -1311,7 +1441,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/select-attributes": {
@@ -1354,7 +1488,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/overview": {
@@ -1397,7 +1535,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/search": {
@@ -1444,7 +1586,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/simulations/list": {
@@ -1487,7 +1633,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/detail": {
@@ -1530,7 +1680,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/new": {
@@ -1573,7 +1727,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/create": {
@@ -1616,7 +1774,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/update": {
@@ -1659,7 +1821,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/duplicate": {
@@ -1702,7 +1868,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/delete": {
@@ -1745,7 +1915,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/overview": {
@@ -1788,7 +1962,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/search": {
@@ -1835,7 +2013,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/attempts": {
@@ -1882,7 +2064,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/personas/list": {
@@ -1925,7 +2111,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/detail": {
@@ -1968,7 +2158,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/new": {
@@ -2011,7 +2205,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/create": {
@@ -2054,7 +2252,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/update": {
@@ -2097,7 +2299,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/duplicate": {
@@ -2140,7 +2346,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/delete": {
@@ -2183,7 +2393,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/overview": {
@@ -2226,7 +2440,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/search": {
@@ -2273,7 +2491,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/response-times": {
@@ -2316,7 +2538,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/auth/list": {
@@ -2359,7 +2585,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/detail": {
@@ -2402,7 +2632,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/new": {
@@ -2445,7 +2679,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/create": {
@@ -2488,7 +2726,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/update": {
@@ -2531,7 +2773,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/duplicate": {
@@ -2574,7 +2820,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/delete": {
@@ -2617,7 +2867,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/login": {
@@ -2660,7 +2914,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/departments/list": {
@@ -2703,7 +2961,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/detail": {
@@ -2746,7 +3008,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/new": {
@@ -2789,7 +3055,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/create": {
@@ -2832,7 +3102,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/update": {
@@ -2875,7 +3149,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/duplicate": {
@@ -2918,7 +3196,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/delete": {
@@ -2961,7 +3243,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/remove-profiles": {
@@ -3004,7 +3290,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/login": {
@@ -3027,7 +3317,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/cohorts/list": {
@@ -3070,7 +3364,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/detail": {
@@ -3113,7 +3411,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/new": {
@@ -3156,7 +3458,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/detail-with-profiles": {
@@ -3199,7 +3505,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/duplicate": {
@@ -3242,7 +3552,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/leave": {
@@ -3285,7 +3599,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/add-profiles": {
@@ -3328,7 +3646,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/remove-profiles": {
@@ -3371,7 +3693,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/create": {
@@ -3414,7 +3740,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/update": {
@@ -3457,7 +3787,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/delete": {
@@ -3500,7 +3834,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/overview": {
@@ -3543,7 +3881,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/search": {
@@ -3590,7 +3932,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/search-profile": {
@@ -3633,7 +3979,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/pass-matrix": {
@@ -3676,7 +4026,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/add-staff": {
@@ -3719,7 +4073,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/documents/list": {
@@ -3762,7 +4120,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/detail": {
@@ -3805,7 +4167,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/detail-bulk": {
@@ -3848,7 +4214,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/create": {
@@ -3891,7 +4261,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/delete": {
@@ -3934,7 +4308,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/bulk-update": {
@@ -3977,7 +4355,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/bulk-delete": {
@@ -4020,7 +4402,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/update": {
@@ -4063,7 +4449,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/certificate": {
@@ -4104,7 +4494,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/render": {
@@ -4147,7 +4541,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/evals/list": {
@@ -4190,7 +4588,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/detail": {
@@ -4233,7 +4635,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/new": {
@@ -4276,7 +4682,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/create": {
@@ -4319,7 +4729,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/update": {
@@ -4362,7 +4776,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/delete": {
@@ -4405,7 +4823,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/model_runs": {
@@ -4448,7 +4870,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/run": {
@@ -4491,7 +4917,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/stop": {
@@ -4534,7 +4964,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/rubrics/list": {
@@ -4577,7 +5011,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/detail": {
@@ -4620,7 +5058,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/new": {
@@ -4663,7 +5105,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/duplicate": {
@@ -4706,7 +5152,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/create": {
@@ -4749,7 +5199,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/update": {
@@ -4792,7 +5246,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/delete": {
@@ -4835,7 +5293,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/settings/list": {
@@ -4878,7 +5340,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
       }
     },
     "/api/v3/settings/detail": {
@@ -4921,7 +5387,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
       }
     },
     "/api/v3/settings/update": {
@@ -4964,7 +5434,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
       }
     },
     "/api/v3/settings/active": {
@@ -5007,7 +5481,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
       }
     },
     "/api/v3/analytics/refresh": {
@@ -5050,7 +5528,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "analytics"
+        ]
       }
     },
     "/api/v3/dashboard/overview": {
@@ -5093,7 +5575,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "dashboard"
+        ]
       }
     },
     "/api/v3/dashboard/history": {
@@ -5136,7 +5622,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "dashboard"
+        ]
       }
     },
     "/api/v3/reports/export": {
@@ -5178,7 +5668,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports",
+          "reports"
+        ]
       }
     },
     "/api/v3/reports": {
@@ -5221,7 +5716,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
+        ]
       }
     },
     "/api/v3/reports/overview": {
@@ -5264,7 +5763,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
+        ]
       }
     },
     "/api/v3/reports/history": {
@@ -5307,7 +5810,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
+        ]
       }
     },
     "/api/v3/leaderboard/bundle": {
@@ -5350,7 +5857,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "leaderboard"
+        ]
       }
     },
     "/api/v3/leaderboard/cohort": {
@@ -5393,7 +5904,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "leaderboard"
+        ]
       }
     },
     "/api/v3/agents/list": {
@@ -5436,7 +5951,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/detail": {
@@ -5479,7 +5998,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/new": {
@@ -5522,7 +6045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/create": {
@@ -5565,7 +6092,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/update": {
@@ -5608,7 +6139,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/duplicate": {
@@ -5651,7 +6186,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/delete": {
@@ -5694,7 +6233,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/delete-prompt": {
@@ -5737,7 +6280,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/keys/list": {
@@ -5780,7 +6327,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/detail": {
@@ -5823,7 +6374,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/new": {
@@ -5866,7 +6421,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/create": {
@@ -5909,7 +6468,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/update": {
@@ -5952,7 +6515,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/delete": {
@@ -5995,7 +6562,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/decrypt-key": {
@@ -6038,7 +6609,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/models/list": {
@@ -6081,7 +6656,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/detail": {
@@ -6124,7 +6703,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/new": {
@@ -6167,7 +6750,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/create": {
@@ -6210,7 +6797,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/update": {
@@ -6253,7 +6844,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/delete": {
@@ -6296,7 +6891,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/duplicate": {
@@ -6339,7 +6938,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/providers/list": {
@@ -6382,7 +6985,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/detail": {
@@ -6425,7 +7032,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/new": {
@@ -6468,7 +7079,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/create": {
@@ -6511,7 +7126,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/update": {
@@ -6554,7 +7173,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/delete": {
@@ -6597,7 +7220,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/parameters/list": {
@@ -6640,7 +7267,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/detail": {
@@ -6683,7 +7314,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/new": {
@@ -6726,7 +7361,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/create": {
@@ -6769,7 +7408,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/update": {
@@ -6812,7 +7455,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/duplicate": {
@@ -6855,7 +7502,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/delete": {
@@ -6898,7 +7549,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/items/create": {
@@ -6942,7 +7597,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters",
+          "parameters"
+        ]
       }
     },
     "/api/v3/prompts/list": {
@@ -6985,7 +7645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
       }
     },
     "/api/v3/prompts/detail": {
@@ -7028,7 +7692,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
       }
     },
     "/api/v3/prompts/new": {
@@ -7071,7 +7739,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
       }
     },
     "/api/v3/prompts/create": {
@@ -7114,7 +7786,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
       }
     },
     "/api/v3/prompts/update": {
@@ -7157,7 +7833,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
       }
     },
     "/api/v3/prompts/delete": {
@@ -7200,7 +7880,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
       }
     },
     "/api/v3/fields/list": {
@@ -7243,7 +7927,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/detail": {
@@ -7286,7 +7974,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/detail_default": {
@@ -7329,7 +8021,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/new": {
@@ -7372,7 +8068,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/create": {
@@ -7415,7 +8115,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/update": {
@@ -7458,7 +8162,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/duplicate": {
@@ -7501,7 +8209,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/delete": {
@@ -7544,7 +8256,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/units/list": {
@@ -7587,7 +8303,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "units"
+        ]
       }
     },
     "/api/v3/feedback/list": {
@@ -7630,7 +8350,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
       }
     },
     "/api/v3/feedback/create": {
@@ -7673,7 +8397,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
       }
     },
     "/api/v3/feedback/bulk-delete": {
@@ -7716,7 +8444,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
       }
     },
     "/api/v3/logs/list": {
@@ -7759,7 +8491,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/logs/create": {
@@ -7802,7 +8538,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/logs/bulk-delete": {
@@ -7845,7 +8585,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/logs/health": {
@@ -7870,7 +8614,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/logs/recent": {
@@ -7917,7 +8665,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/logs/bundle": {
@@ -7960,7 +8712,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/logs/runs": {
@@ -8003,7 +8759,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/attempts/bulk-archive": {
@@ -8046,7 +8806,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
       }
     },
     "/api/v3/attempts/chats/update-created-at": {
@@ -8089,7 +8853,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
       }
     },
     "/api/v3/attempts/chats/update-completed-at": {
@@ -8132,7 +8900,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
       }
     },
     "/api/v3/attempts/full": {
@@ -8175,7 +8947,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
       }
     },
     "/api/v3/full": {
@@ -8219,7 +8995,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "runs",
+          "v3"
+        ]
       }
     },
     "/api/v3/home/overview": {
@@ -8262,7 +9043,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "home"
+        ]
       }
     },
     "/api/v3/home/history": {
@@ -8305,7 +9090,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "home"
+        ]
       }
     },
     "/api/v3/practice/overview": {
@@ -8348,7 +9137,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "practice"
+        ]
       }
     },
     "/api/v3/practice/history": {
@@ -8391,7 +9184,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "practice"
+        ]
       }
     },
     "/api/v3/pricing/analytics": {
@@ -8434,7 +9231,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "pricing"
+        ]
       }
     },
     "/api/v3/pricing/runs": {
@@ -8477,7 +9278,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "pricing"
+        ]
       }
     },
     "/api/v3/realtime/ephemeral-key": {
@@ -8520,7 +9325,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "realtime"
+        ]
       }
     },
     "/api/v3/schema/list": {
@@ -8544,7 +9353,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "schema"
+        ]
       }
     },
     "/api/v3/schema/query": {
@@ -8588,7 +9401,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "schema"
+        ]
       }
     },
     "/api/v3/uploads/upload": {
@@ -8609,7 +9426,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       },
       "options": {
         "tags": [
@@ -8628,7 +9449,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/api/v3/uploads/upload/{upload_id}": {
@@ -8670,7 +9495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       },
       "head": {
         "tags": [
@@ -8710,7 +9539,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       },
       "patch": {
         "tags": [
@@ -8750,7 +9583,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/api/v3/uploads/upload/{upload_id}/finalize": {
@@ -8794,7 +9631,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/api/v3/uploads/upload/{upload_id}/classify": {
@@ -8848,7 +9689,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/api/v3/uploads/download/{upload_id}": {
@@ -8902,7 +9747,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/socket/v3/client/connect": {
@@ -8929,7 +9778,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/disconnect": {
@@ -8956,7 +9809,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/log": {
@@ -9003,7 +9860,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/join": {
@@ -9051,7 +9912,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/leave": {
@@ -9099,7 +9965,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/end": {
@@ -9148,7 +10019,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/next": {
@@ -9197,7 +10074,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/practice": {
@@ -9246,7 +10129,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/send": {
@@ -9295,7 +10184,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/start": {
@@ -9344,7 +10239,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/stop": {
@@ -9393,7 +10294,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/start": {
@@ -9442,7 +10349,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/stop": {
@@ -9491,7 +10404,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/debug": {
@@ -9540,7 +10459,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/start": {
@@ -9590,7 +10515,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/delta": {
@@ -9640,7 +10572,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/transcript": {
@@ -9690,7 +10629,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/text": {
@@ -9740,7 +10686,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/speech": {
@@ -9790,7 +10743,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/assistant/delta": {
@@ -9840,7 +10800,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/assistant/done": {
@@ -9890,7 +10857,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/assistant/interrupted": {
@@ -9940,7 +10914,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/generate": {
@@ -9988,7 +10969,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/regenerate": {
@@ -10036,7 +11022,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/document": {
@@ -10085,7 +11076,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/statement": {
@@ -10134,7 +11131,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/objectives": {
@@ -10183,7 +11186,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/image": {
@@ -10232,7 +11241,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/video": {
@@ -10281,7 +11296,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/questions": {
@@ -10330,7 +11351,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/documents/generate": {
@@ -10378,7 +11405,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/videos/generate": {
@@ -10426,7 +11458,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/images/complete": {
@@ -10474,7 +11511,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/images/generate": {
@@ -10522,7 +11564,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/server/connection_confirmed": {
@@ -10569,7 +11616,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/joined": {
@@ -10617,7 +11668,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/join_error": {
@@ -10665,7 +11721,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/leave_error": {
@@ -10713,7 +11774,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/ended": {
@@ -10762,7 +11828,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/end_error": {
@@ -10811,7 +11883,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/next_error": {
@@ -10860,7 +11938,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/grading_progress": {
@@ -10909,7 +11993,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/continued": {
@@ -10958,7 +12048,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/end_all_started": {
@@ -11007,7 +12103,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/end_chat_started": {
@@ -11056,7 +12158,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/end_all_completed": {
@@ -11105,7 +12213,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/practice_error": {
@@ -11154,7 +12268,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/send_error": {
@@ -11203,7 +12323,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/hint_generation_progress": {
@@ -11252,7 +12378,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/new_message": {
@@ -11301,7 +12433,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_token": {
@@ -11350,7 +12488,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_complete": {
@@ -11399,7 +12543,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_error": {
@@ -11448,7 +12598,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_cancelled": {
@@ -11497,7 +12653,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_sent": {
@@ -11546,7 +12708,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/started": {
@@ -11595,7 +12763,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/start_error": {
@@ -11644,7 +12818,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/stopped": {
@@ -11693,7 +12873,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/stop_error": {
@@ -11742,7 +12928,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/start_response": {
@@ -11791,7 +12983,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/start_error": {
@@ -11840,7 +13038,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/stop_response": {
@@ -11889,7 +13093,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/stop_error": {
@@ -11938,7 +13148,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/debug_error": {
@@ -11987,7 +13203,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/user/start": {
@@ -11999,9 +13221,9 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Simulation Voice User Start Api",
+        "summary": "Simulation Voice User Start Server Api",
         "description": "Server-to-client event: User speech started in voice simulation.",
-        "operationId": "simulation_voice_user_start_api_socket_v3_server_simulations_voice_user_start_post",
+        "operationId": "simulation_voice_user_start_server_api_socket_v3_server_simulations_voice_user_start_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12022,7 +13244,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Voice User Start Api Socket V3 Server Simulations Voice User Start Post"
+                  "title": "Response Simulation Voice User Start Server Api Socket V3 Server Simulations Voice User Start Post"
                 }
               }
             }
@@ -12037,7 +13259,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/user/delta": {
@@ -12049,9 +13278,9 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Simulation Voice User Delta Api",
+        "summary": "Simulation Voice User Delta Server Api",
         "description": "Server-to-client event: User speech delta from voice simulation.",
-        "operationId": "simulation_voice_user_delta_api_socket_v3_server_simulations_voice_user_delta_post",
+        "operationId": "simulation_voice_user_delta_server_api_socket_v3_server_simulations_voice_user_delta_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12072,7 +13301,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Voice User Delta Api Socket V3 Server Simulations Voice User Delta Post"
+                  "title": "Response Simulation Voice User Delta Server Api Socket V3 Server Simulations Voice User Delta Post"
                 }
               }
             }
@@ -12087,7 +13316,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/user/transcript": {
@@ -12099,9 +13335,9 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Simulation Voice User Transcript Api",
+        "summary": "Simulation Voice User Transcript Server Api",
         "description": "Server-to-client event: User transcript from voice simulation.",
-        "operationId": "simulation_voice_user_transcript_api_socket_v3_server_simulations_voice_user_transcript_post",
+        "operationId": "simulation_voice_user_transcript_server_api_socket_v3_server_simulations_voice_user_transcript_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12122,7 +13358,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Voice User Transcript Api Socket V3 Server Simulations Voice User Transcript Post"
+                  "title": "Response Simulation Voice User Transcript Server Api Socket V3 Server Simulations Voice User Transcript Post"
                 }
               }
             }
@@ -12137,7 +13373,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/user/text_error": {
@@ -12187,7 +13430,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/assistant/tool_call_error": {
@@ -12237,7 +13487,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/assistant/done": {
@@ -12249,9 +13506,9 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Simulation Voice Assistant Done Api",
-        "description": "Client-to-server event: Assistant tool call done in voice simulation.",
-        "operationId": "simulation_voice_assistant_done_api_socket_v3_server_simulations_voice_assistant_done_post",
+        "summary": "Simulation Voice Assistant Done Server Api",
+        "description": "Server-to-client event: Assistant tool call done in voice simulation.",
+        "operationId": "simulation_voice_assistant_done_server_api_socket_v3_server_simulations_voice_assistant_done_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12272,7 +13529,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Voice Assistant Done Api Socket V3 Server Simulations Voice Assistant Done Post"
+                  "title": "Response Simulation Voice Assistant Done Server Api Socket V3 Server Simulations Voice Assistant Done Post"
                 }
               }
             }
@@ -12287,7 +13544,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/assistant/interrupted": {
@@ -12299,9 +13563,9 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Simulation Voice Assistant Interrupted Api",
-        "description": "Client-to-server event: Signal that assistant was interrupted in voice simulation.",
-        "operationId": "simulation_voice_assistant_interrupted_api_socket_v3_server_simulations_voice_assistant_interrupted_post",
+        "summary": "Simulation Voice Assistant Interrupted Server Api",
+        "description": "Server-to-client event: Signal that assistant was interrupted in voice simulation.",
+        "operationId": "simulation_voice_assistant_interrupted_server_api_socket_v3_server_simulations_voice_assistant_interrupted_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12322,7 +13586,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Voice Assistant Interrupted Api Socket V3 Server Simulations Voice Assistant Interrupted Post"
+                  "title": "Response Simulation Voice Assistant Interrupted Server Api Socket V3 Server Simulations Voice Assistant Interrupted Post"
                 }
               }
             }
@@ -12337,7 +13601,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/generation_progress": {
@@ -12385,7 +13656,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/generation_complete": {
@@ -12433,7 +13709,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/generation_error": {
@@ -12481,7 +13762,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/document_complete": {
@@ -12530,7 +13816,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/document_error": {
@@ -12579,7 +13871,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/statement_complete": {
@@ -12628,7 +13926,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/objectives_complete": {
@@ -12677,7 +13981,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/image_complete": {
@@ -12726,7 +14036,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/video_complete": {
@@ -12775,7 +14091,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/video_error": {
@@ -12824,7 +14146,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/questions_complete": {
@@ -12873,7 +14201,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/questions_error": {
@@ -12922,7 +14256,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/documents/generation_progress": {
@@ -12970,7 +14310,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/documents/generation_complete": {
@@ -13018,7 +14363,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/documents/generation_error": {
@@ -13066,7 +14416,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/videos/generation_progress": {
@@ -13114,7 +14469,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/videos/generation_complete": {
@@ -13162,7 +14522,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/videos/generation_error": {
@@ -13210,7 +14575,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/": {
@@ -15042,6 +16412,46 @@
         "title": "CSVRowError",
         "description": "Error for a specific CSV row."
       },
+      "CachedTokenDetails": {
+        "properties": {
+          "audio_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Tokens"
+          },
+          "text_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Tokens"
+          },
+          "image_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Tokens"
+          }
+        },
+        "type": "object",
+        "title": "CachedTokenDetails",
+        "description": "Cached token details within input token details."
+      },
       "ChatData": {
         "properties": {
           "chat": {
@@ -15272,7 +16682,8 @@
           "chat_id",
           "chat_type"
         ],
-        "title": "ChatStoppedPayload"
+        "title": "ChatStoppedPayload",
+        "description": "Response indicating chat session stopped successfully."
       },
       "ClassifyUploadRequest": {
         "properties": {
@@ -16268,7 +17679,8 @@
           "guest_id",
           "server_time"
         ],
-        "title": "ConnectionConfirmedPayload"
+        "title": "ConnectionConfirmedPayload",
+        "description": "Response indicating WebSocket connection was confirmed."
       },
       "ContinuationOption": {
         "properties": {
@@ -16363,7 +17775,8 @@
           "success",
           "message"
         ],
-        "title": "ContinueSimulationErrorPayload"
+        "title": "ContinueSimulationErrorPayload",
+        "description": "Response indicating an error occurred while continuing simulation."
       },
       "ContinueSimulationPayload": {
         "properties": {
@@ -16418,7 +17831,8 @@
           "chat_id",
           "attempt_id"
         ],
-        "title": "ContinueSimulationPayload"
+        "title": "ContinueSimulationPayload",
+        "description": "Request to continue simulation to next chat."
       },
       "CreateAgentRequest": {
         "properties": {
@@ -17801,7 +19215,8 @@
           "success",
           "message"
         ],
-        "title": "CreatePracticeScenarioErrorPayload"
+        "title": "CreatePracticeScenarioErrorPayload",
+        "description": "Response indicating an error occurred while creating practice scenario."
       },
       "CreatePracticeScenarioPayload": {
         "properties": {
@@ -17875,7 +19290,8 @@
           }
         },
         "type": "object",
-        "title": "CreatePracticeScenarioPayload"
+        "title": "CreatePracticeScenarioPayload",
+        "description": "Request to create and start a practice scenario simulation."
       },
       "CreatePromptRequest": {
         "properties": {
@@ -20786,7 +22202,8 @@
           "template_schema",
           "upload_id"
         ],
-        "title": "DocumentTemplateGenerationCompletePayload"
+        "title": "DocumentTemplateGenerationCompletePayload",
+        "description": "Response indicating document template generation completed successfully."
       },
       "DocumentTemplateGenerationErrorPayload": {
         "properties": {
@@ -20815,7 +22232,8 @@
           "success",
           "message"
         ],
-        "title": "DocumentTemplateGenerationErrorPayload"
+        "title": "DocumentTemplateGenerationErrorPayload",
+        "description": "Response indicating an error occurred in document template generation."
       },
       "DocumentTemplateGenerationProgressPayload": {
         "properties": {
@@ -20850,7 +22268,8 @@
         "required": [
           "type"
         ],
-        "title": "DocumentTemplateGenerationProgressPayload"
+        "title": "DocumentTemplateGenerationProgressPayload",
+        "description": "Response indicating progress in document template generation."
       },
       "DocumentToolCompletePayload": {
         "properties": {
@@ -20889,7 +22308,8 @@
           "parent_document_id",
           "trace_id"
         ],
-        "title": "DocumentToolCompletePayload"
+        "title": "DocumentToolCompletePayload",
+        "description": "Response indicating document tool completed successfully."
       },
       "DocumentToolErrorPayload": {
         "properties": {
@@ -20912,7 +22332,8 @@
           "message",
           "trace_id"
         ],
-        "title": "DocumentToolErrorPayload"
+        "title": "DocumentToolErrorPayload",
+        "description": "Response indicating an error occurred in document tool."
       },
       "DocumentToolPayload": {
         "properties": {
@@ -20976,7 +22397,8 @@
           "classify_agent_id",
           "document_agent_id"
         ],
-        "title": "DocumentToolPayload"
+        "title": "DocumentToolPayload",
+        "description": "Request to create document from scenario generation tool."
       },
       "DocumentsListRequest": {
         "properties": {
@@ -21657,7 +23079,8 @@
           "message",
           "chat_id"
         ],
-        "title": "EndAllCompletedPayload"
+        "title": "EndAllCompletedPayload",
+        "description": "Response indicating end all operation completed."
       },
       "EndAllStartedPayload": {
         "properties": {
@@ -21675,7 +23098,8 @@
           "chat_id",
           "attempt_id"
         ],
-        "title": "EndAllStartedPayload"
+        "title": "EndAllStartedPayload",
+        "description": "Response indicating end all operation started."
       },
       "EndChatStartedPayload": {
         "properties": {
@@ -21693,7 +23117,8 @@
           "chat_id",
           "attempt_id"
         ],
-        "title": "EndChatStartedPayload"
+        "title": "EndChatStartedPayload",
+        "description": "Response indicating end chat operation started."
       },
       "EphemeralKeyRequest": {
         "properties": {
@@ -22930,7 +24355,8 @@
         "required": [
           "departmentId"
         ],
-        "title": "GenerateDocumentTemplatePayload"
+        "title": "GenerateDocumentTemplatePayload",
+        "description": "Request to generate a document template."
       },
       "GenerateImagePayload": {
         "properties": {
@@ -23002,7 +24428,8 @@
           "prompt",
           "agent_id"
         ],
-        "title": "GenerateImagePayload"
+        "title": "GenerateImagePayload",
+        "description": "Request to generate an image."
       },
       "GenerateScenarioAIPayload": {
         "properties": {
@@ -23148,7 +24575,8 @@
           "departmentId",
           "scenarioAgentId"
         ],
-        "title": "GenerateScenarioAIPayload"
+        "title": "GenerateScenarioAIPayload",
+        "description": "Request to generate a scenario using AI."
       },
       "GenerateVideoPayload": {
         "properties": {
@@ -23177,7 +24605,8 @@
           "videoId",
           "prompt"
         ],
-        "title": "GenerateVideoPayload"
+        "title": "GenerateVideoPayload",
+        "description": "Request to generate a video."
       },
       "GradeItem": {
         "properties": {
@@ -23651,7 +25080,8 @@
           "chat_id",
           "message_id"
         ],
-        "title": "HintGenerationProgressPayload"
+        "title": "HintGenerationProgressPayload",
+        "description": "Response indicating progress in hint generation."
       },
       "HintItem-Input": {
         "properties": {
@@ -24359,7 +25789,8 @@
           "mime_type",
           "file_size"
         ],
-        "title": "ImageGenerationCompletePayload"
+        "title": "ImageGenerationCompletePayload",
+        "description": "Request to complete image generation."
       },
       "ImageToolCompletePayload": {
         "properties": {
@@ -24393,7 +25824,8 @@
           "image_id",
           "trace_id"
         ],
-        "title": "ImageToolCompletePayload"
+        "title": "ImageToolCompletePayload",
+        "description": "Response indicating image tool completed successfully."
       },
       "ImageToolPayload": {
         "properties": {
@@ -24454,7 +25886,69 @@
           "prompt",
           "agent_id"
         ],
-        "title": "ImageToolPayload"
+        "title": "ImageToolPayload",
+        "description": "Request to create image from scenario generation tool."
+      },
+      "InputTokenDetails": {
+        "properties": {
+          "audio_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Tokens"
+          },
+          "text_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Tokens"
+          },
+          "image_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Tokens"
+          },
+          "cached_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cached Tokens"
+          },
+          "cached_tokens_details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CachedTokenDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "InputTokenDetails",
+        "description": "Input token details from Realtime API usage."
       },
       "KeyDetailRequest": {
         "properties": {
@@ -25244,8 +26738,7 @@
             "anyOf": [
               {
                 "items": {
-                  "additionalProperties": true,
-                  "type": "object"
+                  "$ref": "#/components/schemas/ResponseInputItem"
                 },
                 "type": "array"
               },
@@ -25285,7 +26778,8 @@
           "inputTextTokens",
           "outputTextTokens"
         ],
-        "title": "LogRunPayload"
+        "title": "LogRunPayload",
+        "description": "Request to log run pricing and metrics."
       },
       "LoginProvidersRequest": {
         "properties": {
@@ -25686,7 +27180,8 @@
           "message",
           "created_at"
         ],
-        "title": "MessageSentPayload"
+        "title": "MessageSentPayload",
+        "description": "Response indicating a message was sent."
       },
       "Method": {
         "type": "string",
@@ -26544,7 +28039,8 @@
           "objective_ids",
           "trace_id"
         ],
-        "title": "ObjectivesToolCompletePayload"
+        "title": "ObjectivesToolCompletePayload",
+        "description": "Response indicating objectives tool completed successfully."
       },
       "ObjectivesToolPayload": {
         "properties": {
@@ -26576,7 +28072,8 @@
           "trace_id",
           "objectives"
         ],
-        "title": "ObjectivesToolPayload"
+        "title": "ObjectivesToolPayload",
+        "description": "Request to create objectives from scenario generation tool."
       },
       "OptionItem": {
         "properties": {
@@ -26605,6 +28102,35 @@
           "isCorrect"
         ],
         "title": "OptionItem"
+      },
+      "OutputTokenDetails": {
+        "properties": {
+          "audio_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Tokens"
+          },
+          "text_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Tokens"
+          }
+        },
+        "type": "object",
+        "title": "OutputTokenDetails",
+        "description": "Output token details from Realtime API usage."
       },
       "ParameterDetail": {
         "properties": {
@@ -27183,6 +28709,30 @@
         ],
         "title": "PersonaSearchResult",
         "description": "Persona search result."
+      },
+      "PersonaTool": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameters": {
+            "type": "string",
+            "title": "Parameters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameters"
+        ],
+        "title": "PersonaTool",
+        "description": "Persona tool definition for voice agent."
       },
       "PersonaToolContext": {
         "properties": {
@@ -28481,7 +30031,8 @@
           "problem_statement_id",
           "trace_id"
         ],
-        "title": "ProblemStatementToolCompletePayload"
+        "title": "ProblemStatementToolCompletePayload",
+        "description": "Response indicating problem statement tool completed successfully."
       },
       "ProblemStatementToolPayload": {
         "properties": {
@@ -28515,7 +30066,8 @@
           "title",
           "description"
         ],
-        "title": "ProblemStatementToolPayload"
+        "title": "ProblemStatementToolPayload",
+        "description": "Request to create problem statement from scenario generation tool."
       },
       "ProcessCSVRequest": {
         "properties": {
@@ -29860,7 +31412,34 @@
         "title": "QueryDataRequest",
         "description": "Request to execute a SQL query."
       },
-      "QuestionItem": {
+      "QuestionItem-Input": {
+        "properties": {
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "allow_multiple": {
+            "type": "boolean",
+            "title": "Allow Multiple"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOption"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text",
+          "allow_multiple",
+          "options"
+        ],
+        "title": "QuestionItem",
+        "description": "Question item for scenario questions tool."
+      },
+      "QuestionItem-Output": {
         "properties": {
           "id": {
             "type": "string",
@@ -29903,6 +31482,25 @@
           "options"
         ],
         "title": "QuestionItem"
+      },
+      "QuestionOption": {
+        "properties": {
+          "option_text": {
+            "type": "string",
+            "title": "Option Text"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "option_text",
+          "is_correct"
+        ],
+        "title": "QuestionOption",
+        "description": "Option for a question."
       },
       "QuizItem": {
         "properties": {
@@ -30040,6 +31638,96 @@
         "title": "RangeMinMax",
         "description": "Min/max range values."
       },
+      "RealtimeContentItem": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "audio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio"
+          },
+          "transcript": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcript"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "RealtimeContentItem",
+        "description": "Content item within a RealtimeItem message."
+      },
+      "RealtimeItem": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/RealtimeContentItem"
+            },
+            "type": "array",
+            "title": "Content"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "itemId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itemid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "role",
+          "content",
+          "status"
+        ],
+        "title": "RealtimeItem",
+        "description": "RealtimeItem format for conversation history."
+      },
       "ReasoningMappingItem": {
         "properties": {
           "name": {
@@ -30143,7 +31831,8 @@
           "userInstructions",
           "departmentId"
         ],
-        "title": "RegenerateScenarioPayload"
+        "title": "RegenerateScenarioPayload",
+        "description": "Request to regenerate a scenario."
       },
       "RemoveProfilesFromCohortRequest": {
         "properties": {
@@ -30970,6 +32659,36 @@
         ],
         "title": "ReportsOverviewFilters",
         "description": "Reports overview filter request schema - requires profileId for individual reports."
+      },
+      "ResponseInputItem": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ResponseInputItem",
+        "description": "Input item for agent conversation (TResponseInputItem format)."
       },
       "RubricDetailRequest": {
         "properties": {
@@ -32277,7 +33996,8 @@
           "success",
           "message"
         ],
-        "title": "ScenarioGenerationCompletePayload"
+        "title": "ScenarioGenerationCompletePayload",
+        "description": "Response indicating scenario generation completed successfully."
       },
       "ScenarioGenerationErrorPayload": {
         "properties": {
@@ -32306,7 +34026,8 @@
           "success",
           "message"
         ],
-        "title": "ScenarioGenerationErrorPayload"
+        "title": "ScenarioGenerationErrorPayload",
+        "description": "Response indicating an error occurred in scenario generation."
       },
       "ScenarioGenerationProgressPayload": {
         "properties": {
@@ -32352,7 +34073,8 @@
         "required": [
           "type"
         ],
-        "title": "ScenarioGenerationProgressPayload"
+        "title": "ScenarioGenerationProgressPayload",
+        "description": "Response indicating progress in scenario generation."
       },
       "ScenarioInRequest": {
         "properties": {
@@ -32809,7 +34531,8 @@
           "question_ids",
           "trace_id"
         ],
-        "title": "ScenarioQuestionsToolCompletePayload"
+        "title": "ScenarioQuestionsToolCompletePayload",
+        "description": "Response indicating questions tool completed successfully."
       },
       "ScenarioQuestionsToolErrorPayload": {
         "properties": {
@@ -32832,7 +34555,8 @@
           "message",
           "trace_id"
         ],
-        "title": "ScenarioQuestionsToolErrorPayload"
+        "title": "ScenarioQuestionsToolErrorPayload",
+        "description": "Response indicating an error occurred in questions tool."
       },
       "ScenarioQuestionsToolPayload": {
         "properties": {
@@ -32842,8 +34566,7 @@
           },
           "questions": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/QuestionItem-Input"
             },
             "type": "array",
             "title": "Questions"
@@ -32887,7 +34610,8 @@
           "questions",
           "scenario_id"
         ],
-        "title": "ScenarioQuestionsToolPayload"
+        "title": "ScenarioQuestionsToolPayload",
+        "description": "Request to create questions from scenario generation tool."
       },
       "ScenarioSearchResult": {
         "properties": {
@@ -33042,7 +34766,8 @@
           "success",
           "trace_id"
         ],
-        "title": "ScenarioVideoToolCompletePayload"
+        "title": "ScenarioVideoToolCompletePayload",
+        "description": "Response indicating video tool completed successfully."
       },
       "ScenarioVideoToolErrorPayload": {
         "properties": {
@@ -33065,7 +34790,8 @@
           "message",
           "trace_id"
         ],
-        "title": "ScenarioVideoToolErrorPayload"
+        "title": "ScenarioVideoToolErrorPayload",
+        "description": "Response indicating an error occurred in video tool."
       },
       "ScenarioVideoToolPayload": {
         "properties": {
@@ -33129,7 +34855,8 @@
           "scenario_id",
           "agent_id"
         ],
-        "title": "ScenarioVideoToolPayload"
+        "title": "ScenarioVideoToolPayload",
+        "description": "Request to generate video from scenario generation tool."
       },
       "ScenariosFilters": {
         "properties": {
@@ -33481,7 +35208,8 @@
           "success",
           "message"
         ],
-        "title": "SendSimulationMessageErrorPayload"
+        "title": "SendSimulationMessageErrorPayload",
+        "description": "Response indicating an error occurred while sending simulation message."
       },
       "SendSimulationMessagePayload": {
         "properties": {
@@ -33510,7 +35238,8 @@
         "required": [
           "chat_id"
         ],
-        "title": "SendSimulationMessagePayload"
+        "title": "SendSimulationMessagePayload",
+        "description": "Request to send a simulation message."
       },
       "SettingsActiveRequest": {
         "properties": {
@@ -34334,7 +36063,8 @@
           "completed_chat_id",
           "next_chat_id"
         ],
-        "title": "SimulationContinuedPayload"
+        "title": "SimulationContinuedPayload",
+        "description": "Response indicating simulation was continued successfully."
       },
       "SimulationDetailRequest": {
         "properties": {
@@ -34607,7 +36337,8 @@
           "type",
           "chat_id"
         ],
-        "title": "SimulationGradingProgressPayload"
+        "title": "SimulationGradingProgressPayload",
+        "description": "Response indicating progress in simulation grading."
       },
       "SimulationInCohort": {
         "properties": {
@@ -34698,7 +36429,8 @@
           "success",
           "message"
         ],
-        "title": "SimulationJoinErrorPayload"
+        "title": "SimulationJoinErrorPayload",
+        "description": "Response indicating an error occurred while joining simulation chat room."
       },
       "SimulationJoinPayload": {
         "properties": {
@@ -34716,7 +36448,8 @@
         "required": [
           "chat_id"
         ],
-        "title": "SimulationJoinPayload"
+        "title": "SimulationJoinPayload",
+        "description": "Request to join a simulation chat room for real-time updates."
       },
       "SimulationJoinedPayload": {
         "properties": {
@@ -34734,7 +36467,8 @@
           "chat_id",
           "chat_type"
         ],
-        "title": "SimulationJoinedPayload"
+        "title": "SimulationJoinedPayload",
+        "description": "Response indicating successfully joined simulation chat room."
       },
       "SimulationLeaveErrorPayload": {
         "properties": {
@@ -34752,7 +36486,8 @@
           "success",
           "message"
         ],
-        "title": "SimulationLeaveErrorPayload"
+        "title": "SimulationLeaveErrorPayload",
+        "description": "Response indicating an error occurred while leaving simulation chat room."
       },
       "SimulationLeavePayload": {
         "properties": {
@@ -34770,7 +36505,8 @@
         "required": [
           "chat_id"
         ],
-        "title": "SimulationLeavePayload"
+        "title": "SimulationLeavePayload",
+        "description": "Request to leave a simulation chat room."
       },
       "SimulationMappingItem": {
         "properties": {
@@ -34837,7 +36573,8 @@
           "chat_id",
           "final_content"
         ],
-        "title": "SimulationMessageCancelledPayload"
+        "title": "SimulationMessageCancelledPayload",
+        "description": "Response indicating a simulation message was cancelled."
       },
       "SimulationMessageCompletePayload": {
         "properties": {
@@ -34860,7 +36597,8 @@
           "chat_id",
           "final_content"
         ],
-        "title": "SimulationMessageCompletePayload"
+        "title": "SimulationMessageCompletePayload",
+        "description": "Response indicating a simulation message was completed."
       },
       "SimulationMessageErrorPayload": {
         "properties": {
@@ -34878,7 +36616,8 @@
           "chat_id",
           "error"
         ],
-        "title": "SimulationMessageErrorPayload"
+        "title": "SimulationMessageErrorPayload",
+        "description": "Response indicating an error occurred in a simulation message."
       },
       "SimulationMessageTokenPayload": {
         "properties": {
@@ -34906,7 +36645,8 @@
           "token",
           "accumulated_content"
         ],
-        "title": "SimulationMessageTokenPayload"
+        "title": "SimulationMessageTokenPayload",
+        "description": "Response indicating a token was received for a simulation message."
       },
       "SimulationNewMessagePayload": {
         "properties": {
@@ -34955,7 +36695,8 @@
           "completed",
           "created_at"
         ],
-        "title": "SimulationNewMessagePayload"
+        "title": "SimulationNewMessagePayload",
+        "description": "Response indicating a new simulation message was created."
       },
       "SimulationNewRequest": {
         "properties": {
@@ -35217,7 +36958,8 @@
           "message",
           "attempt_id"
         ],
-        "title": "SimulationStartedPayload"
+        "title": "SimulationStartedPayload",
+        "description": "Response indicating simulation started successfully."
       },
       "SimulationStoppedPayload": {
         "properties": {
@@ -35240,7 +36982,8 @@
           "success",
           "message"
         ],
-        "title": "SimulationStoppedPayload"
+        "title": "SimulationStoppedPayload",
+        "description": "Response indicating simulation was stopped successfully."
       },
       "SimulationTextEndErrorPayload": {
         "properties": {
@@ -35258,7 +37001,8 @@
           "success",
           "message"
         ],
-        "title": "SimulationTextEndErrorPayload"
+        "title": "SimulationTextEndErrorPayload",
+        "description": "Response indicating an error occurred while ending simulation chat session."
       },
       "SimulationTextEndPayload": {
         "properties": {
@@ -35276,7 +37020,8 @@
         "required": [
           "chat_id"
         ],
-        "title": "SimulationTextEndPayload"
+        "title": "SimulationTextEndPayload",
+        "description": "Request to end a simulation chat session."
       },
       "SimulationsData": {
         "properties": {
@@ -36028,7 +37773,8 @@
           "success",
           "message"
         ],
-        "title": "StartSimulationErrorPayload"
+        "title": "StartSimulationErrorPayload",
+        "description": "Response indicating an error occurred while starting simulation."
       },
       "StartSimulationPayload": {
         "properties": {
@@ -36079,7 +37825,8 @@
         "required": [
           "simulation_id"
         ],
-        "title": "StartSimulationPayload"
+        "title": "StartSimulationPayload",
+        "description": "Request to start a text simulation attempt."
       },
       "StartVoiceErrorPayload": {
         "properties": {
@@ -36098,7 +37845,7 @@
           "message"
         ],
         "title": "StartVoiceErrorPayload",
-        "description": "Server-to-client error payload."
+        "description": "Response indicating an error occurred while starting voice simulation."
       },
       "StartVoicePayload": {
         "properties": {
@@ -36112,7 +37859,7 @@
           "chat_id"
         ],
         "title": "StartVoicePayload",
-        "description": "Client-to-server payload for simulation_voice_start."
+        "description": "Request to start a voice simulation session."
       },
       "StartVoiceResponsePayload": {
         "properties": {
@@ -36130,10 +37877,7 @@
           },
           "persona_tools": {
             "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
+              "$ref": "#/components/schemas/PersonaTool"
             },
             "type": "array",
             "title": "Persona Tools"
@@ -36188,8 +37932,7 @@
           },
           "history": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/RealtimeItem"
             },
             "type": "array",
             "title": "History",
@@ -36207,7 +37950,7 @@
           "model"
         ],
         "title": "StartVoiceResponsePayload",
-        "description": "Server-to-client response payload."
+        "description": "Response from starting a voice simulation session."
       },
       "StopEvalRequest": {
         "properties": {
@@ -36273,7 +38016,8 @@
           "success",
           "message"
         ],
-        "title": "StopSimulationErrorPayload"
+        "title": "StopSimulationErrorPayload",
+        "description": "Response indicating an error occurred while stopping simulation."
       },
       "StopSimulationPayload": {
         "properties": {
@@ -36286,7 +38030,8 @@
         "required": [
           "chat_id"
         ],
-        "title": "StopSimulationPayload"
+        "title": "StopSimulationPayload",
+        "description": "Request to stop an active simulation run."
       },
       "StopVoiceErrorPayload": {
         "properties": {
@@ -36305,7 +38050,7 @@
           "message"
         ],
         "title": "StopVoiceErrorPayload",
-        "description": "Server-to-client error payload."
+        "description": "Response indicating an error occurred while stopping voice simulation."
       },
       "StopVoicePayload": {
         "properties": {
@@ -36319,7 +38064,7 @@
           "chat_id"
         ],
         "title": "StopVoicePayload",
-        "description": "Client-to-server payload for simulation_voice_stop."
+        "description": "Request to stop a voice simulation session."
       },
       "StopVoiceResponsePayload": {
         "properties": {
@@ -36338,7 +38083,7 @@
           "message"
         ],
         "title": "StopVoiceResponsePayload",
-        "description": "Server-to-client response payload."
+        "description": "Response from stopping a voice simulation session."
       },
       "StudentSimReportRequest": {
         "properties": {
@@ -39250,7 +40995,8 @@
           "success",
           "message"
         ],
-        "title": "VideoGenerationCompletePayload"
+        "title": "VideoGenerationCompletePayload",
+        "description": "Response indicating video generation completed successfully."
       },
       "VideoGenerationErrorPayload": {
         "properties": {
@@ -39279,7 +41025,8 @@
           "success",
           "message"
         ],
-        "title": "VideoGenerationErrorPayload"
+        "title": "VideoGenerationErrorPayload",
+        "description": "Response indicating an error occurred in video generation."
       },
       "VideoGenerationProgressPayload": {
         "properties": {
@@ -39336,7 +41083,8 @@
         "required": [
           "type"
         ],
-        "title": "VideoGenerationProgressPayload"
+        "title": "VideoGenerationProgressPayload",
+        "description": "Response indicating progress in video generation."
       },
       "VideoItem": {
         "properties": {
@@ -39372,7 +41120,7 @@
           },
           "questions": {
             "items": {
-              "$ref": "#/components/schemas/QuestionItem"
+              "$ref": "#/components/schemas/QuestionItem-Output"
             },
             "type": "array",
             "title": "Questions"
@@ -39411,7 +41159,7 @@
           "message"
         ],
         "title": "VoiceDebugInfoErrorPayload",
-        "description": "Server-to-client error payload."
+        "description": "Response indicating an error occurred while processing debug info."
       },
       "VoiceDebugInfoPayload": {
         "properties": {
@@ -39430,7 +41178,7 @@
           "content"
         ],
         "title": "VoiceDebugInfoPayload",
-        "description": "Client-to-server payload for simulation_voice_debug_info."
+        "description": "Request to send debug info in voice simulation."
       },
       "VoiceInterruptedPayload": {
         "properties": {
@@ -39444,7 +41192,7 @@
           "chat_id"
         ],
         "title": "VoiceInterruptedPayload",
-        "description": "Client-to-server payload for simulation_voice_assistant_interrupted."
+        "description": "Request to signal that assistant was interrupted in voice simulation."
       },
       "VoiceToolCallDeltaPayload": {
         "properties": {
@@ -39478,7 +41226,7 @@
           "response_id"
         ],
         "title": "VoiceToolCallDeltaPayload",
-        "description": "Client-to-server payload for simulation_voice_assistant_delta."
+        "description": "Request to send assistant tool call delta in voice simulation."
       },
       "VoiceToolCallDonePayload": {
         "properties": {
@@ -39512,7 +41260,7 @@
           "response_id"
         ],
         "title": "VoiceToolCallDonePayload",
-        "description": "Client-to-server payload for simulation_voice_assistant_done."
+        "description": "Request to signal that assistant tool call is done in voice simulation."
       },
       "VoiceToolCallErrorPayload": {
         "properties": {
@@ -39531,7 +41279,34 @@
           "message"
         ],
         "title": "VoiceToolCallErrorPayload",
-        "description": "Server-to-client error payload."
+        "description": "Response indicating an error occurred in assistant tool call."
+      },
+      "VoiceUsage": {
+        "properties": {
+          "input_token_details": {
+            "$ref": "#/components/schemas/InputTokenDetails"
+          },
+          "output_token_details": {
+            "$ref": "#/components/schemas/OutputTokenDetails"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input_token_details",
+          "output_token_details",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "VoiceUsage",
+        "description": "Token usage information from Realtime API."
       },
       "VoiceUserDeltaPayload": {
         "properties": {
@@ -39560,7 +41335,7 @@
           "content_index"
         ],
         "title": "VoiceUserDeltaPayload",
-        "description": "Client-to-server payload for simulation_voice_user_delta."
+        "description": "Request to send incremental user speech delta in voice simulation."
       },
       "VoiceUserMessageErrorPayload": {
         "properties": {
@@ -39579,7 +41354,7 @@
           "message"
         ],
         "title": "VoiceUserMessageErrorPayload",
-        "description": "Server-to-client error payload."
+        "description": "Response indicating an error occurred while sending user message."
       },
       "VoiceUserMessagePayload": {
         "properties": {
@@ -39609,7 +41384,7 @@
           "message"
         ],
         "title": "VoiceUserMessagePayload",
-        "description": "Client-to-server payload for simulation_voice_user_text."
+        "description": "Request to send user text message in voice simulation."
       },
       "VoiceUserSpeechPayload": {
         "properties": {
@@ -39630,9 +41405,7 @@
             "title": "Conversation Id"
           },
           "usage": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Usage"
+            "$ref": "#/components/schemas/VoiceUsage"
           }
         },
         "type": "object",
@@ -39644,7 +41417,7 @@
           "usage"
         ],
         "title": "VoiceUserSpeechPayload",
-        "description": "Client-to-server payload for simulation_voice_user_speech."
+        "description": "Request to send user speech audio in voice simulation."
       },
       "VoiceUserStartPayload": {
         "properties": {
@@ -39663,7 +41436,7 @@
           "item_id"
         ],
         "title": "VoiceUserStartPayload",
-        "description": "Client-to-server payload for simulation_voice_user_start."
+        "description": "Request to start user speech input in voice simulation."
       },
       "VoiceUserTranscriptPayload": {
         "properties": {
@@ -39698,7 +41471,7 @@
           "transcript"
         ],
         "title": "VoiceUserTranscriptPayload",
-        "description": "Client-to-server payload for simulation_voice_user_transcript."
+        "description": "Request to send user transcript from voice simulation."
       },
       "app__api__v3__agents__detail__AgentDetailResponse": {
         "properties": {

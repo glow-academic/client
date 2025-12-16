@@ -18,6 +18,8 @@ server_router = APIRouter()
 
 
 class ImageGenerationCompletePayload(BaseModel):
+    """Request to complete image generation."""
+
     image_id: str
     file_path: str
     mime_type: str
