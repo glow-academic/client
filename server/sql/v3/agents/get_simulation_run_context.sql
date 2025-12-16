@@ -2,7 +2,7 @@
 -- Parameters: $1=chat_id (uuid)
 -- Returns: chat, attempt, scenario, persona, model, provider, simulation settings, profile, and documents data
 -- Returns both text and voice agent/model fields for flexibility
--- Existing fields (persona_id, model_id, etc.) point to text agent/model for backward compatibility
+-- Existing fields (persona_id, model_id, etc.) point to text agent/model 
 -- Voice fields are prefixed with voice_* (voice_model_id, voice_model_name, etc.)
 WITH scenario_dept AS (
     SELECT 

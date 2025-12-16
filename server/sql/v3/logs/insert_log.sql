@@ -1,21 +1,10 @@
--- Insert log entry with guest-profile-id resolution (Chris Date: No Nulls)
--- Parameters: $1=level, $2=logger_name, $3=message, $4=profile_id (may be "guest-profile-id"), $5=extra (jsonb)
--- Resolves "guest-profile-id" to actual guest UUID before inserting
+-- Insert log entry (Chris Date: No Nulls)
+-- Parameters: $1=level, $2=logger_name, $3=message, $4=profile_id (uuid or NULL), $5=extra (jsonb)
 -- Inserts into both app_logs and app_logs_profiles junction table
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (default settings only)
-    SELECT 
-        sdg.profile_id as guest_profile_id
-    FROM settings_default_guest sdg
-    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-    WHERE sdg.active = true
-    LIMIT 1
-),
-resolve_profile_id AS (
+WITH resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $4::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
+            WHEN $4::text IS NULL OR $4::text = '' THEN NULL::uuid
             ELSE $4::uuid
         END as resolved_profile_id
 ),

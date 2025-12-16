@@ -11,7 +11,6 @@ import pytest
 from app.utils.logging.db_logger import (
     DBLogHandler,
     get_logger,
-    resolve_profile_id,
     set_profile_id,
     setup_db_logger,
 )
@@ -84,99 +83,7 @@ class TestSetupDbLogger:
             # If we get here without early return, pool was set
 
 
-class TestResolveProfileId:
-    """Tests for resolve_profile_id function."""
-
-    @pytest.mark.asyncio
-    async def test_resolve_profile_id_with_uuid(self, db: asyncpg.Connection) -> None:
-        """Test that resolve_profile_id returns UUID as-is."""
-        test_uuid = "123e4567-e89b-12d3-a456-426614174000"
-
-        # Create a mock pool that uses the test connection
-        class MockPool:
-            def __init__(self, conn: asyncpg.Connection) -> None:
-                self.conn = conn
-
-            async def acquire(self) -> asyncpg.Connection:
-                return self.conn
-
-        pool = MockPool(db)
-        setup_db_logger(pool)  # type: ignore[arg-type]
-
-        result = await resolve_profile_id(test_uuid)
-        assert result == test_uuid
-
-    @pytest.mark.asyncio
-    async def test_resolve_profile_id_guest(self, db: asyncpg.Connection) -> None:
-        """Test that resolve_profile_id resolves guest-profile-id."""
-        # Create a guest profile first
-        guest_id = await db.fetchval(
-            """
-            INSERT INTO profiles (role, default_profile, first_name, last_name, email)
-            VALUES ('guest', true, 'Guest', 'User', 'guest@test.com')
-            RETURNING id::text
-            """
-        )
-
-        # Create a mock pool that uses the test connection
-        class MockPool:
-            def __init__(self, conn: asyncpg.Connection) -> None:
-                self.conn = conn
-
-            async def acquire(self) -> asyncpg.Connection:
-                return self.conn
-
-        pool = MockPool(db)
-        setup_db_logger(pool)  # type: ignore[arg-type]
-
-        result = await resolve_profile_id("guest-profile-id")
-        assert result == guest_id
-
-    @pytest.mark.asyncio
-    async def test_resolve_profile_id_none(self, db: asyncpg.Connection) -> None:
-        """Test that resolve_profile_id resolves None to guest."""
-        # Create a guest profile first
-        guest_id = await db.fetchval(
-            """
-            INSERT INTO profiles (role, default_profile, first_name, last_name, email)
-            VALUES ('guest', true, 'Guest', 'User', 'guest@test.com')
-            RETURNING id::text
-            """
-        )
-
-        # Create a mock pool that uses the test connection
-        class MockPool:
-            def __init__(self, conn: asyncpg.Connection) -> None:
-                self.conn = conn
-
-            async def acquire(self) -> asyncpg.Connection:
-                return self.conn
-
-        pool = MockPool(db)
-        setup_db_logger(pool)  # type: ignore[arg-type]
-
-        result = await resolve_profile_id(None)
-        assert result == guest_id
-
-    @pytest.mark.asyncio
-    async def test_resolve_profile_id_no_pool(self) -> None:
-        """Test that resolve_profile_id returns placeholder when pool is None."""
-        # Reset pool
-        from app.utils.logging.db_logger import _db_pool
-
-        original_pool = _db_pool
-
-        try:
-            # Temporarily set pool to None
-            import app.utils.logging.db_logger as db_logger_module
-
-            db_logger_module._db_pool = None
-
-            result = await resolve_profile_id("guest-profile-id")
-            assert result == "00000000-0000-0000-0000-000000000000"
-        finally:
-            # Restore original pool
-            db_logger_module._db_pool = original_pool
+# Note: TestResolveProfileId class removed - resolve_profile_id function has been removed
 
 
 class TestSetProfileId:
@@ -220,7 +127,7 @@ class TestSetProfileId:
         set_profile_id("test-id")
         set_profile_id(None)
 
-        # Context should be cleared (handler will use guest-profile-id)
+        # Context should be cleared (handler will skip DB write if no profile_id)
         logger = get_logger("test.module")
         handler = next(h for h in logger.handlers if isinstance(h, DBLogHandler))
 
@@ -238,10 +145,8 @@ class TestSetProfileId:
             handler, "_write_to_db", new_callable=AsyncMock
         ) as mock_write:
             handler.emit(record)
-            if mock_write.called:
-                call_args = mock_write.call_args
-                # Should default to guest-profile-id
-                assert call_args[0][1] == "guest-profile-id"
+            # Handler should skip DB write when profile_id is None
+            assert not mock_write.called, "DB write should be skipped when profile_id is None"
 
 
 class TestDBLogHandler:

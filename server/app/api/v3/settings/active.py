@@ -21,7 +21,7 @@ class SettingsActiveRequest(BaseModel):
     """Request to get active settings."""
 
     profileId: str | None = (
-        None  # Can be null, empty string, UUID, or "guest-profile-id" for backward compatibility
+        None  # Can be null, empty string, or UUID
     )
     departmentId: str | None = (
         None  # Optional department ID for department-specific settings lookup
@@ -281,7 +281,7 @@ async def get_active_settings(
     try:
         sql_query = load_sql("sql/v3/settings/get_active_settings.sql")
         # Pass profileId and departmentId to SQL query
-        # profileId: can be null, empty, UUID, or "guest-profile-id" for backward compatibility
+        # profileId: can be null, empty, or UUID
         # departmentId: optional UUID for direct department-specific settings lookup
         # Use empty string instead of None to avoid PostgreSQL type ambiguity
         profile_id_param = request.profileId if request.profileId else ""

@@ -49,7 +49,7 @@ def _resolve_profile_ids(
     effective_profile_id: str | None,
     pathname: str = "/analytics/leaderboard",
 ) -> tuple[str, str]:
-    """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
+    """Resolve profile IDs to ensure they are valid UUIDs."""
     effective = effective_profile_id or profile_id
     cache_key = (profile_id, effective)
     if cache_key in _PROFILE_RESOLUTION_CACHE:

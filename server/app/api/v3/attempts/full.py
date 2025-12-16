@@ -5,15 +5,14 @@ import re
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -413,18 +412,7 @@ async def get_attempt_full(
 
         # Role-based restriction: check if viewing profile's role is "higher" than current user's role
         if current_profile_id:
-            # Resolve "guest-profile-id" to actual guest profile UUID
-            resolved_current_profile_id: str | None = current_profile_id
-            if current_profile_id == "guest-profile-id":
-                guest_profile_sql = load_sql(
-                    "sql/v3/profile/get_default_guest_profile.sql"
-                )
-                guest_row = await conn.fetchrow(guest_profile_sql)
-                if guest_row:
-                    resolved_current_profile_id = str(guest_row["id"])
-                else:
-                    # If no guest profile found, skip role check
-                    resolved_current_profile_id = None
+            resolved_current_profile_id = current_profile_id
 
             # Get attempt's profile role from attempt_profiles
             attempt_profiles_data = parse_jsonb(result.get("attemptProfiles", []))

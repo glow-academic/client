@@ -1,39 +1,12 @@
 -- Get persona detail with agents, departments, and access control
--- Parameters: $1 = persona_id (uuid), $2 = profile_id (uuid or "guest-profile-id")
+-- Parameters: $1 = persona_id (uuid), $2 = profile_id (uuid)
 
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (department-specific or default)
-    SELECT 
-        COALESCE(
-            -- Department-specific settings guest profile (if user has departments)
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $2::uuid AND sdg.active = true
-             LIMIT 1),
-            -- Fallback to default (active) settings guest profile
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $2::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
-            ELSE $2::uuid
-        END as resolved_profile_id
-),
-user_profile AS (
+WITH user_profile AS (
     SELECT 
         p.role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    FROM profiles p
+    WHERE p.id = $2::uuid
 ),
 persona_departments_data AS (
     SELECT 
@@ -50,10 +23,9 @@ persona_department_access_check AS (
             WHEN up.role = 'superadmin' THEN true
             WHEN EXISTS (
                 SELECT 1 FROM persona_departments pd 
-                JOIN resolve_profile_id rpi ON true
                 WHERE pd.persona_id = p.id 
                 AND pd.active = true 
-                AND pd.department_id IN (SELECT department_id FROM profile_departments pd2 WHERE pd2.profile_id = rpi.resolved_profile_id AND pd2.active = true)
+                AND pd.department_id IN (SELECT department_id FROM profile_departments pd2 WHERE pd2.profile_id = $2::uuid AND pd2.active = true)
             ) THEN true
             WHEN NOT EXISTS (
                 SELECT 1 FROM persona_departments pd3 
@@ -96,15 +68,13 @@ valid_depts AS (
         ) as dept_mapping,
         array_agg(d.id::text ORDER BY d.title) as dept_ids
     FROM departments d
-    JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
+    WHERE pd.profile_id = $2::uuid AND d.active = true
 ),
 user_departments AS (
     SELECT department_id
-    FROM resolve_profile_id rpi
-    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
-    WHERE pd.active = true
+    FROM profile_departments pd
+    WHERE pd.profile_id = $2::uuid AND pd.active = true
 ),
 valid_agents AS (
     -- Return empty mapping since personas no longer have agents
@@ -121,9 +91,7 @@ profile_data AS (
     SELECT 
         up.role as user_role,
         up.actor_name
-    FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
-    CROSS JOIN user_profile up
+    FROM user_profile up
 ),
 parameter_mapping_data AS (
     -- Note: parameter_personas junction table removed - parameters no longer directly linked to personas

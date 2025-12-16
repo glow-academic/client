@@ -1,12 +1,12 @@
 -- Get active settings row based on profile's primary department or direct department ID
 -- Parameters: 
---   $1 = profile_id (uuid, null, empty string, or "guest-profile-id" for backward compatibility)
+--   $1 = profile_id (uuid, null, or empty string)
 --   $2 = department_id (optional uuid, null, or empty string for direct department lookup)
--- Returns: Settings row (default for null/empty/guest-profile-id, department-specific for authenticated users or when departmentId provided)
+-- Returns: Settings row (default for null/empty, department-specific for authenticated users or when departmentId provided)
 -- Logic: 
 --   1. If department_id ($2) is provided and not empty: use it directly for department-specific settings
 --   2. If profile_id ($1) is a real UUID: get primary_department_id, then department-specific settings
---   3. If profile_id is null, empty, or "guest-profile-id": return default settings (no department links)
+--   3. If profile_id is null or empty: return default settings (no department links)
 --   4. Fall back to default settings (settings with no department_settings records = cross-department)
 --   5. Final fallback: any active settings row
 WITH default_settings AS (
@@ -22,19 +22,16 @@ WITH default_settings AS (
     LIMIT 1
 ),
 is_guest AS (
-    -- Check if this is a guest request (empty string or "guest-profile-id" string)
+    -- Check if this is a guest request (empty string)
     -- Parameter is passed as text (empty string for null/guest, UUID string for authenticated users)
-    SELECT (
-        $1::text = '' OR 
-        $1::text = 'guest-profile-id'
-    ) as is_guest_flag
+    SELECT ($1::text = '') as is_guest_flag
 ),
 resolve_profile_id AS (
     -- Resolve profile_id (keep as-is if UUID, null if guest)
     -- Parameter is passed as text (empty string for null/guest, UUID string for authenticated users)
     SELECT 
         CASE 
-            WHEN $1::text = '' OR $1::text = 'guest-profile-id' THEN NULL::uuid
+            WHEN $1::text = '' THEN NULL::uuid
             ELSE $1::uuid
         END as resolved_profile_id
 ),

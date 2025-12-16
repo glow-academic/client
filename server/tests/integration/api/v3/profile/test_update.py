@@ -92,11 +92,11 @@ async def test_update_profile_not_found(
     assert "not found" in data["detail"].lower()
 
 
-async def test_update_profile_guest_profile_id(
+async def test_update_profile_with_uuid(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test updating profile with guest-profile-id resolution."""
-    # Create a default guest profile
+    """Test updating profile with actual UUID."""
+    # Create a guest profile
     guest_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, role, default_profile) "
         "VALUES('Guest', 'User', 'guest', true) "
@@ -112,7 +112,7 @@ async def test_update_profile_guest_profile_id(
     response = await client.post(
         "/api/v3/profile/update",
         json={
-            "profileId": "guest-profile-id",
+            "profileId": str(guest_id),
             "firstName": "UpdatedGuest",
         },
     )

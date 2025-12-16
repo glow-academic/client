@@ -5,7 +5,6 @@ from typing import Any
 
 import asyncpg  # type: ignore
 from app.utils.activity.audit import AuditIntent, jinja
-from app.utils.logging.db_logger import resolve_profile_id
 from fastapi import Request
 
 # Global DB pool (set during startup)

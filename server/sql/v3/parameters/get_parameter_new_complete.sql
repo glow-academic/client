@@ -1,34 +1,7 @@
 -- Get default parameter detail for creation
--- Parameters: $1 = profile_id (uuid or "guest-profile-id")
+-- Parameters: $1 = profile_id (uuid)
 
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (department-specific or default)
-    SELECT 
-        COALESCE(
-            -- Department-specific settings guest profile (if user has departments)
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $1::uuid AND sdg.active = true
-             LIMIT 1),
-            -- Fallback to default (active) settings guest profile
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $1::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
-            ELSE $1::uuid
-        END as resolved_profile_id
-),
-user_departments AS (
+WITH user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
@@ -73,7 +46,7 @@ parameter_departments_aggregated AS (
         JOIN default_parameter dp ON pd.parameter_id = dp.id
         WHERE pd.active = true
         UNION
-        -- Field-level departments (for backward compatibility)
+        -- Field-level departments ()
         SELECT fd.department_id as dept_id
         FROM parameter_fields fp
         JOIN default_parameter dp ON fp.parameter_id = dp.id

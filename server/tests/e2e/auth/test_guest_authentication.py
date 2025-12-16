@@ -10,7 +10,7 @@ from playwright.sync_api import Page, expect
 pytestmark = pytest.mark.e2e
 
 
-@pytest.mark.test_profile_id("guest-profile-id")
+@pytest.mark.test_profile_id("965bd24f-dfae-4063-b370-e1373df46322")
 def test_guest_login_flow(page: Page, base_url: str) -> None:
     """Test guest login flow from login page."""
     page.goto(f"{base_url}")
@@ -36,7 +36,7 @@ def test_guest_login_flow(page: Page, base_url: str) -> None:
     assert guest_mode == "true", "Guest mode should be set in localStorage"
 
 
-@pytest.mark.test_profile_id("guest-profile-id")
+@pytest.mark.test_profile_id("965bd24f-dfae-4063-b370-e1373df46322")
 def test_guest_practice_page_access(page: Page, base_url: str) -> None:
     """Test that practice page is accessible with guest authentication."""
     # Navigate directly to practice page with guest profile
@@ -58,7 +58,7 @@ def test_guest_practice_page_access(page: Page, base_url: str) -> None:
     expect(practice_grid).to_be_visible()
 
 
-@pytest.mark.test_profile_id("guest-profile-id")
+@pytest.mark.test_profile_id("965bd24f-dfae-4063-b370-e1373df46322")
 def test_guest_restricted_pages(page: Page, base_url: str) -> None:
     """Test that guest cannot access admin-only pages."""
     # Attempt to access admin staff page
@@ -85,7 +85,7 @@ def test_guest_restricted_pages(page: Page, base_url: str) -> None:
         )
 
 
-@pytest.mark.test_profile_id("guest-profile-id")
+@pytest.mark.test_profile_id("965bd24f-dfae-4063-b370-e1373df46322")
 def test_guest_session_persistence(page: Page, base_url: str) -> None:
     """Test that guest session persists across page reloads."""
     # Navigate to practice page

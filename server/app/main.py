@@ -365,22 +365,6 @@ def get_guest_profile_id() -> str:
     return _guest_profile_id
 
 
-def resolve_profile_id(profile_id: str | None) -> str:
-    """Resolve 'guest-profile-id' to actual guest UUID using cached value.
-
-    Args:
-        profile_id: Profile ID string, may be "guest-profile-id", None, or actual UUID
-
-    Returns:
-        Resolved UUID string (never null)
-
-    Raises:
-        RuntimeError: If guest profile has not been initialized
-    """
-    if not profile_id or profile_id == "guest-profile-id":
-        return get_guest_profile_id()
-
-    return profile_id
 
 
 async def init_db_pool() -> None:
@@ -1274,9 +1258,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
-        from app.utils.logging.db_logger import (get_logger,
-                                                 resolve_profile_id,
-                                                 set_profile_id)
+        from app.utils.logging.db_logger import get_logger, set_profile_id
         from app.utils.metrics.collector import record_error, record_request
 
         logger = get_logger(__name__)
@@ -1315,14 +1297,9 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
         if not profile_id:
             profile_id = request.headers.get("X-Profile-Id")
 
-        # Resolve guest profile if needed
+        # Set profile_id if found, otherwise skip DB logging
         if profile_id:
-            try:
-                resolved_id = await resolve_profile_id(profile_id)
-                set_profile_id(resolved_id)
-            except Exception as e:
-                logger.warning(f"Error resolving profile_id: {e}")
-                set_profile_id(None)
+            set_profile_id(profile_id)
         else:
             # If no profile_id found, try to resolve from department cookies
             from app.utils.logging.db_logger import \
@@ -1339,26 +1316,17 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
                     if resolved_id:
                         set_profile_id(resolved_id)
                     else:
-                        # Fallback to default guest profile
-                        resolved_id = await resolve_profile_id("guest-profile-id")
-                        set_profile_id(resolved_id)
+                        # No profile_id available, skip DB logging
+                        set_profile_id(None)
                 except Exception as e:
                     logger.warning(
                         f"Error resolving profile from department cookies: {e}"
                     )
-                    # Fallback to default guest profile
-                    try:
-                        resolved_id = await resolve_profile_id("guest-profile-id")
-                        set_profile_id(resolved_id)
-                    except Exception:
-                        set_profile_id(None)
-            else:
-                # No cookies, resolve to default guest profile
-                try:
-                    resolved_id = await resolve_profile_id("guest-profile-id")
-                    set_profile_id(resolved_id)
-                except Exception:
+                    # No profile_id available, skip DB logging
                     set_profile_id(None)
+            else:
+                # No profile_id available, skip DB logging
+                set_profile_id(None)
 
         # Process request
         status_code = 500

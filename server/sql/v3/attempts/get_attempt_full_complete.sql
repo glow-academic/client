@@ -132,7 +132,7 @@
             WHERE sv.active = true AND v.active = true
         ),
         -- Note: Quizzes are deprecated - questions are now handled directly through scenarios
-        -- This CTE is kept for backward compatibility but may not be used
+        -- This CTE is kept  but may not be used
         attempt_quizzes_data AS (
             SELECT 
                 q.id as quiz_id,

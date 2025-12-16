@@ -274,7 +274,7 @@ SELECT
     apd.created_at as actual_created_at,
     apd.updated_at as actual_updated_at,
     apd.primary_department_id as actual_primary_department_id,
-    -- Effective profile fields (unprefixed for backward compatibility)
+    -- Effective profile fields (unprefixed )
     epd.id,
     epd.first_name,
     epd.last_name,

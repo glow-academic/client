@@ -143,10 +143,10 @@ async def test_connect_profile_takeover(
     assert len(new_socket_events) == 1
 
 
-async def test_connect_guest_profile_id_resolution(
+async def test_connect_invalid_guest_profile_id_string(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
-    """Test 'guest-profile-id' string resolves to actual guest profile."""
+    """Test that invalid profile ID strings are treated as invalid/missing."""
     # Arrange - ensure there's a default guest profile
     # First, clear any existing default guest profiles
     await db.execute(
@@ -166,7 +166,7 @@ async def test_connect_guest_profile_id_resolution(
     )
 
     sid = "test_sid_guest"
-    environ = {"QUERY_STRING": "profileId=guest-profile-id"}
+    environ = {"QUERY_STRING": "profileId=invalid-uuid-string"}
     auth = {}
 
     # Act
@@ -175,13 +175,9 @@ async def test_connect_guest_profile_id_resolution(
     # Assert
     assert result is True
 
-    # Verify connection_confirmed event was emitted with resolved profile_id
+    # Verify connection_confirmed event was emitted with None profile_id (treated as invalid)
     confirmed_events = mock_sio.get_events("connection_confirmed")
     assert len(confirmed_events) == 1
     assert confirmed_events[0]["sid"] == sid
-    # The profile_id should be resolved to the actual guest profile ID
-    assert confirmed_events[0]["profile_id"] == str(guest_id)
-
-    # Verify socket joined profile room with resolved profile_id
-    assert str(guest_id) in mock_sio.rooms
-    assert sid in mock_sio.rooms[str(guest_id)]
+    # The profile_id should be None since invalid UUID strings are treated as invalid
+    assert confirmed_events[0]["profile_id"] is None

@@ -11,14 +11,8 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type LayoutContextIn = InputOf<"/api/v3/profile/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v3/profile/context", "post">;
-type AuthorizeEmulationIn = InputOf<
-  "/api/v3/profile/emulate",
-  "post"
->;
-type AuthorizeEmulationOut = OutputOf<
-  "/api/v3/profile/emulate",
-  "post"
->;
+type AuthorizeEmulationIn = InputOf<"/api/v3/profile/emulate", "post">;
+type AuthorizeEmulationOut = OutputOf<"/api/v3/profile/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v3/feedback/create", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v3/feedback/create", "post">;
 type RefreshAnalyticsIn = InputOf<"/api/v3/analytics/refresh", "post">;
@@ -35,24 +29,12 @@ type SearchSimulatableProfilesOut = OutputOf<
 >;
 type SearchStaffIn = InputOf<"/api/v3/staff/search", "post">;
 type SearchStaffOut = OutputOf<"/api/v3/staff/search", "post">;
-type CreateStaffDataIn = InputOf<
-  "/api/v3/staff/data/create",
-  "post"
->;
-type CreateStaffDataOut = OutputOf<
-  "/api/v3/staff/data/create",
-  "post"
->;
+type CreateStaffDataIn = InputOf<"/api/v3/staff/data/create", "post">;
+type CreateStaffDataOut = OutputOf<"/api/v3/staff/data/create", "post">;
 type ProcessCSVIn = InputOf<"/api/v3/staff/csv", "post">;
 type ProcessCSVOut = OutputOf<"/api/v3/staff/csv", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<
-  "/api/v3/staff/upsert",
-  "post"
->;
-type BulkCreateOrUpdateStaffOut = OutputOf<
-  "/api/v3/staff/upsert",
-  "post"
->;
+type BulkCreateOrUpdateStaffIn = InputOf<"/api/v3/staff/upsert", "post">;
+type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v3/staff/upsert", "post">;
 type SettingsActiveIn = InputOf<"/api/v3/settings/active", "post">;
 type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 
@@ -481,9 +463,6 @@ export async function clearGuestSessionCookies(): Promise<void> {
     const cookieStore = await cookies();
     cookieStore.delete("department-id");
     cookieStore.delete("auth-mode");
-    // Also clear old cookies for migration period
-    cookieStore.delete("guest-profile-id");
-    cookieStore.delete("default-account-profile-id");
   } catch {
     // Ignore errors - cookies might not exist
   }
@@ -559,6 +538,5 @@ export type {
   SettingsActiveIn,
   SettingsActiveOut,
   SwitchEffectiveProfileParams,
-  SwitchEffectiveProfileResult
+  SwitchEffectiveProfileResult,
 };
-

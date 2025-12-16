@@ -1,22 +1,11 @@
 -- Get staff detail with role visibility check and all fields needed for editing
 -- Parameters:
 --   $1 = profileId (uuid) - target profile to get details for
---   $2 = currentProfileId (uuid) - current user's profile ID for role visibility check
+--   $2 = currentProfileId (uuid or NULL) - current user's profile ID for role visibility check
 -- Returns: All fields needed for editing staff
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (default settings only)
-    SELECT 
-        sdg.profile_id as guest_profile_id
-    FROM settings_default_guest sdg
-    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-    WHERE sdg.active = true
-    LIMIT 1
-),
-resolve_current_profile_id AS (
+WITH resolve_current_profile_id AS (
     SELECT 
         CASE 
-            WHEN $2::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
             WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
             ELSE $2::uuid
         END as resolved_profile_id

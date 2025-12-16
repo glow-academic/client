@@ -1,28 +1,4 @@
-WITH resolve_guest_profile AS (
-    SELECT 
-        COALESCE(
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $7::uuid AND sdg.active = true
-             LIMIT 1),
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $7::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $7::text IS NULL OR $7::text = '' THEN NULL::uuid
-            ELSE $7::uuid
-        END as resolved_profile_id
-),
-update_field AS (
+WITH update_field AS (
     UPDATE fields SET
         name = $2,
         description = $3,

@@ -1,7 +1,7 @@
 -- =====================================================
 -- REPORTS OVERVIEW QUERY - PROFILE-SPECIFIC METRICS
--- Assumes profile_id ($6) may be "guest-profile-id" which needs resolution
--- Parameters: $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (required, may be "guest-profile-id"), $7: department_ids
+-- Assumes profile_id ($6) uuid which needs resolution
+-- Parameters: $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (required, uuid), $7: department_ids
 -- =====================================================
 WITH
 -- Get thresholds from active settings (defaults if no settings found)
@@ -13,34 +13,6 @@ settings_thresholds AS (
     FROM settings
     WHERE active = true
     LIMIT 1
-),
--- Resolve guest-profile-id to actual profile ID
-resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (department-specific or default)
-    SELECT 
-        COALESCE(
-            -- Department-specific settings guest profile (if user has departments)
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $6::uuid AND sdg.active = true
-             LIMIT 1),
-            -- Fallback to default (active) settings guest profile
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $6::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $6::text IS NULL OR $6::text = '' THEN NULL::uuid
-            ELSE $6::uuid
-        END as resolved_profile_id
 ),
 -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
 -- Gets simulations linked to cohorts + practice simulations without cohorts

@@ -53,7 +53,7 @@ def test_admin_access(page: Page, base_url: str) -> None:
     expect(personas_grid).to_be_visible()
 
 
-@pytest.mark.test_profile_id("guest-profile-id")
+@pytest.mark.test_profile_id("965bd24f-dfae-4063-b370-e1373df46322")
 def test_guest_access(page: Page, base_url: str) -> None:
     """Test guest profile access restrictions."""
     # Guest should be able to access practice page
@@ -121,7 +121,7 @@ def test_role_based_redirects(page: Page, base_url: str) -> None:
             expect(simulation_progress.first).to_be_visible()
 
 
-@pytest.mark.test_profile_id("guest-profile-id")
+@pytest.mark.test_profile_id("965bd24f-dfae-4063-b370-e1373df46322")
 def test_guest_role_based_redirects(page: Page, base_url: str) -> None:
     """Test guest redirect paths."""
     # Guest should redirect to practice

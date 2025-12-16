@@ -1,25 +1,10 @@
 -- Update profile with optional fields and activity tracking in a single transaction
--- Parameters: $1=profileId, $2=first_name (nullable text), $3=last_name (nullable text), $4=last_login (nullable timestamp with time zone), $5=role (nullable profile_role), $6=active (nullable bool), $7=unused (placeholder, req_per_day stored in separate table), $8=last_active (nullable timestamp with time zone)
+-- Parameters: $1=profileId (uuid), $2=first_name (nullable text), $3=last_name (nullable text), $4=last_login (nullable timestamp with time zone), $5=role (nullable profile_role), $6=active (nullable bool), $7=unused (placeholder, req_per_day stored in separate table), $8=last_active (nullable timestamp with time zone)
 -- Returns: Updated profile with all fields
 -- Note: NULL parameters mean "don't update this field" (use COALESCE to keep existing value)
 -- last_active is handled separately via profile_activity table
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (default settings only)
-    SELECT 
-        sdg.profile_id::text as guest_profile_id
-    FROM settings_default_guest sdg
-    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-    WHERE sdg.active = true
-    LIMIT 1
-),
-resolve_profile_id AS (
-    -- Resolve "guest-profile-id" to actual default guest profile ID
-    SELECT 
-        CASE 
-            WHEN $1::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            ELSE $1::text
-        END as resolved_profile_id
+WITH resolve_profile_id AS (
+    SELECT $1::uuid as resolved_profile_id
 ),
 profile_exists AS (
     -- Check if profile exists

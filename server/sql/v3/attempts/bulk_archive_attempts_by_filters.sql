@@ -2,7 +2,7 @@
 -- Parameters (in order):
 -- $1: archived (bool) - the archive status to set
 -- $2, $3: start_date (datetime), end_date (datetime)
--- $4: profile_id (uuid, optional)
+-- $4: profile_id (uuid, optional - null or empty string for no filter)
 -- $5: cohort_ids (uuid[])
 -- $6: department_ids (uuid[])
 -- $7: roles (profile_role[])
@@ -15,34 +15,6 @@
 -- Returns: count of updated attempts
 
 WITH 
--- Resolve guest-profile-id to actual profile ID
-resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (department-specific or default)
-    SELECT 
-        COALESCE(
-            -- Department-specific settings guest profile (if user has departments)
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $4::uuid AND sdg.active = true
-             LIMIT 1),
-            -- Fallback to default (active) settings guest profile
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $4::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $4::text IS NULL OR $4::text = '' THEN NULL::uuid
-            ELSE $4::uuid
-        END as resolved_profile_id
-),
 -- Cast roles parameter to help PostgreSQL determine type
 roles_param AS (
     SELECT $7::profile_role[] as roles_array
@@ -51,7 +23,7 @@ roles_param AS (
 history_viewer_role AS (
     SELECT 
         CASE 
-            WHEN rpi.resolved_profile_id IS NULL THEN
+            WHEN $4::text IS NULL OR $4::text = '' THEN
                 CASE 
                     WHEN 'superadmin'::profile_role = ANY($7::profile_role[]) THEN 'superadmin'::text
                     WHEN 'admin'::profile_role = ANY($7::profile_role[]) THEN 'admin'::text
@@ -59,9 +31,8 @@ history_viewer_role AS (
                     WHEN 'member'::profile_role = ANY($7::profile_role[]) THEN 'member'::text
                     ELSE 'guest'::text
                 END
-            ELSE COALESCE((SELECT role::text FROM profiles WHERE id = rpi.resolved_profile_id), 'guest'::text)
+            ELSE COALESCE((SELECT role::text FROM profiles WHERE id = $4::uuid), 'guest'::text)
         END::profile_role as role
-    FROM resolve_profile_id rpi
 ),
 -- Expanded cohort list: union of provided cohortIds + profileId cohorts
 expanded_history_cohort_ids AS (
@@ -72,8 +43,7 @@ expanded_history_cohort_ids AS (
         UNION
         SELECT cp.cohort_id
         FROM cohort_profiles cp
-        JOIN resolve_profile_id rpi ON cp.profile_id = rpi.resolved_profile_id
-        WHERE rpi.resolved_profile_id IS NOT NULL
+        WHERE cp.profile_id = $4::uuid AND ($4::text IS NOT NULL AND $4::text != '')
     ) combined
 ),
 -- Filter attempts by date, profile, cohorts, departments, and role hierarchy
@@ -118,7 +88,7 @@ history_attempts AS (
         $8::text[] IS NULL OR cardinality($8::text[]) = 0 OR 'archived' = ANY($8::text[]) OR sa.archived = FALSE
       )
       -- Only filter by profileId if provided
-      AND (($4::text IS NULL OR $4::text = '' OR $4::text = 'guest-profile-id') OR ap.profile_id = CASE WHEN $4::text = 'guest-profile-id' THEN (SELECT guest_profile_id FROM resolve_guest_profile) ELSE $4::uuid END)
+      AND (($4::text IS NULL OR $4::text = '') OR ap.profile_id = $4::uuid)
       AND (cardinality($6::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $6::uuid[]::text[])
       -- Role hierarchy filtering
       AND (

@@ -77,41 +77,34 @@ def test_auth_header_validation(page: Page, base_url: str) -> None:
     assert response.status in [401, 403], f"Expected 401/403, got {response.status}"
 
 
-def test_auth_header_profile_resolution(page: Page, base_url: str) -> None:
-    """Test that guest-profile-id is resolved to actual UUID."""
-    # Test profile context with guest-profile-id
+def test_auth_header_with_uuid(page: Page, base_url: str) -> None:
+    """Test profile context with actual UUID."""
+    # Get a guest profile UUID from settings or use default test profile
+    from server.tests.e2e.conftest import PROFILE_ID
+    
     context = fetch_profile_context(
         page.context.request,
-        actual_profile_id="guest-profile-id",
-        effective_profile_id="guest-profile-id",
+        actual_profile_id=PROFILE_ID,
+        effective_profile_id=PROFILE_ID,
         pathname="/practice",
         bypass_cache=True,
     )
 
     assert context is not None
-    # The API should resolve guest-profile-id to actual UUID
     actual_profile = context.get("actualProfile", {})
     effective_profile = context.get("effectiveProfile", {})
 
-    # Both should be resolved to actual UUIDs (not "guest-profile-id")
-    assert actual_profile.get("id") != "guest-profile-id", (
-        "Guest profile ID should be resolved"
-    )
-    assert effective_profile.get("id") != "guest-profile-id", (
-        "Effective guest profile ID should be resolved"
-    )
-
-    # Verify resolved IDs are valid UUIDs
+    # Both should be valid UUIDs
     import re
 
     uuid_pattern = re.compile(
         r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I
     )
     assert uuid_pattern.match(actual_profile.get("id", "")), (
-        "Resolved ID should be valid UUID"
+        "Profile ID should be valid UUID"
     )
     assert uuid_pattern.match(effective_profile.get("id", "")), (
-        "Resolved effective ID should be valid UUID"
+        "Effective profile ID should be valid UUID"
     )
 
 

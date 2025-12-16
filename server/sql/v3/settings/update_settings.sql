@@ -21,7 +21,7 @@
 --   $18 = success_threshold (integer)
 --   $19 = warning_threshold (integer)
 --   $20 = danger_threshold (integer)
---   $21 = profile_id (uuid or "guest-profile-id")
+--   $21 = profile_id (uuid)
 --   $22 = provider_key_mapping (jsonb, optional) - {provider_id: key_id}
 --   $23 = auth_key_mapping (jsonb, optional) - {auth_id: {auth_item_id: key_id}}
 --   $24 = default_admin_profile_id (text, optional) - Default admin/superadmin profile ID
@@ -30,34 +30,7 @@
 --   $27 = auth_enabled (jsonb, optional) - {auth_id: enabled (boolean)}
 --   $28 = auth_value_mapping (jsonb, optional) - {auth_id: {auth_item_id: value}} for non-encrypted items
 --   $29 = department_ids (text array, nullable) - Empty array = global settings, non-empty = department-specific
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (department-specific or default)
-    SELECT 
-        COALESCE(
-            -- Department-specific settings guest profile (if user has departments)
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $19::uuid AND sdg.active = true
-             LIMIT 1),
-            -- Fallback to default (active) settings guest profile
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $19::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $19::text IS NULL OR $19::text = '' THEN NULL::uuid
-            ELSE $19::uuid
-        END as resolved_profile_id
-),
-old_settings_id AS (
+WITH old_settings_id AS (
     -- Capture old settings ID before deactivating
     SELECT id::text as old_id FROM settings WHERE active = true LIMIT 1
 ),

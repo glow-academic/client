@@ -48,7 +48,7 @@ async def test_get_profile_context(
 async def test_get_profile_context_guest_profile_id(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test profile context with guest-profile-id resolution."""
+    """Test profile context with guest profile UUID."""
     # Create a default guest profile
     guest_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, role, default_profile) "
@@ -62,11 +62,18 @@ async def test_get_profile_context_guest_profile_id(
         guest_id,
     )
 
+    # Create a guest profile for testing
+    guest_id = await db.fetchval(
+        "INSERT INTO profiles(first_name, last_name, role, default_profile) "
+        "VALUES('Guest', 'User', 'guest', true) "
+        "RETURNING id"
+    )
+    
     response = await client.post(
         "/api/v3/profile/context",
         json={
-            "actualProfileId": "guest-profile-id",
-            "effectiveProfileId": "guest-profile-id",
+            "actualProfileId": str(guest_id),
+            "effectiveProfileId": str(guest_id),
             "pathname": "/home",
         },
     )

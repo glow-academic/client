@@ -1,29 +1,5 @@
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (department-specific or default)
-    SELECT 
-        COALESCE(
-            -- Department-specific settings guest profile (if user has departments)
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $1::uuid AND sdg.active = true
-             LIMIT 1),
-            -- Fallback to default (active) settings guest profile
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    -- Resolve "guest-profile-id" to actual default guest profile ID
-    SELECT 
-        CASE 
-            WHEN $1::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            ELSE $1::uuid
-        END as resolved_profile_id
+WITH resolve_profile_id AS (
+    SELECT $1::uuid as resolved_profile_id
 ),
 user_departments AS (
     SELECT rpi.resolved_profile_id, pd.department_id
@@ -103,7 +79,7 @@ parameter_item_departments_data AS (
         FROM parameter_departments pd
         WHERE pd.active = true
         UNION
-        -- Field-level departments (for backward compatibility)
+        -- Field-level departments ()
         SELECT fp.parameter_id, fd.department_id
         FROM parameter_fields fp
         JOIN field_departments fd ON fd.field_id = fp.field_id
@@ -121,7 +97,7 @@ parameter_item_departments_for_filter AS (
         FROM parameter_departments pd
         WHERE pd.active = true
         UNION
-        -- Field-level departments (for backward compatibility)
+        -- Field-level departments ()
         SELECT fp.parameter_id, fd.department_id
         FROM parameter_fields fp
         JOIN field_departments fd ON fd.field_id = fp.field_id

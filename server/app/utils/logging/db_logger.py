@@ -28,31 +28,6 @@ def setup_db_logger(db_pool: asyncpg.Pool) -> None:
     logger.info("Database logger initialized")
 
 
-async def resolve_profile_id(profile_id: str | None) -> str:
-    """Resolve 'guest-profile-id' to actual guest UUID using cached value (Chris Date: No Nulls).
-
-    Args:
-        profile_id: Profile ID string, may be "guest-profile-id" or None
-
-    Returns:
-        Resolved UUID string (never null)
-    """
-    if not profile_id or profile_id == "guest-profile-id":
-        # Use cached guest profile UUID (no DB call needed)
-        try:
-            from app.main import get_guest_profile_id
-
-            return get_guest_profile_id()
-        except RuntimeError:
-            # Fallback: return a placeholder if not initialized
-            # This should not happen in normal operation
-            logger = logging.getLogger("app.utils.logging.db_logger")
-            logger.warning("Guest profile UUID not initialized; using placeholder")
-            return "00000000-0000-0000-0000-000000000000"
-
-    return profile_id
-
-
 async def resolve_profile_from_department_cookies(
     department_id: str | None, auth_mode: str | None
 ) -> str | None:
@@ -156,9 +131,9 @@ class DBLogHandler(logging.Handler):
                 # Try to get from record if set
                 profile_id = getattr(record, "profile_id", None)
 
-            # If no profile_id, resolve to guest
+            # If no profile_id, skip DB write (use standard logger only)
             if not profile_id:
-                profile_id = "guest-profile-id"
+                return
 
             # Schedule async write (fire and forget)
             import asyncio
@@ -195,28 +170,12 @@ class DBLogHandler(logging.Handler):
 
                 extra_data["exception"] = traceback.format_exception(*record.exc_info)
 
-            # Write to database (SQL will resolve guest-profile-id)
+            # Write to database
             # Inserts into both app_logs and app_logs_profiles junction table
             async with _db_pool.acquire() as conn:
                 await conn.execute(
                     """
-                    WITH resolve_guest_profile AS (
-                        SELECT 
-                            sdg.profile_id as guest_profile_id
-                        FROM settings_default_guest sdg
-                        JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-                        WHERE sdg.active = true
-                        LIMIT 1
-                    ),
-                    resolve_profile_id AS (
-                        SELECT 
-                            CASE 
-                                WHEN $4::text = 'guest-profile-id' THEN
-                                    (SELECT guest_profile_id FROM resolve_guest_profile)
-                                ELSE $4::uuid
-                            END as resolved_profile_id
-                    ),
-                    insert_log AS (
+                    WITH insert_log AS (
                         INSERT INTO app_logs (level, logger_name, message, extra, ts)
                         SELECT 
                             $1::text,
@@ -229,17 +188,16 @@ class DBLogHandler(logging.Handler):
                     INSERT INTO app_logs_profiles (app_log_id, profile_id, created_at, updated_at)
                     SELECT 
                         il.id,
-                        rpi.resolved_profile_id,
+                        $4::uuid,
                         now(),
                         now()
                     FROM insert_log il
-                    CROSS JOIN resolve_profile_id rpi
-                    WHERE rpi.resolved_profile_id IS NOT NULL
+                    WHERE $4::uuid IS NOT NULL
                     """,
                     record.levelname.lower(),
                     record.name,
                     record.getMessage(),
-                    profile_id or "guest-profile-id",
+                    profile_id,
                     json.dumps(extra_data) if extra_data else None,
                 )
         except Exception:

@@ -56,36 +56,6 @@ async def connect(
         f"Client connecting: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
     )
 
-    # Resolve "guest-profile-id" to actual default guest profile
-    if profile_id == "guest-profile-id":
-        try:
-            from app.main import get_pool
-            from app.utils.sql_helper import load_sql
-
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
-                    sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-                    guest_row = await conn.fetchrow(sql)
-                    if guest_row:
-                        profile_id = str(guest_row["id"])
-                        logger.info(
-                            f"Resolved 'guest-profile-id' to actual guest profile: {profile_id}"
-                        )
-                    else:
-                        logger.warning(
-                            "No default guest profile found; treating as anonymous guest"
-                        )
-                        profile_id = None
-            else:
-                logger.error(
-                    "Database pool not available; cannot resolve guest profile"
-                )
-                profile_id = None
-        except Exception as e:
-            logger.error(f"Error resolving guest profile: {e}")
-            profile_id = None
-
     if profile_id:
         # Check if this is the default guest profile
         # Default guest profile is allowed to have multiple simultaneous instances

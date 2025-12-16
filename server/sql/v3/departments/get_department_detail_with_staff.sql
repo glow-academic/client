@@ -187,7 +187,7 @@ department_keys AS (
     AND ds.department_id = $1::uuid
     AND ds.active = true
     UNION
-    -- Also include all active keys (for backward compatibility and general access)
+    -- Also include all active keys ( and general access)
     SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
     FROM keys k
     WHERE k.active = true

@@ -57,11 +57,11 @@ async def test_get_profile_detail_not_found(
     assert "not found" in data["detail"].lower()
 
 
-async def test_get_profile_detail_guest_profile_id(
+async def test_get_profile_detail_with_uuid(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test getting profile with guest-profile-id resolution."""
-    # Create a default guest profile
+    """Test getting profile with actual UUID."""
+    # Create a guest profile
     guest_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, role, default_profile) "
         "VALUES('Guest', 'User', 'guest', true) "
@@ -78,7 +78,7 @@ async def test_get_profile_detail_guest_profile_id(
 
     response = await client.post(
         "/api/v3/profile/detail",
-        json={"profileId": "guest-profile-id"},
+        json={"profileId": str(guest_id)},
     )
 
     assert response.status_code == 200
@@ -87,19 +87,14 @@ async def test_get_profile_detail_guest_profile_id(
     assert data["profile"]["role"] == "guest"
 
 
-async def test_get_profile_detail_guest_profile_id_not_found(
+async def test_get_profile_detail_invalid_string(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test guest-profile-id when no default guest exists."""
-    # Delete any existing default guest profiles
-    await db.execute(
-        "UPDATE profiles SET default_profile = false WHERE role = 'guest' AND default_profile = true"
-    )
-
+    """Test that invalid profile ID strings return error."""
     response = await client.post(
         "/api/v3/profile/detail",
-        json={"profileId": "guest-profile-id"},
+        json={"profileId": "invalid-uuid-string"},
     )
 
-    # Should return 404 if no default guest profile exists
+    # Should return 400 or 404 for invalid profile ID string
     assert response.status_code == 404
