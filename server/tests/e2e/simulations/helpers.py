@@ -133,7 +133,7 @@ def fetch_simulation_detail(
     )
 
 
-def fetch_simulation_detail_default(
+def fetch_simulation_new(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
@@ -171,7 +171,7 @@ def create_simulation_api(
     scenario_ids: list[str] | list[dict[str, Any]] | None = None,
 ) -> str:
     """Create a simulation via the API and return its ID."""
-    defaults = fetch_simulation_detail_default(
+    defaults = fetch_simulation_new(
         request,
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,

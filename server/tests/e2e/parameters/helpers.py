@@ -133,7 +133,7 @@ def fetch_parameter_detail(
     )
 
 
-def fetch_parameter_detail_default(
+def fetch_parameter_new(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,

@@ -133,7 +133,7 @@ def fetch_agent_detail(
     )
 
 
-def fetch_agent_detail_default(
+def fetch_agent_new(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
@@ -173,7 +173,7 @@ def create_agent_api(
     prompt_id: str | None = None,
 ) -> str:
     """Create an agent via the API and return its ID."""
-    defaults = fetch_agent_detail_default(
+    defaults = fetch_agent_new(
         request,
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,

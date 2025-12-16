@@ -22,10 +22,10 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
     try:
         # Get defaults to find valid rubric
         from server.tests.e2e.simulations.helpers import (
-            fetch_simulation_detail_default,
+            fetch_simulation_new,
         )
 
-        defaults = fetch_simulation_detail_default(
+        defaults = fetch_simulation_new(
             page.context.request,
             profile_id=ADMIN_PROFILE_ID,
             effective_profile_id=ADMIN_PROFILE_ID,
@@ -150,10 +150,10 @@ def test_simulation_edit_scenario_management(page: Page, base_url: str) -> None:
     try:
         # Get defaults
         from server.tests.e2e.simulations.helpers import (
-            fetch_simulation_detail_default,
+            fetch_simulation_new,
         )
 
-        defaults = fetch_simulation_detail_default(
+        defaults = fetch_simulation_new(
             page.context.request,
             profile_id=ADMIN_PROFILE_ID,
             effective_profile_id=ADMIN_PROFILE_ID,

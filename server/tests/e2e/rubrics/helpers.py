@@ -133,7 +133,7 @@ def fetch_rubric_detail(
     )
 
 
-def fetch_rubric_detail_default(
+def fetch_rubric_new(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,

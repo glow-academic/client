@@ -41,7 +41,7 @@ async def test_get_persona_new(
     assert "valid_icons" in data
 
 
-async def test_get_persona_detail_default_not_found(
+async def test_get_persona_new_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test getting default persona detail for profile with no department access."""

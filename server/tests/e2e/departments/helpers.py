@@ -133,7 +133,7 @@ def fetch_department_detail(
     )
 
 
-def fetch_department_detail_default(
+def fetch_department_new(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,

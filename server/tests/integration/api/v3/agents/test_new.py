@@ -96,7 +96,7 @@ async def test_get_agent_new_includes_models(
         assert "description" in model_info
 
 
-async def test_get_agent_detail_default_includes_departments(
+async def test_get_agent_new_includes_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that default detail includes user's departments."""

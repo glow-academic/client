@@ -69,10 +69,10 @@ def test_simulations_cache_revalidation_and_no_double_fetch(
 
     # Get defaults for creating simulation
     from server.tests.e2e.simulations.helpers import (
-        fetch_simulation_detail_default,
+        fetch_simulation_new,
     )
 
-    defaults = fetch_simulation_detail_default(
+    defaults = fetch_simulation_new(
         page.context.request,
         profile_id=ADMIN_PROFILE_ID,
         effective_profile_id=ADMIN_PROFILE_ID,

@@ -133,7 +133,7 @@ def fetch_scenario_detail(
     )
 
 
-def fetch_scenario_detail_default(
+def fetch_scenario_new(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
@@ -174,7 +174,7 @@ def create_scenario_api(
     image_input_enabled: bool = False,
 ) -> str:
     """Create a scenario via the API and return its ID."""
-    defaults = fetch_scenario_detail_default(
+    defaults = fetch_scenario_new(
         request,
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,

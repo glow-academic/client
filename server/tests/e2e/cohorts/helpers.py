@@ -133,7 +133,7 @@ def fetch_cohort_detail(
     )
 
 
-def fetch_cohort_detail_default(
+def fetch_cohort_new(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,

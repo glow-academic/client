@@ -133,7 +133,7 @@ def fetch_persona_detail(
     )
 
 
-def fetch_persona_detail_default(
+def fetch_persona_new(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
@@ -172,7 +172,7 @@ def create_persona_api(
     temperature: float | None = None,
 ) -> str:
     """Create a persona via the API and return its ID."""
-    defaults = fetch_persona_detail_default(
+    defaults = fetch_persona_new(
         request,
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,

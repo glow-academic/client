@@ -267,7 +267,7 @@ All tests should be located in `server/tests/e2e/agents/` and follow the same pa
    - Fetch agent detail via API
    - Used for verification in edit flows
 
-4. **`fetch_agent_detail_default(request, profile_id, effective_profile_id, bypass_cache) -> Dict[str, Any]`**
+4. **`fetch_agent_new(request, profile_id, effective_profile_id, bypass_cache) -> Dict[str, Any]`**
    - Fetch default agent detail for create flows
    - Returns default values for form fields
 

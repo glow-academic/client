@@ -153,7 +153,7 @@ cd client && npx tsc --noEmit
 
 ### Server: DHH-Style Architecture
 - **1 SQL file per route**: Each route has a corresponding SQL file in `server/sql/v3/[resource]/[operation].sql`
-- **1 Python file per route**: Each route is a single Python file (e.g., `detail_default.py`, `create.py`)
+- **1 Python file per route**: Each route is a single Python file (e.g., `new.py`, `create.py`)
 - **No abstraction layers**: Routes directly execute SQL using `load_sql()` helper - no service/repository layers
 - **Direct SQL execution**: Routes own transaction and execution control
 - **Testing**: Unit tests (utils), integration tests (endpoints), E2E tests (Playwright)
