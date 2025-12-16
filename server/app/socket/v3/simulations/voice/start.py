@@ -68,13 +68,13 @@ class StartVoiceResponsePayload(BaseModel):
 async def simulation_voice_start_error(
     payload: StartVoiceErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_voice_start_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_start_error", payload.model_dump(), room=room)
 
 
 async def simulation_voice_start_response(
     payload: StartVoiceResponsePayload, room: str
 ) -> None:
-    await sio.emit("simulation_voice_start_response", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_start_response", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> None:

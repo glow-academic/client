@@ -50,12 +50,12 @@ async def image_tool_complete(payload: ImageToolCompletePayload, room: str) -> N
         f"room={room}, trace_id={payload.trace_id}, "
         f"image_id={payload.image_id}"
     )
-    await sio.emit("scenario_tool_image_complete", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_image_complete", payload.model_dump(), room=room)
     logger.info(f"[scenario_tool_image_complete] Emitted to room={room}")
 
 
 async def image_tool_error(payload: ImageToolErrorPayload, room: str) -> None:
-    await sio.emit("scenario_tool_image_error", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_image_error", payload.model_dump(), room=room)
 
 
 async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:

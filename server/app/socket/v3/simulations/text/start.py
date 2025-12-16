@@ -43,11 +43,11 @@ class StartSimulationPayload(BaseModel):
 async def simulation_text_start_error(
     payload: StartSimulationErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_text_start_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_start_error", payload.model_dump(), room=room)
 
 
 async def simulation_started(payload: SimulationStartedPayload, room: str) -> None:
-    await sio.emit("simulation_started", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_started", payload.model_dump(), room=room)
 
 
 async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) -> None:

@@ -1009,9 +1009,9 @@ export default function Document({
             template_mapping?: Record<string, unknown>;
             trace_id?: string;
           }) => {
-            socket.off("document_template_generation_progress", handleProgress);
-            socket.off("document_template_generation_complete", handleComplete);
-            socket.off("document_template_generation_error", handleError);
+            socket.off("documents_generation_progress", handleProgress);
+            socket.off("documents_generation_complete", handleComplete);
+            socket.off("documents_generation_error", handleError);
 
             if (data.success) {
               resolve({
@@ -1032,16 +1032,16 @@ export default function Document({
             message: string;
             trace_id?: string;
           }) => {
-            socket.off("document_template_generation_progress", handleProgress);
-            socket.off("document_template_generation_complete", handleComplete);
-            socket.off("document_template_generation_error", handleError);
+            socket.off("documents_generation_progress", handleProgress);
+            socket.off("documents_generation_complete", handleComplete);
+            socket.off("documents_generation_error", handleError);
 
             reject(new Error(data.message || "Template generation failed"));
           };
 
-          socket.on("document_template_generation_progress", handleProgress);
-          socket.on("document_template_generation_complete", handleComplete);
-          socket.on("document_template_generation_error", handleError);
+          socket.on("documents_generation_progress", handleProgress);
+          socket.on("documents_generation_complete", handleComplete);
+          socket.on("documents_generation_error", handleError);
 
           socket.emit("document_generate", {
             departmentId: body.departmentId!,

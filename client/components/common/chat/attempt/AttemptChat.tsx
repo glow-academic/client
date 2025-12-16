@@ -1224,23 +1224,23 @@ export default function AttemptChat({
       }
     };
 
-    socket.on("simulation_new_message", handleSimulationNewMessage);
-    socket.on("message_sent", handleMessageSent);
-    socket.on("simulation_message_complete", handleSimulationMessageComplete);
-    socket.on("simulation_run_complete", handleSimulationRunComplete);
-    socket.on("simulation_message_cancelled", handleSimulationMessageCancelled);
-    socket.on("simulation_message_error", handleSimulationMessageError);
-    socket.on("simulation_stopped", handleSimulationStopped);
-    socket.on("simulation_continued", handleSimulationContinued);
-    socket.on("end_all_completed", handleEndAllCompleted);
+    socket.on("simulations_text_new_message", handleSimulationNewMessage);
+    socket.on("simulations_text_message_sent", handleMessageSent);
+    socket.on("simulations_text_message_complete", handleSimulationMessageComplete);
+    socket.on("simulations_text_run_complete", handleSimulationRunComplete);
+    socket.on("simulations_text_message_cancelled", handleSimulationMessageCancelled);
+    socket.on("simulations_text_message_error", handleSimulationMessageError);
+    socket.on("simulations_text_stopped", handleSimulationStopped);
+    socket.on("simulations_text_continued", handleSimulationContinued);
+    socket.on("simulations_text_end_all_completed", handleEndAllCompleted);
     socket.on(
-      "simulation_text_send_error",
+      "simulations_text_send_error",
       handleSendSimulationMessageError,
     );
-    socket.on("simulation_text_stop_error", handleStopSimulationError);
-    socket.on("simulation_text_next_error", handleContinueSimulationError);
-    socket.on("simulation_grading_progress", handleSimulationGradingProgress);
-    socket.on("hint_generation_progress", handleHintGenerationProgress);
+    socket.on("simulations_text_stop_error", handleStopSimulationError);
+    socket.on("simulations_text_next_error", handleContinueSimulationError);
+    socket.on("simulations_text_grading_progress", handleSimulationGradingProgress);
+    socket.on("simulations_text_hint_generation_progress", handleHintGenerationProgress);
 
     // Quiz event handlers
     const handleQuizCompleteResponse = (data: {
@@ -1287,8 +1287,8 @@ export default function AttemptChat({
     socket.on("quiz_submit_response_error", handleQuizSubmitResponseError);
 
     return () => {
-      socket.off("simulation_new_message", handleSimulationNewMessage);
-      socket.off("message_sent", handleMessageSent);
+      socket.off("simulations_text_new_message", handleSimulationNewMessage);
+      socket.off("simulations_text_message_sent", handleMessageSent);
       socket.off(
         "simulation_message_complete",
         handleSimulationMessageComplete,
@@ -1299,9 +1299,9 @@ export default function AttemptChat({
         handleSimulationMessageCancelled,
       );
       socket.off("simulation_message_error", handleSimulationMessageError);
-      socket.off("simulation_stopped", handleSimulationStopped);
-      socket.off("simulation_continued", handleSimulationContinued);
-      socket.off("end_all_completed", handleEndAllCompleted);
+      socket.off("simulations_text_stopped", handleSimulationStopped);
+      socket.off("simulations_text_continued", handleSimulationContinued);
+      socket.off("simulations_text_end_all_completed", handleEndAllCompleted);
       socket.off(
         "simulation_text_send_error",
         handleSendSimulationMessageError,
@@ -1312,7 +1312,7 @@ export default function AttemptChat({
         "simulation_grading_progress",
         handleSimulationGradingProgress,
       );
-      socket.off("hint_generation_progress", handleHintGenerationProgress);
+      socket.off("simulations_text_hint_generation_progress", handleHintGenerationProgress);
       socket.off("quiz_complete_response", handleQuizCompleteResponse);
       socket.off("quiz_complete_error", handleQuizCompleteError);
       socket.off(

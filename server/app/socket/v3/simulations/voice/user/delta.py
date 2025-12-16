@@ -29,7 +29,7 @@ async def simulation_voice_user_delta_emit(
     payload: VoiceUserDeltaPayload, room: str
 ) -> None:
     """Emit simulation_voice_user_delta event to room (server-to-client)."""
-    await sio.emit("simulation_voice_user_delta", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_user_delta", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_user_delta_impl(

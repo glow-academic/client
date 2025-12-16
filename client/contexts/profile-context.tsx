@@ -233,7 +233,7 @@ export function ProfileProviderClient({
 
       // Set up event handlers for simulation tracking
       socket.on(
-        "simulation_started",
+        "simulations_text_started",
         (data: { success: boolean; message: string; attempt_id: string }) => {
           setStartingSimulationId(null);
           if (data.success) {
@@ -250,7 +250,7 @@ export function ProfileProviderClient({
       );
 
       socket.on(
-        "simulation_text_practice_error",
+        "simulations_text_practice_error",
         (data: { success: boolean; message: string }) => {
           setStartingSimulationId(null);
           toast.error(data.message);

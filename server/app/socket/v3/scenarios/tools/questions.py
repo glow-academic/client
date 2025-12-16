@@ -53,14 +53,14 @@ async def scenario_questions_tool_complete(
         f"room={room}, trace_id={payload.trace_id}, "
         f"question_ids={len(payload.question_ids)} questions"
     )
-    await sio.emit("scenario_tool_questions_complete", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_questions_complete", payload.model_dump(), room=room)
     logger.info(f"[scenario_tool_questions_complete] Emitted to room={room}")
 
 
 async def scenario_questions_tool_error(
     payload: ScenarioQuestionsToolErrorPayload, room: str
 ) -> None:
-    await sio.emit("scenario_tool_questions_error", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_questions_error", payload.model_dump(), room=room)
 
 
 async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:

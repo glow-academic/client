@@ -35,7 +35,7 @@ class VoiceDebugInfoErrorPayload(BaseModel):
 async def simulation_voice_debug_info_error(
     payload: VoiceDebugInfoErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_voice_debug_info_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_debug_error", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_debug_info_impl(

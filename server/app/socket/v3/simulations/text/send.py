@@ -211,55 +211,55 @@ class SendSimulationMessagePayload(BaseModel):
 async def simulation_text_send_error(
     payload: SendSimulationMessageErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_text_send_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_send_error", payload.model_dump(), room=room)
 
 
 async def hint_generation_progress(
     payload: HintGenerationProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "hint_generation_progress", payload.model_dump(exclude_none=True), room=room
+        "simulations_text_hint_generation_progress", payload.model_dump(exclude_none=True), room=room
     )
 
 
 async def simulation_new_message(
     payload: SimulationNewMessagePayload, room: str
 ) -> None:
-    await sio.emit("simulation_new_message", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_new_message", payload.model_dump(), room=room)
 
 
 async def simulation_message_token(
     payload: SimulationMessageTokenPayload, room: str
 ) -> None:
-    await sio.emit("simulation_message_token", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_message_token", payload.model_dump(), room=room)
 
 
 async def simulation_message_complete(
     payload: SimulationMessageCompletePayload, room: str
 ) -> None:
-    await sio.emit("simulation_message_complete", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_message_complete", payload.model_dump(), room=room)
 
 
 async def simulation_message_error(
     payload: SimulationMessageErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_message_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_message_error", payload.model_dump(), room=room)
 
 
 async def simulation_message_cancelled(
     payload: SimulationMessageCancelledPayload, room: str
 ) -> None:
-    await sio.emit("simulation_message_cancelled", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_message_cancelled", payload.model_dump(), room=room)
 
 
 async def simulation_run_complete(
     payload: SimulationRunCompletePayload, room: str
 ) -> None:
-    await sio.emit("simulation_run_complete", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_run_complete", payload.model_dump(), room=room)
 
 
 async def message_sent(payload: MessageSentPayload, room: str) -> None:
-    await sio.emit("message_sent", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_message_sent", payload.model_dump(), room=room)
 
 
 async def _generate_hints_background_inline(

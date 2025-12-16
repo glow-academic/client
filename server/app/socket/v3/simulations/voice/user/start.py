@@ -28,7 +28,7 @@ async def simulation_voice_user_start_emit(
     payload: VoiceUserStartPayload, room: str
 ) -> None:
     """Emit simulation_voice_user_start event to room (server-to-client)."""
-    await sio.emit("simulation_voice_user_start", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_user_start", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_user_start_impl(

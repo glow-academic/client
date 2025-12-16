@@ -43,12 +43,12 @@ async def objectives_tool_complete(
         f"room={room}, trace_id={payload.trace_id}, "
         f"objective_ids={payload.objective_ids}"
     )
-    await sio.emit("scenario_tool_objectives_complete", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_objectives_complete", payload.model_dump(), room=room)
     logger.info(f"[scenario_tool_objectives_complete] Emitted to room={room}")
 
 
 async def objectives_tool_error(payload: ObjectivesToolErrorPayload, room: str) -> None:
-    await sio.emit("scenario_tool_objectives_error", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_objectives_error", payload.model_dump(), room=room)
 
 
 async def _scenario_tool_objectives_impl(sid: str, data: dict[str, Any]) -> None:

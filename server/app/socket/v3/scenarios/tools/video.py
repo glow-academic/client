@@ -47,14 +47,14 @@ async def scenario_video_tool_complete(
         f"room={room}, trace_id={payload.trace_id}, "
         f"generation_id={payload.generation_id}, video_id={payload.video_id}"
     )
-    await sio.emit("scenario_tool_video_complete", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_video_complete", payload.model_dump(), room=room)
     logger.info(f"[scenario_tool_video_complete] Emitted to room={room}")
 
 
 async def scenario_video_tool_error(
     payload: ScenarioVideoToolErrorPayload, room: str
 ) -> None:
-    await sio.emit("scenario_tool_video_error", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_video_error", payload.model_dump(), room=room)
 
 
 async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:

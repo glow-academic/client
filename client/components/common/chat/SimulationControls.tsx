@@ -254,21 +254,21 @@ export function SimulationControls({
       }
     };
 
-    socket.on("simulation_continued", handleSimulationContinued);
-    socket.on("simulation_text_next_error", handleSimulationError);
-    socket.on("end_all_started", handleEndAllStarted);
-    socket.on("end_chat_started", handleEndChatStarted);
-    socket.on("end_all_completed", handleEndAllCompleted);
-    socket.on("simulation_grading_progress", handleSimulationGradingProgress);
+    socket.on("simulations_text_continued", handleSimulationContinued);
+    socket.on("simulations_text_next_error", handleSimulationError);
+    socket.on("simulations_text_end_all_started", handleEndAllStarted);
+    socket.on("simulations_text_end_chat_started", handleEndChatStarted);
+    socket.on("simulations_text_end_all_completed", handleEndAllCompleted);
+    socket.on("simulations_text_grading_progress", handleSimulationGradingProgress);
 
     return () => {
-      socket.off("simulation_continued", handleSimulationContinued);
-      socket.off("simulation_text_next_error", handleSimulationError);
-      socket.off("end_all_started", handleEndAllStarted);
-      socket.off("end_chat_started", handleEndChatStarted);
-      socket.off("end_all_completed", handleEndAllCompleted);
+      socket.off("simulations_text_continued", handleSimulationContinued);
+      socket.off("simulations_text_next_error", handleSimulationError);
+      socket.off("simulations_text_end_all_started", handleEndAllStarted);
+      socket.off("simulations_text_end_chat_started", handleEndChatStarted);
+      socket.off("simulations_text_end_all_completed", handleEndAllCompleted);
       socket.off(
-        "simulation_grading_progress",
+        "simulations_text_grading_progress",
         handleSimulationGradingProgress
       );
     };

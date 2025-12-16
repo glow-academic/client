@@ -43,7 +43,7 @@ class VoiceToolCallErrorPayload(BaseModel):
 
 # Emit helper functions
 async def voice_tool_call_error(payload: VoiceToolCallErrorPayload, room: str) -> None:
-    await sio.emit("voice_tool_call_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_assistant_tool_call_error", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_assistant_done_impl(

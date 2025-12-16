@@ -46,7 +46,7 @@ async def problem_statement_tool_complete(
         f"problem_statement_id={payload.problem_statement_id}"
     )
     await sio.emit(
-        "scenario_tool_problem_statement_complete",
+        "scenarios_tools_statement_complete",
         payload.model_dump(),
         room=room,
     )
@@ -57,7 +57,7 @@ async def problem_statement_tool_error(
     payload: ProblemStatementToolErrorPayload, room: str
 ) -> None:
     await sio.emit(
-        "scenario_tool_problem_statement_error", payload.model_dump(), room=room
+        "scenarios_tools_statement_error", payload.model_dump(), room=room
     )
 
 

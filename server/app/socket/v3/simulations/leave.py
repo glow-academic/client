@@ -31,7 +31,7 @@ class SimulationLeavePayload(BaseModel):
 async def simulation_leave_error(
     payload: SimulationLeaveErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_leave_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_leave_error", payload.model_dump(), room=room)
 
 
 async def _simulation_leave_impl(sid: str, data: SimulationLeavePayload) -> None:

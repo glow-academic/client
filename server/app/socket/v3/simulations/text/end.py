@@ -34,13 +34,13 @@ class SimulationTextEndPayload(BaseModel):
 
 # Emit helper functions
 async def simulation_text_ended(payload: ChatStoppedPayload, room: str) -> None:
-    await sio.emit("simulation_text_ended", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_ended", payload.model_dump(), room=room)
 
 
 async def simulation_text_end_error(
     payload: SimulationTextEndErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_text_end_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_end_error", payload.model_dump(), room=room)
 
 
 async def _simulation_text_end_impl(sid: str, data: SimulationTextEndPayload) -> None:

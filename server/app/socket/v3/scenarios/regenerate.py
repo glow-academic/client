@@ -84,13 +84,13 @@ async def scenario_regeneration_progress(
 async def scenario_regeneration_complete(
     payload: ScenarioRegenerationCompletePayload, room: str
 ) -> None:
-    await sio.emit("scenario_regeneration_complete", payload.model_dump(), room=room)
+    await sio.emit("scenarios_regeneration_complete", payload.model_dump(), room=room)
 
 
 async def scenario_regeneration_error(
     payload: ScenarioRegenerationErrorPayload, room: str
 ) -> None:
-    await sio.emit("scenario_regeneration_error", payload.model_dump(), room=room)
+    await sio.emit("scenarios_regeneration_error", payload.model_dump(), room=room)
 
 
 async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -> None:

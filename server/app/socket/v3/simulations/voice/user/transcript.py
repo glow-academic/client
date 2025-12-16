@@ -31,7 +31,7 @@ async def simulation_voice_user_transcript_emit(
     payload: VoiceUserTranscriptPayload, room: str
 ) -> None:
     """Emit simulation_voice_user_transcript event to room (server-to-client)."""
-    await sio.emit("simulation_voice_user_transcript", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_user_transcript", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_user_transcript_impl(

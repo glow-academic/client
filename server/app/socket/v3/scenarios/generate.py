@@ -102,7 +102,7 @@ async def scenario_generation_progress(
     payload: ScenarioGenerationProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "scenario_generation_progress",
+        "scenarios_generation_progress",
         payload.model_dump(exclude_none=True),
         room=room,
     )
@@ -111,13 +111,13 @@ async def scenario_generation_progress(
 async def scenario_generation_complete(
     payload: ScenarioGenerationCompletePayload, room: str
 ) -> None:
-    await sio.emit("scenario_generation_complete", payload.model_dump(), room=room)
+    await sio.emit("scenarios_generation_complete", payload.model_dump(), room=room)
 
 
 async def scenario_generation_error(
     payload: ScenarioGenerationErrorPayload, room: str
 ) -> None:
-    await sio.emit("scenario_generation_error", payload.model_dump(), room=room)
+    await sio.emit("scenarios_generation_error", payload.model_dump(), room=room)
 
 
 async def scenario_image_generation_progress(
@@ -141,7 +141,7 @@ async def scenario_image_generation_complete(
 async def scenario_image_generation_error(
     payload: ScenarioImageGenerationErrorPayload, room: str
 ) -> None:
-    await sio.emit("scenario_image_generation_error", payload.model_dump(), room=room)
+    await sio.emit("scenarios_generation_error", payload.model_dump(), room=room)
 
 
 # Helper function to build Pydantic models dynamically from template schemas

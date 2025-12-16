@@ -357,19 +357,19 @@ export default function Scenario({
         trace_id?: string;
       }) => {
         // Clean up all listeners
-        socket.off("scenario_generation_progress", handleProgress);
-        socket.off("scenario_generation_complete", handleComplete);
-        socket.off("scenario_generation_error", handleError);
+        socket.off("scenarios_generation_progress", handleProgress);
+        socket.off("scenarios_generation_complete", handleComplete);
+        socket.off("scenarios_generation_error", handleError);
         socket.off(
-          "scenario_tool_problem_statement_complete",
+          "scenarios_tools_statement_complete",
           handleProblemStatementComplete
         );
         socket.off(
-          "scenario_tool_objectives_complete",
+          "scenarios_tools_objectives_complete",
           handleObjectivesComplete
         );
-        socket.off("scenario_tool_document_complete", handleDocumentComplete);
-        socket.off("scenario_tool_image_complete", handleImageComplete);
+        socket.off("scenarios_tools_document_complete", handleDocumentComplete);
+        socket.off("scenarios_tools_image_complete", handleImageComplete);
 
         if (data.success) {
           // Convert toast to success
@@ -408,19 +408,19 @@ export default function Scenario({
         trace_id?: string;
       }) => {
         // Clean up all listeners
-        socket.off("scenario_generation_progress", handleProgress);
-        socket.off("scenario_generation_complete", handleComplete);
-        socket.off("scenario_generation_error", handleError);
+        socket.off("scenarios_generation_progress", handleProgress);
+        socket.off("scenarios_generation_complete", handleComplete);
+        socket.off("scenarios_generation_error", handleError);
         socket.off(
-          "scenario_tool_problem_statement_complete",
+          "scenarios_tools_statement_complete",
           handleProblemStatementComplete
         );
         socket.off(
-          "scenario_tool_objectives_complete",
+          "scenarios_tools_objectives_complete",
           handleObjectivesComplete
         );
-        socket.off("scenario_tool_document_complete", handleDocumentComplete);
-        socket.off("scenario_tool_image_complete", handleImageComplete);
+        socket.off("scenarios_tools_document_complete", handleDocumentComplete);
+        socket.off("scenarios_tools_image_complete", handleImageComplete);
 
         // Convert toast to error
         toast.error(data.message || "Scenario generation failed", {
@@ -430,16 +430,16 @@ export default function Scenario({
       };
 
       // Register listeners
-      socket.on("scenario_generation_progress", handleProgress);
-      socket.on("scenario_generation_complete", handleComplete);
-      socket.on("scenario_generation_error", handleError);
+      socket.on("scenarios_generation_progress", handleProgress);
+      socket.on("scenarios_generation_complete", handleComplete);
+      socket.on("scenarios_generation_error", handleError);
       socket.on(
         "scenario_tool_problem_statement_complete",
         handleProblemStatementComplete
       );
-      socket.on("scenario_tool_objectives_complete", handleObjectivesComplete);
-      socket.on("scenario_tool_document_complete", handleDocumentComplete);
-      socket.on("scenario_tool_image_complete", handleImageComplete);
+      socket.on("scenarios_tools_objectives_complete", handleObjectivesComplete);
+      socket.on("scenarios_tools_document_complete", handleDocumentComplete);
+      socket.on("scenarios_tools_image_complete", handleImageComplete);
 
       // eslint-disable-next-line no-console
       console.log(

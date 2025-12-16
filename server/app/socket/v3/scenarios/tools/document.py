@@ -51,12 +51,12 @@ async def document_tool_complete(
         f"room={room}, trace_id={payload.trace_id}, "
         f"document_id={payload.document_id}, parent_document_id={payload.parent_document_id}"
     )
-    await sio.emit("scenario_tool_document_complete", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_document_complete", payload.model_dump(), room=room)
     logger.info(f"[scenario_tool_document_complete] Emitted to room={room}")
 
 
 async def document_tool_error(payload: DocumentToolErrorPayload, room: str) -> None:
-    await sio.emit("scenario_tool_document_error", payload.model_dump(), room=room)
+    await sio.emit("scenarios_tools_document_error", payload.model_dump(), room=room)
 
 
 async def _scenario_tool_document_impl(sid: str, data: dict[str, Any]) -> None:

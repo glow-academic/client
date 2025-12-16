@@ -65,7 +65,7 @@ async def document_template_generation_progress(
     payload: DocumentTemplateGenerationProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "document_template_generation_progress",
+        "documents_generation_progress",
         payload.model_dump(exclude_none=True),
         room=room,
     )
@@ -75,7 +75,7 @@ async def document_template_generation_complete(
     payload: DocumentTemplateGenerationCompletePayload, room: str
 ) -> None:
     await sio.emit(
-        "document_template_generation_complete", payload.model_dump(), room=room
+        "documents_generation_complete", payload.model_dump(), room=room
     )
 
 
@@ -83,7 +83,7 @@ async def document_template_generation_error(
     payload: DocumentTemplateGenerationErrorPayload, room: str
 ) -> None:
     await sio.emit(
-        "document_template_generation_error", payload.model_dump(), room=room
+        "documents_generation_error", payload.model_dump(), room=room
     )
 
 

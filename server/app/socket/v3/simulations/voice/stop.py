@@ -39,13 +39,13 @@ class StopVoiceResponsePayload(BaseModel):
 async def simulation_voice_stop_error(
     payload: StopVoiceErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_voice_stop_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_stop_error", payload.model_dump(), room=room)
 
 
 async def simulation_voice_stop_response(
     payload: StopVoiceResponsePayload, room: str
 ) -> None:
-    await sio.emit("simulation_voice_stop_response", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_stop_response", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:

@@ -837,24 +837,30 @@ export default function AttemptMessages({
       }
     };
 
-    socket.on("simulation_message_token", handleSimulationMessageToken);
-    socket.on("simulation_message_complete", handleSimulationMessageComplete);
-    socket.on("simulation_new_message", handleSimulationNewMessage);
-    socket.on("simulation_voice_user_start", handleVoiceSpeechStarted);
-    socket.on("simulation_voice_user_delta", handleVoiceTranscriptDelta);
-    socket.on("simulation_voice_user_transcript", handleVoiceTranscriptReady);
+    socket.on("simulations_text_message_token", handleSimulationMessageToken);
+    socket.on(
+      "simulations_text_message_complete",
+      handleSimulationMessageComplete
+    );
+    socket.on("simulations_text_new_message", handleSimulationNewMessage);
+    socket.on("simulations_voice_user_start", handleVoiceSpeechStarted);
+    socket.on("simulations_voice_user_delta", handleVoiceTranscriptDelta);
+    socket.on("simulations_voice_user_transcript", handleVoiceTranscriptReady);
 
     return () => {
-      socket.off("simulation_message_token", handleSimulationMessageToken);
       socket.off(
-        "simulation_message_complete",
+        "simulations_text_message_token",
+        handleSimulationMessageToken
+      );
+      socket.off(
+        "simulations_text_message_complete",
         handleSimulationMessageComplete
       );
-      socket.off("simulation_new_message", handleSimulationNewMessage);
-      socket.off("simulation_voice_user_start", handleVoiceSpeechStarted);
-      socket.off("simulation_voice_user_delta", handleVoiceTranscriptDelta);
+      socket.off("simulations_text_new_message", handleSimulationNewMessage);
+      socket.off("simulations_voice_user_start", handleVoiceSpeechStarted);
+      socket.off("simulations_voice_user_delta", handleVoiceTranscriptDelta);
       socket.off(
-        "simulation_voice_user_transcript",
+        "simulations_voice_user_transcript",
         handleVoiceTranscriptReady
       );
     };
@@ -894,10 +900,16 @@ export default function AttemptMessages({
       }
     };
 
-    socket.on("hint_generation_progress", handleHintGenerationProgress);
+    socket.on(
+      "simulations_text_hint_generation_progress",
+      handleHintGenerationProgress
+    );
 
     return () => {
-      socket.off("hint_generation_progress", handleHintGenerationProgress);
+      socket.off(
+        "simulations_text_hint_generation_progress",
+        handleHintGenerationProgress
+      );
     };
   }, [socket, simulation?.practiceSimulation, targetChatId, router]);
 

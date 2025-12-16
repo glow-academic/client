@@ -34,11 +34,11 @@ class SimulationJoinPayload(BaseModel):
 
 # Emit helper functions (imported by server/join.py)
 async def simulation_joined(payload: SimulationJoinedPayload, room: str) -> None:
-    await sio.emit("simulation_joined", payload.model_dump(), room=room)
+    await sio.emit("simulations_joined", payload.model_dump(), room=room)
 
 
 async def simulation_join_error(payload: SimulationJoinErrorPayload, room: str) -> None:
-    await sio.emit("simulation_join_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_join_error", payload.model_dump(), room=room)
 
 
 async def _simulation_join_impl(sid: str, data: SimulationJoinPayload) -> None:

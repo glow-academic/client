@@ -36,7 +36,7 @@ class VoiceUserMessageErrorPayload(BaseModel):
 async def simulation_voice_user_text_error(
     payload: VoiceUserMessageErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_voice_user_text_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_voice_user_text_error", payload.model_dump(), room=room)
 
 
 async def _simulation_voice_user_text_impl(

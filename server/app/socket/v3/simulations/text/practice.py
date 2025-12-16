@@ -38,7 +38,7 @@ class CreatePracticeScenarioPayload(BaseModel):
 async def simulation_text_practice_error(
     payload: CreatePracticeScenarioErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_text_practice_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_practice_error", payload.model_dump(), room=room)
 
 
 async def _simulation_text_practice_impl(

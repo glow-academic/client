@@ -54,7 +54,7 @@ async def video_generation_progress(
     payload: VideoGenerationProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "video_generation_progress",
+        "videos_generation_progress",
         payload.model_dump(exclude_none=True),
         room=room,
     )
@@ -63,13 +63,13 @@ async def video_generation_progress(
 async def video_generation_complete(
     payload: VideoGenerationCompletePayload, room: str
 ) -> None:
-    await sio.emit("video_generation_complete", payload.model_dump(), room=room)
+    await sio.emit("videos_generation_complete", payload.model_dump(), room=room)
 
 
 async def video_generation_error(
     payload: VideoGenerationErrorPayload, room: str
 ) -> None:
-    await sio.emit("video_generation_error", payload.model_dump(), room=room)
+    await sio.emit("videos_generation_error", payload.model_dump(), room=room)
 
 
 async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:

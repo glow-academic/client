@@ -103,31 +103,31 @@ class ContinueSimulationPayload(BaseModel):
 async def simulation_text_next_error(
     payload: ContinueSimulationErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulation_text_next_error", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_next_error", payload.model_dump(), room=room)
 
 
 async def simulation_grading_progress(
     payload: SimulationGradingProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "simulation_grading_progress", payload.model_dump(exclude_none=True), room=room
+        "simulations_text_grading_progress", payload.model_dump(exclude_none=True), room=room
     )
 
 
 async def end_all_started(payload: EndAllStartedPayload, room: str) -> None:
-    await sio.emit("end_all_started", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_end_all_started", payload.model_dump(), room=room)
 
 
 async def end_chat_started(payload: EndChatStartedPayload, room: str) -> None:
-    await sio.emit("end_chat_started", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_end_chat_started", payload.model_dump(), room=room)
 
 
 async def end_all_completed(payload: EndAllCompletedPayload, room: str) -> None:
-    await sio.emit("end_all_completed", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_end_all_completed", payload.model_dump(), room=room)
 
 
 async def simulation_continued(payload: SimulationContinuedPayload, room: str) -> None:
-    await sio.emit("simulation_continued", payload.model_dump(), room=room)
+    await sio.emit("simulations_text_continued", payload.model_dump(), room=room)
 
 
 async def _create_chat_for_scenario_inline(
