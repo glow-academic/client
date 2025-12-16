@@ -81,7 +81,7 @@ async function searchCohortProfile(
 ): Promise<CohortSearchProfileOut> {
   "use server";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (api.post as any)("/cohorts/search-profile", input, {
+  return (api.post as any)("/cohorts/search", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",

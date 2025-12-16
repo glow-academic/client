@@ -1,4 +1,4 @@
-"""Cohort search-profile endpoint - search profiles for adding to a cohort."""
+"""Staff search endpoint - search staff with query and filters."""
 
 import json
 from typing import Annotated, Any
@@ -7,7 +7,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.api.v3.profile.staff.list import StaffItem
+from app.api.v3.staff.list import StaffItem
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -33,35 +33,37 @@ class CohortMappingItem(BaseModel):
 router = APIRouter()
 
 
-class CohortSearchProfileRequest(BaseModel):
-    """Request for searching profiles to add to a cohort."""
+class SearchStaffRequest(BaseModel):
+    """Request for staff search."""
 
-    cohortId: str | None = None  # Optional for new cohorts
     query: str | None = (
         None  # Search term (first_name, last_name, email, role). Empty/None returns all profiles (up to limit)
     )
-    departmentIds: list[str] | None = None  # Optional: filter by department IDs
+    cohortIds: list[str] | None = None  # Cohort IDs to EXCLUDE profiles from (optional)
+    departmentIds: list[str] | None = (
+        None  # Department IDs to EXCLUDE profiles from (optional)
+    )
     limit: int = 200  # Maximum number of results
     profileId: str  # Current user's profile ID for permissions
 
 
-class CohortSearchProfileResponse(BaseModel):
-    """Response for cohort search-profile endpoint."""
+class SearchStaffResponse(BaseModel):
+    """Response for staff search endpoint."""
 
     staff: list[StaffItem]  # Filtered staff list (max limit items)
     cohort_mapping: dict[str, CohortMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
 
 
-@router.post("/search-profile", response_model=CohortSearchProfileResponse)
-async def cohort_search_profile(
-    request: CohortSearchProfileRequest,
+@router.post("/search-staff", response_model=SearchStaffResponse)
+async def search_staff(
+    request: SearchStaffRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CohortSearchProfileResponse:
-    """Search profiles for adding to a cohort (excludes profiles already in cohort if cohortId provided)."""
-    tags = ["cohorts"]  # From router tags
+) -> SearchStaffResponse:
+    """Search staff with query and filters."""
+    tags = ["staff"]  # From router tags
 
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
@@ -72,10 +74,10 @@ async def cohort_search_profile(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return CohortSearchProfileResponse.model_validate(cached["data"])
+        return SearchStaffResponse.model_validate(cached["data"])
 
     try:
-        # Build dynamic SQL query
+        # Build dynamic SQL query (similar to staff_queries.search_staff)
         # Start with current_profile_id (used in CTEs)
         params: list[Any] = [request.profileId]
         param_idx = 2  # $1 is current_profile_id
@@ -86,25 +88,27 @@ async def cohort_search_profile(
         # Search query filter (if provided)
         if request.query and request.query.strip():
             search_term = f"%{request.query.strip()}%"
+            # Use the same parameter for all ILIKE conditions (PostgreSQL allows this)
+            # Cast role enum to text for ILIKE comparison
+            # Also check concatenated full name for queries like "default admin"
             search_conditions.append(
                 f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE ${param_idx}) OR p.role::text ILIKE ${param_idx} OR (p.first_name || ' ' || p.last_name) ILIKE ${param_idx})"
             )
             params.append(search_term)
             param_idx += 1
 
-        # Cohort exclusion filter - exclude profiles already in this cohort (only if cohortId provided)
+        # Cohort exclusion filter (if provided)
         cohort_exclusion = ""
-        if request.cohortId:
-            params.append(request.cohortId)
-            cohort_exclusion = f"AND NOT EXISTS (SELECT 1 FROM cohort_profiles cp WHERE cp.profile_id = p.id AND cp.cohort_id = ${param_idx} AND cp.active = true)"
+        if request.cohortIds and len(request.cohortIds) > 0:
+            cohort_exclusion = f"AND NOT EXISTS (SELECT 1 FROM cohort_profiles cp WHERE cp.profile_id = p.id AND cp.cohort_id = ANY(${param_idx}::uuid[]) AND cp.active = true)"
+            params.append(request.cohortIds)
             param_idx += 1
 
-        # Department filter - filter profiles by department IDs (if provided)
-        department_filter = ""
+        # Department exclusion filter (if provided)
+        dept_exclusion = ""
         if request.departmentIds and len(request.departmentIds) > 0:
-            # Create array parameter for department IDs
+            dept_exclusion = f"AND NOT EXISTS (SELECT 1 FROM profile_departments pd2 WHERE pd2.profile_id = p.id AND pd2.department_id = ANY(${param_idx}::uuid[]) AND pd2.active = true)"
             params.append(request.departmentIds)
-            department_filter = f"AND EXISTS (SELECT 1 FROM profile_departments pd_filter WHERE pd_filter.profile_id = p.id AND pd_filter.department_id = ANY(${param_idx}::uuid[]) AND pd_filter.active = true)"
             param_idx += 1
 
         # Build WHERE clause
@@ -255,7 +259,7 @@ async def cohort_search_profile(
             )
             {where_clause}
             {cohort_exclusion}
-            {department_filter}
+            {dept_exclusion}
             ORDER BY p.id, p.last_name, p.first_name
             LIMIT ${limit_param}
         ),
@@ -279,7 +283,7 @@ async def cohort_search_profile(
 
         if not result:
             # Return empty mappings if no data
-            response_data = CohortSearchProfileResponse(
+            response_data = SearchStaffResponse(
                 staff=[],
                 department_mapping={},
                 cohort_mapping={},
@@ -310,9 +314,10 @@ async def cohort_search_profile(
                     department_ids = [
                         str(did) for did in (item.get("department_ids") or [])
                     ]
-                    # Get primary department_id - ensure it always exists
+                    # Get primary department_id - ensure it always exists (default to empty string or first department)
                     primary_department_id = item.get("primary_department_id") or ""
                     if not primary_department_id and department_ids:
+                        # Fallback to first department if no primary department set
                         primary_department_id = (
                             department_ids[0] if len(department_ids) > 0 else ""
                         )
@@ -337,8 +342,8 @@ async def cohort_search_profile(
                             requests_per_day=item.get("requests_per_day"),
                             total_requests=item.get("total_requests", 0),
                             requests_in_last_day=item.get("requests_in_last_day", 0),
-                            can_edit=False,
-                            can_delete=False,
+                            can_edit=False,  # Not needed for search modal
+                            can_delete=False,  # Not needed for search modal
                         )
                     )
 
@@ -368,7 +373,7 @@ async def cohort_search_profile(
                         description=ddata.get("description", ""),
                     )
 
-        response_data = CohortSearchProfileResponse(
+        response_data = SearchStaffResponse(
             staff=staff,
             department_mapping=department_mapping,
             cohort_mapping=cohort_mapping,
@@ -391,7 +396,7 @@ async def cohort_search_profile(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="cohort_search_profile",
+            operation="search_staff",
             sql_query=None,  # Dynamic SQL query
             sql_params=None,  # Dynamic params
             request=http_request,

@@ -17,8 +17,8 @@ type KeyDetailOut = OutputOf<"/api/v3/keys/detail", "post">;
 type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
 type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
-type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
-type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
+type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt", "post">;
+type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.

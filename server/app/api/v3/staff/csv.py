@@ -61,7 +61,7 @@ class ProcessCSVResponse(BaseModel):
     headers: list[str]
 
 
-@router.post("/process-csv", response_model=ProcessCSVResponse)
+@router.post("/csv", response_model=ProcessCSVResponse)
 async def process_csv(
     request: ProcessCSVRequest,
     http_request: Request,

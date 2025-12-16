@@ -40,7 +40,7 @@ class CreateOrUpdateStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/create-or-update-staff", response_model=CreateOrUpdateStaffResponse)
+@router.post("/upsert", response_model=CreateOrUpdateStaffResponse)
 async def create_or_update_staff(
     request: CreateOrUpdateStaffRequest,
     http_request: Request,

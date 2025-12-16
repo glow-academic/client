@@ -20,8 +20,8 @@ type DashboardIn = InputOf<"/api/v3/dashboard/overview", "post">;
 type DashboardOut = OutputOf<"/api/v3/dashboard/overview", "post">;
 type DashboardHistoryIn = InputOf<"/api/v3/dashboard/history", "post">;
 type DashboardHistoryOut = OutputOf<"/api/v3/dashboard/history", "post">;
-type BulkArchiveAttemptsIn = InputOf<"/api/v3/attempts/bulk-archive", "post">;
-type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/bulk-archive", "post">;
+type BulkArchiveAttemptsIn = InputOf<"/api/v3/attempts/archive", "post">;
+type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/archive", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Dashboard overview responses exceed Next.js 2MB cache limit (~12.9MB).

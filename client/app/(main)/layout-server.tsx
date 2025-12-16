@@ -12,11 +12,11 @@ import { cache } from "react";
 type LayoutContextIn = InputOf<"/api/v3/profile/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v3/profile/context", "post">;
 type AuthorizeEmulationIn = InputOf<
-  "/api/v3/profile/authorize-emulation",
+  "/api/v3/profile/emulate",
   "post"
 >;
 type AuthorizeEmulationOut = OutputOf<
-  "/api/v3/profile/authorize-emulation",
+  "/api/v3/profile/emulate",
   "post"
 >;
 type CreateFeedbackIn = InputOf<"/api/v3/feedback/create", "post">;
@@ -26,31 +26,31 @@ type RefreshAnalyticsOut = OutputOf<"/api/v3/analytics/refresh", "post">;
 type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
 type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
 type SearchSimulatableProfilesIn = InputOf<
-  "/api/v3/profile/search-simulatable-profiles",
+  "/api/v3/profile/simulatable",
   "post"
 >;
 type SearchSimulatableProfilesOut = OutputOf<
-  "/api/v3/profile/search-simulatable-profiles",
+  "/api/v3/profile/simulatable",
   "post"
 >;
-type SearchStaffIn = InputOf<"/api/v3/profile/staff/search-staff", "post">;
-type SearchStaffOut = OutputOf<"/api/v3/profile/staff/search-staff", "post">;
+type SearchStaffIn = InputOf<"/api/v3/staff/search", "post">;
+type SearchStaffOut = OutputOf<"/api/v3/staff/search", "post">;
 type CreateStaffDataIn = InputOf<
-  "/api/v3/profile/staff/create-staff-data",
+  "/api/v3/staff/data/create",
   "post"
 >;
 type CreateStaffDataOut = OutputOf<
-  "/api/v3/profile/staff/create-staff-data",
+  "/api/v3/staff/data/create",
   "post"
 >;
-type ProcessCSVIn = InputOf<"/api/v3/profile/staff/process-csv", "post">;
-type ProcessCSVOut = OutputOf<"/api/v3/profile/staff/process-csv", "post">;
+type ProcessCSVIn = InputOf<"/api/v3/staff/csv", "post">;
+type ProcessCSVOut = OutputOf<"/api/v3/staff/csv", "post">;
 type BulkCreateOrUpdateStaffIn = InputOf<
-  "/api/v3/profile/staff/bulk-create-or-update-staff",
+  "/api/v3/staff/bulk/upsert",
   "post"
 >;
 type BulkCreateOrUpdateStaffOut = OutputOf<
-  "/api/v3/profile/staff/bulk-create-or-update-staff",
+  "/api/v3/staff/bulk/upsert",
   "post"
 >;
 type SettingsActiveIn = InputOf<"/api/v3/settings/active", "post">;
@@ -334,7 +334,7 @@ type SwitchEffectiveProfileResult = {
 async function authorizeEmulation(
   input: AuthorizeEmulationIn
 ): Promise<AuthorizeEmulationOut> {
-  return api.post("/profile/authorize-emulation", input);
+  return api.post("/profile/emulate", input);
 }
 
 /**
@@ -507,7 +507,7 @@ export async function refreshAnalytics(
 export async function searchSimulatableProfiles(
   input: SearchSimulatableProfilesIn
 ): Promise<SearchSimulatableProfilesOut> {
-  return api.post("/profile/search-simulatable-profiles", input);
+  return api.post("/profile/simulatable", input);
 }
 
 /** ---- Strongly-typed server actions for Staff (single source of truth) ---- */
@@ -515,19 +515,19 @@ export async function searchStaff(
   input: SearchStaffIn
 ): Promise<SearchStaffOut> {
   "use server";
-  return api.post("/profile/staff/search-staff", input);
+  return api.post("/staff/search", input);
 }
 
 export async function getCreateStaffData(
   input: CreateStaffDataIn
 ): Promise<CreateStaffDataOut> {
   "use server";
-  return api.post("/profile/staff/create-staff-data", input);
+  return api.post("/staff/data/create", input);
 }
 
 export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/profile/staff/process-csv", input);
+  return api.post("/staff/csv", input);
 }
 
 export async function bulkCreateOrUpdateStaff(
@@ -535,7 +535,7 @@ export async function bulkCreateOrUpdateStaff(
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profile/staff/bulk-create-or-update-staff", input);
+  return api.post("/staff/bulk/upsert", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

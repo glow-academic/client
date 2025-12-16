@@ -50,7 +50,7 @@ class BulkArchiveAttemptsResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/bulk-archive", response_model=BulkArchiveAttemptsResponse)
+@router.post("/archive", response_model=BulkArchiveAttemptsResponse)
 async def bulk_archive_attempts(
     request: BulkArchiveAttemptsRequest,
     http_request: Request,

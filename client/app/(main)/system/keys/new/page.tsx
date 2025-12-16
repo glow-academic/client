@@ -15,8 +15,8 @@ type KeyNewOut = OutputOf<"/api/v3/keys/new", "post">;
 type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
 
-type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
-type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
+type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt", "post">;
+type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
 
 /** ---- Strongly-typed server actions ---- */
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {

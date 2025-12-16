@@ -35,7 +35,7 @@ async function createGuestProfile(
 ): Promise<void> {
   const { firstName, lastName } = parseName(name);
   try {
-    await api.post("/profile/staff/create", {
+    await api.post("/staff/create", {
       body: {
         firstName,
         lastName,
@@ -89,7 +89,7 @@ export const {
         // V3 API - fetch profile by email
         let existingProfile = null;
         try {
-          const profileResponse = await api.post("/profile/by-email", {
+          const profileResponse = await api.post("/profile/email", {
             body: { email: user.email || "" },
           });
           existingProfile = profileResponse.profile;

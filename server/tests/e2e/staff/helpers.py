@@ -101,7 +101,7 @@ def fetch_staff_list(
     )
     return _post_json(
         request,
-        "/api/v3/profile/staff/list",
+        "/api/v3/staff/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -125,7 +125,7 @@ def fetch_staff_detail(
     )
     return _post_json(
         request,
-        "/api/v3/profile/staff/detail",
+        "/api/v3/staff/detail",
         {"profileId": profile_id, "currentProfileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -161,7 +161,7 @@ def create_staff_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v3/profile/staff/create",
+        "/api/v3/staff/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -206,7 +206,7 @@ def update_staff_api(
     )
     return _post_json(
         request,
-        "/api/v3/profile/staff/update",
+        "/api/v3/staff/update",
         {
             "profileId": profile_id,
             "role": role,
@@ -246,7 +246,7 @@ def bulk_update_staff_api(
 
     return _post_json(
         request,
-        "/api/v3/profile/staff/bulk-update",
+        "/api/v3/staff/bulk/update",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -269,7 +269,7 @@ def delete_staff_api(
     )
     _post_json(
         request,
-        "/api/v3/profile/staff/delete",
+        "/api/v3/staff/delete",
         {"profileId": profile_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -292,7 +292,7 @@ def bulk_delete_staff_api(
     )
     _post_json(
         request,
-        "/api/v3/profile/staff/bulk-delete",
+        "/api/v3/staff/bulk/delete",
         {"profileIds": profile_ids},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

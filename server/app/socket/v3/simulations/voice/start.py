@@ -2,10 +2,11 @@
 
 import inspect
 import json
+import os
 import uuid
 from typing import Any, get_type_hints
 
-from app.api.v3.realtime.ephemeral_key import _generate_ephemeral_key_internal
+import httpx
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
@@ -85,6 +86,44 @@ class StartVoiceResponsePayload(BaseModel):
     )
     transcription_prompt: str | None = None  # Transcription prompt
     history: list[RealtimeItem] = []  # Conversation history in RealtimeItem format
+
+
+async def _generate_ephemeral_key_internal() -> tuple[str, int]:
+    """Internal function to generate ephemeral key using OpenAI REST API.
+
+    Returns:
+        Tuple of (ephemeral_key, expires_in)
+    """
+    # Get OpenAI API key from environment
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY not configured")
+
+    # Use direct REST API call (OpenAI SDK doesn't support this endpoint yet)
+    async with httpx.AsyncClient() as http_client:
+        response = await http_client.post(
+            "https://api.openai.com/v1/realtime/client_secrets",
+            headers={
+                "Authorization": f"Bearer {openai_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "session": {
+                    "type": "realtime",
+                    "model": "gpt-realtime-mini",
+                }
+            },
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        ephemeral_key = data.get("value")
+        expires_in = data.get("expires_in", 3600)
+
+        if not ephemeral_key:
+            raise ValueError("No ephemeral key in response")
+
+        return ephemeral_key, expires_in
 
 
 # Emit helper functions

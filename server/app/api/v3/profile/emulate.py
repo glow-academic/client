@@ -27,7 +27,7 @@ class AuthorizeEmulationResponse(BaseModel):
     reason: str | None = None
 
 
-@router.post("/authorize-emulation", response_model=AuthorizeEmulationResponse)
+@router.post("/emulate", response_model=AuthorizeEmulationResponse)
 async def authorize_emulation(
     request: AuthorizeEmulationRequest,
     response: Response,

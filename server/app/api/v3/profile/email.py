@@ -20,7 +20,7 @@ class ProfileByEmailRequest(BaseModel):
     email: str
 
 
-@router.post("/by-email", response_model=ProfileDetailResponse)
+@router.post("/email", response_model=ProfileDetailResponse)
 async def get_profile_by_email(
     request: ProfileByEmailRequest,
     http_request: Request,

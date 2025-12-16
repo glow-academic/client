@@ -7,7 +7,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.api.v3.profile.staff.create_or_update_staff import CreateOrUpdateStaffRequest
+from app.api.v3.staff.upsert import CreateOrUpdateStaffRequest
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
@@ -33,9 +33,7 @@ class BulkCreateOrUpdateStaffResponse(BaseModel):
     message: str
 
 
-@router.post(
-    "/bulk-create-or-update-staff", response_model=BulkCreateOrUpdateStaffResponse
-)
+@router.post("/upsert", response_model=BulkCreateOrUpdateStaffResponse)
 async def bulk_create_or_update_staff(
     request: BulkCreateOrUpdateStaffRequest,
     http_request: Request,

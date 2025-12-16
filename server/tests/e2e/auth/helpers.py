@@ -80,7 +80,7 @@ def authorize_emulation(
     }
     return _post_json(
         request,
-        "/api/v3/profile/authorize-emulation",
+        "/api/v3/profile/emulate",
         payload,
         profile_id=requester_profile_id,
         effective_profile_id=requester_profile_id,
@@ -101,7 +101,7 @@ def get_profile_by_email(
     payload = {"email": email}
     return _post_json(
         request,
-        "/api/v3/profile/by-email",
+        "/api/v3/profile/email",
         payload,
         profile_id=profile_id,
         effective_profile_id=effective_id,
@@ -137,7 +137,7 @@ def get_simulatable_profiles(
     bypass_cache: bool = True,
 ) -> list[dict[str, Any]]:
     """Get list of profiles that can be emulated by requester."""
-    # This uses the authorize-emulation endpoint logic
+    # This uses the emulate endpoint logic
     # We can test authorization for multiple profiles to find simulatable ones
     # For now, return empty list - this would require a dedicated endpoint
     # or we can use authorize_emulation in a loop

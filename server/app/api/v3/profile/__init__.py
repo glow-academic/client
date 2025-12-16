@@ -2,14 +2,11 @@
 
 from fastapi import APIRouter
 
-from .authorize_emulation import router as authorize_emulation_router
-from .by_email import router as by_email_router
 from .context import router as context_router
 from .detail import router as detail_router
-from .search_simulatable_profiles import (
-    router as search_simulatable_profiles_router,
-)
-from .staff import router as staff_router
+from .email import router as email_router
+from .emulate import router as emulate_router
+from .simulatable import router as simulatable_router
 from .update import router as update_router
 
 router = APIRouter(prefix="/profile", tags=["profile"])
@@ -17,9 +14,7 @@ router = APIRouter(prefix="/profile", tags=["profile"])
 # Include all profile endpoint routers
 router.include_router(detail_router)
 router.include_router(update_router)
-router.include_router(by_email_router)
+router.include_router(email_router)
 router.include_router(context_router)
-router.include_router(authorize_emulation_router)
-router.include_router(search_simulatable_profiles_router)
-# Include staff management routers
-router.include_router(staff_router)
+router.include_router(emulate_router)
+router.include_router(simulatable_router)

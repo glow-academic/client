@@ -16,8 +16,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProfileDetailIn = InputOf<"/api/v3/profile/staff/detail", "post">;
-type ProfileDetailOut = OutputOf<"/api/v3/profile/staff/detail", "post">;
+type ProfileDetailIn = InputOf<"/api/v3/staff/detail", "post">;
+type ProfileDetailOut = OutputOf<"/api/v3/staff/detail", "post">;
 type ReportsOverviewIn = InputOf<"/api/v3/reports/overview", "post">;
 type ReportsOverviewOut = OutputOf<"/api/v3/reports/overview", "post">;
 type ReportsHistoryIn = InputOf<"/api/v3/reports/history", "post">;
@@ -30,7 +30,7 @@ const getProfileDetail = async (
   _profileId: string,
   input: ProfileDetailIn,
 ): Promise<ProfileDetailOut> => {
-  return api.post("/profile/staff/detail", input, {
+  return api.post("/staff/detail", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",

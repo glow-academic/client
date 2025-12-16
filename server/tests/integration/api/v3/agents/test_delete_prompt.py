@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v3/agents/delete-prompt endpoint."""
+"""Route tests for POST /api/v3/prompts/delete endpoint."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -43,7 +43,7 @@ async def test_delete_agent_prompt_default(
     )
 
     response = await client.post(
-        "/api/v3/agents/delete-prompt",
+        "/api/v3/prompts/delete",
         json={
             "agentId": str(agent_id),
             "promptId": str(prompt1_id),
@@ -98,7 +98,7 @@ async def test_delete_agent_prompt_department_specific(
     )
 
     response = await client.post(
-        "/api/v3/agents/delete-prompt",
+        "/api/v3/prompts/delete",
         json={
             "agentId": str(agent_id),
             "promptId": str(prompt_id),
@@ -147,7 +147,7 @@ async def test_delete_agent_prompt_last_default(
     )
 
     response = await client.post(
-        "/api/v3/agents/delete-prompt",
+        "/api/v3/prompts/delete",
         json={
             "agentId": str(agent_id),
             "promptId": str(prompt_id),

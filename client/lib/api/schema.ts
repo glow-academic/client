@@ -44,7 +44,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/by-email": {
+    "/api/v3/profile/email": {
         parameters: {
             query?: never;
             header?: never;
@@ -57,7 +57,7 @@ export interface paths {
          * Get Profile By Email
          * @description Get profile by email (for auth operations).
          */
-        post: operations["get_profile_by_email_api_v3_profile_by_email_post"];
+        post: operations["get_profile_by_email_api_v3_profile_email_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/authorize-emulation": {
+    "/api/v3/profile/emulate": {
         parameters: {
             query?: never;
             header?: never;
@@ -97,14 +97,14 @@ export interface paths {
          * Authorize Emulation
          * @description Check if emulation is authorized.
          */
-        post: operations["authorize_emulation_api_v3_profile_authorize_emulation_post"];
+        post: operations["authorize_emulation_api_v3_profile_emulate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/search-simulatable-profiles": {
+    "/api/v3/profile/simulatable": {
         parameters: {
             query?: never;
             header?: never;
@@ -117,287 +117,7 @@ export interface paths {
          * Search Simulatable Profiles
          * @description Search profiles that can be emulated by the requester.
          */
-        post: operations["search_simulatable_profiles_api_v3_profile_search_simulatable_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile List
-         * @description Get profile/staff list with permissions and relationships.
-         */
-        post: operations["get_profile_list_api_v3_profile_staff_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Staff Detail
-         * @description Get staff profile details with role visibility check.
-         */
-        post: operations["get_staff_detail_api_v3_profile_staff_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/new": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Staff New
-         * @description Get default staff structure for creation mode.
-         */
-        post: operations["get_staff_new_api_v3_profile_staff_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Profile
-         * @description Create a new profile.
-         */
-        post: operations["create_profile_api_v3_profile_staff_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/bulk-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Create Profile
-         * @description Bulk create profiles.
-         */
-        post: operations["bulk_create_profile_api_v3_profile_staff_bulk_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Profile
-         * @description Update a profile.
-         */
-        post: operations["update_profile_api_v3_profile_staff_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/bulk-update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Update Profile
-         * @description Bulk update profiles.
-         */
-        post: operations["bulk_update_profile_api_v3_profile_staff_bulk_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Profile
-         * @description Delete a profile.
-         */
-        post: operations["delete_profile_api_v3_profile_staff_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Delete Profile
-         * @description Bulk delete profiles.
-         */
-        post: operations["bulk_delete_profile_api_v3_profile_staff_bulk_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/create-staff-data": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Create Staff Data
-         * @description Get all data needed for create staff UI (mappings, etc.).
-         */
-        post: operations["get_create_staff_data_api_v3_profile_staff_create_staff_data_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/search-staff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Staff
-         * @description Search staff with query and filters.
-         */
-        post: operations["search_staff_api_v3_profile_staff_search_staff_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/process-csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Process Csv
-         * @description Process CSV file and map columns to target fields.
-         */
-        post: operations["process_csv_api_v3_profile_staff_process_csv_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/create-or-update-staff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Or Update Staff
-         * @description Create or update a staff member based on email.
-         */
-        post: operations["create_or_update_staff_api_v3_profile_staff_create_or_update_staff_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/bulk-create-or-update-staff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Create Or Update Staff
-         * @description Bulk create or update staff members.
-         */
-        post: operations["bulk_create_or_update_staff_api_v3_profile_staff_bulk_create_or_update_staff_post"];
+        post: operations["search_simulatable_profiles_api_v3_profile_simulatable_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -538,26 +258,6 @@ export interface paths {
          * @description Delete a scenario.
          */
         post: operations["delete_scenario_api_v3_scenarios_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/scenarios/select-attributes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Select Scenario Attributes Endpoint
-         * @description API endpoint for selecting scenario attributes.
-         */
-        post: operations["select_scenario_attributes_endpoint_api_v3_scenarios_select_attributes_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1144,46 +844,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/remove-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Remove Profiles From Department
-         * @description Remove profiles from department (set active = false in junction table).
-         */
-        post: operations["remove_profiles_from_department_api_v3_departments_remove_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/departments/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Departments For Login
-         * @description Get list of active departments for login page.
-         */
-        get: operations["get_departments_for_login_api_v3_departments_login_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/cohorts/list": {
         parameters: {
             query?: never;
@@ -1244,26 +904,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/detail-with-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Cohort Detail With Profiles
-         * @description Get cohort detail with available profiles in one call.
-         */
-        post: operations["get_cohort_detail_with_profiles_api_v3_cohorts_detail_with_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/cohorts/duplicate": {
         parameters: {
             query?: never;
@@ -1298,46 +938,6 @@ export interface paths {
          * @description Remove profile from cohort (leave cohort).
          */
         post: operations["leave_cohort_api_v3_cohorts_leave_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/cohorts/add-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Profiles To Cohort
-         * @description Add profiles to cohort.
-         */
-        post: operations["add_profiles_to_cohort_api_v3_cohorts_add_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/cohorts/remove-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Remove Profiles From Cohort
-         * @description Remove profiles from cohort.
-         */
-        post: operations["remove_profiles_from_cohort_api_v3_cohorts_remove_profiles_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1404,7 +1004,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/search-profile": {
+    "/api/v3/cohorts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1417,27 +1017,7 @@ export interface paths {
          * Cohort Search Profile
          * @description Search profiles for adding to a cohort (excludes profiles already in cohort if cohortId provided).
          */
-        post: operations["cohort_search_profile_api_v3_cohorts_search_profile_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/cohorts/add-staff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Cohort Add Staff
-         * @description Search staff for adding to a cohort (excludes profiles already in cohort).
-         */
-        post: operations["cohort_add_staff_api_v3_cohorts_add_staff_post"];
+        post: operations["cohort_search_profile_api_v3_cohorts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1484,26 +1064,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/detail-bulk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Document Detail Bulk
-         * @description Get bulk document detail information.
-         */
-        post: operations["get_document_detail_bulk_api_v3_documents_detail_bulk_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/documents/create": {
         parameters: {
             query?: never;
@@ -1538,46 +1098,6 @@ export interface paths {
          * @description Delete a document.
          */
         post: operations["delete_document_api_v3_documents_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/documents/bulk-update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Update Documents
-         * @description Bulk update documents.
-         */
-        post: operations["bulk_update_documents_api_v3_documents_bulk_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/documents/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Delete Documents
-         * @description Bulk delete documents.
-         */
-        post: operations["bulk_delete_documents_api_v3_documents_bulk_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1764,7 +1284,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/evals/model_runs": {
+    "/api/v3/evals/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1777,7 +1297,7 @@ export interface paths {
          * Get Model Runs
          * @description Get paginated, filtered model_runs for eval selection.
          */
-        post: operations["get_model_runs_api_v3_evals_model_runs_post"];
+        post: operations["get_model_runs_api_v3_evals_runs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2104,46 +1624,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/reports/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Reports
-         * @description Export reports data as CSV or ZIP file.
-         */
-        post: operations["export_reports_api_v3_reports_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Reports
-         * @description Get reports bundle with aggregated metrics per profile and entity mappings.
-         */
-        post: operations["get_reports_api_v3_reports_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/reports/overview": {
         parameters: {
             query?: never;
@@ -2198,26 +1678,6 @@ export interface paths {
          * @description Get leaderboard bundle with all metrics and profile data.
          */
         post: operations["get_leaderboard_api_v3_leaderboard_bundle_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/leaderboard/cohort": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Leaderboard Cohort Detail
-         * @description Get leaderboard bundle for a specific cohort - requires cohortId.
-         */
-        post: operations["get_leaderboard_cohort_detail_api_v3_leaderboard_cohort_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2364,26 +1824,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/delete-prompt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Agent Prompt
-         * @description Delete an agent prompt.
-         */
-        post: operations["delete_agent_prompt_api_v3_agents_delete_prompt_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/keys/list": {
         parameters: {
             query?: never;
@@ -2504,7 +1944,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/decrypt-key": {
+    "/api/v3/keys/decrypt": {
         parameters: {
             query?: never;
             header?: never;
@@ -2517,7 +1957,7 @@ export interface paths {
          * Decrypt Key
          * @description Decrypt a key's encrypted value.
          */
-        post: operations["decrypt_key_api_v3_keys_decrypt_key_post"];
+        post: operations["decrypt_key_api_v3_keys_decrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2924,146 +2364,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/items/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Parameter Item
-         * @description Create a single parameter item (for inline creation from pickers).
-         */
-        post: operations["create_parameter_item_api_v3_parameters_items_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/prompts/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Prompts List
-         * @description Get prompts list with permissions and relationships.
-         */
-        post: operations["get_prompts_list_api_v3_prompts_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/prompts/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Prompt Detail
-         * @description Get prompt detail information.
-         */
-        post: operations["get_prompt_detail_api_v3_prompts_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/prompts/new": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Prompt New
-         * @description Get default prompt detail information for new prompt creation.
-         */
-        post: operations["get_prompt_new_api_v3_prompts_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/prompts/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Prompt
-         * @description Create a new prompt.
-         */
-        post: operations["create_prompt_api_v3_prompts_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/prompts/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Prompt
-         * @description Update an existing prompt.
-         */
-        post: operations["update_prompt_api_v3_prompts_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/prompts/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Prompt
-         * @description Delete a prompt.
-         */
-        post: operations["delete_prompt_api_v3_prompts_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/fields/list": {
         parameters: {
             query?: never;
@@ -3098,26 +2398,6 @@ export interface paths {
          * @description Get detailed field information.
          */
         post: operations["get_field_detail_api_v3_fields_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/fields/detail_default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Field Detail Default
-         * @description Get default field detail for edit mode (same as detail).
-         */
-        post: operations["get_field_detail_default_api_v3_fields_detail_default_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3224,46 +2504,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/units/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Units List
-         * @description Get list of all active units.
-         */
-        post: operations["get_units_list_api_v3_units_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/feedback/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Feedback
-         * @description Get list of feedback with author information.
-         */
-        post: operations["list_feedback_api_v3_feedback_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/feedback/create": {
         parameters: {
             query?: never;
@@ -3284,108 +2524,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/feedback/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Delete Feedback
-         * @description Bulk delete feedback. Only superadmin can delete feedback.
-         */
-        post: operations["bulk_delete_feedback_api_v3_feedback_bulk_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/logs/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Logs
-         * @description Get list of logs with actor information and all JSONB fields.
-         */
-        post: operations["list_logs_api_v3_logs_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/logs/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Log
-         * @description Create a new log entry.
-         */
-        post: operations["create_log_api_v3_logs_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/logs/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Delete Logs
-         * @description Bulk delete logs. Only superadmin can delete logs.
-         */
-        post: operations["bulk_delete_logs_api_v3_logs_bulk_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/logs/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get System Health
-         * @description Comprehensive system health check endpoint.
-         *     Tests all 9 system components with real functionality checks.
-         *     No authentication required (for monitoring tools).
-         */
-        get: operations["get_system_health_api_v3_logs_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/logs/bundle": {
         parameters: {
             query?: never;
@@ -3397,7 +2535,7 @@ export interface paths {
         put?: never;
         /**
          * Get Logs Bundle
-         * @description Get logs bundle with health KPIs, metrics, and feedback.
+         * @description Get logs bundle with health KPIs and metrics.
          */
         post: operations["get_logs_bundle_api_v3_logs_bundle_post"];
         delete?: never;
@@ -3406,27 +2544,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/logs/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Logs Runs
-         * @description Get paginated, filtered, searched logs for table.
-         */
-        post: operations["get_logs_runs_api_v3_logs_runs_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/attempts/bulk-archive": {
+    "/api/v3/attempts/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -3439,47 +2557,7 @@ export interface paths {
          * Bulk Archive Attempts
          * @description Bulk archive or unarchive simulation attempts.
          */
-        post: operations["bulk_archive_attempts_api_v3_attempts_bulk_archive_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/attempts/chats/update-created-at": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Chat Created At
-         * @description Update simulation chat createdAt timestamp.
-         */
-        post: operations["update_chat_created_at_api_v3_attempts_chats_update_created_at_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/attempts/chats/update-completed-at": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Chat Completed At
-         * @description Update simulation chat completedAt timestamp.
-         */
-        post: operations["update_chat_completed_at_api_v3_attempts_chats_update_completed_at_post"];
+        post: operations["bulk_archive_attempts_api_v3_attempts_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3506,7 +2584,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/full": {
+    "/api/v3/prompts/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -3516,10 +2594,290 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Run Full
-         * @description Get complete run data with all related entities and computed values.
+         * Delete Agent Prompt
+         * @description Delete an agent prompt.
          */
-        post: operations["get_run_full_api_v3_full_post"];
+        post: operations["delete_agent_prompt_api_v3_prompts_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profile List
+         * @description Get profile/staff list with permissions and relationships.
+         */
+        post: operations["get_profile_list_api_v3_staff_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Staff Detail
+         * @description Get staff profile details with role visibility check.
+         */
+        post: operations["get_staff_detail_api_v3_staff_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Staff New
+         * @description Get default staff structure for creation mode.
+         */
+        post: operations["get_staff_new_api_v3_staff_new_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Profile
+         * @description Create a new profile.
+         */
+        post: operations["create_profile_api_v3_staff_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Profile
+         * @description Update a profile.
+         */
+        post: operations["update_profile_api_v3_staff_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Profile
+         * @description Delete a profile.
+         */
+        post: operations["delete_profile_api_v3_staff_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Staff
+         * @description Search staff with query and filters.
+         */
+        post: operations["search_staff_api_v3_staff_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Csv
+         * @description Process CSV file and map columns to target fields.
+         */
+        post: operations["process_csv_api_v3_staff_csv_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/upsert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Or Update Staff
+         * @description Create or update a staff member based on email.
+         */
+        post: operations["create_or_update_staff_api_v3_staff_upsert_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/data/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Create Staff Data
+         * @description Get all data needed for create staff UI (mappings, etc.).
+         */
+        post: operations["get_create_staff_data_api_v3_staff_data_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/bulk/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Create Profile
+         * @description Bulk create profiles.
+         */
+        post: operations["bulk_create_profile_api_v3_staff_bulk_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/bulk/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Update Profile
+         * @description Bulk update profiles.
+         */
+        post: operations["bulk_update_profile_api_v3_staff_bulk_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/bulk/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Delete Profile
+         * @description Bulk delete profiles.
+         */
+        post: operations["bulk_delete_profile_api_v3_staff_bulk_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/staff/bulk/upsert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Create Or Update Staff
+         * @description Bulk create or update staff members.
+         */
+        post: operations["bulk_create_or_update_staff_api_v3_staff_bulk_upsert_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3645,28 +3003,6 @@ export interface paths {
          * @description Get paginated, filtered, searched, sorted pricing runs for table.
          */
         post: operations["get_pricing_runs_api_v3_pricing_runs_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/realtime/ephemeral-key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Ephemeral Key
-         * @description Generate OpenAI ephemeral key for Realtime API.
-         *
-         *     Server-side only - never expose OpenAI API key to frontend.
-         */
-        post: operations["generate_ephemeral_key_api_v3_realtime_ephemeral_key_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5611,26 +4947,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * AddProfilesToCohortRequest
-         * @description Request for adding profiles to cohort.
-         */
-        AddProfilesToCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Profileids */
-            profileIds: string[];
-        };
-        /**
-         * AddProfilesToCohortResponse
-         * @description Response for adding profiles to cohort.
-         */
-        AddProfilesToCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
         /** AgentDetailRequest */
         AgentDetailRequest: {
             /** Agentid */
@@ -6146,56 +5462,6 @@ export interface components {
             message: string;
         };
         /**
-         * BulkDeleteDocumentsRequest
-         * @description Request to bulk delete documents.
-         */
-        BulkDeleteDocumentsRequest: {
-            /** Documentids */
-            documentIds: string[];
-        };
-        /**
-         * BulkDeleteDocumentsResponse
-         * @description Response from bulk delete operation.
-         */
-        BulkDeleteDocumentsResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** BulkDeleteFeedbackRequest */
-        BulkDeleteFeedbackRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Ids */
-            ids: string[];
-        };
-        /** BulkDeleteFeedbackResponse */
-        BulkDeleteFeedbackResponse: {
-            /** Success */
-            success: boolean;
-            /** Deleted Count */
-            deleted_count: number;
-            /** Message */
-            message: string;
-        };
-        /** BulkDeleteLogsRequest */
-        BulkDeleteLogsRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Ids */
-            ids: number[];
-        };
-        /** BulkDeleteLogsResponse */
-        BulkDeleteLogsResponse: {
-            /** Success */
-            success: boolean;
-            /** Deleted Count */
-            deleted_count: number;
-            /** Message */
-            message: string;
-        };
-        /**
          * BulkDeleteStaffRequest
          * @description Request to bulk delete staff.
          */
@@ -6208,33 +5474,6 @@ export interface components {
          * @description Response from bulk delete staff.
          */
         BulkDeleteStaffResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BulkUpdateDocumentsRequest
-         * @description Request to bulk update documents.
-         */
-        BulkUpdateDocumentsRequest: {
-            /** Documentids */
-            documentIds: string[];
-            /** Type */
-            type: string;
-            /** Department Id */
-            department_id?: string | null;
-            /**
-             * Field Ids
-             * @default []
-             */
-            field_ids: string[];
-        };
-        /**
-         * BulkUpdateDocumentsResponse
-         * @description Response from bulk update operation.
-         */
-        BulkUpdateDocumentsResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -6392,39 +5631,6 @@ export interface components {
             }[];
         };
         /**
-         * CohortAddStaffRequest
-         * @description Request for searching staff to add to a cohort.
-         */
-        CohortAddStaffRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Query */
-            query?: string | null;
-            /**
-             * Limit
-             * @default 200
-             */
-            limit: number;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * CohortAddStaffResponse
-         * @description Response for cohort add-staff endpoint.
-         */
-        CohortAddStaffResponse: {
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__cohorts__add_staff__DepartmentMappingItem"];
-            };
-        };
-        /**
          * CohortDailyFact
          * @description Cohort daily fact.
          */
@@ -6517,46 +5723,6 @@ export interface components {
             };
         };
         /**
-         * CohortDetailWithProfilesRequest
-         * @description Request for cohort detail with available profiles.
-         */
-        CohortDetailWithProfilesRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Departmentids */
-            departmentIds: string[];
-            /** Currentprofileid */
-            currentProfileId: string;
-        };
-        /**
-         * CohortDetailWithProfilesResponse
-         * @description Response for cohort detail with available profiles.
-         */
-        CohortDetailWithProfilesResponse: {
-            /** Cohort Id */
-            cohort_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean;
-            /** Current Profile Ids */
-            current_profile_ids: string[];
-            /** Available Profiles */
-            available_profiles: components["schemas"]["app__api__v3__cohorts__detail__StaffItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__cohorts__detail_with_profiles__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-        };
-        /**
          * CohortFact
          * @description Cohort fact.
          */
@@ -6636,14 +5802,14 @@ export interface components {
          */
         CohortSearchProfileResponse: {
             /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            staff: components["schemas"]["StaffItem"][];
             /** Cohort Mapping */
             cohort_mapping: {
                 [key: string]: components["schemas"]["CohortMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__cohorts__search_profile__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__search__DepartmentMappingItem"];
             };
         };
         /**
@@ -7074,34 +6240,6 @@ export interface components {
             message: string;
         };
         /**
-         * CreateLogRequest
-         * @description Request to create a log entry.
-         */
-        CreateLogRequest: {
-            /** Level */
-            level: string;
-            /** Logger Name */
-            logger_name: string;
-            /** Message */
-            message: string;
-            /** Profile Id */
-            profile_id: string;
-            /** Extra */
-            extra?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /**
-         * CreateLogResponse
-         * @description Response from creating a log entry.
-         */
-        CreateLogResponse: {
-            /** Success */
-            success: boolean;
-            /** Log Id */
-            log_id: number | null;
-        };
-        /**
          * CreateModelRequest
          * @description Request to create model.
          */
@@ -7188,35 +6326,6 @@ export interface components {
             profileId: string;
             /** Created */
             created: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * CreateParameterItemRequest
-         * @description Request to create a single parameter item.
-         */
-        CreateParameterItemRequest: {
-            /** Parameterid */
-            parameterId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Default
-             * @default false
-             */
-            default: boolean;
-        };
-        /**
-         * CreateParameterItemResponse
-         * @description Response from create parameter item.
-         */
-        CreateParameterItemResponse: {
-            /** Success */
-            success: boolean;
-            /** Parameteritemid */
-            parameterItemId: string;
             /** Message */
             message: string;
         };
@@ -7348,39 +6457,6 @@ export interface components {
             simulation_id?: string | null;
             /** Profile Id */
             profile_id?: string | null;
-        };
-        /**
-         * CreatePromptRequest
-         * @description Request to create prompt.
-         */
-        CreatePromptRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** System Prompt */
-            system_prompt: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * CreatePromptResponse
-         * @description Response from create prompt.
-         */
-        CreatePromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Promptid */
-            promptId: string;
-            /** Message */
-            message: string;
         };
         /**
          * CreateProviderRequest
@@ -7599,10 +6675,10 @@ export interface components {
          */
         CreateStaffDataResponse: {
             /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            staff: components["schemas"]["StaffItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__profile__staff__create_staff_data__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__staff__data__create__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -7726,16 +6802,16 @@ export interface components {
          * @description Header metrics (10 total).
          */
         DashboardHeaderMetrics: {
-            averageScore: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            completionPercentage: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            highestScore: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            messagesPerSession: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            personaResponseTimes: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            sessionEfficiency: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            stagnationRate: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            timeSpent: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
-            totalAttempts: components["schemas"]["app__api__v3__dashboard__bundle__MetricResponse"];
+            averageScore: components["schemas"]["MetricResponse"];
+            completionPercentage: components["schemas"]["MetricResponse"];
+            firstAttemptPassRate: components["schemas"]["MetricResponse"];
+            highestScore: components["schemas"]["MetricResponse"];
+            messagesPerSession: components["schemas"]["MetricResponse"];
+            personaResponseTimes: components["schemas"]["MetricResponse"];
+            sessionEfficiency: components["schemas"]["MetricResponse"];
+            stagnationRate: components["schemas"]["MetricResponse"];
+            timeSpent: components["schemas"]["MetricResponse"];
+            totalAttempts: components["schemas"]["MetricResponse"];
         };
         /**
          * DashboardHistoryFilters
@@ -8128,26 +7204,6 @@ export interface components {
             message: string;
         };
         /**
-         * DeletePromptRequest
-         * @description Request to delete prompt.
-         */
-        DeletePromptRequest: {
-            /** Promptid */
-            promptId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * DeletePromptResponse
-         * @description Response from delete prompt.
-         */
-        DeletePromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
          * DeleteProviderRequest
          * @description Request to delete provider.
          */
@@ -8293,50 +7349,6 @@ export interface components {
             /** Profile Mapping */
             profile_mapping: {
                 [key: string]: components["schemas"]["ProfileMappingItem"];
-            };
-        };
-        /**
-         * DepartmentsLoginResponse
-         * @description Response with list of active departments.
-         */
-        DepartmentsLoginResponse: {
-            /** Departments */
-            departments: components["schemas"]["DepartmentOption"][];
-        };
-        /**
-         * DocumentDetailBulkRequest
-         * @description Request to get bulk document details.
-         */
-        DocumentDetailBulkRequest: {
-            /** Documentids */
-            documentIds: string[];
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * DocumentDetailBulkResponse
-         * @description Bulk document detail response.
-         */
-        DocumentDetailBulkResponse: {
-            /** Document Type Options */
-            document_type_options: string[];
-            /** Type */
-            type: string | null;
-            /** Department Ids */
-            department_ids: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__documents__detail_bulk__DepartmentMappingItem"];
-            };
-            /** Field Ids */
-            field_ids: string[];
-            /** Valid Field Ids */
-            valid_field_ids: string[];
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__documents__detail_bulk__FieldMappingItem"];
             };
         };
         /**
@@ -8901,31 +7913,6 @@ export interface components {
             attempt_id: string;
         };
         /**
-         * EphemeralKeyRequest
-         * @description Request to generate ephemeral key.
-         */
-        EphemeralKeyRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * EphemeralKeyResponse
-         * @description Response with ephemeral key.
-         */
-        EphemeralKeyResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Ephemeral Key */
-            ephemeral_key?: string | null;
-            /**
-             * Expires In
-             * @default 3600
-             */
-            expires_in: number;
-        };
-        /**
          * EvalDetailRequest
          * @description Request to get eval details.
          */
@@ -9122,36 +8109,6 @@ export interface components {
             example: string;
             /** Department Ids */
             department_ids?: string[] | null;
-        };
-        /**
-         * ExportRequest
-         * @description Request to export reports data.
-         */
-        ExportRequest: {
-            filters: components["schemas"]["ReportsExportFilters"];
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
-            /** Metrics */
-            metrics?: string[] | null;
-            /**
-             * Brightspaceformat
-             * @default false
-             */
-            brightspaceFormat: boolean;
-        };
-        /** FeedbackListRequest */
-        FeedbackListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** FeedbackListResponse */
-        FeedbackListResponse: {
-            /** Feedback */
-            feedback: components["schemas"]["app__api__v3__feedback__list__FeedbackItem"][];
         };
         /** FieldConnection */
         FieldConnection: {
@@ -10042,24 +8999,6 @@ export interface components {
             gradient_end_color: string;
         };
         /**
-         * LeaderboardCohortDetailFilters
-         * @description Leaderboard cohort detail filter request schema - requires single cohortId.
-         */
-        LeaderboardCohortDetailFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortid */
-            cohortId: string;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-        };
-        /**
          * LeaderboardMetric
          * @description Leaderboard metric.
          */
@@ -10210,83 +9149,6 @@ export interface components {
             health_kpis: components["schemas"]["HealthKPIs"];
             /** Metrics */
             metrics: components["schemas"]["MetricsDataPoint"][];
-            /** Feedback */
-            feedback: components["schemas"]["app__api__v3__logs__bundle__FeedbackItem"][];
-        };
-        /** LogsListRequest */
-        LogsListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** LogsListResponse */
-        LogsListResponse: {
-            /** Logs */
-            logs: components["schemas"]["app__api__v3__logs__list__LogItem"][];
-        };
-        /**
-         * LogsRunsFilters
-         * @description Logs runs filter request schema.
-         */
-        LogsRunsFilters: {
-            /** Profileid */
-            profileId: string;
-            /** Startdate */
-            startDate?: string | null;
-            /** Enddate */
-            endDate?: string | null;
-            /** Levels */
-            levels?: string[] | null;
-            /** Loggernames */
-            loggerNames?: string[] | null;
-            /** Actornames */
-            actorNames?: string[] | null;
-            /** Search */
-            search?: string | null;
-            /** Sortby */
-            sortBy?: string | null;
-            /** Sortorder */
-            sortOrder?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Pagesize
-             * @default 10
-             */
-            pageSize: number;
-        };
-        /**
-         * LogsRunsResponse
-         * @description Response for logs runs table.
-         */
-        LogsRunsResponse: {
-            /** Data */
-            data: components["schemas"]["app__api__v3__logs__runs__LogItem"][];
-            /** Totalcount */
-            totalCount: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-            /** Totalpages */
-            totalPages: number;
-            /**
-             * Leveloptions
-             * @default []
-             */
-            levelOptions: components["schemas"]["FilterOption"][];
-            /**
-             * Loggeroptions
-             * @default []
-             */
-            loggerOptions: components["schemas"]["FilterOption"][];
-            /**
-             * Actoroptions
-             * @default []
-             */
-            actorOptions: components["schemas"]["FilterOption"][];
         };
         /** MessageItem */
         MessageItem: {
@@ -10327,6 +9189,36 @@ export interface components {
          * @enum {string}
          */
         Method: "avg" | "max" | "sum" | "rate" | "countDistinct" | "min" | "slope";
+        /**
+         * MetricResponse
+         * @description Standard metric response.
+         */
+        MetricResponse: {
+            /** Hasdata */
+            hasData: boolean;
+            method: components["schemas"]["Method"];
+            /** Currentvalue */
+            currentValue: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
+            /** Trendanalysis */
+            trendAnalysis?: string | null;
+            /** Valuefield */
+            valueField?: string | null;
+            /** Keyfield */
+            keyField?: string | null;
+            /** Trenddata */
+            trendData: components["schemas"]["app__api__v3__dashboard__bundle__TrendData"][];
+            /** Datapoints */
+            dataPoints: components["schemas"]["DataPoint"][];
+            /** Hover */
+            hover?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /**
          * MetricsDataPoint
          * @description App metrics data point.
@@ -10536,7 +9428,7 @@ export interface components {
          */
         ModelRunsResponse: {
             /** Model Runs */
-            model_runs: components["schemas"]["app__api__v3__evals__model_runs__ModelRunItem"][];
+            model_runs: components["schemas"]["app__api__v3__evals__runs__ModelRunItem"][];
             /** Total Count */
             total_count: number;
             /** Page */
@@ -11412,38 +10304,6 @@ export interface components {
             scopedRoles: string[];
         };
         /**
-         * ProfileDataEnhanced
-         * @description Enhanced profile data row.
-         */
-        ProfileDataEnhanced: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /**
-             * Emails
-             * @default []
-             */
-            emails: string[];
-            /** Primaryemail */
-            primaryEmail: string | null;
-            /** Role */
-            role: string;
-            /**
-             * Simulationids
-             * @default []
-             */
-            simulationIds: string[];
-            /**
-             * Scenarioids
-             * @default []
-             */
-            scenarioIds: string[];
-            metrics: components["schemas"]["ProfileMetrics"];
-        };
-        /**
          * ProfileDetailRequest
          * @description Request to get profile details.
          */
@@ -11501,78 +10361,6 @@ export interface components {
             description: string;
         };
         /**
-         * ProfileMetrics
-         * @description Profile metrics - each metric is a full MetricResponse object.
-         */
-        ProfileMetrics: {
-            averageScore: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            completionPercentage: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            highestScore: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            messagesPerSession: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            personaResponseTimes: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            sessionEfficiency: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            stagnationRate: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            timeSpent: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-            totalAttempts: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
-        };
-        /**
-         * PromptDetailRequest
-         * @description Request for prompt detail.
-         */
-        PromptDetailRequest: {
-            /** Promptid */
-            promptId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * PromptDetailResponse
-         * @description Response for prompt detail endpoint.
-         */
-        PromptDetailResponse: {
-            /** Prompt Id */
-            prompt_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active: boolean;
-            /** System Prompt */
-            system_prompt: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Agent Ids */
-            agent_ids: string[];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__prompts__detail__DepartmentMappingItem"];
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-        };
-        /**
          * PromptInfo
          * @description Prompt information for version history.
          */
@@ -11591,90 +10379,6 @@ export interface components {
             department_ids: string[] | null;
             /** Can Delete */
             can_delete: boolean;
-        };
-        /**
-         * PromptItem
-         * @description Prompt item for list view.
-         */
-        PromptItem: {
-            /** Prompt Id */
-            prompt_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active: boolean;
-            /** System Prompt Preview */
-            system_prompt_preview: string;
-            /** System Prompt */
-            system_prompt: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids: string[];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * PromptNewRequest
-         * @description Request for default prompt detail.
-         */
-        PromptNewRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * PromptsListRequest
-         * @description Request for prompts list.
-         */
-        PromptsListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * PromptsListResponse
-         * @description Response for prompts list.
-         */
-        PromptsListResponse: {
-            /** Prompts */
-            prompts: components["schemas"]["PromptItem"][];
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
-            /** Agent Options */
-            agent_options: {
-                [key: string]: string;
-            }[];
-            /** Persona Options */
-            persona_options: {
-                [key: string]: string;
-            }[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__prompts__list__DepartmentMappingItem"];
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
         };
         /**
          * ProviderDetailRequest
@@ -11951,48 +10655,6 @@ export interface components {
             objectivesEnabled: boolean;
         };
         /**
-         * RemoveProfilesFromCohortRequest
-         * @description Request for removing profiles from cohort.
-         */
-        RemoveProfilesFromCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Profileids */
-            profileIds: string[];
-            /** Currentprofileid */
-            currentProfileId: string;
-        };
-        /**
-         * RemoveProfilesFromCohortResponse
-         * @description Response for removing profiles from cohort.
-         */
-        RemoveProfilesFromCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * RemoveProfilesFromDepartmentRequest
-         * @description Request for removing profiles from department.
-         */
-        RemoveProfilesFromDepartmentRequest: {
-            /** Departmentid */
-            departmentId: string;
-            /** Profileids */
-            profileIds: string[];
-        };
-        /**
-         * RemoveProfilesFromDepartmentResponse
-         * @description Response for removing profiles from department.
-         */
-        RemoveProfilesFromDepartmentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
          * RenderTemplateRequest
          * @description Request to render document template.
          */
@@ -12019,115 +10681,6 @@ export interface components {
             message: string;
             /** Rendered Html */
             rendered_html: string;
-        };
-        /**
-         * ReportsBundleFilters
-         * @description Reports bundle filter request schema.
-         */
-        ReportsBundleFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Page */
-            page?: number | null;
-            /** Pagesize */
-            pageSize?: number | null;
-            /** Search */
-            search?: string | null;
-            /** Sortby */
-            sortBy?: string | null;
-            /** Sortorder */
-            sortOrder?: string | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
-        };
-        /**
-         * ReportsBundleResponse
-         * @description Reports bundle response with entity mappings.
-         */
-        ReportsBundleResponse: {
-            /** Data */
-            data: components["schemas"]["ProfileDataEnhanced"][];
-            /** Totalcount */
-            totalCount: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-            /** Totalpages */
-            totalPages: number;
-            /**
-             * Profileoptions
-             * @default []
-             */
-            profileOptions: components["schemas"]["FilterOption"][];
-            /**
-             * Simulationoptions
-             * @default []
-             */
-            simulationOptions: components["schemas"]["FilterOption"][];
-            /**
-             * Scenariooptions
-             * @default []
-             */
-            scenarioOptions: components["schemas"]["FilterOption"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__reports__bundle__ScenarioMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-        };
-        /**
-         * ReportsExportFilters
-         * @description Reports export filter request schema.
-         */
-        ReportsExportFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Profileid */
-            profileId?: string | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Page */
-            page?: number | null;
-            /** Pagesize */
-            pageSize?: number | null;
-            /** Search */
-            search?: string | null;
-            /** Sortby */
-            sortBy?: string | null;
-            /** Sortorder */
-            sortOrder?: string | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
         };
         /**
          * ReportsHistoryFilters
@@ -12444,75 +10997,6 @@ export interface components {
             queued_count: number;
             /** Message */
             message: string;
-        };
-        /** RunFullRequest */
-        RunFullRequest: {
-            /** Runid */
-            runId: string;
-            /** Profileid */
-            profileId?: string | null;
-        };
-        /**
-         * RunFullResponse
-         * @description Response containing complete run data with all nested structures.
-         */
-        RunFullResponse: {
-            run: components["schemas"]["RunItem"];
-            simulation?: components["schemas"]["app__api__v3__attempts__full__SimulationItem"] | null;
-            /**
-             * Attemptprofiles
-             * @default []
-             */
-            attemptProfiles: components["schemas"]["AttemptProfileItem"][];
-            /** Chats */
-            chats: components["schemas"]["ChatData"][];
-            /** Scenariodocuments */
-            scenarioDocuments: components["schemas"]["ScenarioDocumentItem"][];
-            aggregatedResults?: components["schemas"]["AggregatedResults"] | null;
-            timer: components["schemas"]["TimerItem"];
-            /** Currentchatindex */
-            currentChatIndex: number;
-            /** Expectedchatcount */
-            expectedChatCount: number;
-            /** Issinglechatattempt */
-            isSingleChatAttempt: boolean;
-            /** Islastattempt */
-            isLastAttempt: boolean;
-            /** Showresults */
-            showResults: boolean;
-            /** Shouldshowcontrols */
-            shouldShowControls: boolean;
-            /** Remainingscenarioscount */
-            remainingScenariosCount: number;
-            /** Islastremainingscenario */
-            isLastRemainingScenario: boolean;
-            /** Canpickmultiplealternatives */
-            canPickMultipleAlternatives: boolean;
-            /** Isactive */
-            isActive: boolean;
-            rubricStructure?: components["schemas"]["RubricStructure"] | null;
-            /**
-             * Allsimulationscenarios
-             * @default []
-             */
-            allSimulationScenarios: components["schemas"]["AllSimulationScenarioItem"][];
-        };
-        /** RunItem */
-        RunItem: {
-            /** Id */
-            id: string;
-            /** Createdat */
-            createdAt: string;
-            /** Inputtokens */
-            inputTokens: number;
-            /** Outputtokens */
-            outputTokens: number;
-            /** Cachedinputtokens */
-            cachedInputTokens: number;
-            /** Keyid */
-            keyId?: string | null;
-            /** Agentid */
-            agentId?: string | null;
         };
         /**
          * ScenarioAttributeAttemptFact
@@ -12992,54 +11476,15 @@ export interface components {
          */
         SearchStaffResponse: {
             /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            staff: components["schemas"]["StaffItem"][];
             /** Cohort Mapping */
             cohort_mapping: {
                 [key: string]: components["schemas"]["CohortMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__profile__staff__search_staff__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__staff__search__DepartmentMappingItem"];
             };
-        };
-        /**
-         * SelectAttributesRequest
-         * @description Request to select scenario attributes.
-         */
-        SelectAttributesRequest: {
-            /** Scenarioid */
-            scenarioId: string;
-            /** Departmentid */
-            departmentId: string;
-            /** Profileid */
-            profileId?: string | null;
-        };
-        /**
-         * SelectAttributesResponse
-         * @description Response with selected scenario attributes.
-         */
-        SelectAttributesResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Personaid */
-            personaId?: string | null;
-            /**
-             * Personaids
-             * @default []
-             */
-            personaIds: string[];
-            /**
-             * Documentids
-             * @default []
-             */
-            documentIds: string[];
-            /**
-             * Parameteritemids
-             * @default []
-             */
-            parameterItemIds: string[];
         };
         /**
          * SendSimulationMessageErrorPayload
@@ -13838,7 +12283,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__profile__staff__detail__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__staff__detail__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -13856,25 +12301,67 @@ export interface components {
             profileId: string;
         };
         /**
+         * StaffItem
+         * @description Staff item in list response.
+         */
+        StaffItem: {
+            /** Profile Id */
+            profile_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email */
+            primary_email: string | null;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string;
+            /** Initials */
+            initials: string;
+            /** Active */
+            active: boolean;
+            /** Last Active */
+            last_active: string | null;
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Primary Department Id */
+            primary_department_id: string;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Total Requests */
+            total_requests: number;
+            /** Requests In Last Day */
+            requests_in_last_day: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /**
          * StaffListResponse
          * @description Response for staff list endpoint.
          */
         StaffListResponse: {
             /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            staff: components["schemas"]["StaffItem"][];
             /** Cohort Mapping */
             cohort_mapping: {
                 [key: string]: components["schemas"]["CohortMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__profile__staff__list__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__staff__list__DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
             /** Trend Data */
             trend_data: {
-                [key: string]: components["schemas"]["app__api__v3__profile__staff__list__TrendData"][];
+                [key: string]: components["schemas"]["app__api__v3__staff__list__TrendData"][];
             };
             /** Role Options */
             role_options: {
@@ -13926,7 +12413,7 @@ export interface components {
             role_options: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__profile__staff__new__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__staff__new__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -14271,16 +12758,6 @@ export interface components {
             /** Value */
             value: number;
         };
-        /** UnitsListRequest */
-        UnitsListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** UnitsListResponse */
-        UnitsListResponse: {
-            /** Units */
-            units: components["schemas"]["UnitItem"][];
-        };
         /** UpdateAgentRequest */
         UpdateAgentRequest: {
             /** Agentid */
@@ -14342,27 +12819,6 @@ export interface components {
          * @description Response from update auth.
          */
         UpdateAuthResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** UpdateChatCompletedAtRequest */
-        UpdateChatCompletedAtRequest: {
-            /** Chatid */
-            chatId: string;
-            /** Completedat */
-            completedAt: string;
-        };
-        /** UpdateChatCreatedAtRequest */
-        UpdateChatCreatedAtRequest: {
-            /** Chatid */
-            chatId: string;
-            /** Createdat */
-            createdAt: string;
-        };
-        /** UpdateChatTimestampResponse */
-        UpdateChatTimestampResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -14730,41 +13186,6 @@ export interface components {
             reqPerDay?: number | null;
             /** Lastactive */
             lastActive?: string | null;
-        };
-        /**
-         * UpdatePromptRequest
-         * @description Request to update prompt.
-         */
-        UpdatePromptRequest: {
-            /** Promptid */
-            promptId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** System Prompt */
-            system_prompt: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * UpdatePromptResponse
-         * @description Response from update prompt.
-         */
-        UpdatePromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Promptid */
-            promptId: string;
-            /** Message */
-            message: string;
         };
         /**
          * UpdateProviderRequest
@@ -15680,70 +14101,6 @@ export interface components {
             passPoints: number;
         };
         /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__cohorts__add_staff__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * StaffItem
-         * @description Staff item for cohort detail.
-         */
-        app__api__v3__cohorts__detail__StaffItem: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email */
-            primary_email: string | null;
-            /** Name */
-            name: string;
-            /** Role */
-            role: string;
-            /** Initials */
-            initials: string;
-            /** Active */
-            active: boolean;
-            /** Lastactive */
-            lastActive?: string | null;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Primary Department Id */
-            primary_department_id: string;
-            /** Requests Per Day */
-            requests_per_day?: number | null;
-            /** Total Requests */
-            total_requests: number;
-            /** Requests In Last Day */
-            requests_in_last_day: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Remove */
-            can_remove: boolean;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__cohorts__detail_with_profiles__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * CohortItem
          * @description Cohort item for list view.
          */
@@ -15853,7 +14210,7 @@ export interface components {
          * DepartmentMappingItem
          * @description Department mapping item.
          */
-        app__api__v3__cohorts__search_profile__DepartmentMappingItem: {
+        app__api__v3__cohorts__search__DepartmentMappingItem: {
             /** Name */
             name: string;
             /** Description */
@@ -15926,36 +14283,6 @@ export interface components {
             parameter_id: string;
             /** Parameter Name */
             parameter_name: string;
-        };
-        /**
-         * MetricResponse
-         * @description Standard metric response.
-         */
-        app__api__v3__dashboard__bundle__MetricResponse: {
-            /** Hasdata */
-            hasData: boolean;
-            method: components["schemas"]["Method"];
-            /** Currentvalue */
-            currentValue: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "success" | "warning" | "danger" | "neutral";
-            /** Trendanalysis */
-            trendAnalysis?: string | null;
-            /** Valuefield */
-            valueField?: string | null;
-            /** Keyfield */
-            keyField?: string | null;
-            /** Trenddata */
-            trendData: components["schemas"]["app__api__v3__dashboard__bundle__TrendData"][];
-            /** Datapoints */
-            dataPoints: components["schemas"]["DataPoint"][];
-            /** Hover */
-            hover?: {
-                [key: string]: unknown;
-            } | null;
         };
         /**
          * ParameterMappingItem
@@ -16275,52 +14602,6 @@ export interface components {
          * DepartmentMappingItem
          * @description Department mapping item - extends MappingItem with optional entity ID arrays.
          */
-        app__api__v3__documents__detail_bulk__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Staff Ids */
-            staff_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-        };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item with parameter context.
-         */
-        app__api__v3__documents__detail_bulk__FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item - extends MappingItem with optional entity ID arrays.
-         */
         app__api__v3__documents__list__DepartmentMappingItem: {
             /** Name */
             name: string;
@@ -16507,7 +14788,7 @@ export interface components {
          * ModelRunItem
          * @description Model run item for selection.
          */
-        app__api__v3__evals__model_runs__ModelRunItem: {
+        app__api__v3__evals__runs__ModelRunItem: {
             /** Model Run Id */
             model_run_id: string;
             /** Created At */
@@ -16530,23 +14811,6 @@ export interface components {
             persona_name: string | null;
             /** Actor Type */
             actor_type: string | null;
-        };
-        /** FeedbackItem */
-        app__api__v3__feedback__list__FeedbackItem: {
-            /** Feedback Id */
-            feedback_id: string;
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-            /** Created At */
-            created_at: string;
-            /** Author Name */
-            author_name: string;
-            /** Author Alias */
-            author_alias: string;
-            /** Author Profile Id */
-            author_profile_id: string;
         };
         /**
          * DepartmentMappingItem
@@ -16765,24 +15029,6 @@ export interface components {
             document_ids: string[];
         };
         /**
-         * FeedbackItem
-         * @description Feedback item.
-         */
-        app__api__v3__logs__bundle__FeedbackItem: {
-            /** Feedback Id */
-            feedback_id: number;
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-            /** Created At */
-            created_at: string;
-            /** Author Name */
-            author_name: string;
-            /** Author Profile Id */
-            author_profile_id: string;
-        };
-        /**
          * TrendData
          * @description Trend data point for health KPIs.
          */
@@ -16795,54 +15041,6 @@ export interface components {
             latency: number;
             /** Count */
             count: number;
-        };
-        /**
-         * LogItem
-         * @description Log item with new simplified structure.
-         */
-        app__api__v3__logs__list__LogItem: {
-            /** Id */
-            id: string;
-            /** Level */
-            level: string;
-            /** Logger Name */
-            logger_name: string;
-            /** Message */
-            message: string;
-            /** Profile Id */
-            profile_id: string;
-            /** Extra */
-            extra: {
-                [key: string]: unknown;
-            } | null;
-            /** Created At */
-            created_at: string;
-            /** Actor Name */
-            actor_name: string;
-        };
-        /**
-         * LogItem
-         * @description Log item.
-         */
-        app__api__v3__logs__runs__LogItem: {
-            /** Id */
-            id: string;
-            /** Created At */
-            created_at: string;
-            /** Logger Name */
-            logger_name: string;
-            /** Level */
-            level: string;
-            /** Actor Name */
-            actor_name: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Extra */
-            extra?: {
-                [key: string]: unknown;
-            } | null;
         };
         /** DepartmentMappingItem */
         app__api__v3__models__detail__DepartmentMappingItem: {
@@ -17750,234 +15948,6 @@ export interface components {
             createdAt: string;
             /** Updatedat */
             updatedAt: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__profile__staff__create_staff_data__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__profile__staff__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__profile__staff__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * StaffItem
-         * @description Staff item in list response.
-         */
-        app__api__v3__profile__staff__list__StaffItem: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email */
-            primary_email: string | null;
-            /** Name */
-            name: string;
-            /** Role */
-            role: string;
-            /** Initials */
-            initials: string;
-            /** Active */
-            active: boolean;
-            /** Last Active */
-            last_active: string | null;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Primary Department Id */
-            primary_department_id: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Total Requests */
-            total_requests: number;
-            /** Requests In Last Day */
-            requests_in_last_day: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * TrendData
-         * @description Trend data point.
-         */
-        app__api__v3__profile__staff__list__TrendData: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number;
-            /** Count */
-            count: number;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__profile__staff__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__profile__staff__search_staff__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__prompts__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__prompts__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * MetricResponse
-         * @description Standard metric response.
-         */
-        app__api__v3__reports__bundle__MetricResponse: {
-            /** Hasdata */
-            hasData: boolean;
-            method: components["schemas"]["Method"];
-            /** Currentvalue */
-            currentValue: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "success" | "warning" | "danger" | "neutral";
-            /** Trendanalysis */
-            trendAnalysis?: string | null;
-            /** Valuefield */
-            valueField?: string | null;
-            /** Keyfield */
-            keyField?: string | null;
-            /** Trenddata */
-            trendData: components["schemas"]["app__api__v3__reports__bundle__TrendData"][];
-            /** Datapoints */
-            dataPoints: components["schemas"]["DataPoint"][];
-            /** Hover */
-            hover?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        app__api__v3__reports__bundle__PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data.
-         */
-        app__api__v3__reports__bundle__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Persona Ids
-             * @default []
-             */
-            persona_ids: string[];
-            /**
-             * Persona Mapping
-             * @default {}
-             */
-            persona_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__reports__bundle__PersonaMappingItem"];
-            };
-            /**
-             * Document Mapping
-             * @default {}
-             */
-            document_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Mapping
-             * @default {}
-             */
-            parameter_item_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Ids
-             * @default []
-             */
-            parameter_item_ids: string[];
-            /**
-             * Document Ids
-             * @default []
-             */
-            document_ids: string[];
-        };
-        /**
-         * TrendData
-         * @description Trend data point.
-         */
-        app__api__v3__reports__bundle__TrendData: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number;
-            /** Count */
-            count: number;
         };
         /**
          * StandardGroupItem
@@ -19551,6 +17521,68 @@ export interface components {
             /** Time Limit Seconds */
             time_limit_seconds?: number | null;
         };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__staff__data__create__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__staff__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__staff__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * TrendData
+         * @description Trend data point.
+         */
+        app__api__v3__staff__list__TrendData: {
+            /** Date */
+            date: string;
+            /** Value */
+            value: number;
+            /** Count */
+            count: number;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__staff__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__staff__search__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -19626,7 +17658,7 @@ export interface operations {
             };
         };
     };
-    get_profile_by_email_api_v3_profile_by_email_post: {
+    get_profile_by_email_api_v3_profile_email_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -19692,7 +17724,7 @@ export interface operations {
             };
         };
     };
-    authorize_emulation_api_v3_profile_authorize_emulation_post: {
+    authorize_emulation_api_v3_profile_emulate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -19725,7 +17757,7 @@ export interface operations {
             };
         };
     };
-    search_simulatable_profiles_api_v3_profile_search_simulatable_profiles_post: {
+    search_simulatable_profiles_api_v3_profile_simulatable_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -19745,468 +17777,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchSimulatableProfilesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_list_api_v3_profile_staff_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_staff_detail_api_v3_profile_staff_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_staff_new_api_v3_profile_staff_new_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffNewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffNewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_profile_api_v3_profile_staff_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_create_profile_api_v3_profile_staff_bulk_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkCreateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkCreateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_profile_api_v3_profile_staff_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_update_profile_api_v3_profile_staff_bulk_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkUpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkUpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_profile_api_v3_profile_staff_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_delete_profile_api_v3_profile_staff_bulk_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkDeleteStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkDeleteStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_create_staff_data_api_v3_profile_staff_create_staff_data_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateStaffDataRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateStaffDataResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_staff_api_v3_profile_staff_search_staff_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    process_csv_api_v3_profile_staff_process_csv_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProcessCSVRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProcessCSVResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_or_update_staff_api_v3_profile_staff_create_or_update_staff_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateOrUpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateOrUpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_create_or_update_staff_api_v3_profile_staff_bulk_create_or_update_staff_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkCreateOrUpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkCreateOrUpdateStaffResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20438,39 +18008,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteScenarioResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    select_scenario_attributes_endpoint_api_v3_scenarios_select_attributes_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SelectAttributesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SelectAttributesResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21441,59 +18978,6 @@ export interface operations {
             };
         };
     };
-    remove_profiles_from_department_api_v3_departments_remove_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RemoveProfilesFromDepartmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RemoveProfilesFromDepartmentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_departments_for_login_api_v3_departments_login_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DepartmentsLoginResponse"];
-                };
-            };
-        };
-    };
     get_cohorts_list_api_v3_cohorts_list_post: {
         parameters: {
             query?: never;
@@ -21593,39 +19077,6 @@ export interface operations {
             };
         };
     };
-    get_cohort_detail_with_profiles_api_v3_cohorts_detail_with_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CohortDetailWithProfilesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CohortDetailWithProfilesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_cohort_api_v3_cohorts_duplicate_post: {
         parameters: {
             query?: never;
@@ -21679,72 +19130,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeaveCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_profiles_to_cohort_api_v3_cohorts_add_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddProfilesToCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AddProfilesToCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_profiles_from_cohort_api_v3_cohorts_remove_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RemoveProfilesFromCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RemoveProfilesFromCohortResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21857,7 +19242,7 @@ export interface operations {
             };
         };
     };
-    cohort_search_profile_api_v3_cohorts_search_profile_post: {
+    cohort_search_profile_api_v3_cohorts_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -21877,39 +19262,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CohortSearchProfileResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    cohort_add_staff_api_v3_cohorts_add_staff_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CohortAddStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CohortAddStaffResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21989,39 +19341,6 @@ export interface operations {
             };
         };
     };
-    get_document_detail_bulk_api_v3_documents_detail_bulk_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocumentDetailBulkRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DocumentDetailBulkResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_document_api_v3_documents_create_post: {
         parameters: {
             query?: never;
@@ -22075,72 +19394,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteDocumentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_update_documents_api_v3_documents_bulk_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkUpdateDocumentsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkUpdateDocumentsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_delete_documents_api_v3_documents_bulk_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkDeleteDocumentsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkDeleteDocumentsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22451,7 +19704,7 @@ export interface operations {
             };
         };
     };
-    get_model_runs_api_v3_evals_model_runs_post: {
+    get_model_runs_api_v3_evals_runs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -23012,72 +20265,6 @@ export interface operations {
             };
         };
     };
-    export_reports_api_v3_reports_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExportRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_reports_api_v3_reports_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportsBundleFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReportsBundleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_reports_overview_api_v3_reports_overview_post: {
         parameters: {
             query?: never;
@@ -23154,39 +20341,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LeaderboardBundleFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LeaderboardBundleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_leaderboard_cohort_detail_api_v3_leaderboard_cohort_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LeaderboardCohortDetailFilters"];
             };
         };
         responses: {
@@ -23441,39 +20595,6 @@ export interface operations {
             };
         };
     };
-    delete_agent_prompt_api_v3_agents_delete_prompt_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteAgentPromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteAgentPromptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_keys_list_api_v3_keys_list_post: {
         parameters: {
             query?: never;
@@ -23672,7 +20793,7 @@ export interface operations {
             };
         };
     };
-    decrypt_key_api_v3_keys_decrypt_key_post: {
+    decrypt_key_api_v3_keys_decrypt_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -24365,237 +21486,6 @@ export interface operations {
             };
         };
     };
-    create_parameter_item_api_v3_parameters_items_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateParameterItemRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateParameterItemResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_prompts_list_api_v3_prompts_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromptsListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_prompt_detail_api_v3_prompts_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromptDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_prompt_new_api_v3_prompts_new_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromptNewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_prompt_api_v3_prompts_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatePromptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_prompt_api_v3_prompts_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdatePromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdatePromptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_prompt_api_v3_prompts_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeletePromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeletePromptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_fields_list_api_v3_fields_list_post: {
         parameters: {
             query?: never;
@@ -24630,39 +21520,6 @@ export interface operations {
         };
     };
     get_field_detail_api_v3_fields_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FieldDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FieldDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_field_detail_default_api_v3_fields_detail_default_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -24860,72 +21717,6 @@ export interface operations {
             };
         };
     };
-    get_units_list_api_v3_units_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UnitsListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UnitsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_feedback_api_v3_feedback_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FeedbackListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeedbackListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_feedback_api_v3_feedback_create_post: {
         parameters: {
             query?: never;
@@ -24955,160 +21746,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_delete_feedback_api_v3_feedback_bulk_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkDeleteFeedbackRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkDeleteFeedbackResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_logs_api_v3_logs_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LogsListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LogsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_log_api_v3_logs_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateLogRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateLogResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_delete_logs_api_v3_logs_bulk_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkDeleteLogsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkDeleteLogsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_system_health_api_v3_logs_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
                 };
             };
         };
@@ -25146,40 +21783,7 @@ export interface operations {
             };
         };
     };
-    get_logs_runs_api_v3_logs_runs_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LogsRunsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LogsRunsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_archive_attempts_api_v3_attempts_bulk_archive_post: {
+    bulk_archive_attempts_api_v3_attempts_archive_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -25199,72 +21803,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulkArchiveAttemptsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_chat_created_at_api_v3_attempts_chats_update_created_at_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateChatCreatedAtRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateChatTimestampResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_chat_completed_at_api_v3_attempts_chats_update_completed_at_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateChatCompletedAtRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateChatTimestampResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25311,7 +21849,7 @@ export interface operations {
             };
         };
     };
-    get_run_full_api_v3_full_post: {
+    delete_agent_prompt_api_v3_prompts_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -25320,7 +21858,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RunFullRequest"];
+                "application/json": components["schemas"]["DeleteAgentPromptRequest"];
             };
         };
         responses: {
@@ -25330,7 +21868,469 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RunFullResponse"];
+                    "application/json": components["schemas"]["DeleteAgentPromptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_list_api_v3_staff_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_detail_api_v3_staff_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_new_api_v3_staff_new_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffNewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffNewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_profile_api_v3_staff_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_profile_api_v3_staff_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_profile_api_v3_staff_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_staff_api_v3_staff_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_csv_api_v3_staff_csv_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessCSVRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessCSVResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_or_update_staff_api_v3_staff_upsert_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrUpdateStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateOrUpdateStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_create_staff_data_api_v3_staff_data_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStaffDataRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateStaffDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_create_profile_api_v3_staff_bulk_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkCreateStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkCreateStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_update_profile_api_v3_staff_bulk_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkUpdateStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkUpdateStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_delete_profile_api_v3_staff_bulk_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDeleteStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkDeleteStaffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_create_or_update_staff_api_v3_staff_bulk_upsert_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkCreateOrUpdateStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkCreateOrUpdateStaffResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25529,39 +22529,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingRunsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_ephemeral_key_api_v3_realtime_ephemeral_key_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EphemeralKeyRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EphemeralKeyResponse"];
                 };
             };
             /** @description Validation Error */

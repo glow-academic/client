@@ -14,10 +14,10 @@ import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffDetailIn = InputOf<"/api/v3/profile/staff/detail", "post">;
-type StaffDetailOut = OutputOf<"/api/v3/profile/staff/detail", "post">;
-type UpdateStaffIn = InputOf<"/api/v3/profile/staff/update", "post">;
-type UpdateStaffOut = OutputOf<"/api/v3/profile/staff/update", "post">;
+type StaffDetailIn = InputOf<"/api/v3/staff/detail", "post">;
+type StaffDetailOut = OutputOf<"/api/v3/staff/detail", "post">;
+type UpdateStaffIn = InputOf<"/api/v3/staff/update", "post">;
+type UpdateStaffOut = OutputOf<"/api/v3/staff/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -27,7 +27,7 @@ const getStaff = async (
   currentProfileId: string,
 ): Promise<StaffDetailOut> => {
   return api.post(
-    "/profile/staff/detail",
+    "/staff/detail",
     { body: { profileId, currentProfileId } },
     {
       cache: "no-store",
@@ -75,7 +75,7 @@ async function updateStaff(input: UpdateStaffIn): Promise<UpdateStaffOut> {
     throw new Error("Authentication required");
   }
 
-  return api.post("/profile/staff/update", {
+  return api.post("/staff/update", {
     body: { ...input.body, profileId },
   });
 }

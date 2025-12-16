@@ -27,7 +27,7 @@ class BulkDeleteStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/bulk-delete", response_model=BulkDeleteStaffResponse)
+@router.post("/delete", response_model=BulkDeleteStaffResponse)
 async def bulk_delete_profile(
     request: BulkDeleteStaffRequest,
     http_request: Request,

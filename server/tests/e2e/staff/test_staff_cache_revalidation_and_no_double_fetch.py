@@ -89,7 +89,7 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
 
         # Set up request counter
         list_counter, stop_counter = _set_request_counter(
-            page, "/api/v3/profile/staff/list"
+            page, "/api/v3/staff/list"
         )
 
         page.goto(f"{base_url}/management/staff")
@@ -180,7 +180,7 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
         )
 
         list_counter, stop_counter = _set_request_counter(
-            page, "/api/v3/profile/staff/list"
+            page, "/api/v3/staff/list"
         )
 
         page.goto(f"{base_url}/management/staff")
@@ -297,7 +297,7 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
         )
 
         list_counter, stop_counter = _set_request_counter(
-            page, "/api/v3/profile/staff/list"
+            page, "/api/v3/staff/list"
         )
 
         page.goto(f"{base_url}/management/staff")

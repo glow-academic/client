@@ -34,9 +34,7 @@ class SearchSimulatableProfilesResponse(BaseModel):
     profiles: list[ProfileItem]  # Filtered profiles list (max limit items)
 
 
-@router.post(
-    "/search-simulatable-profiles", response_model=SearchSimulatableProfilesResponse
-)
+@router.post("/simulatable", response_model=SearchSimulatableProfilesResponse)
 async def search_simulatable_profiles(
     request: SearchSimulatableProfilesRequest,
     http_request: Request,

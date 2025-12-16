@@ -13,14 +13,14 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffNewOut = OutputOf<"/api/v3/profile/staff/new", "post">;
-type CreateStaffIn = InputOf<"/api/v3/profile/staff/create", "post">;
-type CreateStaffOut = OutputOf<"/api/v3/profile/staff/create", "post">;
+type StaffNewOut = OutputOf<"/api/v3/staff/new", "post">;
+type CreateStaffIn = InputOf<"/api/v3/staff/create", "post">;
+type CreateStaffOut = OutputOf<"/api/v3/staff/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getStaffNew = cache(async (profileId: string): Promise<StaffNewOut> => {
   return api.post(
-    "/profile/staff/new",
+    "/staff/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -35,7 +35,7 @@ const getStaffNew = cache(async (profileId: string): Promise<StaffNewOut> => {
 async function createStaff(input: CreateStaffIn): Promise<CreateStaffOut> {
   "use server";
 
-  return api.post("/profile/staff/create", {
+  return api.post("/staff/create", {
     body: { ...input.body },
   });
 }

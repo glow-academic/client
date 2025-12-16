@@ -14,7 +14,7 @@ type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
 type UpdateSettingsIn = InputOf<"/api/v3/settings/update", "post">;
 type UpdateSettingsOut = OutputOf<"/api/v3/settings/update", "post">;
 type KeysListOut = OutputOf<"/api/v3/keys/list", "post">;
-type StaffListOut = OutputOf<"/api/v3/profile/staff/list", "post">;
+type StaffListOut = OutputOf<"/api/v3/staff/list", "post">;
 export type DepartmentsListOut = OutputOf<"/api/v3/departments/list", "post">;
 
 /** ---- Direct fetch for settings list ---- */
@@ -65,7 +65,7 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
 /** ---- Direct fetch for staff list (for profile selection) ---- */
 const getStaffList = async (profileId: string): Promise<StaffListOut> => {
   return api.post(
-    "/profile/staff/list",
+    "/staff/list",
     { body: { profileId } },
     {
       cache: "no-store",

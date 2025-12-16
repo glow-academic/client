@@ -29,7 +29,7 @@ class DecryptKeyResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/decrypt-key", response_model=DecryptKeyResponse)
+@router.post("/decrypt", response_model=DecryptKeyResponse)
 async def decrypt_key(
     request: DecryptKeyRequest,
     http_request: Request,

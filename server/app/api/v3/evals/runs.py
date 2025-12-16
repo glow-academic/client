@@ -65,7 +65,7 @@ class ModelRunsResponse(BaseModel):
     persona_mapping: dict[str, str]
 
 
-@router.post("/model_runs", response_model=ModelRunsResponse)
+@router.post("/runs", response_model=ModelRunsResponse)
 async def get_model_runs(
     filters: ModelRunsFilters,
     request: Request,

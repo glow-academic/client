@@ -18,8 +18,8 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 
-type ModelRunsFilters = InputOf<"/api/v3/evals/model_runs", "post">;
-type ModelRunsResponse = OutputOf<"/api/v3/evals/model_runs", "post">;
+type ModelRunsFilters = InputOf<"/api/v3/evals/runs", "post">;
+type ModelRunsResponse = OutputOf<"/api/v3/evals/runs", "post">;
 
 export interface ModelRunCardGridProps {
   profileId: string;

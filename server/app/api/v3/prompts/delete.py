@@ -27,7 +27,7 @@ class DeleteAgentPromptResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete-prompt", response_model=DeleteAgentPromptResponse)
+@router.post("/delete", response_model=DeleteAgentPromptResponse)
 async def delete_agent_prompt(
     request: DeleteAgentPromptRequest,
     http_request: Request,

@@ -35,7 +35,7 @@ class BulkUpdateStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/bulk-update", response_model=BulkUpdateStaffResponse)
+@router.post("/update", response_model=BulkUpdateStaffResponse)
 async def bulk_update_profile(
     request: BulkUpdateStaffRequest,
     http_request: Request,
