@@ -1,141 +1,145 @@
-"""Staff create endpoint - create a new staff member."""
+"""Staff bulk create endpoint - bulk create staff members."""
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
-
+from app.api.v3.profile.create import CreateProfileRequest
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
 
-class CreateStaffRequest(BaseModel):
-    """Request to create a single staff member."""
+class BulkCreateStaffRequest(BaseModel):
+    """Request to bulk create staff members."""
 
-    firstName: str
-    lastName: str
-    emails: list[str]  # List of emails (first one will be set as primary)
-    primary_email_index: int | None = (
-        None  # Index in emails array for primary (defaults to 0)
-    )
-    role: str
-    cohort_ids: list[str] = []  # List of cohort IDs (no primary flag)
-    department_ids: list[str] = []  # List of department IDs
-    primary_department_index: int | None = (
-        None  # Index in department_ids array for primary (defaults to 0)
-    )
+    profiles: list[CreateProfileRequest]
 
 
-class CreateStaffResponse(BaseModel):
-    """Response from create staff."""
+class BulkCreateStaffResponse(BaseModel):
+    """Response from bulk create staff."""
 
     success: bool
-    profileId: str
+    profileIds: list[str]
     message: str
 
 
-@router.post("/create", response_model=CreateStaffResponse)
-async def create_profile(
-    request: CreateStaffRequest,
+@router.post("/create", response_model=BulkCreateStaffResponse)
+async def bulk_create_staff(
+    request: BulkCreateStaffRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateStaffResponse:
-    """Create a new profile."""
+) -> BulkCreateStaffResponse:
+    """Bulk create profiles."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Generate new profile ID
-        profile_id = str(uuid.uuid4())
-
-        # Validate emails array
-        if not request.emails or len(request.emails) == 0:
-            raise HTTPException(
-                status_code=400, detail="At least one email is required"
+        # Prepare arrays for bulk operation (maintain parallel structure)
+        profile_ids = [str(uuid.uuid4()) for _ in request.profiles]
+        first_names = [p.firstName for p in request.profiles]
+        last_names = [p.lastName for p in request.profiles]
+        # Extract primary email from each profile's emails array
+        emails = []
+        for p in request.profiles:
+            if not p.emails or len(p.emails) == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Profile {p.firstName} {p.lastName} must have at least one email",
+                )
+            primary_index = (
+                p.primary_email_index if p.primary_email_index is not None else 0
             )
+            if primary_index < 0 or primary_index >= len(p.emails):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid primary_email_index for {p.firstName} {p.lastName}",
+                )
+            emails.append(p.emails[primary_index])
+        roles = [p.role for p in request.profiles]
+        # Department IDs must be parallel array (use empty string for profiles without departments)
+        # Extract primary department from department_ids array using primary_department_index
+        department_ids: list[str] = []
+        for p in request.profiles:
+            if p.department_ids and p.primary_department_index is not None:
+                primary_dept_index = p.primary_department_index
+                if (
+                    primary_dept_index >= 0
+                    and primary_dept_index < len(p.department_ids)
+                ):
+                    dept_id = p.department_ids[primary_dept_index]
+                    department_ids.append(dept_id)
+                else:
+                    department_ids.append("")  # Empty string for no department
+            else:
+                department_ids.append("")  # Empty string for no department
 
-        # Determine primary email index (default to 0)
-        primary_index = (
-            request.primary_email_index
-            if request.primary_email_index is not None
-            else 0
-        )
-        if primary_index < 0 or primary_index >= len(request.emails):
-            raise HTTPException(status_code=400, detail="Invalid primary_email_index")
-
-        primary_email = request.emails[primary_index]
-
-        # Determine primary department index (default to 0)
-        primary_dept_index = (
-            request.primary_department_index
-            if request.primary_department_index is not None
-            else (0 if request.department_ids else None)
-        )
-        if request.department_ids and (
-            primary_dept_index is None
-            or primary_dept_index < 0
-            or primary_dept_index >= len(request.department_ids)
-        ):
-            raise HTTPException(
-                status_code=400, detail="Invalid primary_department_index"
-            )
-
-        # Single consolidated query: validates email, creates profile, and inserts department
-        # Note: For now, we create profile with primary email, then insert other emails
-        # TODO: Update SQL to handle multiple emails in one query
-        sql_query = load_sql("sql/v3/profile/staff/create_profile_complete.sql")
+        # Single consolidated query: validates emails, creates all profiles, and inserts departments
+        sql_query = load_sql("sql/v3/profile/staff/bulk_create_profile_complete.sql")
         sql_params = (
-            profile_id,
-            request.firstName,
-            request.lastName,
-            primary_email,
-            request.role,
-            True,  # active
-            request.cohort_ids,
-            request.department_ids,
-            primary_dept_index,
+            profile_ids,
+            first_names,
+            last_names,
+            emails,
+            roles,
+            department_ids if department_ids else [],
         )
 
         async with transaction(conn):
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
-                raise HTTPException(status_code=500, detail="Failed to create profile")
+                raise HTTPException(status_code=500, detail="Failed to create profiles")
 
-            # Check if email already exists (returned from query)
-            if result["email_exists"]:
+            # Check if any emails already exist
+            existing_emails = result.get("existing_emails", [])
+            if existing_emails:
                 raise HTTPException(
-                    status_code=400, detail=f"Email '{primary_email}' already exists"
+                    status_code=400,
+                    detail=f"Emails already exist: {', '.join(existing_emails)}",
                 )
 
-            # Verify profile was created
-            if not result["id"]:
-                raise HTTPException(status_code=500, detail="Failed to create profile")
+            # Get created profile IDs
+            created_ids = result.get("profile_ids", [])
+            if not created_ids:
+                raise HTTPException(status_code=500, detail="Failed to create profiles")
 
-            # Insert additional emails (if any)
-            if len(request.emails) > 1:
-                insert_email_sql = """
-                    INSERT INTO profile_emails (profile_id, email, is_primary, active)
-                    SELECT $1::uuid, unnest($2::text[]), false, true
-                    WHERE NOT EXISTS (SELECT 1 FROM profile_emails WHERE email = unnest($2::text[]) AND active = true)
-                """
-                # Get all emails except the primary one
-                additional_emails = [
-                    e for i, e in enumerate(request.emails) if i != primary_index
-                ]
-                if additional_emails:
-                    await conn.execute(insert_email_sql, profile_id, additional_emails)
+            profile_ids = [str(pid) for pid in created_ids]
 
-        result_data = CreateStaffResponse(
+            # Insert additional emails for each profile
+            for i, profile_req in enumerate(request.profiles):
+                if len(profile_req.emails) > 1:
+                    profile_id = profile_ids[i]
+                    primary_index = (
+                        profile_req.primary_email_index
+                        if profile_req.primary_email_index is not None
+                        else 0
+                    )
+                    additional_emails = [
+                        e
+                        for j, e in enumerate(profile_req.emails)
+                        if j != primary_index
+                    ]
+                    if additional_emails:
+                        insert_email_sql = """
+                            INSERT INTO profile_emails (profile_id, email, is_primary, active)
+                            SELECT $1::uuid, unnest($2::text[]), false, true
+                            WHERE NOT EXISTS (SELECT 1 FROM profile_emails WHERE email = unnest($2::text[]) AND active = true)
+                        """
+                        await conn.execute(
+                            insert_email_sql, profile_id, additional_emails
+                        )
+
+        result_data = BulkCreateStaffResponse(
             success=True,
-            profileId=str(result["id"]),
-            message=f"Staff '{request.firstName} {request.lastName}' created successfully",
+            profileIds=profile_ids,
+            message=f"{len(profile_ids)} staff members created successfully",
         )
 
         # Invalidate cache after mutation
@@ -149,9 +153,9 @@ async def create_profile(
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path="/api/v3/profile/staff/create",  # Constructed path since no Request
-            operation="create_profile",
+            route_path=http_request.url.path,
+            operation="bulk_create_staff",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=None,
+            request=http_request,
         )

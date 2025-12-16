@@ -35,7 +35,7 @@ async function createGuestProfile(
 ): Promise<void> {
   const { firstName, lastName } = parseName(name);
   try {
-    await api.post("/staff/create", {
+    await api.post("/profile/create", {
       body: {
         firstName,
         lastName,

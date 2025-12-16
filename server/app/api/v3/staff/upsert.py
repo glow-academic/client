@@ -1,4 +1,4 @@
-"""Staff create or update endpoint - create or update a staff member based on email."""
+"""Staff bulk create or update endpoint - bulk create or update staff members."""
 
 import uuid
 from typing import Annotated, Any
@@ -7,6 +7,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.api.v3.profile.upsert import CreateOrUpdateProfileRequest
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
@@ -15,128 +16,149 @@ from app.utils.sql_helper import load_sql
 router = APIRouter()
 
 
-class CreateOrUpdateStaffRequest(BaseModel):
-    """Request to create or update a single staff member."""
+class BulkCreateOrUpdateStaffRequest(BaseModel):
+    """Request to bulk create or update staff members."""
 
-    firstName: str
-    lastName: str
-    emails: list[
-        str
-    ]  # List of emails (first one will be set as primary if primary_email_index not specified)
-    primary_email_index: int | None = (
-        None  # Index in emails array for primary (defaults to 0)
-    )
-    role: str
-    department_ids: list[str] = []
-    cohort_ids: list[str] = []
+    profiles: list[CreateOrUpdateProfileRequest]
+    currentProfileId: str  # Current user's profile ID for role validation
 
 
-class CreateOrUpdateStaffResponse(BaseModel):
-    """Response from create or update staff."""
+class BulkCreateOrUpdateStaffResponse(BaseModel):
+    """Response from bulk create or update staff."""
 
     success: bool
-    profileId: str
-    created: bool  # True if created, False if updated
+    profileIds: list[str]
+    created_count: int
+    updated_count: int
     message: str
 
 
-@router.post("/upsert", response_model=CreateOrUpdateStaffResponse)
-async def create_or_update_staff(
-    request: CreateOrUpdateStaffRequest,
+@router.post("/upsert", response_model=BulkCreateOrUpdateStaffResponse)
+async def bulk_create_or_update_staff(
+    request: BulkCreateOrUpdateStaffRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateOrUpdateStaffResponse:
-    """Create or update a staff member based on email."""
+) -> BulkCreateOrUpdateStaffResponse:
+    """Bulk create or update staff members."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Validate emails array
-        if not request.emails or len(request.emails) == 0:
-            raise HTTPException(
-                status_code=400, detail="At least one email is required"
-            )
+        profile_ids: list[str] = []
+        created_count = 0
+        updated_count = 0
 
-        # Determine primary email index (default to 0)
-        primary_index = (
-            request.primary_email_index
-            if request.primary_email_index is not None
-            else 0
+        # Load consolidated SQL query with role validation built-in
+        create_or_update_sql = load_sql(
+            "sql/v3/profile/staff/create_or_update_staff_complete.sql"
         )
-        if primary_index < 0 or primary_index >= len(request.emails):
-            raise HTTPException(status_code=400, detail="Invalid primary_email_index")
-
-        primary_email = request.emails[primary_index]
-
-        # Convert string UUIDs to UUID arrays
-        dept_uuids = (
-            [uuid.UUID(d) for d in request.department_ids]
-            if request.department_ids
-            else []
-        )
-        cohort_uuids = (
-            [uuid.UUID(c) for c in request.cohort_ids] if request.cohort_ids else []
-        )
-
-        # Single consolidated query for create/update with departments and cohorts
-        sql_query = load_sql("sql/v3/profile/staff/create_or_update_staff_complete.sql")
-        profile_id_new = uuid.uuid4()
-        sql_params = (
-            profile_id_new,
-            request.firstName,
-            request.lastName,
-            primary_email,
-            request.role,
-            True,  # active
-            dept_uuids,
-            cohort_uuids,
-            None,  # current_profile_id (no role validation for single create/update)
-        )
+        sql_query = create_or_update_sql  # Track primary query
 
         async with transaction(conn):
-            result = await conn.fetchrow(sql_query, *sql_params)
+            for profile_req in request.profiles:
+                # Validate emails array
+                if not profile_req.emails or len(profile_req.emails) == 0:
+                    raise HTTPException(
+                        status_code=400, detail="At least one email is required"
+                    )
 
-            if not result:
-                raise HTTPException(
-                    status_code=500, detail="Failed to create or update staff profile"
+                # Determine primary email index (default to 0)
+                primary_index = (
+                    profile_req.primary_email_index
+                    if profile_req.primary_email_index is not None
+                    else 0
+                )
+                if primary_index < 0 or primary_index >= len(profile_req.emails):
+                    raise HTTPException(
+                        status_code=400, detail="Invalid primary_email_index"
+                    )
+
+                primary_email = profile_req.emails[primary_index]
+
+                # Convert string UUIDs to UUID arrays
+                dept_uuids = (
+                    [uuid.UUID(d) for d in profile_req.department_ids]
+                    if profile_req.department_ids
+                    else []
+                )
+                cohort_uuids = (
+                    [uuid.UUID(c) for c in profile_req.cohort_ids]
+                    if profile_req.cohort_ids
+                    else []
                 )
 
-            profile_id = result["profile_id"]
-            created = result["created"]
+                # Single consolidated query for create/update with departments, cohorts, and role validation
+                profile_id_new = uuid.uuid4()
+                sql_params = (
+                    profile_id_new,
+                    profile_req.firstName,
+                    profile_req.lastName,
+                    primary_email,
+                    profile_req.role,
+                    True,  # active
+                    dept_uuids,
+                    cohort_uuids,
+                    uuid.UUID(
+                        request.currentProfileId
+                    ),  # current_profile_id for role validation
+                )
+                result = await conn.fetchrow(create_or_update_sql, *sql_params)
 
-            # Update all emails: deactivate existing, then insert/activate new ones
-            # First, deactivate all existing emails for this profile
-            await conn.execute(
-                "UPDATE profile_emails SET active = false, updated_at = NOW() WHERE profile_id = $1",
-                profile_id,
-            )
+                if not result:
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Failed to create or update staff profile: {primary_email}",
+                    )
 
-            # Insert/update all emails (set primary based on index)
-            for i, email in enumerate(request.emails):
-                is_primary = i == primary_index
+                # Check for role validation error
+                validation_error = result.get("validation_error")
+                if validation_error:
+                    raise HTTPException(
+                        status_code=403,
+                        detail=validation_error,
+                    )
+
+                profile_id = result["profile_id"]
+                created = result["created"]
+
+                # Update all emails: deactivate existing, then insert/activate new ones
+                # First, deactivate all existing emails for this profile
                 await conn.execute(
-                    """
-                    INSERT INTO profile_emails (profile_id, email, is_primary, active)
-                    VALUES ($1::uuid, $2, $3, true)
-                    ON CONFLICT (email) DO UPDATE SET
-                        profile_id = EXCLUDED.profile_id,
-                        is_primary = EXCLUDED.is_primary,
-                        active = true,
-                        updated_at = NOW()
-                """,
+                    "UPDATE profile_emails SET active = false, updated_at = NOW() WHERE profile_id = $1",
                     profile_id,
-                    email,
-                    is_primary,
                 )
-            message = (
-                f"Staff '{request.firstName} {request.lastName}' created successfully"
-                if created
-                else f"Staff '{request.firstName} {request.lastName}' updated successfully"
-            )
 
-        result_data = CreateOrUpdateStaffResponse(
-            success=True, profileId=profile_id, created=created, message=message
+                # Insert/update all emails (set primary based on index)
+                for i, email in enumerate(profile_req.emails):
+                    is_primary = i == primary_index
+                    await conn.execute(
+                        """
+                        INSERT INTO profile_emails (profile_id, email, is_primary, active)
+                        VALUES ($1::uuid, $2, $3, true)
+                        ON CONFLICT (profile_id, email) DO UPDATE SET
+                            is_primary = EXCLUDED.is_primary,
+                            active = true,
+                            updated_at = NOW()
+                    """,
+                        profile_id,
+                        email,
+                        is_primary,
+                    )
+
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+
+                profile_ids.append(str(profile_id))
+
+        result_data = BulkCreateOrUpdateStaffResponse(
+            success=True,
+            profileIds=profile_ids,
+            created_count=created_count,
+            updated_count=updated_count,
+            message=f"{created_count} created, {updated_count} updated successfully",
         )
 
         # Invalidate cache after mutation
@@ -151,7 +173,7 @@ async def create_or_update_staff(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_or_update_staff",
+            operation="bulk_create_or_update_staff",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

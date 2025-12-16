@@ -46,11 +46,11 @@ type CreateStaffDataOut = OutputOf<
 type ProcessCSVIn = InputOf<"/api/v3/staff/csv", "post">;
 type ProcessCSVOut = OutputOf<"/api/v3/staff/csv", "post">;
 type BulkCreateOrUpdateStaffIn = InputOf<
-  "/api/v3/staff/bulk/upsert",
+  "/api/v3/staff/upsert",
   "post"
 >;
 type BulkCreateOrUpdateStaffOut = OutputOf<
-  "/api/v3/staff/bulk/upsert",
+  "/api/v3/staff/upsert",
   "post"
 >;
 type SettingsActiveIn = InputOf<"/api/v3/settings/active", "post">;
@@ -535,7 +535,7 @@ export async function bulkCreateOrUpdateStaff(
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/staff/bulk/upsert", input);
+  return api.post("/staff/upsert", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

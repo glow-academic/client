@@ -1,5 +1,6 @@
-"""Staff update endpoint - update a staff member."""
+"""Staff bulk update endpoint - bulk update staff members."""
 
+import uuid
 from typing import Annotated, Any
 
 import asyncpg
@@ -14,129 +15,98 @@ from app.utils.sql_helper import load_sql
 router = APIRouter()
 
 
-class UpdateStaffRequest(BaseModel):
-    """Request to update staff."""
+class BulkUpdateStaffRequest(BaseModel):
+    """Request to bulk update staff."""
 
-    profileId: str
-    first_name: str
-    last_name: str
-    emails: list[
-        str
-    ]  # List of emails (first one will be set as primary if primary_email_index not specified)
-    primary_email_index: int | None = (
-        None  # Index in emails array for primary (defaults to 0)
+    profileIds: list[str]
+    role: str | None = None
+    requests_per_day: int | None | str = (
+        None  # int for limit, None for unlimited, "__keep__" to not update
     )
-    role: str
-    requests_per_day: int | None
-    cohort_ids: list[str]  # List of cohort IDs (no primary flag)
-    department_ids: list[str]  # List of department IDs
-    primary_department_index: int | None = (
-        None  # Index in department_ids array for primary (defaults to 0)
-    )
-    active: bool
+    primary_department_id: str | None = None
+    currentProfileId: str  # Current user's profile ID for permission validation
+    active: bool | None = None
 
 
-class UpdateStaffResponse(BaseModel):
-    """Response from update staff."""
+class BulkUpdateStaffResponse(BaseModel):
+    """Response from bulk update staff."""
 
     success: bool
     message: str
 
 
-@router.post("/update", response_model=UpdateStaffResponse)
-async def update_profile(
-    request: UpdateStaffRequest,
+@router.post("/update", response_model=BulkUpdateStaffResponse)
+async def bulk_update_staff(
+    request: BulkUpdateStaffRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateStaffResponse:
-    """Update a profile."""
+) -> BulkUpdateStaffResponse:
+    """Bulk update profiles."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Validate emails array
-        if not request.emails or len(request.emails) == 0:
-            raise HTTPException(
-                status_code=400, detail="At least one email is required"
-            )
+        # Convert profile IDs to UUID array
+        profile_uuids = [uuid.UUID(p) for p in request.profileIds]
 
-        # Determine primary email index (default to 0)
-        primary_index = (
-            request.primary_email_index
-            if request.primary_email_index is not None
-            else 0
-        )
-        if primary_index < 0 or primary_index >= len(request.emails):
-            raise HTTPException(status_code=400, detail="Invalid primary_email_index")
-
-        primary_email = request.emails[primary_index]
-
-        # Determine primary department index (default to 0)
-        primary_dept_index = (
-            request.primary_department_index
-            if request.primary_department_index is not None
-            else (0 if request.department_ids else None)
-        )
-        if request.department_ids and (
-            primary_dept_index is None
-            or primary_dept_index < 0
-            or primary_dept_index >= len(request.department_ids)
+        # Handle requests_per_day: "__keep__" means skip, None means unlimited (-1 in SQL), int means limit
+        requests_per_day_value = None
+        if (
+            isinstance(request.requests_per_day, str)
+            and request.requests_per_day == "__keep__"
         ):
-            raise HTTPException(
-                status_code=400, detail="Invalid primary_department_index"
-            )
+            requests_per_day_value = None  # Skip update
+        elif (
+            isinstance(request.requests_per_day, str)
+            and request.requests_per_day != "__keep__"
+        ):
+            try:
+                requests_per_day_value = int(request.requests_per_day)
+            except (ValueError, TypeError):
+                requests_per_day_value = -1  # Invalid -> unlimited (NULL in DB)
+        elif isinstance(request.requests_per_day, int):
+            requests_per_day_value = request.requests_per_day
+        elif request.requests_per_day is None:
+            requests_per_day_value = -1  # None -> unlimited (NULL in DB)
 
-        # Single consolidated query: checks existence, updates profile, department, and request limit
-        sql_query = load_sql("sql/v3/profile/staff/update_profile_complete.sql")
+        # Handle primary_department_id: convert to UUID if provided, None if not
+        primary_department_uuid = None
+        if request.primary_department_id:
+            try:
+                primary_department_uuid = uuid.UUID(request.primary_department_id)
+            except (ValueError, TypeError):
+                primary_department_uuid = None  # Invalid UUID -> skip update
+
+        # Single consolidated query for validation + update
+        sql_query = load_sql("sql/v3/profile/staff/bulk_update_profile_complete.sql")
         sql_params = (
-            request.profileId,
-            request.first_name,
-            request.last_name,
-            primary_email,
+            uuid.UUID(request.currentProfileId),
+            profile_uuids,
             request.role,
             request.active,
-            request.cohort_ids,
-            request.department_ids,
-            primary_dept_index,
-            request.requests_per_day,
+            requests_per_day_value,
+            primary_department_uuid,
         )
 
         async with transaction(conn):
             result = await conn.fetchrow(sql_query, *sql_params)
 
-            if not result or not result["id"]:
+            if not result:
+                raise HTTPException(status_code=500, detail="Failed to update profiles")
+
+            updated_count = result["updated_count"]
+
+            # Check if all profiles were updated (validation might have filtered some out)
+            if updated_count < len(request.profileIds):
                 raise HTTPException(
-                    status_code=404, detail=f"Profile not found: {request.profileId}"
+                    status_code=403,
+                    detail=f"Only {updated_count} of {len(request.profileIds)} profiles were updated. Some profiles failed validation (role assignment, default profile editing, etc.).",
                 )
 
-            # Update all emails: deactivate existing, then insert/activate new ones
-            # First, deactivate all existing emails for this profile
-            await conn.execute(
-                "UPDATE profile_emails SET active = false, updated_at = NOW() WHERE profile_id = $1",
-                request.profileId,
-            )
-
-            # Insert/update all emails (set primary based on index)
-            for i, email in enumerate(request.emails):
-                is_primary = i == primary_index
-                await conn.execute(
-                    """
-                    INSERT INTO profile_emails (profile_id, email, is_primary, active)
-                    VALUES ($1::uuid, $2, $3, true)
-                    ON CONFLICT (email) DO UPDATE SET
-                        profile_id = EXCLUDED.profile_id,
-                        is_primary = EXCLUDED.is_primary,
-                        active = true,
-                        updated_at = NOW()
-                """,
-                    request.profileId,
-                    email,
-                    is_primary,
-                )
-
-        result_data = UpdateStaffResponse(
-            success=True, message=f"Staff '{result['name']}' updated successfully"
+        result_data = BulkUpdateStaffResponse(
+            success=True,
+            message=f"{len(request.profileIds)} staff members updated successfully",
         )
 
         # Invalidate cache after mutation
@@ -151,7 +121,7 @@ async def update_profile(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="update_profile",
+            operation="bulk_update_staff",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

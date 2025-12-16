@@ -13,7 +13,7 @@
           "profile"
         ],
         "summary": "Get Profile Detail",
-        "description": "Get profile by ID (simple auth version without permissions).",
+        "description": "Get profile details with role visibility check.",
         "operationId": "get_profile_detail_api_v3_profile_detail_post",
         "requestBody": {
           "content": {
@@ -31,7 +31,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProfileDetailResponse"
+                  "$ref": "#/components/schemas/ProfileDetailResponseFull"
                 }
               }
             }
@@ -60,7 +60,7 @@
           "profile"
         ],
         "summary": "Update Profile",
-        "description": "Update profile fields (simple auth version).",
+        "description": "Update profile fields - supports both simple auth updates and comprehensive staff updates.",
         "operationId": "update_profile_api_v3_profile_update_post",
         "requestBody": {
           "content": {
@@ -78,7 +78,195 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProfileDetailResponse"
+                  "$ref": "#/components/schemas/UpdateProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
+      }
+    },
+    "/api/v3/profile/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "profile"
+        ],
+        "summary": "Create Profile",
+        "description": "Create a new profile.",
+        "operationId": "create_profile_api_v3_profile_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
+      }
+    },
+    "/api/v3/profile/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "profile"
+        ],
+        "summary": "Delete Profile",
+        "description": "Delete a profile.",
+        "operationId": "delete_profile_api_v3_profile_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
+      }
+    },
+    "/api/v3/profile/upsert": {
+      "post": {
+        "tags": [
+          "v3",
+          "profile"
+        ],
+        "summary": "Create Or Update Profile",
+        "description": "Create or update a profile based on email.",
+        "operationId": "create_or_update_profile_api_v3_profile_upsert_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrUpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrUpdateProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
+      }
+    },
+    "/api/v3/profile/new": {
+      "post": {
+        "tags": [
+          "v3",
+          "profile"
+        ],
+        "summary": "Get Profile New",
+        "description": "Get default profile structure for creation mode.",
+        "operationId": "get_profile_new_api_v3_profile_new_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileNewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNewResponse"
                 }
               }
             }
@@ -6161,241 +6349,6 @@
         ]
       }
     },
-    "/api/v3/staff/detail": {
-      "post": {
-        "tags": [
-          "v3",
-          "staff"
-        ],
-        "summary": "Get Staff Detail",
-        "description": "Get staff profile details with role visibility check.",
-        "operationId": "get_staff_detail_api_v3_staff_detail_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StaffDetailRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StaffDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
-      }
-    },
-    "/api/v3/staff/new": {
-      "post": {
-        "tags": [
-          "v3",
-          "staff"
-        ],
-        "summary": "Get Staff New",
-        "description": "Get default staff structure for creation mode.",
-        "operationId": "get_staff_new_api_v3_staff_new_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StaffNewRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StaffNewResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
-      }
-    },
-    "/api/v3/staff/create": {
-      "post": {
-        "tags": [
-          "v3",
-          "staff"
-        ],
-        "summary": "Create Profile",
-        "description": "Create a new profile.",
-        "operationId": "create_profile_api_v3_staff_create_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateStaffRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateStaffResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
-      }
-    },
-    "/api/v3/staff/update": {
-      "post": {
-        "tags": [
-          "v3",
-          "staff"
-        ],
-        "summary": "Update Profile",
-        "description": "Update a profile.",
-        "operationId": "update_profile_api_v3_staff_update_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStaffRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateStaffResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
-      }
-    },
-    "/api/v3/staff/delete": {
-      "post": {
-        "tags": [
-          "v3",
-          "staff"
-        ],
-        "summary": "Delete Profile",
-        "description": "Delete a profile.",
-        "operationId": "delete_profile_api_v3_staff_delete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteStaffRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteStaffResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
-      }
-    },
     "/api/v3/staff/search": {
       "post": {
         "tags": [
@@ -6490,53 +6443,6 @@
         ]
       }
     },
-    "/api/v3/staff/upsert": {
-      "post": {
-        "tags": [
-          "v3",
-          "staff"
-        ],
-        "summary": "Create Or Update Staff",
-        "description": "Create or update a staff member based on email.",
-        "operationId": "create_or_update_staff_api_v3_staff_upsert_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrUpdateStaffRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateOrUpdateStaffResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
-      }
-    },
     "/api/v3/staff/data/create": {
       "post": {
         "tags": [
@@ -6586,16 +6492,15 @@
         ]
       }
     },
-    "/api/v3/staff/bulk/create": {
+    "/api/v3/staff/create": {
       "post": {
         "tags": [
           "v3",
-          "staff",
           "staff"
         ],
-        "summary": "Bulk Create Profile",
+        "summary": "Bulk Create Staff",
         "description": "Bulk create profiles.",
-        "operationId": "bulk_create_profile_api_v3_staff_bulk_create_post",
+        "operationId": "bulk_create_staff_api_v3_staff_create_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6630,21 +6535,19 @@
         },
         "x-cache-tags": [
           "v3",
-          "staff",
           "staff"
         ]
       }
     },
-    "/api/v3/staff/bulk/update": {
+    "/api/v3/staff/update": {
       "post": {
         "tags": [
           "v3",
-          "staff",
           "staff"
         ],
-        "summary": "Bulk Update Profile",
+        "summary": "Bulk Update Staff",
         "description": "Bulk update profiles.",
-        "operationId": "bulk_update_profile_api_v3_staff_bulk_update_post",
+        "operationId": "bulk_update_staff_api_v3_staff_update_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6679,21 +6582,19 @@
         },
         "x-cache-tags": [
           "v3",
-          "staff",
           "staff"
         ]
       }
     },
-    "/api/v3/staff/bulk/delete": {
+    "/api/v3/staff/delete": {
       "post": {
         "tags": [
           "v3",
-          "staff",
           "staff"
         ],
-        "summary": "Bulk Delete Profile",
+        "summary": "Bulk Delete Staff",
         "description": "Bulk delete profiles.",
-        "operationId": "bulk_delete_profile_api_v3_staff_bulk_delete_post",
+        "operationId": "bulk_delete_staff_api_v3_staff_delete_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6728,21 +6629,19 @@
         },
         "x-cache-tags": [
           "v3",
-          "staff",
           "staff"
         ]
       }
     },
-    "/api/v3/staff/bulk/upsert": {
+    "/api/v3/staff/upsert": {
       "post": {
         "tags": [
           "v3",
-          "staff",
           "staff"
         ],
         "summary": "Bulk Create Or Update Staff",
         "description": "Bulk create or update staff members.",
-        "operationId": "bulk_create_or_update_staff_api_v3_staff_bulk_upsert_post",
+        "operationId": "bulk_create_or_update_staff_api_v3_staff_upsert_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6777,7 +6676,6 @@
         },
         "x-cache-tags": [
           "v3",
-          "staff",
           "staff"
         ]
       }
@@ -13570,7 +13468,7 @@
         "properties": {
           "profiles": {
             "items": {
-              "$ref": "#/components/schemas/CreateOrUpdateStaffRequest"
+              "$ref": "#/components/schemas/CreateOrUpdateProfileRequest"
             },
             "type": "array",
             "title": "Profiles"
@@ -13629,7 +13527,7 @@
         "properties": {
           "profiles": {
             "items": {
-              "$ref": "#/components/schemas/CreateStaffRequest"
+              "$ref": "#/components/schemas/CreateProfileRequest"
             },
             "type": "array",
             "title": "Profiles"
@@ -15883,7 +15781,7 @@
         "title": "CreateModelResponse",
         "description": "Response from create model."
       },
-      "CreateOrUpdateStaffRequest": {
+      "CreateOrUpdateProfileRequest": {
         "properties": {
           "firstName": {
             "type": "string",
@@ -15939,10 +15837,10 @@
           "emails",
           "role"
         ],
-        "title": "CreateOrUpdateStaffRequest",
-        "description": "Request to create or update a single staff member."
+        "title": "CreateOrUpdateProfileRequest",
+        "description": "Request to create or update a single profile."
       },
-      "CreateOrUpdateStaffResponse": {
+      "CreateOrUpdateProfileResponse": {
         "properties": {
           "success": {
             "type": "boolean",
@@ -15968,8 +15866,8 @@
           "created",
           "message"
         ],
-        "title": "CreateOrUpdateStaffResponse",
-        "description": "Response from create or update staff."
+        "title": "CreateOrUpdateProfileResponse",
+        "description": "Response from create or update profile."
       },
       "CreateParameterRequest": {
         "properties": {
@@ -16285,6 +16183,100 @@
         "type": "object",
         "title": "CreatePracticeScenarioPayload",
         "description": "Request to create and start a practice scenario simulation."
+      },
+      "CreateProfileRequest": {
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "title": "Firstname"
+          },
+          "lastName": {
+            "type": "string",
+            "title": "Lastname"
+          },
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email Index"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids",
+            "default": []
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids",
+            "default": []
+          },
+          "primary_department_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "firstName",
+          "lastName",
+          "emails",
+          "role"
+        ],
+        "title": "CreateProfileRequest",
+        "description": "Request to create a single profile."
+      },
+      "CreateProfileResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "profileId",
+          "message"
+        ],
+        "title": "CreateProfileResponse",
+        "description": "Response from create profile."
       },
       "CreateProviderRequest": {
         "properties": {
@@ -16909,100 +16901,6 @@
         ],
         "title": "CreateStaffDataResponse",
         "description": "Response with all data needed for create staff UI."
-      },
-      "CreateStaffRequest": {
-        "properties": {
-          "firstName": {
-            "type": "string",
-            "title": "Firstname"
-          },
-          "lastName": {
-            "type": "string",
-            "title": "Lastname"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "primary_email_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email Index"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids",
-            "default": []
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids",
-            "default": []
-          },
-          "primary_department_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Index"
-          }
-        },
-        "type": "object",
-        "required": [
-          "firstName",
-          "lastName",
-          "emails",
-          "role"
-        ],
-        "title": "CreateStaffRequest",
-        "description": "Request to create a single staff member."
-      },
-      "CreateStaffResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "profileId",
-          "message"
-        ],
-        "title": "CreateStaffResponse",
-        "description": "Response from create staff."
       },
       "DailyData": {
         "properties": {
@@ -18246,6 +18144,39 @@
         "title": "DeletePersonaResponse",
         "description": "Response from delete persona."
       },
+      "DeleteProfileRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "DeleteProfileRequest",
+        "description": "Request to delete profile."
+      },
+      "DeleteProfileResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeleteProfileResponse",
+        "description": "Response from delete profile."
+      },
       "DeleteProviderRequest": {
         "properties": {
           "providerId": {
@@ -18387,39 +18318,6 @@
         ],
         "title": "DeleteSimulationResponse",
         "description": "Response from delete simulation."
-      },
-      "DeleteStaffRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "DeleteStaffRequest",
-        "description": "Request to delete staff."
-      },
-      "DeleteStaffResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteStaffResponse",
-        "description": "Response from delete staff."
       },
       "DepartmentDetailRequest": {
         "properties": {
@@ -26509,14 +26407,19 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
+          },
+          "currentProfileId": {
+            "type": "string",
+            "title": "Currentprofileid"
           }
         },
         "type": "object",
         "required": [
-          "profileId"
+          "profileId",
+          "currentProfileId"
         ],
         "title": "ProfileDetailRequest",
-        "description": "Request to get profile details."
+        "description": "Request for profile detail."
       },
       "ProfileDetailResponse": {
         "properties": {
@@ -26529,7 +26432,143 @@
           "profile"
         ],
         "title": "ProfileDetailResponse",
-        "description": "Response containing profile details."
+        "description": "Response containing profile details (simple version for backward compatibility)."
+      },
+      "ProfileDetailResponseFull": {
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__profile__detail__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "valid_cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "first_name",
+          "last_name",
+          "name",
+          "emails",
+          "primary_email",
+          "role",
+          "requests_per_day",
+          "cohort_ids",
+          "department_ids",
+          "primary_department_id",
+          "active",
+          "can_edit",
+          "valid_department_ids",
+          "department_mapping",
+          "cohort_mapping",
+          "valid_cohort_ids"
+        ],
+        "title": "ProfileDetailResponseFull",
+        "description": "Response for profile detail endpoint (comprehensive version)."
       },
       "ProfileItem": {
         "properties": {
@@ -26634,7 +26673,7 @@
           "primaryDepartmentId"
         ],
         "title": "ProfileItem",
-        "description": "Profile data item."
+        "description": "Profile data item (simple version for backward compatibility)."
       },
       "ProfileMappingItem": {
         "properties": {
@@ -26654,6 +26693,126 @@
         ],
         "title": "ProfileMappingItem",
         "description": "Profile mapping item."
+      },
+      "ProfileNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ProfileNewRequest",
+        "description": "Request to get default profile details."
+      },
+      "ProfileNewResponse": {
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "valid_cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Cohort Ids"
+          },
+          "role_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Role Options"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__profile__new__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "emails",
+          "role",
+          "requests_per_day",
+          "primary_department_id",
+          "active",
+          "can_edit",
+          "valid_department_ids",
+          "valid_cohort_ids",
+          "role_options",
+          "department_mapping",
+          "cohort_mapping"
+        ],
+        "title": "ProfileNewResponse",
+        "description": "Response with default profile details and metadata."
       },
       "PromptInfo": {
         "properties": {
@@ -31697,161 +31856,6 @@
         "title": "SkillStandardFact",
         "description": "Skill standard fact."
       },
-      "StaffDetailRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "currentProfileId": {
-            "type": "string",
-            "title": "Currentprofileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId",
-          "currentProfileId"
-        ],
-        "title": "StaffDetailRequest",
-        "description": "Request for staff detail."
-      },
-      "StaffDetailResponse": {
-        "properties": {
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          },
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "primary_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__staff__detail__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "valid_cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profile_id",
-          "first_name",
-          "last_name",
-          "name",
-          "emails",
-          "primary_email",
-          "role",
-          "requests_per_day",
-          "cohort_ids",
-          "department_ids",
-          "primary_department_id",
-          "active",
-          "can_edit",
-          "valid_department_ids",
-          "department_mapping",
-          "cohort_mapping",
-          "valid_cohort_ids"
-        ],
-        "title": "StaffDetailResponse",
-        "description": "Response for staff detail endpoint."
-      },
       "StaffFilters": {
         "properties": {
           "profileId": {
@@ -32079,126 +32083,6 @@
         ],
         "title": "StaffListResponse",
         "description": "Response for staff list endpoint."
-      },
-      "StaffNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "StaffNewRequest",
-        "description": "Request to get default staff details."
-      },
-      "StaffNewResponse": {
-        "properties": {
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "valid_cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Cohort Ids"
-          },
-          "role_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Role Options"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__staff__new__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "first_name",
-          "last_name",
-          "emails",
-          "role",
-          "requests_per_day",
-          "primary_department_id",
-          "active",
-          "can_edit",
-          "valid_department_ids",
-          "valid_cohort_ids",
-          "role_options",
-          "department_mapping",
-          "cohort_mapping"
-        ],
-        "title": "StaffNewResponse",
-        "description": "Response with default staff details and metadata."
       },
       "StandardGroup": {
         "properties": {
@@ -34211,6 +34095,103 @@
               }
             ],
             "title": "Lastactive"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email Index"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "primary_department_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Index"
           }
         },
         "type": "object",
@@ -34218,7 +34199,26 @@
           "profileId"
         ],
         "title": "UpdateProfileRequest",
-        "description": "Request to update profile fields."
+        "description": "Request to update profile - supports both simple and comprehensive updates."
+      },
+      "UpdateProfileResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "UpdateProfileResponse",
+        "description": "Response from update profile."
       },
       "UpdateProviderRequest": {
         "properties": {
@@ -35077,117 +35077,6 @@
         ],
         "title": "UpdateSimulationResponse",
         "description": "Response from update simulation."
-      },
-      "UpdateStaffRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "primary_email_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email Index"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "primary_department_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Index"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId",
-          "first_name",
-          "last_name",
-          "emails",
-          "role",
-          "requests_per_day",
-          "cohort_ids",
-          "department_ids",
-          "active"
-        ],
-        "title": "UpdateStaffRequest",
-        "description": "Request to update staff."
-      },
-      "UpdateStaffResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateStaffResponse",
-        "description": "Response from update staff."
       },
       "ValidationError": {
         "properties": {
@@ -41717,6 +41606,44 @@
         "title": "DepartmentItem",
         "description": "Department item."
       },
+      "app__api__v3__profile__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__profile__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
       "app__api__v3__rubrics__create__StandardGroupItem": {
         "properties": {
           "name": {
@@ -46291,25 +46218,6 @@
         "title": "DepartmentMappingItem",
         "description": "Department mapping item."
       },
-      "app__api__v3__staff__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
       "app__api__v3__staff__list__DepartmentMappingItem": {
         "properties": {
           "name": {
@@ -46352,25 +46260,6 @@
         ],
         "title": "TrendData",
         "description": "Trend data point."
-      },
-      "app__api__v3__staff__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
       },
       "app__api__v3__staff__search__DepartmentMappingItem": {
         "properties": {

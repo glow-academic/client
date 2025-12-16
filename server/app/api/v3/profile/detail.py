@@ -1,29 +1,44 @@
-"""Profile detail endpoint - get profile by ID."""
+"""Profile detail endpoint - get individual profile details with role visibility check."""
 
+import json
 from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
+
+# Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
+class CohortMappingItem(BaseModel):
+    """Cohort mapping item."""
+
+    name: str
+    description: str
+
+
+# Type alias for Dict mapping
+DepartmentMapping = dict[str, DepartmentMappingItem]
+CohortMapping = dict[str, CohortMappingItem]
 
 router = APIRouter()
 
 
-class ProfileDetailRequest(BaseModel):
-    """Request to get profile details."""
-
-    profileId: str
-
-
+# Simple ProfileItem for backward compatibility (used by email.py, context.py, simulatable.py)
 class ProfileItem(BaseModel):
-    """Profile data item."""
+    """Profile data item (simple version for backward compatibility)."""
 
     id: str
     firstName: str
@@ -40,69 +55,167 @@ class ProfileItem(BaseModel):
     primaryDepartmentId: str | None  # UUID of primary department
 
 
+# Simple ProfileDetailResponse for backward compatibility (used by email.py)
 class ProfileDetailResponse(BaseModel):
-    """Response containing profile details."""
+    """Response containing profile details (simple version for backward compatibility)."""
 
     profile: ProfileItem
 
 
-@router.post("/detail", response_model=ProfileDetailResponse)
+class ProfileDetailRequest(BaseModel):
+    """Request for profile detail."""
+
+    profileId: str  # Target profile to get details for
+    currentProfileId: str  # Current user's profile ID for role visibility check
+
+
+class ProfileDetailResponseFull(BaseModel):
+    """Response for profile detail endpoint (comprehensive version)."""
+
+    profile_id: str
+    first_name: str
+    last_name: str
+    name: str
+    emails: list[str]  # List of all active emails
+    primary_email: str | None  # Primary email (first in emails array if exists)
+    role: str
+    requests_per_day: int | None
+    cohort_ids: list[str]  # List of cohort IDs (no primary flag)
+    department_ids: list[str]  # List of department IDs
+    primary_department_id: str | None
+    active: bool
+    can_edit: bool
+    valid_department_ids: list[str]
+    department_mapping: DepartmentMapping
+    cohort_mapping: CohortMapping
+    valid_cohort_ids: list[str]  # List of all valid cohort IDs user can assign
+
+
+def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
+    """Parse JSONB data with type safety."""
+    if isinstance(data, str):
+        try:
+            return json.loads(data)  # type: ignore
+        except json.JSONDecodeError:
+            return {}
+    return data or {}
+
+
+@router.post("/detail", response_model=ProfileDetailResponseFull)
 async def get_profile_detail(
-    request: ProfileDetailRequest,
-    http_request: Request,
+    request_body: ProfileDetailRequest,
+    request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ProfileDetailResponse:
-    """Get profile by ID (simple auth version without permissions)."""
+) -> ProfileDetailResponseFull:
+    """Get profile details with role visibility check."""
     tags = ["profile"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
-    cache_key_val = cache_key(http_request.url.path, body_dict)
+    body_dict = request_body.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
+        # Handle cached data that might be missing new fields (backward compatibility)
+        cached_data = cached["data"]
+        # If cached data is missing valid_cohort_ids, provide default empty list
+        if "valid_cohort_ids" not in cached_data:
+            cached_data["valid_cohort_ids"] = []
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return ProfileDetailResponse.model_validate(cached["data"])
+        return ProfileDetailResponseFull.model_validate(cached_data)
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile by ID
-        # Profile ID must be a valid UUID (guest profile IDs are resolved on the client side)
-        if not request.profileId:
-            raise HTTPException(status_code=400, detail="profileId is required")
-        sql_query = load_sql("sql/v3/profile/get_profile.sql")
-        sql_params = (request.profileId,)
-        row = await conn.fetchrow(sql_query, request.profileId)
-        if not row:
-            raise HTTPException(status_code=404, detail="Profile not found")
-
-        # Transform database row to response (inline business logic)
-        emails = row.get("emails") or []
-        primary_email = row.get("primary_email")
-        profile = ProfileItem(
-            id=str(row["id"]),
-            firstName=row["first_name"],
-            lastName=row["last_name"],
-            emails=emails if isinstance(emails, list) else [],
-            primaryEmail=primary_email,
-            role=row["role"],
-            active=row["active"],
-            reqPerDay=row["req_per_day"],
-            lastLogin=row["last_login"].isoformat() if row["last_login"] else "",
-            lastActive=row["last_active"].isoformat() if row["last_active"] else None,
-            createdAt=row["created_at"].isoformat() if row["created_at"] else "",
-            updatedAt=row["updated_at"].isoformat() if row["updated_at"] else "",
-            primaryDepartmentId=str(row["primary_department_id"])
-            if row.get("primary_department_id")
-            else None,
+        # Load SQL query
+        sql_query = load_sql("sql/v3/profile/staff/get_staff_detail.sql")
+        sql_params = (
+            request_body.profileId,
+            request_body.currentProfileId,
         )
 
-        response_data = ProfileDetailResponse(profile=profile)
+        # Execute query
+        row = await conn.fetchrow(
+            sql_query, request_body.profileId, request_body.currentProfileId
+        )
+
+        # If no row returned, profile is not visible to current user (role hierarchy)
+        if not row:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Profile {request_body.profileId} not found or not visible",
+            )
+
+        # Build response
+        emails = row.get("emails") or []
+        primary_email = row.get("primary_email")
+
+        # Parse department_mapping
+        department_mapping_data = parse_jsonb(row.get("department_mapping"))
+        department_mapping: DepartmentMapping = {}
+        if isinstance(department_mapping_data, dict):
+            for dept_id, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
+
+        # Parse cohort_mapping
+        cohort_mapping_data = parse_jsonb(row.get("cohort_mapping"))
+        cohort_mapping: CohortMapping = {}
+        if isinstance(cohort_mapping_data, dict):
+            for cohort_id, cdata in cohort_mapping_data.items():
+                if isinstance(cdata, dict):
+                    cohort_mapping[cohort_id] = CohortMappingItem(
+                        name=cdata.get("name", ""),
+                        description=cdata.get("description", ""),
+                    )
+
+        valid_department_ids = row.get("valid_department_ids") or []
+        if not isinstance(valid_department_ids, list):
+            valid_department_ids = []
+
+        valid_cohort_ids = row.get("valid_cohort_ids") or []
+        if not isinstance(valid_cohort_ids, list):
+            valid_cohort_ids = []
+
+        cohort_ids = row.get("cohort_ids") or []
+        if not isinstance(cohort_ids, list):
+            cohort_ids = []
+
+        department_ids = row.get("department_ids") or []
+        if not isinstance(department_ids, list):
+            department_ids = []
+
+        # Handle primary_department_id - convert to string if not None
+        primary_department_id = row.get("primary_department_id")
+        if primary_department_id is not None:
+            primary_department_id = str(primary_department_id)
+
+        response_data = ProfileDetailResponseFull(
+            profile_id=str(row.get("profile_id", "")),
+            first_name=row.get("first_name", ""),
+            last_name=row.get("last_name", ""),
+            name=row.get("name", ""),
+            emails=emails if isinstance(emails, list) else [],
+            primary_email=primary_email,
+            role=row.get("role", ""),
+            requests_per_day=row.get("requests_per_day"),
+            cohort_ids=cohort_ids,
+            department_ids=department_ids,
+            primary_department_id=primary_department_id,
+            active=row.get("active", True),
+            can_edit=row.get("can_edit", False),
+            valid_department_ids=valid_department_ids,
+            department_mapping=department_mapping,
+            cohort_mapping=cohort_mapping,
+            valid_cohort_ids=valid_cohort_ids,
+        )
 
         # Cache response
         await set_cached(
@@ -120,9 +233,9 @@ async def get_profile_detail(
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=http_request.url.path,
+            route_path=request.url.path,
             operation="get_profile_detail",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=http_request,
+            request=request,
         )

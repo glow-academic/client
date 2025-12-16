@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * Get Profile Detail
-         * @description Get profile by ID (simple auth version without permissions).
+         * @description Get profile details with role visibility check.
          */
         post: operations["get_profile_detail_api_v3_profile_detail_post"];
         delete?: never;
@@ -35,9 +35,89 @@ export interface paths {
         put?: never;
         /**
          * Update Profile
-         * @description Update profile fields (simple auth version).
+         * @description Update profile fields - supports both simple auth updates and comprehensive staff updates.
          */
         post: operations["update_profile_api_v3_profile_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/profile/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Profile
+         * @description Create a new profile.
+         */
+        post: operations["create_profile_api_v3_profile_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/profile/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Profile
+         * @description Delete a profile.
+         */
+        post: operations["delete_profile_api_v3_profile_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/profile/upsert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Or Update Profile
+         * @description Create or update a profile based on email.
+         */
+        post: operations["create_or_update_profile_api_v3_profile_upsert_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/profile/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profile New
+         * @description Get default profile structure for creation mode.
+         */
+        post: operations["get_profile_new_api_v3_profile_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2624,106 +2704,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Staff Detail
-         * @description Get staff profile details with role visibility check.
-         */
-        post: operations["get_staff_detail_api_v3_staff_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/staff/new": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Staff New
-         * @description Get default staff structure for creation mode.
-         */
-        post: operations["get_staff_new_api_v3_staff_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/staff/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Profile
-         * @description Create a new profile.
-         */
-        post: operations["create_profile_api_v3_staff_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/staff/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Profile
-         * @description Update a profile.
-         */
-        post: operations["update_profile_api_v3_staff_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/staff/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Profile
-         * @description Delete a profile.
-         */
-        post: operations["delete_profile_api_v3_staff_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/staff/search": {
         parameters: {
             query?: never;
@@ -2764,26 +2744,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/upsert": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Or Update Staff
-         * @description Create or update a staff member based on email.
-         */
-        post: operations["create_or_update_staff_api_v3_staff_upsert_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/staff/data/create": {
         parameters: {
             query?: never;
@@ -2804,7 +2764,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/bulk/create": {
+    "/api/v3/staff/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2814,17 +2774,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Create Profile
+         * Bulk Create Staff
          * @description Bulk create profiles.
          */
-        post: operations["bulk_create_profile_api_v3_staff_bulk_create_post"];
+        post: operations["bulk_create_staff_api_v3_staff_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/bulk/update": {
+    "/api/v3/staff/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2834,17 +2794,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Update Profile
+         * Bulk Update Staff
          * @description Bulk update profiles.
          */
-        post: operations["bulk_update_profile_api_v3_staff_bulk_update_post"];
+        post: operations["bulk_update_staff_api_v3_staff_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/bulk/delete": {
+    "/api/v3/staff/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2854,17 +2814,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Delete Profile
+         * Bulk Delete Staff
          * @description Bulk delete profiles.
          */
-        post: operations["bulk_delete_profile_api_v3_staff_bulk_delete_post"];
+        post: operations["bulk_delete_staff_api_v3_staff_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/staff/bulk/upsert": {
+    "/api/v3/staff/upsert": {
         parameters: {
             query?: never;
             header?: never;
@@ -2877,7 +2837,7 @@ export interface paths {
          * Bulk Create Or Update Staff
          * @description Bulk create or update staff members.
          */
-        post: operations["bulk_create_or_update_staff_api_v3_staff_bulk_upsert_post"];
+        post: operations["bulk_create_or_update_staff_api_v3_staff_upsert_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5421,7 +5381,7 @@ export interface components {
          */
         BulkCreateOrUpdateStaffRequest: {
             /** Profiles */
-            profiles: components["schemas"]["CreateOrUpdateStaffRequest"][];
+            profiles: components["schemas"]["CreateOrUpdateProfileRequest"][];
             /** Currentprofileid */
             currentProfileId: string;
         };
@@ -5447,7 +5407,7 @@ export interface components {
          */
         BulkCreateStaffRequest: {
             /** Profiles */
-            profiles: components["schemas"]["CreateStaffRequest"][];
+            profiles: components["schemas"]["CreateProfileRequest"][];
         };
         /**
          * BulkCreateStaffResponse
@@ -6290,10 +6250,10 @@ export interface components {
             message: string;
         };
         /**
-         * CreateOrUpdateStaffRequest
-         * @description Request to create or update a single staff member.
+         * CreateOrUpdateProfileRequest
+         * @description Request to create or update a single profile.
          */
-        CreateOrUpdateStaffRequest: {
+        CreateOrUpdateProfileRequest: {
             /** Firstname */
             firstName: string;
             /** Lastname */
@@ -6316,10 +6276,10 @@ export interface components {
             cohort_ids: string[];
         };
         /**
-         * CreateOrUpdateStaffResponse
-         * @description Response from create or update staff.
+         * CreateOrUpdateProfileResponse
+         * @description Response from create or update profile.
          */
-        CreateOrUpdateStaffResponse: {
+        CreateOrUpdateProfileResponse: {
             /** Success */
             success: boolean;
             /** Profileid */
@@ -6457,6 +6417,46 @@ export interface components {
             simulation_id?: string | null;
             /** Profile Id */
             profile_id?: string | null;
+        };
+        /**
+         * CreateProfileRequest
+         * @description Request to create a single profile.
+         */
+        CreateProfileRequest: {
+            /** Firstname */
+            firstName: string;
+            /** Lastname */
+            lastName: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email Index */
+            primary_email_index?: number | null;
+            /** Role */
+            role: string;
+            /**
+             * Cohort Ids
+             * @default []
+             */
+            cohort_ids: string[];
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /** Primary Department Index */
+            primary_department_index?: number | null;
+        };
+        /**
+         * CreateProfileResponse
+         * @description Response from create profile.
+         */
+        CreateProfileResponse: {
+            /** Success */
+            success: boolean;
+            /** Profileid */
+            profileId: string;
+            /** Message */
+            message: string;
         };
         /**
          * CreateProviderRequest
@@ -6686,46 +6686,6 @@ export interface components {
             };
             /** Role Options */
             role_options: string[];
-        };
-        /**
-         * CreateStaffRequest
-         * @description Request to create a single staff member.
-         */
-        CreateStaffRequest: {
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email Index */
-            primary_email_index?: number | null;
-            /** Role */
-            role: string;
-            /**
-             * Cohort Ids
-             * @default []
-             */
-            cohort_ids: string[];
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /** Primary Department Index */
-            primary_department_index?: number | null;
-        };
-        /**
-         * CreateStaffResponse
-         * @description Response from create staff.
-         */
-        CreateStaffResponse: {
-            /** Success */
-            success: boolean;
-            /** Profileid */
-            profileId: string;
-            /** Message */
-            message: string;
         };
         /**
          * DailyData
@@ -7204,6 +7164,24 @@ export interface components {
             message: string;
         };
         /**
+         * DeleteProfileRequest
+         * @description Request to delete profile.
+         */
+        DeleteProfileRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * DeleteProfileResponse
+         * @description Response from delete profile.
+         */
+        DeleteProfileResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * DeleteProviderRequest
          * @description Request to delete provider.
          */
@@ -7274,24 +7252,6 @@ export interface components {
          * @description Response from delete simulation.
          */
         DeleteSimulationResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeleteStaffRequest
-         * @description Request to delete staff.
-         */
-        DeleteStaffRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * DeleteStaffResponse
-         * @description Response from delete staff.
-         */
-        DeleteStaffResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -10305,22 +10265,68 @@ export interface components {
         };
         /**
          * ProfileDetailRequest
-         * @description Request to get profile details.
+         * @description Request for profile detail.
          */
         ProfileDetailRequest: {
             /** Profileid */
             profileId: string;
+            /** Currentprofileid */
+            currentProfileId: string;
         };
         /**
          * ProfileDetailResponse
-         * @description Response containing profile details.
+         * @description Response containing profile details (simple version for backward compatibility).
          */
         ProfileDetailResponse: {
             profile: components["schemas"]["ProfileItem"];
         };
         /**
+         * ProfileDetailResponseFull
+         * @description Response for profile detail endpoint (comprehensive version).
+         */
+        ProfileDetailResponseFull: {
+            /** Profile Id */
+            profile_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Name */
+            name: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email */
+            primary_email: string | null;
+            /** Role */
+            role: string;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Primary Department Id */
+            primary_department_id: string | null;
+            /** Active */
+            active: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__profile__detail__DepartmentMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Valid Cohort Ids */
+            valid_cohort_ids: string[];
+        };
+        /**
          * ProfileItem
-         * @description Profile data item.
+         * @description Profile data item (simple version for backward compatibility).
          */
         ProfileItem: {
             /** Id */
@@ -10359,6 +10365,50 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * ProfileNewRequest
+         * @description Request to get default profile details.
+         */
+        ProfileNewRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * ProfileNewResponse
+         * @description Response with default profile details and metadata.
+         */
+        ProfileNewResponse: {
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Emails */
+            emails: string[];
+            /** Role */
+            role: string;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+            /** Active */
+            active: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Valid Cohort Ids */
+            valid_cohort_ids: string[];
+            /** Role Options */
+            role_options: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__profile__new__DepartmentMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
         };
         /**
          * PromptInfo
@@ -12239,60 +12289,6 @@ export interface components {
             avgPct: number;
         };
         /**
-         * StaffDetailRequest
-         * @description Request for staff detail.
-         */
-        StaffDetailRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Currentprofileid */
-            currentProfileId: string;
-        };
-        /**
-         * StaffDetailResponse
-         * @description Response for staff detail endpoint.
-         */
-        StaffDetailResponse: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Name */
-            name: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email */
-            primary_email: string | null;
-            /** Role */
-            role: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Primary Department Id */
-            primary_department_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__staff__detail__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Valid Cohort Ids */
-            valid_cohort_ids: string[];
-        };
-        /**
          * StaffFilters
          * @description Filters for staff list.
          */
@@ -12375,50 +12371,6 @@ export interface components {
             last_active_options: {
                 [key: string]: string;
             }[];
-        };
-        /**
-         * StaffNewRequest
-         * @description Request to get default staff details.
-         */
-        StaffNewRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * StaffNewResponse
-         * @description Response with default staff details and metadata.
-         */
-        StaffNewResponse: {
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Emails */
-            emails: string[];
-            /** Role */
-            role: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Primary Department Id */
-            primary_department_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Valid Cohort Ids */
-            valid_cohort_ids: string[];
-            /** Role Options */
-            role_options: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__staff__new__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
         };
         /**
          * StandardGroup
@@ -13167,7 +13119,7 @@ export interface components {
         };
         /**
          * UpdateProfileRequest
-         * @description Request to update profile fields.
+         * @description Request to update profile - supports both simple and comprehensive updates.
          */
         UpdateProfileRequest: {
             /** Profileid */
@@ -13186,6 +13138,32 @@ export interface components {
             reqPerDay?: number | null;
             /** Lastactive */
             lastActive?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Emails */
+            emails?: string[] | null;
+            /** Primary Email Index */
+            primary_email_index?: number | null;
+            /** Requests Per Day */
+            requests_per_day?: number | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Primary Department Index */
+            primary_department_index?: number | null;
+        };
+        /**
+         * UpdateProfileResponse
+         * @description Response from update profile.
+         */
+        UpdateProfileResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * UpdateProviderRequest
@@ -13475,44 +13453,6 @@ export interface components {
          * @description Response from update simulation.
          */
         UpdateSimulationResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * UpdateStaffRequest
-         * @description Request to update staff.
-         */
-        UpdateStaffRequest: {
-            /** Profileid */
-            profileId: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email Index */
-            primary_email_index?: number | null;
-            /** Role */
-            role: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Primary Department Index */
-            primary_department_index?: number | null;
-            /** Active */
-            active: boolean;
-        };
-        /**
-         * UpdateStaffResponse
-         * @description Response from update staff.
-         */
-        UpdateStaffResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -15950,6 +15890,26 @@ export interface components {
             updatedAt: string;
         };
         /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__profile__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__profile__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * StandardGroupItem
          * @description Standard group item for create.
          */
@@ -17535,16 +17495,6 @@ export interface components {
          * DepartmentMappingItem
          * @description Department mapping item.
          */
-        app__api__v3__staff__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
         app__api__v3__staff__list__DepartmentMappingItem: {
             /** Name */
             name: string;
@@ -17562,16 +17512,6 @@ export interface components {
             value: number;
             /** Count */
             count: number;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__staff__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * DepartmentMappingItem
@@ -17611,7 +17551,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileDetailResponse"];
+                    "application/json": components["schemas"]["ProfileDetailResponseFull"];
                 };
             };
             /** @description Validation Error */
@@ -17644,7 +17584,139 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileDetailResponse"];
+                    "application/json": components["schemas"]["UpdateProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_profile_api_v3_profile_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_profile_api_v3_profile_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_or_update_profile_api_v3_profile_upsert_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrUpdateProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateOrUpdateProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_new_api_v3_profile_new_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileNewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileNewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21915,171 +21987,6 @@ export interface operations {
             };
         };
     };
-    get_staff_detail_api_v3_staff_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_staff_new_api_v3_staff_new_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffNewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffNewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_profile_api_v3_staff_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_profile_api_v3_staff_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_profile_api_v3_staff_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     search_staff_api_v3_staff_search_post: {
         parameters: {
             query?: never;
@@ -22146,39 +22053,6 @@ export interface operations {
             };
         };
     };
-    create_or_update_staff_api_v3_staff_upsert_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateOrUpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateOrUpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_create_staff_data_api_v3_staff_data_create_post: {
         parameters: {
             query?: never;
@@ -22212,7 +22086,7 @@ export interface operations {
             };
         };
     };
-    bulk_create_profile_api_v3_staff_bulk_create_post: {
+    bulk_create_staff_api_v3_staff_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -22245,7 +22119,7 @@ export interface operations {
             };
         };
     };
-    bulk_update_profile_api_v3_staff_bulk_update_post: {
+    bulk_update_staff_api_v3_staff_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -22278,7 +22152,7 @@ export interface operations {
             };
         };
     };
-    bulk_delete_profile_api_v3_staff_bulk_delete_post: {
+    bulk_delete_staff_api_v3_staff_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -22311,7 +22185,7 @@ export interface operations {
             };
         };
     };
-    bulk_create_or_update_staff_api_v3_staff_bulk_upsert_post: {
+    bulk_create_or_update_staff_api_v3_staff_upsert_post: {
         parameters: {
             query?: never;
             header?: never;

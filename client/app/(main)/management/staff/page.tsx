@@ -15,14 +15,14 @@ import type { Metadata } from "next";
 /** ---- Strong types from OpenAPI ---- */
 type StaffListIn = InputOf<"/api/v3/staff/list", "post">;
 type StaffListOut = OutputOf<"/api/v3/staff/list", "post">;
-type DeleteStaffIn = InputOf<"/api/v3/staff/delete", "post">;
-type DeleteStaffOut = OutputOf<"/api/v3/staff/delete", "post">;
-type BulkDeleteStaffIn = InputOf<"/api/v3/staff/bulk/delete", "post">;
-type BulkDeleteStaffOut = OutputOf<"/api/v3/staff/bulk/delete", "post">;
-type UpdateStaffIn = InputOf<"/api/v3/staff/update", "post">;
-type UpdateStaffOut = OutputOf<"/api/v3/staff/update", "post">;
-type BulkUpdateStaffIn = InputOf<"/api/v3/staff/bulk/update", "post">;
-type BulkUpdateStaffOut = OutputOf<"/api/v3/staff/bulk/update", "post">;
+type DeleteStaffIn = InputOf<"/api/v3/profile/delete", "post">;
+type DeleteStaffOut = OutputOf<"/api/v3/profile/delete", "post">;
+type BulkDeleteStaffIn = InputOf<"/api/v3/staff/delete", "post">;
+type BulkDeleteStaffOut = OutputOf<"/api/v3/staff/delete", "post">;
+type UpdateStaffIn = InputOf<"/api/v3/profile/update", "post">;
+type UpdateStaffOut = OutputOf<"/api/v3/profile/update", "post">;
+type BulkUpdateStaffIn = InputOf<"/api/v3/staff/update", "post">;
+type BulkUpdateStaffOut = OutputOf<"/api/v3/staff/update", "post">;
 type SearchStaffIn = InputOf<"/api/v3/staff/search", "post">;
 type SearchStaffOut = OutputOf<"/api/v3/staff/search", "post">;
 type CreateStaffDataIn = InputOf<
@@ -36,11 +36,11 @@ type CreateStaffDataOut = OutputOf<
 type ProcessCSVIn = InputOf<"/api/v3/staff/csv", "post">;
 type ProcessCSVOut = OutputOf<"/api/v3/staff/csv", "post">;
 type BulkCreateOrUpdateStaffIn = InputOf<
-  "/api/v3/staff/bulk/upsert",
+  "/api/v3/staff/upsert",
   "post"
 >;
 type BulkCreateOrUpdateStaffOut = OutputOf<
-  "/api/v3/staff/bulk/upsert",
+  "/api/v3/staff/upsert",
   "post"
 >;
 /** ---- Derived types from server responses ---- */
@@ -72,7 +72,7 @@ async function deleteStaff(
 ): Promise<DeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/staff/delete", input);
+  return api.post("/profile/delete", input);
 }
 
 async function bulkDeleteStaff(
@@ -80,7 +80,7 @@ async function bulkDeleteStaff(
 ): Promise<BulkDeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/staff/bulk/delete", input);
+  return api.post("/staff/delete", input);
 }
 
 async function getCreateStaffData(
@@ -100,7 +100,7 @@ async function bulkCreateOrUpdateStaff(
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/staff/bulk/upsert", input);
+  return api.post("/staff/upsert", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
