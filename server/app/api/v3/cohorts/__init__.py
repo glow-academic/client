@@ -14,10 +14,7 @@ from app.api.v3.cohorts.duplicate import router as duplicate_router
 from app.api.v3.cohorts.leave import router as leave_router
 from app.api.v3.cohorts.list import router as list_router
 from app.api.v3.cohorts.new import router as new_router
-from app.api.v3.cohorts.overview import router as overview_router
-from app.api.v3.cohorts.pass_matrix import router as pass_matrix_router
 from app.api.v3.cohorts.remove_profiles import router as remove_profiles_router
-from app.api.v3.cohorts.search import router as search_router
 from app.api.v3.cohorts.search_profile import router as search_profile_router
 from app.api.v3.cohorts.update import router as update_router
 
@@ -35,8 +32,5 @@ router.include_router(remove_profiles_router)
 router.include_router(create_router)
 router.include_router(update_router)
 router.include_router(delete_router)
-router.include_router(overview_router)
-router.include_router(search_router)
 router.include_router(search_profile_router)
-router.include_router(pass_matrix_router)
 router.include_router(add_staff_router)

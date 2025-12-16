@@ -104,87 +104,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Profile Overview
-         * @description Profile overview
-         *     ----------------
-         *     Profile + last login, classes, dashboard flags, latest grades.
-         *     Accepts UUID or name.
-         *
-         *     Input
-         *       • profile_id - UUID or name/email to search for
-         *
-         *     Returns
-         *       { "profile": { … }, "latest_grades": [ … ] }
-         *
-         *     Quick-start
-         *       ask:  "Show me Nina Park's profile"
-         *       call: profile_overview("Nina Park")
-         *
-         *     See also 👉 student_sim_report() for per-chat detail.
-         */
-        post: operations["profile_overview_api_v3_profile_overview_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Find Profiles
-         * @description 🔎 Find profiles by name
-         *     ------------------------
-         *     Fuzzy first/last/email search.
-         *
-         *     Input
-         *       • query - Name or email to search for
-         *       • limit - Max results (default: 10)
-         *
-         *     Returns
-         *       [
-         *         {
-         *           "id": str,           # Profile UUID
-         *           "first_name": str | None,
-         *           "last_name": str | None,
-         *           "email": str | None,
-         *           "role": str | None,
-         *           "full_name": str,    # "First Last" or email or "Unknown"
-         *           "score": int         # Heuristic match score
-         *         },
-         *         ...
-         *       ]
-         *
-         *     Quick-start
-         *       ask:  "Find everyone named Jordan"
-         *       call: await find_profiles("Jordan")
-         *
-         *     See also 👉 profile_overview() for detailed profile data.
-         */
-        post: operations["find_profiles_api_v3_profile_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/profile/search-simulatable-profiles": {
         parameters: {
             query?: never;
@@ -199,40 +118,6 @@ export interface paths {
          * @description Search profiles that can be emulated by the requester.
          */
         post: operations["search_simulatable_profiles_api_v3_profile_search_simulatable_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/simulation-report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Student Sim Report
-         * @description Deep dive: every attempt, chat, grade, feedback
-         *     Comprehensive student simulation report.
-         *
-         *     Input
-         *       • profile_id - UUID of the student profile
-         *       • recent - Limit messages per chat (default: 50)
-         *
-         *     Returns
-         *       { "profile": { … }, "attempts": [ … ] }
-         *
-         *     Quick-start
-         *       ask:  "Full report on student X"
-         *       call: student_sim_report("uuid-here")
-         *
-         *     See also profile_overview() for summary view.
-         */
-        post: operations["student_sim_report_api_v3_profile_simulation_report_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -679,85 +564,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Scenario Overview
-         * @description 🎭 Scenario overview with metadata & usage
-         *     -----------------------------------------
-         *     Show scenario details and associated simulations.
-         *
-         *     Input
-         *       • scenario_id – UUID of the scenario
-         *
-         *     Returns
-         *       { "id": "…", "title": "…", "simulations": […], … }
-         *
-         *     Quick-start
-         *       ask:  "Show me details for scenario X"
-         *       call: scenario_overview("uuid-here")
-         *
-         *     See also 👉 simulation_overview() for sim details.
-         */
-        post: operations["scenario_overview_api_v3_scenarios_overview_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/scenarios/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Find Scenarios
-         * @description 🔎 Find scenarios by name/problem_statement
-         *     --------------------------------------------
-         *     Fuzzy, case-insensitive search on scenario name and problem statement.
-         *
-         *     Input
-         *         • query - Scenario name or problem statement to search for
-         *         • limit - Max results (default: 10)
-         *
-         *     Returns
-         *         [
-         *             {
-         *                 "id": str,                       # Scenario UUID
-         *                 "name": str | None,              # Scenario name/title
-         *                 "problem_statement": str | None, # Scenario problem statement
-         *                 "persona_id": str | None,        # Linked persona UUID (if any)
-         *                 "default_scenario": bool,        # Is this the default scenario?
-         *                 "score": int                     # Heuristic match score
-         *             },
-         *             ...
-         *         ]
-         *
-         *     Quick-start
-         *         ask:  "Find scenarios for medication errors"
-         *         call: await find_scenarios("medication error")
-         *
-         *     See also 👉 scenario_overview() for detailed scenario data.
-         */
-        post: operations["find_scenarios_api_v3_scenarios_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/simulations/list": {
         parameters: {
             query?: never;
@@ -898,119 +704,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Overview
-         * @description 🔎 Simulation overview
-         *     ----------------------
-         *     Sim meta, rubric, cohorts, scenarios, pass stats.
-         *
-         *     Input
-         *       • sim_id – UUID of the simulation
-         *
-         *     Returns
-         *       { "simulation": { … }, "rubric": { … }, "cohorts": [ … ], "stats": { … } }
-         *
-         *     Quick-start
-         *       ask:  "Give me the Induction Homework sim stats"
-         *       call: simulation_overview("uuid-here")
-         *
-         *     See also 👉 simulation_attempts() for detailed attempt list.
-         */
-        post: operations["simulation_overview_api_v3_simulations_overview_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/simulations/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Find Simulations
-         * @description 🔎 Find simulations by title
-         *     ----------------------------
-         *     Fuzzy sim title search.
-         *
-         *     Input
-         *       • query - Simulation title to search for
-         *       • limit - Max results (default: 10)
-         *
-         *     Returns
-         *       [
-         *         {
-         *           "id": str,                # Simulation UUID
-         *           "title": str | None,      # Simulation title
-         *           "active": bool,           # Is the simulation active?
-         *           "time_limit": int | None, # Time limit in minutes (if any)
-         *           "created_at": str | None, # ISO8601 creation timestamp
-         *           "score": int              # Heuristic match score
-         *         },
-         *         ...
-         *       ]
-         *
-         *     Quick-start
-         *       ask:  "Which sims mention 'cardiac'?"
-         *       call: await find_simulations("cardiac")
-         *
-         *     See also 👉 simulation_overview() for detailed sim data.
-         */
-        post: operations["find_simulations_api_v3_simulations_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/simulations/attempts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Attempts
-         * @description Flat list of attempts (who, when, score)
-         *     List all attempts for a specific simulation.
-         *
-         *     Input
-         *       • sim_id - UUID of the simulation
-         *       • limit - Max results (default: 200)
-         *
-         *     Returns
-         *       [ { "id": "…", "student": "…", "score": 85, … }, … ]
-         *
-         *     Quick-start
-         *       ask:  "List last 200 attempts on Sim Y"
-         *       call: simulation_attempts("uuid-here")
-         *
-         *     See also simulation_overview() for aggregate stats.
-         */
-        post: operations["simulation_attempts_api_v3_simulations_attempts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/personas/list": {
         parameters: {
             query?: never;
@@ -1145,110 +838,6 @@ export interface paths {
          * @description Delete a persona.
          */
         post: operations["delete_persona_api_v3_personas_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/personas/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Persona Overview
-         * @description Persona overview
-         *     --------------
-         *     Show persona details and associated simulations.
-         *
-         *     Input
-         *       • persona_id - UUID of the persona
-         *
-         *     Returns
-         *       { "id": "…", "name": "…", "scenarios": […], … }
-         *
-         *     Quick-start
-         *       ask:  "Show me details for persona X"
-         *       call: persona_overview("uuid-here")
-         *
-         *     See also 👉 simulation_overview() for sim details.
-         */
-        post: operations["persona_overview_api_v3_personas_overview_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/personas/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Find Personas
-         * @description 🔎 Find personas by name
-         *     ------------------------
-         *     Performs a case-insensitive, fuzzy search on persona names.
-         *
-         *     Input
-         *         • query - Name of the persona to search for
-         *         • limit - Max results (default: 10)
-         *
-         *     Returns
-         *         [ { "id": "...", "name": "...", "description": "...", "score": ... }, ... ]
-         *         or [ { "error": "Database error: ..." } ] on failure
-         *
-         *     Quick-start
-         *         ask:  "Find the aggressive persona"
-         *         call: await find_personas("Aggressive")
-         *
-         *     See also 👉 persona_overview() for detailed persona data.
-         */
-        post: operations["find_personas_api_v3_personas_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/personas/response-times": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Persona Response Times
-         * @description Persona response time analysis
-         *     Analyze response times for a specific persona.
-         *
-         *     Input
-         *       • persona_id - UUID of the persona
-         *       • window_days - Analysis window in days (default: 30)
-         *
-         *     Returns
-         *       { "persona": {…}, "stats": {…}, "recent_responses": […] }
-         *
-         *     Quick-start
-         *       ask:  "How fast does persona X respond?"
-         *       call: persona_response_times("uuid-here")
-         *
-         *     See also persona_overview() for persona details.
-         */
-        post: operations["persona_response_times_api_v3_personas_response_times_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1815,85 +1404,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Cohort Overview
-         * @description 🔎 Cohort overview
-         *     ------------------
-         *     Cohort meta, roster, active sims, pass-rate.
-         *
-         *     Input
-         *       • cohort_id – UUID of the cohort
-         *
-         *     Returns
-         *       { "cohort": { … }, "roster": [ … ], "simulations": [ … ], "stats": { … } }
-         *
-         *     Quick-start
-         *       ask:  "How's Fall 2025 Cohort A doing?"
-         *       call: cohort_overview("uuid-here")
-         *
-         *     See also 👉 cohort_pass_matrix() for detailed pass/fail data.
-         */
-        post: operations["cohort_overview_api_v3_cohorts_overview_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/cohorts/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Find Cohorts
-         * @description 🔎 Find cohorts by title/description
-         *     ------------------------------------
-         *     Fuzzy, case-insensitive search on cohort title and description.
-         *
-         *     Input
-         *         • query - Cohort title or description to search for
-         *         • limit - Max results (default: 10)
-         *
-         *     Returns
-         *         [
-         *             {
-         *                 "id": "...",
-         *                 "title": "...",
-         *                 "active": <bool>,
-         *                 "description": "...",
-         *                 "profile_count": <int>,
-         *                 "score": <int>
-         *             },
-         *             ...
-         *         ]
-         *
-         *     Quick-start
-         *         ask:  "Find all Fall 2025 cohorts"
-         *         call: await find_cohorts("Fall 2025")
-         *
-         *     See also 👉 cohort_overview() for detailed cohort data.
-         */
-        post: operations["find_cohorts_api_v3_cohorts_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/cohorts/search-profile": {
         parameters: {
             query?: never;
@@ -1908,39 +1418,6 @@ export interface paths {
          * @description Search profiles for adding to a cohort (excludes profiles already in cohort if cohortId provided).
          */
         post: operations["cohort_search_profile_api_v3_cohorts_search_profile_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/cohorts/pass-matrix": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Cohort Pass Matrix
-         * @description Cohort pass/fail matrix across simulations
-         *     Show pass/fail rates for all students in a cohort.
-         *
-         *     Input
-         *       • cohort_id - UUID of the cohort
-         *
-         *     Returns
-         *       { "cohort": {…}, "matrix": [{…}], "summary": {…} }
-         *
-         *     Quick-start
-         *       ask:  "Show pass rates for cohort X"
-         *       call: cohort_pass_matrix("uuid-here")
-         *
-         *     See also cohort_overview() for cohort details.
-         */
-        post: operations["cohort_pass_matrix_api_v3_cohorts_pass_matrix_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3909,39 +3386,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/logs/recent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recent App Logs
-         * @description 🔎 Fetch recent ERROR/WARN app logs
-         *     -----------------------------------
-         *     Recent application logs filtered by level.
-         *
-         *     Input
-         *       • level – Log level filter ('error', 'warn', 'info', 'debug')
-         *       • limit – Max results (default: 100)
-         *
-         *     Returns
-         *       [ { "id": …, "level": "…", "message": "…", … }, … ]
-         *
-         *     Quick-start
-         *       ask:  "Any critical errors today?"
-         *       call: recent_app_logs("error")
-         */
-        post: operations["recent_app_logs_api_v3_logs_recent_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/logs/bundle": {
         parameters: {
             query?: never;
@@ -4223,71 +3667,6 @@ export interface paths {
          *     Server-side only - never expose OpenAI API key to frontend.
          */
         post: operations["generate_ephemeral_key_api_v3_realtime_ephemeral_key_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/schema/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Schema
-         * @description Database schema overview
-         *     Lists all tables and columns in the public schema.
-         *
-         *     Quick-start
-         *       ask:  "What tables are in the DB?"
-         *       call: list_schema()
-         */
-        get: operations["list_schema_api_v3_schema_list_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/schema/query": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Query Data
-         * @description Custom SQL queries (read-only)
-         *     Run SELECT or EXPLAIN queries with a 200-row limit.
-         *     All standard SELECT clauses like WHERE, LIKE, JOIN, GROUP BY, ORDER BY are supported.
-         *
-         *     Input
-         *       • sql - A standard SQL SELECT or EXPLAIN statement.
-         *
-         *     Returns
-         *       Raw query results as text, or an error message.
-         *
-         *     Quick-start
-         *       ask:  "Run this SQL: SELECT * FROM profiles LIMIT 5"
-         *       call: query_data("SELECT first_name, last_name FROM profiles LIMIT 5")
-         *
-         *     Troubleshooting
-         *       • If you get a "no such column" or "no such table" error, your query is likely using an incorrect name.
-         *       • **Fallback:** Call the `list_schema()` tool first to see the available tables and exact column names before trying your query again.
-         *
-         *     Security
-         *       • Only SELECT and EXPLAIN statements are allowed.
-         *       • UPDATE, INSERT, DELETE, and other write operations are blocked.
-         */
-        post: operations["query_data_api_v3_schema_query_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6789,7 +6168,7 @@ export interface components {
             /** Profileid */
             profileId: string;
             /** Ids */
-            ids: number[];
+            ids: string[];
         };
         /** BulkDeleteFeedbackResponse */
         BulkDeleteFeedbackResponse: {
@@ -7212,66 +6591,6 @@ export interface components {
             profileId: string;
         };
         /**
-         * CohortOverviewRequest
-         * @description Request to get cohort overview.
-         */
-        CohortOverviewRequest: {
-            /** Cohort Id */
-            cohort_id: string;
-        };
-        /**
-         * CohortOverviewResponse
-         * @description Response with cohort overview data.
-         */
-        CohortOverviewResponse: {
-            /** Cohort */
-            cohort: {
-                [key: string]: unknown;
-            };
-            /** Roster */
-            roster: {
-                [key: string]: unknown;
-            }[];
-            /** Simulations */
-            simulations: {
-                [key: string]: unknown;
-            }[];
-            /** Stats */
-            stats: {
-                [key: string]: unknown;
-            };
-        };
-        /**
-         * CohortPassMatrixRequest
-         * @description Request to get cohort pass matrix.
-         */
-        CohortPassMatrixRequest: {
-            /** Cohort Id */
-            cohort_id: string;
-        };
-        /**
-         * CohortPassMatrixResponse
-         * @description Response with cohort pass matrix data.
-         */
-        CohortPassMatrixResponse: {
-            /** Cohort */
-            cohort: {
-                [key: string]: unknown;
-            };
-            /** Matrix */
-            matrix: {
-                [key: string]: unknown;
-            }[];
-            /** Summary */
-            summary: {
-                [key: string]: unknown;
-            };
-            /** Simulations */
-            simulations: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
          * CohortPerformanceResponse
          * @description Cohort performance response.
          */
@@ -7326,24 +6645,6 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__cohorts__search_profile__DepartmentMappingItem"];
             };
-        };
-        /**
-         * CohortSearchResult
-         * @description Cohort search result.
-         */
-        CohortSearchResult: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Active */
-            active: boolean;
-            /** Description */
-            description: string | null;
-            /** Profile Count */
-            profile_count: number;
-            /** Score */
-            score: number;
         };
         /**
          * CohortsData
@@ -7698,7 +6999,7 @@ export interface components {
         /** CreateFeedbackResponse */
         CreateFeedbackResponse: {
             /** Feedback Id */
-            feedback_id: number;
+            feedback_id: string;
             /** Success */
             success: boolean;
             /** Message */
@@ -10016,71 +9317,6 @@ export interface components {
             count: number;
         };
         /**
-         * FindCohortsRequest
-         * @description Request to search cohorts.
-         */
-        FindCohortsRequest: {
-            /** Query */
-            query: string;
-            /**
-             * Limit
-             * @default 10
-             */
-            limit: number;
-        };
-        /**
-         * FindPersonasRequest
-         * @description Request to search personas.
-         */
-        FindPersonasRequest: {
-            /** Query */
-            query: string;
-            /**
-             * Limit
-             * @default 10
-             */
-            limit: number;
-        };
-        /**
-         * FindProfilesRequest
-         * @description Request to search profiles.
-         */
-        FindProfilesRequest: {
-            /** Query */
-            query: string;
-            /**
-             * Limit
-             * @default 10
-             */
-            limit: number;
-        };
-        /**
-         * FindScenariosRequest
-         * @description Request to search scenarios.
-         */
-        FindScenariosRequest: {
-            /** Query */
-            query: string;
-            /**
-             * Limit
-             * @default 10
-             */
-            limit: number;
-        };
-        /**
-         * FindSimulationsRequest
-         * @description Request to search simulations.
-         */
-        FindSimulationsRequest: {
-            /** Query */
-            query: string;
-            /**
-             * Limit
-             * @default 10
-             */
-            limit: number;
-        };
-        /**
          * GenerateCertificateRequest
          * @description Request to generate certificate.
          */
@@ -10903,26 +10139,6 @@ export interface components {
             message: string;
         };
         /**
-         * LogEntry
-         * @description Log entry.
-         */
-        LogEntry: {
-            /** Id */
-            id: number;
-            /** Level */
-            level: string;
-            /** Logger Name */
-            logger_name: string;
-            /** Message */
-            message: string;
-            /** Extra */
-            extra: {
-                [key: string]: unknown;
-            } | null;
-            /** Created At */
-            created_at: string;
-        };
-        /**
          * LogRunPayload
          * @description Request to log run pricing and metrics.
          */
@@ -11594,28 +10810,6 @@ export interface components {
             profileId: string;
         };
         /**
-         * PersonaOverviewRequest
-         * @description Request to get persona overview.
-         */
-        PersonaOverviewRequest: {
-            /** Persona Id */
-            persona_id: string;
-        };
-        /**
-         * PersonaOverviewResponse
-         * @description Response with persona overview data.
-         */
-        PersonaOverviewResponse: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Scenarios */
-            scenarios: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
          * PersonaPerformanceData
          * @description Persona performance data.
          */
@@ -11652,51 +10846,6 @@ export interface components {
             personaColors: {
                 [key: string]: string;
             };
-        };
-        /**
-         * PersonaResponseTimesRequest
-         * @description Request to get persona response times.
-         */
-        PersonaResponseTimesRequest: {
-            /** Persona Id */
-            persona_id: string;
-            /**
-             * Window Days
-             * @default 30
-             */
-            window_days: number;
-        };
-        /**
-         * PersonaResponseTimesResponse
-         * @description Response with persona response times data.
-         */
-        PersonaResponseTimesResponse: {
-            /** Persona */
-            persona: {
-                [key: string]: unknown;
-            };
-            /** Stats */
-            stats: {
-                [key: string]: unknown;
-            };
-            /** Recent Responses */
-            recent_responses: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
-         * PersonaSearchResult
-         * @description Persona search result.
-         */
-        PersonaSearchResult: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Score */
-            score: number;
         };
         /**
          * PersonaTool
@@ -12368,50 +11517,6 @@ export interface components {
             totalAttempts: components["schemas"]["app__api__v3__reports__bundle__MetricResponse"];
         };
         /**
-         * ProfileOverviewRequest
-         * @description Request to get profile overview.
-         */
-        ProfileOverviewRequest: {
-            /** Profile Id */
-            profile_id: string;
-        };
-        /**
-         * ProfileOverviewResponse
-         * @description Response with profile overview data.
-         */
-        ProfileOverviewResponse: {
-            /** Profile */
-            profile: {
-                [key: string]: unknown;
-            };
-            /** Latest Grades */
-            latest_grades: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
-         * ProfileSearchResult
-         * @description Profile search result.
-         */
-        ProfileSearchResult: {
-            /** Id */
-            id: string;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
-            /** Emails */
-            emails: string[] | null;
-            /** Primary Email */
-            primary_email: string | null;
-            /** Role */
-            role: string | null;
-            /** Full Name */
-            full_name: string;
-            /** Score */
-            score: number;
-        };
-        /**
          * PromptDetailRequest
          * @description Request for prompt detail.
          */
@@ -12689,14 +11794,6 @@ export interface components {
             }[];
         };
         /**
-         * QueryDataRequest
-         * @description Request to execute a SQL query.
-         */
-        QueryDataRequest: {
-            /** Sql */
-            sql: string;
-        };
-        /**
          * QuestionItem
          * @description Question item for scenario questions tool.
          */
@@ -12816,22 +11913,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-        };
-        /**
-         * RecentAppLogsRequest
-         * @description Request to get recent app logs.
-         */
-        RecentAppLogsRequest: {
-            /**
-             * Level
-             * @default error
-             */
-            level: string;
-            /**
-             * Limit
-             * @default 100
-             */
-            limit: number;
         };
         /**
          * RefreshRequest
@@ -13686,30 +12767,6 @@ export interface components {
             problemStatementIds?: string[] | null;
         };
         /**
-         * ScenarioOverviewRequest
-         * @description Request to get scenario overview.
-         */
-        ScenarioOverviewRequest: {
-            /** Scenario Id */
-            scenario_id: string;
-        };
-        /**
-         * ScenarioOverviewResponse
-         * @description Response with scenario overview data.
-         */
-        ScenarioOverviewResponse: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Simulations */
-            simulations: {
-                [key: string]: unknown;
-            }[];
-            /** Persona Ids */
-            persona_ids: string[] | null;
-        };
-        /**
          * ScenarioPerformanceResponse
          * @description Scenario performance response.
          */
@@ -13769,24 +12826,6 @@ export interface components {
             question_timestamps?: {
                 [key: string]: number[];
             } | null;
-        };
-        /**
-         * ScenarioSearchResult
-         * @description Scenario search result.
-         */
-        ScenarioSearchResult: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string | null;
-            /** Problem Statement */
-            problem_statement: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Default Scenario */
-            default_scenario: boolean;
-            /** Score */
-            score: number;
         };
         /**
          * ScenarioStatsResponse
@@ -14241,37 +13280,6 @@ export interface components {
             department_ids?: string[] | null;
         };
         /**
-         * SimulationAttemptResult
-         * @description Simulation attempt result.
-         */
-        SimulationAttemptResult: {
-            /** Id */
-            id: string;
-            /** Student */
-            student: string;
-            /** Score */
-            score: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Time Taken */
-            time_taken: number | null;
-            /** Created At */
-            created_at: string;
-        };
-        /**
-         * SimulationAttemptsRequest
-         * @description Request to get simulation attempts.
-         */
-        SimulationAttemptsRequest: {
-            /** Sim Id */
-            sim_id: string;
-            /**
-             * Limit
-             * @default 200
-             */
-            limit: number;
-        };
-        /**
          * SimulationCompositionResponse
          * @description Simulation composition response.
          */
@@ -14581,40 +13589,6 @@ export interface components {
             profileId: string;
         };
         /**
-         * SimulationOverviewRequest
-         * @description Request to get simulation overview.
-         */
-        SimulationOverviewRequest: {
-            /** Sim Id */
-            sim_id: string;
-        };
-        /**
-         * SimulationOverviewResponse
-         * @description Response with simulation overview data.
-         */
-        SimulationOverviewResponse: {
-            /** Simulation */
-            simulation: {
-                [key: string]: unknown;
-            };
-            /** Rubric */
-            rubric: {
-                [key: string]: unknown;
-            } | null;
-            /** Cohorts */
-            cohorts: {
-                [key: string]: unknown;
-            }[];
-            /** Scenarios */
-            scenarios: {
-                [key: string]: unknown;
-            }[];
-            /** Stats */
-            stats: {
-                [key: string]: unknown;
-            };
-        };
-        /**
          * SimulationParameterFactCategorical
          * @description Simulation parameter fact (categorical).
          */
@@ -14658,24 +13632,6 @@ export interface components {
              * @enum {string}
              */
             status: "success" | "warning" | "danger" | "neutral";
-        };
-        /**
-         * SimulationSearchResult
-         * @description Simulation search result.
-         */
-        SimulationSearchResult: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string | null;
-            /** Active */
-            active: boolean;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Created At */
-            created_at: string | null;
-            /** Score */
-            score: number;
         };
         /**
          * SimulationStartedPayload
@@ -15168,33 +14124,6 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
-        };
-        /**
-         * StudentSimReportRequest
-         * @description Request to get student simulation report.
-         */
-        StudentSimReportRequest: {
-            /** Profile Id */
-            profile_id: string;
-            /**
-             * Recent
-             * @default 50
-             */
-            recent: number;
-        };
-        /**
-         * StudentSimReportResponse
-         * @description Response with student simulation report.
-         */
-        StudentSimReportResponse: {
-            /** Profile */
-            profile: {
-                [key: string]: unknown;
-            };
-            /** Attempts */
-            attempts: {
-                [key: string]: unknown;
-            }[];
         };
         /**
          * TemplateInfo
@@ -17605,7 +16534,7 @@ export interface components {
         /** FeedbackItem */
         app__api__v3__feedback__list__FeedbackItem: {
             /** Feedback Id */
-            feedback_id: number;
+            feedback_id: string;
             /** Type */
             type: string;
             /** Message */
@@ -20796,72 +19725,6 @@ export interface operations {
             };
         };
     };
-    profile_overview_api_v3_profile_overview_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfileOverviewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileOverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    find_profiles_api_v3_profile_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FindProfilesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileSearchResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     search_simulatable_profiles_api_v3_profile_search_simulatable_profiles_post: {
         parameters: {
             query?: never;
@@ -20882,39 +19745,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchSimulatableProfilesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    student_sim_report_api_v3_profile_simulation_report_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StudentSimReportRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StudentSimReportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21654,72 +20484,6 @@ export interface operations {
             };
         };
     };
-    scenario_overview_api_v3_scenarios_overview_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenarioOverviewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScenarioOverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    find_scenarios_api_v3_scenarios_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FindScenariosRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScenarioSearchResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_simulations_list_api_v3_simulations_list_post: {
         parameters: {
             query?: never;
@@ -21951,105 +20715,6 @@ export interface operations {
             };
         };
     };
-    simulation_overview_api_v3_simulations_overview_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationOverviewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SimulationOverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    find_simulations_api_v3_simulations_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FindSimulationsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SimulationSearchResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_attempts_api_v3_simulations_attempts_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationAttemptsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SimulationAttemptResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_personas_list_api_v3_personas_list_post: {
         parameters: {
             query?: never;
@@ -22268,105 +20933,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletePersonaResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    persona_overview_api_v3_personas_overview_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PersonaOverviewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PersonaOverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    find_personas_api_v3_personas_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FindPersonasRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PersonaSearchResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    persona_response_times_api_v3_personas_response_times_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PersonaResponseTimesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PersonaResponseTimesResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23291,72 +21857,6 @@ export interface operations {
             };
         };
     };
-    cohort_overview_api_v3_cohorts_overview_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CohortOverviewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CohortOverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    find_cohorts_api_v3_cohorts_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FindCohortsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CohortSearchResult"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     cohort_search_profile_api_v3_cohorts_search_profile_post: {
         parameters: {
             query?: never;
@@ -23377,39 +21877,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CohortSearchProfileResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    cohort_pass_matrix_api_v3_cohorts_pass_matrix_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CohortPassMatrixRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CohortPassMatrixResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26646,39 +25113,6 @@ export interface operations {
             };
         };
     };
-    recent_app_logs_api_v3_logs_recent_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RecentAppLogsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LogEntry"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_logs_bundle_api_v3_logs_bundle_post: {
         parameters: {
             query?: never;
@@ -27128,59 +25562,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EphemeralKeyResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_schema_api_v3_schema_list_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    query_data_api_v3_schema_query_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QueryDataRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
                 };
             };
             /** @description Validation Error */
