@@ -1,0 +1,8 @@
+"""Simulation WebSocket event handlers."""
+
+# Import handlers so they register themselves via @sio.event decorators
+from app.socket.v3.simulations.join import simulation_join  # noqa: F401
+from app.socket.v3.simulations.leave import simulation_leave  # noqa: F401
+
+# Explicitly export for main.py imports
+__all__ = ["simulation_join", "simulation_leave"]

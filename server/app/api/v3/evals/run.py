@@ -4,14 +4,13 @@ import asyncio
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db, get_pool
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.evals.run_eval_worker import run_eval_parallel
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -36,7 +35,7 @@ router = APIRouter()
 
 async def _emit_eval_progress(event_data: dict[str, Any]) -> None:
     """Emit eval progress event via WebSocket."""
-    # TODO: Create app.socket.evals.run module with eval_progress function
+    # TODO: Create app.socket.v3.evals.run module with eval_progress function
     # For now, this is a no-op until the WebSocket handler is implemented
     pass
 

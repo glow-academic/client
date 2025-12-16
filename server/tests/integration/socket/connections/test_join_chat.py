@@ -2,9 +2,8 @@
 
 import asyncpg  # type: ignore
 import pytest
+from app.socket.v3.connections.join_chat import join_chat
 from tests.integration.socket.conftest import MockSocketIO
-
-from app.socket.connections.join_chat import join_chat
 
 pytestmark = pytest.mark.asyncio
 

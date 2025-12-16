@@ -5,7 +5,6 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.main import UPLOAD_FOLDER, get_pool
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
@@ -318,10 +317,9 @@ async def _emit_image_complete(
     room: str | None,
 ) -> None:
     """Emit WebSocket event for image generation completion."""
-    from app.socket.scenarios.generate import (
+    from app.socket.v3.scenarios.generate import (
         ScenarioImageGenerationCompletePayload,
-        scenario_image_generation_complete,
-    )
+        scenario_image_generation_complete)
 
     if not room:
         logger.warning(
@@ -347,10 +345,8 @@ async def _emit_image_error(
 ) -> None:
     """Emit WebSocket event for image generation error."""
     from app.main import get_image_generation_storage
-    from app.socket.scenarios.generate import (
-        ScenarioImageGenerationErrorPayload,
-        scenario_image_generation_error,
-    )
+    from app.socket.v3.scenarios.generate import (
+        ScenarioImageGenerationErrorPayload, scenario_image_generation_error)
 
     # Get room from storage
     storage = get_image_generation_storage()

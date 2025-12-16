@@ -80,18 +80,18 @@ def patch_sio_instance(mock_sio: MockSocketIO, monkeypatch: pytest.MonkeyPatch) 
     # Import and patch sio in all handler modules that import it
     # This ensures handlers use the mock instance instead of the real one
     handler_module_paths = [
-        "app.socket.assistants.send_message",
-        "app.socket.assistants.start",
-        "app.socket.assistants.stop",
-        "app.socket.simulations.send_message",
-        "app.socket.simulations.start",
-        "app.socket.simulations.stop",
-        "app.socket.simulations.continue_chat",
-        "app.socket.connections.connect",
-        "app.socket.connections.disconnect",
-        "app.socket.connections.join_chat",
-        "app.socket.connections.leave_chat",
-        "app.socket.connections.stop_chat",
+        "app.socket.v3.assistants.send_message",
+        "app.socket.v3.assistants.start",
+        "app.socket.v3.assistants.stop",
+        "app.socket.v3.simulations.send_message",
+        "app.socket.v3.simulations.start",
+        "app.socket.v3.simulations.stop",
+        "app.socket.v3.simulations.continue_chat",
+        "app.socket.v3.connections.connect",
+        "app.socket.v3.connections.disconnect",
+        "app.socket.v3.connections.join_chat",
+        "app.socket.v3.connections.leave_chat",
+        "app.socket.v3.connections.stop_chat",
     ]
 
     for module_path in handler_module_paths:
@@ -137,15 +137,15 @@ def patch_get_pool(db: asyncpg.Connection, monkeypatch: pytest.MonkeyPatch) -> N
 
     # Also patch in modules that import get_pool directly
     import_modules = [
-        "app.socket.assistants.start",
-        "app.socket.assistants.send_message",
-        "app.socket.assistants.stop",
-        "app.socket.connections.connect",
-        "app.socket.connections.disconnect",
-        "app.socket.simulations.start",
-        "app.socket.simulations.send_message",
-        "app.socket.simulations.stop",
-        "app.socket.simulations.continue_chat",
+        "app.socket.v3.assistants.start",
+        "app.socket.v3.assistants.send_message",
+        "app.socket.v3.assistants.stop",
+        "app.socket.v3.connections.connect",
+        "app.socket.v3.connections.disconnect",
+        "app.socket.v3.simulations.start",
+        "app.socket.v3.simulations.send_message",
+        "app.socket.v3.simulations.stop",
+        "app.socket.v3.simulations.continue_chat",
         "app.utils.websocket.cleanup_profile_connection",
     ]
 

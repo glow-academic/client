@@ -1,6 +1,7 @@
 """Model new endpoint for create page."""
 
 from typing import Annotated, Any
+import json
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -107,8 +108,6 @@ async def get_model_new(
             valid_provider_ids = [str(pid) for pid in valid_provider_ids_raw if pid]
         elif isinstance(valid_provider_ids_raw, str):
             # Handle JSON string
-            import json
-
             valid_provider_ids_raw = json.loads(valid_provider_ids_raw)
             if isinstance(valid_provider_ids_raw, list):
                 valid_provider_ids = [str(pid) for pid in valid_provider_ids_raw if pid]

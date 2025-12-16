@@ -2,10 +2,9 @@
 
 import asyncpg  # type: ignore
 import pytest
+from app.socket.v3.simulations.start import start_simulation
 from tests.integration.socket.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-
-from app.socket.simulations.start import start_simulation
 
 pytestmark = pytest.mark.asyncio
 
