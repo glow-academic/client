@@ -5,7 +5,13 @@
  * 06/18/2025
  */
 "use client";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 // UI Components
@@ -27,30 +33,27 @@ import {
   TemperatureBoundsPicker,
   type TemperatureBounds,
 } from "@/components/common/forms/TemperatureBoundsPicker";
-import { ModalityCardGrid } from "@/components/common/models/ModalityCardGrid";
+import { InputModalityCardGrid } from "@/components/common/models/InputModalityCardGrid";
+import { OutputModalityCardGrid } from "@/components/common/models/OutputModalityCardGrid";
+import { PricingTypeCardGrid } from "@/components/common/models/PricingTypeCardGrid";
 import { ProviderCardGrid } from "@/components/common/models/ProviderCardGrid";
 import { QualityCardGrid } from "@/components/common/models/QualityCardGrid";
 import { ReasoningCardGrid } from "@/components/common/models/ReasoningCardGrid";
-import { VoiceCardGrid } from "@/components/common/models/VoiceCardGrid";
-import { PricingTypeCardGrid } from "@/components/common/models/PricingTypeCardGrid";
 import { UnitCardGrid } from "@/components/common/models/UnitCardGrid";
-import { PricingEntryList } from "@/components/common/models/PricingEntryList";
+import { VoiceCardGrid } from "@/components/common/models/VoiceCardGrid";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { cn } from "@/lib/utils";
+import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import {
   Brain,
   Check,
   DollarSign,
   Edit,
   Image,
-  Layers,
-  Plus,
   Power,
   Settings,
   Thermometer,
-  Trash2,
   Volume2,
   X,
 } from "lucide-react";
@@ -225,17 +228,6 @@ export default function Model({
     return modelDataForMappings?.provider_mapping || {};
   }, [modelDataForMappings]);
 
-
-  // Convert provider_mapping to ProviderOption array for ProviderPicker
-  const providerOptions = useMemo(() => {
-    return Object.entries(providerMapping).map(([id, data]) => ({
-      id,
-      name: data.name,
-      description: data.description,
-      value: "", // Will be populated from provider detail if needed
-    }));
-  }, [providerMapping]);
-
   // Get current department_ids and key_id for edit mode
   const currentDepartmentIds = useMemo(() => {
     if (isEditMode && modelDetail && "department_ids" in modelDetail) {
@@ -321,7 +313,7 @@ export default function Model({
             price: p.price,
           })
         ) || [];
-      
+
       // Transform pricing array to Record structure
       const pricing: Record<string, { unit_id: string; price: number }[]> = {};
       const selectedPricingTypesSet = new Set<string>();
@@ -348,7 +340,7 @@ export default function Model({
       const hasModalities =
         modalities.input.length > 0 || modalities.output.length > 0;
       const hasTemperature = !!temperature_bounds;
-      const hasPricing = pricing && pricing.length > 0;
+      const hasPricing = pricing && Object.keys(pricing).length > 0;
       const hasVoices =
         modelDetail.voices &&
         (modelDetail.voices as Array<string | { voice: string }>).length > 0;
@@ -448,10 +440,11 @@ export default function Model({
       const hasCustomUrl =
         !formData?.customModel ||
         (formData.customModel && !!formData.baseUrl?.trim());
-      const hasModalities =
-        formData?.modalities &&
-        formData.modalities.input.length > 0 &&
-        formData.modalities.output.length > 0;
+      const hasInputModalities =
+        formData?.modalities && formData.modalities.input.length > 0;
+      const hasOutputModalities =
+        formData?.modalities && formData.modalities.output.length > 0;
+      const hasModalities = hasInputModalities && hasOutputModalities;
 
       switch (stepId) {
         case "basic":
@@ -462,16 +455,25 @@ export default function Model({
         case "provider":
           if (!hasName || !hasValue || !hasDescription) return "pending";
           return hasProvider ? "completed" : "active";
+        case "inputModalities":
+          if (!hasName || !hasValue || !hasDescription || !hasProvider)
+            return "pending";
+          return hasInputModalities ? "completed" : "active";
+        case "outputModalities":
+          if (!hasName || !hasValue || !hasDescription || !hasProvider)
+            return "pending";
+          if (!hasInputModalities) return "pending";
+          return hasOutputModalities ? "completed" : "active";
         case "modalities":
+          // Keep for backward compatibility, but use inputModalities and outputModalities instead
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
           return hasModalities ? "completed" : "active";
         case "temperature":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasModalities) return "pending";
-          return formData?.enableTemperature &&
-            formData?.temperature_bounds
+          if (!hasInputModalities || !hasOutputModalities) return "pending";
+          return formData?.enableTemperature && formData?.temperature_bounds
             ? "completed"
             : formData?.enableTemperature
               ? "active"
@@ -479,7 +481,7 @@ export default function Model({
         case "pricing":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasModalities) return "pending";
+          if (!hasInputModalities || !hasOutputModalities) return "pending";
           // Check if pricing has any entries (new Record structure)
           const hasPricingEntries =
             formData?.enablePricing &&
@@ -495,9 +497,8 @@ export default function Model({
         case "reasoning":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasModalities) return "pending";
-          if (!formData?.modalities?.output?.includes("text"))
-            return "pending";
+          if (!hasInputModalities || !hasOutputModalities) return "pending";
+          if (!formData?.modalities?.output?.includes("text")) return "pending";
           return formData?.enableReasoningLevels &&
             formData?.reasoning_levels?.length
             ? "completed"
@@ -507,7 +508,7 @@ export default function Model({
         case "voices":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasModalities) return "pending";
+          if (!hasInputModalities || !hasOutputModalities) return "pending";
           if (
             !formData?.modalities?.input?.includes("audio") ||
             !formData?.modalities?.output?.includes("audio")
@@ -521,7 +522,7 @@ export default function Model({
         case "qualities":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasModalities) return "pending";
+          if (!hasInputModalities || !hasOutputModalities) return "pending";
           if (
             !formData?.modalities?.output?.includes("image") &&
             !formData?.modalities?.output?.includes("audio")
@@ -562,10 +563,16 @@ export default function Model({
         status: getStepStatus("provider"),
       },
       {
-        id: "modalities",
-        title: "Modalities",
-        description: "Configure input and output modalities.",
-        status: getStepStatus("modalities"),
+        id: "inputModalities",
+        title: "Input Modalities",
+        description: "Configure input modalities.",
+        status: getStepStatus("inputModalities"),
+      },
+      {
+        id: "outputModalities",
+        title: "Output Modalities",
+        description: "Configure output modalities.",
+        status: getStepStatus("outputModalities"),
       },
       {
         id: "temperature",
@@ -628,6 +635,8 @@ export default function Model({
           !formData?.modalities?.output?.includes("audio")
         )
           return false;
+        // Filter out old "modalities" step if it exists
+        if (step.id === "modalities") return false;
         return true;
       });
       const index = visibleSteps.findIndex((s) => s.id === stepId);
@@ -885,16 +894,16 @@ export default function Model({
                 {formData?.name !== undefined ? (
                   <input
                     type="text"
-              id="name"
-              data-testid="input-model-name"
-              value={formData.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
+                    id="name"
+                    data-testid="input-model-name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
                     onFocus={(e) => {
                       if (!e.target.value || e.target.value.trim() === "") {
                         e.target.select();
                       }
                     }}
-                    onBlur={(e) => {
+                    onBlur={() => {
                       // If empty on blur, don't revert (let validation handle it)
                     }}
                     className={cn(
@@ -903,14 +912,14 @@ export default function Model({
                     )}
                     placeholder="New Model"
                     disabled={isReadonly || isSubmitting}
-            />
-          ) : null}
+                  />
+                ) : null}
                 <p className="text-xs text-muted-foreground mt-1 px-2">
                   {formData?.name === "" || !formData?.name
                     ? "Click to edit • Name will be auto-generated if unchanged"
                     : "Click to edit"}
                 </p>
-          {errors.name && (
+                {errors.name && (
                   <p className="text-sm text-destructive mt-1 px-2">
                     {errors.name}
                   </p>
@@ -937,396 +946,399 @@ export default function Model({
               ) : null}
               {errors.description && (
                 <p className="text-sm text-destructive">{errors.description}</p>
-          )}
-        </div>
+              )}
+            </div>
 
-        {/* Value */}
-        <div className="space-y-2">
-          <Label htmlFor="value">Value</Label>
-          {formData.value !== undefined ? (
-            <Input
-              id="value"
-              data-testid="input-model-value"
-              value={formData.value}
-              onChange={(e) => handleInputChange("value", e.target.value)}
-              placeholder="Enter model value identifier (e.g., gpt-4, gemini-pro)"
-              className={errors.value ? "border-destructive" : ""}
-              disabled={isReadonly || isSubmitting}
-            />
-          ) : null}
-          {errors.value && (
-            <p className="text-sm text-destructive">{errors.value}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Unique identifier for this model (used in API calls)
-          </p>
-        </div>
+            {/* Value */}
+            <div className="space-y-2">
+              <Label htmlFor="value">Value</Label>
+              {formData.value !== undefined ? (
+                <Input
+                  id="value"
+                  data-testid="input-model-value"
+                  value={formData.value}
+                  onChange={(e) => handleInputChange("value", e.target.value)}
+                  placeholder="Enter model value identifier (e.g., gpt-4, gemini-pro)"
+                  className={errors.value ? "border-destructive" : ""}
+                  disabled={isReadonly || isSubmitting}
+                />
+              ) : null}
+              {errors.value && (
+                <p className="text-sm text-destructive">{errors.value}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Unique identifier for this model (used in API calls)
+              </p>
+            </div>
 
-        {/* Department Selection */}
+            {/* Department Selection */}
             {validDepartmentIds && validDepartmentIds.length > 1 && (
-          <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
-            {formData?.departmentIds !== undefined ? (
-              <GenericPicker
-                items={departmentMapping}
-                itemIds={validDepartmentIds}
-                selectedIds={formData.departmentIds || []}
-                onSelect={(ids) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    departmentIds: ids,
-                  }))
-                }
-                getId={(dept) => (dept as unknown as { id: string }).id}
-                getLabel={(dept) => dept.name || ""}
-                getSearchText={(dept) =>
-                  `${dept.name} ${dept.description || ""}`
-                }
-                placeholder="All Departments"
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                {formData?.departmentIds !== undefined ? (
+                  <GenericPicker
+                    items={departmentMapping}
+                    itemIds={validDepartmentIds}
+                    selectedIds={formData.departmentIds || []}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        departmentIds: ids,
+                      }))
+                    }
+                    getId={(dept) => (dept as unknown as { id: string }).id}
+                    getLabel={(dept) => dept.name || ""}
+                    getSearchText={(dept) =>
+                      `${dept.name} ${dept.description || ""}`
+                    }
+                    placeholder="All Departments"
                     disabled={isReadonly || isSubmitting}
-                multiSelect={true}
-                hideSelectedChips={true}
-                buttonClassName="w-full"
-              />
-            ) : null}
-          </div>
+                    multiSelect={true}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
+                  />
+                ) : null}
+              </div>
             )}
 
-        {/* Active Switch */}
+            {/* Active Switch */}
             <div className="space-y-2 pt-2">
               <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="active"
-              className="text-sm flex items-center gap-1.5"
-            >
-              <Power className="h-3.5 w-3.5 text-muted-foreground" />
-              Active
-            </Label>
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="active"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                    Active
+                  </Label>
                   {formData?.active !== undefined ? (
-              <Switch
-                id="active"
-                data-testid="switch-model-active"
+                    <Switch
+                      id="active"
+                      data-testid="switch-model-active"
                       checked={formData.active ?? true}
-                onCheckedChange={(checked) =>
-                  handleInputChange("active", checked)
-                }
+                      onCheckedChange={(checked) =>
+                        handleInputChange("active", checked)
+                      }
                       disabled={isReadonly || isSubmitting}
-              />
-            ) : null}
-          </div>
-          <p className="text-xs text-muted-foreground pl-5">
-            Inactive models will not be available for selection
-          </p>
-        </div>
-
-        {/* Custom Model Switch */}
-              <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="customModel"
-              className="text-sm flex items-center gap-1.5"
-            >
-              <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-              Custom Model
-            </Label>
-                  {formData?.customModel !== undefined ? (
-              <Switch
-                id="customModel"
-                data-testid="switch-model-custom"
-                checked={formData.customModel}
-                onCheckedChange={(checked) => {
-                  handleInputChange("customModel", checked);
-                  if (!checked) {
-                    handleInputChange("baseUrl", "");
-                  }
-                }}
-                disabled={isSubmitting || isReadonly}
-              />
-            ) : null}
-          </div>
-          <p className="text-xs text-muted-foreground pl-5">
-            Use a custom base URL for this model
-          </p>
+                    />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Inactive models will not be available for selection
+                </p>
               </div>
 
-        {/* Temperature Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="enable-temperature"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Thermometer className="h-3.5 w-3.5 text-muted-foreground" />
-                Temperature
-              </Label>
-              {formData?.enableTemperature !== undefined ? (
-                <Switch
-                  id="enable-temperature"
-                  data-testid="switch-model-temperature"
-                  checked={formData.enableTemperature || false}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        enableTemperature: true,
-                        temperature_bounds: prev.temperature_bounds || {
-                          type: "range",
-                          lower: 0.0,
-                          upper: 1.0,
-                        },
-                      }));
-                    } else {
-                      const { temperature_bounds: _, ...rest } = formData;
-                      setFormData({
-                        ...rest,
-                        enableTemperature: false,
-                      } as FormData);
-                    }
-                  }}
-                  disabled={isSubmitting || isReadonly}
-                />
-              ) : null}
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Configure temperature bounds for this model
-            </p>
-          </div>
-        </div>
+              {/* Custom Model Switch */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="customModel"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                    Custom Model
+                  </Label>
+                  {formData?.customModel !== undefined ? (
+                    <Switch
+                      id="customModel"
+                      data-testid="switch-model-custom"
+                      checked={formData.customModel}
+                      onCheckedChange={(checked) => {
+                        handleInputChange("customModel", checked);
+                        if (!checked) {
+                          handleInputChange("baseUrl", "");
+                        }
+                      }}
+                      disabled={isSubmitting || isReadonly}
+                    />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Use a custom base URL for this model
+                </p>
+              </div>
 
-        {/* Pricing Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="enable-pricing"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                Pricing
-              </Label>
-              {formData?.enablePricing !== undefined ? (
-                <Switch
-                  id="enable-pricing"
-                  data-testid="switch-model-pricing"
-                  checked={formData.enablePricing || false}
-                  onCheckedChange={(checked) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      enablePricing: checked,
-                      pricing: checked ? prev.pricing || {} : {},
-                      selectedPricingTypes: checked
-                        ? prev.selectedPricingTypes || []
-                        : [],
-                    }));
-                  }}
-                  disabled={isSubmitting || isReadonly}
-                />
-              ) : null}
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Configure pricing for this model
-            </p>
-          </div>
-        </div>
+              {/* Temperature Switch */}
+              <div className="space-y-2 pt-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="enable-temperature"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <Thermometer className="h-3.5 w-3.5 text-muted-foreground" />
+                      Temperature
+                    </Label>
+                    {formData?.enableTemperature !== undefined ? (
+                      <Switch
+                        id="enable-temperature"
+                        data-testid="switch-model-temperature"
+                        checked={formData.enableTemperature || false}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              enableTemperature: true,
+                              temperature_bounds: prev.temperature_bounds || {
+                                type: "range",
+                                lower: 0.0,
+                                upper: 1.0,
+                              },
+                            }));
+                          } else {
+                            const { temperature_bounds: _, ...rest } = formData;
+                            setFormData({
+                              ...rest,
+                              enableTemperature: false,
+                            } as FormData);
+                          }
+                        }}
+                        disabled={isSubmitting || isReadonly}
+                      />
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Configure temperature bounds for this model
+                  </p>
+                </div>
+              </div>
 
-        {/* Reasoning Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="enable-reasoning"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Brain className="h-3.5 w-3.5 text-muted-foreground" />
-                Reasoning
-              </Label>
-              {formData?.enableReasoningLevels !== undefined ? (
-                <Switch
-                  id="enable-reasoning"
-                  data-testid="switch-model-reasoning"
-                  checked={formData.enableReasoningLevels || false}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        enableReasoningLevels: true,
-                        reasoning_levels:
-                          prev.reasoning_levels &&
-                          prev.reasoning_levels.length > 0
-                            ? prev.reasoning_levels
-                            : [],
-                      }));
-                    } else {
-                      const { reasoning_levels: _, ...rest } = formData;
-                      setFormData({
-                        ...rest,
-                        enableReasoningLevels: false,
-                      } as FormData);
-                    }
-                  }}
-                  disabled={isSubmitting || isReadonly}
-                />
-              ) : null}
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Select reasoning levels for this model
-            </p>
-          </div>
-        </div>
+              {/* Pricing Switch */}
+              <div className="space-y-2 pt-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="enable-pricing"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                      Pricing
+                    </Label>
+                    {formData?.enablePricing !== undefined ? (
+                      <Switch
+                        id="enable-pricing"
+                        data-testid="switch-model-pricing"
+                        checked={formData.enablePricing || false}
+                        onCheckedChange={(checked) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            enablePricing: checked,
+                            pricing: checked ? prev.pricing || {} : {},
+                            selectedPricingTypes: checked
+                              ? prev.selectedPricingTypes || []
+                              : [],
+                          }));
+                        }}
+                        disabled={isSubmitting || isReadonly}
+                      />
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Configure pricing for this model
+                  </p>
+                </div>
+              </div>
+
+              {/* Reasoning Switch */}
+              <div className="space-y-2 pt-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="enable-reasoning"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <Brain className="h-3.5 w-3.5 text-muted-foreground" />
+                      Reasoning
+                    </Label>
+                    {formData?.enableReasoningLevels !== undefined ? (
+                      <Switch
+                        id="enable-reasoning"
+                        data-testid="switch-model-reasoning"
+                        checked={formData.enableReasoningLevels || false}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              enableReasoningLevels: true,
+                              reasoning_levels:
+                                prev.reasoning_levels &&
+                                prev.reasoning_levels.length > 0
+                                  ? prev.reasoning_levels
+                                  : [],
+                            }));
+                          } else {
+                            const { reasoning_levels: _, ...rest } = formData;
+                            setFormData({
+                              ...rest,
+                              enableReasoningLevels: false,
+                            } as FormData);
+                          }
+                        }}
+                        disabled={isSubmitting || isReadonly}
+                      />
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Select reasoning levels for this model
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Step 2: Custom Model URL */}
-        {formData?.customModel && (() => {
-          const step = getStepById("customUrl");
-          const stepNumber = getStepNumber("customUrl");
-          return (
-            <Card
-              className={cn(
-                "transition-all",
-                !isEditMode &&
-                  step?.status === "active" &&
-                  "ring-2 ring-primary",
-                !isEditMode && step?.status === "pending" && "opacity-50"
-              )}
-            >
-              <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                      step?.status === "completed"
-                        ? "bg-green-500 text-white"
-                        : step?.status === "active"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                    )}
-                  >
-                    {step?.status === "completed" ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <span>{stepNumber}</span>
-                    )}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">
-                      {step?.title || "Custom Model URL"}
-                    </CardTitle>
-                    <CardDescription>
-                      {step?.description ||
-                        "Configure custom base URL for this model (optional)."}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-            <CardContent className="space-y-4 px-6">
-              <div className="space-y-2">
-                <Label htmlFor="baseUrl">Base URL</Label>
-                {!isEditMode || isEditingBaseUrl ? (
-                  <div className="flex items-center gap-2">
-                    <Textarea
-                id="baseUrl"
-                data-testid="input-model-base-url"
-                      value={
-                        isEditingBaseUrl
-                          ? editingBaseUrlValue
-                          : formData.baseUrl || ""
-                      }
-                      onChange={(e) => {
-                        if (isEditingBaseUrl) {
-                          setEditingBaseUrlValue(e.target.value);
-                        } else {
-                          handleInputChange("baseUrl", e.target.value);
-                        }
-                      }}
-                      placeholder="e.g. https://api.example.com/v1"
-                      className={cn(
-                        "flex-1 h-10 resize-none",
-                        errors.baseUrl ? "border-destructive" : ""
-                      )}
-                      disabled={isReadonly || isSubmitting}
-                      onKeyDown={(e) => {
-                        if (isEditingBaseUrl) {
-                          if (e.key === "Enter" && e.ctrlKey) {
-                            handleSaveEditBaseUrl();
-                          } else if (e.key === "Escape") {
-                            handleCancelEditBaseUrl();
-                          }
-                        }
-                      }}
-                    />
-                    {isEditingBaseUrl && (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            handleSaveEditBaseUrl();
-                          }}
-                          disabled={isReadonly || isSubmitting}
-                          className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            handleCancelEditBaseUrl();
-                          }}
-                          disabled={isReadonly || isSubmitting}
-                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 w-full">
+        {formData?.customModel &&
+          (() => {
+            const step = getStepById("customUrl");
+            const stepNumber = getStepNumber("customUrl");
+            return (
+              <Card
+                className={cn(
+                  "transition-all",
+                  !isEditMode &&
+                    step?.status === "active" &&
+                    "ring-2 ring-primary",
+                  !isEditMode && step?.status === "pending" && "opacity-50"
+                )}
+              >
+                <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                  <div className="flex items-center space-x-3">
                     <div
-                      ref={dotsContainerRef}
-                      className="flex-1 p-3 bg-muted rounded-md border h-10 flex items-center w-full overflow-hidden"
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                        step?.status === "completed"
+                          ? "bg-green-500 text-white"
+                          : step?.status === "active"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                      )}
                     >
-                      {formData.baseUrl ? (
-                        <code className="text-sm break-all w-full">
-                          {formData.baseUrl}
-                        </code>
+                      {step?.status === "completed" ? (
+                        <Check className="w-4 h-4" />
                       ) : (
-                        <span className="text-muted-foreground text-lg whitespace-nowrap">
-                          {"•".repeat(dotsCount)}
-                        </span>
+                        <span>{stepNumber}</span>
                       )}
                     </div>
-                    {!isReadonly && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleStartEditBaseUrl}
-                        disabled={isSubmitting}
-                        className="shrink-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                    <div>
+                      <CardTitle className="text-lg">
+                        {step?.title || "Custom Model URL"}
+                      </CardTitle>
+                      <CardDescription>
+                        {step?.description ||
+                          "Configure custom base URL for this model (optional)."}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 px-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="baseUrl">Base URL</Label>
+                    {!isEditMode || isEditingBaseUrl ? (
+                      <div className="flex items-center gap-2">
+                        <Textarea
+                          id="baseUrl"
+                          data-testid="input-model-base-url"
+                          value={
+                            isEditingBaseUrl
+                              ? editingBaseUrlValue
+                              : formData.baseUrl || ""
+                          }
+                          onChange={(e) => {
+                            if (isEditingBaseUrl) {
+                              setEditingBaseUrlValue(e.target.value);
+                            } else {
+                              handleInputChange("baseUrl", e.target.value);
+                            }
+                          }}
+                          placeholder="e.g. https://api.example.com/v1"
+                          className={cn(
+                            "flex-1 h-10 resize-none",
+                            errors.baseUrl ? "border-destructive" : ""
+                          )}
+                          disabled={isReadonly || isSubmitting}
+                          onKeyDown={(e) => {
+                            if (isEditingBaseUrl) {
+                              if (e.key === "Enter" && e.ctrlKey) {
+                                handleSaveEditBaseUrl();
+                              } else if (e.key === "Escape") {
+                                handleCancelEditBaseUrl();
+                              }
+                            }
+                          }}
+                        />
+                        {isEditingBaseUrl && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                handleSaveEditBaseUrl();
+                              }}
+                              disabled={isReadonly || isSubmitting}
+                              className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                handleCancelEditBaseUrl();
+                              }}
+                              disabled={isReadonly || isSubmitting}
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 w-full">
+                        <div
+                          ref={dotsContainerRef}
+                          className="flex-1 p-3 bg-muted rounded-md border h-10 flex items-center w-full overflow-hidden"
+                        >
+                          {formData.baseUrl ? (
+                            <code className="text-sm break-all w-full">
+                              {formData.baseUrl}
+                            </code>
+                          ) : (
+                            <span className="text-muted-foreground text-lg whitespace-nowrap">
+                              {"•".repeat(dotsCount)}
+                            </span>
+                          )}
+                        </div>
+                        {!isReadonly && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleStartEditBaseUrl}
+                            disabled={isSubmitting}
+                            className="shrink-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {errors.baseUrl && (
+                      <p className="text-sm text-destructive">
+                        {errors.baseUrl}
+                      </p>
                     )}
                   </div>
-                )}
-              {errors.baseUrl && (
-                <p className="text-sm text-destructive">{errors.baseUrl}</p>
-              )}
-            </div>
-            </CardContent>
-          </Card>
-          );
-        })()}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
         {/* Step 3: Provider Selection */}
         {(() => {
@@ -1365,33 +1377,36 @@ export default function Model({
                       {step?.title || "Provider"}
                     </CardTitle>
                     <CardDescription>
-                      {step?.description || "Select the provider for this model."}
+                      {step?.description ||
+                        "Select the provider for this model."}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-          <CardContent className="space-y-4 px-6">
-            <ProviderCardGrid
-              providerMapping={providerMapping}
-              validProviderIds={Object.keys(providerMapping)}
-              selectedProviderId={formData.provider_id || null}
-              onSelect={(providerId) => {
-                handleInputChange("provider_id", providerId || "");
-              }}
-              readonly={isReadonly || isSubmitting}
-            />
-            {errors.provider_id && (
-              <p className="text-sm text-destructive">{errors.provider_id}</p>
-            )}
-          </CardContent>
-        </Card>
+              <CardContent className="space-y-4 px-6">
+                <ProviderCardGrid
+                  providerMapping={providerMapping}
+                  validProviderIds={Object.keys(providerMapping)}
+                  selectedProviderId={formData.provider_id || null}
+                  onSelect={(providerId) => {
+                    handleInputChange("provider_id", providerId || "");
+                  }}
+                  readonly={isReadonly || isSubmitting}
+                />
+                {errors.provider_id && (
+                  <p className="text-sm text-destructive">
+                    {errors.provider_id}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           );
         })()}
 
-        {/* Step 4: Modalities */}
+        {/* Step 4: Input Modalities */}
         {(() => {
-          const step = getStepById("modalities");
-          const stepNumber = getStepNumber("modalities");
+          const step = getStepById("inputModalities");
+          const stepNumber = getStepNumber("inputModalities");
           return (
             <Card
               className={cn(
@@ -1422,128 +1437,100 @@ export default function Model({
                   </div>
                   <div>
                     <CardTitle className="text-lg">
-                      {step?.title || "Modalities"}
+                      {step?.title || "Input Modalities"}
                     </CardTitle>
                     <CardDescription>
-                      {step?.description ||
-                        "Configure input and output modalities."}
+                      {step?.description || "Configure input modalities."}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-          <CardContent className="space-y-4 px-6">
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                    <div className="space-y-2">
-                <label className="text-sm font-medium">Input Modalities</label>
-                <ModalityCardGrid
-                        selectedIds={formData.modalities?.input || ["text"]}
+              <CardContent className="space-y-4 px-6">
+                <InputModalityCardGrid
+                  selectedIds={formData.modalities?.input || ["text"]}
                   onSelect={(ids) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            modalities: {
-                        input: ids.length > 0 ? ids : ["text"],
-                              output: prev.modalities?.output || ["text"],
-                            },
-                          }))
-                        }
-                  readonly={isReadonly || isSubmitting}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                <label className="text-sm font-medium">Output Modalities</label>
-                <ModalityCardGrid
-                        selectedIds={formData.modalities?.output || ["text"]}
-                  onSelect={(ids) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            modalities: {
-                              input: prev.modalities?.input || ["text"],
-                        output: ids.length > 0 ? ids : ["text"],
-                            },
-                          }))
-                        }
-                  readonly={isReadonly || isSubmitting}
-                      />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-          );
-        })()}
-
-        {/* Step 5: Temperature */}
-        {formData.enableTemperature && (() => {
-          const step = getStepById("temperature");
-          const stepNumber = getStepNumber("temperature");
-          return (
-            <Card
-              className={cn(
-                "transition-all",
-                !isEditMode &&
-                  step?.status === "active" &&
-                  "ring-2 ring-primary",
-                !isEditMode && step?.status === "pending" && "opacity-50"
-              )}
-            >
-              <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                      step?.status === "completed"
-                        ? "bg-green-500 text-white"
-                        : step?.status === "active"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                    )}
-                  >
-                    {step?.status === "completed" ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <span>{stepNumber}</span>
-                    )}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">
-                      {step?.title || "Temperature"}
-                    </CardTitle>
-                    <CardDescription>
-                      {step?.description ||
-                        "Configure temperature bounds (optional)."}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-          <CardContent className="space-y-4 px-6">
-                <TemperatureBoundsPicker
-                  bounds={
-                    formData.temperature_bounds || {
-                      type: "range",
-                      lower: 0.0,
-                      upper: 1.0,
-                    }
-                  }
-                  onBoundsChange={(bounds) =>
                     setFormData((prev) => ({
                       ...prev,
-                      temperature_bounds: bounds,
+                      modalities: {
+                        input: ids.length > 0 ? ids : ["text"],
+                        output: prev.modalities?.output || ["text"],
+                      },
                     }))
                   }
-                  disabled={isSubmitting || isReadonly}
+                  readonly={isReadonly || isSubmitting}
                 />
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
           );
         })()}
 
-        {/* Step 6: Pricing */}
-        {formData.enablePricing && (() => {
-          const step = getStepById("pricing");
-          const stepNumber = getStepNumber("pricing");
-          
-          // Step for pricing type selection
+        {/* Step 5: Output Modalities */}
+        {(() => {
+          const step = getStepById("outputModalities");
+          const stepNumber = getStepNumber("outputModalities");
           return (
-            <>
+            <Card
+              className={cn(
+                "transition-all",
+                !isEditMode &&
+                  step?.status === "active" &&
+                  "ring-2 ring-primary",
+                !isEditMode && step?.status === "pending" && "opacity-50"
+              )}
+            >
+              <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                      step?.status === "completed"
+                        ? "bg-green-500 text-white"
+                        : step?.status === "active"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                    )}
+                  >
+                    {step?.status === "completed" ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <span>{stepNumber}</span>
+                    )}
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">
+                      {step?.title || "Output Modalities"}
+                    </CardTitle>
+                    <CardDescription>
+                      {step?.description || "Configure output modalities."}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 px-6">
+                <OutputModalityCardGrid
+                  selectedIds={formData.modalities?.output || ["text"]}
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      modalities: {
+                        input: prev.modalities?.input || ["text"],
+                        output: ids.length > 0 ? ids : ["text"],
+                      },
+                    }))
+                  }
+                  readonly={isReadonly || isSubmitting}
+                />
+              </CardContent>
+            </Card>
+          );
+        })()}
+
+        {/* Step 6: Temperature */}
+        {formData.enableTemperature &&
+          (() => {
+            const step = getStepById("temperature");
+            const stepNumber = getStepNumber("temperature");
+            return (
               <Card
                 className={cn(
                   "transition-all",
@@ -1573,39 +1560,106 @@ export default function Model({
                     </div>
                     <div>
                       <CardTitle className="text-lg">
-                        {step?.title || "Pricing"}
+                        {step?.title || "Temperature"}
                       </CardTitle>
                       <CardDescription>
                         {step?.description ||
-                          "Configure pricing for this model (optional)."}
+                          "Configure temperature bounds (optional)."}
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 px-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="pricing-types">Pricing Types</Label>
+                  <TemperatureBoundsPicker
+                    bounds={
+                      formData.temperature_bounds || {
+                        type: "range",
+                        lower: 0.0,
+                        upper: 1.0,
+                      }
+                    }
+                    onBoundsChange={(bounds) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        temperature_bounds: bounds,
+                      }))
+                    }
+                    disabled={isSubmitting || isReadonly}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+        {/* Step 7: Pricing */}
+        {formData.enablePricing &&
+          (() => {
+            const step = getStepById("pricing");
+            const stepNumber = getStepNumber("pricing");
+
+            // Step for pricing type selection
+            return (
+              <>
+                <Card
+                  className={cn(
+                    "transition-all",
+                    !isEditMode &&
+                      step?.status === "active" &&
+                      "ring-2 ring-primary",
+                    !isEditMode && step?.status === "pending" && "opacity-50"
+                  )}
+                >
+                  <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                          step?.status === "completed"
+                            ? "bg-green-500 text-white"
+                            : step?.status === "active"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                        )}
+                      >
+                        {step?.status === "completed" ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <span>{stepNumber}</span>
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">
+                          {step?.title || "Pricing"}
+                        </CardTitle>
+                        <CardDescription>
+                          {step?.description ||
+                            "Configure pricing for this model (optional)."}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 px-6">
                     <PricingTypeCardGrid
                       selectedIds={formData.selectedPricingTypes || []}
                       onSelect={(ids) => {
                         setFormData((prev) => {
                           const newPricing = { ...prev.pricing };
                           const newSelectedTypes = ids;
-                          
+
                           // Remove pricing data for deselected types
                           Object.keys(newPricing).forEach((type) => {
                             if (!newSelectedTypes.includes(type)) {
                               delete newPricing[type];
                             }
                           });
-                          
+
                           // Initialize empty arrays for newly selected types
                           newSelectedTypes.forEach((type) => {
                             if (!newPricing[type]) {
                               newPricing[type] = [];
                             }
                           });
-                          
+
                           return {
                             ...prev,
                             selectedPricingTypes: newSelectedTypes,
@@ -1615,60 +1669,59 @@ export default function Model({
                       }}
                       readonly={isReadonly || isSubmitting}
                     />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Individual Pricing Type Sections */}
-              {(formData.selectedPricingTypes || []).map((pricingType) => {
-                const pricingEntries = formData.pricing?.[pricingType] || [];
-                const selectedUnitIds = pricingEntries.map((e) => e.unit_id);
-                const typeLabel =
-                  pricingType.charAt(0).toUpperCase() + pricingType.slice(1);
+                {/* Individual Pricing Type Sections */}
+                {(formData.selectedPricingTypes || []).map((pricingType) => {
+                  const pricingEntries = formData.pricing?.[pricingType] || [];
+                  const selectedUnitIds = pricingEntries.map((e) => e.unit_id);
+                  const typeLabel =
+                    pricingType.charAt(0).toUpperCase() + pricingType.slice(1);
 
-                return (
-                  <Card
-                    key={pricingType}
-                    className={cn(
-                      "transition-all",
-                      !isEditMode &&
-                        step?.status === "active" &&
-                        "ring-2 ring-primary",
-                      !isEditMode && step?.status === "pending" && "opacity-50"
-                    )}
-                  >
-                    <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                            pricingEntries.length > 0
-                              ? "bg-green-500 text-white"
-                              : step?.status === "active"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                          )}
-                        >
-                          {pricingEntries.length > 0 ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <span>{stepNumber}</span>
-                          )}
+                  return (
+                    <Card
+                      key={pricingType}
+                      className={cn(
+                        "transition-all",
+                        !isEditMode &&
+                          step?.status === "active" &&
+                          "ring-2 ring-primary",
+                        !isEditMode &&
+                          step?.status === "pending" &&
+                          "opacity-50"
+                      )}
+                    >
+                      <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                              pricingEntries.length > 0
+                                ? "bg-green-500 text-white"
+                                : step?.status === "active"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                            )}
+                          >
+                            {pricingEntries.length > 0 ? (
+                              <Check className="w-4 h-4" />
+                            ) : (
+                              <span>{stepNumber}</span>
+                            )}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">
+                              {typeLabel} Pricing
+                            </CardTitle>
+                            <CardDescription>
+                              Configure pricing entries for {pricingType} tokens
+                            </CardDescription>
+                          </div>
                         </div>
-                        <div>
-                          <CardTitle className="text-lg">
-                            {typeLabel} Pricing
-                          </CardTitle>
-                          <CardDescription>
-                            Configure pricing entries for {pricingType} tokens
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6 px-6">
-                      {/* Unit Selection */}
-                      <div className="space-y-2">
-                        <Label>Select Units</Label>
+                      </CardHeader>
+                      <CardContent className="space-y-6 px-6">
+                        {/* Unit Selection with Inline Price Editing */}
                         <UnitCardGrid
                           units={units}
                           selectedIds={selectedUnitIds}
@@ -1680,7 +1733,8 @@ export default function Model({
                               }
 
                               // Get current entries
-                              const currentEntries = newPricing[pricingType] || [];
+                              const currentEntries =
+                                newPricing[pricingType] || [];
                               const currentUnitIds = new Set(
                                 currentEntries.map((e) => e.unit_id)
                               );
@@ -1695,7 +1749,7 @@ export default function Model({
                               ).filter((id) => !newUnitIds.has(id));
 
                               // Remove entries for deselected units
-                              let updatedEntries = currentEntries.filter(
+                              const updatedEntries = currentEntries.filter(
                                 (e) => !removedUnitIds.includes(e.unit_id)
                               );
 
@@ -1716,83 +1770,99 @@ export default function Model({
                             });
                           }}
                           readonly={isReadonly || isSubmitting}
-                        />
-                      </div>
+                          enablePriceEditing={true}
+                          prices={Object.fromEntries(
+                            pricingEntries.map((e) => [e.unit_id, e.price])
+                          )}
+                          onPriceChange={(unitId, price) => {
+                            setFormData((prev) => {
+                              const newPricing = { ...prev.pricing };
+                              if (!newPricing[pricingType]) {
+                                newPricing[pricingType] = [];
+                              }
 
-                      {/* Price Editing */}
-                      {selectedUnitIds.length > 0 && (
-                        <div className="space-y-2">
-                          <Label>Configure Prices</Label>
-                          <PricingEntryList
-                            entries={pricingEntries}
-                            units={units}
-                            onEntriesChange={(newEntries) => {
-                              setFormData((prev) => {
-                                const newPricing = { ...prev.pricing };
-                                newPricing[pricingType] = newEntries;
-                                return {
-                                  ...prev,
-                                  pricing: newPricing,
+                              // Find and update the entry for this unit
+                              const entries = newPricing[pricingType] || [];
+                              const entryIndex = entries.findIndex(
+                                (e) => e.unit_id === unitId
+                              );
+
+                              if (entryIndex >= 0 && entries[entryIndex]) {
+                                entries[entryIndex] = {
+                                  unit_id: entries[entryIndex].unit_id,
+                                  price,
                                 };
-                              });
-                            }}
-                            readonly={isReadonly || isSubmitting}
-                          />
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </>
-          );
-        })()}
+                              } else {
+                                // If entry doesn't exist, add it
+                                entries.push({
+                                  unit_id: unitId,
+                                  price,
+                                });
+                              }
 
-        {/* Step 7: Reasoning Levels */}
+                              newPricing[pricingType] = entries;
+
+                              return {
+                                ...prev,
+                                pricing: newPricing,
+                              };
+                            });
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </>
+            );
+          })()}
+
+        {/* Step 8: Reasoning Levels */}
         {formData.modalities?.output?.includes("text") &&
-          formData.enableReasoningLevels && (() => {
-          const step = getStepById("reasoning");
-          const stepNumber = getStepNumber("reasoning");
-          return (
-            <Card
-              className={cn(
-                "transition-all",
-                !isEditMode &&
-                  step?.status === "active" &&
-                  "ring-2 ring-primary",
-                !isEditMode && step?.status === "pending" && "opacity-50"
-              )}
-            >
-              <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                      step?.status === "completed"
-                        ? "bg-green-500 text-white"
-                        : step?.status === "active"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                    )}
-                  >
-                    {step?.status === "completed" ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <span>{stepNumber}</span>
-                    )}
+          formData.enableReasoningLevels &&
+          (() => {
+            const step = getStepById("reasoning");
+            const stepNumber = getStepNumber("reasoning");
+            return (
+              <Card
+                className={cn(
+                  "transition-all",
+                  !isEditMode &&
+                    step?.status === "active" &&
+                    "ring-2 ring-primary",
+                  !isEditMode && step?.status === "pending" && "opacity-50"
+                )}
+              >
+                <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                        step?.status === "completed"
+                          ? "bg-green-500 text-white"
+                          : step?.status === "active"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                      )}
+                    >
+                      {step?.status === "completed" ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <span>{stepNumber}</span>
+                      )}
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">
+                        {step?.title || "Reasoning Levels"}
+                      </CardTitle>
+                      <CardDescription>
+                        {step?.description ||
+                          "Select reasoning levels (optional, text output only)."}
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">
-                      {step?.title || "Reasoning Levels"}
-                    </CardTitle>
-                    <CardDescription>
-                      {step?.description ||
-                        "Select reasoning levels (optional, text output only)."}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-            <CardContent className="space-y-4 px-6">
+                </CardHeader>
+                <CardContent className="space-y-4 px-6">
                   <ReasoningCardGrid
                     selectedIds={formData.reasoning_levels || []}
                     onSelect={(ids) =>
@@ -1803,14 +1873,15 @@ export default function Model({
                     }
                     readonly={isReadonly || isSubmitting}
                   />
-            </CardContent>
-          </Card>
-          );
-        })()}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
-        {/* Step 8: Voices */}
+        {/* Step 9: Voices */}
         {formData.modalities?.input?.includes("audio") &&
-          formData.modalities?.output?.includes("audio") && (() => {
+          formData.modalities?.output?.includes("audio") &&
+          (() => {
             const step = getStepById("voices");
             const stepNumber = getStepNumber("voices");
             return (
@@ -1852,163 +1923,167 @@ export default function Model({
                     </div>
                   </div>
                 </CardHeader>
-              <CardContent className="space-y-4 px-6">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Volume2 className="h-4 w-4 text-muted-foreground" />
-                    <Label htmlFor="enable-voices" className="text-sm font-medium">
-                      Enable Voice Selection
-                    </Label>
-                    <Switch
-                      id="enable-voices"
-                      checked={formData.enableVoices || false}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
+                <CardContent className="space-y-4 px-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                      <Label
+                        htmlFor="enable-voices"
+                        className="text-sm font-medium"
+                      >
+                        Enable Voice Selection
+                      </Label>
+                      <Switch
+                        id="enable-voices"
+                        checked={formData.enableVoices || false}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              enableVoices: true,
+                              voices:
+                                prev.voices && prev.voices.length > 0
+                                  ? prev.voices
+                                  : [],
+                            }));
+                          } else {
+                            const { voices: _, ...rest } = formData;
+                            setFormData({
+                              ...rest,
+                              enableVoices: false,
+                            } as FormData);
+                          }
+                        }}
+                        disabled={isSubmitting || isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-6">
+                      Select specific voices for this model. If disabled or none
+                      selected, all available voices are allowed.
+                    </p>
+                  </div>
+                  {formData.enableVoices && (
+                    <div className="pt-2">
+                      <VoiceCardGrid
+                        selectedIds={formData.voices || []}
+                        onSelect={(ids) =>
                           setFormData((prev) => ({
                             ...prev,
-                            enableVoices: true,
-                            voices:
-                              prev.voices && prev.voices.length > 0
-                                ? prev.voices
-                                : [],
-                          }));
-                        } else {
-                          const { voices: _, ...rest } = formData;
-                          setFormData({
-                            ...rest,
-                            enableVoices: false,
-                          } as FormData);
+                            voices: ids.length > 0 ? ids : [],
+                          }))
                         }
-                      }}
-                      disabled={isSubmitting || isReadonly}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-6">
-                    Select specific voices for this model. If disabled or none
-                    selected, all available voices are allowed.
-                  </p>
-                </div>
-                {formData.enableVoices && (
-                  <div className="pt-2">
-                    <VoiceCardGrid
-                      selectedIds={formData.voices || []}
-                      onSelect={(ids) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          voices: ids.length > 0 ? ids : [],
-                        }))
-                      }
-                      readonly={isReadonly || isSubmitting}
-                    />
-                  </div>
-              )}
-            </CardContent>
-          </Card>
+                        readonly={isReadonly || isSubmitting}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             );
           })()}
 
-        {/* Step 9: Qualities */}
+        {/* Step 10: Qualities */}
         {(formData.modalities?.output?.includes("image") ||
-          formData.modalities?.output?.includes("audio")) && (() => {
-          const step = getStepById("qualities");
-          const stepNumber = getStepNumber("qualities");
-          return (
-            <Card
-              className={cn(
-                "transition-all",
-                !isEditMode &&
-                  step?.status === "active" &&
-                  "ring-2 ring-primary",
-                !isEditMode && step?.status === "pending" && "opacity-50"
-              )}
-            >
-              <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                      step?.status === "completed"
-                        ? "bg-green-500 text-white"
-                        : step?.status === "active"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                    )}
-                  >
-                    {step?.status === "completed" ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <span>{stepNumber}</span>
-                    )}
+          formData.modalities?.output?.includes("audio")) &&
+          (() => {
+            const step = getStepById("qualities");
+            const stepNumber = getStepNumber("qualities");
+            return (
+              <Card
+                className={cn(
+                  "transition-all",
+                  !isEditMode &&
+                    step?.status === "active" &&
+                    "ring-2 ring-primary",
+                  !isEditMode && step?.status === "pending" && "opacity-50"
+                )}
+              >
+                <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                        step?.status === "completed"
+                          ? "bg-green-500 text-white"
+                          : step?.status === "active"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                      )}
+                    >
+                      {step?.status === "completed" ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <span>{stepNumber}</span>
+                      )}
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">
+                        {step?.title || "Qualities"}
+                      </CardTitle>
+                      <CardDescription>
+                        {step?.description ||
+                          "Select qualities (optional, image/audio output only)."}
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">
-                      {step?.title || "Qualities"}
-                    </CardTitle>
-                    <CardDescription>
-                      {step?.description ||
-                        "Select qualities (optional, image/audio output only)."}
-                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 px-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                      <Image
+                        className="h-4 w-4 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <Label
+                        htmlFor="enable-qualities"
+                        className="text-sm font-medium"
+                      >
+                        Enable Qualities
+                      </Label>
+                      <Switch
+                        id="enable-qualities"
+                        checked={formData.enableQualities || false}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              enableQualities: true,
+                              qualities:
+                                prev.qualities && prev.qualities.length > 0
+                                  ? prev.qualities
+                                  : [],
+                            }));
+                          } else {
+                            const { qualities: _, ...rest } = formData;
+                            setFormData({
+                              ...rest,
+                              enableQualities: false,
+                            } as FormData);
+                          }
+                        }}
+                        disabled={isSubmitting || isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-6">
+                      Select specific quality levels for this model. If
+                      disabled, all available quality levels are allowed.
+                    </p>
                   </div>
-                </div>
-              </CardHeader>
-            <CardContent className="space-y-4 px-6">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                  <Image
-                    className="h-4 w-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <Label
-                    htmlFor="enable-qualities"
-                    className="text-sm font-medium"
-                  >
-                    Enable Qualities
-                  </Label>
-                  <Switch
-                    id="enable-qualities"
-                    checked={formData.enableQualities || false}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          enableQualities: true,
-                          qualities:
-                            prev.qualities && prev.qualities.length > 0
-                              ? prev.qualities
-                              : [],
-                        }));
-                      } else {
-                        const { qualities: _, ...rest } = formData;
-                        setFormData({
-                          ...rest,
-                          enableQualities: false,
-                        } as FormData);
-                      }
-                    }}
-                    disabled={isSubmitting || isReadonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-6">
-                  Select specific quality levels for this model. If disabled,
-                  all available quality levels are allowed.
-                </p>
-              </div>
-              {formData.enableQualities && (
-                <div className="pt-2">
-                  <QualityCardGrid
-                    selectedIds={formData.qualities || []}
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({ ...prev, qualities: ids }))
-                    }
-                    readonly={isReadonly || isSubmitting}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          );
-        })()}
+                  {formData.enableQualities && (
+                    <div className="pt-2">
+                      <QualityCardGrid
+                        selectedIds={formData.qualities || []}
+                        onSelect={(ids) =>
+                          setFormData((prev) => ({ ...prev, qualities: ids }))
+                        }
+                        readonly={isReadonly || isSubmitting}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
